@@ -2,8 +2,10 @@
 The instrumentdata class 
 """
 
-import pyfits
+import sys
 
+import pytools
+import util
 
 class InputImage(object):
     '''The InputImage class is the base class for all of the various
@@ -11,7 +13,9 @@ class InputImage(object):
     '''
 
     def __init__(self, filename):
-
+        self.filename = filename
+        self.rootname = util.findrootname(filename)
+        
     def setInstrumentParameters(self, instrpars, pri_header):
         """ 
         Sets the instrument parameters.
@@ -75,17 +79,7 @@ class InputImage(object):
         return _result
 
     def getreferencesky(self):
-        return (self._subtractedsky * (self.refplatescale / self.platescale)**2 )
-
-    def getComputedSky(self):
-        return self._computedsky
-
-    def setComputedSky(self,newValue):
-        self._computedsky = newValue
-        
-    def getSubtractedSky(self):
-        return self._subtractedsky
-                
+        return (self._subtractedsky * (self.refplatescale / self.platescale)**2 )                
                 
     def updateMDRIZSKY(self,filename=None):
     
@@ -108,5 +102,3 @@ class InputImage(object):
                     comment="Sky value subtracted by Multidrizzle")
         finally:
             _handle.close()
-        
-    
