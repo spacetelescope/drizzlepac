@@ -1,10 +1,13 @@
-#!/usr/bin/env python
+#
+#   Authors: Christopher Hanley, Warren Hack, Ivo Busko, David Grumm
+#   Program: acs_input.py
+#   Purpose: Class used to model ACS specific instrument data.
 
 from pytools import fileutil
 import numpy as np
 from input_image import InputImage
 
-class ACSdata(filename):
+class ACSInputImage(InputImage):
 
     SEPARATOR = '_'
 
@@ -13,8 +16,7 @@ class ACSdata(filename):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self.platescale = platescale
-        self._effGain = 1
-
+        
     def doUnitConversions(self):
         # Effective gain to be used in the driz_cr step.  Since the
         # ACS images have already been converted to electrons,

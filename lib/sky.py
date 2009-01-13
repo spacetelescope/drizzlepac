@@ -2,13 +2,14 @@
 """
 
 Function for computing and subtracting the backgroud of an image.  The
-algorithm in use in the function is to use a sigma clipped median of 
-each *sci* image in a data file.  Then the sky value for each detector
+algorithm employed here uses a sigma clipped median of  each *sci* image in a data file.  
+Then the sky value for each detector
 is compared and the lowest value is subtracted from all chips in the
 detector.  Finally, the MDRIZSKY keyword is updated in the header
 of the input files.
 
 :author: Christopher Hanley
+:author: Megan Sosey
 
 """
 
