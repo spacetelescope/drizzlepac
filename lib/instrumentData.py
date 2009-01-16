@@ -17,6 +17,8 @@ class InputImage:
         self.rootname = util.findrootname(filename)
         self.subtractedSky=0.0 #sky subtracted from all the chips for the instrument
         
+        setInstrumentParameters(self)
+        
         
         
     def setInstrumentParameters(self, instrpars, pri_header):

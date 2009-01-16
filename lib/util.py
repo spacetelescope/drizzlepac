@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
-These are utility functions that can be used by any of the
-classes
+A library of utility functions
 
 """
 from pytools import asnutil
@@ -30,6 +29,7 @@ def atfile_sci(filename):
 """
 return the filename of the science image 
 which is assumed to be the first word
+in the atfile the user gave
 """
     return filename.split()[0]
 
@@ -38,8 +38,19 @@ def atfile_ivm(filename):
 """
 return the filename of the IVM file
 which is assumed to be the second word
+in the atfile the user gave
 """
     return filename.split()[1]    
+
+
+def printParams(paramDictionary):
+""" Print nicely the parameters from the dictionary"""
+
+    keys=paramDictionary.keys()
+    keys.sort()
+    for key in keys:
+    	print key,":\t",paramDict[key]
+
 
 
 def isASNTable(inputFilelist):
@@ -53,21 +64,7 @@ def isCommaList(inputFilelist):
 	if "," in inputFilelist:
 		return True
     return False        
-
-""" get some better logic here"""
-def isSingleFile(inputFilelist):
-	if !isCommaList(inputFilelist):
-    	if !isASNTable(inputFilelist):
-        	if !isFilelist(inputFilelist):
-            	return True
-    return False
-
-def isFilelist(inputFilelist):
-"""return true if input is an @ style list"""
-	if '@' in inputFilelist:
-    	return True
-    return False
-    
+  
 def loadFileList(inputFilelist):
 """open up the @ file and read in the science and possible
   ivm filenames from the first two columns
@@ -102,7 +99,8 @@ def readASNtable(filename):
 read the given association file (fits table)
 and return a list of the science files
 the asnutil function is used and
-a list of filenames is returned
+a
+ list of filenames is returned
 
 """
 	asndict=asnutil.readASNTable(filename, output=None, prodonly=False):	
@@ -116,9 +114,11 @@ a list of filenames is returned
 def getInputAsList(input, output=None, ivmlist=None, prodonly=False):
     if (isinstance(input, list) == False) and \
        ('_asn' in input or '_asc' in input) :
+       
         # Input is an association table
         # Get the input files, and run makewcs on them
         oldasndict = asnutil.readASNTable(input, prodonly=prodonly)
+
         if not output:
             output = oldasndict['output']
 
@@ -177,4 +177,9 @@ def update_input(filelist, ivmlist=None, removed_files=None):
         return newfilelist, ivmlist 
 
 
-
+def populateParameters(taskname)
+""" Read in the list of user parameters for the task using configobj """
+	kwParams={} #empty dictionary for now
+	return kwParams
+    
+    
