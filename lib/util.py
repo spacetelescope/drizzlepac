@@ -46,11 +46,13 @@ in the atfile the user gave
 def printParams(paramDictionary):
 """ Print nicely the parameters from the dictionary"""
 
-    keys=paramDictionary.keys()
-    keys.sort()
-    for key in keys:
-    	print key,":\t",paramDict[key]
-
+	if len(paramDictionary) == 0):
+    	print "\nNo parameters were supplied\n"
+    else:
+	    keys=paramDictionary.keys()
+   		keys.sort()
+    	for key in keys:
+    		print key,":\t",paramDict[key]
 
 
 def isASNTable(inputFilelist):

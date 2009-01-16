@@ -17,7 +17,7 @@ configObj is there as a placeholder to pass in the full parameter set
 These are parameters that the configObj should contain:
 
 
-new params that should be in configobj
+params that should be in configobj
 ---------------------------------------
 skyuser		'KEYWORD indicating a sky subtraction value if done by user.
 skysub		'Perform sky subtraction?'
@@ -33,7 +33,7 @@ skyusigma	'Upper side clipping factor (in sigma)'
 stuff I got rid of
 -------------------
 #can't we do something to get rid of this parameter? I've always hated it
-#or do we need it for some backwards compat reason?
+#or do we need it for some reason I haven't figured out yet?
 group		'the group number for the fits image' 
 
 
@@ -60,7 +60,7 @@ def subtractSky(inputImageList,configObj=configObj):
         
     _computedSky = 0.0
     _subtractedSky = 0.0
-        
+    _skyValue=0.0  
         
     """ Processes sky in input images."""
     
@@ -71,18 +71,20 @@ def subtractSky(inputImageList,configObj=configObj):
         for image in inputImageList:
             try:
                 imageHandle = fileutil.openImage(image,mode='update',memmap=0)
-                userSkyValue = imageHandle[0].header[configObj["skyuser"]]
-                imageHandle.close()
+                _skyValue = imageHandle[0].header[configObj["skyuser"]]
             except:
                 print "**************************************************************"
                 print "*"
                 print "*  Cannot find keyword ",configObj["skyuser"]," in ",image," to update"
                 print "*"
                 print "**************************************************************\n\n\n"
+				imageHandle.close()
                 raise KeyError
             
-            updateMDRIZSKY(image, skyValue=0.0,memmap=0)
-               
+            imageHandle[0].header[configObj["skyuser"]] = _skyValue
+            imageHandle.close()
+            
+                           
     elif (configObj["skysub"]):
         # Compute our own sky values and subtract them from the image copies.
         print "Subtracting sky..."
@@ -113,8 +115,8 @@ def subtractSky(inputImageList,configObj=configObj):
             if (configObj['exposure'].header['INSTRUME'] != 'STIS'):
                 configObj['image'].setSubtractedSky(imageMinDict[configObj['rootname']])
             else:
-                setSubtractedSky(image,getComputedSky(image))
-                subtractSky(image)
+                _computedSky=(image,getComputedSky(image))
+                subtractSky(image,_computedSky)
 
     else:
         # Default Case, sky subtraction is turned off.  No sky subtraction done to image.
@@ -125,7 +127,7 @@ def subtractSky(inputImageList,configObj=configObj):
 
     #Update the MDRIZSKY KEYWORD
     for image in imageFileList:
-    	updateMDRIZSKY(image, skyValue=0.0,memmap=0)
+    	updateMDRIZSKY(image, skyValue=_skyValue,memmap=0)
             
            
             

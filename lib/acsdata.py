@@ -4,6 +4,50 @@ from pytools import fileutil
 import numpy as np
 from input_image import InputImage
 
+
+"""
+These are functions related directly to ACS images
+"""
+
+def getACSInfo(primaryHeader):
+	"""
+	This takes a pyfits primary header instance and pulls out
+    the basic set of keywords we would like to have which 
+    are specific to ACS and then returns a dictionary of key value pairs
+    
+    The keyword list is not passed in because they
+    can be different from instrument to instrument
+    """
+    
+    #the flatfile keyword name           
+    keywords["flatname"]="PFLTFILE"
+    cr_bits_value = 4096
+
+    # Effective gain to be used in the driz_cr step.  Since the
+    # ACS images have already been converted to electrons,
+    # the effective gain is 1.    
+    keywords["effGain"]=1.
+        
+    try:    
+        keywords["darkcurrent"]=primaryHeader["MEANDARK"] #in header units        
+    except:                                                         
+        str =  "#############################################\n"        
+        str += "#                                           #\n"        
+        str += "# Error:                                    #\n"        
+        str += "#   Cannot find the value for 'MEANDARK'    #\n"        
+        str += "#   in the image header.  ACS input images  #\n"        
+        str += "#   are expected to have this header        #\n"        
+        str += "#   keyword.                                #\n"        
+        str += "#                                           #\n"        
+        str += "# Error occured in getASCInfo               #\n"        
+        str += "#                                           #\n"        
+        str += "#############################################\n"        
+        raise ValueError, str                                           
+
+    #the number of science chips in the image
+        
+    
+    
 class ACSdata(filename):
 
     SEPARATOR = '_'
@@ -98,43 +142,6 @@ class ACSdata(filename):
                 print str
         flat = data
         return flat
-
-
-    def getdarkcurrent(self):
-        """
-        
-        Purpose
-        =======
-        Return the dark current for the ACS detector.  This value
-        will be contained within an instrument specific keyword.
-        The value in the image header will be converted to units
-        of electrons.
-        
-        :units: electrons
-        
-        """
-        
-        darkcurrent = 0
-        
-        try:
-            darkcurrent = self.header['MEANDARK']
-        except:
-            str =  "#############################################\n"
-            str += "#                                           #\n"
-            str += "# Error:                                    #\n"
-            str += "#   Cannot find the value for 'MEANDARK'    #\n"
-            str += "#   in the image header.  ACS input images  #\n"
-            str += "#   are expected to have this header        #\n"
-            str += "#   keyword.                                #\n"
-            str += "#                                           #\n"
-            str += "# Error occured in the ACSInputImage class  #\n"
-            str += "#                                           #\n"
-            str += "#############################################\n"
-            raise ValueError, str
-        
-        
-        return darkcurrent
-
 
 class WFCInputImage (ACSInputImage):
 

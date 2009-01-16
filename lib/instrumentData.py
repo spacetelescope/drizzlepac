@@ -1,12 +1,46 @@
 #!/usr/bin/env python
 """
-The instrument data class 
+functions associated with HST instruments
+
+
 """
 
 import sys
 import pytools
 import util
 
+def getBasicInstrData(filename):
+	""" return a dictionary with basic instrument data taken from the header
+    	of the input filename
+    """
+        
+    imageHandle=fileutil.openImage(filename,mode='update',memmap=0)
+    priHeader=imageHandle[0].header
+    	
+    instrument=priHeader["INSTRUME"]
+
+	#these fill in specific instrument information
+    if ("ACS" in instrument):
+        instrData=getACSInfo(priHeader)
+    if ("NICMOS" in instrument):
+    	instrData=getNICMOSInfo(priHeader)
+    if ("WFC3" in instrument):
+    	instrData=getWFC3Info(priHeader)
+    if("WFPC2" in instrument):
+    	instrData=getWFPC2Info(priHeader)
+
+        
+    #keywords which are common to all instruments
+    genericKW=["INSTRUME","NAXIS1","NAXIS2","LTV1","LTV2","EXPTIME"]
+    
+    for key in genericKW:
+    	instrData[key]=priHeader[key]
+
+    
+        
+    return instrData    
+    
+    
 class InputImage:
     '''The InputImage class is the base class for all of the various
        types of images
