@@ -6,9 +6,9 @@ A library of utility functions
 from pytools import asnutil
 
 def findrootname(filename):
-"""
-return the rootname of the given file
-"""
+    """
+    return the rootname of the given file
+    """
 
     puncloc = [filename.find(char) for char in string.punctuation]
     val = sys.maxint
@@ -26,52 +26,53 @@ to be the IVM file that is associated with it
 """
 
 def atfile_sci(filename):
-"""
-return the filename of the science image 
-which is assumed to be the first word
-in the atfile the user gave
-"""
+    """
+    return the filename of the science image 
+    which is assumed to be the first word
+    in the atfile the user gave
+    """
     return filename.split()[0]
 
     
 def atfile_ivm(filename):
-"""
-return the filename of the IVM file
-which is assumed to be the second word
-in the atfile the user gave
-"""
+    """
+    return the filename of the IVM file
+    which is assumed to be the second word
+    in the atfile the user gave
+    """
     return filename.split()[1]    
-
-
+    
+    
 def printParams(paramDictionary):
-""" Print nicely the parameters from the dictionary"""
+    """ Print nicely the parameters from the dictionary
+    """
 
-	if len(paramDictionary) == 0):
-    	print "\nNo parameters were supplied\n"
+    if (len(paramDictionary) == 0):
+        print "\nNo parameters were supplied\n"
     else:
-	    keys=paramDictionary.keys()
-   		keys.sort()
-    	for key in keys:
-    		print key,":\t",paramDict[key]
+        keys=paramDictionary.keys()
+        keys.sort()
+        for key in keys:
+            print key,":\t",paramDict[key]
 
 
 def isASNTable(inputFilelist):
-"""return TRUE if inputFilelist is a fits ASN file"""
-	if ("_asn"  or "_asc") in inputFilelist:
-    	return True
+    """return TRUE if inputFilelist is a fits ASN file"""
+    if ("_asn"  or "_asc") in inputFilelist:
+        return True
     return False
 
 def isCommaList(inputFilelist):
-"""return True if the input is a comma separated list of names"""
-	if "," in inputFilelist:
-		return True
+    """return True if the input is a comma separated list of names"""
+    if "," in inputFilelist:
+        return True
     return False        
   
 def loadFileList(inputFilelist):
-"""open up the @ file and read in the science and possible
-  ivm filenames from the first two columns
-"""
-	f = open(inputFilelist[1:])
+    """open up the @ file and read in the science and possible
+      ivm filenames from the first two columns
+    """
+    f = open(inputFilelist[1:])
     # check the first line in order to determine whether
     # IVM files have been specified in a second column...
     lines = f.readline()
@@ -88,29 +89,13 @@ def loadFileList(inputFilelist):
 
 
 def readCommaList(fileList):
-""" return a list of the files with the commas removed """
-	names=fileList.split(',')
+    """ return a list of the files with the commas removed """
+    names=fileList.split(',')
     fileList=[]
     for item in names:
-    	fileList.append(item)
+        fileList.append(item)
     return fileList
     
-
-def readASNtable(filename):
-"""
-read the given association file (fits table)
-and return a list of the science files
-the asnutil function is used and
-a
- list of filenames is returned
-
-"""
-	asndict=asnutil.readASNTable(filename, output=None, prodonly=False):	
-	fileList=[]
-    for member in asndict:
-    	fileList.append(asndict[member]['MEMNAME'])       
-    return fileList
-
 
 
 def getInputAsList(input, output=None, ivmlist=None, prodonly=False):
@@ -178,10 +163,3 @@ def update_input(filelist, ivmlist=None, removed_files=None):
         newfilelist = [el[0] for el in sci_ivm] 
         return newfilelist, ivmlist 
 
-
-def populateParameters(taskname)
-""" Read in the list of user parameters for the task using configobj """
-	kwParams={} #empty dictionary for now
-	return kwParams
-    
-    
