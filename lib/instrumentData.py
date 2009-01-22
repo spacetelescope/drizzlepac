@@ -9,41 +9,99 @@ import sys
 import pytools
 import util
 import acsdata
+from pytools import fileutil
 
+class imageObject(filename):
+    """
+    This returns an imageObject that contains all the
+    necessary information to run the image file through
+    any multidrizzle function
+    
+    There will be generic keywords which are good for
+    the entire image file, and some that might pertain
+    only to the specific chip. Does it make sense to
+    have an object with attributes which are general 
+    and then dictionaries for each chip? Like a list
+    of dictionaries maybe?
+    
+    or is it better to make a chip class? oo, maybe that,
+    so imageObjects have chips
+    
+    """
+    
+    def __init__(self,filename):
+        
+        header=fileutil.getHeader(filename)
 
-def getBasicInstrData(filename):
-    """ return a dictionary with basic instrument data taken from the header
-   		of the input filename
+        #populate the global attributes
+        self.instrument=header["INSTRUME"]
+        self.exptime=header["EXPTIME"]
+        self.nextend=header["NEXTEND"]
+ 
+        #this is the number of science chips to be processed in the file
+        self.numchips=countSCI(filename)
+        
+        #where chip 1 = SCI,1
+        for chip in range(1,numchips,1):
+            chipDictionary=getBasicInfo(filename,extension)
+            
+            #add chip object here
+        
+    
+def getBasicInfo(filename,extension):
+    """ 
+        return a dictionary with basic instrument data taken from the header
+   		of the input filename. This  will be passed around
+        to the other functions and should contain enough information to run
+        any of the functions that are in multidrizzle without continually
+        accessing the header of the file. The actual data will not be passed around,
+        file handling will be written inside all the functions.
+        
     """
         
-    imageHandle=fileutil.openImage(filename,mode='update',memmap=0)
-    priHeader=imageHandle[0].header
-	
-    instrument=priHeader["INSTRUME"]
+    
     
     #these fill in specific instrument information
     #instrData is returned as a dictionary of key vals
     if ("ACS" in instrument):
-        instrData=getACSInfo(priHeader)
+        instrData=getACSInfo(filename)
     if ("NICMOS" in instrument):
-        instrData=getNICMOSInfo(priHeader)
+        instrData=getNICMOSInfo(filename)
     if ("WFC3" in instrument):
-        instrData=getWFC3Info(priHeader)
+        instrData=getWFC3Info(filename)
     if("WFPC2" in instrument):
-        instrData=getWFPC2Info(priHeader)
+        instrData=getWFPC2Info(filename)
+    if("STIS" in instrument):
+        instrData=getSTISIInfo(filename)    
 
         
     #keywords which are common to all instruments
-    genericKW=["INSTRUME","NAXIS1","NAXIS2","LTV1","LTV2","EXPTIME","NEXTEND"]
+    genericKW=["INSTRUME","NAXIS1","NAXIS2","LTV1","LTV2"]
     
     for key in genericKW:
     	instrData[key]=priHeader[key]
 
+    #Now add in other information we would like to keep track of for the
+    #drizzling process
     
-    imageHandle.close()
+    instrData["filename"]=filename
+    
         
     return instrData    
     
+
+def countSCI(filename):
+    """
+        count the number of SCI extensions in the file
+    """
+    imageHandle=fileutil.openImage(filename,memmap=0)
+    
+    _sciext="SCI"
+    chips=fileutil.findExtname(imageHandle,extname=_sciext):
+    
+    imageHandle.close()
+    return chips
+
     
 class InputImage:
     '''The InputImage class is the base class for all of the various

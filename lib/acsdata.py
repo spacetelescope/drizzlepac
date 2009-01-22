@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-from pytools import fileutil
-import numpy as np
-
 """
 These are functions related directly to ACS images
 """
 
-def getACSInfo(primaryHeader):
+from pytools import fileutil
+import numpy as np
+
+
+def getACSInfo(filename):
     """
     This takes a pyfits primary header instance and pulls out
     the basic set of keywords we would like to have which 
@@ -43,11 +44,11 @@ def getACSInfo(primaryHeader):
         str += "#############################################\n"        
         raise ValueError, str                                           
 
-    #the number of science chips in the image
-    #ACS has SCI,ERR,DQ for each science chip
-    #so,  nextend / 3 gives you the number of science chips
-    #can't think of a better way to get this right now
-    keywords["NUMCHIPS"]=int(primaryHeader["NEXTEND"]) / 3
+    #find out the number of science images/chips/units that are contained
+    #in the file.
+    keywords["NUMCHIPS"]=countSCI(    
+    
+    
     keywords["GAIN"]=float(primaryHeader["ATODGNA"])
     keywords["READNOISE"]=float(primaryHeader["READNSEA"])
     
@@ -65,9 +66,10 @@ def getCTEdirection(extension):
     
     return cte_dir
     
-"""
-def getflat(self):
 
+def getflat(imageInformation,chip):
+
+    """
     Purpose
     =======
     Method for retrieving a detector's flat field.
@@ -76,18 +78,27 @@ def getflat(self):
     image.
 
     :units: electrons
-
+    
+    imageInformation is the object with the basic image information that 
+    we are creating and passing around
+    
+    since we are passing around objects that are valid for the
+    entire FILE not just per detector or chip, we need to be specific
+    about which chip we want an image returned for
+    
+    """
 
     # The keyword for ACS flat fields in the primary header of the flt
     # file is pfltfile.  This flat file is already in the required 
     # units of electrons.
 
-    filename = self.header['PFLTFILE']
-
+    filename = imageInformation['PFLTFILE']
+    flatExt=
+    
     try:
         handle = fileutil.openImage(filename,mode='readonly',memmap=0)
-        hdu = fileutil.getExtn(handle,extn=self.extn)
-        data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
+        hdu = fileutil.getExtn(handle,extn=extn)
+        data = hdu.data[ltv2:size2,ltv1:size1]
     except:
         try:
             handle = fileutil.openImage(filename[5:],mode='readonly',memmap=0)
