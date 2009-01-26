@@ -54,6 +54,13 @@ class imageObject():
         
     #write some __other functions__ to make the imageObject call the image like pyfits
     
+    def __getHeaderExt(self,extname,extver):
+        return self._image[extname,extver].header
+        
+    def __getDataExt(self,extname,extver):
+        return self._image[extname,extver].data
+    
+    
     #close the object nicely, this should be calling pyfits.close() I think
     def close(self):
         self._image.close()       
