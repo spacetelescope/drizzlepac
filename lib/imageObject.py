@@ -10,7 +10,7 @@ import pytools
 import util
 from pytools import fileutil
 
-class imageObject():
+class imageObject:
     """
     This returns an imageObject that contains all the
     necessary information to run the image file through
@@ -46,7 +46,7 @@ class imageObject():
         print self._image[0].header["NEXTEND"]
         
         #this is the number of science chips to be processed in the file
-        self.numchips=_countEXT(extname=self.scienceExt)
+        self.numchips=self._countEXT(extname=self.scienceExt)
         
         #get the rootnames for the chip
         for chip in numchips:
@@ -69,8 +69,9 @@ class imageObject():
 
         _sciext="SCI"
         count=0
-
-        for i in range (1,self.imageHandle[0].header["NEXTEND"],1):
+        nextend=self._image[0].header["NEXTEND"]
+        
+        for i in range (1,nextend,1):
             if (image[i].header["EXTNAME"] == extname):
                 count=count+1    
 
