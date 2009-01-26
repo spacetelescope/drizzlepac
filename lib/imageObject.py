@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-functions associated with HST instruments
-
+A class which makes image objects for 
+each input filename
 
 """
 
@@ -10,7 +10,7 @@ import pytools
 import util
 from pytools import fileutil
 
-class imageObject:
+class imageObject():
     """
     This returns an imageObject that contains all the
     necessary information to run the image file through
@@ -42,17 +42,14 @@ class imageObject:
         #populate the global attributes
         self.instrument=self._image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
-        print self.scienceExt
-        print self._image[0].header["NEXTEND"]
         
         #this is the number of science chips to be processed in the file
         self.numchips=self._countEXT(extname=self.scienceExt)
         
         #get the rootnames for the chip
-        for chip in numchips:
-            thisImage[chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
-                
-        return self._image
+        for chip in range(1,self.numchips,1):
+            self._image[chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
+               
         
     
     #close the object nicely, this should be calling pyfits.close() I think
@@ -72,7 +69,7 @@ class imageObject:
         nextend=self._image[0].header["NEXTEND"]
         
         for i in range (1,nextend,1):
-            if (image[i].header["EXTNAME"] == extname):
+            if (self._image[i].header["EXTNAME"] == extname):
                 count=count+1    
 
         return count
