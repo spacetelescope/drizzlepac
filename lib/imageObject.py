@@ -34,9 +34,10 @@ class imageObject():
         #am I using the self syntax correctly here? Or should it just be _image
         try:
             self._image=fileutil.openImage(filename,clobber=False,memmap=0)
-        except:
+            
+        except IOError:
             print "\Unable to open file:",filename
-            raise ValueError
+            raise IOError
             
 
         #populate the global attributes
@@ -51,6 +52,7 @@ class imageObject():
             self._image[chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
                
         
+    #write some __other functions__ to make the imageObject call the image like pyfits
     
     #close the object nicely, this should be calling pyfits.close() I think
     def close(self):
