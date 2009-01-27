@@ -33,37 +33,57 @@ class imageObject():
         #filutil open returns a pyfits object
         #am I using the self syntax correctly here? Or should it just be _image
         try:
-            self._image=fileutil.openImage(filename,clobber=False,memmap=0)
+            self.image=fileutil.openImage(filename,clobber=False,memmap=0)
             
         except IOError:
             print "\Unable to open file:",filename
             raise IOError
             
 
-        #populate the global attributes
-        self.instrument=self._image[0].header["INSTRUME"]
+        #populate the global attributes which are good for all the chips in the file
+        self.instrument=self.image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
+        self.filename=self.image[0].header["filename"]
+        
+        #assuming all the chips have the same dimensions in the file
+        self.naxis1=self.image[self.scienceExt,1].header["NAXIS1"]
+        self.naxis2=self.image[self.scienceExt,1].header["NAXIS2"]
+        
         
         #this is the number of science chips to be processed in the file
         self.numchips=self._countEXT(extname=self.scienceExt)
         
         #get the rootnames for the chip
         for chip in range(1,self.numchips,1):
-            self._image[chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
+            self.image[chip].rootname=self.image[self.scienceExt,chip].header["EXPNAME"]
                
+            
+    def _getHeader(self,extname,extver=1):
+        """return the header for the specified extension """
+        if(extname==''): #ask for specific information
+            print "Please specify a header extension to return"
+            raise ValueError
+            
+        return self.image[extname,extver].header
         
-    #write some __other functions__ to make the imageObject call the image like pyfits
+    def _getData(self,extname,extver=1):
+        """return the data for the specified extension"""
+        if(extname==''): #ask for specific information
+            print "Please specify a header extension to return"        
+        return self.image[extname,extver].data
     
-    def __getHeaderExt(self,extname,extver):
-        return self._image[extname,extver].header
+    
+    def __cmp__(self, other):
+        """overload the comparison operator??? """
+        if isinstance(other,imageObject):
+            if (self.filename == other.filename):
+                return True            
+        return False
         
-    def __getDataExt(self,extname,extver):
-        return self._image[extname,extver].data
     
-    
-    #close the object nicely, this should be calling pyfits.close() I think
     def close(self):
-        self._image.close()       
+        """close the object nicely"""
+        self.image.close()       
         
          
     def _countEXT(self,extname='SCI'):
@@ -75,10 +95,10 @@ class imageObject():
 
         _sciext="SCI"
         count=0
-        nextend=self._image[0].header["NEXTEND"]
+        nextend=self.image[0].header["NEXTEND"]
         
         for i in range (1,nextend,1):
-            if (self._image[i].header["EXTNAME"] == extname):
+            if (self.image[i].header["EXTNAME"] == extname):
                 count=count+1    
 
         return count
