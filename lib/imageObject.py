@@ -19,21 +19,15 @@ class imageObject():
     
     There will be generic keywords which are good for
     the entire image file, and some that might pertain
-    only to the specific chip. Does it make sense to
-    have an object with attributes which are general 
-    and then dictionaries for each chip? Like a list
-    of dictionaries maybe?
-    
- 
+    only to the specific chip. 
     
     """
     
     def __init__(self,filename=None):
         
         #filutil open returns a pyfits object
-        #am I using the self syntax correctly here? Or should it just be _image
         try:
-            self.image=fileutil.openImage(filename,clobber=False,memmap=0)
+            self._image=fileutil.openImage(filename,clobber=False,memmap=0)
             
         except IOError:
             print "\Unable to open file:",filename
@@ -41,13 +35,13 @@ class imageObject():
             
 
         #populate the global attributes which are good for all the chips in the file
-        self.instrument=self.image[0].header["INSTRUME"]
+        self.instrument=self._image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
-        self.filename=self.image[0].header["filename"]
+        self.filename=self._image[0].header["filename"]
         
         #assuming all the chips have the same dimensions in the file
-        self.naxis1=self.image[self.scienceExt,1].header["NAXIS1"]
-        self.naxis2=self.image[self.scienceExt,1].header["NAXIS2"]
+        self.naxis1=self._image[self.scienceExt,1].header["NAXIS1"]
+        self.naxis2=self._image[self.scienceExt,1].header["NAXIS2"]
         
         
         #this is the number of science chips to be processed in the file
@@ -55,23 +49,18 @@ class imageObject():
         
         #get the rootnames for the chip
         for chip in range(1,self.numchips,1):
-            self.image[chip].rootname=self.image[self.scienceExt,chip].header["EXPNAME"]
+            self._image[chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
                
             
-    def _getHeader(self,extname,extver=1):
-        """return the header for the specified extension """
-        if(extname==''): #ask for specific information
-            print "Please specify a header extension to return"
-            raise ValueError
-            
-        return self.image[extname,extver].header
+    def _getExt(self,exten=None):
+        """return the specified extension """
+        return fileutil.getExtn(self._image,extn=exten)
         
-    def _getData(self,extname,extver=1):
-        """return the data for the specified extension"""
-        if(extname==''): #ask for specific information
-            print "Please specify a header extension to return"        
-        return self.image[extname,extver].data
-    
+    def __getitem__(self,exten=None):
+        """overload  getitem to return the data and header"""
+        self._getExt(exten)
+        
+            
     
     def __cmp__(self, other):
         """overload the comparison operator??? """
@@ -79,11 +68,13 @@ class imageObject():
             if (self.filename == other.filename):
                 return True            
         return False
-        
+    
+    def info(self):
+        self._image.info()    
     
     def close(self):
         """close the object nicely"""
-        self.image.close()       
+        self._image.close()       
         
          
     def _countEXT(self,extname='SCI'):
@@ -95,10 +86,10 @@ class imageObject():
 
         _sciext="SCI"
         count=0
-        nextend=self.image[0].header["NEXTEND"]
+        nextend=self._image[0].header["NEXTEND"]
         
         for i in range (1,nextend,1):
-            if (self.image[i].header["EXTNAME"] == extname):
+            if (self._image[i].header["EXTNAME"] == extname):
                 count=count+1    
 
         return count
