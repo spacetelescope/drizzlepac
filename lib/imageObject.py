@@ -40,8 +40,8 @@ class imageObject():
         self._filename=self._image[0].header["filename"] #can we make this unchangeable?
         
         #assuming all the chips have the same dimensions in the file
-        self.naxis1=self._image[self.scienceExt,1].header["NAXIS1"]
-        self.naxis2=self._image[self.scienceExt,1].header["NAXIS2"]
+        self._naxis1=self._image[self.scienceExt,1].header["NAXIS1"]
+        self._naxis2=self._image[self.scienceExt,1].header["NAXIS2"]
         
         
         #this is the number of science chips to be processed in the file
