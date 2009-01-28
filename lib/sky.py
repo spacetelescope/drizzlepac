@@ -41,7 +41,8 @@ def subtractSky(imageObject,paramDict={}):
    
                    
     _skyValue=0.0    #this will be the final sky value computed for the exposure                                                                  
-
+    skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
+    
     #just making sure, tricky users and all, these are things that will be used
     #by the sky function so we want them defined at least
     try:
@@ -75,7 +76,7 @@ def subtractSky(imageObject,paramDict={}):
                 imageHandle.close()
                 raise KeyError
 
-            image.header[paramDict["MDRIZSKY"]] = _skyValue
+            image.header[paramDict[skyKW]] = _skyValue
 
     elif (paramDict["skysub"]):
         # Compute our own sky values and subtract them from the image copies.
@@ -83,13 +84,11 @@ def subtractSky(imageObject,paramDict={}):
         # science chips in the exposure is used as the reference sky for each chip
 
         print "Computing minimum sky ..."
-
-        image=imageObject[sciExt+','+str(chip)] 
         minSky=[] #store the sky for each chip
-         
-           
+                    
+        #####FIX THIS#######            
         if ("STIS" in imageObject._instrument):
-            for image in inputImageList:
+            for chip in numchips:
                 # We need to account for the fact that STIS associations contain
                 # separate exposures for the same chip within the same file.
                 # In those cases, we do not want to use the minimum sky value
@@ -110,20 +109,19 @@ def subtractSky(imageObject,paramDict={}):
                     image=imageObject[myext]
                     _computedSky= computeSky(image.data, paramDict, memmap=0)
                     minSky.append(_computedSky)
+                    image.computedSky=_computedSky #update the keyword in the actual header here as well?
 
-                _skyValue=min(minSky) #what if the sky is negative?
+            _skyValue=min(minSky) #what if the sky is negative?
 
             #now subtract that value from all the chips in the exposure
-            subtractSky(image,_skyValue,numsci)
-
-
-
-    else:
-        # Default Case, sky subtraction is turned off.  No sky subtraction done to image.
-        print "No sky subtraction requested, MDRIZSKY set to a value of 0..."
-        for chip in numchips:
-            imageObject[sciExt+','+str(chip)].header["MDRIZSKY"] = _skyValue
-    
+            #and update the chips header keyword with the sub
+            for chip in numchips:
+                subtractSky(image.data,_skyValue)
+                updateKW(image,skyKW,_skyValue)
+            
+        #update the value of MDRIZSKY in the global header
+        updateKW(imageObject[0],skyKW,_skyValue)
+   
        
    
 #this function can be called by users and will create an imageObject to send to
@@ -240,11 +238,15 @@ def _subtractSky(dataArray,skyValue,memmap=0):
     except:
         raise IOError, "Unable to perform sky subtraction on data array"
 
-
+def updateKW(image,skyKW,_skyValue)
+    """update the header with the kw,value"""
+    image.header[skyKW]=_skyValue
+    
+    
 #this is really related to each individual chip
-def getreferencesky(imageObject,extension=1):
+def getreferencesky(imageObject,extension=1,keyval):
 
-    _subtractedSky=imageObject[extension].header["MDRIZSKY"]
+    _subtractedSky=imageObject[extension].header[keyval]
     _refplatescale=imageObject[extension].header["REFPLTSCL"]
     _platescale=imageObject[extension].header["PLATESCL"]
     
@@ -263,134 +265,5 @@ def getreferencesky(imageObject,extension=1):
 
 
 
-
-#this is the original function
-def subtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywidth=0.1,
-		skystat="median", skylower="INDEF", skyupper="INDEF", skyclip=5, skysligma=4.,skyusigma=4.,):
-
-    """
-    inputImageList is a python list of image filename
-    configObj is there as a placeholder to pass in the 
-        full parameter set for now, pass in configObj 
-        as a dictionary right now
-
-    These are parameters that the configObj should contain:
-
-
-    params that should be in configobj
-    ---------------------------------------
-    skyuser		'KEYWORD indicating a sky subtraction value if done by user.
-    skysub		'Perform sky subtraction?'
-    skywidth	'Bin width for sampling sky statistics (in sigma)'
-    skystat	 	'Sky correction statistics parameter'
-    skylower	'Lower limit of usable data for sky (always in electrons)'
-    skyupper	'Upper limit of usable data for sky (always in electrons)'
-    skyclip		'Number of clipping iterations'
-    skylsigma	'Lower side clipping factor (in sigma)'
-    skyusigma	'Upper side clipping factor (in sigma)'
-
-    """
-
-    #inputImageList here is assumed to be a python list of filenames
-    #though I think this might be part of configObj too
-    if len(inputImageList) == 0:
-        print "Empty image list given to Sky routine"
-        return ValueError
-
-    #make up a dictionary of the task parameter values
-    paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
-    			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
-                "skyclip":skyclip,"skylsigma":skylsigma,"skyusigma":skyusigma}
-
-
-    #if configobj has been provided, then use those parameters instead
-    if (len(configObj) != 0):
-    # Print out the parameters provided by the user
-        print "USER INPUT PARAMETERS for SKY SUBTRACTION:"
-        util.printParams(configObj)        
-
-        #now replace the defaults with the user specs
-        #this assumes only matching keys, though with this
-        #syntax configObj could contain more than the standard keys
-        #and they will get appended onto the paramDict
-        for key in configObj:
-            paramDict[key]=configObj[key]
-
-
-    """ Processes sky in input images."""
-    #this will be the final sky value computed for the exposure                  
-    _skyValue=0.0                                                                  
-
-    # User Subtraction Case, User has done own sky subtraction,  
-	# so use the image header value for subtractedsky value
-    if paramDict["skyuser"] != '':
-        print "User has done their own sky subtraction, updating MDRIZSKY with supplied value..."
-        for image in inputImageList:
-
-
-            try:
-                imageHandle = fileutil.openImage(image,mode='update',memmap=0)
-                _skyValue = imageHandle[0].header[paramDict["skyuser"]]
-
-            except:
-                print "**************************************************************"
-                print "*"
-                print "*  Cannot find keyword ",paramDict["skyuser"]," in ",image," to update"
-                print "*"
-                print "**************************************************************\n\n\n"
-                imageHandle.close()
-                raise KeyError
-
-            imageHandle[0].header[paramDict["MDRIZSKY"]] = _skyValue
-            imageHandle.close()
-
-
-    elif (paramDict["skysub"]):
-        # Compute our own sky values and subtract them from the image copies.
-        # for all instruments other than ACS the minimum sky value from all the
-        # science chips in the exposure is used as the reference sky for each chip
-
-        print "Subtracting sky..."
-
-        for image in inputImageList:
-            instDat=instrumentData.getBasicInstrData(image)
-            numsci=instDat["NUMCHIPS"]
-            minSky=[]
-
-            for chip in numsci:
-            	myext="[SCI,"+str(chip)+"]"
-                _computedSky= computeSky(image, paramDict, extn=myext, memmap=0)
-                minSky.append(_computedSky)
-           
-            _skyValue=min(minSky) #what if the sky is negative?
-
-            #now subtract that value from all the chips in the exposure
-            subtractSky(image,_skyValue,numsci)
-
-        for image in inputImageList:
-            # We need to account for the fact that STIS associations contain
-            # separate exposures for the same chip within the same file.
-            # In those cases, we do not want to use the minimum sky value
-            # for the set of chips, but rather use each chip's own value.
-            # NOTE: This can be generalized later with changes to PyDrizzle
-            #       to provide an attribute that specifies whether each member
-            #       associated with file is a separate exposure or not.
-            #   WJH/CJH 
-            if (paramDict['exposure'].header['INSTRUME'] != 'STIS'):
-                paramDict['image'].setSubtractedSky(imageMinDict[paramDict['rootname']])
-            else:
-                _computedSky=(image,getComputedSky(image))
-
-
-    else:
-        # Default Case, sky subtraction is turned off.  No sky subtraction done to image.
-        print "No sky subtraction requested, MDRIZSKY set to a value of 0..."
-        for image in imageFileList:
-            setSubtractedSky(image,sky=_skyValue)
-
-
-    #Update the MDRIZSKY KEYWORD
-    for image in imageFileList:
-    	updateMDRIZSKY(image, skyValue=_skyValue,memmap=0)
 
 
