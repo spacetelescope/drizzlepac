@@ -35,9 +35,9 @@ class imageObject():
             
 
         #populate the global attributes which are good for all the chips in the file
-        self.instrument=self._image[0].header["INSTRUME"]
+        self._instrument=self._image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
-        self.filename=self._image[0].header["filename"] #can we make this unchangeable?
+        self._filename=self._image[0].header["filename"] #can we make this unchangeable?
         
         #assuming all the chips have the same dimensions in the file
         self.naxis1=self._image[self.scienceExt,1].header["NAXIS1"]
@@ -71,7 +71,7 @@ class imageObject():
             just to check the filename of the object
          """
         if isinstance(other,imageObject):
-            if (self.filename == other.filename):
+            if (self._filename == other._filename):
                 return True            
         return False
     
