@@ -37,7 +37,7 @@ class imageObject():
         #populate the global attributes which are good for all the chips in the file
         self.instrument=self._image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
-        self.filename=self._image[0].header["filename"]
+        self.filename=self._image[0].header["filename"] #can we make this unchangeable?
         
         #assuming all the chips have the same dimensions in the file
         self.naxis1=self._image[self.scienceExt,1].header["NAXIS1"]
@@ -52,25 +52,33 @@ class imageObject():
             self._image[chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
                
             
-    def _getExt(self,exten=None):
-        """return the specified extension """
-        return fileutil.getExtn(self._image,extn=exten)
+    def getData(self,exten=None):
+        """return just the specified data extension """
+        return fileutil.getExtn(self._image,extn=exten).data
         
-    def __getitem__(self,exten=None):
+    def getHeader(self,exten=None):
+        """return just the specified header extension"""
+        return fileutil.getExtn(self._image,extn=exten).header
+        
+        
+    def __getitem__(self,exten):
         """overload  getitem to return the data and header"""
-        self._getExt(exten)
-        
-            
+        return fileutil.getExtn(self._image,extn=exten)
+    
     
     def __cmp__(self, other):
-        """overload the comparison operator??? """
+        """overload the comparison operator???
+            just to check the filename of the object
+         """
         if isinstance(other,imageObject):
             if (self.filename == other.filename):
                 return True            
         return False
     
     def info(self):
+        """return fits information on the _image"""
         self._image.info()    
+        
     
     def close(self):
         """close the object nicely"""
