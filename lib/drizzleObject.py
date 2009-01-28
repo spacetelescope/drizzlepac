@@ -6,15 +6,6 @@ which can be passsed on to other classes
 
 Files can be in GEIS or MEF format (but not waiver fits).
 
-Runs some sanity checks on the input files.
-If necessary converts files to MEF format (this should not be left to makewcs 
-because 'updatewcs' may be False).
-Runs makewcs.
-Returns the list of created objects which have been
-initialized
-
-
-
 """
 from pytools import parseinput, fileutil, readgeis, asnutil, irafglob, check_files
 import pyfits

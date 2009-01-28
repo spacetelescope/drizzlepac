@@ -25,6 +25,162 @@ import util
 import instrumentData
 from pytools import cfgpars
 
+
+#this is the main function that takes an imageObject and the config obj runs with it
+#this is eventually what the user function calls as well
+def subtractSky(imageObject,configObj={}):
+    """
+    subtract the sky from all the chips in the imagefile that imageObject represents
+    
+    imageObject contains all the information about the chips in the image file
+    configObj is represented as a dict for now, but will prolly be an actual config object
+    
+    """
+   """ Processes sky in input images."""
+   
+                   
+    _skyValue=0.0    #this will be the final sky value computed for the exposure                                                                  
+    _numchips=imageObject.numchips
+    
+    # User Subtraction Case, User has done own sky subtraction,  
+	# so use the image header value for subtractedsky value
+    if paramDict["skyuser"] != '':
+        print "User has done their own sky subtraction, updating MDRIZSKY with supplied value..."
+        for image in inputImageList:
+
+
+            try:
+                imageHandle = fileutil.openImage(image,mode='update',memmap=0)
+                _skyValue = imageHandle[0].header[paramDict["skyuser"]]
+
+            except:
+                print "**************************************************************"
+                print "*"
+                print "*  Cannot find keyword ",paramDict["skyuser"]," in ",image," to update"
+                print "*"
+                print "**************************************************************\n\n\n"
+                imageHandle.close()
+                raise KeyError
+
+            imageHandle[0].header[paramDict["MDRIZSKY"]] = _skyValue
+            imageHandle.close()
+
+
+    elif (paramDict["skysub"]):
+        # Compute our own sky values and subtract them from the image copies.
+        # for all instruments other than ACS the minimum sky value from all the
+        # science chips in the exposure is used as the reference sky for each chip
+
+        print "Subtracting sky..."
+
+        for image in inputImageList:
+            instDat=instrumentData.getBasicInstrData(image)
+            numsci=instDat["NUMCHIPS"]
+            minSky=[]
+
+            for chip in numsci:
+            	myext="[SCI,"+str(chip)+"]"
+                _computedSky= computeSky(image, paramDict, extn=myext, memmap=0)
+                minSky.append(_computedSky)
+           
+            _skyValue=min(minSky) #what if the sky is negative?
+
+            #now subtract that value from all the chips in the exposure
+            subtractSky(image,_skyValue,numsci)
+
+        for image in inputImageList:
+            # We need to account for the fact that STIS associations contain
+            # separate exposures for the same chip within the same file.
+            # In those cases, we do not want to use the minimum sky value
+            # for the set of chips, but rather use each chip's own value.
+            # NOTE: This can be generalized later with changes to PyDrizzle
+            #       to provide an attribute that specifies whether each member
+            #       associated with file is a separate exposure or not.
+            #   WJH/CJH 
+            if (paramDict['exposure'].header['INSTRUME'] != 'STIS'):
+                paramDict['image'].setSubtractedSky(imageMinDict[paramDict['rootname']])
+            else:
+                _computedSky=(image,getComputedSky(image))
+
+
+    else:
+        # Default Case, sky subtraction is turned off.  No sky subtraction done to image.
+        print "No sky subtraction requested, MDRIZSKY set to a value of 0..."
+        for image in imageFileList:
+            setSubtractedSky(image,sky=_skyValue)
+
+
+    #Update the MDRIZSKY KEYWORD
+    for image in imageFileList:
+    	updateMDRIZSKY(image, skyValue=_skyValue,memmap=0)
+    
+   
+   
+#this function can be called by users and will create an imageObject to send to
+#the official function. I dunno, what's really a good name for this that the users
+#can easily differentiate from the call we want? I chose "my" as the prefix cause
+#it would be easy to add that to all the user independent calls and make it
+#somewhat uniform
+
+def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywidth=0.1,
+		skystat="median", skylower="INDEF", skyupper="INDEF", skyclip=5, skysligma=4.,skyusigma=4.,):
+
+
+    """
+    inputImageList is a python list of image filename
+    configObj is there as a placeholder to pass in the 
+        full parameter set for now, pass in configObj 
+        as a dictionary right now
+
+    These are parameters that the configObj should contain:
+
+
+    params that should be in configobj
+    ---------------------------------------
+    skyuser		'KEYWORD indicating a sky subtraction value if done by user.
+    skysub		'Perform sky subtraction?'
+    skywidth	'Bin width for sampling sky statistics (in sigma)'
+    skystat	 	'Sky correction statistics parameter'
+    skylower	'Lower limit of usable data for sky (always in electrons)'
+    skyupper	'Upper limit of usable data for sky (always in electrons)'
+    skyclip		'Number of clipping iterations'
+    skylsigma	'Lower side clipping factor (in sigma)'
+    skyusigma	'Upper side clipping factor (in sigma)'
+
+    """
+
+    #inputImageList here is assumed to be a python list of filenames
+    #though I think this might be part of configObj too
+    if len(inputImageList) == 0:
+        print "Empty image list given to Sky routine"
+        return ValueError
+
+    #make up a dictionary of the task parameter values
+    paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
+    			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
+                "skyclip":skyclip,"skylsigma":skylsigma,"skyusigma":skyusigma}
+
+
+    #if configobj has been provided, then use those parameters instead
+    if (len(configObj) != 0):
+    # Print out the parameters provided by the user
+        print "USER INPUT PARAMETERS for SKY SUBTRACTION:"
+        util.printParams(configObj)        
+
+        #now replace the defaults with the user specs
+        #this assumes only matching keys, though with this
+        #syntax configObj could contain more than the standard keys
+        #and they will get appended onto the paramDict
+        for key in configObj:
+            paramDict[key]=configObj[key]
+        
+    #create image object    
+    #create a configObject here with the paramDict settings?
+
+    subtractSky(imageObject,paramDict)
+    
+
+#this is the original function
 def subtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywidth=0.1,
 		skystat="median", skylower="INDEF", skyupper="INDEF", skyclip=5, skysligma=4.,skyusigma=4.,):
 
@@ -157,94 +313,98 @@ def subtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywidt
 ####Helper functions follow ####### 
 
 
-    def computeSky(imageName,  configSky, extn, memmap=0):
+def computeSky(imageName,  configSky, extn, memmap=0):
 
-        """ 
-        Compute the sky value based upon the sci array of the chip	         
-        """
+    """ 
+    Compute the sky value based upon the sci array of the chip	         
+    """
 
-        # Open input image and get pointer to SCI data
-        #
- 		#
-        try:
-            _handle = fileutil.openImage(imageName,mode='update',memmap=0)
-            _sciext = fileutil.getExtn(_handle, extn=extn) #will grab the first extension with data if none specified
-        except:
-            raise IOError, "Unable to open %s for sky level computation"%imageName
+    # Open input image and get pointer to SCI data
+    #
+ 	#
+    try:
+        _handle = fileutil.openImage(imageName,mode='update',memmap=0)
+        _sciext = fileutil.getExtn(_handle, extn=extn) #will grab the first extension with data if none specified
+    except:
+        raise IOError, "Unable to open %s for sky level computation"%imageName
 
-		#this object contains the returned values from the sky stats routine
-        _tmp = ImageStats(_sciext.data,
-                fields      = skypars['skystat'],
-                lower       = skypars['skylower'],
-                upper       = skypars['skyupper'],
-                nclip       = skypars['skyclip'],
-                lsig        = skypars['skylsigma'],
-                usig        = skypars['skyusigma'],
-                binwidth    = skypars['skywidth']
-                )
+	#this object contains the returned values from the sky stats routine
+    _tmp = ImageStats(_sciext.data,
+            fields      = skypars['skystat'],
+            lower       = skypars['skylower'],
+            upper       = skypars['skyupper'],
+            nclip       = skypars['skyclip'],
+            lsig        = skypars['skylsigma'],
+            usig        = skypars['skyusigma'],
+            binwidth    = skypars['skywidth']
+            )
 
-        _computedsky = _extractSkyValue(_tmp,skypars['skystat'].lower())
-        print "Computed sky value for ",imageName," : ",_computedsky
+    _computedsky = _extractSkyValue(_tmp,skypars['skystat'].lower())
+    print "Computed sky value for ",imageName," : ",_computedsky
 
-        # Close input image filehandle
+    # Close input image filehandle
+    _handle.close()
+    del _sciext,_handle
+
+    return _computedsky
+
+
+
+def _extractSkyValue(ImageStatsObject,skystat):
+    if (skystat =="mode"):
+        return ImageStatsObject.mode
+    elif (skystat == "mean"):
+        return ImageStatsObject.mean
+    else:
+        return ImageStatsObject.median
+
+
+
+def _subtractSky(imageName,skyValue,numsci,memmap):
+    """
+    subtract the given sky value from each chip in the exposure
+    """
+
+    try:
+        _handle = fileutil.openImage(imageName,mode='update',memmap=memmap)
+
+        for chip in numsci: 
+            myext="[SCI,"+str(chip)+"]"   
+            _sciext = fileutil.getExtn(_handle,extn=myext)
+            np.subtract(_sciext.data,skyValue,_sciext.data)
+
+    except:
+        raise IOError, "Unable to open %s for sky subtraction"%imageName
+
+    finally:
         _handle.close()
         del _sciext,_handle
 
-        return _computedsky
+
+
+def updateMDRIZSKY(imageObject, skyValue=0.0):
+    """ update the global header value of MDRIZSKY with the 
+    	subtracted skyValue
+        
+        ext should be the chip you want to update
+    """ 
+    fname=imageObject[0].header["FILENAME"]
+    
+    try:
+        # Assume MDRIZSKY lives in primary header
+        print "Updating MDRIZSKY in %s with %f"%(fname,skyValue)
+        imageObject[0].header.update('MDRIZSKY',skyValue,comment="Sky value subtracted by Multidrizzle")
+    except:
+        print "Cannot find keyword MDRIZSKY in %s to update"%fname
 
 
 
-    def _extractSkyValue(ImageStatsObject,skystat):
-        if (skystat =="mode"):
-            return ImageStatsObject.mode
-        elif (skystat == "mean"):
-            return ImageStatsObject.mean
-        else:
-            return ImageStatsObject.median
+#this is really related to each individual chip
+def getreferencesky(imageObject,extension=1):
 
-
-
-    def _subtractSky(imageName,skyValue,numsci,memmap):
-        """
-        subtract the given sky value from each chip in the exposure
-        """
-
-        try:
-            _handle = fileutil.openImage(imageName,mode='update',memmap=memmap)
-
-            for chip in numsci: 
-                myext="[SCI,"+str(chip)+"]"   
-                _sciext = fileutil.getExtn(_handle,extn=myext)
-                np.subtract(_sciext.data,skyValue,_sciext.data)
-
-        except:
-            raise IOError, "Unable to open %s for sky subtraction"%imageName
-
-        finally:
-            _handle.close()
-            del _sciext,_handle
-
-
-
-    def updateMDRIZSKY(image, skyValue=0.0,memmap=0):
-        """ update the global header value of MDRIZSKY with the 
-    	    subtracted skyValue
-        """ 
-
-        try:
-            _handle = fileutil.openImage(image,mode='update',memmap=0)
-        except:
-            raise IOError, "Unable to open %s for sky level computation"%image
-        try:
-            try:
-                # Assume MDRIZSKY lives in primary header
-                print "Updating MDRIZSKY in %s with %f"%(image,skyValue)
-                _handle[0].header['MDRIZSKY'] = skyValue
-            except:
-                print "Cannot find keyword MDRIZSKY in %s to update"%image
-                print "Adding MDRIZSKY keyword to primary header with value %f"%skyValue
-                _handle[0].header.update('MDRIZSKY',self.getSubtractedSky(), 
-                    comment="Sky value subtracted by Multidrizzle")
-        finally:
-            _handle.close()
+    _subtractedSky=imageObject[extension].header["MDRIZSKY"]
+    _refplatescale=imageObject[extension].header["REFPLTSCL"]
+    _platescale=imageObject[extension].header["PLATESCL"]
+    
+    return (_subtractedsky * (_refplatescale / _platescale)**2 )                
 

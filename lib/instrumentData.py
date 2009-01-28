@@ -15,7 +15,8 @@ class imageObject(filename):
     """
     This returns an imageObject that contains all the
     necessary information to run the image file through
-    any multidrizzle function
+    any multidrizzle function. It is essentially a 
+    PyFits object with extra attributes
     
     There will be generic keywords which are good for
     the entire image file, and some that might pertain
@@ -89,7 +90,7 @@ def getBasicInfo(filename,extension):
         
     return instrData    
     
-
+"""
 def countSCI(filename):
     """
         count the number of SCI extensions in the file
@@ -102,7 +103,7 @@ def countSCI(filename):
     imageHandle.close()
     return chips
 
-    
+"""    
 class InputImage:
     '''The InputImage class is the base class for all of the various
        types of images
@@ -184,27 +185,5 @@ class InputImage:
             _result = _result / _count
         return _result
 
-    def getreferencesky(self):
-        return (self._subtractedsky * (self.refplatescale / self.platescale)**2 )                
-                
-    def updateMDRIZSKY(self,filename=None):
-    
-        if (filename == None):
-            filename = self.name
-            
-        try:
-            _handle = fileutil.openImage(filename,mode='update',memmap=self.memmap)
-        except:
-            raise IOError, "Unable to open %s for sky level computation"%filename
-        try:
-            try:
-                # Assume MDRIZSKY lives in primary header
-                print "Updating MDRIZSKY in %s with %f"%(filename,self.getSubtractedSky())
-                _handle[0].header['MDRIZSKY'] = self.getSubtractedSky()
-            except:
-                print "Cannot find keyword MDRIZSKY in %s to update"%filename
-                print "Adding MDRIZSKY keyword to primary header with value %f"%self.getSubtractedSky()
-                _handle[0].header.update('MDRIZSKY',self.getSubtractedSky(), 
-                    comment="Sky value subtracted by Multidrizzle")
-        finally:
-            _handle.close()
+
+               
