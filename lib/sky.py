@@ -26,9 +26,8 @@ import instrumentData
 from pytools import cfgpars
 import assert
 
-#this is the main function that takes an imageObject and the config obj runs with it
-#this is eventually what the user function calls as well
-
+#this is the main function that takes an imageObject and a parameter dictions
+#made from the config obj. This is what the user function calls as well
 def subtractSky(imageObject,paramDict={}):
     """
     subtract the sky from all the chips in the imagefile that imageObject represents
@@ -37,7 +36,6 @@ def subtractSky(imageObject,paramDict={}):
     configObj is represented as a dict for now, but will prolly be an actual config object
     
     """
-   """ Processes sky in input images."""
    
                    
     _skyValue=0.0    #this will be the final sky value computed for the exposure                                                                  
@@ -50,8 +48,8 @@ def subtractSky(imageObject,paramDict={}):
         assert (imageObject._filename != ''), "image object filename is empty!, doh!"
         assert (imageObject.scienceExt !=''), "image object science extension is empty!"
         assert (imageObject._instrument !=''), "image object instrument name is empty!"
-    except:
-        raise ValueError
+    except: AssertionError
+        raise AssertionError
         
     numchips=imageObject._numchips
     sciExt=imageObject.scienceExt
@@ -107,7 +105,7 @@ def subtractSky(imageObject,paramDict={}):
             for chip in numchips:
             	    myext="[SCI,"+str(chip)+"]"
                     image=imageObject[myext]
-                    _computedSky= computeSky(image.data, paramDict, memmap=0)
+                    _computedSky= computeSky(image, paramDict, memmap=0)
                     minSky.append(_computedSky)
                     image.computedSky=_computedSky #update the keyword in the actual header here as well?
 
@@ -193,14 +191,18 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
 ##  Helper functions follow  ## 
 ###############################
 
-def computeSky(dataArray, skypars, memmap=0):
+def computeSky(image, skypars, memmap=0):
 
     """ 
-    Compute the sky value for the data array passed to the function        
+    Compute the sky value for the data array passed to the function 
+    image is a pyfits object which contains the data and the header
+    for one image extension
+    
+    skypars is passed in as paramDict
     """
 
-	#this object contains the returned values from the sky stats routine
-    _tmp = ImageStats(_sciext.data,
+	#this object contains the returned values from the image stats routine
+    _tmp = ImageStats(image.data,
             fields      = skypars['skystat'],
             lower       = skypars['skylower'],
             upper       = skypars['skyupper'],
@@ -217,26 +219,28 @@ def computeSky(dataArray, skypars, memmap=0):
 
 
 
-def _extractSkyValue(ImageStatsObject,skystat):
+def _extractSkyValue(imstatObject,skystat):
     if (skystat =="mode"):
-        return ImageStatsObject.mode
+        return imstatObject.mode() 
     elif (skystat == "mean"):
-        return ImageStatsObject.mean
+        return imstatObject.mean()
     else:
-        return ImageStatsObject.median
+        return imstatObject.median() 
 
 
 
-def _subtractSky(dataArray,skyValue,memmap=0):
+def _subtractSky(image,skyValue,memmap=0):
     """
     subtract the given sky value from each the data array
-    that has been passed
+    that has been passed. image is a pyfits object that 
+    contains the data and header for one image extension
     """
     try:
-        np.subtract(dataArray,skyValue,dataArray)
+        np.subtract(image.data,skyValue,image.data)
 
     except:
-        raise IOError, "Unable to perform sky subtraction on data array"
+        print "Unable to perform sky subtraction on data array"
+        raise IOError 
 
 def updateKW(image,skyKW,_skyValue)
     """update the header with the kw,value"""
@@ -244,11 +248,12 @@ def updateKW(image,skyKW,_skyValue)
     
     
 #this is really related to each individual chip
-def getreferencesky(imageObject,extension=1,keyval):
+#so pass in the image for that chip, image contains header and data
+def getreferencesky(image,keyval):
 
-    _subtractedSky=imageObject[extension].header[keyval]
-    _refplatescale=imageObject[extension].header["REFPLTSCL"]
-    _platescale=imageObject[extension].header["PLATESCL"]
+    _subtractedSky=image.header[keyval]
+    _refplatescale=image.header["REFPLTSCL"]
+    _platescale=image.header["PLATESCL"]
     
     return (_subtractedsky * (_refplatescale / _platescale)**2 )                
 
