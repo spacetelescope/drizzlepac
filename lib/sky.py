@@ -209,7 +209,7 @@ def computeSky(image, skypars, memmap=0):
     """
 
 	#this object contains the returned values from the image stats routine
-    _tmp = imagestats.ImageStats(image,
+    _tmp = imagestats.ImageStats(image.data,
             fields      = skypars['skystat'],
             lower       = skypars['skylower'],
             upper       = skypars['skyupper'],
@@ -222,17 +222,17 @@ def computeSky(image, skypars, memmap=0):
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
     print "Computed sky value for data array : ", _skyValue
 
-    return skyValue
+    return _skyValue
 
 
 
 def _extractSkyValue(imstatObject,skystat):
     if (skystat =="mode"):
-        return imstatObject.mode() 
+        return imstatObject.mode 
     elif (skystat == "mean"):
-        return imstatObject.mean()
+        return imstatObject.mean
     else:
-        return imstatObject.median() 
+        return imstatObject.median 
 
 
 
