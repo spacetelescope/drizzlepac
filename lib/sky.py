@@ -25,15 +25,15 @@ import util
 import imageObject
 from pytools import cfgpars
 import imagestats
-import numpy as N
+import numpy as np
 
-#this is the main function that takes an imageObject and a parameter dictions
+#this is the main function that takes an imageSet and a parameter dictions
 #made from the config obj. This is what the user function calls as well
-def subtractSky(imageObject,paramDict={},saveFile=True):
+def subtractSky(imageSet,paramDict={},saveFile=True):
     """
-    subtract the sky from all the chips in the imagefile that imageObject represents
+    subtract the sky from all the chips in the imagefile that imageSet represents
     
-    imageObject contains all the information about the chips in the image file
+    imageSet contains all the information about the chips in the image file
     configObj is represented as a dict for now, but will prolly be an actual config object
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
     """
@@ -45,16 +45,16 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
     #just making sure, tricky users and all, these are things that will be used
     #by the sky function so we want them defined at least
     try:
-        assert imageObject._numchips > 0, "invalid value for number of chips"
-        assert imageObject._filename != '', "image object filename is empty!, doh!"
-        assert imageObject.scienceExt !='', "image object science extension is empty!"
-        assert imageObject._instrument !='', "image object instrument name is empty!"
+        assert imageSet._numchips > 0, "invalid value for number of chips"
+        assert imageSet._filename != '', "image object filename is empty!, doh!"
+        assert imageSet.scienceExt !='', "image object science extension is empty!"
+        assert imageSet._instrument !='', "image object instrument name is empty!"
 
     except AssertionError:
         raise AssertionError
         
-    numchips=imageObject._numchips
-    sciExt=imageObject.scienceExt
+    numchips=imageSet._numchips
+    sciExt=imageSet.scienceExt
     
     # User Subtraction Case, User has done own sky subtraction,  
 	# so use the image header value for subtractedsky value
@@ -64,20 +64,20 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
        
         for chip in range(1,numchips+1,1):
             try:
-                _skyValue = imageObject._image[0].header[paramDict["skyuser"]]
+                _skyValue = imageSet._image[0].header[paramDict["skyuser"]]
 
             except:
                 print "**************************************************************"
                 print "*"
-                print "*  Cannot find keyword ",paramDict["skyuser"]," in ",imageObject._filename
+                print "*  Cannot find keyword ",paramDict["skyuser"]," in ",imageSet._filename
                 print "*"
                 print "**************************************************************\n\n\n"
                 raise KeyError
                 
-            _updateKW(imageObject[sciExt+','+str(chip)],skyKW,_skyValue)
+            _updateKW(imageSet[sciExt+','+str(chip)],skyKW,_skyValue)
                         
         #update the value of MDRIZSKY in the global header
-        _updateKW(imageObject[0],skyKW,_skyValue)
+        _updateKW(imageSet[0],skyKW,_skyValue)
         print skyKW,"=",_skyValue
 
     else:
@@ -89,7 +89,7 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
         minSky=[] #store the sky for each chip
                     
         #####FIX THIS#######            
-        if ("STIS" in imageObject._instrument):
+        if ("STIS" in imageSet._instrument):
             for chip in range(1,numchips+1,1):
                 # We need to account for the fact that STIS associations contain
                 # separate exposures for the same chip within the same file.
@@ -99,7 +99,7 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
                 #       to provide an attribute that specifies whether each member
                 #       associated with file is a separate exposure or not.
                 #   WJH/CJH 
-                image=imageObject._image[sciExt,chip]
+                image=imageSet._image[sciExt,chip]
                 _skyValue=_computeSky(image,paramDict)
                 _subtractSky(image,_skyValue)
                 _updateKW(image,skyKW,_skyValue)
@@ -107,7 +107,7 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
         else:
             for chip in range(1,numchips+1,1):
             	    myext=sciExt+","+str(chip)
-                    image=imageObject[myext]
+                    image=imageSet[myext]
                     _skyValue= _computeSky(image, paramDict, memmap=0)
                     minSky.append(_skyValue)
                     image.computedSky=_skyValue #update the keyword in the actual header here as well?
@@ -121,17 +121,17 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
                 _updateKW(image,skyKW,_skyValue)
             
         #update the value of MDRIZSKY in the global header
-        _updateKW(imageObject[0],skyKW,_skyValue)
+        _updateKW(imageSet[0],skyKW,_skyValue)
    
     if(saveFile):
         print "Saving output sky subtracted images to disk....\n"
         for chip in range(1,numchips+1,1):
-            image=imageObject._image[sciExt,chip]
+            image=imageSet._image[sciExt,chip]
             print image.outputNames['outSky']
             image.writeto(image.outputNames['outSky'])
             
    
-#this function can be called by users and will create an imageObject to send to
+#this function can be called by users and will create an imageSet to send to
 #the official function. I dunno, what's really a good name for this that the users
 #can easily differentiate from the call we want? I chose "my" as the prefix cause
 #it would be easy to add that to all the user independent calls and make it
@@ -193,7 +193,7 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
     #create image object    
     #create a configObject here with the paramDict settings?
     #call the real sky subtraction routine
-    subtractSky(imageObject,paramDict,saveFile)
+    subtractSky(imageSet,paramDict,saveFile)
     
 
 
@@ -246,7 +246,7 @@ def _subtractSky(image,skyValue,memmap=0):
     contains the data and header for one image extension
     """
     try:
-        N.subtract(image.data,skyValue,image.data)
+        np.subtract(image.data,skyValue,image.data)
 
     except IOError:
         print "Unable to perform sky subtraction on data array"
