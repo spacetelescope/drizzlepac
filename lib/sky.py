@@ -38,7 +38,7 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
     """
    
-                   
+    #General values to use               
     _skyValue=0.0    #this will be the sky value computed for the exposure                                                                  
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
     
@@ -64,8 +64,7 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
        
         for chip in range(1,numchips+1,1):
             try:
-                image=imageObject[sciExt+','+str(chip)]                
-                _skyValue = image.header[paramDict["skyuser"]]
+                _skyValue = imageObject._image[0].header[paramDict["skyuser"]]
 
             except:
                 print "**************************************************************"
@@ -74,8 +73,12 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
                 print "*"
                 print "**************************************************************\n\n\n"
                 raise KeyError
-
-            image.header[paramDict[skyKW]] = _skyValue
+                
+            _updateKW(imageObject[sciExt+','+str(chip)],skyKW,_skyValue)
+                        
+        #update the value of MDRIZSKY in the global header
+        _updateKW(imageObject[0],skyKW,_skyValue)
+        print skyKW,"=",_skyValue
 
     else:
         # Compute our own sky values and subtract them from the image copies.
@@ -96,14 +99,14 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
                 #       to provide an attribute that specifies whether each member
                 #       associated with file is a separate exposure or not.
                 #   WJH/CJH 
-                image=imageObject["SCI,"+str(chip)]
+                image=imageObject._image[sciExt,chip]
                 _skyValue=_computeSky(image,paramDict)
                 _subtractSky(image,_skyValue)
                 _updateKW(image,skyKW,_skyValue)
         
         else:
             for chip in range(1,numchips+1,1):
-            	    myext=imageObject.scienceExt+","+str(chip)
+            	    myext=sciExt+","+str(chip)
                     image=imageObject[myext]
                     _skyValue= _computeSky(image, paramDict, memmap=0)
                     minSky.append(_skyValue)
@@ -120,13 +123,12 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
         #update the value of MDRIZSKY in the global header
         _updateKW(imageObject[0],skyKW,_skyValue)
    
-        if(saveFile):
-            print "Saving output sky subtracted images....\n"
-            for chip in range(1,numchips+1,1):
-                myext="SCI,"+str(chip)
-                image=imageObject[myext]
-                print image.outputNames['outSky']
-                image.writeto(image.outputNames['outSky'])
+    if(saveFile):
+        print "Saving output sky subtracted images to disk....\n"
+        for chip in range(1,numchips+1,1):
+            image=imageObject._image[sciExt,chip]
+            print image.outputNames['outSky']
+            image.writeto(image.outputNames['outSky'])
             
    
 #this function can be called by users and will create an imageObject to send to
