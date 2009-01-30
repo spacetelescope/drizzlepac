@@ -24,16 +24,17 @@
 import util
 import imageObject
 from pytools import cfgpars
+import imagestats
 
 #this is the main function that takes an imageObject and a parameter dictions
 #made from the config obj. This is what the user function calls as well
-def subtractSky(imageObject,paramDict={}):
+def subtractSky(imageObject,paramDict={},saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageObject represents
     
     imageObject contains all the information about the chips in the image file
     configObj is represented as a dict for now, but will prolly be an actual config object
-    
+    if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
     """
    
                    
@@ -60,7 +61,7 @@ def subtractSky(imageObject,paramDict={}):
     if paramDict["skyuser"] != '':
         print "User has done their own sky subtraction, updating MDRIZSKY with supplied value..."
        
-        for chip in numchips:
+        for chip in range(1,numchips+1,1):
             try:
                 image=imageObject[sciExt+','+str(chip)]                
                 _skyValue = image.header[paramDict["skyuser"]]
@@ -75,7 +76,7 @@ def subtractSky(imageObject,paramDict={}):
 
             image.header[paramDict[skyKW]] = _skyValue
 
-    elif (paramDict["skysub"]):
+    else:
         # Compute our own sky values and subtract them from the image copies.
         # for all instruments other than ACS the minimum sky value from all the
         # science chips in the exposure is used as the reference sky for each chip
@@ -85,7 +86,7 @@ def subtractSky(imageObject,paramDict={}):
                     
         #####FIX THIS#######            
         if ("STIS" in imageObject._instrument):
-            for chip in numchips:
+            for chip in range(1,numchips+1,1):
                 # We need to account for the fact that STIS associations contain
                 # separate exposures for the same chip within the same file.
                 # In those cases, we do not want to use the minimum sky value
@@ -100,8 +101,8 @@ def subtractSky(imageObject,paramDict={}):
                 updateKW(image,skyKW,_skyValue)
         
         else:
-            for chip in numchips:
-            	    myext="SCI,"+str(chip)
+            for chip in range(1,numchips+1,1):
+            	    myext=imageObject.scienceExt+","+str(chip)
                     image=imageObject[myext]
                     _skyValue= computeSky(image, paramDict, memmap=0)
                     minSky.append(_skyValue)
@@ -111,14 +112,21 @@ def subtractSky(imageObject,paramDict={}):
 
             #now subtract that value from all the chips in the exposure
             #and update the chips header keyword with the sub
-            for chip in numchips:
+            for chip in change(1,numchips+1,1):
                 subtractSky(image,_skyValue)
                 updateKW(image,skyKW,_skyValue)
             
         #update the value of MDRIZSKY in the global header
         updateKW(imageObject[0],skyKW,_skyValue)
    
-       
+        if(saveFile):
+            print "Saving output sky subtracted images....\n"
+            for chip in range(1,numchips+1,1):
+                myext="SCI"+str(chip)
+                image=imageObject[myext]
+                print image.outputNames['outSky']
+                image.writeto(image.outputNames['outSky'])
+            
    
 #this function can be called by users and will create an imageObject to send to
 #the official function. I dunno, what's really a good name for this that the users
@@ -126,9 +134,8 @@ def subtractSky(imageObject,paramDict={}):
 #it would be easy to add that to all the user independent calls and make it
 #somewhat uniform
 
-def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywidth=0.1,
-		skystat="median", skylower="INDEF", skyupper="INDEF", skyclip=5, skysligma=4.,skyusigma=4.,):
-
+def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywidth=0.1,skystat="median", 
+    skylower="INDEF", skyupper="INDEF",skyclip=5, skysligma=4.,skyusigma=4.,saveFile=True):
 
     """
     inputImageList is a python list of image filename
@@ -156,8 +163,10 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
     #inputImageList here is assumed to be a python list of filenames
     #though I think this might be part of configObj too
     if len(inputImageList) == 0:
-        print "Empty image list given to Sky routine"
-        return ValueError
+        print "Empty input image list given to Sky routine, checking configObj"
+        if(len(configObj["imageList"]) == 0):
+            print "no image list in configObject either"
+            return ValueError
 
     #make up a dictionary of the task parameter values
     paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
@@ -181,7 +190,7 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
     #create image object    
     #create a configObject here with the paramDict settings?
     #call the real sky subtraction routine
-    subtractSky(imageObject,paramDict)
+    subtractSky(imageObject,paramDict,saveFile)
     
 
 
@@ -200,7 +209,7 @@ def computeSky(image, skypars, memmap=0):
     """
 
 	#this object contains the returned values from the image stats routine
-    _tmp = ImageStats(image.data,
+    _tmp = imagestats.ImageStats(image,
             fields      = skypars['skystat'],
             lower       = skypars['skylower'],
             upper       = skypars['skyupper'],
