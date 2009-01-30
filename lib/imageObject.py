@@ -51,7 +51,8 @@ class imageObject():
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
             self._image[self.scienceExt,chip].outputNames=util.setOutputNames(self._image[self.scienceExt,chip].rootname) #this is a dictionary
-            
+           
+        
     def getData(self,exten=None):
         """return just the specified data extension """
         return fileutil.getExtn(self._image,extn=exten).data
@@ -65,6 +66,9 @@ class imageObject():
         """overload  getitem to return the data and header"""
         return fileutil.getExtn(self._image,extn=exten)
     
+    def __setitem__(self,kw,value):
+        """overload setitem to update information"""
+        self._image.header.update[kw] = value
     
     def __cmp__(self, other):
         """overload the comparison operator???
