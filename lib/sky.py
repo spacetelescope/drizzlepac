@@ -142,8 +142,7 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
 #it would be easy to add that to all the user independent calls and make it
 #somewhat uniform
 
-def mySubtractSky(imageList=[], configObj={}, skyuser="", skysub=True, skywidth=0.1, skystat="median", 
-    skylower=0., skyupper=3.,skyclip=5, skylsigma=4.,skyusigma=4.,saveFile=True):
+def mySubtractSky(imageList=[], configObj={}, saveFile=True):
 
     """
     imageList is a python list of image filename
@@ -179,9 +178,7 @@ def mySubtractSky(imageList=[], configObj={}, skyuser="", skysub=True, skywidth=
             imageList = configObj["imageList"]
             
     #make up a dictionary of the task parameter values
-    paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
-    			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
-                "skyclip":skyclip,"skylsigma":skylsigma,"skyusigma":skyusigma}
+    paramDict=_setDefaults()
     
     #if configobj has been provided, then use those parameters instead
     if (len(configObj) != 0):
