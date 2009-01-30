@@ -45,12 +45,12 @@ class imageObject():
         
         
         #this is the number of science chips to be processed in the file
-        self.numchips=self._countEXT(extname=self.scienceExt)
+        self._numchips=self._countEXT(extname=self.scienceExt)
         
-        #get the rootnames for the chip
-        for chip in range(1,self.numchips,1):
-            self._image[chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
-               
+        #get the rootnames for the chip and add output filename information
+        for chip in range(1,self._numchips+1,1):
+            self._image[self.scienceExt,chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
+            self._image[self.scienceExt,chip].outputNames=util.setOutputNames(self._image[self.scienceExt,chip].rootname) #this is a dictionary
             
     def getData(self,exten=None):
         """return just the specified data extension """
