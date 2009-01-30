@@ -105,7 +105,7 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
             for chip in range(1,numchips+1,1):
             	    myext=imageObject.scienceExt+","+str(chip)
                     image=imageObject[myext]
-                    _skyValue= computeSky(image, paramDict, memmap=0)
+                    _skyValue= _computeSky(image, paramDict, memmap=0)
                     minSky.append(_skyValue)
                     image.computedSky=_skyValue #update the keyword in the actual header here as well?
 
