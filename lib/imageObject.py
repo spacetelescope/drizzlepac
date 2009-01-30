@@ -49,9 +49,16 @@ class imageObject():
         
         #get the rootnames for the chip and add output filename information
         for chip in range(1,self._numchips+1,1):
-            self._image[self.scienceExt,chip].rootname=self._image[self.scienceExt,chip].header["EXPNAME"]
+            self._assignRootname(chip)
             self._image[self.scienceExt,chip].outputNames=util.setOutputNames(self._image[self.scienceExt,chip].rootname) #this is a dictionary
            
+    def _assignRootname(self, chip):
+        """assign a unique rootname for the image based in the expname"""
+        extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
+        extver=self._image[self.scienceExt,chip].header["EXTVER"]
+        expname=self._image[self.scienceExt,chip].header["EXPNAME"]
+        self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
+        
         
     def getData(self,exten=None):
         """return just the specified data extension """

@@ -112,7 +112,8 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
                     image.computedSky=_skyValue #update the keyword in the actual header here as well?
 
             _skyValue=min(minSky) #what if the sky is negative?
-
+            print "Minimum sky value determined:",_skyValue
+            
             #now subtract that value from all the chips in the exposure
             #and update the chips header keyword with the sub
             for chip in range(1,numchips+1,1):
@@ -136,11 +137,11 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
 #it would be easy to add that to all the user independent calls and make it
 #somewhat uniform
 
-def mySubtractSky(inputImageList=[], configObj={}, skyuser="", skysub=True, skywidth=0.1,skystat="median", 
+def mySubtractSky(imageList=[], configObj={}, skyuser="", skysub=True, skywidth=0.1, skystat="median", 
     skylower="INDEF", skyupper="INDEF",skyclip=5, skylsigma=4.,skyusigma=4.,saveFile=True):
 
     """
-    inputImageList is a python list of image filename
+    imageList is a python list of image filename
     paramDict is there as a placeholder to pass in the 
         full parameter set for now, pass in configObj 
         as a dictionary right now
@@ -162,15 +163,15 @@ def mySubtractSky(inputImageList=[], configObj={}, skyuser="", skysub=True, skyw
 
     """
 
-    #inputImageList here is assumed to be a python list of filenames
+    #imageList here is assumed to be a python list of filenames
     #though I think this might be part of configObj too
-    if len(inputImageList) == 0:
+    if len(imageList) == 0:
         print "Empty input image list given to Sky routine, checking configObj"
         if(len(configObj["imageList"]) == 0):
             print "no image list in configObject either"
             return ValueError
         else:
-            inputImageList = configObj["imageList"]
+            imageList = configObj["imageList"]
             
     #make up a dictionary of the task parameter values
     paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
@@ -191,7 +192,7 @@ def mySubtractSky(inputImageList=[], configObj={}, skyuser="", skysub=True, skyw
     util.printParams(paramDict)        
 
     #create image object    
-    for image in inputImageList:
+    for image in imageList:
         imageSet=imageObject(image)
         print "\nWorking on: ",imageSet._filename
         imageSet.info()

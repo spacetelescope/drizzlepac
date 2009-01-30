@@ -53,7 +53,7 @@ def printParams(paramDictionary):
         keys=paramDictionary.keys()
         keys.sort()
         for key in keys:
-            print key,":\t",paramDict[key]
+            print key,":\t",paramDictionary[key]
 
 
 def isASNTable(inputFilelist):
@@ -163,3 +163,36 @@ def update_input(filelist, ivmlist=None, removed_files=None):
         newfilelist = [el[0] for el in sci_ivm] 
         return newfilelist, ivmlist 
 
+
+
+def setOutputNames(filename):
+    """
+    Define the default output filenames for drizzle products,
+    these are based on the original rootname of the image 
+    
+    filename should be just 1 filename, so call this in a loop
+    for chip names contained inside a file
+    
+    """
+
+    # Define FITS output filenames for intermediate products
+    outFinal = filename+'_drz.fits'
+    outSci = filename+'_sci.fits'
+    outWeight = filename+'_weight.fits'
+    outContext = filename+'_context.fits'
+    outSky = filename + '_sky.fits'
+    staticMask=filename +'_staticMask.fits'
+    blotImage = filename + '_blot.fits'
+    crImage = filename + '_cr.fits'
+    outSingle = filename+'.fits'
+    outSWeight = filename+'_wht.fits'
+    outSContext = None
+
+    fnames={'outFinal':outFinal,'outSci':outSci,
+               'outWeight':outWeight,'outContext':outContext,
+               'outSingle':outSingle,'outSWeight':outSWeight,
+               'outSContext':outSContext, 'staticMask':staticMask,
+               'blotImage':blotImage,'crImage':crImage,'outSingle':outSingle,
+               'outSWeight':outSWeight,'outSContext':outSContext,'outSky':outSky}
+
+    return fnames
