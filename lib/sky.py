@@ -155,7 +155,7 @@ def mySubtractSky(imageList=[], configObj={}, saveFile=True):
 
     params that should be in configobj
     ---------------------------------------
-    skyuser		'KEYWORD indicating a sky subtraction value if done by user.
+    skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
     skysub		'Perform sky subtraction?'
     skywidth	'Bin width for sampling sky statistics (in sigma)'
     skystat	 	'Sky correction statistics parameter'

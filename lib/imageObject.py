@@ -36,6 +36,7 @@ class imageObject():
         #populate the global attributes which are good for all the chips in the file
         self._instrument=self._image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
+        self.maskExt='DQ' #the extension with the mask image in it
         self._filename=self._image[0].header["filename"] #can we make this unchangeable?
         
         #assuming all the chips have the same dimensions in the file
