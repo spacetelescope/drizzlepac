@@ -22,7 +22,7 @@
 
 """
 import util
-import imageObject
+from imageObject import imageObject
 from pytools import cfgpars
 import imagestats
 import numpy as np
@@ -33,7 +33,7 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     
-    imageSet contains all the information about the chips in the image file
+    imageSet contains all the information about the chips in the image file and is an imageObject
     configObj is represented as a dict for now, but will prolly be an actual config object
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
     """
@@ -88,7 +88,6 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
         print "Computing minimum sky ..."
         minSky=[] #store the sky for each chip
                     
-        #####FIX THIS#######            
         if ("STIS" in imageSet._instrument):
             for chip in range(1,numchips+1,1):
                 # We need to account for the fact that STIS associations contain
@@ -170,7 +169,9 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
         if(len(configObj["imageList"]) == 0):
             print "no image list in configObject either"
             return ValueError
-
+        else:
+            inputImageList = configObj["imageList"]
+            
     #make up a dictionary of the task parameter values
     paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
     			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
@@ -191,9 +192,10 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
             paramDict[key]=configObj[key]
         
     #create image object    
-    #create a configObject here with the paramDict settings?
-    #call the real sky subtraction routine
-    subtractSky(imageSet,paramDict,saveFile)
+    for image in inputImageList:
+        imageSet=imageObject(image)
+        #call the real sky subtraction routine
+        subtractSky(imageSet,paramDict,saveFile)
     
 
 
