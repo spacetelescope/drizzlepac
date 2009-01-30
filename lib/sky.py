@@ -25,6 +25,7 @@ import util
 import imageObject
 from pytools import cfgpars
 import imagestats
+import numpy as N
 
 #this is the main function that takes an imageObject and a parameter dictions
 #made from the config obj. This is what the user function calls as well
@@ -44,10 +45,10 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
     #just making sure, tricky users and all, these are things that will be used
     #by the sky function so we want them defined at least
     try:
-        assert (imageObject._numchips > 0), "invalid value for number of chips"
-        assert (imageObject._filename != ''), "image object filename is empty!, doh!"
-        assert (imageObject.scienceExt !=''), "image object science extension is empty!"
-        assert (imageObject._instrument !=''), "image object instrument name is empty!"
+        assert imageObject._numchips > 0, "invalid value for number of chips"
+        assert imageObject._filename != '', "image object filename is empty!, doh!"
+        assert imageObject.scienceExt !='', "image object science extension is empty!"
+        assert imageObject._instrument !='', "image object instrument name is empty!"
 
     except AssertionError:
         raise AssertionError
@@ -96,9 +97,9 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
                 #       associated with file is a separate exposure or not.
                 #   WJH/CJH 
                 image=imageObject["SCI,"+str(chip)]
-                _skyValue=computeSky(image,paramDict)
-                subtractSky(image,_skyValue)
-                updateKW(image,skyKW,_skyValue)
+                _skyValue=_computeSky(image,paramDict)
+                _subtractSky(image,_skyValue)
+                _updateKW(image,skyKW,_skyValue)
         
         else:
             for chip in range(1,numchips+1,1):
@@ -112,12 +113,12 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
 
             #now subtract that value from all the chips in the exposure
             #and update the chips header keyword with the sub
-            for chip in change(1,numchips+1,1):
-                subtractSky(image,_skyValue)
-                updateKW(image,skyKW,_skyValue)
+            for chip in range(1,numchips+1,1):
+                _subtractSky(image,_skyValue)
+                _updateKW(image,skyKW,_skyValue)
             
         #update the value of MDRIZSKY in the global header
-        updateKW(imageObject[0],skyKW,_skyValue)
+        _updateKW(imageObject[0],skyKW,_skyValue)
    
         if(saveFile):
             print "Saving output sky subtracted images....\n"
@@ -198,7 +199,7 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
 ##  Helper functions follow  ## 
 ###############################
 
-def computeSky(image, skypars, memmap=0):
+def _computeSky(image, skypars, memmap=0):
 
     """ 
     Compute the sky value for the data array passed to the function 
@@ -220,7 +221,7 @@ def computeSky(image, skypars, memmap=0):
             )
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
-    print "Computed sky value for data array : ", _skyValue
+    print "Computed sky value for %s: "%image.rootname, _skyValue
 
     return _skyValue
 
@@ -243,14 +244,14 @@ def _subtractSky(image,skyValue,memmap=0):
     contains the data and header for one image extension
     """
     try:
-        np.subtract(image.data,skyValue,image.data)
+        N.subtract(image.data,skyValue,image.data)
 
     except IOError:
         print "Unable to perform sky subtraction on data array"
         raise IOError 
 
 
-def updateKW(image, skyKW, _skyValue):
+def _updateKW(image, skyKW, _skyValue):
     """update the header with the kw,value"""
 
     image.header[skyKW]=_skyValue
