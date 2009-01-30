@@ -6,7 +6,6 @@ each input filename
 """
 
 import sys
-import pytools
 import util
 from pytools import fileutil
 
@@ -74,7 +73,7 @@ class imageObject():
         return fileutil.getExtn(self._image,extn=exten)
     
     def __setitem__(self,kw,value):
-        """overload setitem to update information"""
+        """overload setitem to update information, not sure this is right yet"""
         self._image.header.update[kw] = value
     
     def __cmp__(self, other):

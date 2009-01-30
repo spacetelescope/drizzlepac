@@ -49,13 +49,18 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
         assert imageSet._filename != '', "image object filename is empty!, doh!"
         assert imageSet.scienceExt !='', "image object science extension is empty!"
         assert imageSet._instrument !='', "image object instrument name is empty!"
-
+        
     except AssertionError:
         raise AssertionError
         
     numchips=imageSet._numchips
     sciExt=imageSet.scienceExt
     
+    #if no settings were supplied, set them to the defaults for the task
+    if (len(paramDict) == 0):
+        paramDict=_setDefaults()
+        
+    print paramDict
     # User Subtraction Case, User has done own sky subtraction,  
 	# so use the image header value for subtractedsky value
     
@@ -138,7 +143,7 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
 #somewhat uniform
 
 def mySubtractSky(imageList=[], configObj={}, skyuser="", skysub=True, skywidth=0.1, skystat="median", 
-    skylower="INDEF", skyupper="INDEF",skyclip=5, skylsigma=4.,skyusigma=4.,saveFile=True):
+    skylower=0., skyupper=3.,skyclip=5, skylsigma=4.,skyusigma=4.,saveFile=True):
 
     """
     imageList is a python list of image filename
@@ -274,9 +279,26 @@ def getreferencesky(image,keyval):
     return (_subtractedsky * (_refplatescale / _platescale)**2 )                
 
 
+#set up the default values for the task, this is still too clunky
+#but perhaps could eventually be used to create the default configObj file?
+def _setDefaults():
+
+    skyuser=''
+    skysub=True
+    skywidth=0.1
+    skystat="median" 
+    skylower=0.  #um, what to do with INDEF
+    skyupper=3. #um, what to do with INDEF
+    skyclip=5
+    skylsigma=4.
+    skyusigma=4.
 
 
+    paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
+    			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
+                "skyclip":skyclip,"skylsigma":skylsigma,"skyusigma":skyusigma}
 
+    return paramDict
 
 
 
