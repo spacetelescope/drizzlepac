@@ -136,12 +136,12 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
 #it would be easy to add that to all the user independent calls and make it
 #somewhat uniform
 
-def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywidth=0.1,skystat="median", 
-    skylower="INDEF", skyupper="INDEF",skyclip=5, skysligma=4.,skyusigma=4.,saveFile=True):
+def mySubtractSky(inputImageList=[], configObj={}, skyuser="", skysub=True, skywidth=0.1,skystat="median", 
+    skylower="INDEF", skyupper="INDEF",skyclip=5, skylsigma=4.,skyusigma=4.,saveFile=True):
 
     """
     inputImageList is a python list of image filename
-    configObj is there as a placeholder to pass in the 
+    paramDict is there as a placeholder to pass in the 
         full parameter set for now, pass in configObj 
         as a dictionary right now
 
@@ -176,28 +176,29 @@ def mySubtractSky(configObj={},inputImageList=[], skyuser="", skysub=True, skywi
     paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
     			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
                 "skyclip":skyclip,"skylsigma":skylsigma,"skyusigma":skyusigma}
-
-
+    
     #if configobj has been provided, then use those parameters instead
     if (len(configObj) != 0):
-    # Print out the parameters provided by the user
-        print "USER INPUT PARAMETERS for SKY SUBTRACTION:"
-        util.printParams(configObj)        
-
         #now replace the defaults with the user specs
         #this assumes only matching keys, though with this
         #syntax configObj could contain more than the standard keys
         #and they will get appended onto the paramDict
         for key in configObj:
             paramDict[key]=configObj[key]
-        
+
+    # Print out the parameters provided by the user
+    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
+    util.printParams(paramDict)        
+
     #create image object    
     for image in inputImageList:
         imageSet=imageObject(image)
+        print "\nWorking on: ",imageSet._filename
+        imageSet.info()
         #call the real sky subtraction routine
         subtractSky(imageSet,paramDict,saveFile)
+        imageSet.close()
     
-
 
 ###############################
 ##  Helper functions follow  ## 
