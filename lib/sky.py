@@ -123,7 +123,7 @@ def subtractSky(imageObject,paramDict={},saveFile=True):
         if(saveFile):
             print "Saving output sky subtracted images....\n"
             for chip in range(1,numchips+1,1):
-                myext="SCI"+str(chip)
+                myext="SCI,"+str(chip)
                 image=imageObject[myext]
                 print image.outputNames['outSky']
                 image.writeto(image.outputNames['outSky'])
@@ -254,7 +254,7 @@ def _subtractSky(image,skyValue,memmap=0):
 def _updateKW(image, skyKW, _skyValue):
     """update the header with the kw,value"""
 
-    image.header[skyKW]=_skyValue
+    image.header.update(skyKW,_skyValue)
     
     
 #this is really related to each individual chip
