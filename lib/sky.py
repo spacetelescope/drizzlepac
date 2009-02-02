@@ -27,15 +27,19 @@ from pytools import cfgpars
 import imagestats
 import numpy as np
 
-#this is the main function that takes an imageSet and a parameter dictions
+#this is the main function that takes an imageSet and a parameter dictionary
 #made from the config obj. This is what the user function calls as well
-def subtractSky(imageSet,paramDict={},saveFile=True):
+def subtractSky(imageSet,configObj={},saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     
     imageSet contains all the information about the chips in the image file and is an imageObject
     configObj is represented as a dict for now, but will prolly be an actual config object
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
+
+    the output from sky subtraction is a copy of the original input file
+    where all the science data extensions have been sky subtracted
+
     """
    
     #General values to use               
@@ -47,6 +51,7 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
     try:
         assert imageSet._numchips > 0, "invalid value for number of chips"
         assert imageSet._filename != '', "image object filename is empty!, doh!"
+        assert imageSet._rootname != '', "image rootname is empty!, doh!"
         assert imageSet.scienceExt !='', "image object science extension is empty!"
         assert imageSet._instrument !='', "image object instrument name is empty!"
         
@@ -57,13 +62,19 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
     sciExt=imageSet.scienceExt
     
     #if no settings were supplied, set them to the defaults for the task
-    if (len(paramDict) == 0):
-        paramDict=_setDefaults()
-        
-    print paramDict
+    paramDict=_setDefaults()
+ 
+    #apply the parameter changes that have been set
+    if(len(configObj) != 0):
+        for key in configObj:
+            paramDict[key]=configObj[key]
+                
+    # Print out the parameters provided by the user
+    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
+    util.printParams(paramDict)        
+
     # User Subtraction Case, User has done own sky subtraction,  
-	# so use the image header value for subtractedsky value
-    
+	# so use the image header value for subtractedsky value    
     if paramDict["skyuser"] != '':
         print "User has done their own sky subtraction, updating MDRIZSKY with supplied value..."
        
@@ -166,6 +177,9 @@ def mySubtractSky(imageList=[], configObj={}, saveFile=True):
     skylsigma	'Lower side clipping factor (in sigma)'
     skyusigma	'Upper side clipping factor (in sigma)'
 
+
+    the output from sky subtraction is a copy of the original input file
+    where all the science data extensions have been sky subtracted
     """
 
     #imageList here is assumed to be a python list of filenames
