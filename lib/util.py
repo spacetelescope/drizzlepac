@@ -184,7 +184,7 @@ def setOutputNames(filename):
     staticMask=filename +'_staticMask.fits'
     blotImage = filename + '_blot.fits'
     crImage = filename + '_cr.fits'
-    outSingle = filename+'.fits'
+    outSingle = filename+'_single.fits'
     outSWeight = filename+'_wht.fits'
     outSContext = None
 
