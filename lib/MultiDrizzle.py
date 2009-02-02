@@ -10,7 +10,9 @@ Files can be in GEIS or MEF format (but not waiver fits).
 from pytools import parseinput, fileutil, irafglob
 import os
 import util
-
+from sky import subtractSky
+import staticMask
+from optparse import OptionParser
 
 class MultiDrizzle:
 """
@@ -27,7 +29,12 @@ have been run on the images.
 
 """	
 
-	def __init__(self,inputImageList=[],configObj={}):
+	def __init__(self,inputImageList=[],configObj={},saveFiles=True):
+    
+        """ inputImageList is a list of filenames supplied by the user
+            configObj are the optional user overrides for the parameters
+            savefFiles will write output files for every step
+        """
     
     	"""Check to see what kind of file input was given"""
         self.ivmList=[] #just to open the list, hmm, should each image have an ivm attribute?
@@ -60,7 +67,13 @@ have been run on the images.
     	"""step through all the functions to perform full drizzling """
         
         if (self.doStaticMask && !(self.staticMaskDone)):
-        	staticMask(self.objectList)
+            for imageSet in self.objectList:
+                numchips=imageSet._numchips
+                for chip in range(1,numchips+1,1):
+                    image=imageSet._image[imageSet.scienceExt,chip]
+                	image.staticMask=StaticMask(image)
+                    if(saveFiles):
+                        image.staticMask.saveToFile(image.outputNames["staticMask"])                    
             
        	if (self.doSkySubtraction && (!(self.skySubtractionDone)):
         	subtractSky(self.objectList)
@@ -124,3 +137,28 @@ have been run on the images.
                 params[key]=configObj[key]
                 
        return params
+
+if __name__ == __main__:
+
+    #parse the command line options
+    usage = "usage: %prog [options]"
+    parser = OptionParser(usage=usage)
+    parser.add_option("-c", "--comments", dest="comments",default="none", type="string",
+                      help="File that contains comments to add", metavar="COMMENTS")
+
+    parser.add_option("-i", "--image", dest="image",default="none", type="string",
+                      help="FITS image to update", metavar="IMAGE")
+
+    parser.add_option("-o", "--overwrite", dest="overimage",action="store_true",
+                      default=0,help="Overwrite original FITS image", metavar="OVERIMAGE")
+
+    parser.add_option("-k", "--keeplog", dest="keeplog", action="store_true",default=0,
+                      help="Keep logfile of results", metavar="KEEPLOG")
+
+    parser.add_option("-l", "--logfile", dest="logfile",default="fixOpticalHdr.log",type="string",
+                      help="file to store log information to",metavar="LOGFILE")
+
+    parser.add_option("-r", "--report", dest="report", default=0, action="store_true",
+                      help="report keywords to log that have N/A values",metavar="REPORT")
+
+    (options, args) = parser.parse_args()

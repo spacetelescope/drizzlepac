@@ -62,16 +62,8 @@ def subtractSky(imageSet,configObj={},saveFile=True):
     sciExt=imageSet.scienceExt
     
     #if no settings were supplied, set them to the defaults for the task
-    paramDict=_setDefaults()
+    paramDict=_setDefaults(configObj)
  
-    #apply the parameter changes that have been set
-    if(len(configObj) != 0):
-        for key in configObj:
-            paramDict[key]=configObj[key]
-                
-    # Print out the parameters provided by the user
-    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
-    util.printParams(paramDict)        
 
     # User Subtraction Case, User has done own sky subtraction,  
 	# so use the image header value for subtractedsky value    
@@ -190,17 +182,8 @@ def mySubtractSky(imageList=[], configObj={}, saveFile=True):
             imageList = configObj["imageList"]
             
     #make up a dictionary of the task parameter values
-    paramDict=_setDefaults()
+    paramDict=_setDefaults(configObj)
     
-    #if configobj has been provided, then use those parameters instead
-    if (len(configObj) != 0):
-        #now replace the defaults with the user specs
-        #this assumes only matching keys, though with this
-        #syntax configObj could contain more than the standard keys
-        #and they will get appended onto the paramDict
-        for key in configObj:
-            paramDict[key]=configObj[key]
-
     #create image object    
     for image in imageList:
         imageSet=imageObject(image)
@@ -288,7 +271,7 @@ def getreferencesky(image,keyval):
 
 #set up the default values for the task, this is still too clunky
 #but perhaps could eventually be used to create the default configObj file?
-def _setDefaults():
+def _setDefaults(configObj={}):
 
     skyuser=''
     skysub=True
@@ -304,6 +287,16 @@ def _setDefaults():
     paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
     			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
                 "skyclip":skyclip,"skylsigma":skylsigma,"skyusigma":skyusigma}
+
+
+    #apply the parameter changes that have been set
+    if(len(configObj) != 0):
+        for key in configObj:
+            paramDict[key]=configObj[key]
+                
+    # Print out the parameters provided by the user
+    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
+    util.printParams(paramDict)        
 
     return paramDict
 

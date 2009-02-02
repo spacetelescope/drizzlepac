@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 #
-#   Authors:    Ivo Busko, Christopher Hanley, Warren Hack
+#   Authors:    Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
 #   Program:    static_mask.py
 #   Purpose:    Class that manages the creation of a global static
 #               mask which is used to mask pixels that are some
@@ -8,6 +7,8 @@
 
 import numpy as np
 from imagestats import ImageStats
+from pytools import fileutil
+import pyfits
 
 class StaticMask:
     """
@@ -24,10 +25,8 @@ class StaticMask:
     pixel value of the good pixels.
 
 
-    staticMask=filename +'_staticMask.fits'  #(instrument/detector, (nx,ny), chip_id)
-
     """
-    def __init__ (self, badval=64, goodval=1.0, staticsig= 3.0):
+    def __init__ (self, chipImage, configObj={}): 
 
         # For now, we don't use badval. It is supposed to
         # be used to flag back the DQ array of the input
@@ -35,27 +34,30 @@ class StaticMask:
         # the task repeatedly over a set of images, whenever
         # additional images are included in the set each
         # time.
-        
-        self.static_sig = staticsig
-        self.static_badval = badval
-        self.static_goodval = goodval
+        #
+        # chipImage is a pointer back to the header+plus data of the chip in imageObject
+        # signature is created in the imageObject class
+        #
+        self.parameters=_setDefaults(configObj)
+        self.maskPtr=None #points back to the imageObject
+        self.signature=chipImage.signature    
 
-        self.masklist = {}
-
-    def addMember(self,sci_arr,signature):
+    def addMember(self):
         """
         Combines the input image with the static mask that
         has the same signature.  The signature parameter
         consists of the tuple:
         (instrument/detector, (nx,ny), chip_id)
+        
+        signature is defined in the image object now
         """
         # If this is a new signature, create a new Static Mask file
-        if not self.masklist.has_key(signature):
-            self.masklist[signature] = self._buildMaskArray(signature)
+        if not self.masklist.has_key(self.signature):
+            self.masklist[self.signature] = self._buildMaskArray(self.signature)
 
         # Operate on input image DQ array to flag 'bad' pixels in the
         # global static mask
-        stats = ImageStats(sci_arr,nclip=3,fields='mode')
+        stats = ImageStats(chipImage.data,nclip=3,fields='mode')
         mode = stats.mode
         rms  = stats.stddev
         del stats
@@ -68,16 +70,16 @@ class StaticMask:
         #
         sky_rms_diff = mode - (self.static_sig*rms)
 
-        np.bitwise_and(self.masklist[signature],np.logical_not(np.less( sci_arr, sky_rms_diff)),self.masklist[signature])
+        np.bitwise_and(self.masklist[self.signature],np.logical_not(np.less( sci_arr, sky_rms_diff)),self.masklist[self.signature])
 
-    def _buildMaskArray(self,signature):
+    def _buildMaskArray(self):
         """ Creates numarray array for static mask array signature. """
-        return np.ones(signature[1],dtype=np.int16)
+        return np.ones(self.signature[1],dtype=np.int16)
 
-    def getMask(self,signature):
+    def getMask(self):
         """ Returns the appropriate StaticMask array for the image. """
-        if self.masklist.has_key(signature):
-            mask =  self.masklist[signature]
+        if self.masklist.has_key(self.signature):
+            mask =  self.masklist[self.signature]
         else:
             mask = None
         return mask
@@ -88,3 +90,45 @@ class StaticMask:
         for key in self.masklist.keys():
             self.masklist[key] = None
         self.masklist = {}
+        
+    def saveToFile(self, filename):
+        """ saves the static mask to a file"""
+        
+        #check to see if the file already exists on disk
+        if !(fileutil.checkFileExists(filename)):
+            #create a new fits image with the mask array and a standard header
+            for mask in self.masklist:
+                #open a new header and data unit
+                fitsobj=pyfits.HDUList()
+                newHDU = pyfits.PrimaryHDU()
+                newHDU.data = masklist[mask]
+                fitsobj.append(newHDU)
+                
+            try:
+                print "Saving static mask to disk:",filename
+                
+            except IOError:
+                print "Problem saving static mask file: ",filename," to disk!\n"
+                raise IOError
+                
+            
+
+    def _setDefaults(configObj={}):
+ 
+        static_sig = 4.0
+        static_badval = 64
+        static_goodval = 1.0
+        masklist = {}
+        
+        paramDict={"static_sig":static_sig,
+                    "static_badval":static_badval,
+                    "static_goodval":static_goodval,
+                    "masklist":masklist}
+                    
+        if(len(configObj) != 0):
+            for key in configObj:
+                paramDict[key]=configObj[key] 
+                
+        self.masklist=paramDict["masklist"]
+                  
+        return paramDict
