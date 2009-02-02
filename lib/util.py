@@ -181,18 +181,24 @@ def setOutputNames(filename):
     outWeight = filename+'_weight.fits'
     outContext = filename+'_context.fits'
     outSky = filename + '_sky.fits'
-    staticMask=filename +'_staticMask.fits'
     blotImage = filename + '_blot.fits'
     crImage = filename + '_cr.fits'
     outSingle = filename+'_single.fits'
     outSWeight = filename+'_wht.fits'
     outSContext = None
-
-    fnames={'outFinal':outFinal,'outSci':outSci,
-               'outWeight':outWeight,'outContext':outContext,
-               'outSingle':outSingle,'outSWeight':outSWeight,
-               'outSContext':outSContext, 'staticMask':staticMask,
-               'blotImage':blotImage,'crImage':crImage,'outSingle':outSingle,
-               'outSWeight':outSWeight,'outSContext':outSContext,'outSky':outSky}
+        
+    fnames={'outFinal':outFinal,
+            'outSci':outSci,
+            'outWeight':outWeight,
+            'outContext':outContext,
+            'outSingle':outSingle,
+            'outSWeight':outSWeight,
+            'outSContext':outSContext,
+            'blotImage':blotImage,
+            'crImage':crImage,
+            'outSingle':outSingle,
+            'outSWeight':outSWeight,
+            'outSContext':outSContext,
+            'outSky':outSky}
 
     return fnames

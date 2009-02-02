@@ -37,29 +37,48 @@ class imageObject():
         self._instrument=self._image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
         self.maskExt='DQ' #the extension with the mask image in it
-        self._filename=self._image[0].header["FILENAME"] #can we make this unchangeable?
+        self._filename=self._image[0].header["FILENAME"] 
         self._rootname=self._image[0].header["ROOTNAME"]
         self.outputNames=util.setOutputNames(self._rootname)
-        
-        #assuming all the chips have the same dimensions in the file
-        self._naxis1=self._image[self.scienceExt,1].header["NAXIS1"]
-        self._naxis2=self._image[self.scienceExt,1].header["NAXIS2"]
-        
+                
         
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
         
-        #get the rootnames for the chip and add output filename information
+        #assign chip specific information
         for chip in range(1,self._numchips+1,1):
             self._assignRootname(chip)
+            self._staticmask=None #this will be replaced with a  pointer to a StaticMask object
+            #assuming all the chips dont have the same dimensions in the file
+            self._image[self.scienceExt,chip]._naxis1=self._image[self.scienceExt,chip].header["NAXIS1"]
+            self._image[self.scienceExt,chip]._naxis2=self._image[self.scienceExt,chip].header["NAXIS2"]            
             self._image[self.scienceExt,chip].outputNames=util.setOutputNames(self._image[self.scienceExt,chip].rootname) #this is a dictionary
-           
+            self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+
+
     def _assignRootname(self, chip):
         """assign a unique rootname for the image based in the expname"""
         extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
         extver=self._image[self.scienceExt,chip].header["EXTVER"]
         expname=self._image[self.scienceExt,chip].header["EXPNAME"]
         self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
+
+    def _assignSignature(self, chip):
+        """assign a unique signature for the image based 
+           on the  instrument, detector, chip, and size
+           this will be used to uniquely identify the appropriate
+           static mask for the image
+           
+           this also records the filename for the static mask to the outputNames dictionary
+           
+        """
+        instr=self._instrument
+        detector=self._image[0].header["DETECTOR"]
+        nx=self._image[self.scienceExt,chip]._naxis1
+        ny=self._image[self.scienceExt,chip]._naxis2
+        
+        self._image[self.scienceExt,chip].signature=[instr+detector,(nx,ny),chip]
+        self._image[self.scienceExt,chip].outputNames["staticMask"]=instr+"_"+detector+"_"+str(nx)+"x"+str(ny)+"_"+str(chip)+"_staticMask.fits"
         
         
     def getData(self,exten=None):

@@ -201,10 +201,6 @@ def mySubtractSky(imageList=[], configObj={}, saveFile=True):
         for key in configObj:
             paramDict[key]=configObj[key]
 
-    # Print out the parameters provided by the user
-    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
-    util.printParams(paramDict)        
-
     #create image object    
     for image in imageList:
         imageSet=imageObject(image)
@@ -242,7 +238,9 @@ def _computeSky(image, skypars, memmap=0):
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
     print "Computed sky value for %s: "%image.rootname, _skyValue
-
+    
+    del _tmp
+    
     return _skyValue
 
 
