@@ -141,11 +141,8 @@ def subtractSky(imageSet,configObj={},saveFile=True):
         _updateKW(imageSet[0],skyKW,_skyValue)
    
     if(saveFile):
-        print "Saving output sky subtracted images to disk....\n"
-        for chip in range(1,numchips+1,1):
-            image=imageSet._image[sciExt,chip]
-            print image.outputNames['outSky']
-            image.writeto(image.outputNames['outSky'])
+        print "Saving output sky subtracted image: ",imageSet.outputNames["outSky"]
+        imageSet._image.writeto(imageSet.outputNames['outSky'])
             
    
 #this function can be called by users and will create an imageSet to send to
