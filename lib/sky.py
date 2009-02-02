@@ -122,6 +122,7 @@ def subtractSky(imageSet,paramDict={},saveFile=True):
             #now subtract that value from all the chips in the exposure
             #and update the chips header keyword with the sub
             for chip in range(1,numchips+1,1):
+                image=imageSet._image[sciExt,chip]
                 _subtractSky(image,_skyValue)
                 _updateKW(image,skyKW,_skyValue)
             
@@ -284,7 +285,7 @@ def _setDefaults():
     skysub=True
     skywidth=0.1
     skystat="median" 
-    skylower=0.  #um, what to do with INDEF
+    skylower=None  #um, what to do with INDEF
     skyupper=3. #um, what to do with INDEF
     skyclip=5
     skylsigma=4.

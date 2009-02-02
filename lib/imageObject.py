@@ -37,7 +37,9 @@ class imageObject():
         self._instrument=self._image[0].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
         self.maskExt='DQ' #the extension with the mask image in it
-        self._filename=self._image[0].header["filename"] #can we make this unchangeable?
+        self._filename=self._image[0].header["FILENAME"] #can we make this unchangeable?
+        self._rootname=self._image[0].header["ROOTNAME"]
+        self.outputNames=util.setOutputNames(self._rootname)
         
         #assuming all the chips have the same dimensions in the file
         self._naxis1=self._image[self.scienceExt,1].header["NAXIS1"]
