@@ -6,93 +6,161 @@ the running of multidrizzle using those object
 
 Files can be in GEIS or MEF format (but not waiver fits).
 
+I'm writing this to help me work through running the
+whole package as I'm coding it
 """
-from pytools import parseinput, fileutil, irafglob
+
+from pytools import fileutil
 import os
-import util
-from sky import subtractSky
+import sky
 import staticMask
-from optparse import OptionParser
+import imageObject
 
 class MultiDrizzle:
-"""
+    """
 
-Create an object which contains the basic
-information for multidrizzle including the
-steps which have been performed and
-a run function to actually "multidrizzle"
-all the images together.
+    Create an object which contains the basic
+    information for multidrizzle including the
+    steps which have been performed and
+    a run function to actually "multidrizzle"
+    all the images together.
 
-This includes the list of image files that
-the user supplied, and the steps that
-have been run on the images.
+    This includes the list of image files that
+    the user supplied, and the steps that
+    have been run on the images.
 
-"""	
+    """	
 
-	def __init__(self,inputImageList=[],configObj={},saveFiles=True):
-    
-        """ inputImageList is a list of filenames supplied by the user
-            configObj are the optional user overrides for the parameters
-            savefFiles will write output files for every step
-        """
-    
-    	"""Check to see what kind of file input was given"""
-        self.ivmList=[] #just to open the list, hmm, should each image have an ivm attribute?
-   		self.objectList=[] #the list of imageObject object references       
-        self.fileList=[] #the list of filenames given by the user, and parsed by the code
-                         #there should be one imageObject for each file in the list
-		
-        #Keep track of steps to perform on the object
-        self.staticMaskDone=False
-        self.skySubtractionDone=False
-        self.drizzleSeperateDone=False
-        self.medianImageDone=False
-        self.blotDone=False
-        self.derivCRDone=False
-        self.drizFinalDone=False
+    def __init__(self,inputImageList=[],configObj={},saveFiles=True):
+
+        """ inputImageList is a list of filenames supplied by the user                        
+            configObj are the optional user overrides for the parameters                      
+            savefFiles will write output files for every step                                 
+        """                                                                                   
+
+        """Check to see what kind of file input was given"""                                  
+        self._ivmList=[] #just to open the list                                               
+        self._objectList=[] #the list of imageObject object references                         
+        self._fileList=[] #the list of filenames given by the user, and parsed by the code    
+                         #there should be one imageObject for each file in the list           
+        self._drizSepList=[] #this is a list of the singly drizzled images                     
+        self._medianImage='' #the name of the output median images                             
+        self._blotImlist=[] #the list of blotted image names                                   
+
+        #Keep track of steps to perform on the object                                         
+        self.staticMaskDone=False                                                             
+        self.skySubtractionDone=False                                                         
+        self.drizzleSeperateDone=False                                                        
+        self.medianImageDone=False                                                            
+        self.blotDone=False                                                                   
+        self.derivCRDone=False                                                                
+        self.drizFinalDone=False                                                              
+
+        #setup default parameters including user overrides                                    
+        self.parameters=_setDefaults(configObj)                                               
+
+        #create the list of inputImage object pointers                                        
+        if(len(inputImageList) == 0):                                                         
+            print "No input images were specified!"                                           
+            return ValueError                                                                 
+
+        else:                                                                                 
+            self._fileList=inputImageList                                                     
+
+
+    def run(self):
+        """step through all the functions to perform full drizzling """
+
+        #These can be run on individual images, 
+        #they dont have to  be in memory together        
+        for filename in self.fileList:
+            imageSet=(imageObject(filename))
+
+            _computeStaticMask(imageSet)
+            _computeSky(imageSet)
+            _createDrizSep(imageSet)
+
+            imageSet.close()   
+
+        _computeMedian(self.drizSepList) #this step needs a list of all the separately drizled images   
+        _createBlotImages()
+        _calcDerivCr()
+
+        _runFinalDrizzle()
+
+        print "MultiDrizzle finished!"
         
-        #setup default parameters including user overrides       
-        self.parameters=_setDefaults(configObj)
-                
-        #create the list of inputImage object pointers
-        if(len(inputImageList) == 0):
-            print "No input images were specified!"
+        
+
+    def _computeStaticMask(self,imageSet):
+        """run static mask step"""   
+                                                                   
+        if (self.doStaticMask and not(self.staticMaskDone)):                                       
+            try:                                                                                
+                staticMask(imageSet, self.parameters, self.saveFiles)       
+            except:                                                                             
+                print "Problem occured during static mask step"                                 
+                return ValueError     
+                                                                          
+        if(self.saveFiles):                                                                     
+            imageSet.staticMask.saveToFile(image.outputNames["staticMask"])                        
+
+    def _computeSky(self,imageSet):
+        """ run sky subtraction """
+
+        if (self.doSkySubtraction and (not(self.skySubtractionDone))):
+            try:
+                sky.subtractSky(imageSet,self.parameters, self.saveFiles)
+            except:
+                print "Problem occured during sky subtraction step"
+                return ValueError
+
+    def _createDrizSep(self,imageSet):
+        """ drizzle seperate images """
+        if (self.doDrizzleSeparate and (not(self.drizzleSeperateDone))):
+            try:
+                self.drizSepList.append(drizzleSeperate(imageSet, self.parameters, self.saveFiles))
+            except:
+                print "Problem running driz seperate step"
+                return ValueError
+
+    def _computeMedian(self,imageList):
+        """ create a median image from the separately drizzled images """
+        try:
+            self.medianImage=mkMedian(imageList, self.parameters,self.saveFiles)
+        except:
+            print "Problem running median combinations step"
             return ValueError
-        else:
-       		for filename in self.fileList:
-            	self.objectList.append(imageObject(filename))
+
+    def _createBlotImages(self):
+        """ create blotted images from the median image """
         
-    
-	def run(self):
-    	"""step through all the functions to perform full drizzling """
-        
-        if (self.doStaticMask && !(self.staticMaskDone)):
-            for imageSet in self.objectList:
-                numchips=imageSet._numchips
-                for chip in range(1,numchips+1,1):
-                    image=imageSet._image[imageSet.scienceExt,chip]
-                	image.staticMask=StaticMask(image)
-                    if(saveFiles):
-                        image.staticMask.saveToFile(image.outputNames["staticMask"])                    
-            
-       	if (self.doSkySubtraction && (!(self.skySubtractionDone)):
-        	subtractSky(self.objectList)
-            
-        if (self.doDrizzleSeparate && !(self.drizzleSeperateDone)):
-        	drizzleSeperate(self.objectList)
-            
-        if (self.doMakeMedian && !(self.medianImagedone)):
-        	medianImage(self.objectList)
-            
-        if (self.doBlot && !self.blotDone && self.medianImageDone):
-        	blot(self.objectList)
-            
-        if (self.doDerivCr && !(self.derivCRDrone)):
-        	derivCR(self.objectList)
-            
-        if (self.doFinalDrizzle && !(self.drizFinalDone)):
-        	drizFinal(self.objectList)    
-         
+        if (self.doBlot and (not(self.blotDone) and self.medianImageDone)):
+            try:
+                blot(self.medianImage, self._filelist, self.parameters,self.saveFiles)
+            except:
+                print "problem running blot image step"
+                return ValueError
+
+    def _calcDerivCr():
+        """ run deriv_cr to look for cosmic rays """
+
+        if (self.doDerivCr and (not(self.derivCRDrone)) ):
+            try:
+                derivCR(self.objectList,self.parameters,self.saveFiles)
+            except:
+                print "Problem running deriv cr step"
+                return ValueError
+
+    def runFinalDrizzle():
+        """ run through the final drizzle process """
+        if (self.doFinalDrizzle and not(self.drizFinalDone)):
+            try:
+                drizFinal(self.objectList,self.parameters,self.saveFiles)    
+            except:
+                print "Problem running final drizzle"
+                return ValueError
+
 
     def _setDefaults(configObj={}):
         """ set the defaults for the user input section"""
@@ -105,7 +173,7 @@ have been run on the images.
         self.doBlot=False
         self.doDerivCr=False
         self.doFinalDrizzle=False
-        
+
         params={'output':'',
                 'mdriztab':'',
                 'refimage':'',
@@ -113,52 +181,28 @@ have been run on the images.
                 'workinplace':False,
                 'updatewcs':True,
                 'proc_unit':'native',
-                'coeffs'='header',
-                'output=''
-                'mdriztab=False
-                'refimage=''
-                'runfile=''
-                'workinplace'=False
-                'updatewcs'=True
-                'proc_unit'="native" 
-                'coeffs'='header'
-                'context'=False
-                'clean'=False
-                'group'=''
-                'ra'='' 
-                'dec'='' 
-                'build'=True
-                'shiftfile'='' 
-                'staticfile'='' }
-        
+                'coeffs':'header',
+                'output':'',
+                'mdriztab':False,
+                'refimage':'',
+                'runfile':'',
+                'workinplace':False,
+                'updatewcs':True,
+                'proc_unit':"native", 
+                'coeffs':'header',
+                'context':False,
+                'clean':False,
+                'group':'',
+                'ra':'', 
+                'dec':'' ,
+                'build':True,
+                'shiftfile':'' ,
+                'staticfile':'' }
+
         #override defaults        
         if(len(configObj) !=0 ):
             for key in configObj:
                 params[key]=configObj[key]
-                
-       return params
 
-if __name__ == __main__:
+        return params
 
-    #parse the command line options
-    usage = "usage: %prog [options]"
-    parser = OptionParser(usage=usage)
-    parser.add_option("-c", "--comments", dest="comments",default="none", type="string",
-                      help="File that contains comments to add", metavar="COMMENTS")
-
-    parser.add_option("-i", "--image", dest="image",default="none", type="string",
-                      help="FITS image to update", metavar="IMAGE")
-
-    parser.add_option("-o", "--overwrite", dest="overimage",action="store_true",
-                      default=0,help="Overwrite original FITS image", metavar="OVERIMAGE")
-
-    parser.add_option("-k", "--keeplog", dest="keeplog", action="store_true",default=0,
-                      help="Keep logfile of results", metavar="KEEPLOG")
-
-    parser.add_option("-l", "--logfile", dest="logfile",default="fixOpticalHdr.log",type="string",
-                      help="file to store log information to",metavar="LOGFILE")
-
-    parser.add_option("-r", "--report", dest="report", default=0, action="store_true",
-                      help="report keywords to log that have N/A values",metavar="REPORT")
-
-    (options, args) = parser.parse_args()

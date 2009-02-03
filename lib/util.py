@@ -140,6 +140,7 @@ def runmakewcs(input):
     input: a list of files
     output: returns a list of names of the modified files
             (For GEIS files returns the translated names.)
+    
     """
     newNames = updatewcs.updatewcs(input, checkfiles=False)
     

@@ -1,16 +1,23 @@
-#
-#   Authors:    Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
-#   Program:    static_mask.py
-#   Purpose:    Class that manages the creation of a global static
-#               mask which is used to mask pixels that are some
-#               sigma BELOW the mode computed for the image.
+"""
+   Authors:    Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
+   Program:    staticMask.py
+   Purpose:    Class that manages the creation of a global static
+               mask which is used to mask pixels that are some
+               sigma BELOW the mode computed for the image.
+
+    This class manages the creation of the global static mask which
+    masks pixels which are negative in the SCI array.
+    A static mask numarray object gets created for each global
+    mask needed, one for each chip from each instrument/detector.
+    Each static mask array has type Int16, and resides in memory.
+
+"""
 
 import numpy as np
-from imagestats import ImageStats
 from pytools import fileutil
 import pyfits
 
-class StaticMask:
+class staticMask:
     """
     This class manages the creation of the global static mask which
     masks pixels which are negative in the SCI array.
@@ -26,6 +33,7 @@ class StaticMask:
 
 
     """
+    
     def __init__ (self, chipImage, configObj={}): 
 
         # For now, we don't use badval. It is supposed to
@@ -95,16 +103,14 @@ class StaticMask:
         """ saves the static mask to a file"""
         
         #check to see if the file already exists on disk
-        if !(fileutil.checkFileExists(filename)):
+        if not (fileutil.checkFileExists(filename)):
             #create a new fits image with the mask array and a standard header
             for mask in self.masklist:
                 #open a new header and data unit
-                fitsobj=pyfits.HDUList()
                 newHDU = pyfits.PrimaryHDU()
-                newHDU.data = masklist[mask]
-                fitsobj.append(newHDU)
-                
+                newHDU.data = masklist[mask]                
             try:
+                newHDU.writeto(filename)
                 print "Saving static mask to disk:",filename
                 
             except IOError:
@@ -114,6 +120,7 @@ class StaticMask:
             
 
     def _setDefaults(configObj={}):
+        """set the default parameters for the class"""
  
         static_sig = 4.0
         static_badval = 64
