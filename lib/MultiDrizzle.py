@@ -80,9 +80,9 @@ class MultiDrizzle:
             _computeSky(imageSet)
             _createDrizSep(imageSet)
 
-            imageSet.close()   
+            imageSet.close()   #the output images have been saved to separate files
 
-        _computeMedian(self.drizSepList) #this step needs a list of all the separately drizled images   
+        _computeMedian() #this step needs a list of all the separately drizled images   
         _createBlotImages()
         _calcDerivCr()
 
@@ -119,15 +119,15 @@ class MultiDrizzle:
         """ drizzle seperate images """
         if (self.doDrizzleSeparate and (not(self.drizzleSeperateDone))):
             try:
-                self.drizSepList.append(drizzleSeperate(imageSet, self.parameters, self.saveFiles))
+                self._drizSepList.append(drizzleSeperate(imageSet, self.parameters, self.saveFiles))
             except:
                 print "Problem running driz seperate step"
                 return ValueError
 
-    def _computeMedian(self,imageList):
+    def _computeMedian(self):
         """ create a median image from the separately drizzled images """
         try:
-            self.medianImage=mkMedian(imageList, self.parameters,self.saveFiles)
+            self.medianImage=mkMedian(self._drizSepList, self.parameters,self.saveFiles)
         except:
             print "Problem running median combinations step"
             return ValueError
@@ -147,7 +147,7 @@ class MultiDrizzle:
 
         if (self.doDerivCr and (not(self.derivCRDrone)) ):
             try:
-                derivCR(self.objectList,self.parameters,self.saveFiles)
+                derivCR(self._objectList,self.parameters,self.saveFiles)
             except:
                 print "Problem running deriv cr step"
                 return ValueError
@@ -156,7 +156,7 @@ class MultiDrizzle:
         """ run through the final drizzle process """
         if (self.doFinalDrizzle and not(self.drizFinalDone)):
             try:
-                drizFinal(self.objectList,self.parameters,self.saveFiles)    
+                drizFinal(self._objectList,self.parameters,self.saveFiles)    
             except:
                 print "Problem running final drizzle"
                 return ValueError

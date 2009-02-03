@@ -34,7 +34,7 @@ class staticMask:
 
     """
     
-    def __init__ (self, chipImage, configObj={}): 
+    def __init__ (self, chipImage=None, configObj={}): 
 
         # For now, we don't use badval. It is supposed to
         # be used to flag back the DQ array of the input
@@ -46,9 +46,14 @@ class staticMask:
         # chipImage is a pointer back to the header+plus data of the chip in imageObject
         # signature is created in the imageObject class
         #
+        
+        if (chipImage == None):
+            print "No image data supplied"
+        else:
+            self.signature=chipImage.signature    
+
         self.parameters=_setDefaults(configObj)
         self.maskPtr=None #points back to the imageObject
-        self.signature=chipImage.signature    
 
     def addMember(self):
         """
