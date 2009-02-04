@@ -93,43 +93,36 @@ def subtractSky(imageSet,configObj={},saveFile=True):
         # for all instruments other than ACS the minimum sky value from all the
         # science chips in the exposure is used as the reference sky for each chip
 
+        # Set up a dictionary of computed sky values with the EXPNAMEs as the
+        # keys.  This allows the code to determine the minimum for each 
+        # exposure regardless of instrument or file structure and apply the
+        # correct sky value to each exposure's chips. 
         print "Computing minimum sky ..."
-        minSky=[] #store the sky for each chip
-                    
-        if ("STIS" in imageSet._instrument):
-            for chip in range(1,numchips+1,1):
-                # We need to account for the fact that STIS associations contain
-                # separate exposures for the same chip within the same file.
-                # In those cases, we do not want to use the minimum sky value
-                # for the set of chips, but rather use each chip's own value.
-                # NOTE: This can be generalized later with changes to PyDrizzle
-                #       to provide an attribute that specifies whether each member
-                #       associated with file is a separate exposure or not.
-                #   WJH/CJH 
-                image=imageSet._image[sciExt,chip]
-                _skyValue=_computeSky(image,paramDict)
-                _subtractSky(image,_skyValue)
-                _updateKW(image,skyKW,_skyValue)
-        
-        else:
-            for chip in range(1,numchips+1,1):
-            	    myext=sciExt+","+str(chip)
-                    image=imageSet[myext]
-                    _skyValue= _computeSky(image, paramDict, memmap=0)
-                    minSky.append(_skyValue)
-                    image.computedSky=_skyValue #update the keyword in the actual header here as well?
+        minSky={} #store the sky for each chip
+        for chip in range(1,numchips+1,1):
+            myext=sciExt+","+str(chip)
+            image=imageSet[myext]
+            expname = image.header['expname']
+            _skyValue= _computeSky(image, paramDict, memmap=0)
+            if minSky.has_key(expname):
+                minSky[expname].append(_skyValue)
+            else:
+                minSky[expname] = [_skyValue]
+            #update the keyword in the actual header here as well?
+            image.computedSky=_skyValue 
 
-            _skyValue=min(minSky) #what if the sky is negative?
-            print "Minimum sky value determined:",_skyValue
-            
-            #now subtract that value from all the chips in the exposure
-            #and update the chips header keyword with the sub
-            for chip in range(1,numchips+1,1):
-                image=imageSet._image[sciExt,chip]
-                _subtractSky(image,_skyValue)
-                _updateKW(image,skyKW,_skyValue)
+        #now subtract that value from all the chips in the exposure
+        #and update the chips header keyword with the sub
+        for chip in range(1,numchips+1,1):
+            image=imageSet._image[sciExt,chip]
+            expname = image.header['expname']
+            _skyValue = min(minSky[expname])
+            print "Minimum sky value for ",expname,":",_skyValue
+            _subtractSky(image,_skyValue)
+            _updateKW(image,skyKW,_skyValue)
             
         #update the value of MDRIZSKY in the global header
+        # This does not make sense for STIS ASN files...
         _updateKW(imageSet[0],skyKW,_skyValue)
    
     if(saveFile):
