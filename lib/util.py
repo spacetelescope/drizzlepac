@@ -3,7 +3,9 @@
 A library of utility functions
 
 """
-from pytools import asnutil
+from pytools import asnutil,fileutil
+import buildmask
+from updatewcs import wcsutil
 
 def findrootname(filename):
     """
@@ -203,3 +205,85 @@ def setOutputNames(filename):
             'outSky':outSky}
 
     return fnames
+
+####
+#
+# The following functions were required for use with the drizzling code
+# and were copied in from pydrizzle_tng.py.
+#
+####
+
+def get_hstwcs(filename,hdulist,hdr,primary_hdr):
+    ''' Return the HSTWCS object for a given chip.
+    
+    '''
+    exptimes = get_exptime(hdr,primary_hdr)
+
+    hdrwcs = wcsutil.HSTWCS(primary_hdr,hdr,hdulist)
+    hdrwcs.filename = filename
+    hdrwcs.expname = hdr['expname']
+    hdrwcs.extver = hdr['extver']
+
+    # Ideally, this would get added as an attribute of the InputImage class
+    # rather than as an attribute of the HSTWCS class
+    hdrwcs.exptime = exptimes[0]
+    hdrwcs.expstart = exptimes[1]
+    hdrwcs.expend = exptimes[2]
+    
+    return hdrwcs
+
+def get_exptime(header,primary_hdr):
+
+    if primary_hdr.has_key('exptime'):
+        exphdr = primary_hdr
+    else:
+        exphdr = header
+        
+    exptime = float(exphdr['EXPTIME'])
+    if exptime == 0.: exptime = 1.0
+
+    if exphdr.has_key('EXPSTART'):
+        expstart = float(exphdr['EXPSTART'])
+        expend = float(exphdr['EXPEND'])
+    else:
+        expstart = 0.
+        expend = exptime
+
+    return (exptime,expstart,expend)
+
+def build_masks(dqname,expname,detnum,dq_extn,bits_single,bits_final,extver,instrument):
+    '''Build masks for a given chip. '''
+    
+    dqfm = buildmask.buildMaskName(fileutil.buildNewRootname(expname),detnum)
+    print '[util.build_masks] dqfm: ',dqfm
+
+    # The WFPC2 specific logic will need to be pulled in as
+    # an InputImage class method.
+    if bits_final != None:
+        if instrument != 'WFPC2':
+            print 'building mask for ',dq_extn,',',extver,' for output ',dqfm
+            final_mask = buildmask.buildMaskImage(dqname,bits_final,dqfm,extname=dq_extn,extver=extver)
+        else:
+            final_mask = buildmask.buildShadowMaskImage(dqname,detnum,extver,dqfm, bitvalue=bits_final, binned=binned)
+    else:
+        dqfm = None
+
+    if bits_single != None:
+        dqsm = dqfm.replace('final','single')
+        if instrument != 'WFPC2':
+            print 'building mask for ',dq_extn,',',extver,' for output ',dqsm
+            single_mask = buildmask.buildMaskImage(dqname,bits_single,dqsm,extname=dq_extn,extver=extver)
+        else:
+            single_mask = buildmask.buildShadowMaskImage(dqname,detnum,extver,dqsm, bitvalue=bits_single, binned=binned)
+    else:
+        dqsm = None
+    return dqsm,dqfm
+
+def get_detnum(hstwcs,filename,extnum):
+    detnum = None
+    binned = None
+    if hstwcs.filename == filename and hstwcs.extver == extnum:
+        detnum = hstwcs.chip
+        binned = hstwcs.binned
+
+    return detnum,binned

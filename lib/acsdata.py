@@ -46,7 +46,7 @@ def getACSInfo(filename):
 
     #find out the number of science images/chips/units that are contained
     #in the file.
-    keywords["NUMCHIPS"]=countSCI(    
+    #keywords["NUMCHIPS"]=countSCI( )   
     
     
     keywords["GAIN"]=float(primaryHeader["ATODGNA"])
@@ -93,7 +93,7 @@ def getflat(imageInformation,chip):
     # units of electrons.
 
     filename = imageInformation['PFLTFILE']
-    flatExt=
+    #flatExt=
     
     try:
         handle = fileutil.openImage(filename,mode='readonly',memmap=0)
@@ -163,4 +163,3 @@ def _setDefaultSBCGain(self):
 
 def _setDefaultSBCReadnoise(self):
     self._rdnoise = 0
-"""

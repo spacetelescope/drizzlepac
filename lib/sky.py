@@ -66,7 +66,7 @@ def subtractSky(imageSet,configObj={},saveFile=True):
  
 
     # User Subtraction Case, User has done own sky subtraction,  
-	# so use the image header value for subtractedsky value    
+    # so use the image header value for subtractedsky value    
     if paramDict["skyuser"] != '':
         print "User has done their own sky subtraction, updating MDRIZSKY with supplied value..."
        

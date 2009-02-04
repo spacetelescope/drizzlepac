@@ -13,28 +13,29 @@ import util
 
 
 class MultiDrizzle:
-"""
+    """
 
-Create an object which contains the basic
-information for multidrizzle including the
-steps which have been performed and
-a run function to actually "multidrizzle"
-all the images together.
+    Create an object which contains the basic
+    information for multidrizzle including the
+    steps which have been performed and
+    a run function to actually "multidrizzle"
+    all the images together.
 
-This includes the list of image files that
-the user supplied, and the steps that
-have been run on the images.
+    This includes the list of image files that
+    the user supplied, and the steps that
+    have been run on the images.
 
-"""	
+    """
 
-	def __init__(self,inputImageList=[],configObj={}):
-    
-    	"""Check to see what kind of file input was given"""
+    def __init__(self,inputImageList=[],configObj={}):
+
+        """Check to see what kind of file input was given"""
+
         self.ivmList=[] #just to open the list, hmm, should each image have an ivm attribute?
-   		self.objectList=[] #the list of imageObject object references       
+        self.objectList=[] #the list of imageObject object references       
         self.fileList=[] #the list of filenames given by the user, and parsed by the code
                          #there should be one imageObject for each file in the list
-		
+
         #Keep track of steps to perform on the object
         self.staticMaskDone=False
         self.skySubtractionDone=False
@@ -52,34 +53,34 @@ have been run on the images.
             print "No input images were specified!"
             return ValueError
         else:
-       		for filename in self.fileList:
+            for filename in self.fileList:
             	self.objectList.append(imageObject(filename))
         
     
-	def run(self):
-    	"""step through all the functions to perform full drizzling """
-        
-        if (self.doStaticMask && !(self.staticMaskDone)):
-        	staticMask(self.objectList)
+    def run(self):
+        """step through all the functions to perform full drizzling """
+
+        if (self.doStaticMask and (not self.staticMaskDone)):
+            staticMask(self.objectList)
+      
+        if (self.doSkySubtraction and (not self.skySubtractionDone)):
+            subtractSky(self.objectList)
             
-       	if (self.doSkySubtraction && (!(self.skySubtractionDone)):
-        	subtractSky(self.objectList)
-            
-        if (self.doDrizzleSeparate && !(self.drizzleSeperateDone)):
-        	drizzleSeperate(self.objectList)
-            
-        if (self.doMakeMedian && !(self.medianImagedone)):
+        if (self.doDrizzleSeparate and (not self.drizSeperateDone)):
+        	drizSeparate(self.objectList)
+
+        if (self.doMakeMedian and (not self.medianImagedone)):
         	medianImage(self.objectList)
-            
-        if (self.doBlot && !self.blotDone && self.medianImageDone):
+
+        if (self.doBlot and not self.blotDone and self.medianImageDone):
         	blot(self.objectList)
-            
-        if (self.doDerivCr && !(self.derivCRDrone)):
+
+        if (self.doDerivCr and (not self.derivCRDrone)):
         	derivCR(self.objectList)
-            
-        if (self.doFinalDrizzle && !(self.drizFinalDone)):
+       
+        if (self.doFinalDrizzle and (not self.drizFinalDone)):
         	drizFinal(self.objectList)    
-         
+
 
     def _setDefaults(configObj={}):
         """ set the defaults for the user input section"""
@@ -100,27 +101,27 @@ have been run on the images.
                 'workinplace':False,
                 'updatewcs':True,
                 'proc_unit':'native',
-                'coeffs'='header',
-                'output=''
-                'mdriztab=False
-                'refimage=''
-                'runfile=''
-                'workinplace'=False
-                'updatewcs'=True
-                'proc_unit'="native" 
-                'coeffs'='header'
-                'context'=False
-                'clean'=False
-                'group'=''
-                'ra'='' 
-                'dec'='' 
-                'build'=True
-                'shiftfile'='' 
-                'staticfile'='' }
+                'coeffs':'header',
+                'output':'',
+                'mdriztab':False,
+                'refimage':'',
+                'runfile':'',
+                'workinplace':False,
+                'updatewcs':True,
+                'proc_unit':"native", 
+                'coeffs':'header',
+                'context':False,
+                'clean':False,
+                'group':'',
+                'ra':'', 
+                'dec':'', 
+                'build':True,
+                'shiftfile':'', 
+                'staticfile':'' }
         
         #override defaults        
         if(len(configObj) !=0 ):
             for key in configObj:
                 params[key]=configObj[key]
                 
-       return params
+        return params
