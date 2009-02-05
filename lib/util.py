@@ -251,33 +251,18 @@ def get_exptime(header,primary_hdr):
 
     return (exptime,expstart,expend)
 
-def build_masks(dqname,expname,detnum,dq_extn,bits_single,bits_final,extver,instrument):
-    '''Build masks for a given chip. '''
-    
-    dqfm = buildmask.buildMaskName(fileutil.buildNewRootname(expname),detnum)
-    print '[util.build_masks] dqfm: ',dqfm
-
+def build_mask(dqname,mask_name,detnum,dq_extn,bits,extver,instrument):
+    '''Build masks for a given chip. This can be called for either single_mask
+       or final_mask creation.    
+    '''
     # The WFPC2 specific logic will need to be pulled in as
     # an InputImage class method.
-    if bits_final != None:
+    if bits != None:
+        print 'building mask for ',dq_extn,',',extver,' for output ',mask_name
         if instrument != 'WFPC2':
-            print 'building mask for ',dq_extn,',',extver,' for output ',dqfm
-            final_mask = buildmask.buildMaskImage(dqname,bits_final,dqfm,extname=dq_extn,extver=extver)
+            out_mask = buildmask.buildMaskImage(dqname,bits,mask_name,extname=dq_extn,extver=extver)
         else:
-            final_mask = buildmask.buildShadowMaskImage(dqname,detnum,extver,dqfm, bitvalue=bits_final, binned=binned)
-    else:
-        dqfm = None
-
-    if bits_single != None:
-        dqsm = dqfm.replace('final','single')
-        if instrument != 'WFPC2':
-            print 'building mask for ',dq_extn,',',extver,' for output ',dqsm
-            single_mask = buildmask.buildMaskImage(dqname,bits_single,dqsm,extname=dq_extn,extver=extver)
-        else:
-            single_mask = buildmask.buildShadowMaskImage(dqname,detnum,extver,dqsm, bitvalue=bits_single, binned=binned)
-    else:
-        dqsm = None
-    return dqsm,dqfm
+            out_mask = buildmask.buildShadowMaskImage(dqname,detnum,extver,mask_name, bitvalue=bits, binned=binned)
 
 def get_detnum(hstwcs,filename,extnum):
     detnum = None
