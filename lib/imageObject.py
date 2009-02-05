@@ -6,7 +6,7 @@ each input filename
 """
 
 import sys
-import util
+import util,wcs_functions
 from pytools import fileutil
 import buildmask
 
@@ -60,15 +60,18 @@ class imageObject():
             sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
 
             # build up HSTWCS object for each chip, which will be necessary for drizzling operations
-            sci_chip.wcs=util.get_hstwcs(self._filename,self._image,sci_chip.header,self._image['PRIMARY'].header)
+            sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.header,self._image['PRIMARY'].header)
             sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
 
-           #assuming all the chips dont have the same dimensions in the file
-            sci_chip._naxis1=self._image[self.scienceExt,chip].header["NAXIS1"]
-            sci_chip._naxis2=self._image[self.scienceExt,chip].header["NAXIS2"]            
+            #assuming all the chips don't have the same dimensions in the file
+            sci_chip._naxis1=sci_chip.header["NAXIS1"]
+            sci_chip._naxis2=sci_chip.header["NAXIS2"]            
             sci_chip.outputNames=util.setOutputNames(sci_chip.rootname) #this is a dictionary
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
-            sci_chip.extver = chip
+
+            # record the exptime values for this chip so that it can be
+            # easily used to generate the composite value for the final output image
+            sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
                         
             # Define mask names as additional entries into outputNames dictionary
             sci_chip.outputNames['driz_mask']=sci_chip.dqrootname+'_final_mask.fits'
@@ -85,10 +88,12 @@ class imageObject():
         """assign a unique rootname for the image based in the expname"""
         extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
         extver=self._image[self.scienceExt,chip].header["EXTVER"]
-        expname=self._image[self.scienceExt,chip].header["EXPNAME"]
-        self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
+        expname=self._image[self.scienceExt,chip].header["EXPNAME"].lower()
+
         # record extension-based name to reflect what extension a mask file corresponds to
+        self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
         self._image[self.scienceExt,chip].dqrootname=self._rootname + "_" + extname + str(extver)
+        self._image[self.scienceExt,chip]._expname=expname
 
 
     def _assignDQName(self,chip):
@@ -112,7 +117,7 @@ class imageObject():
         
         self._image[self.scienceExt,chip].signature=[instr+detector,(nx,ny),detnum]
         self._image[self.scienceExt,chip].outputNames["staticMask"]=instr+"_"+detector+"_"+str(nx)+"x"+str(ny)+"_"+str(detnum)+"_staticMask.fits"
-        
+            
     def _find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
             which that DQ extension should be read from.
@@ -141,7 +146,18 @@ class imageObject():
     def getHeader(self,exten=None):
         """return just the specified header extension"""
         return fileutil.getExtn(self._image,extn=exten).header
-        
+    
+    def getKeywordList(self,kw):
+        """return lists of all exptime,expstart,expend values 
+           for all chips in the imageObject
+        """
+        kwlist = []
+        for chip in range(1,self._numchips+1,1):
+            sci_chip = self._image[self.scienceExt,chip]
+            kwlist.append(sci_chip.__dict__[kw])
+            
+        return kwlist
+                
     def getExtensions(self,extname='SCI',section=None):
         ''' Return the list of EXTVER values for extensions with name specified in extname.
         '''
@@ -163,6 +179,7 @@ class imageObject():
     
     def __setitem__(self,kw,value):
         """overload setitem to update information, not sure this is right yet"""
+        # This operation only updates keyword values in the primary header
         self._image.header.update[kw] = value
     
     def __cmp__(self, other):

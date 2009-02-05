@@ -6,3 +6,4 @@ def drizSeparate(objectList,configObj={}):
     
 def drizFinal(objectList, configObj={}):
     pass
+    

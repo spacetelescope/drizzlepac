@@ -3,9 +3,10 @@
 A library of utility functions
 
 """
+import numpy as np
 from pytools import asnutil,fileutil
 import buildmask
-from updatewcs import wcsutil
+
 
 def findrootname(filename):
     """
@@ -213,44 +214,6 @@ def setOutputNames(filename):
 #
 ####
 
-def get_hstwcs(filename,hdulist,hdr,primary_hdr):
-    ''' Return the HSTWCS object for a given chip.
-    
-    '''
-    exptimes = get_exptime(hdr,primary_hdr)
-
-    hdrwcs = wcsutil.HSTWCS(primary_hdr,hdr,hdulist)
-    hdrwcs.filename = filename
-    hdrwcs.expname = hdr['expname']
-    hdrwcs.extver = hdr['extver']
-
-    # Ideally, this would get added as an attribute of the InputImage class
-    # rather than as an attribute of the HSTWCS class
-    hdrwcs.exptime = exptimes[0]
-    hdrwcs.expstart = exptimes[1]
-    hdrwcs.expend = exptimes[2]
-    
-    return hdrwcs
-
-def get_exptime(header,primary_hdr):
-
-    if primary_hdr.has_key('exptime'):
-        exphdr = primary_hdr
-    else:
-        exphdr = header
-        
-    exptime = float(exphdr['EXPTIME'])
-    if exptime == 0.: exptime = 1.0
-
-    if exphdr.has_key('EXPSTART'):
-        expstart = float(exphdr['EXPSTART'])
-        expend = float(exphdr['EXPEND'])
-    else:
-        expstart = 0.
-        expend = exptime
-
-    return (exptime,expstart,expend)
-
 def build_mask(dqname,mask_name,detnum,dq_extn,bits,extver,instrument):
     '''Build masks for a given chip. This can be called for either single_mask
        or final_mask creation.    
@@ -272,3 +235,71 @@ def get_detnum(hstwcs,filename,extnum):
         binned = hstwcs.binned
 
     return detnum,binned
+
+def get_exptime(header,primary_hdr):
+
+    if primary_hdr.has_key('exptime'):
+        exphdr = primary_hdr
+    else:
+        exphdr = header
+        
+    exptime = float(exphdr['EXPTIME'])
+    if exptime == 0.: exptime = 1.0
+
+    if exphdr.has_key('EXPSTART'):
+        expstart = float(exphdr['EXPSTART'])
+        expend = float(exphdr['EXPEND'])
+    else:
+        expstart = 0.
+        expend = exptime
+
+    return (exptime,expstart,expend)
+
+def compute_texptime(imageObjectList):
+    """
+    Add up the exposure time for all the members in
+    the pattern, since 'drizzle' doesn't have the necessary
+    information to correctly set this itself.
+    """
+    expnames = []
+    exptimes = []
+    start = []
+    end = []
+    for img in imageObjectList:
+        expnames += img.getKeywordList('_expname')
+        exptimes += img.getKeywordList('_exptime')
+        start += img.getKeywordList('_expstart')
+        end += img.getKeywordList('_expend')
+    
+    exptime = 0.
+    expstart = min(start)
+    expend = max(end)
+    exposure = None
+    for n in range(len(expnames)):
+        if expnames[n] != exposure:
+            exposure = expnames[n]
+            exptime += exptimes[n]
+
+    return (exptime,expstart,expend)
+
+def computeRange(corners):
+    """ Determine the range spanned by an array of pixel positions. """
+    _xrange = (np.minimum.reduce(corners[:,0]),np.maximum.reduce(corners[:,0]))
+    _yrange = (np.minimum.reduce(corners[:,1]),np.maximum.reduce(corners[:,1]))
+    return _xrange,_yrange
+
+def getRotatedSize(corners,angle):
+    """ Determine the size of a rotated (meta)image."""
+    # If there is no rotation, simply return original values
+    if angle == 0.:
+        _corners = corners
+    else:
+        # Find center
+        #_xr,_yr = computeRange(corners)
+        #_cen = ( ((_xr[1] - _xr[0])/2.)+_xr[0],((_yr[1]-_yr[0])/2.)+_yr[0])
+        _rotm = fileutil.buildRotMatrix(angle)
+        # Rotate about the center
+        #_corners = N.dot(corners - _cen,_rotm)
+        _corners = np.dot(corners,_rotm)
+
+    return computeRange(_corners)
