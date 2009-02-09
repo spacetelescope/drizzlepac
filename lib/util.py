@@ -168,45 +168,6 @@ def update_input(filelist, ivmlist=None, removed_files=None):
         return newfilelist, ivmlist 
 
 
-
-def setOutputNames(filename):
-    """
-    Define the default output filenames for drizzle products,
-    these are based on the original rootname of the image 
-    
-    filename should be just 1 filename, so call this in a loop
-    for chip names contained inside a file
-    
-    """
-
-    # Define FITS output filenames for intermediate products
-    outFinal = filename+'_drz.fits'
-    outSci = filename+'_sci.fits'
-    outWeight = filename+'_weight.fits'
-    outContext = filename+'_context.fits'
-    outSky = filename + '_sky.fits'
-    blotImage = filename + '_blot.fits'
-    crImage = filename + '_cr.fits'
-    outSingle = filename+'_single.fits'
-    outSWeight = filename+'_wht.fits'
-    outSContext = None
-        
-    fnames={'outFinal':outFinal,
-            'outSci':outSci,
-            'outWeight':outWeight,
-            'outContext':outContext,
-            'outSingle':outSingle,
-            'outSWeight':outSWeight,
-            'outSContext':outSContext,
-            'blotImage':blotImage,
-            'crImage':crImage,
-            'outSingle':outSingle,
-            'outSWeight':outSWeight,
-            'outSContext':outSContext,
-            'outSky':outSky}
-
-    return fnames
-
 ####
 #
 # The following functions were required for use with the drizzling code

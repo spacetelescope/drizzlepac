@@ -113,6 +113,7 @@ def subtractSky(imageSet,configObj={},saveFile=True):
             print "Minimum sky value for chip "+str(chip),_skyValue
             _subtractSky(image,_skyValue)
             _updateKW(image,skyKW,_skyValue)
+            del image.data
             
         #update the value of MDRIZSKY in the global header
         # This does not make sense for STIS ASN files...

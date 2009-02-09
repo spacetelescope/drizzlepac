@@ -36,20 +36,21 @@ class imageObject():
             self._image=fileutil.openImage(filename,clobber=False,memmap=0)
             
         except IOError:
-            print "\Unable to open file:",filename
+            print "\nUnable to open file:",filename
             raise IOError
             
 
         #populate the global attributes which are good for all the chips in the file
-        self._instrument=self._image[0].header["INSTRUME"]
+        self._instrument=self._image['PRIMARY'].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
         self.maskExt='DQ' #the extension with the mask image in it
-        self._filename=self._image[0].header["FILENAME"] 
-        self._rootname=self._image[0].header["ROOTNAME"]
-        self.outputNames=util.setOutputNames(self._rootname)
+        self._filename=self._image['PRIMARY'].header["FILENAME"] 
+        self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
+        self.outputNames=_setOutputNames(self._rootname)
          
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
+
         #assign chip specific information
         for chip in range(1,self._numchips+1,1):
             self._assignRootname(chip)
@@ -66,7 +67,7 @@ class imageObject():
             #assuming all the chips don't have the same dimensions in the file
             sci_chip._naxis1=sci_chip.header["NAXIS1"]
             sci_chip._naxis2=sci_chip.header["NAXIS2"]            
-            sci_chip.outputNames=util.setOutputNames(sci_chip.rootname) #this is a dictionary
+            sci_chip.outputNames=_setOutputNames(sci_chip.rootname) #this is a dictionary
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
 
             # record the exptime values for this chip so that it can be
@@ -76,6 +77,7 @@ class imageObject():
             # Define mask names as additional entries into outputNames dictionary
             sci_chip.outputNames['driz_mask']=sci_chip.dqrootname+'_final_mask.fits'
             sci_chip.outputNames['single_driz_mask']=sci_chip.outputNames['driz_mask'].replace('final','single')
+
             #
             # SYNTAX for creating mask files:
             #for final mask
@@ -83,6 +85,44 @@ class imageObject():
             #for single mask
             #util.build_mask(sci_chip.dqfile,sci_chip.outputNames['single_driz_mask'],sci_chip.detnum,sci_chip.dq_extn,bits_single,chip,self._instrument)
             # static_mask needs to be applied to single_driz_mask upon creation
+
+
+    def __getitem__(self,exten):
+        """overload  getitem to return the data and header"""
+        return fileutil.getExtn(self._image,extn=exten)
+    
+    def __setitem__(self,kw,value):
+        """overload setitem to update information, not sure this is right yet"""
+        # This operation only updates keyword values in the primary header
+        self._image.header.update(kw,value)
+    
+    def __cmp__(self, other):
+        """overload the comparison operator
+            just to check the filename of the object?
+         """
+        if isinstance(other,imageObject):
+            if (self._filename == other._filename):
+                return True            
+        return False
+    
+    def info(self):
+        """return fits information on the _image"""
+        self._image.info()    
+        
+    
+    def close(self):
+        """close the object nicely"""
+        self._image.close()  
+        #do we want to  del self._image here?     
+
+    def getData(self,exten=None):
+        """return just the specified data extension """
+        return fileutil.getExtn(self._image,extn=exten).data
+        
+    def getHeader(self,exten=None):
+        """return just the specified header extension"""
+        return fileutil.getExtn(self._image,extn=exten).header
+
 
     def _assignRootname(self, chip):
         """assign a unique rootname for the image based in the expname"""
@@ -110,7 +150,7 @@ class imageObject():
            
         """
         instr=self._instrument
-        detector=self._image[0].header["DETECTOR"]
+        detector=self._image['PRIMARY'].header["DETECTOR"]
         nx=self._image[self.scienceExt,chip]._naxis1
         ny=self._image[self.scienceExt,chip]._naxis2
         detnum = self._image[self.scienceExt,chip].detnum
@@ -118,6 +158,46 @@ class imageObject():
         self._image[self.scienceExt,chip].signature=[instr+detector,(nx,ny),detnum]
         self._image[self.scienceExt,chip].outputNames["staticMask"]=instr+"_"+detector+"_"+str(nx)+"x"+str(ny)+"_"+str(detnum)+"_staticMask.fits"
             
+
+    def _setOutputNames(self,rootname):
+        """
+        Define the default output filenames for drizzle products,
+        these are based on the original rootname of the image 
+
+        filename should be just 1 filename, so call this in a loop
+        for chip names contained inside a file
+
+        """
+
+        # Define FITS output filenames for intermediate products
+        outFinal = filename+'_drz.fits'
+        outSci = filename+'_sci.fits'
+        outWeight = filename+'_weight.fits'
+        outContext = filename+'_context.fits'
+        outSky = filename + '_sky.fits'
+        blotImage = filename + '_blot.fits'
+        crImage = filename + '_cr.fits'
+        outSingle = filename+'_single.fits'
+        outSWeight = filename+'_wht.fits'
+        outSContext = None
+
+        fnames={'outFinal':outFinal,
+                'outSci':outSci,
+                'outWeight':outWeight,
+                'outContext':outContext,
+                'outSingle':outSingle,
+                'outSWeight':outSWeight,
+                'outSContext':outSContext,
+                'blotImage':blotImage,
+                'crImage':crImage,
+                'outSingle':outSingle,
+                'outSWeight':outSWeight,
+                'outSContext':outSContext,
+                'outSky':outSky}
+
+        return fnames
+
+
     def _find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
             which that DQ extension should be read from.
@@ -139,13 +219,6 @@ class imageObject():
 
         return dqfile,dq_suffix
             
-    def getData(self,exten=None):
-        """return just the specified data extension """
-        return fileutil.getExtn(self._image,extn=exten).data
-        
-    def getHeader(self,exten=None):
-        """return just the specified header extension"""
-        return fileutil.getExtn(self._image,extn=exten).header
     
     def getKeywordList(self,kw):
         """return lists of all exptime,expstart,expend values 
@@ -173,32 +246,6 @@ class imageObject():
 
         return section
            
-    def __getitem__(self,exten):
-        """overload  getitem to return the data and header"""
-        return fileutil.getExtn(self._image,extn=exten)
-    
-    def __setitem__(self,kw,value):
-        """overload setitem to update information, not sure this is right yet"""
-        # This operation only updates keyword values in the primary header
-        self._image.header.update[kw] = value
-    
-    def __cmp__(self, other):
-        """overload the comparison operator???
-            just to check the filename of the object
-         """
-        if isinstance(other,imageObject):
-            if (self._filename == other._filename):
-                return True            
-        return False
-    
-    def info(self):
-        """return fits information on the _image"""
-        self._image.info()    
-        
-    
-    def close(self):
-        """close the object nicely"""
-        self._image.close()       
         
          
     def _countEXT(self,extname='SCI'):
@@ -210,7 +257,7 @@ class imageObject():
 
         _sciext="SCI"
         count=0
-        nextend=self._image[0].header["NEXTEND"]
+        nextend=self._image['PRIMARY'].header["NEXTEND"]
 
         for i in range (1,nextend,1):
             if (self._image[i].header["EXTNAME"] == extname):

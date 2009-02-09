@@ -80,13 +80,13 @@ class MultiDrizzle:
             _computeSky(imageSet)
             _createDrizSep(imageSet)
 
-            imageSet.close()   #the output images have been saved to separate files
+            imageSet.close()   #the output images have been saved to larger separate files
 
         _computeMedian() #this step needs a list of all the separately drizled images   
         _createBlotImages()
         _calcDerivCr()
 
-        _runFinalDrizzle()
+        _runFinalDrizzle() #give it the list of images
 
         print "MultiDrizzle finished!"
         
