@@ -170,15 +170,15 @@ class imageObject():
         """
 
         # Define FITS output filenames for intermediate products
-        outFinal = filename+'_drz.fits'
-        outSci = filename+'_sci.fits'
-        outWeight = filename+'_weight.fits'
-        outContext = filename+'_context.fits'
-        outSky = filename + '_sky.fits'
-        blotImage = filename + '_blot.fits'
-        crImage = filename + '_cr.fits'
-        outSingle = filename+'_single.fits'
-        outSWeight = filename+'_wht.fits'
+        outFinal = rootname+'_drz.fits'
+        outSci = rootname+'_sci.fits'
+        outWeight = rootname+'_weight.fits'
+        outContext = rootname+'_context.fits'
+        outSky = rootname + '_sky.fits'
+        blotImage = rootname + '_blot.fits'
+        crImage = rootname + '_cr.fits'
+        outSingle = rootname+'_single.fits'
+        outSWeight = rootname+'_wht.fits'
         outSContext = None
 
         fnames={'outFinal':outFinal,
