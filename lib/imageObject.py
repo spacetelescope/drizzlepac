@@ -46,7 +46,7 @@ class imageObject():
         self.maskExt='DQ' #the extension with the mask image in it
         self._filename=self._image['PRIMARY'].header["FILENAME"] 
         self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
-        self.outputNames=_setOutputNames(self._rootname)
+        self.outputNames=self._setOutputNames(self._rootname)
          
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
@@ -67,7 +67,7 @@ class imageObject():
             #assuming all the chips don't have the same dimensions in the file
             sci_chip._naxis1=sci_chip.header["NAXIS1"]
             sci_chip._naxis2=sci_chip.header["NAXIS2"]            
-            sci_chip.outputNames=_setOutputNames(sci_chip.rootname) #this is a dictionary
+            sci_chip.outputNames=self._setOutputNames(sci_chip.rootname) #this is a dictionary
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
 
             # record the exptime values for this chip so that it can be

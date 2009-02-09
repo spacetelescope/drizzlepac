@@ -97,7 +97,7 @@ class MultiDrizzle:
                                                                    
         if (self.doStaticMask and not(self.staticMaskDone)):                                       
             try:                                                                                
-                staticMask(imageSet, self.parameters, self.saveFiles)       
+                staticMask(imageSet, self.parameters,self.saveFiles)       
             except:                                                                             
                 print "Problem occured during static mask step"                                 
                 return ValueError     
