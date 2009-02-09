@@ -54,9 +54,9 @@ class imageObject():
         #assign chip specific information
         for chip in range(1,self._numchips+1,1):
             self._assignRootname(chip)
-            self._staticmask=None #this will be replaced with a  pointer to a StaticMask object
             sci_chip = self._image[self.scienceExt,chip]
-            
+            sci_chip._staticmask=None #this will be replaced with a  pointer to a StaticMask object
+
             sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               
             sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
 

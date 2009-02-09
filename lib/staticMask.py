@@ -34,7 +34,7 @@ class staticMask:
 
     """
     
-    def __init__ (self, chipImage=None, configObj={}, saveFiles=True): 
+    def __init__ (self, chipImage=None, configObj={}): 
 
         # For now, we don't use badval. It is supposed to
         # be used to flag back the DQ array of the input
@@ -53,8 +53,6 @@ class staticMask:
             self.signature=chipImage.signature    
 
         self.parameters=self._setDefaults(configObj)
-        self.maskPtr=None #points back to the imageObject
-        self.saveFiles=saveFiles
 
     def addMember(self):
         """
@@ -128,7 +126,7 @@ class staticMask:
                 
             
 
-    def _setDefaults(configObj={}):
+    def _setDefaults(self,configObj={}):
         """set the default parameters for the class"""
  
         static_sig = 4.0
