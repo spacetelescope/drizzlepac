@@ -111,7 +111,8 @@ class MultiDrizzle:
                                                                    
         if (self.doStaticMask and not(self.staticMaskDone)):                                       
             try:                                                                                
-                self.staticMask.addMember(imageSet)       
+                self.staticMask.addMember(imageSet)     
+                self.staticMaskDone=True  
             except:                                                                             
                 print "Problem occured during static mask step"                                 
                 return ValueError     
@@ -119,6 +120,7 @@ class MultiDrizzle:
         else:
             print "Step is not properly setup"
             return ValueError
+                                          
                                                                               
         if(self.saveFiles):                                                                     
             self.staticMask.saveToFile()                        
@@ -129,6 +131,7 @@ class MultiDrizzle:
         if (self.doSkySubtraction and (not(self.skySubtractionDone))):
             try:
                 sky.subtractSky(imageSet,self.parameters, self.saveFiles)
+                self.skySubtractionDone=True
             except:
                 print "Problem occured during sky subtraction step"
                 return ValueError
@@ -138,6 +141,7 @@ class MultiDrizzle:
         if (self.doDrizzleSeparate and (not(self.drizzleSeparateDone))):
             try:
                 self._drizSepList.append(drizzleSeparate(imageSet, self.parameters, self.saveFiles))
+                self.drizzleSeparateDone=True
             except:
                 print "Problem running driz separate step"
                 return ValueError
@@ -148,6 +152,7 @@ class MultiDrizzle:
         if(self.drizzleSeparateDone):
             try:
                 self.medianImage=mkMedian(self._drizSepList, self.parameters,self.saveFiles)
+                self.medianImageDone=True
             except:
                 print "Problem running median combinations step"
                 return ValueError
@@ -158,6 +163,7 @@ class MultiDrizzle:
         if (self.doBlot and (not(self.blotDone) and self.medianImageDone)):
             try:
                 blot(self.medianImage, self._fileList, self.parameters,self.saveFiles)
+                self.blotDone=True
             except:
                 print "problem running blot image step"
                 return ValueError
@@ -168,6 +174,7 @@ class MultiDrizzle:
         if (self.doDerivCr and (not(self.derivCRDrone)) ):
             try:
                 derivCR(self._objectList,self.parameters,self.saveFiles)
+                self.dericCRDone=True
             except:
                 print "Problem running deriv cr step"
                 return ValueError
