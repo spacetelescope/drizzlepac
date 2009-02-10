@@ -29,7 +29,7 @@ class imageObject():
     
     """
     
-    def __init__(self,filename=None):
+    def __init__(self,filename):
         
         #filutil open returns a pyfits object
         try:
@@ -44,7 +44,8 @@ class imageObject():
         self._instrument=self._image['PRIMARY'].header["INSTRUME"]
         self.scienceExt= 'SCI' # the extension the science image is stored in
         self.maskExt='DQ' #the extension with the mask image in it
-        self._filename=self._image['PRIMARY'].header["FILENAME"] 
+        #self._filename=self._image['PRIMARY'].header["FILENAME"] 
+        self._filename = filename
         self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
         self.outputNames=self._setOutputNames(self._rootname)
          
@@ -67,24 +68,22 @@ class imageObject():
             #assuming all the chips don't have the same dimensions in the file
             sci_chip._naxis1=sci_chip.header["NAXIS1"]
             sci_chip._naxis2=sci_chip.header["NAXIS2"]            
-            sci_chip.outputNames=self._setOutputNames(sci_chip.rootname) #this is a dictionary
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
 
             # record the exptime values for this chip so that it can be
             # easily used to generate the composite value for the final output image
             sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
                         
-            # Define mask names as additional entries into outputNames dictionary
-            sci_chip.outputNames['driz_mask']=sci_chip.dqrootname+'_final_mask.fits'
-            sci_chip.outputNames['single_driz_mask']=sci_chip.outputNames['driz_mask'].replace('final','single')
-
-            #
-            # SYNTAX for creating mask files:
-            #for final mask
-            #util.build_mask(sci_chip.dqfile,sci_chip.outputNames['driz_mask'],sci_chip.detnum,sci_chip.dq_extn,bits_final,chip,self._instrument)
-            #for single mask
-            #util.build_mask(sci_chip.dqfile,sci_chip.outputNames['single_driz_mask'],sci_chip.detnum,sci_chip.dq_extn,bits_single,chip,self._instrument)
-            # static_mask needs to be applied to single_driz_mask upon creation
+            sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
+            
+            # Determine output value of BUNITS
+            # and make sure it is not specified as 'ergs/cm...'
+            _bunit = None
+            if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
+                _bunit = sci_chip.header['BUNIT']
+            else:
+                _bunit = 'ELECTRONS/S'
+            sci_chip._bunit = _bunit
 
 
     def __getitem__(self,exten):
@@ -132,13 +131,11 @@ class imageObject():
 
         # record extension-based name to reflect what extension a mask file corresponds to
         self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
+        self._image[self.scienceExt,chip].sciname=self._filename + "[" + extname +","+str(extver)+"]"
         self._image[self.scienceExt,chip].dqrootname=self._rootname + "_" + extname + str(extver)
         self._image[self.scienceExt,chip]._expname=expname
+        self._image[self.scienceExt,chip]._chip = chip
 
-
-    def _assignDQName(self,chip):
-        """assign a unique rootname for the DQ image associated with this chip """
-        self._image[self.scienceExt,chip].dqname = self.dqfile+'['+self.dq_extn+','+str(chip)+']'
         
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -156,7 +153,6 @@ class imageObject():
         detnum = self._image[self.scienceExt,chip].detnum
         
         self._image[self.scienceExt,chip].signature=[instr+detector,(nx,ny),detnum]
-        self._image[self.scienceExt,chip].outputNames["staticMask"]=instr+"_"+detector+"_"+str(nx)+"x"+str(ny)+"_"+str(detnum)+"_staticMask.fits"
             
 
     def _setOutputNames(self,rootname):
@@ -168,36 +164,66 @@ class imageObject():
         for chip names contained inside a file
 
         """
-
         # Define FITS output filenames for intermediate products
-        outFinal = rootname+'_drz.fits'
-        outSci = rootname+'_sci.fits'
-        outWeight = rootname+'_weight.fits'
-        outContext = rootname+'_context.fits'
-        outSky = rootname + '_sky.fits'
-        blotImage = rootname + '_blot.fits'
-        crImage = rootname + '_cr.fits'
-        outSingle = rootname+'_single.fits'
-        outSWeight = rootname+'_wht.fits'
-        outSContext = None
+        
+        # Build names based on final DRIZZLE output name
+        # where 'output' normally would have been created 
+        #   by 'process_input()'
+        #
 
-        fnames={'outFinal':outFinal,
-                'outSci':outSci,
-                'outWeight':outWeight,
-                'outContext':outContext,
-                'outSingle':outSingle,
-                'outSWeight':outSWeight,
-                'outSContext':outSContext,
-                'blotImage':blotImage,
-                'crImage':crImage,
-                'outSingle':outSingle,
-                'outSWeight':outSWeight,
-                'outSContext':outSContext,
-                'outSky':outSky}
+        outFinal = rootname+'_drz.fits'
+        outSci = rootname+'_drz_sci.fits'
+        outWeight = rootname+'_drz_weight.fits'
+        outContext = rootname+'_drz_context.fits'
+        outMedian = rootname+'_med.fits'
+        
+        # Build names based on input name
+        indx = self._filename.find('.fits')
+        origFilename = self._filename[:indx]+'_OrIg.fits'
+        outSky = rootname + '_sky.fits'
+        outSingle = rootname+'_single_sci.fits'
+        outSWeight = rootname+'_single_wht.fits'
+        
+        # Build outputNames dictionary
+        fnames={
+            'origFilename':origFilename,
+            'outMedian':outMedian,
+            'outFinal':outFinal,
+            'outSci':outSci,
+            'outWeight':outWeight,
+            'outContext':outContext,
+            'outSingle':outSingle,
+            'outSWeight':outSWeight,
+            'outSContext':None,
+            'outSky':outSky}
+        
 
         return fnames
 
+    def _setChipOutputNames(self,rootname,chip):
+        blotImage = rootname + '_blt.fits'
+        crmaskImage = rootname + '_crmask.fits'
+        crcorImage = rootname + '_cor.fits'
 
+
+        # Start with global names
+        fnames = self.outputNames
+
+        # Now add chip-specific entries
+        fnames['blotImage'] = blotImage
+        fnames['crcorImage'] = crcorImage
+        fnames['crmaskImage'] = crmaskImage
+
+        # Define mask names as additional entries into outputNames dictionary
+        fnames['drizMask']=self._image[self.scienceExt,chip].dqrootname+'_final_mask.fits'
+        fnames['singleDrizMask']=fnames['drizMask'].replace('final','single')
+
+        # Add entries to outputNames for use by 'drizzle'
+        fnames['inData']=self._image[self.scienceExt,chip].sciname
+        fnames['extver']=chip
+
+        return fnames
+        
     def _find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
             which that DQ extension should be read from.
@@ -221,7 +247,7 @@ class imageObject():
             
     
     def getKeywordList(self,kw):
-        """return lists of all exptime,expstart,expend values 
+        """return lists of all attribute values 
            for all chips in the imageObject
         """
         kwlist = []
@@ -245,7 +271,7 @@ class imageObject():
                 section = [section]
 
         return section
-           
+        
         
          
     def _countEXT(self,extname='SCI'):

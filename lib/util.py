@@ -7,6 +7,14 @@ import numpy as np
 from pytools import asnutil,fileutil
 import buildmask
 
+def _ptime():
+    import time
+
+    # Format time values for keywords IRAF-TLM, and DATE
+    _ltime = time.localtime(time.time())
+    tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)',_ltime)
+    #date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
+    return tlm_str
 
 def findrootname(filename):
     """
@@ -174,19 +182,6 @@ def update_input(filelist, ivmlist=None, removed_files=None):
 # and were copied in from pydrizzle_tng.py.
 #
 ####
-
-def build_mask(dqname,mask_name,detnum,dq_extn,bits,extver,instrument):
-    '''Build masks for a given chip. This can be called for either single_mask
-       or final_mask creation.    
-    '''
-    # The WFPC2 specific logic will need to be pulled in as
-    # an InputImage class method.
-    if bits != None:
-        print 'building mask for ',dq_extn,',',extver,' for output ',mask_name
-        if instrument != 'WFPC2':
-            out_mask = buildmask.buildMaskImage(dqname,bits,mask_name,extname=dq_extn,extver=extver)
-        else:
-            out_mask = buildmask.buildShadowMaskImage(dqname,detnum,extver,mask_name, bitvalue=bits, binned=binned)
 
 def get_detnum(hstwcs,filename,extnum):
     detnum = None

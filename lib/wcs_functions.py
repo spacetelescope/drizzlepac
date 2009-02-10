@@ -31,7 +31,7 @@ def make_outputwcs(imageObjectList,configObj=None):
         hstwcs_list += img.getKeywordList('wcs')
         
     output_wcs = utils.output_wcs(hstwcs_list)
-    
+       
     # Merge in user-specified attributes for the output WCS
     # as recorded in the input configObj object.
     user_pars = DEFAULT_WCS_PARS.copy()
