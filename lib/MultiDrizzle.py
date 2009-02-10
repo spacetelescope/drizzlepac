@@ -116,7 +116,7 @@ class MultiDrizzle:
                 return ValueError     
                                                                           
         if(self.saveFiles):                                                                     
-            imageSet.staticMask.saveToFile(image.outputNames["staticMask"])                        
+            self.staticMask.saveToFile()                        
 
     def _computeSky(self,imageSet):
         """ run sky subtraction """

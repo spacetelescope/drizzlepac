@@ -148,12 +148,11 @@ class imageObject():
         """
         instr=self._instrument
         detector=self._image['PRIMARY'].header["DETECTOR"]
-        nx=self._image[self.scienceExt,chip]._naxis1
-        ny=self._image[self.scienceExt,chip]._naxis2
+        ny=self._image[self.scienceExt,chip]._naxis1
+        nx=self._image[self.scienceExt,chip]._naxis2
         detnum = self._image[self.scienceExt,chip].detnum
         
-        self._image[self.scienceExt,chip].signature=[instr+detector,(nx,ny),detnum]
-            
+        self._image[self.scienceExt,chip].signature=(instr+detector,(nx,ny),detnum) #signature is a tuple
 
     def _setOutputNames(self,rootname):
         """

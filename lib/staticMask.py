@@ -16,6 +16,7 @@
 import numpy as np
 from pytools import fileutil
 import pyfits
+from imagestats import ImageStats
 
 class staticMask:
     """
@@ -34,7 +35,7 @@ class staticMask:
 
     """
     
-    def __init__ (self, imageObject=None, configObj={}): 
+    def __init__ (self, configObj={}): 
 
         # For now, we don't use badval. It is supposed to
         # be used to flag back the DQ array of the input
@@ -43,18 +44,13 @@ class staticMask:
         # additional images are included in the set each
         # time.
         #
-        # chipImage is a pointer back to the header+plus data of the chip in imageObject
         # signature is created in the imageObject class
         #
         
-        if (imageObject == None):
-            print "No image data supplied"
-        else:
-            self.parameters=self._setDefaults(configObj)
-            self._imagePtr=imageObject
+        self._setDefaults(configObj)
             
             
-    def addMember(self):
+    def addMember(self, imagePtr=None):
         """
         Combines the input image with the static mask that
         has the same signature.  The signature parameter
@@ -65,14 +61,15 @@ class staticMask:
         """
         
         numchips=imagePtr._numchips
+        
         for chip in range(1,numchips+1,1):
-            chipid=self._imagePtr._scienceExt + ','+ str(chip)
-            chipimage=self._imagePtr._image[chipid]
+            chipid=imagePtr.scienceExt + ','+ str(chip)
+            chipimage=imagePtr[chipid]
             signature=chipimage.signature
-            
+
             # If this is a new signature, create a new Static Mask file which is empty
             # only create a new mask if one doesn't already exist
-            if not self.masklist.has_key(signature):
+            if ((not self.masklist.has_key(signature)) or (len(self.masklist) == 0)):
                 self.masklist[signature] = self._buildMaskArray(signature)
 
                 # Operate on input image DQ array to flag 'bad' pixels in the
@@ -83,16 +80,11 @@ class staticMask:
                 del stats
 
                 print('  mode = %9f;   rms = %7f')  %  (mode,rms)
-                #
-                # The scale value (3.0) could potentially become a useful 
-                # user settable parameter.  Consider for future revisions.
-                # 29-April-2004 WJH/CJH/AMK
-                #
+
                 sky_rms_diff = mode - (self.static_sig*rms)
+                np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage.data, sky_rms_diff)),self.masklist[signature])
 
-                np.bitwise_and(self.masklist[signature],np.logical_not(np.less( sci_arr, sky_rms_diff)),self.masklist[signature])
-
-    def _buildMaskArray(self):
+    def _buildMaskArray(self,signature):
         """ Creates empty  numpy array for static mask array signature. """
         return np.ones(signature[1],dtype=np.int16)
 
@@ -182,5 +174,4 @@ class staticMask:
         self.static_sig=paramDict["static_sig"]
         self.static_badval=paramDict["static_badval"]
         self.static_goodval=paramDict["static_goodval"]
-                  
-        return paramDict
+        
