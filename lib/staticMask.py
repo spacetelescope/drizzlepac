@@ -83,7 +83,9 @@ class staticMask:
 
                 sky_rms_diff = mode - (self.static_sig*rms)
                 np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage.data, sky_rms_diff)),self.masklist[signature])
-
+            else:
+                print "Mask already exisits for signature: ",signature
+                
     def _buildMaskArray(self,signature):
         """ Creates empty  numpy array for static mask array signature. """
         return np.ones(signature[1],dtype=np.int16)
@@ -100,12 +102,12 @@ class staticMask:
         """returns the name of the output mask file that
             should reside on disk for the given signature """
              
-        filename=constructFilename(signature)
+        filename=self.constructFilename(signature)
 
         if(fileutil.checkFileExists(filename)):
             return filename
         else:
-            print "\nmMask file for ",str(signature)," does not exist on disk!"
+            print "\nmMask file for ",str(signature)," does not exist on disk"
             return None
             
     def constructFilename(self,signature):
@@ -123,6 +125,13 @@ class staticMask:
             self.masklist[key] = None
         self.masklist = {}
         
+    def deleteMask(self,signature):
+        """delete just the mask that matches the signature given"""
+        if self.masklist.has_key(signature):
+            self.masklist[signature] = None
+        else:
+            print "No matching mask"
+        
     def saveToFile(self):
         """ saves the static mask to a file
             it uses the signatures associated with each
@@ -131,13 +140,13 @@ class staticMask:
         
         for key in self.masklist.keys():
             #check to see if the file already exists on disk
-            filename=self.getMaskName(key)
+            filename=self.constructFilename(key)
             
-            if (filename == None):
+            if not(fileutil.checkFileExists(filename)):
                 #create a new fits image with the mask array and a standard header
                 #open a new header and data unit
                 newHDU = pyfits.PrimaryHDU()
-                newHDU.data = masklist[key]     
+                newHDU.data = self.masklist[key]     
                            
                 try:
                     newHDU.writeto(filename)

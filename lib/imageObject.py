@@ -112,7 +112,7 @@ class imageObject():
     def close(self):
         """close the object nicely"""
         self._image.close()  
-        #do we want to  del self._image here?     
+        #do we want to  del self._image.data here?     
 
     def getData(self,exten=None):
         """return just the specified data extension """

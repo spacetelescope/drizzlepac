@@ -50,7 +50,7 @@ class MultiDrizzle:
         #Keep track of steps to perform on the object                                         
         self.staticMaskDone=False                                                             
         self.skySubtractionDone=False                                                         
-        self.drizzleSeperateDone=False                                                        
+        self.drizzleSeparateDone=False                                                        
         self.medianImageDone=False                                                            
         self.blotDone=False                                                                   
         self.derivCRDone=False                                                                
@@ -58,7 +58,8 @@ class MultiDrizzle:
 
         #setup default parameters including user overrides                                    
         self.parameters=self._setDefaults(configObj)                                               
-
+        self.saveFiles=saveFiles
+        
         #create the list of inputImage object pointers                                        
         if(len(inputImageList) == 0):                                                         
             print "No input images were specified!"                                           
@@ -80,17 +81,17 @@ class MultiDrizzle:
         #These can be run on individual images, 
         #they dont have to be in memory together or submitted as a list               
         for imageSet in self._objectList:    
-            _computeStaticMask(imageSet)
-            _computeSky(imageSet)
-            _createDrizSep(imageSet)
+            self.computeStaticMask(imageSet)
+            self.computeSky(imageSet)
+            self.createDrizSep(imageSet)
 
             imageSet.close()   #the output images have been saved to larger separate files
 
-        _computeMedian() #this step needs a list of all the separately drizled images   
-        _createBlotImages()
-        _calcDerivCr()
+        self.computeMedian() #this step needs a list of all the separately drizled images   
+        self.createBlotImages()
+        self.calcDerivCr()
 
-        _runFinalDrizzle() #give it the list of images
+        self.runFinalDrizzle() #give it the list of images
 
         print "MultiDrizzle finished!"
         
@@ -105,20 +106,24 @@ class MultiDrizzle:
             print "Object list already poplulated\nNot adding new ones"
              
 
-    def _computeStaticMask(self,imageSet):
+    def computeStaticMask(self,imageSet):
         """run static mask step, where imageSet is a single imageObject"""   
                                                                    
         if (self.doStaticMask and not(self.staticMaskDone)):                                       
             try:                                                                                
-                self.staticMask.addMember(imageSet, self.parameters)       
+                self.staticMask.addMember(imageSet)       
             except:                                                                             
                 print "Problem occured during static mask step"                                 
                 return ValueError     
-                                                                          
+        
+        else:
+            print "Step is not properly setup"
+            return ValueError
+                                                                              
         if(self.saveFiles):                                                                     
             self.staticMask.saveToFile()                        
 
-    def _computeSky(self,imageSet):
+    def computeSky(self,imageSet):
         """ run sky subtraction """
 
         if (self.doSkySubtraction and (not(self.skySubtractionDone))):
@@ -128,24 +133,26 @@ class MultiDrizzle:
                 print "Problem occured during sky subtraction step"
                 return ValueError
 
-    def _createDrizSep(self,imageSet):
-        """ drizzle seperate images """
-        if (self.doDrizzleSeparate and (not(self.drizzleSeperateDone))):
+    def createDrizSep(self,imageSet):
+        """ drizzle separate images """
+        if (self.doDrizzleSeparate and (not(self.drizzleSeparateDone))):
             try:
-                self._drizSepList.append(drizzleSeperate(imageSet, self.parameters, self.saveFiles))
+                self._drizSepList.append(drizzleSeparate(imageSet, self.parameters, self.saveFiles))
             except:
-                print "Problem running driz seperate step"
+                print "Problem running driz separate step"
                 return ValueError
 
-    def _computeMedian(self):
+    def computeMedian(self):
         """ create a median image from the separately drizzled images """
-        try:
-            self.medianImage=mkMedian(self._drizSepList, self.parameters,self.saveFiles)
-        except:
-            print "Problem running median combinations step"
-            return ValueError
+        
+        if(self.drizzleSeparateDone):
+            try:
+                self.medianImage=mkMedian(self._drizSepList, self.parameters,self.saveFiles)
+            except:
+                print "Problem running median combinations step"
+                return ValueError
 
-    def _createBlotImages(self):
+    def createBlotImages(self):
         """ create blotted images from the median image """
         
         if (self.doBlot and (not(self.blotDone) and self.medianImageDone)):
@@ -155,7 +162,7 @@ class MultiDrizzle:
                 print "problem running blot image step"
                 return ValueError
 
-    def _calcDerivCr():
+    def calcDerivCr(self):
         """ run deriv_cr to look for cosmic rays """
 
         if (self.doDerivCr and (not(self.derivCRDrone)) ):
@@ -165,7 +172,7 @@ class MultiDrizzle:
                 print "Problem running deriv cr step"
                 return ValueError
 
-    def runFinalDrizzle():
+    def runFinalDrizzle(self):
         """ run through the final drizzle process """
         if (self.doFinalDrizzle and not(self.drizFinalDone)):
             try:
