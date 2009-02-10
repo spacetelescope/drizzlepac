@@ -14,7 +14,7 @@ from pytools import fileutil
 import os
 import sky
 from staticMask import staticMask
-import imageObject
+from imageObject import imageObject
 
 class MultiDrizzle:
     """
@@ -39,8 +39,8 @@ class MultiDrizzle:
         """                                                                                   
 
         """Check to see what kind of file input was given"""                                  
-        self._ivmList=[] #just to open the list                                               
-        self._objectList=[] #the list of imageObject object references                         
+        self._ivmList=[] #just to open the list 
+        self._objectList=[] #pointers to the imageObjects                                              
         self._fileList=[] #the list of filenames given by the user, and parsed by the code    
                          #there should be one imageObject for each file in the list           
         self._drizSepList=[] #this is a list of the singly drizzled images                     
@@ -70,16 +70,16 @@ class MultiDrizzle:
         #create a static mask object for the image set
         self.staticMask=staticMask(configObj)  #this creates a pointer back to the static mask object
                                                #but no masks have been added to it yet
+                                               
+        self._populateObjects() #read the images into memory (data is lazy instantiation)            
+
 
     def run(self):
         """step through all the functions to perform full drizzling """
 
         #These can be run on individual images, 
-        #they dont have to be in memory together or submitted as a list       
-        for filename in self.fileList:
-            imageSet=(imageObject(filename))
-            self._objectList.add(imageSet)
-            
+        #they dont have to be in memory together or submitted as a list               
+        for imageSet in self._objectList:    
             _computeStaticMask(imageSet)
             _computeSky(imageSet)
             _createDrizSep(imageSet)
@@ -94,7 +94,16 @@ class MultiDrizzle:
 
         print "MultiDrizzle finished!"
         
-        
+
+    def _populateObjects(self):
+        """read the images into memory and populate the objectlist """
+        if(len(self._objectList) == 0):
+            for image in self._fileList:
+                imageSet=(imageObject(image))
+                self._objectList.append(imageSet)  
+        else:
+            print "Object list already poplulated\nNot adding new ones"
+             
 
     def _computeStaticMask(self,imageSet):
         """run static mask step, where imageSet is a single imageObject"""   
@@ -141,7 +150,7 @@ class MultiDrizzle:
         
         if (self.doBlot and (not(self.blotDone) and self.medianImageDone)):
             try:
-                blot(self.medianImage, self._filelist, self.parameters,self.saveFiles)
+                blot(self.medianImage, self._fileList, self.parameters,self.saveFiles)
             except:
                 print "problem running blot image step"
                 return ValueError
