@@ -13,7 +13,7 @@ whole package as I'm coding it
 from pytools import fileutil
 import os
 import sky
-import staticMask
+from staticMask import staticMask
 import imageObject
 
 class MultiDrizzle:
@@ -57,7 +57,7 @@ class MultiDrizzle:
         self.drizFinalDone=False                                                              
 
         #setup default parameters including user overrides                                    
-        self.parameters=_setDefaults(configObj)                                               
+        self.parameters=self._setDefaults(configObj)                                               
 
         #create the list of inputImage object pointers                                        
         if(len(inputImageList) == 0):                                                         
@@ -67,15 +67,19 @@ class MultiDrizzle:
         else:                                                                                 
             self._fileList=inputImageList                                                     
 
+        #create a static mask object for the image set
+        self.staticMask=staticMask(configObj)  #this creates a pointer back to the static mask object
+                                               #but no masks have been added to it yet
 
     def run(self):
         """step through all the functions to perform full drizzling """
 
         #These can be run on individual images, 
-        #they dont have to  be in memory together        
+        #they dont have to be in memory together or submitted as a list       
         for filename in self.fileList:
             imageSet=(imageObject(filename))
-
+            self._objectList.add(imageSet)
+            
             _computeStaticMask(imageSet)
             _computeSky(imageSet)
             _createDrizSep(imageSet)
@@ -93,11 +97,11 @@ class MultiDrizzle:
         
 
     def _computeStaticMask(self,imageSet):
-        """run static mask step"""   
+        """run static mask step, where imageSet is a single imageObject"""   
                                                                    
         if (self.doStaticMask and not(self.staticMaskDone)):                                       
             try:                                                                                
-                staticMask(imageSet, self.parameters,self.saveFiles)       
+                self.staticMask.addMember(imageSet, self.parameters)       
             except:                                                                             
                 print "Problem occured during static mask step"                                 
                 return ValueError     
@@ -162,7 +166,7 @@ class MultiDrizzle:
                 return ValueError
 
 
-    def _setDefaults(configObj={}):
+    def _setDefaults(self,configObj={}):
         """ set the defaults for the user input section"""
 
         #what steps shall we perform? I'm turning them on as they are completed
