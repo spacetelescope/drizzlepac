@@ -21,7 +21,7 @@ from imagestats import ImageStats
 class staticMask:
     """
     This class manages the creation of the global static mask which
-    masks pixels which are negative in the SCI array.
+    masks pixels that are negative in the SCI array.
     A static mask numarray object gets created for each global
     mask needed, one for each chip from each instrument/detector.
     Each static mask array has type Int16, and resides in memory.
@@ -44,7 +44,7 @@ class staticMask:
         # additional images are included in the set each
         # time.
         #
-        # signature is created in the imageObject class
+        # the signature is created in the imageObject class
         #
         
         self._setDefaults(configObj)
@@ -72,19 +72,19 @@ class staticMask:
             if ((not self.masklist.has_key(signature)) or (len(self.masklist) == 0)):
                 self.masklist[signature] = self._buildMaskArray(signature)
 
-                # Operate on input image DQ array to flag 'bad' pixels in the
-                # global static mask
-                stats = ImageStats(chipimage.data,nclip=3,fields='mode')
-                mode = stats.mode
-                rms  = stats.stddev
-                del stats
+            # Operate on input image DQ array to flag 'bad' pixels in the
+            # global static mask
+            stats = ImageStats(chipimage.data,nclip=3,fields='mode')
+            mode = stats.mode
+            rms  = stats.stddev
+            del stats
 
-                print('  mode = %9f;   rms = %7f')  %  (mode,rms)
+            print('  mode = %9f;   rms = %7f')  %  (mode,rms)
 
-                sky_rms_diff = mode - (self.static_sig*rms)
-                np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage.data, sky_rms_diff)),self.masklist[signature])
-            else:
-                print "Mask already exisits for signature: ",signature
+            sky_rms_diff = mode - (self.static_sig*rms)
+            np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage.data, sky_rms_diff)),self.masklist[signature])
+
+
                 
     def _buildMaskArray(self,signature):
         """ Creates empty  numpy array for static mask array signature. """
