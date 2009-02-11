@@ -51,7 +51,8 @@ class imageObject():
          
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
-
+        self._nextend=self._image["PRIMARY"].header["NEXTEND"]
+        
         #assign chip specific information
         for chip in range(1,self._numchips+1,1):
             self._assignRootname(chip)
@@ -110,9 +111,19 @@ class imageObject():
         
     
     def close(self):
-        """close the object nicely"""
-        self._image.close()  
-        #do we want to  del self._image.data here?     
+        """close the object nicely
+           and release all the data arrays from memory
+        """
+        self._image.close()  #calls pyfits.close()
+        
+        #we actuallly want to make sure that all the
+        #data extensions have been closed and deleted
+        #since we could have the DQ,ERR and others read in
+        #at this point
+         
+        for ext in range(1,self._nextend,1):
+            del self._image[ext].data
+            
 
     def getData(self,exten=None):
         """return just the specified data extension """
