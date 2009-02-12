@@ -46,7 +46,7 @@ class imageObject():
         self.scienceExt= "SCI" # the extension the science image is stored in
         self.maskExt="DQ" #the extension with the mask image in it
         self._filename = filename
-        self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
+        self._rootname=self._image['PRIMARY'].header["ROOTNAME"] #this should really come from the filename above
         self.outputNames=self._setOutputNames(self._rootname)
          
         #this is the number of science chips to be processed in the file
@@ -145,9 +145,8 @@ class imageObject():
         #valid there afterwards that I can play with
         
         if not self._isSimpleFits: 
-            for ext in range(1,self._nextend,1):
-                self._image[1].data = np.array(0)  #so we dont get io errors on stuff that wasn't read in yet        
-
+            for ext in range(1,self._nextend+1,1):
+                self._image[ext].data = np.array(0)  #so we dont get io errors on stuff that wasn't read in yet     
         else:
             self._image.data=np.array(0)
             
@@ -161,7 +160,7 @@ class imageObject():
         """
         _image=fileutil.openImage(self._filename,clobber=False,memmap=0)
         _data=fileutil.getExtn(_image,extn=exten).data
-        
+        _image.close()
         del _image
         return _data
                 
@@ -171,13 +170,13 @@ class imageObject():
         fileutil is used instead of pyfits to account for
         non FITS input images. openImage returns a pyfits object        
         """
-        image=fileutil.openImage(self._filename,clobber=False,memmap=0)
-        header=fileutil.getExtn(self._image,extn=exten).header
-        image.close()
-        del image
-        return header
+        _image=fileutil.openImage(self._filename,clobber=False,memmap=0)
+        _header=fileutil.getExtn(_image,extn=exten).header
+        _image.close()
+        del _image
+        return _header
 
-    def putData(self,exten=None):
+    def putData(self,data=None,exten=None):
         """Now that we are removing the data from the object to save memory,
             we need something that cleanly puts the data array back into
             the object so that we can write out everything together  using
@@ -187,8 +186,21 @@ class imageObject():
             section ( ie. update the bitpix to reflect the datatype of the
             array you are adding). The other header stuff is  up to you to verify...
             
+            data should be the data array
+            exten is where you want to stick it, in this case we need an explicit number
         """
+        if (data == None):
+            print "No data supplied"
+
+        else:            
+            #check the bitpix in the current header and the current data array type
+            _cbitpix=self._image[exten].header["BITPIX"]
         
+            iraf={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
+                    
+            #update the bitpix to the current datatype, this aint fancy and ignores bscale
+            self._image[exten].header["BITPIX"]=iraf[data.dtype.name]
+            self._image[exten].data=data
 
     def _assignRootname(self, chip):
         """assign a unique rootname for the image based in the expname"""
