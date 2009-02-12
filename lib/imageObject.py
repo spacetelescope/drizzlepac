@@ -9,6 +9,7 @@ import sys
 import util,wcs_functions
 from pytools import fileutil
 import buildmask
+import numpy as np
 
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
@@ -107,12 +108,21 @@ class imageObject():
     
     def info(self):
         """return fits information on the _image"""
-        self._image.info()    
-        
+        #if the file hasn't been closed yet then we can
+        #use the pyfits info which looks at the extensions
+        if(len(self._image[1].data.shape) !=0 ): 
+            self._image.info()    
+            
+        #otherwise, we need to do something else
+        else:  
+            print "Data sections have already been closed\n"  
     
     def close(self):
         """close the object nicely
            and release all the data arrays from memory
+           YOU CANT GET IT BACK, the pointers and data are gone
+           so use the getData method to get the data array
+           returned for future use
         """
         self._image.close()  #calls pyfits.close()
         
@@ -122,16 +132,33 @@ class imageObject():
         #at this point
          
         for ext in range(1,self._nextend,1):
-            del self._image[ext].data
-            
+            self._image[1].data = np.array(0)  #so we dont get io errors on stuff that wasn't read in yet        
 
     def getData(self,exten=None):
-        """return just the specified data extension """
-        return fileutil.getExtn(self._image,extn=exten).data
+        """return just the data array from the specified extension 
+            this method should be 
         
+            fileutil is used instead of pyfits to account for
+            non FITS input images. openImage returns a pyfits object
+        
+        """
+        image=fileutil.openImage(self._filename,clobber=False,memmap=0)
+        data=fileutil.getExtn(self._image,extn=exten).data
+        image.close()
+        del image
+        return data
+                
     def getHeader(self,exten=None):
-        """return just the specified header extension"""
-        return fileutil.getExtn(self._image,extn=exten).header
+        """return just the specified header extension
+           
+        fileutil is used instead of pyfits to account for
+        non FITS input images. openImage returns a pyfits object        
+        """
+        image=fileutil.openImage(self._filename,clobber=False,memmap=0)
+        header=fileutil.getExtn(self._image,extn=exten).header
+        image.close()
+        del image
+        return header
 
 
     def _assignRootname(self, chip):
