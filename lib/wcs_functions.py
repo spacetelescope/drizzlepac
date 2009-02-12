@@ -5,19 +5,45 @@ from updatewcs.distortion import utils
 
 from pytools import fileutil
 import util
+import imageObject
+import updatewcs
+from updatewcs import pywcs
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,
                      'outnx':None,'outny':None,'crpix1':None,'crpix2':None,
                      'crval1':None,'crval2':None}
+
+
+# Default mapping function based on PyWCS 
+class WCSMap:
+    def __init__(self,input,output):
+        # Verify that we have valid WCS input objects
+        self.checkWCS(input,'Input')
+        self.checkWCS(output,'Output')
+
+        self.input = input
+        self.output = output
+
+    def checkWCS(self,obj,name):
+        try:
+            assert isinstance(obj, pywcs.WCS)
+        except AssertionError:
+            print name +' object needs to be an instance or subclass of a PyWCS object.'
+            raise
+    def forward(self,pixx,pixy):
+        return self.output.wcs_sky2pix(*self.input.all_pix2sky([pixx,pixy],1))
+    def backward(self,pixx,pixy):
+        return self.input.wcs_sky2pix(*self.output.all_pix2sky([pixx,pixy],1))
+    
                     
-def get_hstwcs(filename,hdulist,hdr,primary_hdr):
+def get_hstwcs(filename,hdulist,extnum):
     ''' Return the HSTWCS object for a given chip.
     
     '''
-    hdrwcs = wcsutil.HSTWCS(primary_hdr,hdr,hdulist)
+    hdrwcs = wcsutil.HSTWCS(hdulist,ext=extnum)
     hdrwcs.filename = filename
-    hdrwcs.expname = hdr['expname']
-    hdrwcs.extver = hdr['extver']
+    hdrwcs.expname = hdulist[extnum].header['expname']
+    hdrwcs.extver = hdulist[extnum].header['extver']
     
     return hdrwcs
 
@@ -25,13 +51,15 @@ def get_hstwcs(filename,hdulist,hdr,primary_hdr):
 # Possibly need to generate a stand-alone interface for this function.
 #
 # Primary interface for creating the output WCS from a list of HSTWCS objects
-def make_outputwcs(imageObjectList,configObj=None):
+def make_outputwcs(imageObjectList,output,configObj=None):
     hstwcs_list = []
     for img in imageObjectList:
         hstwcs_list += img.getKeywordList('wcs')
         
     output_wcs = utils.output_wcs(hstwcs_list)
        
+    outwcs = createWCSObject(output,output_wcs,imageObjectList)
+    
     # Merge in user-specified attributes for the output WCS
     # as recorded in the input configObj object.
     user_pars = DEFAULT_WCS_PARS.copy()
@@ -45,8 +73,34 @@ def make_outputwcs(imageObjectList,configObj=None):
     # Apply user settings to output_wcs
     mergeWCS(output_wcs,user_pars)
     
-    return output_wcs
+    return outwcs
 
+def createWCSObject(output,output_wcs,imageObjectList):
+    """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
+    outwcs = imageObject.WCSObject(output)
+    outwcs.wcs = output_wcs
+    #
+    # Add exptime information for use with drizzle
+    #
+    outwcs._exptime,outwcs._expstart,outwcs._expend = util.compute_texptime(imageObjectList)
+        
+    outwcs.nimages = countImages(imageObjectList)
+     
+    return outwcs
+
+def countImages(imageObjectList):
+    expnames = []
+    for img in imageObjectList:
+       expnames += img.getKeywordList('_expname')
+    imgnames = []
+
+    nimages = 0
+    for e in expnames:
+        if e not in imgnames:
+            imgnames.append(e)
+            nimages += 1
+    return nimages
+        
 def mergeWCS(outwcs,user_pars):
     """ Merges the user specified WCS values given as dictionary derived from 
         the input configObj object with the output PyWCS object computed 
@@ -113,3 +167,29 @@ def mergeWCS(outwcs,user_pars):
     outwcs.wcs.crpix =_crpix
     if _crval is not None:
         outwcs.wcs.crval = _crval
+
+def convertWCS(inwcs,drizwcs):
+    """ Copy WCSObject WCS into Drizzle compatible array."""
+    drizwcs[0] = inwcs.crpix[0]
+    drizwcs[1] = inwcs.crval[0]
+    drizwcs[2] = inwcs.crpix[1]
+    drizwcs[3] = inwcs.crval[1]
+    drizwcs[4] = inwcs.cd[0][0]
+    drizwcs[5] = inwcs.cd[1][0]
+    drizwcs[6] = inwcs.cd[0][1]
+    drizwcs[7] = inwcs.cd[1][1]
+
+    return drizwcs
+
+def updateWCS(drizwcs,inwcs):
+    """ Copy output WCS array from Drizzle into WCSObject."""
+    inwcs.crpix[0]    = drizwcs[0]
+    inwcs.crval[0]   = drizwcs[1]
+    inwcs.crpix[1]   = drizwcs[2]
+    inwcs.crval[1]   = drizwcs[3]
+    inwcs.cd[0][0]     = drizwcs[4]
+    inwcs.cd[1][0]     = drizwcs[5]
+    inwcs.cd[0][1]     = drizwcs[6]
+    inwcs.cd[1][1]     = drizwcs[7]
+    inwcs.pscale = N.sqrt(N.power(inwcs.cd[0][0],2)+N.power(inwcs.cd[1][0],2)) * 3600.
+    inwcs.orient = N.arctan2(inwcs.cd[0][1],inwcs.cd[1][1]) * 180./N.pi

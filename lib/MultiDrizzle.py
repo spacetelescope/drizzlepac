@@ -134,7 +134,7 @@ class MultiDrizzle:
         """ drizzle separate images """
         if (self.doDrizzleSeparate and (not(self.drizzleSeparateDone))):
             try:
-                self._drizSepList.append(drizzleSeparate(imageSet, self.parameters, self.saveFiles))
+                self._drizSepList.append(drizSeparate(imageSet, self.parameters, self.saveFiles))
                 self.drizzleSeparateDone=True
             except:
                 print "Problem running driz separate step"

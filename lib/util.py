@@ -4,8 +4,14 @@ A library of utility functions
 
 """
 import numpy as np
+import pyfits
 from pytools import asnutil,fileutil
 import buildmask
+
+
+__version__ = "0.1.0tng1"
+__pyfits_version__ = pyfits.__version__
+__numpy_version__ = np.__version__
 
 def _ptime():
     import time

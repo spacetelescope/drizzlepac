@@ -1,48 +1,27 @@
-import sys
+import sys,types
 import util
 from util import _ptime
-
-# Default mapping function based on PyWCS 
-class WCSMap:
-    def __init__(self,input,output):
-        # Verify that we have valid WCS input objects
-        self.checkWCS(input,'Input')
-        self.checkWCS(output,'Output')
-
-        self.input = input
-        self.output = output
-
-    def checkWCS(self,obj,name):
-        try:
-            assert isinstance(obj, pywcs.WCS)
-        except AssertionError:
-            print name +' object needs to be an instance or subclass of a PyWCS object.'
-            raise
-    def forward(self,pixx,pixy):
-        return self.output.wcs_sky2pix_fits(*self.input.all_pix2sky_fits(pixx,pixy))
-    def backward(self,pixx,pixy):
-        return self.input.wcs_sky2pix_fits(*self.output.all_pix2sky_fits(pixx,pixy))
-
+import numpy as np
+from pytools import fileutil
+import outputimage,imageObject,wcs_functions
+try:
+    import arrdriz
+except ImportError:
+    arrdriz = None
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def drizSeparate(imageObjectList,output_wcs,configObj={}):
-    namelist = []
-    hstwcs_list = []
-    for img in imageObjectList:
-        namelist += img.getKeywordList(outputNames)
-        hstwcs_list += img.getKeywordList(wcs)
-    parlist = configObj
-    run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap)
+def drizSeparate(imageObjectList,output_wcs,configObj={},wcsmap=wcs_functions.WCSMap):
+    # Insure that input imageObjectList is a list, not just a single instance.
+    run_driz(imageObjectList,output_wcs,configObj,wcsmap=wcsmap)
     
-def drizFinal(imageObjectList, output_wcs, configObj={}):
-    drizSeparate(imageObjectList, output_wcs, configObj={})
+def drizFinal(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap):
+    drizSeparate(imageObjectList, output_wcs, configObj={},wcsmap=wcsmap)
     
 # Run 'drizzle' here...
 #
 
-def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
-    #(save=no,build=yes,blot=no,single=no,clean=no,interp='linear',sinscl=1.0, debug=no):
+def run_driz(imageObjectList,output_wcs,parlist,wcsmap=None):
     """Perform drizzle operation on input to create output.
      The input parameters originally was a list
      of dictionaries, one for each input, that matches the
@@ -52,33 +31,40 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
      list and run 'drizzle' for each entry. 
     
     Parameters required for input in parlist:
-        build,single,interp,sinscl,debug,
+        build,single,units,wt_scl,pixfrac,kernel,fillval,
+        rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """    
     print 'MultiDrizzle: drizzle task started at ',_ptime()
+    # Insure that input imageObject is a list
+    if not isinstance(imageObjectList, list):
+        imageObjectList = [imageObjectList]
+        
+    # Insure that output WCS provided by user is a imageObject instance
+    if not isinstance(output_wcs,imageObject.baseImageObject):
+        output_wcs = wcs_functions.createWCSObject(output_wcs)
 
+    # Create a list which points to all the chips being combined 
+    # by extracting all the chips from each of the input imageObjects
+    chiplist = []
+    for img in imageObjectList:
+        img.updateChipOutputNames(output_wcs)
+        for chip in range(1,img._numchips+1):
+            chiplist.append(img._image[img.scienceExt,chip])
+    
     #
     # Setup the versions info dictionary for output to PRIMARY header
     # The keys will be used as the name reported in the header, as-is
     #
-    _versions = {'PyDrizzle':__version__,'PyFITS':pyfits.__version__,'Numpy':np.__version__}
+    _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
 
     # Interpret input parameters for use in drizzling
     build = parlist['build']
     single= parlist['single']
-    interp = parlist['interp']
-    sinscl = parlist['sinscl']
-    debug = parlist['debug']
-
-    # Store the value of build set by the user for use, if desired,
-    # in the 'clean()' method.
-    #
-    #### This will be replaced with an attribute of the output_wcs object
-    output=namelist[0]['outFinal']
 
     # Check for existance of output file.
-    if single == no and build == yes and fileutil.findFile(output):
+    if single == False and build == True and fileutil.findFile(output_wcs._filename):
         print 'Removing previous output product...'
-        os.remove(output)
+        os.remove(output_wcs._filename)
 
     # Set parameters for each input and run drizzle on it here.
     #
@@ -88,13 +74,14 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
     # this gets updated for the output image, it does not
     # modify the original WCS computed by PyDrizzle
     #_wcs = observation.product.geometry.wcs.copy()
-    _wcs = output_wcs
+    _wcs = output_wcs.wcs
+    output=output_wcs.outputNames['outFinal']
 
-    _numctx = {'all':len(hstwcs_list)}
+    _numctx = {'all':len(chiplist)}
     #            if single:
     # Determine how many chips make up each single image
-    for plist in namelist:
-        plsingle = plist['outSingle']
+    for plist in chiplist:
+        plsingle = plist.outputNames['outSingle']
         if _numctx.has_key(plsingle): _numctx[plsingle] += 1
         else: _numctx[plsingle] = 1
     #
@@ -110,7 +97,7 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
     _nplanes = int((_numctx['all']-1) / 32) + 1
     # For single drizzling or when context is turned off,
     # minimize to 1 plane only...
-    if single or namelist[0]['outContext'] == '' or namelist[0]['outContext'] == None:
+    if single or chiplist[0].outputNames['outContext'] == '' or chiplist[0].outputNames['outContext'] == None:
         _nplanes = 1
 
     # Always initialize context images to a 3-D array
@@ -124,13 +111,17 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
     _nimg = 0
     _hdrlist = []
 
-    chips = len(hstwcs_list)
-    for chip in range(chips):
+    for chip in chiplist:
+        # Update outputNames with output name from output wcs object
+        chip.outputNames['output'] = output
+        
+
         # Open the SCI image
-        _expname = namelist[chip]['inData']
+        _expname = chip.outputNames['data']
         _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
-        _extn = 'sci,'+str(namelist[chip]['extver'])
-        _sciext = fileutil.getExtn(_handle,extn=_extn)
+        #_extn = chip.header['extname']+str(chip.header['extver'])
+        #_sciext = fileutil.getExtn(_handle,extn=_extn)
+        _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
         ####
         #
@@ -139,7 +130,7 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
         ####
         # Determine output value of BUNITS
         # and make sure it is not specified as 'ergs/cm...'
-        _bunit = sci_chip._bunit
+        _bunit = chip._bunit
         
         _bindx = _bunit.find('/')
 
@@ -174,9 +165,9 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
         #        
         ####
         if single:
-            _mask = namelist[chip]['singleDrizMask']
+            _mask = chip.outputNames['singleDrizMask']
         else:
-            _mask = namelist[chip]['drizMask']
+            _mask = chip.outputNames['drizMask']
 
         # Check to see whether there is a mask_array at all to use...
         if isinstance(_mask,types.StringType):
@@ -206,11 +197,11 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
                     if _wtscl_float != None:
                         _wtscl = _wtscl_float
                     elif parlist['wt_scl'] == 'expsq':
-                        _wtscl = hstwcs_list[chip].exptime*hstwcs_list[chip].exptime
+                        _wtscl = chip._exptime*chip._exptime
                     else:
                         # Default to the case of 'exptime', if
                         #   not explicitly specified as 'expsq'
-                        _wtscl = hstwcs_list[chip].exptime
+                        _wtscl = chip._exptime
                 else:
                     # int value passed in as a string, convert to float
                     _wtscl = float(parlist['wt_scl'])
@@ -219,15 +210,14 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
                 _wtscl = float(parlist['wt_scl'])
         else:
             # Default case: wt_scl = exptime
-            _wtscl = hstwcs_list[chip].exptime
+            _wtscl = chip._exptime
 
-        #print 'WT_SCL: ',plist['wt_scl'],' _wtscl: ',_wtscl
         # Set additional parameters needed by 'drizzle'
         _in_units = parlist['in_units']
         if _in_units == 'cps':
             _expin = 1.0
         else:
-            _expin = hstwcs_list[chip].exptime
+            _expin = chip._exptime
         _shift_fr = 'output'
         _shift_un = 'output'
         _uniqid = _numchips + 1
@@ -235,13 +225,13 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
         nmiss = 0
         nskip = 0
 
-        _con = yes
+        _con = True
         _imgctx = _numctx['all']
         if single:
-            _imgctx = _numctx[namelist[chip]['outSingle']]
-        #if single or (plist['outcontext'] == '' and single == yes):
+            _imgctx = _numctx[chip.outputNames['outSingle']]
+
         if _nplanes == 1:
-            _con = no
+            _con = False
             # We need to reset what gets passed to TDRIZ
             # when only 1 context image plane gets generated
             # to prevent overflow problems with trying to access
@@ -261,18 +251,39 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
         _pxg = np.zeros([2,2],dtype=np.float32)
         _pyg = np.zeros([2,2],dtype=np.float32)
 
-        wmap = wcsmap(hstwcs_list[chip],output_wcs)
-       
+
+        if wcsmap is None and arrdriz is not None:
+            # Use default C mapping function
+            _inwcs = np.zeros([8],dtype=np.float64)
+            _inwcs = wcs_functions.convertWCS(_wcs.wcs,_inwcs)
+            print 'Default mapping sciext: ',_sciext.data.shape
+            print 'Default mapping outsci: ',_outsci.shape
+
+            mapping = arrdriz.DefaultMapping(
+                _sciext.data.shape[1], _sciext.data.shape[0],
+                _outsci.shape[1], _outsci.shape[0],
+                plist['xsh'], plist['ysh'], 'output', 'output',
+                plist['rot'], plist['scale'], 0.0, 0.0, 1.0, 1.0,
+                0.0, 'output', _pxg, _pyg, 'center', plist['coeffs'], _inwcs,
+                plist['alpha'], plist['beta'])
+
+            print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
+        else:
+            # Use user provided mapping function
+            wmap = wcsmap(chip.wcs,output_wcs.wcs)
+            mapping = wmap.forward
+            
         _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
             _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
             1.0, 1.0, 1.0, 'center', parlist['pixfrac'],
             parlist['kernel'], _in_units, _expin,_wtscl,
-            str(parlist['fillval']), nmiss, nskip, 1, wmap.forward)
-        del wmap
+            str(parlist['fillval']), nmiss, nskip, 1, mapping)
+        
 
         # Set up information for generating output FITS image
-        namelist[chip]['driz_version'] = _vers
-        _hdrlist.append(namelist[chip])
+        #### Check to see what names need to be included here for use in _hdrlist
+        chip.outputNames['driz_version'] = _vers
+        _hdrlist.append(chip.outputNames)
 
         if nmiss > 0:
             print '! Warning, ',nmiss,' points were outside the output image.'
@@ -280,7 +291,7 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
             print '! Note, ',nskip,' input lines were skipped completely.'
         # Close image handle
         _handle.close()
-        del _handle,_extn,_sciext
+        del _handle,_sciext
         del _inwht
 
         # Remember the name of the first image that goes into
@@ -289,7 +300,7 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
         # values for the start of the exposure time used to make
         # this product; in particular, TIME-OBS and DATE-OBS.
         if _numchips == 0:
-            _template = namelist[chip]['inData']
+            _template = chip.outputNames['data']
 
         # Increment number of chips processed for single output
         _numchips += 1
@@ -306,7 +317,7 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
             # Start by determining what exposure time needs to be used
             # to rescale the product.
             if single:
-                _expscale = hstwcs_list[chip].exptime
+                _expscale = chip._exptime
             else:
                 _expscale = output_wcs.exptime
 
@@ -317,7 +328,7 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
             #
             # Write output arrays to FITS file(s) and reset chip counter
             #
-            _outimg = outputimage.OutputImage(_hdrlist, build=build, wcs=_wcs, single=single)
+            _outimg = outputimage.OutputImage(_hdrlist, parlist, build=build, wcs=_wcs, single=single)
             _outimg.set_bunit(_bunit)
             _outimg.set_units(parlist['units'])
 
@@ -337,9 +348,9 @@ def run_driz(namelist,hstwcs_list,output_wcs,parlist,wcsmap=WCSMap):
             _nimg += 1
 
     del _outsci,_outwht,_outctx, _hdrlist
-        #del _outsci,_outwht,_inwcs,_outctx, _hdrlist
     # end of loop over each chip
 
 
     print 'PyDrizzle drizzling completed at ',_ptime()
 
+    

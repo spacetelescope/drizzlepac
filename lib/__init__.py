@@ -2,6 +2,8 @@ import buildmask
 import drizzle
 import imageObject
 import MultiDrizzle
+import outputimage
+import process_input
 import sky
 import staticMask
 import util

@@ -6,8 +6,9 @@ each input filename
 """
 
 import sys
-import util,wcs_functions
 from pytools import fileutil
+import pyfits
+import util,wcs_functions
 import buildmask
 import numpy as np
 
@@ -17,84 +18,22 @@ DQ_EXTNS = {'WFPC2':{'c0h':'sdq','c0f':'sci'}}
 
 __version__ = '0.1dev1'
 
-class imageObject():
-    """
-    This returns an imageObject that contains all the
-    necessary information to run the image file through
-    any multidrizzle function. It is essentially a 
-    PyFits object with extra attributes
-    
-    There will be generic keywords which are good for
-    the entire image file, and some that might pertain
-    only to the specific chip. 
-    
-    """
-    
+class baseImageObject:
     def __init__(self,filename):
-        
-        #filutil open returns a pyfits object
-        try:
-            self._image=fileutil.openImage(filename,clobber=False,memmap=0)
-            
-        except IOError:
-            print "\nUnable to open file:",filename
-            raise IOError
-            
 
-        #populate the global attributes which are good for all the chips in the file
-        self._instrument=self._image['PRIMARY'].header["INSTRUME"]
         self.scienceExt= "SCI" # the extension the science image is stored in
         self.maskExt="DQ" #the extension with the mask image in it
         self._filename = filename
-        self._rootname=self._image['PRIMARY'].header["ROOTNAME"] #this should really come from the filename above
-        self.outputNames=self._setOutputNames(self._rootname)
+
+        self._image = None
+        self._instrument=None
+        self._rootname=None
+        self.outputNames={}
          
         #this is the number of science chips to be processed in the file
-        self._numchips=self._countEXT(extname=self.scienceExt)
-        
-        if (self._numchips == 0):
-            self._isSimpleFits = True
-        else:
-            self._isSimpleFits = False
-            
+        self._numchips=1
         self._nextend=0
         
-        if not self._isSimpleFits:
-            self._nextend=self._image["PRIMARY"].header["NEXTEND"]
-
-            #assign chip specific information
-            for chip in range(1,self._numchips+1,1):
-                self._assignRootname(chip)
-                sci_chip = self._image[self.scienceExt,chip]
-                sci_chip._staticmask=None #this will be replaced with a  pointer to a StaticMask object
-
-                sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               
-                sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
-
-                # build up HSTWCS object for each chip, which will be necessary for drizzling operations
-                sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.header,self._image['PRIMARY'].header)
-                sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
-
-                #assuming all the chips don't have the same dimensions in the file
-                sci_chip._naxis1=sci_chip.header["NAXIS1"]
-                sci_chip._naxis2=sci_chip.header["NAXIS2"]            
-                self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
-
-                # record the exptime values for this chip so that it can be
-                # easily used to generate the composite value for the final output image
-                sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
-
-                sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
-
-                # Determine output value of BUNITS
-                # and make sure it is not specified as 'ergs/cm...'
-                _bunit = None
-                if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
-                    _bunit = sci_chip.header['BUNIT']
-                else:
-                    _bunit = 'ELECTRONS/S'
-                sci_chip._bunit = _bunit
-
 
     def __getitem__(self,exten):
         """overload  getitem to return the data and header
@@ -189,7 +128,6 @@ class imageObject():
         """
         if (data == None):
             print "No data supplied"
-
         else:                   
             iraf={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
                     
@@ -207,9 +145,9 @@ class imageObject():
         self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
         self._image[self.scienceExt,chip].sciname=self._filename + "[" + extname +","+str(extver)+"]"
         self._image[self.scienceExt,chip].dqrootname=self._rootname + "_" + extname + str(extver)
+        # Needed to keep EXPTIMEs associated properly (1 EXPTIME for all chips)
         self._image[self.scienceExt,chip]._expname=expname
-        self._image[self.scienceExt,chip]._chip = chip
-
+        self._image[self.scienceExt,chip]._chip =chip
         
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -286,16 +224,33 @@ class imageObject():
         fnames['blotImage'] = blotImage
         fnames['crcorImage'] = crcorImage
         fnames['crmaskImage'] = crmaskImage
-
+        sci_chip = self._image[self.scienceExt,chip]
         # Define mask names as additional entries into outputNames dictionary
-        fnames['drizMask']=self._image[self.scienceExt,chip].dqrootname+'_final_mask.fits'
+        fnames['drizMask']=sci_chip.dqrootname+'_final_mask.fits'
         fnames['singleDrizMask']=fnames['drizMask'].replace('final','single')
-
-        # Add entries to outputNames for use by 'drizzle'
-        fnames['inData']=self._image[self.scienceExt,chip].sciname
-        fnames['extver']=chip
+        
+        # Add the following entries for use in creating outputImage object
+        fnames['blotnx'] = sci_chip._naxis1
+        fnames['blotny'] = sci_chip._naxis2
+        fnames['data'] = sci_chip.sciname
+        fnames['exptime'] = sci_chip._exptime
 
         return fnames
+
+    def updateChipOutputNames(self,output_wcs):
+        """Copy info from output WCSObject into outputnames for each chip
+           for use in creating outputimage object. 
+        """
+        for chip in range(1,self._numchips+1):
+            outputnames = self._image[self.scienceExt,chip].outputNames
+            
+            outputnames['output'] = output_wcs.outputNames['outFinal']
+            outputnames['outnx'] = output_wcs.wcs.naxis1
+            outputnames['outny'] = output_wcs.wcs.naxis2
+            outputnames['texptime'] = output_wcs._exptime
+            outputnames['texpstart'] = output_wcs._expstart
+            outputnames['texpend'] = output_wcs._expend
+            outputnames['nimages'] = output_wcs.nimages
         
     def _find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
@@ -404,3 +359,91 @@ class imageObject():
         iraf={-64:'float64',-32:'float32',8:'uint8',16:'int16',32:'int32'}
         
         return iraf[irafType]
+
+class imageObject(baseImageObject):
+    """
+    This returns an imageObject that contains all the
+    necessary information to run the image file through
+    any multidrizzle function. It is essentially a 
+    PyFits object with extra attributes
+    
+    There will be generic keywords which are good for
+    the entire image file, and some that might pertain
+    only to the specific chip. 
+    
+    """
+    
+    def __init__(self,filename):
+        baseImageObject.__init__(self,filename)
+        
+        #filutil open returns a pyfits object
+        try:
+            self._image=fileutil.openImage(filename,clobber=False,memmap=0)
+            
+        except IOError:
+            print "\nUnable to open file:",filename
+            raise IOError
+            
+
+        #populate the global attributes which are good for all the chips in the file
+        self._instrument=self._image['PRIMARY'].header["INSTRUME"]
+        self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
+        self.outputNames=self._setOutputNames(self._rootname)
+         
+        #this is the number of science chips to be processed in the file
+        self._numchips=self._countEXT(extname=self.scienceExt)
+        
+        if (self._numchips == 0):
+            self._isSimpleFits = True
+        else:
+            self._isSimpleFits = False
+
+        if not self._isSimpleFits:
+            self._nextend=self._image["PRIMARY"].header["NEXTEND"]
+
+            #assign chip specific information
+            for chip in range(1,self._numchips+1,1):
+                self._assignRootname(chip)
+                sci_chip = self._image[self.scienceExt,chip]
+                sci_chip._staticmask=None #this will be replaced with a  pointer to a StaticMask object
+
+                sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               
+                sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
+
+                # build up HSTWCS object for each chip, which will be necessary for drizzling operations
+                sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.extnum)
+                sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
+
+                #assuming all the chips don't have the same dimensions in the file
+                sci_chip._naxis1=sci_chip.header["NAXIS1"]
+                sci_chip._naxis2=sci_chip.header["NAXIS2"]            
+                self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+
+                # record the exptime values for this chip so that it can be
+                # easily used to generate the composite value for the final output image
+                sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
+                            
+                sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
+
+                # Determine output value of BUNITS
+                # and make sure it is not specified as 'ergs/cm...'
+                _bunit = None
+                if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
+                    _bunit = sci_chip.header['BUNIT']
+                else:
+                    _bunit = 'ELECTRONS/S'
+                sci_chip._bunit = _bunit
+            
+
+class WCSObject(baseImageObject):
+    def __init__(self,filename,suffix='_drz.fits'):
+        baseImageObject.__init__(self,filename)
+                
+        self._image = pyfits.HDUList()
+        self._image.append(pyfits.PrimaryHDU())
+        self._rootname = filename[:filename.find(suffix)]
+        self.outputNames = self._setOutputNames(self._rootname)
+        self.nimages = 1
+    
+        self._bunit = 'ELECTRONS/S'
+        

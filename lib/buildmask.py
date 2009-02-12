@@ -36,37 +36,43 @@ from pytools import fileutil, readgeis
 import pyfits
 import numpy as N
 
-def build_mask(imageObjectList,driz_separate):
+def build_mask(imageObjectList,configObj):
     # value of driz_separate needs to come from configObj object/dictionary
     dqfile = []
     detnum = []
-    bitvalue = []
     outputnames = []
     instrument = []
     extname = []
     extver = []
     binned = []
     
+    # extract parameters needed from user parameter settings 
+    bitvalue = configObj['bitvalue']
+    driz_separate = configObj['driz_separate']
+    
+    # Insure that input imageObject is a list
+    if not isinstance(imageObjectList, list):
+        imageObjectList = [imageObjectList]
+    
     for img in imageObjectList:
-        dqfile += img.getKeywordList(dqfile)
-        detnum += img.getKeywordList(detnum)
-        bitvalue += img.getKeywordList(bitvalues)
-        outputnames += img.getKeywordList(outputnames)
+        dqfile += img.getKeywordList('dqfile')
+        detnum += img.getKeywordList('detnum')
+        outputnames += img.getKeywordList('outputNames')
         instrument += [img._instrument]*img._numchips
         extname += [img.maskExt]*img._numchips
-        extver += img.getKeywordList(_chip)
-        binned += img.getKeywordList(binned)
-        
-    for chip in len(dqfile):
+        extver += img.getKeywordList('_chip')
+        binned += img.getKeywordList('binned')
+
+    for chip in range(len(dqfile)):
         if driz_separate:
             maskname = outputnames[chip]['singleDrizMask']
         else:
             maskname = outputnames[chip]['drizMask']
             
         if instrument[chip] == 'WFPC2':
-           buildShadowMaskImage(dqfile[chip],detnum[chip],extnum[chip],maskname,bitvalue=bitvalue[chip],binned=binned[chip])
+           buildShadowMaskImage(dqfile[chip],detnum[chip],extnum[chip],maskname,bitvalue=bitvalue,binned=binned[chip])
         else:
-           buildMaskImage(dqfile[chip],bitvalue[chip],maskname,extname=extname[chip],extver=extver[chip]) 
+           buildMaskImage(dqfile[chip],bitvalue,maskname,extname=extname[chip],extver=extver[chip]) 
 
 def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
