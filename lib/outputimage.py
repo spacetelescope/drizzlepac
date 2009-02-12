@@ -57,7 +57,7 @@ class OutputImage:
         self.units = 'cps'
         
         # Merge input_pars with each chip's outputNames object
-        for p in parlist:
+        for p in self.parlist:
             p.update(input_pars)
             
         if not blot:
@@ -79,9 +79,9 @@ class OutputImage:
             _outweight = plist[0]['outSWeight']
             _outcontext = plist[0]['outSContext']
             # Only report values appropriate for single exposure
-            self.texptime = plist[0]['exptime']
-            self.expstart = plist[0]['expstart']
-            self.expend = plist[0]['expend']
+            self.texptime = plist[0]['texptime']
+            self.expstart = plist[0]['texpstart']
+            self.expend = plist[0]['texpend']
         else:
             _outdata = plist[0]['outFinal']
             _outweight = plist[0]['outWeight']
