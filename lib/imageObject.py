@@ -128,15 +128,48 @@ class baseImageObject:
         """
         if (data == None):
             print "No data supplied"
-        else:                   
+        else:   
+        
+            #check if the exten is a string or number and translate to the correct chip
+            _extnum=0
+            
+            if ',' in str(exten): #assume a string like "sci,1" has been given
+                _extensplit=exten.split(',')
+                _extname=_extensplit[0]
+                _extver=int(_extensplit[1])
+                _extnum=self.findExtNum(_extname,_extver)
+            else:
+                #assume that a direct extnum has been given    
+                _extnum=int(exten)
+                
+            if(_extnum == None):
+                print "no extension number found"
+                return ValueError
+                
             iraf={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
                     
             #update the bitpix to the current datatype, this aint fancy and ignores bscale
-            self._image[exten].header["BITPIX"]=iraf[data.dtype.name]
-            self._image[exten].data=data
+            self._image[_extnum].header["BITPIX"]=iraf[data.dtype.name]
+            self._image[_extnum].data=data
 
+    def findExtNum(self,extname=None,extver=1):
+        """find the extension number of the give extname and extver"""      
+        extnum=None
+        _extname=extname.upper()
+         
+        if not self._isSimpleFits:
+            for ext in range(1,self._nextend+1,1):
+                if (self._image[ext].extname == _extname):
+                    if (self._image[ext].extver == extver):
+                        extnum=self._image[ext].extnum
+        else:
+            print "Image is simple fits"
+            
+        return extnum        
+        
     def _assignRootname(self, chip):
         """assign a unique rootname for the image based in the expname"""
+        
         extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
         extver=self._image[self.scienceExt,chip].header["EXTVER"]
         expname=self._image[self.scienceExt,chip].header["EXPNAME"].lower()
@@ -313,16 +346,14 @@ class baseImageObject:
         
         if (self._image['PRIMARY'].header["EXTEND"]):
             nextend=int(self._image['PRIMARY'].header["NEXTEND"])
-            for i in range (1,nextend,1):
+            for i in range (1,nextend+1,1):
                 self._image[i].extnum=i
                 self._image[i].extname=self._image[i].header["EXTNAME"]
                 self._image[i].extver=self._image[i].header["EXTVER"]
                 
                 if (self._image[i].header["EXTNAME"] == extname):
                     count=count+1    
-                    
-                    
-            
+                          
         return count
     
     def _averageFromHeader(self, header, keyword):
