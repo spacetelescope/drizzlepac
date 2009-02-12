@@ -43,49 +43,57 @@ class imageObject():
 
         #populate the global attributes which are good for all the chips in the file
         self._instrument=self._image['PRIMARY'].header["INSTRUME"]
-        self.scienceExt= 'SCI' # the extension the science image is stored in
-        self.maskExt='DQ' #the extension with the mask image in it
-        #self._filename=self._image['PRIMARY'].header["FILENAME"] 
+        self.scienceExt= "SCI" # the extension the science image is stored in
+        self.maskExt="DQ" #the extension with the mask image in it
         self._filename = filename
         self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
         self.outputNames=self._setOutputNames(self._rootname)
          
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
-        self._nextend=self._image["PRIMARY"].header["NEXTEND"]
         
-        #assign chip specific information
-        for chip in range(1,self._numchips+1,1):
-            self._assignRootname(chip)
-            sci_chip = self._image[self.scienceExt,chip]
-            sci_chip._staticmask=None #this will be replaced with a  pointer to a StaticMask object
-
-            sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               
-            sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
-
-            # build up HSTWCS object for each chip, which will be necessary for drizzling operations
-            sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.header,self._image['PRIMARY'].header)
-            sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
-
-            #assuming all the chips don't have the same dimensions in the file
-            sci_chip._naxis1=sci_chip.header["NAXIS1"]
-            sci_chip._naxis2=sci_chip.header["NAXIS2"]            
-            self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
-
-            # record the exptime values for this chip so that it can be
-            # easily used to generate the composite value for the final output image
-            sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
-                        
-            sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
+        if (self._numchips == 0):
+            self._isSimpleFits = True
+        else:
+            self._isSimpleFits = False
             
-            # Determine output value of BUNITS
-            # and make sure it is not specified as 'ergs/cm...'
-            _bunit = None
-            if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
-                _bunit = sci_chip.header['BUNIT']
-            else:
-                _bunit = 'ELECTRONS/S'
-            sci_chip._bunit = _bunit
+        self._nextend=0
+        
+        if not self._isSimpleFits:
+            self._nextend=self._image["PRIMARY"].header["NEXTEND"]
+
+            #assign chip specific information
+            for chip in range(1,self._numchips+1,1):
+                self._assignRootname(chip)
+                sci_chip = self._image[self.scienceExt,chip]
+                sci_chip._staticmask=None #this will be replaced with a  pointer to a StaticMask object
+
+                sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               
+                sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
+
+                # build up HSTWCS object for each chip, which will be necessary for drizzling operations
+                sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.header,self._image['PRIMARY'].header)
+                sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
+
+                #assuming all the chips don't have the same dimensions in the file
+                sci_chip._naxis1=sci_chip.header["NAXIS1"]
+                sci_chip._naxis2=sci_chip.header["NAXIS2"]            
+                self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+
+                # record the exptime values for this chip so that it can be
+                # easily used to generate the composite value for the final output image
+                sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
+
+                sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
+
+                # Determine output value of BUNITS
+                # and make sure it is not specified as 'ergs/cm...'
+                _bunit = None
+                if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
+                    _bunit = sci_chip.header['BUNIT']
+                else:
+                    _bunit = 'ELECTRONS/S'
+                sci_chip._bunit = _bunit
 
 
     def __getitem__(self,exten):
@@ -110,12 +118,15 @@ class imageObject():
         """return fits information on the _image"""
         #if the file hasn't been closed yet then we can
         #use the pyfits info which looks at the extensions
-        if(len(self._image[1].data.shape) !=0 ): 
-            self._image.info()    
+        if(self._isSimpleFits):
+            print self._filename," is a simple fits image"
+        else:
+            if(len(self._image[1].data.shape) !=0 ): 
+                self._image.info()    
             
-        #otherwise, we need to do something else
-        else:  
-            print "Data sections have already been closed\n"  
+            #otherwise, we need to do something else
+            else:  
+                print "Data sections have already been closed\n"  
     
     def close(self):
         """close the object nicely
@@ -129,11 +140,16 @@ class imageObject():
         #we actuallly want to make sure that all the
         #data extensions have been closed and deleted
         #since we could have the DQ,ERR and others read in
-        #at this point
-         
-        for ext in range(1,self._nextend,1):
-            self._image[1].data = np.array(0)  #so we dont get io errors on stuff that wasn't read in yet        
+        #at this point, but I'd like there to be something
+        #valid there afterwards that I can play with
+        
+        if not self._isSimpleFits: 
+            for ext in range(1,self._nextend,1):
+                self._image[1].data = np.array(0)  #so we dont get io errors on stuff that wasn't read in yet        
 
+        else:
+            self._image.data=np.array(0)
+            
     def getData(self,exten=None):
         """return just the data array from the specified extension 
             this method should be 
@@ -160,6 +176,18 @@ class imageObject():
         del image
         return header
 
+    def putData(self,exten=None):
+        """Now that we are removing the data from the object to save memory,
+            we need something that cleanly puts the data array back into
+            the object so that we can write out everything together  using
+            something like pyfits.writeto....this method is an attempt to
+            make sure that when you add an array back to the .data section
+            of the hdu it still matches the header information for that
+            section ( ie. update the bitpix to reflect the datatype of the
+            array you are adding). The other header stuff is  up to you to verify...
+            
+        """
+        
 
     def _assignRootname(self, chip):
         """assign a unique rootname for the image based in the expname"""
@@ -311,21 +339,21 @@ class imageObject():
         
         
          
-    def _countEXT(self,extname='SCI'):
+    def _countEXT(self,extname="SCI"):
 
         """
             count the number of extensions in the file
             with the given name (EXTNAME)
         """
 
-        _sciext="SCI"
-        count=0
-        nextend=self._image['PRIMARY'].header["NEXTEND"]
-
-        for i in range (1,nextend,1):
-            if (self._image[i].header["EXTNAME"] == extname):
-                count=count+1    
-
+        count=0 #simple fits image
+        
+        if (self._image['PRIMARY'].header["EXTEND"]):
+            nextend=int(self._image['PRIMARY'].header["NEXTEND"])
+            for i in range (1,nextend,1):
+                if (self._image[i].header["EXTNAME"] == extname):
+                    count=count+1    
+            
         return count
     
     def _averageFromHeader(self, header, keyword):

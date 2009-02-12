@@ -47,15 +47,6 @@ class MultiDrizzle:
         self._medianImage='' #the name of the output median images                             
         self._blotImlist=[] #the list of blotted image names                                   
 
-        #Keep track of steps to perform on the object                                         
-        self.staticMaskDone=False                                                             
-        self.skySubtractionDone=False                                                         
-        self.drizzleSeparateDone=False                                                        
-        self.medianImageDone=False                                                            
-        self.blotDone=False                                                                   
-        self.derivCRDone=False                                                                
-        self.drizFinalDone=False                                                              
-
         #setup default parameters including user overrides                                    
         self.parameters=self._setDefaults(configObj)                                               
         self.saveFiles=saveFiles
@@ -78,10 +69,13 @@ class MultiDrizzle:
     def run(self):
         """step through all the functions to perform full drizzling """
 
+        for imageSet in self._objectList: 
+            self.computeStaticMask(imageSet) #this must get all the images since the final mask
+                                             #is the logical AND for all the chips that are input
+
         #These can be run on individual images, 
         #they dont have to be in memory together or submitted as a list               
         for imageSet in self._objectList:    
-            self.computeStaticMask(imageSet)
             self.computeSky(imageSet)
             self.createDrizSep(imageSet)
 
@@ -200,6 +194,16 @@ class MultiDrizzle:
         self.doBlot=False
         self.doDerivCr=False
         self.doFinalDrizzle=False
+
+        #Keep track of steps to perform on the object                                         
+        self.staticMaskDone=False                                                             
+        self.skySubtractionDone=False                                                         
+        self.drizzleSeparateDone=False                                                        
+        self.medianImageDone=False                                                            
+        self.blotDone=False                                                                   
+        self.derivCRDone=False                                                                
+        self.drizFinalDone=False                                                              
+
 
         params={'output':'',
                 'mdriztab':'',

@@ -56,8 +56,10 @@ class staticMask:
         has the same signature.  The signature parameter
         consists of the tuple:
         (instrument/detector, (nx,ny), chip_id)
-        
+       
         signature is defined in the image object for each chip
+        
+        imagePtr is an imageObject
         """
         
         numchips=imagePtr._numchips
