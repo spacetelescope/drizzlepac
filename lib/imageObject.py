@@ -97,13 +97,13 @@ class imageObject():
 
 
     def __getitem__(self,exten):
-        """overload  getitem to return the data and header"""
+        """overload  getitem to return the data and header
+            these only work on the HDU list already in memory
+            once the data has been zero's in self._image you should
+            use getData or getHeader to re-read the file
+        """
         return fileutil.getExtn(self._image,extn=exten)
     
-    def __setitem__(self,kw,value):
-        """overload setitem to update information, not sure this is right yet"""
-        # This operation only updates keyword values in the primary header
-        self._image.header.update(kw,value)
     
     def __cmp__(self, other):
         """overload the comparison operator
@@ -133,7 +133,8 @@ class imageObject():
            and release all the data arrays from memory
            YOU CANT GET IT BACK, the pointers and data are gone
            so use the getData method to get the data array
-           returned for future use
+           returned for future use. You can use putData to 
+           reattach a new data array to the imageObject
         """
         self._image.close()  #calls pyfits.close()
         
@@ -158,11 +159,11 @@ class imageObject():
             non FITS input images. openImage returns a pyfits object
         
         """
-        image=fileutil.openImage(self._filename,clobber=False,memmap=0)
-        data=fileutil.getExtn(self._image,extn=exten).data
-        image.close()
-        del image
-        return data
+        _image=fileutil.openImage(self._filename,clobber=False,memmap=0)
+        _data=fileutil.getExtn(_image,extn=exten).data
+        
+        del _image
+        return _data
                 
     def getHeader(self,exten=None):
         """return just the specified header extension
