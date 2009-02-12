@@ -121,13 +121,8 @@ class imageObject():
         if(self._isSimpleFits):
             print self._filename," is a simple fits image"
         else:
-            if(len(self._image[1].data.shape) !=0 ): 
-                self._image.info()    
-            
-            #otherwise, we need to do something else
-            else:  
-                print "Data sections have already been closed\n"  
-    
+            self._image.info()    
+ 
     def close(self):
         """close the object nicely
            and release all the data arrays from memory
@@ -146,9 +141,12 @@ class imageObject():
         
         if not self._isSimpleFits: 
             for ext in range(1,self._nextend+1,1):
-                self._image[ext].data = np.array(0)  #so we dont get io errors on stuff that wasn't read in yet     
-        else:
-            self._image.data=np.array(0)
+                #use the datatype for the extension
+                dtype=self.getNumpyType(self._image[ext].header["BITPIX"])
+                self._image[ext].data = np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet     
+        else:            
+            self._image.data=np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
+            
             
     def getData(self,exten=None):
         """return just the data array from the specified extension 
@@ -397,3 +395,9 @@ class imageObject():
             _result = _result / _count
         return _result
 
+    def getNumpyType(self,irafType):
+        """return the corresponding numpy data type"""
+        
+        iraf={-64:'float64',-32:'float32',8:'uint8',16:'int16',32:'int32'}
+        
+        return iraf[irafType]
