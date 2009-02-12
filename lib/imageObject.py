@@ -359,8 +359,14 @@ class imageObject():
         if (self._image['PRIMARY'].header["EXTEND"]):
             nextend=int(self._image['PRIMARY'].header["NEXTEND"])
             for i in range (1,nextend,1):
+                self._image[i].extnum=i
+                self._image[i].extname=self._image[i].header["EXTNAME"]
+                self._image[i].extver=self._image[i].header["EXTVER"]
+                
                 if (self._image[i].header["EXTNAME"] == extname):
                     count=count+1    
+                    
+                    
             
         return count
     
