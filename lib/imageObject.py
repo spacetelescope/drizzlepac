@@ -190,10 +190,7 @@ class imageObject():
         if (data == None):
             print "No data supplied"
 
-        else:            
-            #check the bitpix in the current header and the current data array type
-            _cbitpix=self._image[exten].header["BITPIX"]
-        
+        else:                   
             iraf={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
                     
             #update the bitpix to the current datatype, this aint fancy and ignores bscale
