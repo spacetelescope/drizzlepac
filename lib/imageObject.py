@@ -153,7 +153,7 @@ class baseImageObject:
             self._image[_extnum].header["BITPIX"]=iraf[data.dtype.name]
             self._image[_extnum].data=data
 
-    def getAllData(self,extname=None):
+    def getAllData(self,extname=None,exclude=None):
         """ this function is meant to make it easier to attach ALL the data
         extensions of the image object so that we can write out copies of the
         original image nicer.
@@ -161,6 +161,12 @@ class baseImageObject:
         if no extname is given, the it retrieves all data from the original
         file and attaches it. Otherwise, give the name of the extensions
         you want and all of those will be restored
+        
+        ok, I added another option. If you want to get all the data
+        extensions EXCEPT a particular one, leave extname=NONE and
+        set exclude=EXTNAME. This is helpfull cause you might not know
+        all the extnames the image has, this will find out and exlude
+        the one you dont want overwritten
         """
         
         #make a list of the available extension names for the object
@@ -173,6 +179,17 @@ class baseImageObject:
             for i in range(1,self._nextend+1,1):
                 if self._image[i].extname.upper() not in extensions:
                     extensions.append(self._image[i].extname)
+        #remove this extension from the list
+        if exclude != None:
+            exclude.upper()
+            if exclude in extensions:
+                newExt=[]
+                for item in extensions:
+                    if item != exclude:
+                        newExt.append(item)
+            extensions=newExt
+            del newExt
+                   
         for i in range(1,self._nextend+1,1):
             if (self._image[i].extname in extensions):
                 self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
