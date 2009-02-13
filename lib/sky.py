@@ -12,14 +12,6 @@
     :author: Christopher Hanley
     :author: Megan Sosey
 
-
-    stuff I got rid of
-    -------------------
-    #can't we do something to get rid of this parameter? I've always hated it
-    #or do we need it for some reason I haven't figured out yet?
-    group		'the group number for the fits image' 
-
-
 """
 import util
 from imageObject import imageObject
@@ -29,11 +21,11 @@ import numpy as np
 
 #this is the main function that takes an imageSet and a parameter dictionary
 #made from the config obj. This is what the user function calls as well
-def subtractSky(imageSet,configObj={},saveFile=True):
+def subtractSky(imageSet=None,configObj={},saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     
-    imageSet contains all the information about the chips in the image file and is an imageObject
+    imageSet is an imageObject reference
     configObj is represented as a dict for now, but will prolly be an actual config object
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
 
@@ -72,7 +64,7 @@ def subtractSky(imageSet,configObj={},saveFile=True):
        
         for chip in range(1,numchips+1,1):
             try:
-                _skyValue = imageSet._image[0].header[paramDict["skyuser"]]
+                _skyValue = imageSet._image["PRIMARY"].header[paramDict["skyuser"]]
 
             except:
                 print "**************************************************************"
@@ -85,7 +77,7 @@ def subtractSky(imageSet,configObj={},saveFile=True):
             _updateKW(imageSet[sciExt+','+str(chip)],skyKW,_skyValue)
                         
         #update the value of MDRIZSKY in the global header
-        _updateKW(imageSet[0],skyKW,_skyValue)
+        _updateKW(imageSet["PRIMARY"],skyKW,_skyValue)
         print skyKW,"=",_skyValue
 
     else:
@@ -95,8 +87,13 @@ def subtractSky(imageSet,configObj={},saveFile=True):
 
         print "Computing minimum sky ..."
         minSky=[] #store the sky for each chip
+        
         for chip in range(1,numchips+1,1):
             myext=sciExt+","+str(chip)
+            
+            #add the data back into the chip, leave it there til the end of this function
+            imageSet[myext].data=imageSet.getData(myext)
+            
             image=imageSet[myext]
             _skyValue= _computeSky(image, paramDict, memmap=0)
             minSky.append(_skyValue)
@@ -105,15 +102,14 @@ def subtractSky(imageSet,configObj={},saveFile=True):
             image.computedSky=_skyValue 
 
         _skyValue = min(minSky)
+        print "Minimum sky value all chips ",_skyValue
 
         #now subtract that value from all the chips in the exposure
         #and update the chips header keyword with the sub
         for chip in range(1,numchips+1,1):
             image=imageSet._image[sciExt,chip]
-            print "Minimum sky value for chip "+str(chip),_skyValue
             _subtractSky(image,_skyValue)
             _updateKW(image,skyKW,_skyValue)
-            del image.data
             
         #update the value of MDRIZSKY in the global header
         # This does not make sense for STIS ASN files...
@@ -121,9 +117,16 @@ def subtractSky(imageSet,configObj={},saveFile=True):
    
     if(saveFile):
         print "Saving output sky subtracted image: ",imageSet.outputNames["outSky"]
-        imageSet._image.writeto(imageSet.outputNames['outSky'])
-            
-   
+        #get the rest of the data extensions
+        imageSet.getAllData(exclude="SCI")
+        try:
+            imageSet._image.writeto(imageSet.outputNames['outSky'])
+        except IOError:
+            print "Image already exists on disk!"
+            return IOError
+                    
+    imageSet.close() #remove the data from memory
+
 #this function can be called by users and will create an imageSet to send to
 #the official function. I dunno, what's really a good name for this that the users
 #can easily differentiate from the call we want? I chose "my" as the prefix cause
@@ -194,7 +197,6 @@ def _computeSky(image, skypars, memmap=0):
     
     skypars is passed in as paramDict
     """
-
 	#this object contains the returned values from the image stats routine
     _tmp = imagestats.ImageStats(image.data,
             fields      = skypars['skystat'],
