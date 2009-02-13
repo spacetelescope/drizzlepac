@@ -2,13 +2,14 @@
 
 """
 These are functions related directly to ACS images
+that grab instrument specific informationrigh
 """
 
 from pytools import fileutil
 import numpy as np
 
 
-def getACSInfo(filename):
+def getACSInfo(imageSet=None):
     """
     This takes a pyfits primary header instance and pulls out
     the basic set of keywords we would like to have which 
@@ -17,7 +18,9 @@ def getACSInfo(filename):
     The keyword list is not passed in because they
     can be different from instrument to instrument
     """
-    keywords={}
+    keywords={} #store keyword name specifics
+    finalDict={} #store the final keyword:values to be returned, 
+                #where they keywords be the same across instruments
     
     #the flatfile keyword name           
     keywords["flatname"]="PFLTFILE"
@@ -43,16 +46,18 @@ def getACSInfo(filename):
         str += "#                                           #\n"        
         str += "#############################################\n"        
         raise ValueError, str                                           
-
-    #find out the number of science images/chips/units that are contained
-    #in the file.
-    #keywords["NUMCHIPS"]=countSCI( )   
     
     
-    keywords["GAIN"]=float(primaryHeader["ATODGNA"])
-    keywords["READNOISE"]=float(primaryHeader["READNSEA"])
+    keywords["GAIN"]=float(imageSet._image["PRIMARY"].header["ATODGNA"])
+    keywords["READNOISE"]=float(imageSet._image["PRIMARY"].header["READNSEA"])
     
     keywords["PLATESCALE"]=0.04
+    
+    
+    finalDict["flatfield"]=imageSet._image["PRIMARY"].header[keywords["flatname"]]
+    #there could be different gains for each chip
+    for chip in range(1,imageSet._numchips+1,1):
+        finalDict["gain"]=[imageSet._image[
     
     return keywords
 
@@ -67,99 +72,54 @@ def getCTEdirection(extension):
     return cte_dir
     
 
-def getflat(imageInformation,chip):
+def getHRCInfo(finalDict={}):
 
-    """
-    Purpose
-    =======
-    Method for retrieving a detector's flat field.
+        instrument = 'ACS/HRC'        
+        full_shape = (1024,1024)
+        platescale = platescale
 
-    This method will return an array the same shape as the
-    image.
+        if ( amp == 'A' or amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
+            cte_dir = 1   
+        if ( amp == 'C' or amp == 'D' ) :
+            cte_dir = -1   
 
-    :units: electrons
-    
-    imageInformation is the object with the basic image information that 
-    we are creating and passing around
-    
-    since we are passing around objects that are valid for the
-    entire FILE not just per detector or chip, we need to be specific
-    about which chip we want an image returned for
-    
-    """
+def getSBCInfo (finalDict={}):
 
-    # The keyword for ACS flat fields in the primary header of the flt
-    # file is pfltfile.  This flat file is already in the required 
-    # units of electrons.
+    full_shape = (1024,1024)
+    platescale = platescale
+    instrument = 'ACS/SBC'
 
-    filename = imageInformation['PFLTFILE']
-    #flatExt=
-    
-    try:
-        handle = fileutil.openImage(filename,mode='readonly',memmap=0)
-        hdu = fileutil.getExtn(handle,extn=extn)
-        data = hdu.data[ltv2:size2,ltv1:size1]
-    except:
-        try:
-            handle = fileutil.openImage(filename[5:],mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn=self.extn)
-            data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-        except:
-            data = np.ones(self.image_shape,dtype=self.image_dtype)
-            str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-            print str
-    flat = data
-    return flat
+    # no cte correction for SBC so set cte_dir=0.
+    print('\nWARNING: No cte correction will be made for this SBC data.\n')
+    cte_dir = 0       
 
-class HRCInputImage (ACSInputImage):
-
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        ACSInputImage.__init__(self, input, dqname, platescale,memmap=0,proc_unit=proc_unit)
-        self.instrument = 'ACS/HRC'        
-        self.full_shape = (1024,1024)
-        self.platescale = platescale
-
-        if ( self.amp == 'A' or self.amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
-            self.cte_dir = 1   
-        if ( self.amp == 'C' or self.amp == 'D' ) :
-            self.cte_dir = -1   
-
-class SBCInputImage (ACSInputImage):
-
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        ACSInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
-        self.full_shape = (1024,1024)
-        self.platescale = platescale
-        self.instrument = 'ACS/SBC'
-
-        # no cte correction for SBC so set cte_dir=0.
-        print('\nWARNING: No cte correction will be made for this SBC data.\n')
-        self.cte_dir = 0       
-
-        # Set the default readnoise or gain values based upon the amount of user input given.
+    # Set the default readnoise or gain values based upon the amount of user input given.
 
     # Case 1: User supplied no gain or readnoise information
     if usingDefaultReadnoise and usingDefaultGain:
         # Set the default gain and readnoise values
-        self._setSBCchippars()
+        _setSBCchippars()
     # Case 2: The user has supplied a value for gain
     elif usingDefaultReadnoise and not usingDefaultGain:
         # Set the default readnoise value
-        self._setDefaultSBCReadnoise()
+        _setDefaultSBCReadnoise()
     # Case 3: The user has supplied a value for readnoise 
     elif not usingDefaultReadnoise and usingDefaultGain:
         # Set the default gain value
-        self._setDefaultSBCGain()
+        _setDefaultSBCGain()
     else:
         # In this case, the user has specified both a gain and readnoise values.  Just use them as is.
         pass
 
-def _setSBCchippars(self):
-    self._setDefaultSBCGain()
-    self._setDefaultSBCReadnoise()
+def _setSBCchippars(finalDict={}):
+    _setDefaultSBCGain()
+    _setDefaultSBCReadnoise()
 
-def _setDefaultSBCGain(self):
-    self._gain = 1
+def _setDefaultSBCGain(finalDict{}):
+    _gain = 1
 
-def _setDefaultSBCReadnoise(self):
-    self._rdnoise = 0
+def _setDefaultSBCReadnoise(finalDict{}):
+    _rdnoise = 0
+
+
+

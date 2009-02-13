@@ -7,7 +7,11 @@ the running of multidrizzle using those object
 Files can be in GEIS or MEF format (but not waiver fits).
 
 I'm writing this to help me work through running the
-whole package as I'm coding it
+whole package as I'm coding it. It can be an example
+later on for the users that like to use classes. I will
+also write a functional script that does the same thing
+
+Megan Sosey
 """
 
 from pytools import fileutil
@@ -44,7 +48,7 @@ class MultiDrizzle:
         self._fileList=[] #the list of filenames given by the user, and parsed by the code    
                          #there should be one imageObject for each file in the list           
         self._drizSepList=[] #this is a list of the singly drizzled images                     
-        self._medianImage='' #the name of the output median images                             
+        self._medianImage='' #the name of the output median image                             
         self._blotImlist=[] #the list of blotted image names                                   
 
         #setup default parameters including user overrides                                    
@@ -66,28 +70,32 @@ class MultiDrizzle:
         self._populateObjects() #read the images into memory (data is lazy instantiation)            
 
 
+
     def run(self):
         """step through all the functions to perform full drizzling """
 
         for imageSet in self._objectList: 
             self.computeStaticMask(imageSet) #this must get all the images since the final mask
                                              #is the logical AND for all the chips that are input
-
+            
         #These can be run on individual images, 
         #they dont have to be in memory together or submitted as a list               
         for imageSet in self._objectList:    
             self.computeSky(imageSet)
             self.createDrizSep(imageSet)
 
-            imageSet.close()   #the output images have been saved to larger separate files
 
         self.computeMedian() #this step needs a list of all the separately drizled images   
-        self.createBlotImages()
-        self.calcDerivCr()
+        for imageSet in self._objectList:
+            self.createBlotImages()
+            self.calcDerivCr()
 
         self.runFinalDrizzle() #give it the list of images
-
+        self.staticMask.close() #free up the static mask memory
+        
         print "MultiDrizzle finished!"
+        
+        
         
 
     def _populateObjects(self):
@@ -96,6 +104,7 @@ class MultiDrizzle:
             for image in self._fileList:
                 imageSet=(imageObject(image))
                 self._objectList.append(imageSet)  
+                imageSet.close() #this clears the data from memory, read back in using getData
         else:
             print "Object list already poplulated\nNot adding new ones"
              
@@ -106,7 +115,10 @@ class MultiDrizzle:
         if (self.doStaticMask and not(self.staticMaskDone)):                                       
             try:                                                                                
                 self.staticMask.addMember(imageSet)     
-                self.staticMaskDone=True  
+                if self.saveFiles:
+                    self.staticMask.saveToFile()
+                self.staticMaskDone=True                  
+                
             except:                                                                             
                 print "Problem occured during static mask step"                                 
                 return ValueError     

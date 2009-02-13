@@ -11,7 +11,7 @@ from ir_input import IRInputImage
 from input_image import InputImage
 
 
-class NICMOSInputImage(IRInputImage):
+class NICMOSInputImage(imageObject):
 
     SEPARATOR = '_'
 

@@ -509,6 +509,14 @@ class imageObject(baseImageObject):
                     _bunit = 'ELECTRONS/S'
                 sci_chip._bunit = _bunit
             
+    def getScienceInfo(self,chip=None):
+        """return a dictionary of science information such as gain and readnoise
+           which is specific to the chip itself
+           
+        """
+        
+        
+                    
 
 class WCSObject(baseImageObject):
     def __init__(self,filename,suffix='_drz.fits'):
