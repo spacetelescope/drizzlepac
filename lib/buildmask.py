@@ -76,6 +76,8 @@ def build_mask(imageObjectList,configObj):
 
 def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
+    if bitvalue == None:
+        return (dqarr * 0.0) + 1.0
     _maskarr = N.bitwise_or(dqarr,N.array([bitvalue]))
     return N.choose(N.greater(_maskarr,bitvalue),(1,0)).astype(N.uint8)
 
@@ -89,8 +91,8 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
     # If no bitvalue is set or rootname given, assume no mask is desired
     # However, this name would be useful as the output mask from
     # other processing, such as MultiDrizzle, so return it anyway.
-    if bitvalue == None or rootname == None:
-        return None
+    #if bitvalue == None or rootname == None:
+    #    return None
 
     # build output name
     maskname = output
