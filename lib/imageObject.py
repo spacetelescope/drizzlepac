@@ -124,7 +124,8 @@ class baseImageObject:
             array you are adding). The other header stuff is  up to you to verify...
             
             data should be the data array
-            exten is where you want to stick it, in this case we need an explicit number
+            exten is where you want to stick it, either extension number or
+                a string like 'sci,1'
         """
         if (data == None):
             print "No data supplied"
@@ -151,6 +152,31 @@ class baseImageObject:
             #update the bitpix to the current datatype, this aint fancy and ignores bscale
             self._image[_extnum].header["BITPIX"]=iraf[data.dtype.name]
             self._image[_extnum].data=data
+
+    def getAllData(self,extname=None):
+        """ this function is meant to make it easier to attach ALL the data
+        extensions of the image object so that we can write out copies of the
+        original image nicer.
+        
+        if no extname is given, the it retrieves all data from the original
+        file and attaches it. Otherwise, give the name of the extensions
+        you want and all of those will be restored
+        """
+        
+        #make a list of the available extension names for the object
+        extensions=[]
+        if extname != None:
+            extensions.append(extname.upper())
+        else:
+        #restore all the extensions data from the original file, be careful here
+        #if you've altered data in memory you want to keep!
+            for i in range(1,self._nextend+1,1):
+                if self._image[i].extname.upper() not in extensions:
+                    extensions.append(self._image[i].extname)
+        for i in range(1,self._nextend+1,1):
+            if (self._image[i].extname in extensions):
+                self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
+        
 
     def findExtNum(self,extname=None,extver=1):
         """find the extension number of the give extname and extver"""      
@@ -390,6 +416,7 @@ class baseImageObject:
         iraf={-64:'float64',-32:'float32',8:'uint8',16:'int16',32:'int32'}
         
         return iraf[irafType]
+        
 
 class imageObject(baseImageObject):
     """
