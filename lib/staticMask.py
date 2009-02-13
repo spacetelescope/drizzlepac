@@ -7,7 +7,7 @@
 
     This class manages the creation of the global static mask which
     masks pixels which are negative in the SCI array.
-    A static mask numarray object gets created for each global
+    A static mask numpy object gets created for each global
     mask needed, one for each chip from each instrument/detector.
     Each static mask array has type Int16, and resides in memory.
 
@@ -59,15 +59,15 @@ class staticMask:
        
         signature is defined in the image object for each chip
         
-        imagePtr is an imageObject
+        imagePtr is an imageObject reference
         """
         
         numchips=imagePtr._numchips
         
         for chip in range(1,numchips+1,1):
             chipid=imagePtr.scienceExt + ','+ str(chip)
-            chipimage=imagePtr[chipid]
-            signature=chipimage.signature
+            chipimage=imagePtr.getData(chipid)
+            signature=imagePtr[chipid].signature
 
             # If this is a new signature, create a new Static Mask file which is empty
             # only create a new mask if one doesn't already exist
@@ -76,16 +76,16 @@ class staticMask:
 
             # Operate on input image DQ array to flag 'bad' pixels in the
             # global static mask
-            stats = ImageStats(chipimage.data,nclip=3,fields='mode')
+            stats = ImageStats(chipimage,nclip=3,fields='mode')
             mode = stats.mode
             rms  = stats.stddev
             del stats
-
+            print "Static Mask statistics:\n"
             print('  mode = %9f;   rms = %7f')  %  (mode,rms)
 
             sky_rms_diff = mode - (self.static_sig*rms)
-            np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage.data, sky_rms_diff)),self.masklist[signature])
-
+            np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage, sky_rms_diff)),self.masklist[signature])
+            del chipimage
 
                 
     def _buildMaskArray(self,signature):
