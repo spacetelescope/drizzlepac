@@ -64,6 +64,7 @@ class staticMask:
         
         numchips=imagePtr._numchips
         
+        print "Computing static masks:\n"
         for chip in range(1,numchips+1,1):
             chipid=imagePtr.scienceExt + ','+ str(chip)
             chipimage=imagePtr.getData(chipid)
@@ -80,7 +81,7 @@ class staticMask:
             mode = stats.mode
             rms  = stats.stddev
             del stats
-            print "Static Mask statistics:\n"
+            
             print('  mode = %9f;   rms = %7f')  %  (mode,rms)
 
             sky_rms_diff = mode - (self.static_sig*rms)
@@ -158,7 +159,12 @@ class staticMask:
                     print "Problem saving static mask file: ",filename," to disk!\n"
                     raise IOError
 
-            
+    def close(self):
+        """close out the static mask cleanly"""
+        for mask in self.masklist.keys():
+            self.masklist[mask]=0.
+        self.masklist={}
+                  
 
     def _setDefaults(self,configObj={}):
         """set the default parameters for the class"""
