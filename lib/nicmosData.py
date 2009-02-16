@@ -7,16 +7,16 @@ from pytools import fileutil
 from nictools import readTDD
 import numpy as np
 
-from ir_input import IRInputImage
-from input_image import InputImage
+from irData import IRInputImage
+from imageObject import imageObject
 
 
 class NICMOSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self, input,dqname,platescale,memmap=0,proc_unit="native"):
-        IRInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self, filename=None,proc_unit="native"):
+        imageObject.__init__(self,filename)
         
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
@@ -24,11 +24,34 @@ class NICMOSInputImage(imageObject):
         # Detector parameters
         self.platescale = platescale
         self.full_shape = (256,256)
+        self._detector=self._image["PRIMARY"].header["CAMERA"]
          
         # no cte correction for NICMOS so set cte_dir=0.
         self.cte_dir = 0   
 
         self._effGain = 1
+        
+        for chip in range(1,self._numchips+1,1):
+            self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+
+    def _assignSignature(self, chip):
+        """assign a unique signature for the image based 
+           on the  instrument, detector, chip, and size
+           this will be used to uniquely identify the appropriate
+           static mask for the image
+           
+           this also records the filename for the static mask to the outputNames dictionary
+           
+        """
+        instr=self._instrument
+        detector=self._image['PRIMARY'].header["CAMERA"] #this needs to be made more general
+        ny=self._image[self.scienceExt,chip]._naxis1
+        nx=self._image[self.scienceExt,chip]._naxis2
+        detnum = self._image[self.scienceExt,chip].detnum
+        
+        self._image[self.scienceExt,chip].signature=(instr+detector,(nx,ny),detnum) #signature is a tuple
+
+
 
     def updateMDRIZSKY(self,filename=None): 
         if (filename == None): 
@@ -250,12 +273,26 @@ class NICMOSInputImage(imageObject):
                         
             # Return the darkimage taking into account an subarray information available
             return darkobj[self.ltv2:self.size2,self.ltv1:self.size1]
+ 
+    def isCountRate(self):
+        """
+        isCountRate: Method or IRInputObject used to indicate if the
+        science data is in units of counts or count rate.  This method
+        assumes that the keyword 'BUNIT' is in the header of the input
+        FITS file.
+        """
+        
+        if self.header.has_key('BUNIT'):       
+            if self.header['BUINT'].find("/") != -1:
+                return True
+        else:
+            return False
         
     
 class NIC1InputImage(NICMOSInputImage):
 
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        NICMOSInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self, filename=None,proc_unit="native"):
+        NICMOSInputImage.__init__(self,filename)
         self.instrument = 'NICMOS/1'
         
     def _setDarkRate(self):
@@ -269,8 +306,8 @@ class NIC1InputImage(NICMOSInputImage):
             self._rdnoise = self._rdnoise / self.getGain() # ADU
 
 class NIC2InputImage(NICMOSInputImage):
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        NICMOSInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self,filename=None,proc_unit="native"):
+        NICMOSInputImage.__init__(self,filename)
         self.instrument = 'NICMOS/2'
         
     def _setDarkRate(self):
@@ -284,8 +321,8 @@ class NIC2InputImage(NICMOSInputImage):
             self._rdnoise = self._rdnoise/self.getGain() #ADU
 
 class NIC3InputImage(NICMOSInputImage):
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        NICMOSInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self,filename=None,proc_unit="native"):
+        NICMOSInputImage.__init__(self,filename)
         self.instrument = 'NICMOS/3'
         
     def _setDarkRate(self):

@@ -14,11 +14,33 @@ class ACSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self,filename='',proc_unit="native"):
+    def __init__(self,filename=None,proc_unit="native"):
         imageObject.__init__(self,filename)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self.platescale = 0.
+        
+        for chip in range(1,self._numchips+1,1):
+            self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+
+
+    def _assignSignature(self, chip):
+        """assign a unique signature for the image based 
+           on the  instrument, detector, chip, and size
+           this will be used to uniquely identify the appropriate
+           static mask for the image
+           
+           this also records the filename for the static mask to the outputNames dictionary
+           
+        """
+        instr=self._instrument
+        detector=self._image['PRIMARY'].header["DETECTOR"] #this needs to be made more general
+        ny=self._image[self.scienceExt,chip]._naxis1
+        nx=self._image[self.scienceExt,chip]._naxis2
+        detnum = self._image[self.scienceExt,chip].detnum
+        
+        self._image[self.scienceExt,chip].signature=(instr+detector,(nx,ny),detnum) #signature is a tuple
+
         
     def doUnitConversions(self):
         # Effective gain to be used in the driz_cr step.  Since the

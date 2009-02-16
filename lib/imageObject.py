@@ -225,22 +225,6 @@ class baseImageObject:
         self._image[self.scienceExt,chip]._expname=expname
         self._image[self.scienceExt,chip]._chip =chip
         
-    def _assignSignature(self, chip):
-        """assign a unique signature for the image based 
-           on the  instrument, detector, chip, and size
-           this will be used to uniquely identify the appropriate
-           static mask for the image
-           
-           this also records the filename for the static mask to the outputNames dictionary
-           
-        """
-        instr=self._instrument
-        detector=self._image['PRIMARY'].header["DETECTOR"]
-        ny=self._image[self.scienceExt,chip]._naxis1
-        nx=self._image[self.scienceExt,chip]._naxis2
-        detnum = self._image[self.scienceExt,chip].detnum
-        
-        self._image[self.scienceExt,chip].signature=(instr+detector,(nx,ny),detnum) #signature is a tuple
 
     def _setOutputNames(self,rootname):
         """
@@ -492,7 +476,6 @@ class imageObject(baseImageObject):
                 #assuming all the chips don't have the same dimensions in the file
                 sci_chip._naxis1=sci_chip.header["NAXIS1"]
                 sci_chip._naxis2=sci_chip.header["NAXIS2"]            
-                self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
 
                 # record the exptime values for this chip so that it can be
                 # easily used to generate the composite value for the final output image

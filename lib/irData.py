@@ -3,9 +3,9 @@
 #   Program: ir_input.py
 #   Purpose: Class used to model IR specific instrument data.
 
-from input_image import InputImage
+from imageObject import imageObject
 
-class IRInputImage(InputImage):
+class IRInputImage(imageObject):
     """
     
     IRInputImage
@@ -18,11 +18,11 @@ class IRInputImage(InputImage):
     SEPARATOR = '_'
 
 
-    def __init__(self,input,dqname,platescale,memmap=0,proc_unit="native"):
+    def __init__(self,filename=None,proc_unit="native"):
         """
         Constructor for IRInputImage class object.
         """
-        InputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+        imageObject.__init__(self,filename)
         
     def isCountRate(self):
         """
