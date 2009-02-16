@@ -26,14 +26,13 @@ class NICMOSInputImage(imageObject):
         self.full_shape = (256,256)
         self._detector=self._image["PRIMARY"].header["CAMERA"]
         self._instrument=self._image['PRIMARY'].header["INSTRUME"]
- 
-        # no cte correction for NICMOS so set cte_dir=0.
-        self.cte_dir = 0   
-
-        self._effGain = 1 #get the gain from the detector subclass
-        
+         
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+            self._image[self.scienceExt,chip].cte_dir = 0   #no correction for nicmos
+            self._effGain = 1 #get the specific gain from the detector subclass
+
+            
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -293,7 +292,10 @@ class NIC1InputImage(NICMOSInputImage):
 
     def __init__(self, filename=None,proc_unit="native"):
         NICMOSInputImage.__init__(self,filename)
-        self.instrument = 'NICMOS/1'
+        self._effGain = 1 #get the gain from the detector subclass
+        self._gain=5.4 #measured
+        
+
         
     def _setDarkRate(self):
         self.darkrate = 0.08 #electrons/s
@@ -310,7 +312,7 @@ class NIC1InputImage(NICMOSInputImage):
 class NIC2InputImage(NICMOSInputImage):
     def __init__(self,filename=None,proc_unit="native"):
         NICMOSInputImage.__init__(self,filename)
-        self.instrument = 'NICMOS/2'
+        self._gain=5.4 #measured
         
     def _setDarkRate(self):
         self.darkrate = 0.08 #electrons/s
@@ -325,7 +327,7 @@ class NIC2InputImage(NICMOSInputImage):
 class NIC3InputImage(NICMOSInputImage):
     def __init__(self,filename=None,proc_unit="native"):
         NICMOSInputImage.__init__(self,filename)
-        self.instrument = 'NICMOS/3'
+        self._gain-6.5 #measured
         
     def _setDarkRate(self):
         self.darkrate = 0.15 #electrons/s

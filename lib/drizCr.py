@@ -34,14 +34,6 @@ def drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
     backg    = 0              # Background value
     expkey   = "exptime"        # exposure time keyword
     
-    These are defined in the imageObject now inside the instrument
-    constructors and could be taken away from the parameter list
-    so not to confuse users
-        
-    ctedir   = 1               # ctr correction direction   
-    amp      = 'A'            # amplifier (used for HRC)
-    units    = "counts"        # counts or cps
-
     blot images are saved out to simple fits files with 1 chip in them
     so for example in ACS, there will be 1 image file with 2 chips that is
     the original image and 2 blotted image files, each with 1 chip
@@ -56,7 +48,6 @@ def drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
     paramDict=setDefaults(configObj)
     grow=paramDict["grow"]
     ctegrow=paramDict["ctegrow"]
-    ctedir=paramDict["ctedir"]
     
     scienceChip=sciImage[sciImage.scienceExt,chip]
     
@@ -71,10 +62,11 @@ def drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
     blotDerivName=scienceChip.outputNames["blotDeriv"]
     crCorImage=scienceChip.outputNames["crcorImage"]
     crMaskImage=scienceChip.outputNames["crmaskImage"]
+    ctedir=scienceChip.cte_dir
     
     #check that sciImage and blotImage are the same size?
     try:
-        fileutil.checkFileExists(blotImageName))
+        fileutil.checkFileExists(blotImageName)
     except IOError:
         print "Could not find the Blotted image on disk:",blotImageName
         raise IOError
@@ -106,7 +98,7 @@ def drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
     __mult2 = float(__scaleList[1])
     
     __gain=scienceChip._gain
-    __rn=scienceChip._rn
+    __rn=scienceChip._rdnoise
 
     # Define output cosmic ray mask to populate
     __crMask = np.zeros(__inputImage.shape,dtype=np.uint8)
@@ -211,23 +203,26 @@ def drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
     __corrFile = np.zeros(__inputImage.shape,dtype=__inputImage.dtype)
     __corrFile = np.where(np.equal(__dqMask,0),__blotData,__inputImage)
 
-    # Remove the existing cor file if it exists
-    if(os.access(crcorimage, os.F_OK)):
-        os.remove(crcorimage)
-        print "Removing old corr file:",corrName 
+    if(saveFiles):
+        # Remove the existing cor file if it exists
+        if(os.access(crcorimage, os.F_OK)):
+            os.remove(crcorimage)
+            print "Removing old corr file:",corrName 
 
-    createFile(__corrFile,outfile=crcorimage,header=None)
+        createFile(__corrFile,outfile=crcorimage,header=None)
     
     ######## Save the cosmic ray mask file to disk
     _cr_file = np.zeros(__inputImage.shape,np.uint8)
     _cr_file = np.where(__crMask,1,0).astype(np.uint8)
 
-    # Remove the existing mask file if it exists
-    if(os.access(crmaskimage, os.F_OK)):
-        os.remove(crmaskimage)
-        print "Removed old cosmic ray mask file:",crName 
+    
+    if(saveFiles):
+        # Remove the existing mask file if it exists
+        if(os.access(crmaskimage, os.F_OK)):
+            os.remove(crmaskimage)
+            print "Removed old cosmic ray mask file:",crName 
 
-    createFile(_cr_file, outfile=crmaskimage, header = None)
+        createFile(_cr_file, outfile=crmaskimage, header = None)
    
   
 def createFile(dataArray=None, outfile=None, header=None):
@@ -236,7 +231,7 @@ def createFile(dataArray=None, outfile=None, header=None):
     try:    
         assert(outfile != None), "Please supply an output filename for createFile"
         assert(dataArray != None), "Please supply a data array for createFiles"
-    except AssertionError
+    except AssertionError:
         raise AssertionError
         
     try:
@@ -278,24 +273,18 @@ def setDefaults(configObj={}):
     gain     = 7               # Detector gain, e-/ADU
     grow     = 1               # Radius around CR pixel to mask [default=1 for 3x3 for non-NICMOS]   
     ctegrow  = 0               # Length of CTE correction to be applied
-    ctedir   = 1               # cte correction direction   
-    amp      = 'A'            # amplifier (used for HRC)
     rn       = 5               # Read noise in electrons
     snr      = "4.0 3.0"       # Signal-to-noise ratio
     scale    = "0.5 0.4"       # scaling factor applied to the derivative
-    units    = "counts"        # counts or cps
     backg    = 0              # Background value
     expkey   = "exptime"        # exposure time keyword
     
     paramDict={"gain":gain,
                 "grow": grow,
                 "ctegrow":ctegrow,
-                "ctedir":ctedir,
-                "amp":amp,
                 "rn":rn,
                 "snr":snr,
                 "scale":scale,
-                "units":units,
                 "backg":backg,
                 "expkey":expkey}
     
