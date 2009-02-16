@@ -8,6 +8,7 @@ import numpy as np
 import convolve as NC
 import pyfits
 import os
+import quickDeriv
 
 __version__ = '1.1'
 
@@ -71,17 +72,20 @@ def drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
         print "Could not find the Blotted image on disk:",blotImageName
         raise IOError
    
+  
     #grab the actual images from disk
     __inputImage=sciImage.getData(chip)
     
     try:
         __blotImage=fileutil.openImage(blotImageName,mode='readonly',writefits=False,memmap=0)
         __blotData=__blotImage.data
-        __blotDerivImage=fileutil.openImage(blotDerivName,mode='readonly',writefits=False,memmap=0)
-        __blotDeriv=__blotDerivImage.data
     except IOError:
         print "Problem opening blot images"
         return IOError
+    
+    #make the derivative blot image
+    __blotDeriv = quickDeriv.qderiv(__blotData)
+     
     
     #this grabs the original dq mask from the science image
     __dq = sciImage.maskExt + ',' + str(chip)
@@ -294,3 +298,55 @@ def setDefaults(configObj={}):
             
             
     return paramDict
+
+
+def myDrizCR(filename=None,chip=None,configObj={},saveFiles=True):
+    """ This is the user access function for drizCR
+    
+    mask blemishes in dithered data by comparison of an image
+    with a model image and the derivative of the model image.
+
+    sciImage is an imageObject which contains the science data
+    blotImage is inferred from the sciImage object here which knows the name of its blotted image :)
+    chip should be the science chip that corresponds to the blotted image that was sent
+    configObj contains the user parameters
+    dgMask is inferred from the sciImage object, the name of the mask file to combine with the generated Cosmic ray mask
+    saveFiles saves intermediate files to disk
+    
+    here are the options you can override in configObj
+
+    gain     = 7               # Detector gain, e-/ADU
+    grow     = 1               # Radius around CR pixel to mask [default=1 for 3x3 for non-NICMOS]   
+    ctegrow  = 0               # Length of CTE correction to be applied
+    rn       = 5               # Read noise in electrons
+    snr      = "4.0 3.0"       # Signal-to-noise ratio
+    scale    = "0.5 0.4"       # scaling factor applied to the derivative
+    backg    = 0              # Background value
+    expkey   = "exptime"        # exposure time keyword
+    
+    blot images are saved out to simple fits files with 1 chip in them
+    so for example in ACS, there will be 1 image file with 2 chips that is
+    the original image and 2 blotted image files, each with 1 chip
+    
+    
+    """
+    #create an image object for the user, first we need to see what instrument it is
+    #i'm doing this with fileutil to account for non-fits images
+    try:
+        image=fileutil.openImage(filename,clobber=False,memmap=0) #pointer to a fits object
+    except IOError:
+        print "Problem opening input file: ",filename
+        raise IOError
+        
+    inst=image["PRIMARY"].header["INSTRUME"]
+    
+    if("ACS" in inst):
+        myimage=acsData.ACSInputImage(filename
+        
+                    
+
+
+
+
+
+

@@ -275,7 +275,6 @@ class baseImageObject:
         blotImage = rootname + '_blt.fits'
         crmaskImage = rootname + '_crmask.fits'
         crcorImage = rootname + '_cor.fits'
-        blotDeriv = rootname + '_blt_deriv.fits'
 
 
         # Start with global names
@@ -283,7 +282,6 @@ class baseImageObject:
 
         # Now add chip-specific entries
         fnames['blotImage'] = blotImage
-        fnames['blotDeriv'] = blotDeriv
         fnames['crcorImage'] = crcorImage
         fnames['crmaskImage'] = crmaskImage
         sci_chip = self._image[self.scienceExt,chip]
