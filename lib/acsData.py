@@ -18,10 +18,8 @@ class ACSInputImage(imageObject):
         imageObject.__init__(self,filename)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
-        self.platescale = 0.
-        
-        for chip in range(1,self._numchips+1,1):
-            self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+        self.platescale = 0. #where do we get the platescale from?
+        self._instrument=self._image["PRIMARY"].header["INSTRUME"]
 
 
     def _assignSignature(self, chip):
@@ -33,13 +31,11 @@ class ACSInputImage(imageObject):
            this also records the filename for the static mask to the outputNames dictionary
            
         """
-        instr=self._instrument
-        detector=self._image['PRIMARY'].header["DETECTOR"] #this needs to be made more general
         ny=self._image[self.scienceExt,chip]._naxis1
         nx=self._image[self.scienceExt,chip]._naxis2
         detnum = self._image[self.scienceExt,chip].detnum
         
-        self._image[self.scienceExt,chip].signature=(instr+detector,(nx,ny),detnum) #signature is a tuple
+        self._image[self.scienceExt,chip].signature=(self._instrument+'/'+self._detector,(nx,ny),detnum) #signature is a tuple
 
         
     def doUnitConversions(self):
@@ -163,26 +159,31 @@ class ACSInputImage(imageObject):
         return darkcurrent
 
 
-class WFC (ACSInputImage):
+class WFCInputImage(ACSInputImage):
 
-    def __init__(self,filename=''):
-        ACSInputImage.__init__(self,filename='')
-        self.instrument = 'ACS/WFC'
+    def __init__(self,filename=None):
+        ACSInputImage.__init__(self,filename)
+        self._detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (4096,2048)
-        self.platescale = platescale
+        self.platescale = 0.
 
-        if ( self.extn == 'sci,1') : # get cte direction, which depends on which chip but is independent of amp 
-            self.cte_dir = -1    
-        if ( self.extn == 'sci,2') : 
-            self.cte_dir = 1   
+        # get cte direction, which depends on which chip but is independent of amp 
+        for chip in range(1,self._numchips+1,1):
+            self._assignSignature(chip) #this is used in the static mask
+
+            if ( chip == 1) :
+                self._image[self.scienceExt,chip].cte_dir = -1    
+            if ( chip == 2) : 
+                self._image[self.scienceExt,chip].cte_dir = 1   
+
 
 class HRCInputImage (ACSInputImage):
 
-    def __init__(self, filename=''):
-        ACSInputImage.__init__(self, input, filename='')
-        self.instrument = 'ACS/HRC'        
+    def __init__(self, filename=None):
+        ACSInputImage.__init__(self, input, filename)
+        self.detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (1024,1024)
-        self.platescale = platescale
+        self.platescale = 0.
 
         if ( self.amp == 'A' or self.amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
             self.cte_dir = 1   
@@ -191,11 +192,11 @@ class HRCInputImage (ACSInputImage):
 
 class SBCInputImage (ACSInputImage):
 
-    def __init__(self, filename=''):
-        ACSInputImage.__init__(self,filename='')
+    def __init__(self, filename=None):
+        ACSInputImage.__init__(self,filename)
         self.full_shape = (1024,1024)
-        self.platescale = platescale
-        self.instrument = 'ACS/SBC'
+        self.platescale = 0.
+        self._detector=self._image['PRIMARY'].header["DETECTOR"]
 
         # no cte correction for SBC so set cte_dir=0.
         print('\nWARNING: No cte correction will be made for this SBC data.\n')
