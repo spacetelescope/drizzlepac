@@ -18,9 +18,11 @@ class ACSInputImage(imageObject):
         imageObject.__init__(self,filename)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
-        self.platescale = 0. #where do we get the platescale from?
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
-
+    
+        for chip in range(1,self._numchips+1,1):
+            self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
+            self._image[self.scienceExt,chip].platescale = 0. #where do we get the platescale from?
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -107,17 +109,20 @@ class ACSInputImage(imageObject):
         # file is pfltfile.  This flat file is already in the required 
         # units of electrons.
         
-        filename = self.header['PFLTFILE']
+        filename = self._image["PRIMARY"].header['PFLTFILE']
         
         try:
             handle = fileutil.openImage(filename,mode='readonly',memmap=0)
             hdu = fileutil.getExtn(handle,extn=self.extn)
             data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
+            handle.close()
         except:
             try:
+                #see if jref$ was appended to the filename
                 handle = fileutil.openImage(filename[5:],mode='readonly',memmap=0)
                 hdu = fileutil.getExtn(handle,extn=self.extn)
                 data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
+                handle.close()
             except:
                 data = np.ones(self.image_shape,dtype=self.image_dtype)
                 str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
@@ -126,7 +131,7 @@ class ACSInputImage(imageObject):
         return flat
 
 
-    def getdarkcurrent(self):
+    def getdarkcurrent(self,chip):
         """
         
         Purpose
@@ -139,11 +144,10 @@ class ACSInputImage(imageObject):
         :units: electrons
         
         """
-        
-        darkcurrent = 0
-        
+              
+        darkcurrent=0.        
         try:
-            darkcurrent = self.header['MEANDARK']
+            darkcurrent = self._image[self.scienceExt,chip].header['MEANDARK']
         except:
             str =  "#############################################\n"
             str += "#                                           #\n"
@@ -179,7 +183,7 @@ class WFCInputImage(ACSInputImage):
             if ( chip == 2) : 
                 self._image[self.scienceExt,chip].cte_dir = 1   
 
-
+            
 class HRCInputImage (ACSInputImage):
 
     def __init__(self, filename=None):
