@@ -21,15 +21,16 @@ class NICMOSInputImage(imageObject):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
 
-        # Detector parameters
+        # Detector parameters, nic only has 1 detector in each file
         self.platescale = platescale
         self.full_shape = (256,256)
         self._detector=self._image["PRIMARY"].header["CAMERA"]
-         
+        self._instrument=self._image['PRIMARY'].header["INSTRUME"]
+ 
         # no cte correction for NICMOS so set cte_dir=0.
         self.cte_dir = 0   
 
-        self._effGain = 1
+        self._effGain = 1 #get the gain from the detector subclass
         
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
@@ -44,12 +45,11 @@ class NICMOSInputImage(imageObject):
            
         """
         instr=self._instrument
-        detector=self._image['PRIMARY'].header["CAMERA"] #this needs to be made more general
         ny=self._image[self.scienceExt,chip]._naxis1
         nx=self._image[self.scienceExt,chip]._naxis2
         detnum = self._image[self.scienceExt,chip].detnum
         
-        self._image[self.scienceExt,chip].signature=(instr+detector,(nx,ny),detnum) #signature is a tuple
+        self._image[self.scienceExt,chip].signature=(instr+self._detector,(nx,ny),detnum) #signature is a tuple
 
 
 
@@ -301,6 +301,8 @@ class NIC1InputImage(NICMOSInputImage):
             self.darkrate = self.darkrate / self.getGain() # DN/s
 
     def _setDefaultReadnoise(self):
+        """ this could be updated to calculate the readnoise from the NOISFILE            
+        """
         self._rdnoise = 26.0 # electrons
         if self.proc_unit == 'native':
             self._rdnoise = self._rdnoise / self.getGain() # ADU

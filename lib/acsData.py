@@ -56,9 +56,12 @@ class ACSInputImage(imageObject):
             _subarray = True
         return _subarray
 
-    def setInstrumentParameters(self, instrpars, pri_header):
+    def setInstrumentParameters(self):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
+            
+            this should probably be moved to the sub instrument classes
+            for each detector type?
         """
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
@@ -185,10 +188,14 @@ class HRCInputImage (ACSInputImage):
         self.full_shape = (1024,1024)
         self.platescale = 0.
 
-        if ( self.amp == 'A' or self.amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
-            self.cte_dir = 1   
-        if ( self.amp == 'C' or self.amp == 'D' ) :
-            self.cte_dir = -1   
+        for chip in range(1,self._numchips+1,1):
+            self._assignSignature(chip) #this is used in the static mask
+
+            amp=self._image[self.scienceExt,chip].header["CCDAMP"]
+            if ( amp == 'A' or amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
+                self._image[self.scienceExt,chip].cte_dir = 1   
+            if ( amp == 'C' or amp == 'D' ) :
+                self._image[self.scienceExt,chip].cte_dir = -1   
 
 class SBCInputImage (ACSInputImage):
 
@@ -198,11 +205,25 @@ class SBCInputImage (ACSInputImage):
         self.platescale = 0.
         self._detector=self._image['PRIMARY'].header["DETECTOR"]
 
-        # no cte correction for SBC so set cte_dir=0.
-        print('\nWARNING: No cte correction will be made for this SBC data.\n')
-        self.cte_dir = 0       
+        for chip in range(1,self._numchips+1,1):
+            self._assignSignature(chip) #this is used in the static mask
 
-    def setInstrumentParameters(self, instrpars, pri_header):
+            # no cte correction for SBC so set cte_dir=0.
+            print('\nWARNING: No cte correction will be made for this SBC data.\n')
+            self._image[self.scienceExt,chip].cte_dir = 0       
+
+
+    def _setSBCchippars(self):
+        self._setDefaultSBCGain()
+        self._setDefaultSBCReadnoise()
+     
+    def _setDefaultSBCGain(self):
+        self._gain = 1
+
+    def _setDefaultSBCReadnoise(self):
+        self._rdnoise = 0
+
+    def _setInstrumentParameters(self):
         """ Sets the instrument parameters.
         """
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
@@ -266,13 +287,3 @@ class SBCInputImage (ACSInputImage):
         else:
             # In this case, the user has specified both a gain and readnoise values.  Just use them as is.
             pass
-
-    def _setSBCchippars(self):
-        self._setDefaultSBCGain()
-        self._setDefaultSBCReadnoise()
-     
-    def _setDefaultSBCGain(self):
-        self._gain = 1
-
-    def _setDefaultSBCReadnoise(self):
-        self._rdnoise = 0

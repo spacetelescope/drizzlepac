@@ -445,7 +445,6 @@ class imageObject(baseImageObject):
             
 
         #populate the global attributes which are good for all the chips in the file
-        self._instrument=self._image['PRIMARY'].header["INSTRUME"]
         self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
         self.outputNames=self._setOutputNames(self._rootname)
          
