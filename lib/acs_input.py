@@ -5,17 +5,20 @@
 
 from pytools import fileutil
 import numpy as np
-from input_image import InputImage
+from imageObject import imageObject
 
-class ACSInputImage(InputImage):
+"""###########We need to get the PLATESCALE input here somewhere ###########"""
+
+
+class ACSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self, input,dqname,platescale,memmap=0,proc_unit="native"):
-        InputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self,filename='',proc_unit="native"):
+        imageObject.__init__(self,filename)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
-        self.platescale = platescale
+        self.platescale = 0.
         
     def doUnitConversions(self):
         # Effective gain to be used in the driz_cr step.  Since the
@@ -138,10 +141,10 @@ class ACSInputImage(InputImage):
         return darkcurrent
 
 
-class WFCInputImage (ACSInputImage):
+class WFC (ACSInputImage):
 
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        ACSInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self,filename=''):
+        ACSInputImage.__init__(self,filename='')
         self.instrument = 'ACS/WFC'
         self.full_shape = (4096,2048)
         self.platescale = platescale
@@ -153,8 +156,8 @@ class WFCInputImage (ACSInputImage):
 
 class HRCInputImage (ACSInputImage):
 
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        ACSInputImage.__init__(self, input, dqname, platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self, filename=''):
+        ACSInputImage.__init__(self, input, filename='')
         self.instrument = 'ACS/HRC'        
         self.full_shape = (1024,1024)
         self.platescale = platescale
@@ -166,8 +169,8 @@ class HRCInputImage (ACSInputImage):
 
 class SBCInputImage (ACSInputImage):
 
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        ACSInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self, filename=''):
+        ACSInputImage.__init__(self,filename='')
         self.full_shape = (1024,1024)
         self.platescale = platescale
         self.instrument = 'ACS/SBC'
