@@ -189,6 +189,19 @@ def update_input(filelist, ivmlist=None, removed_files=None):
 #
 ####
 
+def countImages(imageObjectList):
+    expnames = []
+    for img in imageObjectList:
+       expnames += img.getKeywordList('_expname')
+    imgnames = []
+
+    nimages = 0
+    for e in expnames:
+        if e not in imgnames:
+            imgnames.append(e)
+            nimages += 1
+    return nimages
+
 def get_detnum(hstwcs,filename,extnum):
     detnum = None
     binned = None

@@ -5,7 +5,7 @@ each input filename
 
 """
 
-import sys
+import sys,copy
 from pytools import fileutil
 import pyfits
 import util,wcs_functions
@@ -29,6 +29,7 @@ class baseImageObject:
         self._instrument=None
         self._rootname=None
         self.outputNames={}
+        self.outputValues = {}
          
         #this is the number of science chips to be processed in the file
         self._numchips=1
@@ -160,19 +161,43 @@ class baseImageObject:
         
         if no extname is given, the it retrieves all data from the original
         file and attaches it. Otherwise, give the name of the extensions
-        you want and all of those will be restored
+        you want and all of those will be restored.
         
         ok, I added another option. If you want to get all the data
         extensions EXCEPT a particular one, leave extname=NONE and
         set exclude=EXTNAME. This is helpfull cause you might not know
-        all the extnames the image has, this will find out and exlude
-        the one you dont want overwritten
+        all the extnames the image has, this will find out and exclude
+        the one you do not want overwritten.
         """
         
+        extensions = self._findExtnames(extname=extname,exclude=exclude)
+                   
+        for i in range(1,self._nextend+1,1):
+            if (self._image[i].extname in extensions):
+                self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
+
+    def returnAllChips(self,extname=None,exclude=None):
+        """ Returns a list containing all the chips which match the extname given
+            minus those specified for exclusion (if any). 
+        """
+        extensions = self._findExtnames(extname=extname,exclude=exclude)
+        chiplist = []
+        for i in range(1,self._nextend+1,1):
+            if (self._image[i].extname in extensions):
+                chiplist.append(self._image[i])
+        return chiplist
+        
+    def _findExtnames(self,extname=None,exclude=None):
+        """ This method builds a list of all extensions which have 'EXTNAME'==extname
+            and do not include any extensions with 'EXTNAME'==exclude, if any are 
+            specified for exclusion at all.
+        """
         #make a list of the available extension names for the object
         extensions=[]
         if extname != None:
-            extensions.append(extname.upper())
+            if not isinstance(extname,list): extname=[extname]
+            for extn in extname:
+                extensions.append(extn.upper())
         else:
         #restore all the extensions data from the original file, be careful here
         #if you've altered data in memory you want to keep!
@@ -189,12 +214,8 @@ class baseImageObject:
                         newExt.append(item)
             extensions=newExt
             del newExt
-                   
-        for i in range(1,self._nextend+1,1):
-            if (self._image[i].extname in extensions):
-                self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
-        
-
+        return extensions
+    
     def findExtNum(self,extname=None,extver=1):
         """find the extension number of the give extname and extver"""      
         extnum=None
@@ -290,10 +311,7 @@ class baseImageObject:
         fnames['singleDrizMask']=fnames['drizMask'].replace('final','single')
         
         # Add the following entries for use in creating outputImage object
-        fnames['blotnx'] = sci_chip._naxis1
-        fnames['blotny'] = sci_chip._naxis2
         fnames['data'] = sci_chip.sciname
-        fnames['exptime'] = sci_chip._exptime
 
         return fnames
 
@@ -301,16 +319,19 @@ class baseImageObject:
         """Copy info from output WCSObject into outputnames for each chip
            for use in creating outputimage object. 
         """
-        for chip in range(1,self._numchips+1):
-            outputnames = self._image[self.scienceExt,chip].outputNames
-            
-            outputnames['output'] = output_wcs.outputNames['outFinal']
-            outputnames['outnx'] = output_wcs.wcs.naxis1
-            outputnames['outny'] = output_wcs.wcs.naxis2
-            outputnames['texptime'] = output_wcs._exptime
-            outputnames['texpstart'] = output_wcs._expstart
-            outputnames['texpend'] = output_wcs._expend
-            outputnames['nimages'] = output_wcs.nimages
+        
+        outputvals = self.outputValues
+        
+        outputvals['output'] = output_wcs.outputNames['outFinal']
+        outputvals['outnx'] = output_wcs.wcs.naxis1
+        outputvals['outny'] = output_wcs.wcs.naxis2
+        outputvals['texptime'] = output_wcs._exptime
+        outputvals['texpstart'] = output_wcs._expstart
+        outputvals['texpend'] = output_wcs._expend
+        outputvals['nimages'] = output_wcs.nimages
+        # Required for blot?
+        outputvals['scale'] = output_wcs.wcs.pscale / self._image[self.scienceExt,1].wcs.pscale
+        
         
     def _find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
@@ -481,7 +502,6 @@ class imageObject(baseImageObject):
                 sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
                             
                 sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
-
                 # Determine output value of BUNITS
                 # and make sure it is not specified as 'ergs/cm...'
                 _bunit = None
@@ -504,4 +524,8 @@ class WCSObject(baseImageObject):
         self.nimages = 1
     
         self._bunit = 'ELECTRONS/S'
+        self.default_wcs = None
+
+    def restore_wcs(self):
+        self.wcs = copy.copy(self.default_wcs)
         

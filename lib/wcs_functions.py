@@ -1,4 +1,5 @@
 import numpy as np
+import copy 
 
 from updatewcs import wcsutil
 from updatewcs.distortion import utils
@@ -54,14 +55,25 @@ def get_hstwcs(filename,hdulist,extnum):
 #
 # Primary interface for creating the output WCS from a list of HSTWCS objects
 def make_outputwcs(imageObjectList,output,configObj=None):
+    """ Computes the full output WCS based on the set of input imageObjects
+        provided as input, along with the pre-determined output name from
+        process_input.  The user specified output parameters are then used to
+        modify the default WCS to produce the final desired output frame.
+        The input imageObjectList has the outputValues dictionary
+        updated with the information from the computed output WCS. 
+        It then returns this WCS as a WCSObject(imageObject) 
+        instance.
+    """
+    if not isinstance(imageObjectList,list): 
+        imageObjectList = [imageObjectList]
+    
     hstwcs_list = []
     for img in imageObjectList:
         hstwcs_list += img.getKeywordList('wcs')
-        
-    output_wcs = utils.output_wcs(hstwcs_list)
-       
-    outwcs = createWCSObject(output,output_wcs,imageObjectList)
-    
+
+    # Compute default output WCS
+    default_wcs = utils.output_wcs(hstwcs_list)
+           
     # Merge in user-specified attributes for the output WCS
     # as recorded in the input configObj object.
     user_pars = DEFAULT_WCS_PARS.copy()
@@ -73,37 +85,48 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         user_pars.update(configObj)
 
     # Apply user settings to output_wcs
-    mergeWCS(output_wcs,user_pars)
+    final_wcs = mergeWCS(default_wcs,user_pars)
+
+    # Turn WCS instances into WCSObject instances
+    outwcs = createWCSObject(output,default_wcs,final_wcs,imageObjectList)
+    
+    updateImageWCS(imageObjectList,outwcs)
     
     return outwcs
 
-def createWCSObject(output,output_wcs,imageObjectList):
+def createWCSObject(output,default_wcs,final_wcs,imageObjectList):
     """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
     outwcs = imageObject.WCSObject(output)
-    outwcs.wcs = output_wcs
+    outwcs.default_wcs = default_wcs
+    outwcs.wcs = final_wcs
+
     #
     # Add exptime information for use with drizzle
     #
     outwcs._exptime,outwcs._expstart,outwcs._expend = util.compute_texptime(imageObjectList)
         
-    outwcs.nimages = countImages(imageObjectList)
+    outwcs.nimages = util.countImages(imageObjectList)
      
     return outwcs
 
-def countImages(imageObjectList):
-    expnames = []
+def updateImageWCS(imageObjectList,output_wcs):
+    
+     # Update input imageObjects with output WCS information
     for img in imageObjectList:
-       expnames += img.getKeywordList('_expname')
-    imgnames = []
+        img.updateChipOutputNames(output_wcs)
+   
+def restoreDefaultWCS(imageObjectList,output_wcs):
+    """ Restore WCS information to default values, and update imageObject
+        accordingly.
+    """
+    if not isinstance(imageObjectList,list): 
+        imageObjectList = [imageObjectList]
 
-    nimages = 0
-    for e in expnames:
-        if e not in imgnames:
-            imgnames.append(e)
-            nimages += 1
-    return nimages
-        
-def mergeWCS(outwcs,user_pars):
+    output_wcs.restoreWCS()
+    
+    updateImageWCS(imageObjectList,output_wcs)
+
+def mergeWCS(default_wcs,user_pars):
     """ Merges the user specified WCS values given as dictionary derived from 
         the input configObj object with the output PyWCS object computed 
         using distortion.output_wcs().
@@ -116,6 +139,11 @@ def mergeWCS(outwcs,user_pars):
     #
     # Start by making a copy of the input WCS...
     #
+    
+    outwcs = copy.copy(default_wcs)
+    # If there are no user set parameters, just return a copy of the original WCS
+    if user_pars == DEFAULT_WCS_PARS:
+        return outwcs
 
     if (not user_pars.has_key('ra')) or user_pars['ra'] == None:
         _crval = None
@@ -169,6 +197,8 @@ def mergeWCS(outwcs,user_pars):
     outwcs.wcs.crpix =_crpix
     if _crval is not None:
         outwcs.wcs.crval = _crval
+
+    return outwcs
 
 def convertWCS(inwcs,drizwcs):
     """ Copy WCSObject WCS into Drizzle compatible array."""
