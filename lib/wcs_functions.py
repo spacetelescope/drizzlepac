@@ -141,6 +141,7 @@ def mergeWCS(default_wcs,user_pars):
     #
     
     outwcs = copy.copy(default_wcs)
+    outwcs.wcs = copy.copy(default_wcs.wcs)
     # If there are no user set parameters, just return a copy of the original WCS
     if user_pars == DEFAULT_WCS_PARS:
         return outwcs

@@ -64,7 +64,7 @@ class OutputImage:
             self.output = plist[0]['output']
             self.shape = (plist[0]['outny'],plist[0]['outnx'])
         else:
-            self.output = plist[0]['outblot']
+            self.output = plist[0]['blotImage']
             self.shape = (plist[0]['blotny'],plist[0]['blotnx'])
 
         # Keep track of desired output WCS computed by PyDrizzle

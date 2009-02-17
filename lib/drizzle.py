@@ -39,10 +39,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
         
-    # Insure that output WCS provided by user is a imageObject instance
-    if not isinstance(output_wcs,imageObject.baseImageObject):
-        output_wcs = wcs_functions.createWCSObject(output_wcs)
-
     # Create a list which points to all the chips being combined 
     # by extracting all the chips from each of the input imageObjects
     #chiplist = []
@@ -284,7 +280,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
             #### Check to see what names need to be included here for use in _hdrlist
             chip.outputNames['driz_version'] = _vers
             outputvals = chip.outputNames.copy()
-            _hdrlist.append(outputvals.update(img.outputValues))
+            outputvals.update(img.outputValues)
+            _hdrlist.append(outputvals)
 
             if nmiss > 0:
                 print '! Warning, ',nmiss,' points were outside the output image.'
@@ -328,7 +325,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
 
                 #
                 # Write output arrays to FITS file(s) and reset chip counter
-                #
+                #                
                 _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=build, wcs=_wcs, single=single)
                 _outimg.set_bunit(_bunit)
                 _outimg.set_units(paramDict['units'])
@@ -354,26 +351,39 @@ def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
 
     print 'PyDrizzle drizzling completed at ',_ptime()
 
-def run_blot(imageObjectList,configObj=None,wcsmap=wcs_functions.WCSMap):
+def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
     """ Perform the blot operation on the list of images.
     """
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
+    #
+    # Setup the versions info dictionary for output to PRIMARY header
+    # The keys will be used as the name reported in the header, as-is
+    #
+    _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
 
-    paramDict = configObj
-    
     _hdrlist = []
 
+    
     for img in imageObjectList:
+        
         for chip in img.returnAllChips(extname=img.scienceExt):
 
-            _insci = N.zeros((img.outputValues['outny'],img.outputValues['outnx']),dtype=N.float32)
-            _outsci = N.zeros((chip.wcs.naxis1,chip.wcs.naxis2),dtype=N.float32)
-            _hdrlist.append(plist)
-            
-            plist = chip.outputNames
+            _insci = np.zeros((img.outputValues['outny'],img.outputValues['outnx']),dtype=np.float32)
+            _outsci = np.zeros((chip.wcs.naxis2,chip.wcs.naxis1),dtype=np.float32)
 
+            #### Check to see what names need to be included here for use in _hdrlist
+            chip.outputNames['driz_version'] = _versions
+            outputvals = chip.outputNames.copy()
+            outputvals.update(img.outputValues)
+            outputvals['blotnx'] = chip.wcs.naxis1
+            outputvals['blotny'] = chip.wcs.naxis2
+            _hdrlist.append(outputvals)
+
+            plist = outputvals.copy()
+            plist.update(paramDict)
+            
             _data = img.outputNames['outMedian']
             
             # The following type of logic belongs in the user callable (modular)
@@ -403,7 +413,7 @@ def run_blot(imageObjectList,configObj=None,wcsmap=wcs_functions.WCSMap):
 
             # Now pass numpy objects to callable version of Blot...
             #runBlot(plist)
-            build=no
+            build=False
             misval = 0.0
             kscale = 1.0
             scale = 1.0
@@ -422,9 +432,9 @@ def run_blot(imageObjectList,configObj=None,wcsmap=wcs_functions.WCSMap):
                 # ARRDRIZ.TBLOT needs to be updated to support 'poly5' interpolation,
                 # and exptime scaling of output image.
                 #
-                if (_insci.dtype > N.float32):
+                if (_insci.dtype > np.float32):
                     #WARNING: Input array recast as a float32 array
-                    _insci = _insci.astype(N.float32)
+                    _insci = _insci.astype(np.float32)
                 mapping = arrdriz.DefaultMapping(
                     _outsci.shape[1], _outsci.shape[0],
                     _insci.shape[1], _insci.shape[0],
@@ -451,7 +461,7 @@ def run_blot(imageObjectList,configObj=None,wcsmap=wcs_functions.WCSMap):
             #_wcs = wcsutil.WCSObject(plist['data'],header=_header)
             #_wcs = chip.wcs
 
-            _outimg = outputimage.OutputImage(_hdrlist, build=no, wcs=chip.wcs, blot=yes)
+            _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=False, wcs=chip.wcs, blot=True)
             _outimg.outweight = None
             _outimg.outcontext = None
             _outimg.writeFITS(plist['data'],_outsci,None,versions=_versions)
