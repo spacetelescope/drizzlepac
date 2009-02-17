@@ -445,7 +445,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             else:
                 # Use user provided mapping function
                 wmap = wcsmap(chip.wcs,output_wcs.wcs)
-                mapping = wmap.backward
+                mapping = wmap.forward
 
             t = arrdriz.tblot(
                 _insci, _outsci,xmin,xmax,ymin,ymax,
