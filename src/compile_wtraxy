@@ -1,0 +1,1 @@
+xc -p stsdas wtraxy.f drutil.f x_wtraxy.x /usr/stsci/stsdasx/lib/libiraf77.a

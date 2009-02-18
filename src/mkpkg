@@ -1,0 +1,84 @@
+#   Make the drizzle package
+#
+#   Special keywords recognized by IRAF mkpkg files:
+#
+#	mkpkg relink		update object library and link
+#	mkpkg linkonly		skip object library updates and just link
+#	mkpkg install		move executable to lib$
+#	mkpkg update		update object library, link, and move to lib$
+
+$call	relink
+$exit
+
+update:
+	$call	relink
+	$call	install
+	;
+
+# The -z flag is necessary to enable drizzle handle very large images.
+
+relink:
+	$set LFLAGS = "$(LFLAGS) -z"
+	$update drizzle.a
+	$call	drizzle
+	$call	wdrizzle
+	$call	blot
+    $call   tranback
+    $call   traxy
+    $call   wcs2dr
+	;
+
+install:
+	$move	xx_drizzle.e stsdasbin$x_drizzle.e
+	$move	xx_wdrizzle.e stsdasbin$x_wdrizzle.e
+	$move	xx_blot.e stsdasbin$x_blot.e
+	$move	xx_tranback.e stsdasbin$x_tranback.e
+	$move	xx_traxy.e stsdasbin$x_traxy.e
+	$move	xx_wcs2dr.e stsdasbin$x_wcs2dr.e
+	;
+
+wdrizzle:
+linkonly:
+	$omake	x_wdrizzle.x
+	$link	x_wdrizzle.o drizzle.a -liraf77 -o xx_wdrizzle.e
+	;
+drizzle:
+linkonly:
+	$omake	x_drizzle.x
+	$link	x_drizzle.o drizzle.a -liraf77 -o xx_drizzle.e
+	;
+blot:
+linkonly:
+	$omake	x_blot.x
+	$link	x_blot.o drizzle.a -liraf77 -liminterp -o xx_blot.e
+	;
+tranback:
+linkonly:
+	$omake	x_tranback.x
+	$link	x_tranback.o drizzle.a -liraf77 -o xx_tranback.e
+	;
+traxy:
+linkonly:
+	$omake	x_traxy.x
+	$link	x_traxy.o drizzle.a -liraf77 -o xx_traxy.e
+	;
+wcs2dr:
+linkonly:
+	$omake	x_wcs2dr.x 
+	$link	x_wcs2dr.o drizzle.a -liraf77 -o xx_wcs2dr.e
+	;
+
+drizzle.a:
+	wdrizzle.f
+	drizzle.f
+	blot.f
+    doblot.f
+    inter2d.f
+    bieval.f
+    ioutil.f
+	drutil.f
+    tranback.f
+    traxy.f
+    wcs2dr.f
+    timtem.x
+	;

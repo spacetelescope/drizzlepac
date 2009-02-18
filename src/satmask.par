@@ -1,0 +1,8 @@
+mask,f,a,"satmask.pl",,,Output mask image
+nx,i,h,1024,,,X dimension of output mask
+ny,i,h,1024,,,Y dimension of output mask
+x1,r,a,,,,X coordinate of first point on line
+y1,r,a,,,,Y coordinate of first point on line
+x2,r,a,,,,X coordinate of second point on line
+y2,r,a,,,,Y coordinate of second point on line
+width,r,h,20.0,,,Width of band to be masked off

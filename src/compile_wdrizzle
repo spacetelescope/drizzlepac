@@ -1,0 +1,1 @@
+xc -z -p stsdas wdrizzle.f drutil.f x_wdrizzle.x /usr/stsci/stsdasx/lib/libiraf77.a

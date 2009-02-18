@@ -279,8 +279,8 @@ class baseImageObject:
         # Build outputNames dictionary
         fnames={
             'origFilename':origFilename,
-            'outMedian':outMedian,
             'outFinal':outFinal,
+            'outMedian':outMedian,
             'outSci':outSci,
             'outWeight':outWeight,
             'outContext':outContext,
@@ -315,7 +315,7 @@ class baseImageObject:
 
         return fnames
 
-    def updateChipOutputNames(self,output_wcs):
+    def updateOutputValues(self,output_wcs):
         """Copy info from output WCSObject into outputnames for each chip
            for use in creating outputimage object. 
         """
@@ -331,6 +331,13 @@ class baseImageObject:
         outputvals['nimages'] = output_wcs.nimages
         # Required for blot?
         outputvals['scale'] = output_wcs.wcs.pscale / self._image[self.scienceExt,1].wcs.pscale
+        
+        outnames = self.outputNames
+        outnames['outMedian'] = output_wcs.outputNames['outMedian']
+        outnames['outFinal'] = output_wcs.outputNames['outFinal']
+        outnames['outSci'] = output_wcs.outputNames['outSci']
+        outnames['outWeight'] = output_wcs.outputNames['outWeight']
+        outnames['outContext'] = output_wcs.outputNames['outContext']
         
         
     def _find_DQ_extension(self):
@@ -439,7 +446,26 @@ class baseImageObject:
         
         return iraf[irafType]
         
+    def buildMask(self,configObj):
+        """ Build masks as specified in the user parameters found in the 
+            configObj object.
+        """
+        
+        for chip in range(1,self._numchips+1):
+            sci_chip = self._image[self.scienceExt,chip]
+            masknames = []
+            if configObj['driz_separate']:
+                masknames.append([sci_chip.outputNames['singleDrizMask'],configObj['driz_sep_bit']])
+            if configObj['driz_combine']:
+                masknames.append([sci_chip.outputNames['drizMask'],configObj['final_bits']])
 
+            # Loop over all masks that need to be built for this chip: single and/or final
+            for maskname in masknames:
+                buildmask.buildMaskImage(sci_chip.dqfile,maskname[1],maskname[0],extname=self.maskExt,extver=chip) 
+                """
+                #### For WFPC2 Data, build mask files using:
+                buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname[0],bitvalue=maskname[1],binned=sci_chip.binned)
+                """
 class imageObject(baseImageObject):
     """
     This returns an imageObject that contains all the

@@ -83,7 +83,10 @@ class OutputImage:
             self.expstart = plist[0]['texpstart']
             self.expend = plist[0]['texpend']
         else:
-            _outdata = plist[0]['outFinal']
+            if self.build:
+                _outdata = plist[0]['outFinal']
+            else:
+                _outdata = plist[0]['outSci']
             _outweight = plist[0]['outWeight']
             _outcontext = plist[0]['outContext']
             # Report values appropriate for entire combined product

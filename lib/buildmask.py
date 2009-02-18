@@ -45,16 +45,14 @@ def build_mask(imageObjectList,configObj):
     extname = []
     extver = []
     binned = []
-    
-    # extract parameters needed from user parameter settings 
-    bitvalue = configObj['bitvalue']
-    driz_separate = configObj['driz_separate']
-    
+        
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
     
     for img in imageObjectList:
+        img.buildMask(configObj)
+    """
         dqfile += img.getKeywordList('dqfile')
         detnum += img.getKeywordList('detnum')
         outputnames += img.getKeywordList('outputNames')
@@ -64,16 +62,20 @@ def build_mask(imageObjectList,configObj):
         binned += img.getKeywordList('binned')
 
     for chip in range(len(dqfile)):
-        if driz_separate:
-            maskname = outputnames[chip]['singleDrizMask']
-        else:
-            maskname = outputnames[chip]['drizMask']
-            
-        if instrument[chip] == 'WFPC2':
-           buildShadowMaskImage(dqfile[chip],detnum[chip],extnum[chip],maskname,bitvalue=bitvalue,binned=binned[chip])
-        else:
-           buildMaskImage(dqfile[chip],bitvalue,maskname,extname=extname[chip],extver=extver[chip]) 
+        masknames = []
+        if configObj['driz_separate']:
+            masknames.append([outputnames[chip]['singleDrizMask'],configObj['driz_sep_bit']])
+        if configObj['driz_combine']:
+            masknames.append([outputnames[chip]['drizMask'],configObj['final_bits']])
 
+        # Loop over all masks that need to be built for this chip: single and/or final
+        for maskname in masknames:
+            if instrument[chip] == 'WFPC2':
+                buildShadowMaskImage(dqfile[chip],detnum[chip],extnum[chip],maskname[0],bitvalue=maskname[1],binned=binned[chip])
+            else:
+                print 'Building ',maskname,' for ',dqfile[chip]
+                buildMaskImage(dqfile[chip],maskname[1],maskname[0],extname=extname[chip],extver=extver[chip]) 
+    """
 def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
     if bitvalue == None:

@@ -1,0 +1,1 @@
+xc -p stsdas satmask.f x_satmask.x /usr/stsci/stsdasx/lib/libiraf77.a

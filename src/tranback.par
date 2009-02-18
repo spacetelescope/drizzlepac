@@ -1,0 +1,17 @@
+xout,r,a,400.0,,,X pixel position in output drizzled image
+yout,r,a,400.0,,,Y pixel position in output drizzled image
+coeffs,f,h,"",,,Geometrical distortion coefficients file name 
+lambda,r,h,555.0,,,"Effective Wavelength (nm), Trauger coefficients only"
+xgeoim,f,h,"",,,X-shifts geometric distortion image
+ygeoim,f,h,"",,,Y-shifts geometric distortion image
+nxout,i,h,800,,,X dimension of output drizzled image
+nyout,i,h,800,,,Y dimension of output drizzled image
+nxin,i,h,800,,,X dimension of original input image
+nyin,i,h,800,,,Y dimension of original input image
+scale,r,h,1.0,,,Linear size of output pixels in terms of input pixels
+xsh,r,h,0.0,,,X shift applied to input image 
+ysh,r,h,0.0,,,Y shift applied to input image
+rot,r,h,0.0,,,Rotation applied to input image (degrees anti-clockwise) 
+shft_un,s,h,"input","input|output",,Units of shifts (input or output pixels)
+shft_fr,s,h,"input","input|output",,"Frame in which shifts are applied"
+align,s,h,"center","center|corner",,"Reference point: corner or center of pixel"

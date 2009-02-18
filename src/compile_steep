@@ -1,0 +1,1 @@
+xc -p stsdas steep.f x_steep.x /usr/stsci/stsdasx/lib/libiraf77.a

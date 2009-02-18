@@ -12,16 +12,17 @@ except ImportError:
 #### Top-level interface from inside MultiDrizzle
 #
 def drizSeparate(imageObjectList,output_wcs,configObj={},wcsmap=wcs_functions.WCSMap):
-    # Insure that input imageObjectList is a list, not just a single instance.
-    run_driz(imageObjectList,output_wcs,configObj,wcsmap=wcsmap)
+    if configObj['driz_separate']:
+        run_driz(imageObjectList,output_wcs,configObj,single=True,wcsmap=wcsmap)
     
 def drizFinal(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap):
-    drizSeparate(imageObjectList, output_wcs, configObj={},wcsmap=wcsmap)
+    if configObj['driz_combine']:
+        run_driz(imageObjectList, output_wcs, configObj,single=False,wcsmap=wcsmap)
     
 # Run 'drizzle' here...
 #
 
-def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
+def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
     """Perform drizzle operation on input to create output.
      The input parameters originally was a list
      of dictionaries, one for each input, that matches the
@@ -54,7 +55,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
 
     # Interpret input parameters for use in drizzling
     build = paramDict['build']
-    single= paramDict['single']
 
     # Check for existance of output file.
     if single == False and build == True and fileutil.findFile(output_wcs._filename):
@@ -280,7 +280,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
             #### Check to see what names need to be included here for use in _hdrlist
             chip.outputNames['driz_version'] = _vers
             outputvals = chip.outputNames.copy()
+            # Update entries for names/values based on final output
             outputvals.update(img.outputValues)
+            outputvals.update(img.outputNames)
             _hdrlist.append(outputvals)
 
             if nmiss > 0:
@@ -317,7 +319,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,wcsmap=None):
                 if single:
                     _expscale = chip._exptime
                 else:
-                    _expscale = output_wcs.exptime
+                    _expscale = output_wcs._exptime
 
                 #If output units were set to 'counts', rescale the array in-place
                 if paramDict['units'] == 'counts':

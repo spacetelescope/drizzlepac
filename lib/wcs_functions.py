@@ -113,7 +113,7 @@ def updateImageWCS(imageObjectList,output_wcs):
     
      # Update input imageObjects with output WCS information
     for img in imageObjectList:
-        img.updateChipOutputNames(output_wcs)
+        img.updateOutputValues(output_wcs)
    
 def restoreDefaultWCS(imageObjectList,output_wcs):
     """ Restore WCS information to default values, and update imageObject

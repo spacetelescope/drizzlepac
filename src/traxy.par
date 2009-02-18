@@ -1,0 +1,33 @@
+xin,r,a,400.0,,,X input pixel position
+yin,r,a,400.0,,,Y input pixel position
+xout,r,h,,,,X output pixel position
+yout,r,h,,,,Y output pixel position
+nxin,i,h,800,,,X dimension of original input image
+nyin,i,h,800,,,Y dimension of original input image
+nxout,i,h,800,,,X dimension of output drizzled image
+nyout,i,h,800,,,Y dimension of output drizzled image
+scale,r,h,1.0,,,Linear size of output pixels in terms of input pixels
+xsh,r,h,0.0,,,X shift applied to input image 
+ysh,r,h,0.0,,,Y shift applied to input image
+rot,r,h,0.0,,,Rotation to be applied (degrees anti-clockwise) 
+coeffs,f,h,"",,,Geometrical distortion coefficients file name 
+lambda,r,h,555.0,,,"Effective Wavelength (nm), Trauger coefficients only"
+xgeoim,f,h,"",,,X-shifts geometric distortion image
+ygeoim,f,h,"",,,Y-shifts geometric distortion image
+shft_un,s,h,"input","input|output",,Units of shifts (input or output pixels)
+shft_fr,s,h,"input","input|output",,"Frame in which shifts are applied"
+xgeoim,f,h,"",,,X-shifts geometric distortion image
+ygeoim,f,h,"",,,Y-shifts geometric distortion image
+align,s,h,"center","center|corner",,"Reference point: corner or center of pixel"
+silent,b,h,no,,,"Run silently - no output except to the CL parameters
+
+WCS parameters"
+geomode,s,h,"user","user|wcs",,"Way of specifying geometry - user or wcs"
+refim,f,h,"",,,Reference output image name to define output WCS
+inimage,f,h,,,Input image for WCS
+outscl,r,h,0.1,,,"Scale of output image, arcsecs/pix"
+raref,r,h,0.0,,,"RA of reference point on output (CRVAL1, degrees)"
+decref,r,h,0.0,,,"Dec of reference point on output image (CRVAL2, degrees)"
+xrefpix,r,h,0.0,,,Reference pixel X position on output (CRPIX1)
+yrefpix,r,h,0.0,,,Reference pixel Y position on output (CRPIX2)
+orient,r,h,0.0,,,"Orientation of output (PA of Y axis, N through E)"

@@ -1,0 +1,1 @@
+xc -p stsdas wcs2dr.f drutil.f timtem.x x_wcs2dr.x /usr/stsci/stsdasx/lib/libiraf77.a

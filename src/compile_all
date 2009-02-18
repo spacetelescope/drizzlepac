@@ -1,0 +1,11 @@
+./compile_wcs2dr 
+./compile_drizzle 
+./compile_wdrizzle 
+./compile_blot 
+./compile_wblot 
+./compile_traxy
+./compile_wtraxy
+./compile_tranback
+./compile_steep  
+./compile_satmask
+./compile_dr2geo 

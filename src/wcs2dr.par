@@ -1,0 +1,10 @@
+images,f,a,"",,,Input image list
+refim,f,a,"",,,Reference image
+coeffs,s,h,"",,,Images coefficient file name
+xgeoim,f,h,"",,,X-shifts geometric distortion image
+ygeoim,f,h,"",,,Y-shifts geometric distortion image
+refcoefs,s,h,"",,,Reference coefficient file name
+refxgeo,f,h,"",,,Reference X-shifts geometric distortion image
+refygeo,f,h,"",,,Reference Y-shifts geometric distortion image
+lambda,r,h,500,,,"Wavelength associated with distortion (nm, Trauger only)"
+style,s,h,"line","line|para",,"Output style, parameter file (para) or line (line)"

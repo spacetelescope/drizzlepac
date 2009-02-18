@@ -1,0 +1,43 @@
+data,f,a,"",,,Input data image 
+outdata,f,a,"",,,Output data image 
+outweig,f,h,"",,,Output weighting image 
+outcont,f,h,"",,,Output context image 
+in_mask,f,h,"",,,Input weighting mask 
+wt_scl,s,h,"exptime",,,"Weighting factor for input data image"
+outnx,i,h,800,,,X dimension for created images (if outdata not extant)
+outny,i,h,800,,,"Y dimension for created images (if outdata not extant)
+ 
+GEOMETRIC PARAMETERS"
+geomode,s,h,"user","user|wcs",,"Way of specifying geometry - user or wcs"
+kernel,s,h,"square","square|point|gaussian|turbo|tophat|lanczos2|lanczos3",,Shape of kernel function
+pixfrac,r,h,1.0,,,Linear size of drop in input pixels
+coeffs,f,h,"",,,Geometrical distortion coefficients file name 
+lambda,r,h,555.0,,,"Effective Wavelength (nm), Trauger coefficients only"
+xgeoim,f,h,"",,,X-shifts geometric distortion image
+ygeoim,f,h,"",,,Y-shifts geometric distortion image
+align,s,h,"center","center|corner",,"Reference point: corner or center of pixel
+
+USER MODE geometrical parameters"
+scale,r,h,1.0,,,Linear size of output pixels in terms of input pixels
+xsh,r,h,0.0,,,X shift to be applied to input image 
+ysh,r,h,0.0,,,Y shift to be applied to input image
+rot,r,h,0.0,,,Rotation of input image to be applied (degrees anti-clockwise) 
+shft_un,s,h,"input","input|output",,Units of shifts (input or output pixels)
+shft_fr,s,h,"input","input|output",,"Frame in which shifts are applied       
+
+WCS MODE geometrical parameters"
+outscl,r,h,0.1,,,"Scale of output image, arcsecs/pixel"
+raref,r,h,0.0,,,"RA of reference point on output (CRVAL1, degrees)"
+decref,r,h,0.0,,,"Dec of reference point on output image (CRVAL2, degrees)"
+xrefpix,r,h,0.0,,,Reference pixel X position on output (CRPIX1)
+yrefpix,r,h,0.0,,,Reference pixel Y position on output (CRPIX2)
+orient,r,h,0.0,,,"Orientation of output (PA of Y axis, N through E)
+ 
+SECONDARY GEOMETRIC PARAMETERS (pset)"
+dr2gpar,pset,h,"",,,"Secondary geometric parameters
+
+DATA VALUE SCALING PARAMETERS"
+expkey,s,h,"exptime",,,Exposure time keyword in input data image header 
+in_un,s,h,"counts","counts|cps",,Units of input image (counts or cps)
+out_un,s,h,"counts","counts|cps",,Units for output image (counts or cps)
+fillval,s,h,"INDEF",,,Value to be assigned to undefined output points
