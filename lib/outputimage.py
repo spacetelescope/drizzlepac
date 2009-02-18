@@ -215,6 +215,9 @@ class OutputImage:
         prihdu.header.update('NDRIZIM',len(self.parlist),
             comment='Drizzle, No. images drizzled onto output')
 
+        # Only a subset of these keywords makes sense for the new WCS based
+        # transformations. They need to be reviewed to decide what to keep
+        # and what to leave out.
         #self.addDrizKeywords(prihdu.header,versions)
 
         if scihdr:
@@ -240,6 +243,19 @@ class OutputImage:
                 scihdr.update('CRPIX1',self.wcs.wcs.crpix[0])
                 scihdr.update('CRPIX2',self.wcs.wcs.crpix[1])
                 scihdr.update('VAFACTOR',1.0)
+                # Remove any reference to TDD correction
+                if scihdr.has_key('TDDALPHA'):
+                    del scihdr['TDDALPHA']
+                    del scihdr['TDDBETA']
+                # Remove '-SIP' from CTYPE for output product
+                if scihdr['ctype1'].find('SIP') > -1:
+                    scihdr.update('ctype1', scihdr['ctype1'][:-4])
+                    scihdr.update('ctype2',scihdr['ctype2'][:-4])
+                    # Remove SIP coefficients from DRZ product
+                    for k in scihdr.items():
+                        if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
+                        (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
+                            del scihdr[k[0]]
 
         ##########
         # Now, build the output file
