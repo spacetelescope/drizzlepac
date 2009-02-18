@@ -22,6 +22,35 @@ def drizFinal(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCS
 # Run 'drizzle' here...
 #
 
+def _setDefaults(configObj={}):
+    """set up the default parameters to run drizzle
+        build,single,units,wt_scl,pixfrac,kernel,fillval,
+        rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
+    """
+
+    paramDict={"build":True,
+              "single":True,
+              "units":"cps",
+              "wt_scl":1.,
+              "pixfrac":1.,
+              "kernel":"square",
+              "fillval":999.,
+              "rot":0.,
+              "scale":1.,
+              "xsh":0.,
+              "ysh":0.,
+              "blotnx":2048,
+              "blotny":2048,
+              "outnx":4096,
+              "outny":4096,
+              "data":None }
+
+    if(len(configObj) !=0):
+        for key in configObj.keys():
+            paramDict[key]=configObk[key]
+
+    return paramDict
+
 def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
     """Perform drizzle operation on input to create output.
      The input parameters originally was a list

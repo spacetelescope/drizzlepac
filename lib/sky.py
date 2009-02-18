@@ -12,6 +12,16 @@
     :author: Christopher Hanley
     :author: Megan Sosey
 
+
+    Since the minimum sky is calculated between all chips,
+    it's possible that the chips have a different platescale
+    so the minimum value needs to be compared on the sky, so 
+    each sky minimum is ratioed with the platescale and THAT
+    value is stored in the MDRIZSKY keyword in the header. It
+    is also assumed that in the user done option that the user
+    has already taken this into account, so no extra scaling is
+    done later on in the code to account for it.
+    
 """
 import util
 from imageObject import imageObject
@@ -96,23 +106,28 @@ def subtractSky(imageSet=None,configObj={},saveFile=True):
             
             image=imageSet[myext]
             _skyValue= _computeSky(image, paramDict, memmap=0)
+            #scale the sky value by the area on sky
+            pscale=imageSet[myext].wcs.pscale
+            scaledSky=_skyValue / (pscale**2)
+            _skyValue=scaledSky
             minSky.append(_skyValue)
             
             #update the keyword in the actual header here as well
-            image.computedSky=_skyValue 
+            image.computedSky=_skyValue #this is the scaled sky value
 
         _skyValue = min(minSky)
-        print "Minimum sky value all chips ",_skyValue
+        print "Minimum sky value for all chips ",_skyValue
 
         #now subtract that value from all the chips in the exposure
         #and update the chips header keyword with the sub
         for chip in range(1,numchips+1,1):
             image=imageSet._image[sciExt,chip]
-            _subtractSky(image,_skyValue)
+            _subtractSky(image,(_skyValue * image.wcs.pscale))
             _updateKW(image,skyKW,_skyValue)
             
         #update the value of MDRIZSKY in the global header
-        # This does not make sense for STIS ASN files...
+        # This does not make sense for STIS ASN files that
+        #haven't been chunked up into separate fits files already
         _updateKW(imageSet[0],skyKW,_skyValue)
    
     if(saveFile):
@@ -213,7 +228,7 @@ def _computeSky(image, skypars, memmap=0):
     
     del _tmp
     
-    return _skyValue
+    return _skyValue 
 
 
 

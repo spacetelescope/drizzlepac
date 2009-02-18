@@ -494,6 +494,9 @@ class imageObject(baseImageObject):
         #populate the global attributes which are good for all the chips in the file
         self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
         self.outputNames=self._setOutputNames(self._rootname)
+        
+        self._exptime=self._image["PRIMARY"].header["EXPTIME"]
+        if(self._exptime == 0): self._exptime =1. #to avoid divide by zero
          
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
@@ -536,8 +539,8 @@ class imageObject(baseImageObject):
                 else:
                     _bunit = 'ELECTRONS/S'
                 sci_chip._bunit = _bunit
+                                    
                             
-                    
 
 class WCSObject(baseImageObject):
     def __init__(self,filename,suffix='_drz.fits'):

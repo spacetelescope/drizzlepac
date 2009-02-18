@@ -22,7 +22,6 @@ class NICMOSInputImage(imageObject):
         self.cr_bits_value = 4096
 
         # Detector parameters, nic only has 1 detector in each file
-        self.platescale = platescale
         self.full_shape = (256,256)
         self._detector=self._image["PRIMARY"].header["CAMERA"]
         self._instrument=self._image['PRIMARY'].header["INSTRUME"]
@@ -31,7 +30,6 @@ class NICMOSInputImage(imageObject):
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
             self._image[self.scienceExt,chip].cte_dir = 0   #no correction for nicmos
             self._effGain = 1 #get the specific gain from the detector subclass
-
             
 
     def _assignSignature(self, chip):

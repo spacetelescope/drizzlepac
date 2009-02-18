@@ -7,7 +7,6 @@ from pytools import fileutil
 import numpy as np
 from imageObject import imageObject
 
-"""###########We need to get the PLATESCALE input here somewhere ###########"""
 
 
 class ACSInputImage(imageObject):
@@ -22,7 +21,6 @@ class ACSInputImage(imageObject):
     
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
-            self._image[self.scienceExt,chip].platescale = 0. #where do we get the platescale from?
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -172,12 +170,11 @@ class WFCInputImage(ACSInputImage):
         ACSInputImage.__init__(self,filename)
         self._detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (4096,2048)
-        self.platescale = 0.
 
         # get cte direction, which depends on which chip but is independent of amp 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
-
+            
             if ( chip == 1) :
                 self._image[self.scienceExt,chip].cte_dir = -1    
             if ( chip == 2) : 
@@ -190,11 +187,10 @@ class HRCInputImage (ACSInputImage):
         ACSInputImage.__init__(self, input, filename)
         self.detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (1024,1024)
-        self.platescale = 0.
 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
-
+            
             amp=self._image[self.scienceExt,chip].header["CCDAMP"]
             if ( amp == 'A' or amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
                 self._image[self.scienceExt,chip].cte_dir = 1   
@@ -206,12 +202,10 @@ class SBCInputImage (ACSInputImage):
     def __init__(self, filename=None):
         ACSInputImage.__init__(self,filename)
         self.full_shape = (1024,1024)
-        self.platescale = 0.
         self._detector=self._image['PRIMARY'].header["DETECTOR"]
 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
-
             # no cte correction for SBC so set cte_dir=0.
             print('\nWARNING: No cte correction will be made for this SBC data.\n')
             self._image[self.scienceExt,chip].cte_dir = 0       
