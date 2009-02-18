@@ -30,7 +30,7 @@ def _setDefaults(configObj={}):
 
     paramDict={"build":True,
               "single":True,
-              "units":"cps",
+              "in_units":"cps",
               "wt_scl":1.,
               "pixfrac":1.,
               "kernel":"square",
@@ -43,11 +43,13 @@ def _setDefaults(configObj={}):
               "blotny":2048,
               "outnx":4096,
               "outny":4096,
-              "data":None }
+              "data":None,
+              "driz_separate":True,
+              "driz_combine":False}
 
     if(len(configObj) !=0):
         for key in configObj.keys():
-            paramDict[key]=configObk[key]
+            paramDict[key]=configObj[key]
 
     return paramDict
 
