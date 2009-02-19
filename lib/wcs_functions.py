@@ -1,5 +1,4 @@
 import numpy as np
-import copy 
 
 from updatewcs import wcsutil
 from updatewcs.distortion import utils
@@ -73,26 +72,44 @@ def make_outputwcs(imageObjectList,output,configObj=None):
 
     # Compute default output WCS
     default_wcs = utils.output_wcs(hstwcs_list)
-           
+
+    # Turn WCS instances into WCSObject instances
+    outwcs = createWCSObject(output,default_wcs,default_wcs,imageObjectList)
+    
+    
     # Merge in user-specified attributes for the output WCS
     # as recorded in the input configObj object.
-    user_pars = DEFAULT_WCS_PARS.copy()
-    
+    final_pars = DEFAULT_WCS_PARS.copy()
+     
     # More interpretation of the configObj needs to be done here to translate
     # the input parameter names to those understood by 'mergeWCS' as defined
     # by the DEFAULT_WCS_PARS dictionary.
-    if configObj is not None:
-        user_pars.update(configObj)
+    if configObj['driz_separate']: 
+        single_pars = DEFAULT_WCS_PARS.copy()
+        #single_pars.update(configObj['STEP 3: DRIZZLE SEPARATE IMAGES'])
+        single_keys = {'outnx':'driz_sep_outnx','outny':'driz_sep_outny',
+                        'rot':'driz_sep_rot', 'scale':'driz_sep_scale'}
+        for key in single_keys.keys():
+            single_pars[key] = configObj[single_keys[key]]
 
-    # Apply user settings to output_wcs
-    final_wcs = mergeWCS(default_wcs,user_pars)
+    if configObj['driz_combine']: 
+        final_pars = DEFAULT_WCS_PARS.copy()
+        final_keys = {'outnx':'final_outnx','outny':'final_outny','rot':'final_rot', 'scale':'final_scale'}
+        #final_pars.update(configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'])
+        for key in final_keys.keys():
+            final_pars[key] = configObj[final_keys[key]]
 
-    # Turn WCS instances into WCSObject instances
-    outwcs = createWCSObject(output,default_wcs,final_wcs,imageObjectList)
+    # Apply user settings to create custom output_wcs instances 
+    # for each drizzle step
+    outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
+    outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
+
+    outwcs.wcs = outwcs.final_wcs.copy()
     
     updateImageWCS(imageObjectList,outwcs)
     
     return outwcs
+
 
 def createWCSObject(output,default_wcs,final_wcs,imageObjectList):
     """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
@@ -138,10 +155,9 @@ def mergeWCS(default_wcs,user_pars):
     """
     #
     # Start by making a copy of the input WCS...
-    #
+    #    
+    outwcs = default_wcs.copy()    
     
-    outwcs = copy.copy(default_wcs)
-    outwcs.wcs = copy.copy(default_wcs.wcs)
     # If there are no user set parameters, just return a copy of the original WCS
     if user_pars == DEFAULT_WCS_PARS:
         return outwcs

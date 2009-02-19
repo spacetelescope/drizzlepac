@@ -2,7 +2,7 @@ from pytools import parseinput, fileutil, readgeis, makewcs, asnutil,irafglob
 import pyfits
 import os 
 
-import util,wcs_functions
+import wcs_functions
 
 """
 Process input to MultiDrizzle/PyDrizzle.
@@ -23,35 +23,129 @@ because 'updatewcs' may be False).
 Runs makewcs.
 The function 'process_input' returns an association table, ivmlist, output name
 
-The common interface interpreter for MultiDrizzle tasks, though, not only runs
-'process_input()' but 'createImageObject()' and 'defineOutput()' as well to 
-fully setup all inputs for use with the rest of the MultiDrizzle steps either
-as stand-alone tasks or internally to MultiDrizzle itself. 
+The common interface interpreter for MultiDrizzle tasks, 'processCommonInput()',
+not only runs 'process_input()' but 'createImageObject()' and 'defineOutput()' 
+as well to fully setup all inputs for use with the rest of the MultiDrizzle 
+steps either as stand-alone tasks or internally to MultiDrizzle itself. 
 
 """
 
-def process_common(configObj):
+def processCommonInput(configObj):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to 
     fully setup all inputs for use with the rest of the MultiDrizzle steps either
     as stand-alone tasks or internally to MultiDrizzle itself. 
 
+    Syntax:
+        imageObjectList,outwcs = processInput.processCommonInput(configObj)
+
+        where,
+        configObj: configObj instance or simple dictionary of input parameters        
+        imageObjectList: list of imageObject instances, 1 for each input exposure
+        outwcs: imageObject instance defining the final output frame
+
+    At a minimum, the configObj dictionary should contain:
+        configObj={'input':None,'output':None,'ivmlist':None,
+                    'updatewcs':None,'shiftfile':None}
+
     """
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'], 
-            configObj['ivmlist'], configObj['updatewcs'], 
-            prodonly=False, shiftfile=configObj['shiftfile'])
+            updatewcs=configObj['updatewcs'], shiftfile=configObj['shiftfile'])
+
+    # convert the filenames from asndict into a list of full filenames
+    files = [fileutil.buildRootname(f) for f in asndict['order']]
 
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.
-    imageObjectList = util.createImageObjectList(asndict)
+    imageObjectList = createImageObjectList(files)
+
     # Add info about input IVM files at this point to the imageObjectList
-    #util.addIVMInputs(imageObjectList)
+    addIVMInputs(imageObjectList,ivmlist)
+
     # Build output WCS and update imageObjectList with output WCS info
     outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
     
     return imageObjectList,outwcs
 
+def addIVMInputs(imageObjectList,ivmlist):
+    """ Add IVM filenames provided by user to outputNames dictionary for each
+        input imageObject.
+    """
+    if ivmlist is None:
+        return
+
+    for img,ivmname in zip(imageObjectList,ivmlist):
+        img.updateIVMName(ivmname)
+            
+def createImageObjectList(files):
+    """ Returns a list of imageObject instances, 1 for each input image in the
+        list of input filenames.
+    """
+    imageObjList = []
+    for img in files:
+        imageObjList.append(_getInputImage(img))
+
+    return imageObjList
+
+def _getInputImage (input):
+    """ Factory function to return appropriate imageObject class instance"""
+    # extract primary header from input image
+    phdu = pyfits.getheader(input)
+
+    # Extract the instrument name for the data that is being processed by Multidrizzle
+    _instrument = phdu['INSTRUME']
+    
+    # Determine the instrument detector in use.  NICMOS is a special case because it does
+    # not use the 'DETECTOR' keyword.  It instead used 'CAMERA' to identify which of it's
+    # 3 camera's is in use.  All other instruments support the 'DETECTOR' keyword.
+    if (_instrument == 'NICMOS'):
+        _detector = phdu['CAMERA']
+    else:
+        _detector = phdu['DETECTOR']
+
+    del phdu # just to keep clean
+    
+    # Match up the instrument and detector with the right class
+    # only importing the instrument modules as needed.
+    try:
+        if _instrument == 'ACS':
+            import acsData
+            if _detector == 'HRC': return acsData.HRCInputImage(input)
+            if _detector == 'WFC': return acsData.WFCInputImage(input)
+            if _detector == 'SBC': return acsData.SBCInputImage(input)
+        if _instrument == 'NICMOS':
+            import nicmosData
+            if _detector == 1: return nicmosData.NIC1InputImage(input)
+            if _detector == 2: return nicmosData.NIC2InputImage(input)
+            if _detector == 3: return nicmosData.NIC3InputImage(input)
+
+        """
+        if _instrument == 'WFPC2':
+            import wfpc2Data
+            if _detector == 1: return wfpc2Data.PCInputImage(input)
+            if _detector == 2: return wfpc2Data.WF2InputImage(input)
+            if _detector == 3: return wfpc2Data.WF3InputImage(input)
+            if _detector == 4: return wfpc2Data.WF4InputImage(input)
+        if _instrument == 'STIS':
+            import stisData 
+            if _detector == 'CCD': return stisData.CCDInputImage(input)
+            if _detector == 'FUV-MAMA': return stisData.FUVInputImage(input)
+            if _detector == 'NUV-MAMA': return stisData.NUVInputImage(input)
+        if _instrument == 'WFC3':
+            import wfc3Data
+            if _detector == 'UVIS': return wfc3Data.WFC3UVISInputImage(input)
+            if _detector == 'IR': return wfc3Data.WFC3IRInputImage(input)
+        """
+    except ImportError:
+        msg = 'No module implemented for '+str(_instrument)+'!'
+        raise ValueError,msg
+    # If a supported instrument is not detected, print the following error message
+    # and raise an exception.
+    msg = 'Instrument: ' + str(_instrument) + '/' + str(_detector) + ' not yet supported!'
+    raise ValueError, msg
+
+#### Remaining functions support process_input()
 def atfile_sci(f):
     return f.split()[0]
     
@@ -665,3 +759,13 @@ def buildEmptyDRZ(input, output):
     fitsobj.writeto(output)
     return
 
+def _setDefaults(configObj={}):
+    """ Define minimum set of default values for testing this module."""
+    paramDict = {'output':None,'ivmlist':None,
+                    'updatewcs':True,'shiftfile':None}
+    paramDict.update(configObj)
+
+    print '\nUser Input Parameters for Init Step:'
+    util.printParams(paramDict)
+
+    return paramDict

@@ -287,7 +287,8 @@ class baseImageObject:
             'outSingle':outSingle,
             'outSWeight':outSWeight,
             'outSContext':None,
-            'outSky':outSky}
+            'outSky':outSky,
+            'ivmFile':None}
         
 
         return fnames
@@ -455,7 +456,7 @@ class baseImageObject:
             sci_chip = self._image[self.scienceExt,chip]
             masknames = []
             if configObj['driz_separate']:
-                masknames.append([sci_chip.outputNames['singleDrizMask'],configObj['driz_sep_bit']])
+                masknames.append([sci_chip.outputNames['singleDrizMask'],configObj['driz_sep_bits']])
             if configObj['driz_combine']:
                 masknames.append([sci_chip.outputNames['drizMask'],configObj['final_bits']])
 
@@ -463,9 +464,13 @@ class baseImageObject:
             for maskname in masknames:
                 buildmask.buildMaskImage(sci_chip.dqfile,maskname[1],maskname[0],extname=self.maskExt,extver=chip) 
                 """
-                #### For WFPC2 Data, build mask files using:
+                ### For WFPC2 Data, build mask files using:
                 buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname[0],bitvalue=maskname[1],binned=sci_chip.binned)
                 """
+    def updateIVMName(self,ivmname):
+        """ Update outputNames for image with user-supplied IVM filename."""
+        self.outputNames['ivmFile'] = ivmname
+        
 class imageObject(baseImageObject):
     """
     This returns an imageObject that contains all the
@@ -554,7 +559,9 @@ class WCSObject(baseImageObject):
     
         self._bunit = 'ELECTRONS/S'
         self.default_wcs = None
+        self.final_wcs = None
+        self.single_wcs = None
 
     def restore_wcs(self):
         self.wcs = copy.copy(self.default_wcs)
-        
+

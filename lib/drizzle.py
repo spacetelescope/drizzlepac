@@ -13,12 +13,15 @@ except ImportError:
 #
 def drizSeparate(imageObjectList,output_wcs,configObj={},wcsmap=wcs_functions.WCSMap):
     if configObj['driz_separate']:
-        run_driz(imageObjectList,output_wcs,configObj,single=True,wcsmap=wcsmap)
+        run_driz(imageObjectList,output_wcs.single_wcs,configObj,single=True,wcsmap=wcsmap)
     
 def drizFinal(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap):
     if configObj['driz_combine']:
-        run_driz(imageObjectList, output_wcs, configObj,single=False,wcsmap=wcsmap)
-    
+        run_driz(imageObjectList, output_wcs.final_wcs, configObj,single=False,wcsmap=wcsmap)
+
+def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap):
+    if configObj['blot']:
+        run_blot(imageObjectList, output_wcs.final_wcs, configObj,wcsmap=wcsmap)
 # Run 'drizzle' here...
 #
 
@@ -88,19 +91,14 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
     build = paramDict['build']
 
     # Check for existance of output file.
-    if single == False and build == True and fileutil.findFile(output_wcs._filename):
+    if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
         print 'Removing previous output product...'
-        os.remove(output_wcs._filename)
+        os.remove(imageObjectList[0].outputNames['outFinal'])
 
     # Set parameters for each input and run drizzle on it here.
     #
     # Perform drizzling...
     #
-    # Only work on a copy of the product WCS, so that when
-    # this gets updated for the output image, it does not
-    # modify the original WCS computed by PyDrizzle
-    #_wcs = observation.product.geometry.wcs.copy()
-    _wcs = output_wcs.wcs
 
     numctx = 0
     for img in imageObjectList:
@@ -297,7 +295,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                 print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
             else:
                 # Use user provided mapping function
-                wmap = wcsmap(chip.wcs,output_wcs.wcs)
+                wmap = wcsmap(chip.wcs,output_wcs)
                 mapping = wmap.forward
                 
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
@@ -350,7 +348,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                 if single:
                     _expscale = chip._exptime
                 else:
-                    _expscale = output_wcs._exptime
+                    _expscale = img.outputValues['texptime']
 
                 #If output units were set to 'counts', rescale the array in-place
                 if paramDict['units'] == 'counts':
@@ -359,7 +357,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                 #
                 # Write output arrays to FITS file(s) and reset chip counter
                 #                
-                _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=build, wcs=_wcs, single=single)
+                _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=build, wcs=output_wcs, single=single)
                 _outimg.set_bunit(_bunit)
                 _outimg.set_units(paramDict['units'])
 
@@ -477,7 +475,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                     None, plist['alpha'], plist['beta'])
             else:
                 # Use user provided mapping function
-                wmap = wcsmap(chip.wcs,output_wcs.wcs)
+                wmap = wcsmap(chip.wcs,output_wcs)
                 mapping = wmap.forward
 
             t = arrdriz.tblot(

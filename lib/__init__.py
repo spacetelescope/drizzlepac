@@ -3,7 +3,7 @@ import drizzle
 import imageObject
 import MultiDrizzle
 import outputimage
-import process_input
+import processInput
 import sky
 import staticMask
 import util
