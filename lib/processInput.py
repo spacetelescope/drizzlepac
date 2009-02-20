@@ -3,6 +3,8 @@ import pyfits
 import os 
 
 import wcs_functions
+import mdzhandler
+from pytools import cfgpars
 
 """
 Process input to MultiDrizzle/PyDrizzle.
@@ -30,7 +32,7 @@ steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
 
-def processCommonInput(configObj):
+def processCommonInput(input_dict,configObj,cfg_file=None):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to 
@@ -48,13 +50,56 @@ def processCommonInput(configObj):
     At a minimum, the configObj dictionary should contain:
         configObj={'input':None,'output':None,'ivmlist':None,
                     'updatewcs':None,'shiftfile':None}
+                    
+    Initial example by Nadia ran MD using:
+    It can be run in one of two ways:
+
+        from pytools import cfgepar
+
+        1. Passing a config object to epar
+
+        from runmdz import mdriz
+        mdobj = mdriz('multidrizzle/pars/mdriz.cfg')
+        cfgepar.epar(mdobj)
+
+
+        2. Passing a task  name:
+
+        cfgepar.epar('multidrizzle')
+
+        The example config files are in multidrizzle/pars
+
 
     """
+    # start by merging input_dict with configObj
+    if configObj is None:
+        # If no configObj was provided, 
+        #   convert default pars from .cfg file into a configObj instance
+        configObj = cfgpars.ConfigObjPars(cfg_file)
+
+    # Update input configObj instance with user-specified parameter values
+    # from input_dict
+    # This causes any user-input from input_dict to override the values
+    # set in the GUI or through the configObj itself.
+    # This also assumes input_dict will always be defined at least as
+    # an empty dictionary
+    configObj.update(input_dict)
+
+    # Interpret input, read and convert and update input files, then return
+    # list of input filenames and derived output filename
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'], 
             updatewcs=configObj['updatewcs'], shiftfile=configObj['shiftfile'])
 
     # convert the filenames from asndict into a list of full filenames
     files = [fileutil.buildRootname(f) for f in asndict['order']]
+
+    # interpret MDRIZTAB, if specified, and update configObj accordingly
+    # This can be done here because MDRIZTAB does not include values for 
+    # input, output, updatewcs, or shiftfile.
+    if configObj['mdriztab']:
+        mdriztab_dict = mdzhandler.getMdriztabParameters(files)
+        # Update configObj with values from mpars
+        configObj.update(mdriztab_dict)
 
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.
@@ -759,11 +804,83 @@ def buildEmptyDRZ(input, output):
     fitsobj.writeto(output)
     return
 
-def _setDefaults(configObj={}):
-    """ Define minimum set of default values for testing this module."""
-    paramDict = {'output':None,'ivmlist':None,
-                    'updatewcs':True,'shiftfile':None}
-    paramDict.update(configObj)
+def _setDefaults(input_dict={}):
+    """ Define full set of default values for testing MultiDrizzle."""
+    paramDict = {
+        'input':'*flt.fits',
+        'output':None,
+        'mdriztab':None,
+        'refimage':None,
+        'runfile':None,
+        'workinplace':False,
+        'updatewcs':True,
+        'proc_unit':'native',
+        'coeffs':'header',
+        'context':False,
+        'clean':True,
+        'group':None,
+        'ra':None,
+        'dec':None,
+        'build':True,
+        'shiftfile':None,
+        'gain':None,
+        'gnkeyword':None,
+        'readnoise':None,
+        'rnkeyword':None,
+        'exptime':None,
+        'expkeyword':None,
+        'crbitval':4096,
+        'shiftfile':None,
+        'static':True,
+        'staticfile':None,
+        'static_sig':4.0,
+        'skysub':True,
+        'skywidth':0.1,
+        'skystat':"median",
+        'skylower':None,
+        'skyupper':None,
+        'skyclip':5,
+        'skylsigma':4.0,
+        'skyusigma':4.0,
+        'driz_separate':True,
+        'driz_sep_outnx':None,
+        'driz_sep_outny':None,
+        'driz_sep_kernel':'turbo',
+        'driz_sep_scale':None,
+        'driz_sep_pixfrac':1.0,
+        'driz_sep_rot':None,
+        'driz_sep_fillval':None,
+        'driz_sep_bits':0,
+        'median':True,
+        'median_newmasks':True,
+        'combine_type':"minmed",
+        'combine_nsigma':"4 3",
+        'combine_nlow':0,
+        'combine_nhigh':1,
+        'combine_lthresh':None,
+        'combine_hthresh':None,
+        'combine_grow':1,
+        'blot':True,
+        'blot_interp':'poly5',
+        'blot_sinscl':1.0,
+        'driz_cr':True,
+        'driz_cr_corr':False,
+        'driz_cr_snr':"3.5 3.0",
+        'driz_cr_scale':"1.2 0.7",
+        'driz_cr_cteg':0,
+        'driz_cr_grow':1,
+        'driz_combine':True,
+        'final_wht_type':"EXP",
+        'final_outnx':None,
+        'final_outny':None,
+        'final_kernel':'square',
+        'final_scale':None,
+        'final_pixfrac':1.0,
+        'final_rot':None,
+        'final_fillval':None,
+        'final_bits':0}
+
+    paramDict.update(input_dict)
 
     print '\nUser Input Parameters for Init Step:'
     util.printParams(paramDict)

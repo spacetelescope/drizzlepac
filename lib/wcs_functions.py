@@ -31,9 +31,11 @@ class WCSMap:
             print name +' object needs to be an instance or subclass of a PyWCS object.'
             raise
     def forward(self,pixx,pixy):
+        # Only method used in drizzle/blot.
         skyx,skyy = self.input.all_pix2sky(pixx,pixy,1)
         return self.output.wcs_sky2pix(skyx,skyy,1)
     def backward(self,pixx,pixy):
+        # Not needed for drizzle or blot.
         skyx,skyy = self.output.all_pix2sky(pixx,pixy,1)
         return self.input.wcs_sky2pix(skyx,skyy,1)
     
