@@ -1,0 +1,101 @@
+_task_name_ = string_kw(default="BigBlackBox")
+input = string_kw(default="")  #, trigger='_rule1_') 
+output = string_kw(default='final_drz.fits') 
+mdriztab = boolean_kw(default=True) 
+refimage = string_kw(default="") 
+runfile = string_kw(default="multidrizzle.run") 
+workinplace = boolean_kw(default=no) 
+updatewcs = boolean_kw(default=no) 
+proc_unit = option_kw("native", "electrons", default="native")
+coeffs = string_kw(default="header") 
+context = boolean_kw(default=yes) 
+clean = boolean_kw(default=no) 
+group = string_kw(default="") 
+ra = float_or_none_kw(default=None) 
+dec = float_or_none_kw(default=None) 
+shiftfile = string_kw(default="") 
+staticfile = string_kw(default="") 
+
+mode = string_kw(default="all")
+
+[STEP 1: STATIC MASK ]
+static = boolean_kw(default=True) 
+static_sig = float_kw(default=4.0) 
+
+[STEP 2: SKY SUBTRACTION ]
+skysub = boolean_kw(default=True) 
+skywidth = float_or_none_kw(default=None) 
+skystat = string_kw(default="median") 
+skylower = float_or_none_kw(default=None) 
+skyupper = float_or_none_kw(default=None) 
+skyclip = integer_kw(default=5) 
+skylsigma = float_kw(default=4.) 
+skyusigma = float_kw(default=4.) 
+skyuser = string_kw(default="") 
+
+[STEP 3: DRIZZLE SEPARATE IMAGES]
+driz_separate = boolean_kw(default=True) 
+driz_sep_outnx = float_or_none_kw(default=None) 
+driz_sep_outny = float_or_none_kw(default=None) 
+driz_sep_kernel = option_kw("turbo","square","point", "gaussian", "tophat", "lanczos3", default="turbo") 
+driz_sep_wt_scl = string_kw(default="exptime") 
+driz_sep_scale = float_or_none_kw(default=None) 
+driz_sep_pixfrac = float_kw(default=1.) 
+driz_sep_rot = float_or_none_kw(default=None) 
+driz_sep_fillval = string_kw(default=None) 
+driz_sep_bits = integer_kw(default=0) 
+
+[STEP 4: CREATE MEDIAN IMAGE]
+_section_ = string_kw(default='', active='_rule1_') # en/dis-able whole section
+median = boolean_kw(default=True)
+median_newmasks= boolean_kw(default=true) 
+combine_maskpt = float_kw(default=0.7) 
+combine_type = option_kw("minmed","median","sum",default="minmed") 
+combine_nsigma = string_kw(default="4 3") 
+combine_nlow = integer_kw(default=0) 
+combine_nhigh = integer_kw(default=0) 
+combine_lthresh = string_kw(default="INDEF") 
+combine_hthresh = string_kw(default="INDEF") 
+combine_grow = integer_kw(default=1) 
+
+[STEP 5: BLOT BACK THE MEDIAN IMAGE]
+blot = boolean_kw(default=true) 
+blot_interp = option_kw("poly5","nearest","linear", "poly3", "sinc",default="poly5") 
+blot_sinscl = float_kw(default=1.0) 
+
+[STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR]
+_section_ = string_kw(default='', active='_rule1_') # en/dis-able whole section
+driz_cr = boolean_kw(default=True) 
+driz_cr_corr = boolean_kw(default=False)
+driz_cr_snr = string_kw(default="3.5 3.0") 
+driz_cr_grow = integer_kw(default=1) 
+driz_cr_ctegrow = integer_kw(default=0) 
+driz_cr_scale = string_kw(default="1.2 0.7") 
+
+[STEP 7: DRIZZLE FINAL COMBINED IMAGE]
+driz_combine = boolean_kw(default=True)
+final_wht_type = option_kw("EXP","ERR","IVM",default="EXP") 
+final_outnx = float_or_none_kw(default=None) 
+final_outny = float_or_none_kw(default=None)
+final_kernel = option_kw("square", "point","gaussian","turbo","tophat","lanczos3",default="square") 
+final_wt_scl = string_kw(default="exptime")
+final_scale = float_or_none_kw(default=None)
+final_pixfrac = float_kw(default=1.) 
+final_rot = float_kw(default=0.)
+final_fillval = string_kw(default="INDEF") 
+final_bits = integer_kw(default=0) 
+final_units = option_kw("counts", "cps", default="cps") 
+
+[INSTRUMENT PARAMETERS]
+gain = string_kw(default="")
+gnkeyword = string_kw(default="")
+rdnoise = string_kw(default="")
+rnkeyword = string_kw(default="")
+exptime  = string_kw(default="")
+expkeyword = string_kw(default="")
+crbit = integer_kw(default=0),i,h,,,,"Bit value for CR ident. in DQ array"
+#mode,s,h,"al",,,
+
+[ _RULES_ ]
+
+_rule1_ = string_kw(default='', code='determine_if_mult_files(CFGOBJ)')
