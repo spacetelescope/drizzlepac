@@ -20,7 +20,7 @@ import sky
 from staticMask import staticMask
 from imageObject import imageObject
 
-class MultiDrizzle:
+class MultiDrizzleObject:
     """
 
     Create an object which contains the basic

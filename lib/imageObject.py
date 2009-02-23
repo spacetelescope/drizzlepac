@@ -470,6 +470,14 @@ class baseImageObject:
     def updateIVMName(self,ivmname):
         """ Update outputNames for image with user-supplied IVM filename."""
         self.outputNames['ivmFile'] = ivmname
+
+    def set_units(self):
+        """ Record the units for this image, both BUNITS from header and 
+            in_units as needed internally.
+            This method will be defined specifically for each instrument.
+        """
+        pass
+        
         
 class imageObject(baseImageObject):
     """
@@ -536,15 +544,23 @@ class imageObject(baseImageObject):
                 sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
                             
                 sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
-                # Determine output value of BUNITS
-                # and make sure it is not specified as 'ergs/cm...'
-                _bunit = None
-                if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
-                    _bunit = sci_chip.header['BUNIT']
-                else:
-                    _bunit = 'ELECTRONS/S'
-                sci_chip._bunit = _bunit
+                # Set the units: both bunit and in_units
+                self.set_units(chip)
                                     
+    def set_units(self,chip):
+        """ Define units for this image."""
+        # Determine output value of BUNITS
+        # and make sure it is not specified as 'ergs/cm...'
+        sci_chip = self._image[self.scienceExt,chip]
+
+        _bunit = None
+        if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
+            _bunit = sci_chip.header['BUNIT']
+        else:
+            _bunit = 'ELECTRONS/S'
+        sci_chip._bunit = _bunit
+        #
+        sci_chip.in_units = 'counts'
                             
 
 class WCSObject(baseImageObject):

@@ -7,6 +7,7 @@ import numpy as np
 import pyfits
 from pytools import asnutil,fileutil
 import buildmask
+from pytools import cfgepar,cfgpars
 
 
 __version__ = "0.1.0tng1"
@@ -34,6 +35,26 @@ def findrootname(filename):
             val = num
     return filename[0:val]
 
+
+def getDefaultConfigObj(taskname,configObj,input_dict={}):
+    """ Return default configObj instance for task updated 
+        with user-specified values from input_dict.
+        If configObj already defined, it will simply 
+        return configObj unchanged. 
+    """
+    if configObj is None:
+        # Uncomment the 'loadOnly' parameter to turn off GUI in this function.
+        configObj = cfgepar.epar(taskname) #,loadOnly=1)
+        # Merge in user-input into configObj
+        configObj.update(input_dict)
+    return configObj
+
+def getStepName(configObj,stepnum):
+    """ Return section label based on step number.
+    """
+    for key in configObj.keys():
+        if key.find('STEP '+str(stepnum)) >= 0:
+            return key
 
 """
 These two functions are for reading in an "at" which contains

@@ -1,4 +1,4 @@
-import sys,types
+import sys,types,os
 import util
 from util import _ptime
 import numpy as np
@@ -8,23 +8,80 @@ try:
     import arrdriz
 except ImportError:
     arrdriz = None
+
+__taskname__ = "drizzle"
+_single_step_num_ = 3
+_final_step_num_ = 7
+
+#
+####  User level interface to run drizzle tasks from TEAL
+#
+def run(configObj,input_dict=None,wcsmap=wcs_functions.WCSMap):
+    # Run method assumes that configObj will always be fully populated
+    # If no configObj instance provided on input, use EPAR/TEAL to get the
+    # defaults for the task    
+    imgObjList,outwcs = processInput.setCommonInput(configObj,__taskname__,input_dict=input_dict)
+    # Parse out which mode is to be run: single drizzle or final drizzle
+    # Call only the mode of interest
+    single_step = util.getSectionName(configObj,_single_step_num_)
+    if configObj[single_step]['driz_separate']:
+        drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+    else:
+        drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+def getHelpAsString():
+    return "Drizzle Help"
+
+
+# 
+#### Interactive interface for running drizzle tasks separately
+#
+def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,**input_dict):
+    # Now, merge required input parameters into input_dict
+    input_dict['input'] = input
+    input_dict['output'] = output
+ 
+    run(configObj,input_dict=input_dict,wcsmap=wcsmap)
+
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def drizSeparate(imageObjectList,output_wcs,configObj={},wcsmap=wcs_functions.WCSMap):
-    if configObj['driz_separate']:
-        run_driz(imageObjectList,output_wcs.single_wcs,configObj,single=True,wcsmap=wcsmap)
+def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap):
+    # ConfigObj needs to be parsed specifically for driz_separate set of parameters
+    single_step = util.getSectionName(configObj,_single_step_num_)
+    # This can be called directly from MultiDrizle, so only execute if
+    # switch has been turned on (no guarantee MD will check before calling).
+    if configObj[single_step]['driz_separate']:
+        paramDict = buildDrizParamDict(configObj)
+        run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, wcsmap=wcsmap)
     
-def drizFinal(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap):
-    if configObj['driz_combine']:
-        run_driz(imageObjectList, output_wcs.final_wcs, configObj,single=False,wcsmap=wcsmap)
+def drizFinal(imageObjectList, output_wcs, configObj,wcsmap=wcs_functions.WCSMap):
+    # ConfigObj needs to be parsed specifically for driz_final set of parameters
+    final_step = util.getSectionName(configObj,_final_step_num_)
+    # This can be called directly from MultiDrizle, so only execute if
+    # switch has been turned on (no guarantee MD will check before calling).
+    if configObj[final_step]['driz_combine']:
+        paramDict = buildDrizParamDict(configObj,single=False)
+        run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, wcsmap=wcsmap)
 
-def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap):
-    if configObj['blot']:
-        run_blot(imageObjectList, output_wcs.final_wcs, configObj,wcsmap=wcsmap)
 # Run 'drizzle' here...
 #
+def buildDrizParamDict(configObj,single=True):
+    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval']
+    # Initialize paramDict with global parameter(s)
+    paramDict = {'build':configObj['build']}
+    # build appro
+    if single:
+        driz_prefix = 'driz_sep_'
+        stepnum = 3
+    else:
+        driz_prefix = 'final_'
+        stepnum = 7
+    section_name = util.getSectionName(configObj,stepnum)
+    # Copy values from configObj for the appropriate step to paramDict
+    for par in chip_pars:
+        paramDict[par] = configObj[section_name][driz_prefix+par]
 
+    return paramDict
 def _setDefaults(configObj={}):
     """set up the default parameters to run drizzle
         build,single,units,wt_scl,pixfrac,kernel,fillval,
@@ -238,7 +295,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                 _wtscl = chip._exptime
 
             # Set additional parameters needed by 'drizzle'
-            _in_units = paramDict['in_units']
+            _in_units = cjhip.in_units
             if _in_units == 'cps':
                 _expin = 1.0
             else:
@@ -381,132 +438,3 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
 
 
     print 'PyDrizzle drizzling completed at ',_ptime()
-
-def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
-    """ Perform the blot operation on the list of images.
-    """
-    # Insure that input imageObject is a list
-    if not isinstance(imageObjectList, list):
-        imageObjectList = [imageObjectList]
-    #
-    # Setup the versions info dictionary for output to PRIMARY header
-    # The keys will be used as the name reported in the header, as-is
-    #
-    _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
-
-    _hdrlist = []
-
-    
-    for img in imageObjectList:
-        
-        for chip in img.returnAllChips(extname=img.scienceExt):
-
-            _insci = np.zeros((img.outputValues['outny'],img.outputValues['outnx']),dtype=np.float32)
-            _outsci = np.zeros((chip.wcs.naxis2,chip.wcs.naxis1),dtype=np.float32)
-
-            #### Check to see what names need to be included here for use in _hdrlist
-            chip.outputNames['driz_version'] = _versions
-            outputvals = chip.outputNames.copy()
-            outputvals.update(img.outputValues)
-            outputvals['blotnx'] = chip.wcs.naxis1
-            outputvals['blotny'] = chip.wcs.naxis2
-            _hdrlist.append(outputvals)
-
-            plist = outputvals.copy()
-            plist.update(paramDict)
-            
-            _data = img.outputNames['outMedian']
-            
-            # The following type of logic belongs in the user callable (modular)
-            # interface to the blot routine, as the user may not want to simply
-            # blot the median image, but rather another image altogether (like 
-            # the single_drizzle product). 
-            #
-            # Determine which product was created and should be blotted back
-            #if plist['outsingle'] != plist['outdata']:
-            #    _data = plist['outsingle']
-            #else:
-            #    _data = plist['outdata']
-
-            # PyFITS can be used here as it will always operate on
-            # output from PyDrizzle (which will always be a FITS file)
-            # Open the input science file
-            _fname,_sciextn = fileutil.parseFilename(_data)
-            _inimg = fileutil.openImage(_fname)
-
-            # Return the PyFITS HDU corresponding to the named extension
-            _scihdu = fileutil.getExtn(_inimg,_sciextn)
-            _insci = _scihdu.data.copy()
-
-            # DGEO arrays are assumed to be included in the WCS specification
-            # Read in the distortion correction arrays, if specified
-            #_pxg,_pyg = plist['exposure'].getDGEOArrays()
-
-            # Now pass numpy objects to callable version of Blot...
-            #runBlot(plist)
-            build=False
-            misval = 0.0
-            kscale = 1.0
-            scale = 1.0
-
-            xmin = 1
-            xmax = img.outputValues['outnx']
-            ymin = 1
-            ymax = img.outputValues['outny']
-            if wcsmap is None and arrdriz is not None:
-                # Use default C mapping function
-                #
-                # Convert shifts to input units
-                #
-                xsh = plist['xsh'] * img.outputValues['scale']
-                ysh = plist['ysh'] * img.outputValues['scale']
-                # ARRDRIZ.TBLOT needs to be updated to support 'poly5' interpolation,
-                # and exptime scaling of output image.
-                #
-                if (_insci.dtype > np.float32):
-                    #WARNING: Input array recast as a float32 array
-                    _insci = _insci.astype(np.float32)
-                mapping = arrdriz.DefaultMapping(
-                    _outsci.shape[1], _outsci.shape[0],
-                    _insci.shape[1], _insci.shape[0],
-                    xsh, ysh, 'output', 'input', plist['rot'],
-                    plist['scale'], 0.0, 0.0, 1.0, 1.0, 0.0,
-                    'output', _pxg, _pyg, 'center', plist['coeffs'],
-                    None, plist['alpha'], plist['beta'])
-            else:
-                # Use user provided mapping function
-                wmap = wcsmap(chip.wcs,output_wcs)
-                mapping = wmap.forward
-
-            t = arrdriz.tblot(
-                _insci, _outsci,xmin,xmax,ymin,ymax,
-                scale, kscale, 1.0, 1.0,
-                'center',paramDict['blot_interp'], chip._exptime,
-                misval, paramDict['blot_sinscl'], 1, mapping)
-            del mapping
-
-            # Write output Numpy objects to a PyFITS file
-            # Blotting only occurs from a drizzled SCI extension
-            # to a blotted SCI extension...
-            #_header = fileutil.getHeader(plist['data'])
-            #_wcs = wcsutil.WCSObject(plist['data'],header=_header)
-            #_wcs = chip.wcs
-
-            _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=False, wcs=chip.wcs, blot=True)
-            _outimg.outweight = None
-            _outimg.outcontext = None
-            _outimg.writeFITS(plist['data'],_outsci,None,versions=_versions)
-
-            #_buildOutputFits(_outsci,None,plist['outblot'])
-            _insci *= 0.
-            _outsci *= 0.
-            _inimg.close()
-            del _inimg
-            _hdrlist = []
-
-            #del _pxg,_pyg
-
-            del _insci,_outsci
-        del _outimg
-    
-    

@@ -32,7 +32,7 @@ steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
 
-def processCommonInput(input_dict,configObj,cfg_file=None):
+def setCommonInput(configObj,taskname,input_dict={}):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to 
@@ -47,10 +47,16 @@ def processCommonInput(input_dict,configObj,cfg_file=None):
         imageObjectList: list of imageObject instances, 1 for each input exposure
         outwcs: imageObject instance defining the final output frame
 
-    At a minimum, the configObj dictionary should contain:
-        configObj={'input':None,'output':None,'ivmlist':None,
+    At a minimum, the input_dict dictionary should contain:
+        input_dict={'input':None,'output':None,
                     'updatewcs':None,'shiftfile':None}
-                    
+
+    If provided, the configObj should contain the values of all the MD parameters 
+    as set by the user with TEAL. If no configObj is given, it will retrieve
+    the default values automatically.  In either case, the values from the input_dict
+    will be merged in with the configObj before being used by the rest of the 
+    code. 
+    
     Initial example by Nadia ran MD using:
     It can be run in one of two ways:
 
@@ -71,19 +77,7 @@ def processCommonInput(input_dict,configObj,cfg_file=None):
 
 
     """
-    # start by merging input_dict with configObj
-    if configObj is None:
-        # If no configObj was provided, 
-        #   convert default pars from .cfg file into a configObj instance
-        configObj = cfgpars.ConfigObjPars(cfg_file)
-
-    # Update input configObj instance with user-specified parameter values
-    # from input_dict
-    # This causes any user-input from input_dict to override the values
-    # set in the GUI or through the configObj itself.
-    # This also assumes input_dict will always be defined at least as
-    # an empty dictionary
-    configObj.update(input_dict)
+    configObj = util.getDefaults(__taskname__,configObj,input_dict)
 
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename

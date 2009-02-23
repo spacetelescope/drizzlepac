@@ -67,45 +67,47 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     """
     if not isinstance(imageObjectList,list): 
         imageObjectList = [imageObjectList]
-    
-    hstwcs_list = []
-    for img in imageObjectList:
-        hstwcs_list += img.getKeywordList('wcs')
-
-    # Compute default output WCS
-    default_wcs = utils.output_wcs(hstwcs_list)
+        
+    if configObj['refimage'].strip() in ['',None]:        
+        # Compute default output WCS, if no refimage specified
+        hstwcs_list = []
+        for img in imageObjectList:
+            hstwcs_list += img.getKeywordList('wcs')
+        default_wcs = utils.output_wcs(hstwcs_list)
+    else:
+        # Otherwise, simply use the reference image specified by the user
+        default_wcs = wcsutil.HSTWCS(configObj['refimage'])
 
     # Turn WCS instances into WCSObject instances
     outwcs = createWCSObject(output,default_wcs,default_wcs,imageObjectList)
     
-    
     # Merge in user-specified attributes for the output WCS
     # as recorded in the input configObj object.
     final_pars = DEFAULT_WCS_PARS.copy()
-     
+         
     # More interpretation of the configObj needs to be done here to translate
     # the input parameter names to those understood by 'mergeWCS' as defined
     # by the DEFAULT_WCS_PARS dictionary.
-    if configObj['driz_separate']: 
+    single_step = util.getStepName(configObj,3)
+    if configObj[single_step]['driz_separate']: 
         single_pars = DEFAULT_WCS_PARS.copy()
         #single_pars.update(configObj['STEP 3: DRIZZLE SEPARATE IMAGES'])
         single_keys = {'outnx':'driz_sep_outnx','outny':'driz_sep_outny',
                         'rot':'driz_sep_rot', 'scale':'driz_sep_scale'}
         for key in single_keys.keys():
-            single_pars[key] = configObj[single_keys[key]]
-
-    if configObj['driz_combine']: 
+            single_pars[key] = configObj['STEP 3: DRIZZLE SEPARATE IMAGES'][single_keys[key]]
+    final_step = util.getStepName(configObj,7)
+    if configObj[final_step]['driz_combine']: 
         final_pars = DEFAULT_WCS_PARS.copy()
         final_keys = {'outnx':'final_outnx','outny':'final_outny','rot':'final_rot', 'scale':'final_scale'}
         #final_pars.update(configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'])
         for key in final_keys.keys():
-            final_pars[key] = configObj[final_keys[key]]
+            final_pars[key] = configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'][final_keys[key]]
 
     # Apply user settings to create custom output_wcs instances 
     # for each drizzle step
     outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
     outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
-
     outwcs.wcs = outwcs.final_wcs.copy()
     
     updateImageWCS(imageObjectList,outwcs)
