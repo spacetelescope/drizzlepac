@@ -88,28 +88,30 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     # More interpretation of the configObj needs to be done here to translate
     # the input parameter names to those understood by 'mergeWCS' as defined
     # by the DEFAULT_WCS_PARS dictionary.
-    single_step = util.getStepName(configObj,3)
-    if configObj[single_step]['driz_separate']: 
+    single_step = util.getSectionName(configObj,3)
+    if single_step and configObj[single_step]['driz_separate']: 
         single_pars = DEFAULT_WCS_PARS.copy()
         #single_pars.update(configObj['STEP 3: DRIZZLE SEPARATE IMAGES'])
         single_keys = {'outnx':'driz_sep_outnx','outny':'driz_sep_outny',
                         'rot':'driz_sep_rot', 'scale':'driz_sep_scale'}
         for key in single_keys.keys():
             single_pars[key] = configObj['STEP 3: DRIZZLE SEPARATE IMAGES'][single_keys[key]]
-    final_step = util.getStepName(configObj,7)
-    if configObj[final_step]['driz_combine']: 
+        ### Create single_wcs instance based on user parameters
+        outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
+
+    final_step = util.getSectionName(configObj,7)
+    if final_step and configObj[final_step]['driz_combine']: 
         final_pars = DEFAULT_WCS_PARS.copy()
         final_keys = {'outnx':'final_outnx','outny':'final_outny','rot':'final_rot', 'scale':'final_scale'}
         #final_pars.update(configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'])
         for key in final_keys.keys():
             final_pars[key] = configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'][final_keys[key]]
+        ### Create single_wcs instance based on user parameters
+        outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
+        outwcs.wcs = outwcs.final_wcs.copy()
 
     # Apply user settings to create custom output_wcs instances 
     # for each drizzle step
-    outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
-    outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
-    outwcs.wcs = outwcs.final_wcs.copy()
-    
     updateImageWCS(imageObjectList,outwcs)
     
     return outwcs

@@ -3,24 +3,31 @@ import util
 from util import _ptime
 import numpy as np
 from pytools import fileutil
-import outputimage,imageObject,wcs_functions
+import outputimage,wcs_functions,processInput,util
 try:
     import arrdriz
 except ImportError:
     arrdriz = None
 
-__taskname__ = "drizzle"
+__taskname__ = "BigBlackBox.drizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
 #
 ####  User level interface to run drizzle tasks from TEAL
 #
-def run(configObj,input_dict=None,wcsmap=wcs_functions.WCSMap):
-    # Run method assumes that configObj will always be fully populated
-    # If no configObj instance provided on input, use EPAR/TEAL to get the
-    # defaults for the task    
-    imgObjList,outwcs = processInput.setCommonInput(configObj,__taskname__,input_dict=input_dict)
+def run(configObj=None,input_dict=None,wcsmap=wcs_functions.WCSMap,loadOnly=False):
+    # If called from interactive user-interface, configObj will not be 
+    # defined yet, so get defaults using EPAR/TEAL.
+    #
+    # Also insure that the input_dict (user-specified values) are folded in
+    # with a fully populated configObj instance.
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
+    
+    # Define list of imageObject instances and output WCSObject instance
+    # based on input paramters
+    imgObjList,outwcs = processInput.setCommonInput(configObj)
+
     # Parse out which mode is to be run: single drizzle or final drizzle
     # Call only the mode of interest
     single_step = util.getSectionName(configObj,_single_step_num_)
@@ -79,7 +86,11 @@ def buildDrizParamDict(configObj,single=True):
     section_name = util.getSectionName(configObj,stepnum)
     # Copy values from configObj for the appropriate step to paramDict
     for par in chip_pars:
-        paramDict[par] = configObj[section_name][driz_prefix+par]
+        if not single and par != 'units':
+            paramDict[par] = configObj[section_name][driz_prefix+par]
+        else:
+            # Hard-code single-drizzle to always returns 'cps'
+            paramDict[par] = 'cps'
 
     return paramDict
 def _setDefaults(configObj={}):
@@ -175,8 +186,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
     # with respect to byteorder and byteswapping.
     # This buffer should be reused for each input.
     #
-    _outsci = np.zeros((_wcs.naxis2,_wcs.naxis1),dtype=np.float32)
-    _outwht = np.zeros((_wcs.naxis2,_wcs.naxis1),dtype=np.float32)
+    _outsci = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+    _outwht = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
 
     # Compute how many planes will be needed for the context image.
     _nplanes = int((_numctx['all']-1) / 32) + 1
@@ -187,7 +198,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
 
     # Always initialize context images to a 3-D array
     # and only pass the appropriate plane to drizzle as needed
-    _outctx = np.zeros((_nplanes,_wcs.naxis2,_wcs.naxis1),dtype=np.int32)
+    _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
 
     # Keep track of how many chips have been processed
     # For single case, this will determine when to close
@@ -295,7 +306,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                 _wtscl = chip._exptime
 
             # Set additional parameters needed by 'drizzle'
-            _in_units = cjhip.in_units
+            _in_units = chip.in_units
             if _in_units == 'cps':
                 _expin = 1.0
             else:
@@ -337,7 +348,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
             if wcsmap is None and arrdriz is not None:
                 # Use default C mapping function
                 _inwcs = np.zeros([8],dtype=np.float64)
-                _inwcs = wcs_functions.convertWCS(_wcs.wcs,_inwcs)
+                _inwcs = wcs_functions.convertWCS(output_wcs.wcs,_inwcs)
                 print 'Default mapping sciext: ',_sciext.data.shape
                 print 'Default mapping outsci: ',_outsci.shape
 

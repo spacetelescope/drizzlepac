@@ -1,0 +1,43 @@
+_task_name_ = string_kw(default="buildmask")
+input = string_kw(default="")  #, trigger='_rule1_') 
+output = string_kw(default='final_drz.fits') 
+mdriztab = boolean_kw(default=True) 
+refimage = string_kw(default="") 
+runfile = string_kw(default="multidrizzle.run") 
+workinplace = boolean_kw(default=no) 
+updatewcs = boolean_kw(default=no) 
+proc_unit = option_kw("native", "electrons", default="native")
+coeffs = string_kw(default="header") 
+context = boolean_kw(default=yes) 
+clean = boolean_kw(default=no) 
+group = string_kw(default="") 
+ra = float_or_none_kw(default=None) 
+dec = float_or_none_kw(default=None) 
+shiftfile = string_kw(default="") 
+staticfile = string_kw(default="") 
+
+mode = string_kw(default="all")
+
+[STEP 1: STATIC MASK ]
+static = boolean_kw(default=True) 
+static_sig = float_kw(default=4.0) 
+
+[STEP 3: DRIZZLE SEPARATE IMAGES]
+driz_separate = boolean_kw(default=True) 
+driz_sep_outnx = float_or_none_kw(default=None) 
+driz_sep_outny = float_or_none_kw(default=None) 
+driz_sep_scale = float_or_none_kw(default=None) 
+driz_sep_rot = float_or_none_kw(default=None) 
+driz_sep_bits = integer_kw(default=0) 
+
+[STEP 7: DRIZZLE FINAL COMBINED IMAGE]
+driz_combine = boolean_kw(default=True)
+final_outnx = float_or_none_kw(default=None) 
+final_outny = float_or_none_kw(default=None)
+final_scale = float_or_none_kw(default=None)
+final_rot = float_kw(default=0.)
+final_bits = integer_kw(default=0) 
+
+[ _RULES_ ]
+
+_rule1_ = string_kw(default='', code='determine_if_mult_files(CFGOBJ)')

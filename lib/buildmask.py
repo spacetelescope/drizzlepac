@@ -36,47 +36,48 @@ from pytools import fileutil, readgeis
 import pyfits
 import numpy as N
 
-def build_mask(imageObjectList,configObj):
-    # value of driz_separate needs to come from configObj object/dictionary
-    dqfile = []
-    detnum = []
-    outputnames = []
-    instrument = []
-    extname = []
-    extver = []
-    binned = []
-        
+import processInput,util
+
+__taskname__ = 'BigBlackBox.buildmask'
+#
+#### Interactive interface 
+#
+def run(configObj=None,input_dict={},loadOnly=False):
+    """ Build DQ masks from all input images, then apply static mask(s).
+    """
+    # If called from interactive user-interface, configObj will not be 
+    # defined yet, so get defaults using EPAR/TEAL.
+    #
+    # Also insure that the input_dict (user-specified values) are folded in
+    # with a fully populated configObj instance.
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
+    
+    # Define list of imageObject instances and output WCSObject instance
+    # based on input paramters
+    imgObjList,outwcs = processInput.setCommonInput(configObj)
+
+    # Build DQ masks for all input images.
+    buildMask(imgObjList,configObj)
+    # Build static mask(s)
+    
+    # Apply static mask(s)
+
+#
+#### Functional interface for MultiDrizzle
+#
+def buildMask(imageObjectList,configObj):
+    """ Build DQ masks for all input images.
+    """
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
     
     for img in imageObjectList:
         img.buildMask(configObj)
-    """
-        dqfile += img.getKeywordList('dqfile')
-        detnum += img.getKeywordList('detnum')
-        outputnames += img.getKeywordList('outputNames')
-        instrument += [img._instrument]*img._numchips
-        extname += [img.maskExt]*img._numchips
-        extver += img.getKeywordList('_chip')
-        binned += img.getKeywordList('binned')
 
-    for chip in range(len(dqfile)):
-        masknames = []
-        if configObj['driz_separate']:
-            masknames.append([outputnames[chip]['singleDrizMask'],configObj['driz_sep_bit']])
-        if configObj['driz_combine']:
-            masknames.append([outputnames[chip]['drizMask'],configObj['final_bits']])
 
-        # Loop over all masks that need to be built for this chip: single and/or final
-        for maskname in masknames:
-            if instrument[chip] == 'WFPC2':
-                buildShadowMaskImage(dqfile[chip],detnum[chip],extnum[chip],maskname[0],bitvalue=maskname[1],binned=binned[chip])
-            else:
-                print 'Building ',maskname,' for ',dqfile[chip]
-                buildMaskImage(dqfile[chip],maskname[1],maskname[0],extname=extname[chip],extver=extver[chip]) 
-    """
-def buildMask(dqarr,bitvalue):
+
+def _buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
     if bitvalue == None:
         return (dqarr * 0.0) + 1.0
@@ -125,7 +126,7 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
             else:
                 raise Exception
         # Build mask array from DQ array
-        maskarr = buildMask(dqarr,bitvalue)
+        maskarr = _buildMask(dqarr,bitvalue)
         #Write out the mask file as simple FITS file
         fmask = pyfits.open(maskname,'append')
         maskhdu = pyfits.PrimaryHDU(data=maskarr)
@@ -259,7 +260,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             #maskarr = fsmask[0].data
 
             # Build mask array from DQ array
-            dqmaskarr = buildMask(dqarr,bitvalue)
+            dqmaskarr = _buildMask(dqarr,bitvalue)
 
             #Write out the mask file as simple FITS file
             fdqmask = pyfits.open(maskname,'append')

@@ -455,10 +455,12 @@ class baseImageObject:
         for chip in range(1,self._numchips+1):
             sci_chip = self._image[self.scienceExt,chip]
             masknames = []
-            if configObj['driz_separate']:
-                masknames.append([sci_chip.outputNames['singleDrizMask'],configObj['driz_sep_bits']])
-            if configObj['driz_combine']:
-                masknames.append([sci_chip.outputNames['drizMask'],configObj['final_bits']])
+            single_step = util.getSectionName(configObj,3) 
+            if configObj[single_step]['driz_separate']:
+                masknames.append([sci_chip.outputNames['singleDrizMask'],configObj[single_step]['driz_sep_bits']])
+            final_step = util.getSectionName(configObj,7)
+            if configObj[final_step]['driz_combine']:
+                masknames.append([sci_chip.outputNames['drizMask'],configObj[final_step]['final_bits']])
 
             # Loop over all masks that need to be built for this chip: single and/or final
             for maskname in masknames:

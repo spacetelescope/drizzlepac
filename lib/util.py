@@ -6,7 +6,6 @@ A library of utility functions
 import numpy as np
 import pyfits
 from pytools import asnutil,fileutil
-import buildmask
 from pytools import cfgepar,cfgpars
 
 
@@ -36,7 +35,7 @@ def findrootname(filename):
     return filename[0:val]
 
 
-def getDefaultConfigObj(taskname,configObj,input_dict={}):
+def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated 
         with user-specified values from input_dict.
         If configObj already defined, it will simply 
@@ -44,12 +43,28 @@ def getDefaultConfigObj(taskname,configObj,input_dict={}):
     """
     if configObj is None:
         # Uncomment the 'loadOnly' parameter to turn off GUI in this function.
-        configObj = cfgepar.epar(taskname) #,loadOnly=1)
+        configObj = cfgepar.epar(taskname, loadOnly=loadOnly)
         # Merge in user-input into configObj
-        configObj.update(input_dict)
+        #configObj.update(input_dict)
+        if input_dict is not None:
+            mergeConfigObj(configObj,input_dict)
     return configObj
 
-def getStepName(configObj,stepnum):
+def mergeConfigObj(configObj,input_dict):
+    for key in configObj:
+        if isinstance(configObj[key],dict):
+            keys = configObj[key].keys()
+            for k in keys:
+                for i in input_dict.keys():
+                    if k == i:
+                        configObj[key][k] = input_dict[i]
+                        break
+        else:
+            for i in input_dict.keys():
+                if i == key:
+                    configObj[key] = input_dict[i]
+
+def getSectionName(configObj,stepnum):
     """ Return section label based on step number.
     """
     for key in configObj.keys():

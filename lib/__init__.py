@@ -73,12 +73,38 @@ def getHelpAsString():
         help_str += 'Version '+__version__+'\n'
         return help_str
     
-def run(configObj,input_dict={},wcsmap=wcs_functions.WCSMap):
+def run(configObj=None,input_dict={},wcsmap=wcs_functions.WCSMap,loadOnly=False):
+    """    
+    Initial example by Nadia ran MD with configObj EPAR using:
+    It can be run in one of two ways:
+
+        from pytools import cfgepar
+
+        1. Passing a config object to epar
+
+        from runmdz import mdriz
+        mdobj = mdriz('multidrizzle/pars/mdriz.cfg')
+        cfgepar.epar(mdobj)
+
+
+        2. Passing a task  name:
+
+        cfgepar.epar('multidrizzle')
+
+        The example config files are in multidrizzle/pars
+
+    """
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #
+    # Also insure that the input_dict (user-specified values) are folded in
+    # with a fully populated configObj instance.
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
     print '[BigBlackBox] mdriz is NOW running... '
-    imgObjList,outwcs = processInput.setCommonInput(configObj,__taskname__,input_dict=input_dict)
+
+    # Define list of imageObject instances and output WCSObject instance
+    # based on input paramters
+    imgObjList,outwcs = processInput.setCommonInput(configObj)
     
     # Call rest of MD steps...
     print 'Finished interpreting configObj...'

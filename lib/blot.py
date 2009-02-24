@@ -3,21 +3,29 @@ import util
 from util import _ptime
 import numpy as np
 from pytools import fileutil
-import outputimage,imageObject,wcs_functions
+import outputimage,wcs_functions,processInput,util
 try:
     import arrdriz
 except ImportError:
     arrdriz = None
     
-__taskname__ = 'blot'
+__taskname__ = 'BigBlackBox.blot'
 _blot_step_num_ = 5
 
 #
 #### User level interface run from TEAL
 #
-def run(configObj,input_dict={},wcsmap=wcs_functions.WCSMap):
+def run(configObj=None,input_dict={},wcsmap=wcs_functions.WCSMap,loadOnly=False):
+    # If called from interactive user-interface, configObj will not be 
+    # defined yet, so get defaults using EPAR/TEAL.
+    #
+    # Also insure that the input_dict (user-specified values) are folded in
+    # with a fully populated configObj instance.
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
 
-    imgObjList,outwcs = processInput.setCommonInput(configObj,__taskname__,input_dict=input_dict)
+    # Define list of imageObject instances and output WCSObject instance
+    # based on input paramters
+    imgObjList,outwcs = processInput.setCommonInput(configObj)
 
     runblot(imgObjList,outwcs,configObj,wcsmap=wcsmap)
 

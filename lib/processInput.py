@@ -2,7 +2,7 @@ from pytools import parseinput, fileutil, readgeis, makewcs, asnutil,irafglob
 import pyfits
 import os 
 
-import wcs_functions
+import wcs_functions,util
 import mdzhandler
 from pytools import cfgpars
 
@@ -32,7 +32,7 @@ steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
 
-def setCommonInput(configObj,taskname,input_dict={}):
+def setCommonInput(configObj):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to 
@@ -47,8 +47,8 @@ def setCommonInput(configObj,taskname,input_dict={}):
         imageObjectList: list of imageObject instances, 1 for each input exposure
         outwcs: imageObject instance defining the final output frame
 
-    At a minimum, the input_dict dictionary should contain:
-        input_dict={'input':None,'output':None,
+    At a minimum, the configObj instance (dictionary) should contain:
+        configObj = {'input':None,'output':None,
                     'updatewcs':None,'shiftfile':None}
 
     If provided, the configObj should contain the values of all the MD parameters 
@@ -56,29 +56,8 @@ def setCommonInput(configObj,taskname,input_dict={}):
     the default values automatically.  In either case, the values from the input_dict
     will be merged in with the configObj before being used by the rest of the 
     code. 
-    
-    Initial example by Nadia ran MD using:
-    It can be run in one of two ways:
-
-        from pytools import cfgepar
-
-        1. Passing a config object to epar
-
-        from runmdz import mdriz
-        mdobj = mdriz('multidrizzle/pars/mdriz.cfg')
-        cfgepar.epar(mdobj)
-
-
-        2. Passing a task  name:
-
-        cfgepar.epar('multidrizzle')
-
-        The example config files are in multidrizzle/pars
-
 
     """
-    configObj = util.getDefaults(__taskname__,configObj,input_dict)
-
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'], 
@@ -225,6 +204,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         #input is a string or a python list
         try:
             filelist, output = parseinput.parseinput(input, outputname=output)
+            if output in ['',None]: output = 'final'
             #filelist.sort()
         except IOError: raise
     

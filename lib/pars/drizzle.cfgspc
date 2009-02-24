@@ -1,4 +1,4 @@
-_task_name_ = string_kw(default="BigBlackBox")
+_task_name_ = string_kw(default="drizzle")
 input = string_kw(default="")  #, trigger='_rule1_') 
 output = string_kw(default='final_drz.fits') 
 mdriztab = boolean_kw(default=True) 
@@ -18,23 +18,8 @@ staticfile = string_kw(default="")
 
 mode = string_kw(default="all")
 
-[STEP 1: STATIC MASK ]
-static = boolean_kw(default=True) 
-static_sig = float_kw(default=4.0) 
-
-[STEP 2: SKY SUBTRACTION ]
-skysub = boolean_kw(default=True) 
-skywidth = float_or_none_kw(default=None) 
-skystat = string_kw(default="median") 
-skylower = float_or_none_kw(default=None) 
-skyupper = float_or_none_kw(default=None) 
-skyclip = integer_kw(default=5) 
-skylsigma = float_kw(default=4.) 
-skyusigma = float_kw(default=4.) 
-skyuser = string_kw(default="") 
-
 [STEP 3: DRIZZLE SEPARATE IMAGES]
-driz_separate = boolean_kw(default=True) 
+driz_separate = boolean_kw(default=False) 
 driz_sep_outnx = float_or_none_kw(default=None) 
 driz_sep_outny = float_or_none_kw(default=None) 
 driz_sep_kernel = option_kw("turbo","square","point", "gaussian", "tophat", "lanczos3", default="turbo") 
@@ -45,39 +30,13 @@ driz_sep_rot = float_or_none_kw(default=None)
 driz_sep_fillval = string_kw(default=None) 
 driz_sep_bits = integer_kw(default=0) 
 
-[STEP 4: CREATE MEDIAN IMAGE]
-_section_ = string_kw(default='', active='_rule1_') # en/dis-able whole section
-median = boolean_kw(default=True)
-median_newmasks= boolean_kw(default=true) 
-combine_maskpt = float_kw(default=0.7) 
-combine_type = option_kw("minmed","median","sum",default="minmed") 
-combine_nsigma = string_kw(default="4 3") 
-combine_nlow = integer_kw(default=0) 
-combine_nhigh = integer_kw(default=0) 
-combine_lthresh = string_kw(default="INDEF") 
-combine_hthresh = string_kw(default="INDEF") 
-combine_grow = integer_kw(default=1) 
-
-[STEP 5: BLOT BACK THE MEDIAN IMAGE]
-blot = boolean_kw(default=true) 
-blot_interp = option_kw("poly5","nearest","linear", "poly3", "sinc",default="poly5") 
-blot_sinscl = float_kw(default=1.0) 
-
-[STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR]
-_section_ = string_kw(default='', active='_rule1_') # en/dis-able whole section
-driz_cr = boolean_kw(default=True) 
-driz_cr_corr = boolean_kw(default=False)
-driz_cr_snr = string_kw(default="3.5 3.0") 
-driz_cr_grow = integer_kw(default=1) 
-driz_cr_ctegrow = integer_kw(default=0) 
-driz_cr_scale = string_kw(default="1.2 0.7") 
-
 [STEP 7: DRIZZLE FINAL COMBINED IMAGE]
 driz_combine = boolean_kw(default=True)
 final_wht_type = option_kw("EXP","ERR","IVM",default="EXP") 
 final_outnx = float_or_none_kw(default=None) 
 final_outny = float_or_none_kw(default=None)
 final_kernel = option_kw("square", "point","gaussian","turbo","tophat","lanczos3",default="square") 
+final_wt_scl = string_kw(default="exptime")
 final_scale = float_or_none_kw(default=None)
 final_pixfrac = float_kw(default=1.) 
 final_rot = float_kw(default=0.)
