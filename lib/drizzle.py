@@ -86,12 +86,15 @@ def buildDrizParamDict(configObj,single=True):
     section_name = util.getSectionName(configObj,stepnum)
     # Copy values from configObj for the appropriate step to paramDict
     for par in chip_pars:
-        if not single and par != 'units':
-            paramDict[par] = configObj[section_name][driz_prefix+par]
+        if par == 'units':
+            if single:
+                # Hard-code single-drizzle to always returns 'cps'
+                paramDict[par] = 'cps'
+            else:
+                paramDict[par] = configObj[section_name][driz_prefix+par]
         else:
-            # Hard-code single-drizzle to always returns 'cps'
-            paramDict[par] = 'cps'
-
+            paramDict[par] = configObj[section_name][driz_prefix+par]
+            
     return paramDict
 def _setDefaults(configObj={}):
     """set up the default parameters to run drizzle
@@ -365,7 +368,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                 # Use user provided mapping function
                 wmap = wcsmap(chip.wcs,output_wcs)
                 mapping = wmap.forward
-                
+            
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
                 1.0, 1.0, 1.0, 'center', paramDict['pixfrac'],
