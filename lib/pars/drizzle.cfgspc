@@ -15,7 +15,7 @@ ra = float_or_none_kw(default=None)
 dec = float_or_none_kw(default=None) 
 shiftfile = string_kw(default="") 
 staticfile = string_kw(default="") 
-
+crbit = integer_kw(default=0)
 mode = string_kw(default="all")
 
 [STEP 3: DRIZZLE SEPARATE IMAGES]
@@ -43,16 +43,6 @@ final_rot = float_kw(default=0.)
 final_fillval = string_kw(default="INDEF") 
 final_bits = integer_kw(default=0) 
 final_units = option_kw("counts", "cps", default="cps") 
-
-[INSTRUMENT PARAMETERS]
-gain = string_kw(default="")
-gnkeyword = string_kw(default="")
-rdnoise = string_kw(default="")
-rnkeyword = string_kw(default="")
-exptime  = string_kw(default="")
-expkeyword = string_kw(default="")
-crbit = integer_kw(default=0),i,h,,,,"Bit value for CR ident. in DQ array"
-#mode,s,h,"al",,,
 
 [ _RULES_ ]
 

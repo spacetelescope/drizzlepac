@@ -15,7 +15,7 @@ ra = float_or_none_kw(default=None)
 dec = float_or_none_kw(default=None) 
 shiftfile = string_kw(default="") 
 staticfile = string_kw(default="") 
-
+crbit = float_or_none_kw(default=4096)
 mode = string_kw(default="all")
 
 [STEP 1: STATIC MASK ]
@@ -93,7 +93,6 @@ rdnoise = string_kw(default="")
 rnkeyword = string_kw(default="")
 exptime  = string_kw(default="")
 expkeyword = string_kw(default="")
-crbit = integer_kw(default=0),i,h,,,,"Bit value for CR ident. in DQ array"
 #mode,s,h,"al",,,
 
 [ _RULES_ ]

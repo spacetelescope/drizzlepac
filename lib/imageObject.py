@@ -308,12 +308,14 @@ class baseImageObject:
         fnames['crmaskImage'] = crmaskImage
         sci_chip = self._image[self.scienceExt,chip]
         # Define mask names as additional entries into outputNames dictionary
-        fnames['drizMask']=sci_chip.dqrootname+'_final_mask.fits'
+        fnames['drizMask']=sci_chip.dqrootname+'_final_mask.fits' # used by final_drizzle
+        # dq array mask that gets updated with crmask and written out to 'drizMask'
+        fnames['finalDQMask']=sci_chip.dqrootname+'_final_dqmask.fits'
         fnames['singleDrizMask']=fnames['drizMask'].replace('final','single')
+        fnames['staticMask']=None
         
         # Add the following entries for use in creating outputImage object
         fnames['data'] = sci_chip.sciname
-        fnames['staticMask']=None
         return fnames
 
     def updateOutputValues(self,output_wcs):
@@ -529,7 +531,8 @@ class imageObject(baseImageObject):
                 self._assignRootname(chip)
                 sci_chip = self._image[self.scienceExt,chip]
                 sci_chip._staticmask=None #this will be replaced with a  pointer to a StaticMask object
-
+                sci_chip.signature = None
+                
                 sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               
                 sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
 
