@@ -313,7 +313,7 @@ class baseImageObject:
         
         # Add the following entries for use in creating outputImage object
         fnames['data'] = sci_chip.sciname
-
+        fnames['staticMask']=None
         return fnames
 
     def updateOutputValues(self,output_wcs):
