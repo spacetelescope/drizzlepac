@@ -16,13 +16,7 @@ _final_step_num_ = 7
 #
 ####  User level interface to run drizzle tasks from TEAL
 #
-def run(configObj=None,input_dict=None,wcsmap=wcs_functions.WCSMap,loadOnly=False):
-    # If called from interactive user-interface, configObj will not be 
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
+def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
@@ -42,12 +36,19 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,**input_dict):
+def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,loadOnly=False,**input_dict):
     # Now, merge required input parameters into input_dict
-    input_dict['input'] = input
+    if input is not None:
+        input_dict['input'] = input
     input_dict['output'] = output
- 
-    run(configObj,input_dict=input_dict,wcsmap=wcsmap)
+    # If called from interactive user-interface, configObj will not be 
+    # defined yet, so get defaults using EPAR/TEAL.
+    #
+    # Also insure that the input_dict (user-specified values) are folded in
+    # with a fully populated configObj instance.
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
+    
+    run(configObj,wcsmap=wcsmap)
 
 #
 #### Top-level interface from inside MultiDrizzle
@@ -59,7 +60,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMa
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[single_step]['driz_separate']:
         paramDict = buildDrizParamDict(configObj)
-        mergeStaticDQarray(imageObjectList)
+        paramDict['crbit'] = None
         run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, wcsmap=wcsmap)
     
 def drizFinal(imageObjectList, output_wcs, configObj,wcsmap=wcs_functions.WCSMap):
@@ -69,66 +70,44 @@ def drizFinal(imageObjectList, output_wcs, configObj,wcsmap=wcs_functions.WCSMap
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[final_step]['driz_combine']:
         paramDict = buildDrizParamDict(configObj,single=False)
-        cr_bits_value = configObj['crbit']
-        mergeCRMaskDQarray(imageObjectList,cr_bits_value)
+        paramDict['crbit'] = configObj['crbit']
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, wcsmap=wcsmap)
 
 # Run 'drizzle' here...
 #
-def mergeStaticDQarray(imageObjectList):
-    """ Merge mask made from DQ array with static mask, if available.
-        A new single_mask file will be written out to record the merged results.
-    """
-    for img in imageObjectList:
-        for sci_chip in img.returnAllChips(extname=img.scienceExt):
-            # get the name of the DQ mask that needs to be updated
-            dqmask_name = sci_chip.outputNames['singleDrizMask']
-            smask_name = sci_chip.outputNames['staticMask']
-            if smask_name is not None and os.path.exists(smask_name):
-                dqmask = fileutil.openImage(dqmask_name,mode='update')
-                smask = fileutil.openImage(smask_name)
-                #apply static_mask to single_mask for use with drizzle
-                dqmask[0].data = np.bitwise_and(dqmask[0].data,smask[0].data)
-                smask.close()
-                dqmask.close()
-            
-def mergeCRMaskDQarray(imageObjectList, cr_bits_value):
-    """ Merge mask made from DQ array with static mask, if available.
-        A new single_mask file will be written out to record the merged results.
-        If configObj['crbit'] is not None, then update the input DQ array
-        from the FLT image with the crmask as well.
-    """
-    for img in imageObjectList:
-        for sci_chip in img.returnAllChips(extname=img.scienceExt):
-            # get the name of the DQ mask that needs to be updated
-            dqmask_name = sci_chip.outputNames['drizMask']
-            orig_dqmask_name = sci_chip.outputNames['finalDQMask']
-            # Copy original DQ-only mask as the drizMask that will be used by
-            # drizzle for the final step.
-            if os.path.exists(orig_dqmask_name):
-                fileutil.copyFile(orig_dqmask_name,dqmask_name,replace=True)
-            crmask_name = sci_chip.outputNames['crmaskImage']
+def getWeightMask(maskname,imgObject,chip,bits):
+    dqarr = mergeDQarray(maskname,imgObject,chip,bits)
+    _inwht = dqarr.astype(np.float32)
+    return _inwht
 
-            if crmask_name is not None and os.path.exists(crmask_name):
-                crmask = fileutil.openImage(crmask_name)
-                dqmask = fileutil.openImage(dqmask_name,mode='update')
-                
-                # apply CR Mask to final_mask for use with drizzle
-                np.bitwise_and(dqmask[0].data,crmask[0].data,dqmask[0].data)                
+def mergeDQarray(maskname,imageObject,chip,bits):
+    """ Merge static or CR mask with mask created from DQ array on-the-fly here.
+    """
+    dqarr = imageObject.buildMask(chip,bits)
+    if maskname is not None and os.path.exists(maskname):
+        mask = fileutil.openImage(maskname)
+        maskarr = mask[0].data
+        dqarr = np.bitwise_and(dqarr,maskarr)
+        mask.close()
+    return dqarr
 
-                if cr_bits_value is not None:
-                    # Update input DQ array with CR mask
-                    infile = fileutil.openImage(sci_chip.dqname,mode='update')
-                    __bitarray = np.logical_not(crMask[0].data).astype(np.int16) * cr_bits_value
-                    np.bitwise_or(infile[sci_chip.dq_extn].data,__bitarray,infile[sci_chip.dq_extn].data)
-                    infile.close()
-                
-                # Close open files
-                crmask.close()
-                dqmask.close()
-        
+def updateInputDQArray(dqname,dq_extn, crmaskname,cr_bits_value):
+    if not os.path.exists(crmaskname):
+        print 'WARNING: No CR mask file found! Input DQ array not updated.'
+        return 
+    if cr_bits_value == None:
+        print 'WARNING: Input DQ array not updated!'
+        return
+    crmask = fileutil.openImage(crmaskname)
+    if os.path.exists(dqname):
+        infile = fileutil.openImage(dqname,mode='update')
+        __bitarray = np.logical_not(crmask[0].data).astype(np.int16) * cr_bits_value
+        np.bitwise_or(infile[dq_extn].data,__bitarray,infile[dq_extn].data)
+        infile.close()
+        crmask.close()
+
 def buildDrizParamDict(configObj,single=True):
-    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval']
+    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
     # Initialize paramDict with global parameter(s)
     paramDict = {'build':configObj['build']}
     # build appro
@@ -155,6 +134,8 @@ def _setDefaults(configObj={}):
     """set up the default parameters to run drizzle
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
+        
+        Used exclusively for unit-testing, if any are defined.
     """
 
     paramDict={"build":True,
@@ -215,7 +196,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
 
     # Interpret input parameters for use in drizzling
     build = paramDict['build']
-
+    crbit = paramDict['crbit']
+    bits = paramDict['bits']
+    
     # Check for existance of output file.
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
         print 'Removing previous output product...'
@@ -316,25 +299,11 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
             #        
             ####
             if single:
-                _mask = chip.outputNames['singleDrizMask']
+                _inwht = getWeightMask(chip.outputNames['staticMask'],img,chip._chip,bits)
             else:
-                _mask = chip.outputNames['drizMask']
-
-            # Check to see whether there is a mask_array at all to use...
-            if isinstance(_mask,types.StringType):
-                if _mask != None and _mask != '':
-                    _wht_handle = fileutil.openImage(_mask,mode='readonly',memmap=0)
-                    _inwht = _wht_handle[0].data.astype(np.float32)
-                    _wht_handle.close()
-                    del _wht_handle
-                else:
-                    print 'No weight or mask file specified!  Assuming all pixels are good.'
-                    _inwht = np.ones((_sciext.data.shape[0],_sciext.data.shape[1]),dtype=np.float32)
-            elif _mask != None:
-                _inwht = _mask.astype(np.float32)
-            else:
-                print 'No weight or mask file specified!  Assuming all pixels are good.'
-                _inwht = np.ones((_sciext.data.shape[0],_sciext.data.shape[1]),dtype=np.float32)
+                _inwht = getWeightMask(chip.outputNames['crmaskImage'],img,chip._chip,bits)
+                updateInputDQArray(chip.dqname,chip.dq_extn,
+                                    chip.outputNames['crmaskImage'],crbit)
 
             if paramDict['wt_scl'] != None:
                 if isinstance(paramDict['wt_scl'],types.StringType):

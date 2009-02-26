@@ -308,10 +308,8 @@ class baseImageObject:
         fnames['crmaskImage'] = crmaskImage
         sci_chip = self._image[self.scienceExt,chip]
         # Define mask names as additional entries into outputNames dictionary
-        fnames['drizMask']=sci_chip.dqrootname+'_final_mask.fits' # used by final_drizzle
-        # dq array mask that gets updated with crmask and written out to 'drizMask'
-        fnames['finalDQMask']=sci_chip.dqrootname+'_final_dqmask.fits'
-        fnames['singleDrizMask']=fnames['drizMask'].replace('final','single')
+        fnames['finalMask']=sci_chip.dqrootname+'_final_mask.fits' # used by final_drizzle
+        fnames['singleDrizMask']=fnames['finalMask'].replace('final','single')
         fnames['staticMask']=None
         
         # Add the following entries for use in creating outputImage object
@@ -449,28 +447,26 @@ class baseImageObject:
         
         return iraf[irafType]
         
-    def buildMask(self,configObj):
+    def buildMask(self,chip,bits=0):
         """ Build masks as specified in the user parameters found in the 
             configObj object.
         """
-        
-        for chip in range(1,self._numchips+1):
-            sci_chip = self._image[self.scienceExt,chip]
-            masknames = []
-            single_step = util.getSectionName(configObj,3) 
-            if configObj[single_step]['driz_separate']:
-                masknames.append([sci_chip.outputNames['singleDrizMask'],configObj[single_step]['driz_sep_bits']])
-            final_step = util.getSectionName(configObj,7)
-            if configObj[final_step]['driz_combine']:
-                masknames.append([sci_chip.outputNames['drizMask'],configObj[final_step]['final_bits']])
+        dqarr = self.getData(exten=self.maskExt+','+str(chip))
+        dqmask = self._buildMask(dqarr,bits)
+        del dqarr
+        return dqmask
+        """
+        ### For WFPC2 Data, build mask files using:
+        buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname,bitvalue=bits,binned=sci_chip.binned)
+        """
 
-            # Loop over all masks that need to be built for this chip: single and/or final
-            for maskname in masknames:
-                buildmask.buildMaskImage(sci_chip.dqfile,maskname[1],maskname[0],extname=self.maskExt,extver=chip) 
-                """
-                ### For WFPC2 Data, build mask files using:
-                buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname[0],bitvalue=maskname[1],binned=sci_chip.binned)
-                """
+    def _buildMask(self,dqarr,bitvalue):
+        """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
+        if bitvalue == None:
+            return (dqarr * 0.0) + 1.0
+        _maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
+        return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
+
     def updateIVMName(self,ivmname):
         """ Update outputNames for image with user-supplied IVM filename."""
         self.outputNames['ivmFile'] = ivmname
