@@ -32,7 +32,7 @@ steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
 
-def setCommonInput(configObj):
+def setCommonInput(configObj,createOutwcs=True):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to 
@@ -47,6 +47,9 @@ def setCommonInput(configObj):
         imageObjectList: list of imageObject instances, 1 for each input exposure
         outwcs: imageObject instance defining the final output frame
 
+        you can set createOutwcs=False for the cases where you only want the
+        images processed and no output wcs information in necessary
+        
     At a minimum, the configObj instance (dictionary) should contain:
         configObj = {'input':None,'output':None,
                     'updatewcs':None,'shiftfile':None}
@@ -81,10 +84,13 @@ def setCommonInput(configObj):
     # Add info about input IVM files at this point to the imageObjectList
     addIVMInputs(imageObjectList,ivmlist)
 
-    # Build output WCS and update imageObjectList with output WCS info
-    outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
     
-    return imageObjectList,outwcs
+    if(createOutwcs):
+        # Build output WCS and update imageObjectList with output WCS info
+        outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
+        return imageObjectList,outwcs
+    else:
+        return imageObjectList,None
 
 def addIVMInputs(imageObjectList,ivmlist):
     """ Add IVM filenames provided by user to outputNames dictionary for each
