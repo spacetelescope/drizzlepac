@@ -31,8 +31,8 @@ except:
 #
 #### Interactive user interface (functional form)
 #
-def MultiDrizzle(input = '*flt.fits',output = None, shiftfile = None, updatewcs = True, 
-                configObj=None, **input_dict):
+def MultiDrizzle(input = '*flt.fits',output = None, shiftfile = None, updatewcs = True, editpars=True,
+                configObj=None, wcsmap=wcs_functions.WCSMap, **input_dict):
 
     # Only create an updated input_dict if there is NO configObj provided to
     # avoid having the positional parameters values override those from the
@@ -42,8 +42,14 @@ def MultiDrizzle(input = '*flt.fits',output = None, shiftfile = None, updatewcs 
     input_dict['output'] = output
     input_dict['shiftfile'] = shiftfile
     input_dict['updatewcs'] = updatewcs
+    # If called from interactive user-interface, configObj will not be 
+    # defined yet, so get defaults using EPAR/TEAL.
+    #
+    # Also insure that the input_dict (user-specified values) are folded in
+    # with a fully populated configObj instance.
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     
-    run(configObj,input_dict=input_dict)
+    run(configObj,wcsmap=wcsmap)
 
 #
 #### Interfaces used by TEAL
@@ -73,7 +79,7 @@ def getHelpAsString():
         help_str += 'Version '+__version__+'\n'
         return help_str
     
-def run(configObj=None,input_dict={},wcsmap=wcs_functions.WCSMap,loadOnly=False):
+def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     """    
     Initial example by Nadia ran MD with configObj EPAR using:
     It can be run in one of two ways:
@@ -94,12 +100,6 @@ def run(configObj=None,input_dict={},wcsmap=wcs_functions.WCSMap,loadOnly=False)
         The example config files are in multidrizzle/pars
 
     """
-    # If called from interactive user-interface, configObj will not be 
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
     print '[BigBlackBox] mdriz is NOW running... '
 
     # Define list of imageObject instances and output WCSObject instance

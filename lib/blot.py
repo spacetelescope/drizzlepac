@@ -15,13 +15,7 @@ _blot_step_num_ = 5
 #
 #### User level interface run from TEAL
 #
-def run(configObj=None,input_dict={},wcsmap=wcs_functions.WCSMap,loadOnly=False):
-    # If called from interactive user-interface, configObj will not be 
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
+def run(configObj=None,wcsmap=wcs_functions.WCSMap):
 
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
@@ -35,12 +29,20 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,**input_dict):
+def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=True,**input_dict):
     # Now, merge required input parameters into input_dict
-    input_dict['input'] = input
+    if input is not None:
+        input_dict['input'] = input
     input_dict['output'] = output
+
+    # If called from interactive user-interface, configObj will not be 
+    # defined yet, so get defaults using EPAR/TEAL.
+    #
+    # Also insure that the input_dict (user-specified values) are folded in
+    # with a fully populated configObj instance.
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
  
-    run(configObj,input_dict=input_dict,wcsmap=wcsmap)
+    run(configObj,wcsmap=wcsmap)
 
 #
 #### Top-level interface from inside MultiDrizzle
