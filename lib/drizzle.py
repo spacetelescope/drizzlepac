@@ -16,7 +16,7 @@ _final_step_num_ = 7
 #
 ####  User level interface to run drizzle tasks from TEAL
 #
-def run(configObj=None,wcsmap=wcs_functions.WCSMap):
+def run(configObj,wcsmap=wcs_functions.WCSMap):
     
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
@@ -47,6 +47,8 @@ def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,ed
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    if configObj is None:
+        return
     
     run(configObj,wcsmap=wcsmap)
 

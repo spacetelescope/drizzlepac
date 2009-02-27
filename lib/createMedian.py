@@ -28,11 +28,13 @@ def median(imageList=None,configObj=None, editpars=False, **inputDict):
     """
     inputDict["input"]=imageList        
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
-    run(configObj,inputDict)
+    if configObj is None:
+        return
+    run(configObj)
      
 
 #this is the function that will be called from TEAL
-def run(configObj=None):
+def run(configObj):
  
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 

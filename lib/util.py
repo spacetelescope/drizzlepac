@@ -46,7 +46,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         configObj = cfgepar.epar(taskname, loadOnly=loadOnly)
         # Merge in user-input into configObj
         #configObj.update(input_dict)
-        if input_dict is not None:
+        if input_dict is not None and configObj is not None:
             mergeConfigObj(configObj,input_dict)
     return configObj
 

@@ -15,7 +15,7 @@ _blot_step_num_ = 5
 #
 #### User level interface run from TEAL
 #
-def run(configObj=None,wcsmap=wcs_functions.WCSMap):
+def run(configObj,wcsmap=wcs_functions.WCSMap):
 
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
@@ -41,7 +41,8 @@ def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editp
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
- 
+    if configObj is None:
+        return
     run(configObj,wcsmap=wcsmap)
 
 #

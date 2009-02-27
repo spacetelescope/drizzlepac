@@ -47,11 +47,13 @@ def staticMask(imageList=None,static_sig=None,editpars=False,**inputDict):
     #this accounts for a user called init where config is not defined yet
 
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly(not editpars))
+    if configObj is None:
+        return
         
-    run(configObj,inputDict)
+    run(configObj)
     
 #this is called by the TEAL interface
-def run(configObj=None):
+def run(configObj):
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 
     createStaticMask(imgObjList,configObj)

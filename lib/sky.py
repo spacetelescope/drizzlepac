@@ -68,12 +68,14 @@ def sky(imageList=None,configObj=None, **inputDict):
     """
     inputDict["input"]=imageList        
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
+    if configObj is None:
+        return
 
-    run(configObj,inputDict)
+    run(configObj)
      
 
 #this is the function that will be called from TEAL
-def run(configObj=None):
+def run(configObj):
  
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 
