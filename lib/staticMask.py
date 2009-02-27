@@ -76,6 +76,15 @@ def createStaticMask(imageObjectList=[],configObj=None):
     staticMask.saveToFile()
     staticMask.close()
 
+def constructFilename(signature):
+    """construct an output filename for the given signature
+         signature=[instr+detector,(nx,ny),detnum]
+         
+         the signature is in the image object 
+    """
+    filename=signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
+    return filename        
+
 class staticMask:
     """
     This class manages the creation of the global static mask which
@@ -164,17 +173,7 @@ class staticMask:
              name of the static mask file is saved as sci_chip.outputNames["staticMask"]
         """
         
-        return self._image[chipid].outputNames["staticMask"]
-
-    def constructFilename(signature):
-        """construct an output filename for the given signature
-             signature=[instr+detector,(nx,ny),detnum]
-             
-             the signature is in the image object 
-        """
-        filename=signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
-        return filename        
-    
+        return self._image[chipid].outputNames["staticMask"]    
     
        
     def close(self):
