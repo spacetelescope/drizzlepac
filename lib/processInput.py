@@ -101,7 +101,11 @@ def addIVMInputs(imageObjectList,ivmlist):
 
     for img,ivmname in zip(imageObjectList,ivmlist):
         img.updateIVMName(ivmname)
-            
+
+def checkMultipleFiles(configObj):
+    a,i,o = process_input(configObj['input'],updatewcs=False)
+    return len(a['members']) > 1
+
 def createImageObjectList(files):
     """ Returns a list of imageObject instances, 1 for each input image in the
         list of input filenames.
