@@ -1,0 +1,10 @@
+_task_name_ = string_kw(default="staticMask")
+imageList = string_kw(default="")  #
+mode = string_kw(default="all")
+
+[STEP 1: STATIC MASK ]
+static = boolean_kw(default=True) 
+static_sig = float_kw(default=4.0) 
+
+
+[ _RULES_ ]

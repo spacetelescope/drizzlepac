@@ -90,11 +90,11 @@ def subtractSky(imageObjList,configObj):
     print
     for image in imageObjList:
         print "Working on sky for: ",image
-        _subtractSky(configObj,imageSet=image,saveFile=configObj["clean"])
+        _skySub(configObj,image,configObj["clean"])
     
 
 #this is the main function that does all the real work
-def _subtractSky(configObj=None,imageSet=None,saveFile=True):
+def _skySub(configObj=None,imageSet=None,saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     imageSet is a single imageObject reference

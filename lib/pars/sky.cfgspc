@@ -1,0 +1,17 @@
+_task_name_ = string_kw(default="sky")
+imageList = string_kw(default="")  #
+mode = string_kw(default="all")
+
+[STEP 2: SKY SUBTRACTION ]
+skysub = boolean_kw(default=True, comment= "Perform sky subtraction?")
+skywidth = float_or_none_kw(default=None, comment= "Bin width for sampling sky statistics (in sigma)")
+skystat = string_kw(default="median", comment= "Sky correction statistics parameter")
+skylower = float_or_none_kw(default=None, comment= "Lower limit of usable data for sky (always in electrons)")
+skyupper = float_or_none_kw(default=None, comment= "Upper limit of usable data for sky (always in electrons)")
+skyclip = integer_kw(default=5, comment= "Number of clipping iterations")
+skylsigma = float_kw(default=4., comment="Lower side clipping factor (in sigma)")
+skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)")
+skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user.")
+
+
+[ _RULES_ ]
