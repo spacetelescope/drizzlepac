@@ -30,7 +30,7 @@ def getHelpAsString():
 
 
 #this is called by the user
-def staticMask(imageList=None,static_sig=None,**inputDict):
+def staticMask(imageList=None,static_sig=None,editpars=False,**inputDict):
     """the user can input a list of images if they like to create static masks
        as well as optional values for static_sig and inputDict
        
@@ -43,15 +43,15 @@ def staticMask(imageList=None,static_sig=None,**inputDict):
     if(static_sig != None):
         inputDict["static_sig"]=static_sig
         inputDict["input"]=imageList
+
+    #this accounts for a user called init where config is not defined yet
+
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly(not editpars))
         
     run(configObj,inputDict)
     
 #this is called by the TEAL interface
-def run(configObj=None,inputDict=None):
-    #this accounts for a user called init where config is not defined yet
-
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
-
+def run(configObj=None):
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 
     createStaticMask(imgObjList,configObj)

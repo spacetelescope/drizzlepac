@@ -23,18 +23,18 @@ def getHelpAsString():
     return helpString
 
 #this is the user access function
-def drizCR(imageList=None,configObj=None, **inputDict):
+def drizCR(imageList=None,configObj=None, editpars=False, **inputDict):
     """
         create a median image from the seperately drizzled images   
     """
     inputDict["input"]=imageList        
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly(not editpars))
     run(configObj,inputDict)
      
 
 #this is the function that will be called from TEAL
-def run(configObj=None,**inputDict):
+def run(configObj=None):
  
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
     rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
     

@@ -36,7 +36,7 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,loadOnly=False,**input_dict):
+def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
     # Now, merge required input parameters into input_dict
     if input is not None:
         input_dict['input'] = input
@@ -46,7 +46,7 @@ def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,lo
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     
     run(configObj,wcsmap=wcsmap)
 

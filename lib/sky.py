@@ -67,14 +67,14 @@ def sky(imageList=None,configObj=None, **inputDict):
     
     """
     inputDict["input"]=imageList        
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
+
     run(configObj,inputDict)
      
 
 #this is the function that will be called from TEAL
-def run(configObj=None,**inputDict):
+def run(configObj=None):
  
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
-
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 
     runsubtractSky(imgObjList,configObj)
@@ -84,11 +84,11 @@ def run(configObj=None,**inputDict):
 def runsubtractSky(imageObjList,configObj):
 
     for image in imgObjList:
-        subtractSky(image,configObj,saveFile=configObj["clean"])
+        subtractSky(configObj,image,saveFile=configObj["clean"])
     
 
 #this is the main function that does all the real work
-def subtractSky(imageSet=None,configObj,saveFile=True):
+def subtractSky(configObj,imageSet=None,saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     imageSet is a single imageObject reference

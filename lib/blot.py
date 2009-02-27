@@ -29,7 +29,7 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=True,**input_dict):
+def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
     # Now, merge required input parameters into input_dict
     if input is not None:
         input_dict['input'] = input
