@@ -38,7 +38,7 @@ def getHelpAsString():
     return helpString
 
 #this is the user access function
-def sky(imageList=None,configObj=None, **inputDict):
+def sky(imageList=None,configObj=None, editpars=False, **inputDict):
     """
     imageList is a python list of image filenames, or just a single filename
     configObj is an instance of configObject
@@ -67,7 +67,7 @@ def sky(imageList=None,configObj=None, **inputDict):
     
     """
     inputDict["input"]=imageList        
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
         return
 
@@ -86,15 +86,15 @@ def run(configObj):
 def subtractSky(imageObjList,configObj):
     print "image list:",imageObjList
     print
-    print "configobk:",configObj
+    print "configobj:",configObj
     print
     for image in imageObjList:
-        print image
-        _subtractSky(configObj,image,saveFile=configObj["clean"])
+        print "Working on sky for: ",image
+        _subtractSky(configObj,imageSet=image,saveFile=configObj["clean"])
     
 
 #this is the main function that does all the real work
-def _subtractSky(configObj,imageSet=None,saveFile=True):
+def _subtractSky(configObj=None,imageSet=None,saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     imageSet is a single imageObject reference

@@ -115,7 +115,7 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     staticMask._staticMask(imgObjList,configObj)
     
     #subtract the sky
-    sky.subtractSky(configObj,imgObjList)
+    sky.subtractSky(imgObjList,configObj)
     
     #drizzle to separate images
     drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcs_functions.WCSMap)
