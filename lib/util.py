@@ -248,6 +248,7 @@ def get_detnum(hstwcs,filename,extnum):
     return detnum,binned
 
 def get_exptime(header,primary_hdr):
+    """shouldn't this just be defined in the instrument subclass of imageobject?"""
 
     if primary_hdr.has_key('exptime'):
         exphdr = primary_hdr

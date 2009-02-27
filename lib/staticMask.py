@@ -17,38 +17,81 @@ import numpy as np
 from pytools import fileutil
 import pyfits
 from imagestats import ImageStats
+import util
+
+
+__taskname__ = "BigBlackBox.staticMask"
+_step_num_ = 1
+
+
+#help information that TEAL will look for
+def getHelpAsString():
+    return "Static Mask Help will eventually be here"
+
+
+#this is called by the user
+def staticMask(imageList=None,static_sig=None,**inputDict):
+    """the user can input a list of images if they like to create static masks
+       as well as optional values for static_sig and inputDict
+       
+       the configObj.cfg file will set the defaults and then override them
+       with the user options
+    """
+    if not isinstance(imageList,list):
+        imageList=[imageList]
+        
+    if(static_sig != None):
+        inputDict["static_sig"]=static_sig
+        inputDict["input"]=imageList
+        
+    run(configObj,inputDict)
+    
+#this is called by the TEAL interface
+def run(configObj=None,inputDict=None):
+    #this accounts for a user called init where config is not defined yet
+
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
+
+    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
+
+    createStaticMask(imgObjList,configObj)
+
+
+#this is the workhorse function
+def createStaticMask(imageObjectList=[],configObj=None):
+
+    if (not isinstance(imageObjectList,list) or (len(imageObjectList) ==0)):
+        print "Invalid image object list given to static mask"
+        return ValueError
+    
+    #create a static mask object
+    staticMask=staticMask.staticMask(configObj)
+    
+    for image in imageObjectList:
+        staticMask.addMember(image)
+        
+    #save the masks to disk for later access  
+    staticMask.saveToFile()
+    staticMask.close()
 
 class staticMask:
     """
     This class manages the creation of the global static mask which
-    masks pixels that are negative in the SCI array.
-    A static mask numarray object gets created for each global
+    masks pixels that are unwanted in the SCI array.
+    A static mask  object gets created for each global
     mask needed, one for each chip from each instrument/detector.
-    Each static mask array has type Int16, and resides in memory.
-
-    The parameter 'badval' defaults to 64 and represents the
-    DQ value used to mark pixels flagged as bad by this mask.
-
-    The parameter 'goodval' defaults to 1.0 and represents the
-    pixel value of the good pixels.
-
+    Each static mask array has type Int16, and resides in memory
 
     """
     
-    def __init__ (self, configObj={}): 
+    def __init__ (self, configObj=None): 
 
-        # For now, we don't use badval. It is supposed to
-        # be used to flag back the DQ array of the input
-        # images. This may lead to confusion when running
-        # the task repeatedly over a set of images, whenever
-        # additional images are included in the set each
-        # time.
-        #
         # the signature is created in the imageObject class
-        #
         
-        self._setDefaults(configObj)
-            
+        self.static_sig=4. #just a reasonable number
+        self.masklist={}        
+        self.step_name=util.getSectionName(configObj,_step_num_)    
+                               
             
     def addMember(self, imagePtr=None):
         """
@@ -64,7 +107,7 @@ class staticMask:
         
         numchips=imagePtr._numchips
         
-        print "Computing static masks:\n"
+        print "Computing static mask:\n"
         for chip in range(1,numchips+1,1):
             chipid=imagePtr.scienceExt + ','+ str(chip)
             chipimage=imagePtr.getData(chipid)
@@ -75,8 +118,6 @@ class staticMask:
             if ((not self.masklist.has_key(signature)) or (len(self.masklist) == 0)):
                 self.masklist[signature] = self._buildMaskArray(signature)
 
-            # Operate on input image DQ array to flag 'bad' pixels in the
-            # global static mask
             stats = ImageStats(chipimage,nclip=3,fields='mode')
             mode = stats.mode
             rms  = stats.stddev
@@ -101,7 +142,7 @@ class staticMask:
             mask = None
         return mask
 
-    def getMaskName(self,signature):
+    def getFilename(self,signature):
         """returns the name of the output mask file that
             should reside on disk for the given signature """
              
@@ -113,15 +154,28 @@ class staticMask:
             print "\nmMask file for ",str(signature)," does not exist on disk"
             return None
             
-    def constructFilename(self,signature):
+    def getMaskname(self,chipid):
         """construct an output filename for the given signature
              signature=[instr+detector,(nx,ny),detnum]
+             
+             the signature is in the image object and the
+             name of the static mask file is saved as sci_chip.outputNames["staticMask"]
+        """
+        
+        return self._image[chipid].outputNames["staticMask"]
+
+    def constructFilename(signature):
+        """construct an output filename for the given signature
+             signature=[instr+detector,(nx,ny),detnum]
+             
+             the signature is in the image object 
         """
         filename=signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
-        return filename
-
-        
-    def delete(self):
+        return filename        
+    
+    
+       
+    def close(self):
         """ Deletes all static mask objects. """
 
         for key in self.masklist.keys():
@@ -158,37 +212,6 @@ class staticMask:
                 except IOError:
                     print "Problem saving static mask file: ",filename," to disk!\n"
                     raise IOError
-
-    def close(self):
-        """close out the static mask cleanly"""
-        for mask in self.masklist.keys():
-            self.masklist[mask]=0.
-        self.masklist={}
-                  
-
-    def _setDefaults(self,configObj={}):
-        """set the default parameters for the class"""
- 
-        static_sig = 4.0
-        static_badval = 64
-        static_goodval = 1.0
-        masklist = {}
-        
-        paramDict={"static_sig":static_sig,
-                    "static_badval":static_badval,
-                    "static_goodval":static_goodval,
-                    "masklist":masklist}
-                    
-        #if a masklist is passed in, it should follow the convention
-        #of using the signatures to define the key, otherwise new ones
-        #will be created and used automatically
-                    
-        if(len(configObj) != 0):
-            for key in configObj:
-                paramDict[key]=configObj[key] 
-                
-        self.masklist=paramDict["masklist"]
-        self.static_sig=paramDict["static_sig"]
-        self.static_badval=paramDict["static_badval"]
-        self.static_goodval=paramDict["static_goodval"]
-        
+               
+                   
+           

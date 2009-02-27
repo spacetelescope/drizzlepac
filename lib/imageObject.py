@@ -373,7 +373,9 @@ class baseImageObject:
             kwlist.append(sci_chip.__dict__[kw])
             
         return kwlist
-                
+
+#the following two functions are basically doing the same thing,
+#how are they used differently in the code?                
     def getExtensions(self,extname='SCI',section=None):
         ''' Return the list of EXTVER values for extensions with name specified in extname.
         '''
@@ -450,6 +452,12 @@ class baseImageObject:
     def buildMask(self,chip,bits=0):
         """ Build masks as specified in the user parameters found in the 
             configObj object.
+            
+            we should overload this function in the instrument specific
+            implementations so that we can add other stuff to the badpixel
+            mask? Like vignetting areas and chip boundries in nicmos which
+            are camera dependent? these are not defined in the DQ masks, but
+            should be masked out to get the best results in multidrizzle
         """
         dqarr = self.getData(exten=self.maskExt+','+str(chip))
         dqmask = self._buildMask(dqarr,bits)
@@ -516,6 +524,7 @@ class imageObject(baseImageObject):
         
         if (self._numchips == 0):
             self._isSimpleFits = True
+            self._nextend=0
         else:
             self._isSimpleFits = False
 
@@ -526,7 +535,6 @@ class imageObject(baseImageObject):
             for chip in range(1,self._numchips+1,1):
                 self._assignRootname(chip)
                 sci_chip = self._image[self.scienceExt,chip]
-                sci_chip._staticmask=None #this will be replaced with a  pointer to a StaticMask object
                 sci_chip.signature = None
                 
                 sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               

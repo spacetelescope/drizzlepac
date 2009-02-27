@@ -6,7 +6,7 @@
 from pytools import fileutil
 import numpy as np
 from imageObject import imageObject
-
+from staticMask import constructFilename
 
 
 class ACSInputImage(imageObject):
@@ -34,8 +34,12 @@ class ACSInputImage(imageObject):
         ny=self._image[self.scienceExt,chip]._naxis1
         nx=self._image[self.scienceExt,chip]._naxis2
         detnum = self._image[self.scienceExt,chip].detnum
+        instr=self._instrument
         
-        self._image[self.scienceExt,chip].signature=(self._instrument+'/'+self._detector,(nx,ny),detnum) #signature is a tuple
+        sig=(instr+self._detector,(nx,ny),detnum) #signature is a tuple
+        self._image[self.scienceExt,chip].signature=sig #signature is a tuple
+        filename=constructFilename(sig)
+        self._image[self.scienceExt,chip].outputNames["staticMask"]=filename #this is the name of the static mask file
 
         
     def doUnitConversions(self):

@@ -1,8 +1,7 @@
 # DRIZ_CR  -- mask blemishes in dithered data by comparison of an image
 #             with a model image and the derivative of the model image.
 #
-# Original code has been updated for the redesign
-
+#
 # Import external packages
 import numpy as np
 import convolve as NC
@@ -10,10 +9,47 @@ import pyfits
 import os
 import quickDeriv
 
-__version__ = '1.1'
+__version__ = '1.1' #we should go through and update all these
+
+__taskname__= "BigBlackBox.drizCR" #looks in BigBlackBox for sky.cfg
+_step_num_ = 3  #this relates directly to the syntax in the cfg file
+
+def getHelpAsString():
+    """ I'm thinking we could just make a file called sky.help
+    then use this function to read it into an array or list and return that?
+    """
+    helpString="Help string for drizCR will be here"
+
+    return helpString
+
+#this is the user access function
+def drizCR(imageList=None,configObj=None, **inputDict):
+    """
+        create a median image from the seperately drizzled images   
+    """
+    inputDict["input"]=imageList        
+    run(configObj,inputDict)
+     
+
+#this is the function that will be called from TEAL
+def run(configObj=None,**inputDict):
+ 
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
+    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
+    rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
+    
+    
+#the final function that calls the workhorse  
+def rundrizCR(imgObjList,configObj,saveFile=True):
+
+    for image in imgObjList:
+        for chip in range(1,image._numchips,1):
+            dodrizCr(image,chip,configObj,saveFile)
 
 
-def drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
+
+#the workhorse function
+def dodrizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
     """mask blemishes in dithered data by comparison of an image
     with a model image and the derivative of the model image.
 
@@ -298,45 +334,5 @@ def setDefaults(configObj={}):
             
             
     return paramDict
-
-
-def myDrizCR(filename=None,chip=None,configObj={},saveFiles=True):
-    """ This is the user access function for drizCR
-    
-    mask blemishes in dithered data by comparison of an image
-    with a model image and the derivative of the model image.
-
-    sciImage is an imageObject which contains the science data
-    blotImage is inferred from the sciImage object here which knows the name of its blotted image :)
-    chip should be the science chip that corresponds to the blotted image that was sent
-    configObj contains the user parameters
-    dgMask is inferred from the sciImage object, the name of the mask file to combine with the generated Cosmic ray mask
-    saveFiles saves intermediate files to disk
-    
-    here are the options you can override in configObj
-
-    gain     = 7               # Detector gain, e-/ADU
-    grow     = 1               # Radius around CR pixel to mask [default=1 for 3x3 for non-NICMOS]   
-    ctegrow  = 0               # Length of CTE correction to be applied
-    rn       = 5               # Read noise in electrons
-    snr      = "4.0 3.0"       # Signal-to-noise ratio
-    scale    = "0.5 0.4"       # scaling factor applied to the derivative
-    backg    = 0              # Background value
-    expkey   = "exptime"        # exposure time keyword
-    
-    blot images are saved out to simple fits files with 1 chip in them
-    so for example in ACS, there will be 1 image file with 2 chips that is
-    the original image and 2 blotted image files, each with 1 chip
-    
-    
-    """
-    #create an image object for the user,run through process inputs
-    pass    
-        
-                    
-
-
-
-
 
 

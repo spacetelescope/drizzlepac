@@ -6,10 +6,8 @@
 from pytools import fileutil
 from nictools import readTDD
 import numpy as np
-
-from irData import IRInputImage
 from imageObject import imageObject
-
+from staticMask import constructFilename
 
 class NICMOSInputImage(imageObject):
 
@@ -46,8 +44,11 @@ class NICMOSInputImage(imageObject):
         nx=self._image[self.scienceExt,chip]._naxis2
         detnum = self._image[self.scienceExt,chip].detnum
         
-        self._image[self.scienceExt,chip].signature=(instr+self._detector,(nx,ny),detnum) #signature is a tuple
-
+        sig=(instr+self._detector,(nx,ny),detnum) #signature is a tuple
+        self._image[self.scienceExt,chip].signature=sig
+        filename=constructFilename(sig)
+        self._image[self.scienceExt,chip].outputNames["staticMask"]=filename #this is the name of the static mask file
+        
 
 
     def updateMDRIZSKY(self,filename=None): 

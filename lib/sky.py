@@ -10,18 +10,7 @@
     is updated in the header of the input files.
 
     :author: Christopher Hanley
-    :author: Megan Sosey
-
-
-    Since the minimum sky is calculated between all chips,
-    it's possible that the chips have a different platescale
-    so the minimum value needs to be compared on the sky, so 
-    each sky minimum is ratioed with the platescale and THAT
-    value is stored in the MDRIZSKY keyword in the header. It
-    is also assumed that in the user done option that the user
-    has already taken this into account, so no extra scaling is
-    done later on in the code to account for it.
-    
+    :author: Megan Sosey    
 """
 import util
 from imageObject import imageObject
@@ -29,14 +18,81 @@ from pytools import cfgpars
 import imagestats
 import numpy as np
 
-#this is the main function that takes an imageSet and a parameter dictionary
-#made from the config obj. This is what the user function calls as well
-def subtractSky(imageSet=None,configObj={},saveFile=True):
+__taskname__= "BigBlackBox.sky" #looks in BigBlackBox for sky.cfg
+_step_num_ = 2  #this relates directly to the syntax in the cfg file
+
+def getHelpAsString():
+    """ I'm thinking we could just make a file called sky.help
+    then use this function to read it into an array or list and return that?
+    """
+
+    helpString="  Since the minimum sky is calculated between all chips,"
+    helpString+= "it is possible that the chips have a different platescale"
+    helpString+= "so the minimum value needs to be compared on the sky." 
+    helpString+= "Each sky minimum is ratioed with the platescale and THAT"
+    helpString+= "value is stored in the MDRIZSKY keyword in the header. It"
+    helpString+= "is also assumed that when the user has subtracted the sky themselves,"
+    helpString+= "that has already taken this into account, so no extra scaling is"
+    helpString+= "done later on in the code to account for it. "
+
+    return helpString
+
+#this is the user access function
+def sky(imageList=None,configObj=None, **inputDict):
+    """
+    imageList is a python list of image filenames, or just a single filename
+    configObj is an instance of configObject
+    inputDict is an optional list of parameters specified by the user
+    saveFile decided whether to save intermediate files, set to False to delete them
+    
+    These are parameters that the configObj should contain by default,
+    they can be altered on the fly using the inputDict
+
+
+    params that should be in configobj
+    ---------------------------------------
+    skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
+    skysub		'Perform sky subtraction?'
+    skywidth	'Bin width for sampling sky statistics (in sigma)'
+    skystat	 	'Sky correction statistics parameter'
+    skylower	'Lower limit of usable data for sky (always in electrons)'
+    skyupper	'Upper limit of usable data for sky (always in electrons)'
+    skyclip		'Number of clipping iterations'
+    skylsigma	'Lower side clipping factor (in sigma)'
+    skyusigma	'Upper side clipping factor (in sigma)'
+
+
+    the output from sky subtraction is a copy of the original input file
+    where all the science data extensions have been sky subtracted
+    
+    """
+    inputDict["input"]=imageList        
+    run(configObj,inputDict)
+     
+
+#this is the function that will be called from TEAL
+def run(configObj=None,**inputDict):
+ 
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly)
+
+    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
+
+    runsubtractSky(imgObjList,configObj)
+
+
+#this is the workhorse function
+def runsubtractSky(imageObjList,configObj):
+
+    for image in imgObjList:
+        subtractSky(image,configObj,saveFile=configObj["clean"])
+    
+
+#this is the main function that does all the real work
+def subtractSky(imageSet=None,configObj,saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
-    
-    imageSet is an imageObject reference
-    configObj is represented as a dict for now, but will prolly be an actual config object
+    imageSet is a single imageObject reference
+    configObj should be an actual config object by now
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
 
     the output from sky subtraction is a copy of the original input file
@@ -44,7 +100,15 @@ def subtractSky(imageSet=None,configObj={},saveFile=True):
 
     """
    
-    #General values to use               
+    #General values to use    
+    step_name=util.getSectionName(configObj,_step_num_)  
+    
+    #get the sub-dictionary of values for this step alone
+    paramDict=configObj[step_name]         
+
+    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
+    util.printParams(paramDict)        
+             
     _skyValue=0.0    #this will be the sky value computed for the exposure                                                                  
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
     
@@ -55,31 +119,28 @@ def subtractSky(imageSet=None,configObj={},saveFile=True):
         assert imageSet._filename != '', "image object filename is empty!, doh!"
         assert imageSet._rootname != '', "image rootname is empty!, doh!"
         assert imageSet.scienceExt !='', "image object science extension is empty!"
-        assert imageSet._instrument !='', "image object instrument name is empty!"
         
     except AssertionError:
         raise AssertionError
         
     numchips=imageSet._numchips
     sciExt=imageSet.scienceExt
-    
-    #if no settings were supplied, set them to the defaults for the task
-    paramDict=_setDefaults(configObj)
- 
-
+     
     # User Subtraction Case, User has done own sky subtraction,  
     # so use the image header value for subtractedsky value    
-    if paramDict["skyuser"] != '':
+    skyuser=paramDict["skyuser"]
+    
+    if skyuser != '':
         print "User has done their own sky subtraction, updating MDRIZSKY with supplied value..."
        
         for chip in range(1,numchips+1,1):
             try:
-                _skyValue = imageSet._image["PRIMARY"].header[paramDict["skyuser"]]
+                _skyValue = imageSet._image["PRIMARY"].header[skyuser]
 
             except:
                 print "**************************************************************"
                 print "*"
-                print "*  Cannot find keyword ",paramDict["skyuser"]," in ",imageSet._filename
+                print "*  Cannot find keyword ",skyuser," in ",imageSet._filename
                 print "*"
                 print "**************************************************************\n\n\n"
                 raise KeyError
@@ -142,62 +203,7 @@ def subtractSky(imageSet=None,configObj={},saveFile=True):
                     
     imageSet.close() #remove the data from memory
 
-#this function can be called by users and will create an imageSet to send to
-#the official function. I dunno, what's really a good name for this that the users
-#can easily differentiate from the call we want? I chose "my" as the prefix cause
-#it would be easy to add that to all the user independent calls and make it
-#somewhat uniform
 
-def mySubtractSky(imageList=[], configObj={}, saveFile=True):
-
-    """
-    imageList is a python list of image filename
-    paramDict is there as a placeholder to pass in the 
-        full parameter set for now, pass in configObj 
-        as a dictionary right now
-
-    These are parameters that the configObj should contain:
-
-
-    params that should be in configobj
-    ---------------------------------------
-    skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
-    skysub		'Perform sky subtraction?'
-    skywidth	'Bin width for sampling sky statistics (in sigma)'
-    skystat	 	'Sky correction statistics parameter'
-    skylower	'Lower limit of usable data for sky (always in electrons)'
-    skyupper	'Upper limit of usable data for sky (always in electrons)'
-    skyclip		'Number of clipping iterations'
-    skylsigma	'Lower side clipping factor (in sigma)'
-    skyusigma	'Upper side clipping factor (in sigma)'
-
-
-    the output from sky subtraction is a copy of the original input file
-    where all the science data extensions have been sky subtracted
-    """
-
-    #imageList here is assumed to be a python list of filenames
-    #though I think this might be part of configObj too
-    if len(imageList) == 0:
-        print "Empty input image list given to Sky routine, checking configObj"
-        if(len(configObj["imageList"]) == 0):
-            print "no image list in configObject either"
-            return ValueError
-        else:
-            imageList = configObj["imageList"]
-            
-    #make up a dictionary of the task parameter values
-    paramDict=_setDefaults(configObj)
-    
-    #create image object    
-    for image in imageList:
-        imageSet=imageObject(image)
-        print "\nWorking on: ",imageSet._filename
-        imageSet.info()
-        #call the real sky subtraction routine
-        subtractSky(imageSet,paramDict,saveFile)
-        imageSet.close()
-    
 
 ###############################
 ##  Helper functions follow  ## 
@@ -273,36 +279,6 @@ def getreferencesky(image,keyval):
     return (_subtractedsky * (_refplatescale / _platescale)**2 )                
 
 
-#set up the default values for the task, this is still too clunky
-#but perhaps could eventually be used to create the default configObj file?
-def _setDefaults(configObj={}):
-
-    skyuser=''
-    skysub=True
-    skywidth=0.1
-    skystat="median" 
-    skylower=None  #um, what to do with INDEF
-    skyupper=3. #um, what to do with INDEF
-    skyclip=5
-    skylsigma=4.
-    skyusigma=4.
-
-
-    paramDict={"skyuser":skyuser,"skysub":skysub,"skywidth":skywidth,
-    			"skystat":skystat,"skylower":skylower,"skyupper":skyupper,
-                "skyclip":skyclip,"skylsigma":skylsigma,"skyusigma":skyusigma}
-
-
-    #apply the parameter changes that have been set
-    if(len(configObj) != 0):
-        for key in configObj:
-            paramDict[key]=configObj[key]
-                
-    # Print out the parameters provided by the user
-    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
-    util.printParams(paramDict)        
-
-    return paramDict
 
 
 
