@@ -38,12 +38,12 @@ def run(configObj):
  
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 
-    createMedian(imgObjList,configObj,saveFile=configObj["clean"])
+    _median(imgObjList,configObj,saveFile=configObj["clean"])
 
 
 
 #this is the internal function, the user called function is below
-def createMedian(imageObjecList=None,configObj={},saveFiles=True):
+def _median(imageObjecList=None,configObj={},saveFiles=True):
     """Create a median image from the list of image Objects 
        that has been given
     """

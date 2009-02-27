@@ -56,25 +56,25 @@ def staticMask(imageList=None,static_sig=None,editpars=False,**inputDict):
 def run(configObj):
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 
-    createStaticMask(imgObjList,configObj)
+    _staticMask(imgObjList,configObj)
 
 
 #this is the workhorse function
-def createStaticMask(imageObjectList=[],configObj=None):
+def _staticMask(imageObjectList=[],configObj=None):
 
     if (not isinstance(imageObjectList,list) or (len(imageObjectList) ==0)):
         print "Invalid image object list given to static mask"
         return ValueError
     
     #create a static mask object
-    staticMask=staticMask.staticMask(configObj)
+    myMask=staticMask(configObj)
     
     for image in imageObjectList:
-        staticMask.addMember(image)
+        myMask.addMember(image)
         
     #save the masks to disk for later access  
-    staticMask.saveToFile()
-    staticMask.close()
+    myMask.saveToFile()
+    myMask.close()
 
 def constructFilename(signature):
     """construct an output filename for the given signature
@@ -157,7 +157,7 @@ class staticMask:
         """returns the name of the output mask file that
             should reside on disk for the given signature """
              
-        filename=self.constructFilename(signature)
+        filename=constructFilename(signature)
 
         if(fileutil.checkFileExists(filename)):
             return filename
@@ -198,7 +198,7 @@ class staticMask:
         
         for key in self.masklist.keys():
             #check to see if the file already exists on disk
-            filename=self.constructFilename(key)
+            filename=constructFilename(key)
             
             if not(fileutil.checkFileExists(filename)):
                 #create a new fits image with the mask array and a standard header

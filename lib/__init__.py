@@ -11,6 +11,8 @@ import MultiDrizzleObject
 import outputimage
 import processInput,mdzhandler
 import sky
+import createMedian
+import drizCR
 import staticMask
 import util
 import wcs_functions
@@ -100,11 +102,42 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
         The example config files are in multidrizzle/pars
 
     """
-    print '[BigBlackBox] mdriz is NOW running... '
+    print '[BigBlackBox] mdriz is NOW running... \n'
 
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
     imgObjList,outwcs = processInput.setCommonInput(configObj)
     
     # Call rest of MD steps...
-    print 'Finished interpreting configObj...'
+    print 'Finished interpreting configObj...\n'
+   
+    #create static masks for each image
+    staticMask._staticMask(imgObjList,configObj)
+    
+    #subtract the sky
+    sky.subtractSky(configObj,imgObjList)
+    
+    #drizzle to separate images
+    drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcs_functions.WCSMap)
+    
+    #create the median images from the driz sep images
+    createMedian._median(imgObjList,configObj,configObj["clean"])
+    
+    #blot the images back to the original reference frame
+    blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcs_functions.WCSMap)
+    
+    #look for cosmic rays
+    drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
+    
+    #Make your final drizzled image
+    drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcs_functions.WCSMap)
+    
+    print '\n[BigBlackBox] mdriz is all finished!\n'
+    
+    del imgObjList
+    del outwcs
+    
+    
+    
+    
+    

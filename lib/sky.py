@@ -79,18 +79,22 @@ def run(configObj):
  
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
 
-    runsubtractSky(imgObjList,configObj)
+    subtractSky(imgObjList,configObj)
 
 
 #this is the workhorse function
-def runsubtractSky(imageObjList,configObj):
-
-    for image in imgObjList:
-        subtractSky(configObj,image,saveFile=configObj["clean"])
+def subtractSky(imageObjList,configObj):
+    print "image list:",imageObjList
+    print
+    print "configobk:",configObj
+    print
+    for image in imageObjList:
+        print image
+        _subtractSky(configObj,image,saveFile=configObj["clean"])
     
 
 #this is the main function that does all the real work
-def subtractSky(configObj,imageSet=None,saveFile=True):
+def _subtractSky(configObj,imageSet=None,saveFile=True):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     imageSet is a single imageObject reference

@@ -47,12 +47,12 @@ def rundrizCR(imgObjList,configObj,saveFile=True):
 
     for image in imgObjList:
         for chip in range(1,image._numchips,1):
-            dodrizCr(image,chip,configObj,saveFile)
+            _drizCr(image,chip,configObj,saveFile)
 
 
 
 #the workhorse function
-def dodrizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
+def _drizCr(sciImage=None,chip=None,configObj={},saveFiles=True):
     """mask blemishes in dithered data by comparison of an image
     with a model image and the derivative of the model image.
 
