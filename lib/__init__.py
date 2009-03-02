@@ -16,7 +16,6 @@ import drizCR
 import staticMask
 import util
 import wcs_functions
-from pytools import cfgpars
 
 __taskname__ = "BigBlackBox"
 

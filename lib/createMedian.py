@@ -7,7 +7,7 @@ import os
 import imageObject
 from imagestats import ImageStats
 import util
-from pytools import iterfile.IterFitsFile,numcombine
+from pytools import iterfile,numcombine
 from pytools import nimageiter
 from pytools.nimageiter import ImageIter,computeBuffRows,FileIter,computeNumberBuff
 
@@ -106,12 +106,12 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
             
-        _singleImage=IterFitsFile(singleDriz)
+        _singleImage=iterfile.IterFitsFile(singleDriz)
         singleDrizList.append(_singleImage) #get lists of the handles
         
         # If it exists, extract the corresponding weight images
         if (os.acces(singleWeight,os.F_OK)):
-            _weight_file=IterFitsFile(singleWeight)
+            _weight_file=iterfile.IterFitsFile(singleWeight)
             singleWeightList.append(_weight_file)
             tmp_mean_value = ImageStats(_weight_file.data,lower=1e-8,lsig=None,usig=None,fields="mean",nclip=0)
             _wht_mean.append(tmp_mean_value.mean * maskpt)

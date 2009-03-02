@@ -14,7 +14,7 @@ also write a functional script that does the same thing
 Megan Sosey
 """
 
-from pytools import fileutil
+from pytools import fileutil,cfgpars
 import os
 import sky
 from staticMask import staticMask
