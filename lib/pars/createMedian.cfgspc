@@ -11,8 +11,8 @@ combine_type = option_kw("minmed","median","sum",default="minmed", comment= "Typ
 combine_nsigma = string_kw(default="4 3", comment= "Significance for accepting minimum instead of median")
 combine_nlow = integer_kw(default=0, comment= "minmax: Number of low pixels to reject")
 combine_nhigh = integer_kw(default=0, comment= "minmax: Number of high pixels to reject")
-combine_lthresh = string_kw(default="INDEF", comment="Lower threshold for clipping input pixel values")
-combine_hthresh = string_kw(default="INDEF", comment= "Upper threshold for clipping input pixel values")
+combine_lthresh = float_or_none_kw(default=None, comment="Lower threshold for clipping input pixel values")
+combine_hthresh = float_or_none_kw(default=None, comment= "Upper threshold for clipping input pixel values")
 combine_grow = integer_kw(default=1, comment=" Radius (pixels) for neighbor rejection")
 
 

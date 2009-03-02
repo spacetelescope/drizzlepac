@@ -84,10 +84,6 @@ def run(configObj):
 
 #this is the workhorse function
 def subtractSky(imageObjList,configObj):
-    print "image list:",imageObjList
-    print
-    print "configobj:",configObj
-    print
     for image in imageObjList:
         print "Working on sky for: ",image
         _skySub(configObj,image,configObj["clean"])
@@ -175,12 +171,14 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
             _skyValue= _computeSky(image, paramDict, memmap=0)
             #scale the sky value by the area on sky
             pscale=imageSet[myext].wcs.pscale
-            scaledSky=_skyValue / (pscale**2)
-            _skyValue=scaledSky
-            minSky.append(_skyValue)
+            print 'pixel area on sky=',pscale
+            _scaledSky=_skyValue / (pscale**2)
+            print 'scaledSky=',_scaledSky
+            #_skyValue=_scaledSky
+            minSky.append(_scaledSky)
             
             #update the keyword in the actual header here as well
-            image.computedSky=_skyValue #this is the scaled sky value
+            image.computedSky=_scaledSky #this is the scaled sky value
 
         _skyValue = min(minSky)
         print "Minimum sky value for all chips ",_skyValue
@@ -189,7 +187,9 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
         #and update the chips header keyword with the sub
         for chip in range(1,numchips+1,1):
             image=imageSet._image[sciExt,chip]
-            _subtractSky(image,(_skyValue * image.wcs.pscale))
+            _scaledSky=_skyValue * (image.wcs.pscale**2)
+            print "subtracting scaled sky from chip %d"%chip,_scaledSky
+            _subtractSky(image,(_scaledSky))
             _updateKW(image,skyKW,_skyValue)
             
         #update the value of MDRIZSKY in the global header
@@ -236,7 +236,7 @@ def _computeSky(image, skypars, memmap=0):
             )
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
-    print "Computed sky value for %s: "%image.rootname, _skyValue
+    print "Computed unscaled sky value for %s: "%image.rootname, _skyValue
     
     del _tmp
     

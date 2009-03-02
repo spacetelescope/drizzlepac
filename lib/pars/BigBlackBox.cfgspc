@@ -55,8 +55,8 @@ combine_type = option_kw("minmed","median","sum",default="minmed", comment= "Typ
 combine_nsigma = string_kw(default="4 3", comment= "Significance for accepting minimum instead of median")
 combine_nlow = integer_kw(default=0, comment= "minmax: Number of low pixels to reject")
 combine_nhigh = integer_kw(default=0, comment= "minmax: Number of high pixels to reject")
-combine_lthresh = string_kw(default="INDEF", comment="Lower threshold for clipping input pixel values")
-combine_hthresh = string_kw(default="INDEF", comment= "Upper threshold for clipping input pixel values")
+combine_lthresh = float_or_none_kw(default=None, comment="Lower threshold for clipping input pixel values")
+combine_hthresh = float_or_none_kw(default=None, comment= "Upper threshold for clipping input pixel values")
 combine_grow = integer_kw(default=1, comment=" Radius (pixels) for neighbor rejection")
 
 [STEP 5: BLOT BACK THE MEDIAN IMAGE]
@@ -83,7 +83,7 @@ final_wt_scl = string_kw(default="exptime", comment="Weighting factor for input 
 final_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
 final_pixfrac = float_kw(default=1., comment="Linear size of drop in input pixels")
 final_rot = float_kw(default=0., comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
-final_fillval = string_kw(default="INDEF", comment= "Value to be assigned to undefined output points")
+final_fillval = float_or_none_kw(default=None, comment= "Value to be assigned to undefined output points")
 final_bits = integer_kw(default=0, comment="Integer mask bit values considered good")
 final_units = option_kw("counts", "cps", default="cps", comment="Units for final drizzle image (counts or cps)")
 

@@ -5,7 +5,11 @@ import numpy as np
 import pyfits
 import os
 import imageObject
-import imagestats
+from imagestats import ImageStats
+import util
+from pytools import iterfile.IterFitsFile,numcombine
+from pytools import nimageiter
+from pytools.nimageiter import ImageIter,computeBuffRows,FileIter,computeNumberBuff
 
 __version__ = '1.1'
 
@@ -43,7 +47,7 @@ def run(configObj):
 
 
 #this is the internal function, the user called function is below
-def _median(imageObjecList=None,configObj={},saveFiles=True):
+def _median(imageObjectList=None,configObj={},saveFiles=True):
     """Create a median image from the list of image Objects 
        that has been given
     """
@@ -52,13 +56,13 @@ def _median(imageObjecList=None,configObj={},saveFiles=True):
         print "Please provide a list of imageObjects to the median step"
         return ValueError
         
-    step_name=util.getSectionName(configObj,_step_num)    
+    step_name=util.getSectionName(configObj,_step_num_)    
     paramDict=configObj[step_name]
-    
+        
     newmasks = paramDict['median_newmasks']
     comb_type = paramDict['combine_type']
-    nlow = paramDict['nlow']
-    nhigh = paramDict['nhigh']
+    nlow = paramDict['combine_nlow']
+    nhigh = paramDict['combine_nhigh']
     grow = paramDict['combine_grow']
     maskpt = paramDict['combine_maskpt']
 
@@ -68,14 +72,14 @@ def _median(imageObjecList=None,configObj={},saveFiles=True):
     nsigma2 = float(sigmaSplit[1])
     
     
-    if (paramDict['lthresh'] == None):
+    if (paramDict['combine_lthresh'] == None):
         lthresh = None
     else:
-        lthresh = float(paramDict['lthresh'])
-    if (paramDict['hthresh'] == None):
+        lthresh = float(paramDict['combine_lthresh'])
+    if (paramDict['combine_hthresh'] == None):
         hthresh = None
     else:
-        hthresh = float(paramDict['hthresh'])
+        hthresh = float(paramDict['combine_hthresh'])
 
     #the name of the output median file isdefined in the output wcs object
     #and stuck in the image.outputValues["outMedian"] dict of every imageObject
@@ -98,7 +102,7 @@ def _median(imageObjecList=None,configObj={},saveFiles=True):
     _wht_mean = [] # Compute the mean value of each wht image
     
     #for each image object
-    for image in objectList:
+    for image in imageObjectList:
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
             
@@ -239,7 +243,7 @@ def _median(imageObjecList=None,configObj={},saveFiles=True):
         # DO NUMCOMBINE
         else:
             # Create the combined array object using the numcombine task
-            result = numCombine(imageSectionsList[startDrz:endDrz],
+            result = numcombine.numCombine(imageSectionsList[startDrz:endDrz],
                                     numarrayMaskList=_weight_mask_list,
                                     combinationType=comb_type.lower(),
                                     nlow=nlow,
