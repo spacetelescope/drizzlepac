@@ -20,6 +20,24 @@ import sky
 from staticMask import staticMask
 from imageObject import imageObject
 
+class mdriz(cfgpars.ConfigObjPars):
+    """ This needs to be called using the following syntax:
+
+        mdobj = BigBlackBox.mdriz()
+        cfgepar.epar(mdobj)
+
+    """
+    def __init__(self, cfgFileName):
+        if cfgFileName is None:
+            cfgFileName = __cfg_file__
+        cfgpars.ConfigObjPars.__init__(self, cfgFileName)
+
+    def run(self, *args, **kw):
+        # Place your code to invoke Multidrizzle here
+        print "running MultiDrizzle from TEAL..."        
+        MultiDrizzle(configObj=self)
+    def getHelpAsString(self):
+        getHelpAsString()
 class MultiDrizzleObject:
     """
 

@@ -56,25 +56,7 @@ def MultiDrizzle(input = '*flt.fits',output = None, shiftfile = None, updatewcs 
 #
 #### Interfaces used by TEAL
 #
-class mdriz(cfgpars.ConfigObjPars):
-    """ This needs to be called using the following syntax:
 
-        mdobj = BigBlackBox.mdriz()
-        cfgepar.epar(mdobj)
-
-    """
-    def __init__(self, cfgFileName):
-        if cfgFileName is None:
-            cfgFileName = __cfg_file__
-        cfgpars.ConfigObjPars.__init__(self, cfgFileName)
-
-    def run(self, *args, **kw):
-        # Place your code to invoke Multidrizzle here
-        print "running MultiDrizzle from TEAL..."        
-        MultiDrizzle(configObj=self)
-    def getHelpAsString(self):
-        getHelpAsString()
-            
 def getHelpAsString():
     # Does NOT work with TEAL/cfgepar.epar()
         help_str = __doc__+'\n'
