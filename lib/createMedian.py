@@ -110,7 +110,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
         singleDrizList.append(_singleImage) #get lists of the handles
         
         # If it exists, extract the corresponding weight images
-        if (os.acces(singleWeight,os.F_OK)):
+        if (os.access(singleWeight,os.F_OK)):
             _weight_file=iterfile.IterFitsFile(singleWeight)
             singleWeightList.append(_weight_file)
             tmp_mean_value = ImageStats(_weight_file.data,lower=1e-8,lsig=None,usig=None,fields="mean",nclip=0)
@@ -143,7 +143,8 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
         #
 
     # create an array for the median output image
-    medianImageArray = np.zeros(singleDrizList[0].shape,dtype=singleDrizList[0].type())
+    print "entering line 146"
+    medianImageArray = np.zeros(singleDrizList[0]._shape,dtype=singleDrizList[0].type())
 
     # create the master list to be used by the image iterator
     masterList = []
