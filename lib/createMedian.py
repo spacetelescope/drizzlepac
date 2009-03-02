@@ -7,9 +7,9 @@ import os
 import imageObject
 from imagestats import ImageStats
 import util
-from pytools import iterfile,numcombine
-from pytools import nimageiter
-from pytools.nimageiter import ImageIter,computeBuffRows,FileIter,computeNumberBuff
+from pytools import iterfile
+from pytools import nimageiter 
+from pytools import numcombine
 
 __version__ = '1.1'
 
@@ -173,11 +173,11 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     _imgarr = masterList[0].data
     _bufsize = nimageiter.BUFSIZE
     _imgrows = _imgarr.shape[0]
-    _nrows = computeBuffRows(_imgarr)
+    _nrows = nimageiter.computeBuffRows(_imgarr)
 #        _overlaprows = _nrows - (_overlap+1)
 #        _niter = int(_imgrows/_nrows)
 #        _niter = 1 + int( (_imgrows - _overlaprows)/_nrows)
-    _niter = computeNumberBuff(_imgrows,_nrows,_overlap)
+    _niter = nimageiter.computeNumberBuff(_imgrows,_nrows,_overlap)
     _lastrows = _imgrows - (_niter*_nrows) 
 
     # check to see if this buffer size will leave enough rows for
@@ -190,7 +190,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     masterList[0].close()
     del _imgarr
 
-    for imageSectionsList,prange in FileIter(masterList,overlap=_overlap,bufsize=_bufsize):
+    for imageSectionsList,prange in imageiter.FileIter(masterList,overlap=_overlap,bufsize=_bufsize):
 
         if newmasks:
             """ Build new masks from single drizzled images. """
