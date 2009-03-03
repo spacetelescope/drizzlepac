@@ -39,7 +39,7 @@ final_kernel = option_kw("square", "point","gaussian","turbo","tophat","lanczos3
 final_wt_scl = string_kw(default="exptime")
 final_scale = float_or_none_kw(default=None)
 final_pixfrac = float_kw(default=1.) 
-final_rot = float_kw(default=0.)
+final_rot = float_or_none_kw(default=0.)
 final_fillval = string_kw(default="INDEF") 
 final_bits = integer_kw(default=0) 
 final_units = option_kw("counts", "cps", default="cps") 

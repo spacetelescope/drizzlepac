@@ -82,7 +82,7 @@ final_kernel = option_kw("square", "point",  "gaussian", "turbo", "tophat", "lan
 final_wt_scl = string_kw(default="exptime", comment="Weighting factor for input data image")
 final_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
 final_pixfrac = float_kw(default=1., comment="Linear size of drop in input pixels")
-final_rot = float_kw(default=0., comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
+final_rot = float_or_none_kw(default=0., comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
 final_fillval = float_or_none_kw(default=None, comment= "Value to be assigned to undefined output points")
 final_bits = integer_kw(default=0, comment="Integer mask bit values considered good")
 final_units = option_kw("counts", "cps", default="cps", comment="Units for final drizzle image (counts or cps)")

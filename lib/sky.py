@@ -70,7 +70,7 @@ def sky(imageList=None,configObj=None, editpars=False, **inputDict):
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
         return
-
+    
     run(configObj)
      
 
@@ -78,12 +78,16 @@ def sky(imageList=None,configObj=None, editpars=False, **inputDict):
 def run(configObj):
  
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
-
     subtractSky(imgObjList,configObj)
 
 
 #this is the workhorse function
 def subtractSky(imageObjList,configObj):
+    step_name = util.getSectionName(configObj,_step_num_)
+    if not configObj[step_name]['skysub']:
+        print 'Sky Subtraction step not performed.'
+        return
+
     for image in imageObjList:
         print "Working on sky for: ",image
         _skySub(configObj,image,configObj["clean"])

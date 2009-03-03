@@ -2,6 +2,8 @@ import sys,types,os
 import util
 from util import _ptime
 import numpy as np
+import pyfits
+
 from pytools import fileutil
 import outputimage,wcs_functions,processInput,util
 try:
@@ -20,15 +22,18 @@ def run(configObj,wcsmap=wcs_functions.WCSMap):
     
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
+    print 'Running drizzle run()...'
     imgObjList,outwcs = processInput.setCommonInput(configObj)
 
     # Parse out which mode is to be run: single drizzle or final drizzle
     # Call only the mode of interest
     single_step = util.getSectionName(configObj,_single_step_num_)
+    
     if configObj[single_step]['driz_separate']:
         drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
     else:
         drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+
 def getHelpAsString():
     return "Drizzle Help"
 
@@ -50,7 +55,8 @@ def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,ed
     if configObj is None:
         return
     
-    run(configObj,wcsmap=wcsmap)
+    if editpars == False:
+        run(configObj,wcsmap=wcsmap)
 
 #
 #### Top-level interface from inside MultiDrizzle
@@ -63,6 +69,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMa
     if configObj[single_step]['driz_separate']:
         paramDict = buildDrizParamDict(configObj)
         paramDict['crbit'] = None
+        
         run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, wcsmap=wcsmap)
     
 def drizFinal(imageObjectList, output_wcs, configObj,wcsmap=wcs_functions.WCSMap):
@@ -73,25 +80,25 @@ def drizFinal(imageObjectList, output_wcs, configObj,wcsmap=wcs_functions.WCSMap
     if configObj[final_step]['driz_combine']:
         paramDict = buildDrizParamDict(configObj,single=False)
         paramDict['crbit'] = configObj['crbit']
+        
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, wcsmap=wcsmap)
 
 # Run 'drizzle' here...
 #
 def getWeightMask(maskname,imgObject,chip,bits):
-    dqarr = mergeDQarray(maskname,imgObject,chip,bits)
+    dqarr = imgObject.buildMask(chip,bits)
+    mergeDQarray(maskname,dqarr)
     _inwht = dqarr.astype(np.float32)
     return _inwht
 
-def mergeDQarray(maskname,imageObject,chip,bits):
+def mergeDQarray(maskname,dqarr):
     """ Merge static or CR mask with mask created from DQ array on-the-fly here.
     """
-    dqarr = imageObject.buildMask(chip,bits)
     if maskname is not None and os.path.exists(maskname):
         mask = fileutil.openImage(maskname)
         maskarr = mask[0].data
         dqarr = np.bitwise_and(dqarr,maskarr)
         mask.close()
-    return dqarr
 
 def updateInputDQArray(dqname,dq_extn, crmaskname,cr_bits_value):
     if not os.path.exists(crmaskname):
@@ -306,6 +313,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                 _inwht = getWeightMask(chip.outputNames['crmaskImage'],img,chip._chip,bits)
                 updateInputDQArray(chip.dqname,chip.dq_extn,
                                     chip.outputNames['crmaskImage'],crbit)
+                                    
 
             if paramDict['wt_scl'] != None:
                 if isinstance(paramDict['wt_scl'],types.StringType):
@@ -369,12 +377,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
             if (_sciext.data.dtype > np.float32):
                 #WARNING: Input array recast as a float32 array
                 _sciext.data = _sciext.data.astype(np.float32)
-
-            _pxg = np.zeros([2,2],dtype=np.float32)
-            _pyg = np.zeros([2,2],dtype=np.float32)
-
-
+            
             if wcsmap is None and arrdriz is not None:
+                _pxg = np.zeros([2,2],dtype=np.float32)
+                _pyg = np.zeros([2,2],dtype=np.float32)
                 # Use default C mapping function
                 _inwcs = np.zeros([8],dtype=np.float64)
                 _inwcs = wcs_functions.convertWCS(output_wcs.wcs,_inwcs)
@@ -446,6 +452,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
                     _expscale = chip._exptime
                 else:
                     _expscale = img.outputValues['texptime']
+                print '[run_driz] expscale = ',_expscale
 
                 #If output units were set to 'counts', rescale the array in-place
                 if paramDict['units'] == 'counts':

@@ -8,11 +8,12 @@ import convolve as NC
 import pyfits
 import os
 import quickDeriv
+import util
 
 __version__ = '1.1' #we should go through and update all these
 
 __taskname__= "BigBlackBox.drizCR" #looks in BigBlackBox for sky.cfg
-_step_num_ = 3  #this relates directly to the syntax in the cfg file
+_step_num_ = 6  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():
     """ I'm thinking we could just make a file called sky.help
@@ -32,7 +33,8 @@ def drizCR(imageList=None,configObj=None, editpars=False, **inputDict):
     if configObj is None:
         return
 
-    run(configObj)
+    if editpars == False:
+        run(configObj)
      
 
 #this is the function that will be called from TEAL
@@ -44,6 +46,11 @@ def run(configObj):
     
 #the final function that calls the workhorse  
 def rundrizCR(imgObjList,configObj,saveFile=True):
+
+    step_name = util.getSectionName(configObj,_step_num_)
+    if not configObj[step_name]['driz_cr']:
+        print 'Cosmic-ray identification (driz_cr) step not performed.'
+        return
 
     for image in imgObjList:
         for chip in range(1,image._numchips,1):

@@ -50,18 +50,23 @@ def staticMask(imageList=None,static_sig=None,editpars=False,**inputDict):
     if configObj is None:
         return
         
-    run(configObj)
+    if editpars == False:
+        run(configObj)
     
 #this is called by the TEAL interface
 def run(configObj):
+    
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
-
     _staticMask(imgObjList,configObj)
 
 
 #this is the workhorse function
 def _staticMask(imageObjectList=[],configObj=None):
-
+    step_name = util.getSectionName(configObj,_step_num_)
+    if not configObj[step_name]['static']:
+        print 'Static Mask step not performed.'
+        return
+    
     if (not isinstance(imageObjectList,list) or (len(imageObjectList) ==0)):
         print "Invalid image object list given to static mask"
         return ValueError

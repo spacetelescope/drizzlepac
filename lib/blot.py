@@ -43,7 +43,9 @@ def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editp
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     if configObj is None:
         return
-    run(configObj,wcsmap=wcsmap)
+    
+    if editpars == False:
+        run(configObj,wcsmap=wcsmap)
 
 #
 #### Top-level interface from inside MultiDrizzle

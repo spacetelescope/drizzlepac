@@ -50,7 +50,8 @@ def MultiDrizzle(input = '*flt.fits',output = None, shiftfile = None, updatewcs 
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     
-    run(configObj,wcsmap=wcsmap)
+    if editpars == False:
+        run(configObj,wcsmap=wcsmap)
 
 #
 #### Interfaces used by TEAL

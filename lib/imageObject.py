@@ -449,7 +449,7 @@ class baseImageObject:
         
         return iraf[irafType]
         
-    def buildMask(self,chip,bits=0):
+    def buildMask(self,chip,bits=0,write=False):
         """ Build masks as specified in the user parameters found in the 
             configObj object.
             
@@ -461,7 +461,13 @@ class baseImageObject:
         """
         dqarr = self.getData(exten=self.maskExt+','+str(chip))
         dqmask = self._buildMask(dqarr,bits)
-        del dqarr
+        if write:
+            phdu = pyfits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
+            dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
+            print 'Writing out DQ mask: ',dqmask_name
+            phdu.writeto(dqmask_name)
+            del phdu
+        del dqarr            
         return dqmask
         """
         ### For WFPC2 Data, build mask files using:
