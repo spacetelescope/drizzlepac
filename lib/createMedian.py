@@ -34,7 +34,9 @@ def median(imageList=None,configObj=None, editpars=False, **inputDict):
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
         return
-    run(configObj)
+
+    if editpars == False:
+        run(configObj)
      
 
 #this is the function that will be called from TEAL
@@ -51,6 +53,10 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     """Create a median image from the list of image Objects 
        that has been given
     """
+    step_name = util.getSectionName(configObj,_step_num_)
+    if not configObj[step_name]['median']:
+        print 'Median combination step not performed.'
+        return
     
     if(imageObjectList == None):
         print "Please provide a list of imageObjects to the median step"
