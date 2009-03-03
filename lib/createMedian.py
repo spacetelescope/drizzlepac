@@ -105,9 +105,10 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     for image in imageObjectList:
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
-            
-        _singleImage=iterfile.IterFitsFile(singleDriz)
-        singleDrizList.append(_singleImage) #get lists of the handles
+        print singleDriz, singleWeight
+        
+        _singleImage=iterfile.IterFitsFile(singleDriz)#this returns the handles for the image
+        singleDrizList.append(_singleImage) #add to an array for bookkeeping
         
         # If it exists, extract the corresponding weight images
         if (os.access(singleWeight,os.F_OK)):
@@ -131,7 +132,12 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             exposureTimeList.append(image._exptime)
 
             # Extract the sky value to be used in the model
-            # this sky value is in scaled units on the sky
+            # this sky value is in scaled units on the sky,
+            # should I multiply by the platescale of the output drizzled image
+            # since all the chips have been combined into 1 image in driz_single?
+            # I think this is saved in the header of the single driz (or can be calculated
+            # by pulling the wcs information from the object
+            #backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * outPlatescale)
             backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"])
             
             # Extract the readnoise value for the chip
@@ -142,9 +148,9 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
         # END Loop over input image list
         #
 
-    # create an array for the median output image
+    # create an array for the median output image, use the size of the first image in the list
     print "entering line 146"
-    medianImageArray = np.zeros(singleDrizList[0]._shape,dtype=singleDrizList[0].type())
+    medianImageArray = np.zeros(singleDrizList[0].shape,dtype=singleDrizList[0].type())
 
     # create the master list to be used by the image iterator
     masterList = []

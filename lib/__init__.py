@@ -115,6 +115,9 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     
     print '\n[BigBlackBox] mdriz is all finished!\n'
     
+    for image in imgObjList:
+        image.close()
+        
     del imgObjList
     del outwcs
     

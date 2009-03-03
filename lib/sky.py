@@ -188,7 +188,7 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
         for chip in range(1,numchips+1,1):
             image=imageSet._image[sciExt,chip]
             _scaledSky=_skyValue * (image.wcs.pscale**2)
-            print "subtracting scaled sky from chip %d"%chip,_scaledSky
+            print "subtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             _subtractSky(image,(_scaledSky))
             _updateKW(image,skyKW,_skyValue)
             
