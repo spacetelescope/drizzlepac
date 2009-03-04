@@ -147,7 +147,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"])
             
             # Extract the readnoise value for the chip
-            readnoiseList.append(image._readnoise) #verify this is calculated correctly in the image object
+            readnoiseList.append(image._rdnoise) #verify this is calculated correctly in the image object
 
             print "reference sky value for image ",image._filename," is ", image._image["PRIMARY"].header["MDRIZSKY"]
         #

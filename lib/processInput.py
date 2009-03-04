@@ -80,7 +80,10 @@ def setCommonInput(configObj,createOutwcs=True):
 
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.
-    imageObjectList = createImageObjectList(files)
+    instrpars = configObj['INSTRUMENT PARAMETERS']
+    # pass in 'proc_unit' to initialize unit conversions as necessary
+    instrpars['proc_unit'] = configObj['proc_unit']
+    imageObjectList = createImageObjectList(files,instrpars)
 
     # Add info about input IVM files at this point to the imageObjectList
     addIVMInputs(imageObjectList,ivmlist)
@@ -107,13 +110,15 @@ def checkMultipleFiles(configObj):
     a,i,o = process_input(configObj['input'],updatewcs=False)
     return len(a['members']) > 1
 
-def createImageObjectList(files):
+def createImageObjectList(files,instrpars):
     """ Returns a list of imageObject instances, 1 for each input image in the
         list of input filenames.
     """
     imageObjList = []
     for img in files:
-        imageObjList.append(_getInputImage(img))
+        image = _getInputImage(img)
+        image.setInstrumentParameters(instrpars)
+        imageObjList.append(image)
 
     return imageObjList
 

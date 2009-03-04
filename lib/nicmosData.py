@@ -13,7 +13,7 @@ class NICMOSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self, filename=None,proc_unit="native"):
+    def __init__(self, filename=None):
         imageObject.__init__(self,filename)
         
         # define the cosmic ray bits value to use in the dq array
@@ -119,18 +119,21 @@ class NICMOSInputImage(imageObject):
         # Close the files and clean-up
         _handle.close() 
 
-    def setInstrumentParameters(self, instrpars, pri_header):
+    def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
+        pri_header = self._image[0].header
+        self.proc_unit = instrpars['proc_unit']
+
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ADCGAIN'
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = None
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
-        if instrpars['crbit'] == None:
-            instrpars['crbit'] = self.cr_bits_value
+        #if instrpars['crbit'] == None:
+        #    instrpars['crbit'] = self.cr_bits_value
    
         self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
                                                  instrpars['gnkeyword'])
@@ -138,7 +141,7 @@ class NICMOSInputImage(imageObject):
                                                  instrpars['rnkeyword'])
         self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                  instrpars['expkeyword'])
-        self._crbit     = instrpars['crbit']
+        #self._crbit     = instrpars['crbit']
 
         if self._gain == None or self._exptime == None:
             print 'ERROR: invalid instrument task parameter'
@@ -289,7 +292,7 @@ class NICMOSInputImage(imageObject):
     
 class NIC1InputImage(NICMOSInputImage):
 
-    def __init__(self, filename=None,proc_unit="native"):
+    def __init__(self, filename=None):
         NICMOSInputImage.__init__(self,filename)
         self._effGain = 1 #get the gain from the detector subclass
         self._gain=5.4 #measured
@@ -309,7 +312,7 @@ class NIC1InputImage(NICMOSInputImage):
             self._rdnoise = self._rdnoise / self.getGain() # ADU
 
 class NIC2InputImage(NICMOSInputImage):
-    def __init__(self,filename=None,proc_unit="native"):
+    def __init__(self,filename=None):
         NICMOSInputImage.__init__(self,filename)
         self._gain=5.4 #measured
         
@@ -324,9 +327,9 @@ class NIC2InputImage(NICMOSInputImage):
             self._rdnoise = self._rdnoise/self.getGain() #ADU
 
 class NIC3InputImage(NICMOSInputImage):
-    def __init__(self,filename=None,proc_unit="native"):
+    def __init__(self,filename=None):
         NICMOSInputImage.__init__(self,filename)
-        self._gain-6.5 #measured
+        self._gain=6.5 #measured
         
     def _setDarkRate(self):
         self.darkrate = 0.15 #electrons/s

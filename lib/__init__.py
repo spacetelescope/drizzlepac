@@ -100,7 +100,7 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     sky.subtractSky(imgObjList,configObj)
     
     #drizzle to separate images
-    drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcs_functions.WCSMap)
+    drizzle.drizSeparate(imgObjList,outwcs,configObj,build=False,wcsmap=wcs_functions.WCSMap)
     
     #create the median images from the driz sep images
     createMedian._median(imgObjList,configObj,configObj["clean"])

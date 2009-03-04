@@ -61,7 +61,7 @@ def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,ed
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap):
+def drizSeparate(imageObjectList,output_wcs,configObj,build=None,wcsmap=wcs_functions.WCSMap):
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
     single_step = util.getSectionName(configObj,_single_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -69,10 +69,16 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMa
     if configObj[single_step]['driz_separate']:
         paramDict = buildDrizParamDict(configObj)
         paramDict['crbit'] = None
-        
-        run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, wcsmap=wcsmap)
+        # override configObj[build] value with the value of the build parameter
+        # this is necessary in order for MultiDrizzle to always have build=False
+        # for single-drizzle step when called from the top-level. 
+        if build is None:
+            build = paramDict['build']
+            
+        run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, 
+                build=build, wcsmap=wcsmap)
     
-def drizFinal(imageObjectList, output_wcs, configObj,wcsmap=wcs_functions.WCSMap):
+def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap):
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
     final_step = util.getSectionName(configObj,_final_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -80,8 +86,14 @@ def drizFinal(imageObjectList, output_wcs, configObj,wcsmap=wcs_functions.WCSMap
     if configObj[final_step]['driz_combine']:
         paramDict = buildDrizParamDict(configObj,single=False)
         paramDict['crbit'] = configObj['crbit']
+        # override configObj[build] value with the value of the build parameter
+        # this is necessary in order for MultiDrizzle to always have build=False
+        # for single-drizzle step when called from the top-level. 
+        if build is None:
+            build = paramDict['build']
         
-        run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, wcsmap=wcsmap)
+        run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, 
+                build=paramDict['build'],wcsmap=wcsmap)
 
 # Run 'drizzle' here...
 #
@@ -172,7 +184,7 @@ def _setDefaults(configObj={}):
 
     return paramDict
 
-def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
+def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     """Perform drizzle operation on input to create output.
      The input parameters originally was a list
      of dictionaries, one for each input, that matches the
@@ -204,7 +216,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
     _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
 
     # Interpret input parameters for use in drizzling
-    build = paramDict['build']
     crbit = paramDict['crbit']
     bits = paramDict['bits']
     
@@ -480,8 +491,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,wcsmap=None):
             else:
                 _nimg += 1
 
-        del _outsci,_outwht,_outctx, _hdrlist
-        # end of loop over each chip
+    del _outsci,_outwht,_outctx, _hdrlist
+    # end of loop over each chip
 
 
     print 'PyDrizzle drizzling completed at ',_ptime()

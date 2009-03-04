@@ -13,7 +13,7 @@ class ACSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self,filename=None,proc_unit="native"):
+    def __init__(self,filename=None):
         imageObject.__init__(self,filename)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
@@ -60,21 +60,24 @@ class ACSInputImage(imageObject):
             _subarray = True
         return _subarray
 
-    def setInstrumentParameters(self):
+    def setInstrumentParameters(self,instrpars):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
             
             this should probably be moved to the sub instrument classes
             for each detector type?
         """
+        pri_header = self._image[0].header
+        self.proc_unit = instrpars['proc_unit']
+
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
-        if instrpars['crbit'] == None:
-            instrpars['crbit'] = self.cr_bits_value
+#        if instrpars['crbit'] == None:
+#            instrpars['crbit'] = self.cr_bits_value
          
         self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
                                                  instrpars['gnkeyword'])
@@ -82,7 +85,7 @@ class ACSInputImage(imageObject):
                                                  instrpars['rnkeyword'])
         self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                  instrpars['expkeyword'])
-        self._crbit     = instrpars['crbit']
+#        self._crbit     = instrpars['crbit']
 
         if self._gain == None or self._rdnoise == None or self._exptime == None:
             print 'ERROR: invalid instrument task parameter'
@@ -225,21 +228,23 @@ class SBCInputImage (ACSInputImage):
     def _setDefaultSBCReadnoise(self):
         self._rdnoise = 0
 
-    def _setInstrumentParameters(self):
+    def setInstrumentParameters(self,instrpars):
         """ Sets the instrument parameters.
         """
+        pri_header = self._image[0].header
+        
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = None
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = None
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
-        if instrpars['crbit'] == None:
-            instrpars['crbit'] = self.cr_bits_value
+        #if instrpars['crbit'] == None:
+        #    instrpars['crbit'] = self.cr_bits_value
       
         self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                  instrpars['expkeyword'])
-        self._crbit     = instrpars['crbit']
+        #self._crbit     = instrpars['crbit']
 
         if self._exptime == None:
             print 'ERROR: invalid instrument task parameter'

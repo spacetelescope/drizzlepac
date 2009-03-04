@@ -53,6 +53,15 @@ class baseImageObject:
             if (self._filename == other._filename):
                 return True            
         return False
+
+    def _isNotValid(self, par1, par2):
+        """ Method used to determine if a value or keyword is supplied as 
+            input for instrument specific parameters.
+        """
+        if (par1 == None or par1 == '') and (par2 == None or par2 == ''):
+            return True
+        else:
+            return False
     
     def info(self):
         """return fits information on the _image"""
@@ -492,6 +501,55 @@ class baseImageObject:
         """
         pass
         
+    def getInstrParameter(self, value, header, keyword):
+        """ This method gets a instrument parameter from a
+            pair of task parameters: a value, and a header keyword.
+
+            The default behavior is:
+              - if the value and header keyword are given, raise an exception.
+              - if the value is given, use it.
+              - if the value is blank and the header keyword is given, use
+                the header keyword.
+              - if both are blank, or if the header keyword is not
+                found, return None.
+        """
+        if (value != None and value != '')  and (keyword != None and keyword.strip() != ''):
+            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword) 
+            raise ValueError, exceptionMessage
+        elif value != None and value != '':
+            return self._averageFromList(value)
+        elif keyword != None and keyword.strip() != '':
+            return self._averageFromHeader(header, keyword)
+        else:
+            return None
+
+    def _averageFromHeader(self, header, keyword):
+        """ Averages out values taken from header. The keywords where
+            to read values from are passed as a comma-separated list.
+        """
+        _list = ''
+        for _kw in keyword.split(','):
+            if header.has_key(_kw):
+                _list = _list + ',' + str(header[_kw])
+            else:
+                return None
+        return self._averageFromList(_list)
+
+    def _averageFromList(self, param):
+        """ Averages out values passed as a comma-separated
+            list, disregarding the zero-valued entries.
+        """
+        _result = 0.0
+        _count = 0
+
+        for _param in param.split(','):
+            if _param != '' and float(_param) != 0.0:
+                _result = _result + float(_param)
+                _count  += 1
+
+        if _count >= 1:
+            _result = _result / _count
+        return _result
         
 class imageObject(baseImageObject):
     """
@@ -528,6 +586,8 @@ class imageObject(baseImageObject):
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
         
+        self.proc_unit = None
+
         if (self._numchips == 0):
             self._isSimpleFits = True
             self._nextend=0
@@ -561,6 +621,13 @@ class imageObject(baseImageObject):
                 sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
                 # Set the units: both bunit and in_units
                 self.set_units(chip)
+
+    def setInstrumentParameters(self,instrpars):
+        """ Define instrument-specific parameters for use in the code. 
+            By definition, this definition will need to be overridden by 
+            methods defined in each instrument's sub-class.
+        """
+        pass
                                     
     def set_units(self,chip):
         """ Define units for this image."""

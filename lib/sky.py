@@ -228,7 +228,7 @@ def _computeSky(image, skypars, memmap=0):
     
     skypars is passed in as paramDict
     """
-	#this object contains the returned values from the image stats routine
+    #this object contains the returned values from the image stats routine
     _tmp = imagestats.ImageStats(image.data,
             fields      = skypars['skystat'],
             lower       = skypars['skylower'],
