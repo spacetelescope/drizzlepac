@@ -34,7 +34,7 @@ else:
 
  
 def getNumpyExtensions():
-    ext = [Extension("pydrizzle.arrdriz",['src/arrdrizmodule.c',
+    ext = [Extension("BigBlackBox.cdriz",['src/arrdrizmodule.c',
                                           'src/cdrizzleblot.c',
                                           'src/cdrizzlebox.c',
                                           'src/cdrizzleio.c',
