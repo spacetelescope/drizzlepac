@@ -191,7 +191,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     
     ivmlist = None
     oldasndict = None
-    
+
     if (isinstance(input, list) == False) and \
        ('_asn' in input or '_asc' in input) :
         # Input is an association table
@@ -220,7 +220,11 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         #input is a string or a python list
         try:
             filelist, output = parseinput.parseinput(input, outputname=output)
-            if output in ['',None]: output = 'final'
+            if output in ['',None]: 
+                if len(filelist) == 1: 
+                    output = fileutil.buildNewRootname(filelist[0])
+                else: 
+                    output = 'final'
             #filelist.sort()
         except IOError: raise
     
@@ -250,9 +254,9 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         oldasndict.update(shiftfile=shiftfile)
 
     asndict = update_member_names(oldasndict, pydr_input)
-    
+
     # Build output filename
-    if output == None:
+    if output in [None,'']:
         output = fileutil.buildNewRootname(asndict['output'],extn='_drz.fits')
     else:
         if 'drz' not in output:

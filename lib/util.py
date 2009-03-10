@@ -316,6 +316,30 @@ def getRotatedSize(corners,angle):
 
     return computeRange(_corners)
 
+def readcols(infile,cols=[0,1,2,3]):
+
+    fin = open(infile,'r')
+    outarr = []
+    for l in fin.readlines():
+        l = l.strip()
+        if len(l) == 0 or len(l.split()) < len(cols) or (len(l) > 0 and l[0] == '#' or (l.find("INDEF") > -1)): continue
+
+        for i in range(10):
+            lnew = l.replace("  "," ")
+            if lnew == l: break
+            else: l = lnew
+            lspl = lnew.split(" ")
+
+        if len(outarr) == 0:
+            for c in range(len(cols)): outarr.append([])
+
+        for c,n in zip(cols,range(len(cols))):
+            outarr[n].append(float(lspl[c]))
+    fin.close()
+    for n in range(len(cols)):
+        outarr[n] = np.array(outarr[n],np.float64)
+    return outarr            
+
 def createFile(dataArray=None, outfile=None, header=None):
     """Create a simple fits file for the given data array and header"""
 

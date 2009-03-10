@@ -5,7 +5,7 @@ import numpy as np
 from pytools import fileutil
 import outputimage,wcs_functions,processInput,util
 try:
-    import arrdriz
+    import cdriz as arrdriz
 except ImportError:
     arrdriz = None
     

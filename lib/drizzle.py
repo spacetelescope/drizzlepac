@@ -7,7 +7,7 @@ import pyfits
 from pytools import fileutil
 import outputimage,wcs_functions,processInput,util
 try:
-    import arrdriz
+    import cdriz as arrdriz
 except ImportError:
     arrdriz = None
 
@@ -91,9 +91,9 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_funct
         # for single-drizzle step when called from the top-level. 
         if build is None:
             build = paramDict['build']
-        
+            
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, 
-                build=paramDict['build'],wcsmap=wcsmap)
+                build=build, wcsmap=wcsmap)
 
 # Run 'drizzle' here...
 #
@@ -218,6 +218,12 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Interpret input parameters for use in drizzling
     crbit = paramDict['crbit']
     bits = paramDict['bits']
+    
+    # Insure that the fillval parameter gets properly interpreted for use with tdriz
+    if paramDict['fillval'] in [None, '']:
+        fillval = 'INDEF'
+    else:
+        fillval = str(paramDict['fillval'])
     
     # Check for existance of output file.
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
@@ -398,13 +404,47 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 print 'Default mapping sciext: ',_sciext.data.shape
                 print 'Default mapping outsci: ',_outsci.shape
 
+                indx = chip.outputNames['data'].find('.fits')
+                coeffs_name = chip.outputNames['data'][:indx]+'_coeffs'+str(chip.detnum)+'.dat'
+                """
+                #
+                # Need to compute and write out coeffs files for each chip as well.
+                #
+                coeffs = coeff_converter.sip2idc(chip.wcs)
+                coeffs[0] /= chip.wcs.idcscale
+                coeffs[1] /= chip.wcs.idcscale
+                
+                wmap = wcsmap(chip.wcs,output_wcs)
+                
+                
+                abxt,cdyt = wcs_functions.wcsfit(chip.wcs,output_wcs)
+                abxt[2] -= xzero
+                cdyt[2] -= yzero
+
+                _delta_rot = fileutil.RADTODEG(np.arctan2(abxt[1],cdyt[0]))
+                # Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly
+                _scale = 1./np.sqrt(abxt[0]**2 + abxt[1]**2)
+                tddalpha = chip.header['tddalpha']
+                tddbeta = chip.header['tddbeta']
+
                 mapping = arrdriz.DefaultMapping(
                     _sciext.data.shape[1], _sciext.data.shape[0],
                     _outsci.shape[1], _outsci.shape[0],
-                    plist['xsh'], plist['ysh'], 'output', 'output',
-                    plist['rot'], plist['scale'], 0.0, 0.0, 1.0, 1.0,
-                    0.0, 'output', _pxg, _pyg, 'center', plist['coeffs'], _inwcs,
-                    plist['alpha'], plist['beta'])
+                    abxt[2], cdyt[2], 'output', 'output',
+                    _delta_rot, _scale, 0.0, 0.0, 1.0, 1.0,
+                    0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
+                    tddalpha, tddbeta)
+                """
+                
+                # This call does not impose any linear transformation on the 
+                # image and only serves as a test case for comparison with WDRIZZLE
+                mapping = arrdriz.DefaultMapping(
+                    _sciext.data.shape[1], _sciext.data.shape[0],
+                    _outsci.shape[1], _outsci.shape[0],
+                    0.0, 0.0, 'output', 'output',
+                    0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
+                    0.0, 'output', _pxg, _pyg, 'center', "wcs", _inwcs,
+                    0.0, 0.0)
 
                 print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
             else:
@@ -416,7 +456,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
                 1.0, 1.0, 1.0, 'center', paramDict['pixfrac'],
                 paramDict['kernel'], _in_units, _expin,_wtscl,
-                str(paramDict['fillval']), nmiss, nskip, 1, mapping)
+                fillval, nmiss, nskip, 1, mapping)
             
 
             # Set up information for generating output FITS image
@@ -463,7 +503,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                     _expscale = chip._exptime
                 else:
                     _expscale = img.outputValues['texptime']
-                print '[run_driz] expscale = ',_expscale
 
                 #If output units were set to 'counts', rescale the array in-place
                 if paramDict['units'] == 'counts':
@@ -495,4 +534,4 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # end of loop over each chip
 
 
-    print 'PyDrizzle drizzling completed at ',_ptime()
+    print 'MultiDrizzle drizzling completed at ',_ptime()

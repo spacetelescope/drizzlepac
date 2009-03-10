@@ -318,7 +318,7 @@ PyMapping_call(PyMapping* self, PyObject* args, PyObject* kwargs)
 static PyTypeObject MappingType = {
   PyObject_HEAD_INIT(NULL)
   0,                            /*ob_size*/
-  "arrdriz.DefaultMapping",     /*tp_name*/
+  "cdriz.DefaultMapping",     /*tp_name*/
   sizeof(PyMapping),            /*tp_basicsize*/
   0,                            /*tp_itemsize*/
   (destructor)PyMapping_dealloc, /*tp_dealloc*/
@@ -396,7 +396,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
                         &align_str, &pfract, &kernel_str, &inun_str,
                         &expin, &wtscl, &fillstr, &nmiss, &nskip, &vflag,
                         &callback_obj)) {
-    return PyErr_Format(gl_Error, "arrdriz.tdriz: Invalid Parameters.");
+    return PyErr_Format(gl_Error, "cdriz.tdriz: Invalid Parameters.");
   }
 
   /* Check for invalid scale */
@@ -591,7 +591,7 @@ twdriz(PyObject *obj, PyObject *args)
             &oimg,&owei,&oout,&owht, &ystart,&xmin,&ymin,&dny, &owcsin, &owcsout,
             &opxg, &opyg, &pfract, &kernel,&coeffs, &fillstr,
             &nmiss, &nskip, &vflag)){
-         return PyErr_Format(gl_Error, "arrdriz.twdriz: Invalid Parameters.");
+         return PyErr_Format(gl_Error, "cdriz.twdriz: Invalid Parameters.");
     }
 
     img = (PyArrayObject *)NA_InputArray(oimg, tFloat32, C_ARRAY);
@@ -671,7 +671,7 @@ tblot(PyObject *obj, PyObject *args)
                         &xmax, &ymin, &ymax, &scale, &kscale, &xscale,
                         &yscale, &align_str, &interp_str, &ef, &misval,
                         &sinscl, &vflag, &callback_obj)){
-    return PyErr_Format(gl_Error, "arrdriz.tblot: Invalid Parameters.");
+    return PyErr_Format(gl_Error, "cdriz.tblot: Invalid Parameters.");
   }
 
   /* Check for invalid scale */
@@ -754,7 +754,7 @@ tblot(PyObject *obj, PyObject *args)
   }
 }
 
-static PyMethodDef arrdriz_methods[] =
+static PyMethodDef cdriz_methods[] =
   {
     {"tdriz",  tdriz, METH_VARARGS, "tdriz(image, weight, output, outweight, context, uniqid, ystart, xmin, ymin, dny, scale, xscale, yscale, align, pfrace, kernel, inun, expin, wtscl, fill, nmiss, nskip, vflag, callback)"},
     /*{"twdriz",  tdriz, METH_VARARGS, "triz(image, weight, output, outweight, ystart, xmin, ymin, dny, wcsin, wcsout,pxg,pyg,pfract, kernel, coeffs, fillstr,nmiss,nskip,vflag)"},*/
@@ -762,14 +762,14 @@ static PyMethodDef arrdriz_methods[] =
     {0, 0, 0, 0}                             /* sentinel */
   };
 
-void initarrdriz(void)
+void initcdriz(void)
 {
   PyObject* m;
 
   if (PyType_Ready(&MappingType) < 0)
     return;
 
-  m = Py_InitModule("arrdriz", arrdriz_methods);
+  m = Py_InitModule("cdriz", cdriz_methods);
   if (m == NULL)
     return;
 

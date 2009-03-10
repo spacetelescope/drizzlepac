@@ -847,7 +847,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 
           vc = *output_counts_ptr(p, ii, jj);
           dow = (float)(dover * w);
-
+          
           /* If we are create or modifying the context image,
              we do so here. */
           if (update_context(p, ii, jj, dow, oldcon, newcon, error)) {
