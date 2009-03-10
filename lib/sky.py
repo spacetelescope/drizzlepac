@@ -89,7 +89,7 @@ def subtractSky(imageObjList,configObj):
         return
 
     for image in imageObjList:
-        print "Working on sky for: ",image
+        print "Working on sky for: ",image._filename
         _skySub(configObj,image,configObj["clean"])
     
 

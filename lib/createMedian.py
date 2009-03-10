@@ -10,6 +10,7 @@ import util
 from pytools import iterfile
 from pytools import nimageiter 
 from pytools import numcombine
+from minmed import minmed
 
 __version__ = '1.1'
 
@@ -155,9 +156,8 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
         #
 
     # create an array for the median output image, use the size of the first image in the list
-    print "entering line 146"
     medianImageArray = np.zeros(singleDrizList[0].shape,dtype=singleDrizList[0].type())
-
+    
     # create the master list to be used by the image iterator
     masterList = []
     masterList.extend(singleDrizList)
@@ -191,6 +191,8 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
 #        _niter = int(_imgrows/_nrows)
 #        _niter = 1 + int( (_imgrows - _overlaprows)/_nrows)
     _niter = nimageiter.computeNumberBuff(_imgrows,_nrows,_overlap)
+    #computeNumberBuff actually returns (niter,buffrows)
+    _niter=_niter[0]
     _lastrows = _imgrows - (_niter*_nrows) 
 
     # check to see if this buffer size will leave enough rows for
@@ -203,7 +205,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     masterList[0].close()
     del _imgarr
 
-    for imageSectionsList,prange in imageiter.FileIter(masterList,overlap=_overlap,bufsize=_bufsize):
+    for imageSectionsList,prange in nimageiter.FileIter(masterList,overlap=_overlap,bufsize=_bufsize):
 
         if newmasks:
             """ Build new masks from single drizzled images. """
@@ -273,36 +275,36 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             medianImageArray[prange[0]:prange[1],:] = result.combArrObj
 
 
-        del result
+    del result
+    del _weight_mask_list
+    _weight_mask_list = None
 
+    # Write out the combined image
+    # use the header from the first single drizzled image in the list
+    #header=pyfits.getheader(imageObjectList[0].outputNames["outSingle"])
+    _writeImage(medianImageArray, inputHeader=None, outputFilename=medianfile)
 
-        del _weight_mask_list
+    # Always close any files opened to produce median image; namely,
+    # single drizzle images and singly-drizzled weight images
+    #
+
+    for img in singleDrizList:
+        img.close()
+    singeDrizList = []
+
+    # Close all singly drizzled weight images used to create median image.
+    for img in singleWeightList:
+        img.close()
+    singleWeightList = []
+
+    # If new median masks was turned on, close those files
+    if _weight_mask_list:
+        for arr in _weight_mask_list:
+            del arr
         _weight_mask_list = None
 
-        # Write out the combined image
-        _writeImage(medianImageArray, singleDrizList[0].header, medianfile)
-
-        # Always close any files opened to produce median image; namely,
-        # single drizzle images and singly-drizzled weight images
-        #
-
-        for img in singleDrizList:
-            img.close()
-        singeDrizList = []
-
-        # Close all singly drizzled weight images used to create median image.
-        for img in singleWeightList:
-            img.close()
-        singleWeightList = []
-
-        # If new median masks was turned on, close those files
-        if _weight_mask_list:
-            for arr in _weight_mask_list:
-                del arr
-            _weight_mask_list = None
-
-        del masterList
-        del medianImageArray
+    del masterList
+    del medianImageArray
 
 
 def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
@@ -319,12 +321,18 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
     #_file = pyfits.open(_fname, mode='readonly')
     #_prihdu = pyfits.PrimaryHDU(header=_file[0].header,data=dataArray)
 
-    _prihdu = inputHeader
-    _prihdu.data=dataArray
+    if (inputHeader == None):
+        #use a general primary HDU
+        _prihdu=pyfits.PrimaryHDU(data=dataArray)
+           
+    else:
+        _prihdu = inputHeader
+        _prihdu.data=dataArray
 
     _pf = pyfits.HDUList()
     _pf.append(_prihdu)
     try:
+        print "Saving output median image to: ",outputFilename
         _pf.writeto(outputFilename)
     except IOError:
         print "Problem writing file:",outputFilename

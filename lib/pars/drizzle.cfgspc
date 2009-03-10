@@ -1,5 +1,5 @@
 _task_name_ = string_kw(default="drizzle")
-input = string_kw(default="")  #, trigger='_rule1_') 
+input = string_kw(default="")  #, trigger='_rule1_', comment='Input files (name, suffix, or @list)') 
 output = string_kw(default='final_drz.fits') 
 mdriztab = boolean_kw(default=True) 
 refimage = string_kw(default="") 

@@ -99,7 +99,6 @@ class baseImageObject:
             
     def getData(self,exten=None):
         """return just the data array from the specified extension 
-            this method should be 
         
             fileutil is used instead of pyfits to account for
             non FITS input images. openImage returns a pyfits object

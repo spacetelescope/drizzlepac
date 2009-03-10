@@ -315,3 +315,43 @@ def getRotatedSize(corners,angle):
         _corners = np.dot(corners,_rotm)
 
     return computeRange(_corners)
+
+def createFile(dataArray=None, outfile=None, header=None):
+    """Create a simple fits file for the given data array and header"""
+
+    try:    
+        assert(outfile != None), "Please supply an output filename for createFile"
+        assert(dataArray != None), "Please supply a data array for createFiles"
+    except AssertionError:
+        raise AssertionError
+        
+    try:
+        # Create the output file
+        fitsobj = pyfits.HDUList()
+        if (header != None):
+            del(header['NAXIS1'])
+            del(header['NAXIS2'])
+            if header.has_key('XTENSION'):
+                del(header['XTENSION'])
+            if header.has_key('EXTNAME'):
+                del(header['EXTNAME'])
+            if header.has_key('EXTVER'):
+                del(header['EXTVER'])
+
+            if header.has_key('NEXTEND'):
+                header['NEXTEND'] = 0
+
+            hdu = pyfits.PrimaryHDU(data=dataArray,header=header)
+            del hdu.header['PCOUNT']
+            del hdu.header['GCOUNT']
+
+        else:
+            hdu = pyfits.PrimaryHDU(data=dataArray)
+
+        fitsobj.append(hdu)
+        fitsobj.writeto(outfile)
+
+    finally:
+        # CLOSE THE IMAGE FILES
+        fitsobj.close()
+        del fitsobj
