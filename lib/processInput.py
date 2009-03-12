@@ -77,7 +77,7 @@ def setCommonInput(configObj,createOutwcs=True):
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
         # Update configObj with values from mpars
         configObj.update(mdriztab_dict)
-
+        
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.
     instrpars = configObj['INSTRUMENT PARAMETERS']
@@ -88,7 +88,10 @@ def setCommonInput(configObj,createOutwcs=True):
     # Add info about input IVM files at this point to the imageObjectList
     addIVMInputs(imageObjectList,ivmlist)
 
-    
+    if configObj['shiftfile'] not in [None,""]:
+        # Update all input images with shifts from shiftfile
+        wcs_functions.createHeaderlets(configObj['shiftfile'],verbose=(not configObj['quiet']))
+        
     if(createOutwcs):
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)

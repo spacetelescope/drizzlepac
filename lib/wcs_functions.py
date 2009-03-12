@@ -1,10 +1,11 @@
+import os,copy
 import numpy as np
 from numpy import linalg
 
 from updatewcs import wcsutil
 from updatewcs.distortion import utils
 
-from pytools import fileutil
+from pytools import fileutil,asnutil
 import util
 import imageObject
 import updatewcs
@@ -18,6 +19,10 @@ DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,
                      'crval1':None,'crval2':None}
 
 
+shift_kwlist = ['WSHIFT1','WSHIFT2','WROT','WSCALE']
+shift_kwcomments = ['Shift in axis1 from shiftfile','Shift in axis2 from shiftfile','Rotation from shiftfile','scale change from shiftfile']
+
+WCSEXTN_NAME = 'WCSCORR'
 # Default mapping function based on PyWCS 
 class WCSMap:
     def __init__(self,input,output):
@@ -26,8 +31,10 @@ class WCSMap:
         self.checkWCS(output,'Output')
 
         self.input = input
+        self.input_unshifted = copy.copy(self.input)
         self.output = output
         
+        self.shift = None
 
     def checkWCS(self,obj,name):
         try:
@@ -35,21 +42,46 @@ class WCSMap:
         except AssertionError:
             print name +' object needs to be an instance or subclass of a PyWCS object.'
             raise
+
+    def applyShift(self,imageObject):
+        """ This method pre-computes the correction which needs to be 
+            applied to this entire image based on the information 
+            stored in any existing WCSCORR extension in the input image.
+            
+            This method ALWAYS gets called by 'run_driz()' to insure that
+            any shifts included in the image are applied.
+        """
+        shift,rot,scale = applyHeaderlet(imageObject,self.input,self.output,extname=WCSEXTN_NAME)
+        if shift is not None:
+            self.shift = shift
+            # apply rotation and scale from shiftfile to input WCS
+            self.input.rotateCD(rot)
+            self.input.wcs.cd *= scale
+            self.input.setOrient()
+            self.input.setPscale()
+
     def forward(self,pixx,pixy,origin=1):
+        """ Transform the input pixx,pixy positions in the input frame
+            to pixel positions in the output frame.
+            
+            This method gets passed to the drizzle algorithm.
+        """
         # This matches WTRAXY results to better than 1e-4 pixels.
         skyx,skyy = self.input.all_pix2sky(pixx,pixy,origin)
-        return self.output.wcs_sky2pix(skyx,skyy,origin) 
-
+        result= self.output.wcs_sky2pix(skyx,skyy,origin) 
+        if self.shift is not None:
+            result[0] -= self.shift[0]
+            result[1] -= self.shift[1]
+        return result
+    
     def xy2rd(self,wcs,pixx,pixy):
+        """ Transform input pixel positions into sky positions in the WCS provided.
+        """
         return wcs.wcs_pix2sky(pixx,pixy,1)
     def rd2xy(self,wcs,ra,dec):
+        """ Transform input sky positions into pixel positions in the WCS provided.
+        """
         return wcs.wcs_sky2pix(ra,dec,1)
-    
-    def backward(self,pixx,pixy):
-        # Not needed for drizzle or blot.
-        skyx,skyy = self.output.all_pix2sky(pixx,pixy,1)
-        return self.input.wcs_sky2pix(skyx,skyy,1)
-    
                     
 def get_hstwcs(filename,hdulist,extnum):
     ''' Return the HSTWCS object for a given chip.
@@ -62,10 +94,141 @@ def get_hstwcs(filename,hdulist,extnum):
     
     return hdrwcs
 
+def get_shiftwcs(hdulist,extname=WCSEXTN_NAME):
+    """ Return the pywcs.WCS object for the WCSCORR extension which 
+        contains the shift information.
+    """
+    # If given the name of an image instead of a PyFITS object, 
+    # open the image and get the PyFITS object now.
+    if isinstance(hdulist, str):
+        hdulist = fileutil.openImage(hdulist)
+    extnum = fileutil.findExtname(hdulist,extname)
+    if extnum is None:
+        # Try to interpret the input file as a reference WCS from a shiftfile
+        extnum = fileutil.findExtname(hdulist,'WCS')
+    # If there really is no WCS extension in the input, return None
+    if extnum is None:
+        return None
+
+    extn = hdulist[extnum]
+        
+    hdrwcs = pywcs.WCS(header=extn.header)
+    hdrwcs.orientat = extn.header['orientat']
+    hdrwcs.pscale = np.sqrt(hdrwcs.wcs.cd[1,0]**2 + hdrwcs.wcs.cd[1,1]**2)*3600.0
+    
+    # add shift information as attributes to this WCS object
+    for kw in shift_kwlist:
+        hdrwcs.__dict__[kw.lower()] = extn.header[kw]
+    hdrwcs.naxis1 = extn.header['npix1']
+    hdrwcs.naxis2 = extn.header['npix2']
+    
+        
+    return hdrwcs
+
+
+#### Functions for applying shiftfiles
+def createHeaderlets(shiftfile,clobber=True,update=True,verbose=False):
+    """ Write out separate headerlets for each image in shiftfile.
+        If 'update' is True, then also update the input images with the 
+        headerlets as well.
+    """
+    # Start by reading in the shiftfile
+    sdict = asnutil.ShiftFile(shiftfile)
+    # Open reference WCS 
+    refimg = fileutil.openImage(sdict['refimage'])
+    refwcs = refimg['wcs']
+
+    # set up shift keywords where this list corresponds one-to-one with
+    # the shift values for each image in the ShiftFile object
+    kwlist = shift_kwlist
+    kwcomments = shift_kwcomments
+    # for each image in the shiftfile,
+    for img in sdict['order']:
+        
+        for kw,n in zip(kwlist,range(len(kwlist))):
+            # Add headerlet-specific keywords to ref WCS extension
+            # to record shifts, rotation and scale for 
+            refwcs.header.update(kw,sdict[img][n],kwcomments[n],after='ORIENTAT')
+        
+        # Create name of output headerlet
+        hdrname = img[:-5]+'_hdrlet.fits'
+        if verbose:
+            print 'Writing out headerlet: ',hdrname
+        if clobber and os.path.exists(hdrname):
+            # Remove file if it was already written out earlier so it can be replaced
+            fileutil.removeFile(hdrname)
+        refimg.writeto(hdrname)
+        if update:
+            addWCSExtn(refimg[1],img,verbose=verbose)
+            
+def removeWCSExtn(filename,extname=WCSEXTN_NAME,verbose=True):
+    """ Remove all WCS extensions from file."""
+    fimg = fileutil.openImage(filename,mode='update')
+    if verbose:
+        print 'Removing WCS shift extension from: ',img
+
+    wcsextn = fileutil.findExtname(fimg,extname)
+    while wcsextn is not None:
+        del fimg[wcsextn]
+        wcsextn = fileutil.findExtname(fimg,extname)
+    fimg.close()
+    
+def addWCSExtn(wcsextn,filename, extname=WCSEXTN_NAME,verbose=True):
+    """ Add WCS extension to the file, removing all previous WCS
+        extensions in the process, to insure that there is only 
+        1 WCS extension in the file at any one time.
+    """
+    # write out headerlets as new extensions to the input images
+    if verbose:
+        print 'Updating ',img,' with shift extension.'
+    wcsextn.header.update("EXTNAME",extname)
+    fimg = fileutil.openImage(filename,mode='update')
+    # Remove any or all pre-existing WCSCORR extensions
+    oldextn = fileutil.findExtname(fimg,extname)
+    while oldextn is not None:
+        del fimg[oldextn]
+        oldextn = fileutil.findExtname(fimg,extname)
+
+    fimg.append(wcsextn)
+    fimg.close()
+    
+def applyHeaderlet(imageObject,chipwcs,outwcs,extname=WCSEXTN_NAME):
+    """ Apply shift information found in headerlet extension to 
+        chip in [SCI,extver]. 
+    """
+    hdulist = imageObject._image
+    refwcs = get_shiftwcs(hdulist,extname=extname)
+    if refwcs is None:
+        return None,None,None
+
+    chipname = chipwcs.filename+'["'+chipwcs.extname[0]+'",'+str(chipwcs.extname[1])+']'
+
+    print 'Applying shift information from WCS extension to: ',chipname
+    ref_center = [int(refwcs.naxis1/2) + 1, int(refwcs.naxis2/2) + 1]
+    ratio = refwcs.pscale / outwcs.pscale
+            
+    # Now, in the ref WCS frame, find the offset of this chip from the ref WCS center
+    chip_sky = chipwcs.wcs.crval
+    ref_chip_center = refwcs.wcs_sky2pix([chip_sky[0]],[chip_sky[1]],1)
+    chip_offset = np.array([ref_chip_center[0][0]-ref_center[0], 
+                            ref_chip_center[1][0]-ref_center[1]]) * refwcs.wscale
+
+    # apply shift to this offset 
+    drot = fileutil.buildRotMatrix(-refwcs.wrot)
+    chip_delta = np.dot(chip_offset,drot) + [refwcs.wshift1,refwcs.wshift2] - chip_offset
+    
+    # Transform this offset from refwcs frame back to output wcs frame     
+    delta_orient = outwcs.orientat - refwcs.orientat
+    frot = fileutil.buildRotMatrix(-delta_orient)
+    shift_center = np.dot(chip_delta,frot)*ratio
+    
+    return shift_center,-refwcs.wrot,refwcs.wscale
+    
+    
 #
 # Possibly need to generate a stand-alone interface for this function.
 #
-# Primary interface for creating the output WCS from a list of HSTWCS objects
+#### Primary interface for creating the output WCS from a list of HSTWCS objects
 def make_outputwcs(imageObjectList,output,configObj=None):
     """ Computes the full output WCS based on the set of input imageObjects
         provided as input, along with the pre-determined output name from
@@ -132,7 +295,7 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     
     return outwcs
 
-
+#### Utility functions for working with WCSObjects
 def createWCSObject(output,default_wcs,final_wcs,imageObjectList):
     """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
     outwcs = imageObject.WCSObject(output)
@@ -384,3 +547,4 @@ def fitlin(imgarr,refarr):
     _yt = _yoorg - _d*_xorg-_c*_yorg
 
     return [_a,_b,_xt],[_c,_d,_yt]
+

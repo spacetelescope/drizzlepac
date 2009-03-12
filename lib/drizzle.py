@@ -450,6 +450,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             else:
                 # Use user provided mapping function
                 wmap = wcsmap(chip.wcs,output_wcs)
+                wmap.applyShift(img)
                 mapping = wmap.forward
             
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
