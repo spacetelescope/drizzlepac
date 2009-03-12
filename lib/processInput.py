@@ -83,7 +83,8 @@ def setCommonInput(configObj,createOutwcs=True):
     instrpars = configObj['INSTRUMENT PARAMETERS']
     # pass in 'proc_unit' to initialize unit conversions as necessary
     instrpars['proc_unit'] = configObj['proc_unit']
-    imageObjectList = createImageObjectList(files,instrpars)
+
+    imageObjectList = createImageObjectList(files,instrpars,group=configObj['group'])
 
     # Add info about input IVM files at this point to the imageObjectList
     addIVMInputs(imageObjectList,ivmlist)
@@ -113,19 +114,19 @@ def checkMultipleFiles(configObj):
     a,i,o = process_input(configObj['input'],updatewcs=False)
     return len(a['members']) > 1
 
-def createImageObjectList(files,instrpars):
+def createImageObjectList(files,instrpars,group=None):
     """ Returns a list of imageObject instances, 1 for each input image in the
         list of input filenames.
     """
     imageObjList = []
     for img in files:
-        image = _getInputImage(img)
+        image = _getInputImage(img,group=group)
         image.setInstrumentParameters(instrpars)
         imageObjList.append(image)
 
     return imageObjList
 
-def _getInputImage (input):
+def _getInputImage (input,group=None):
     """ Factory function to return appropriate imageObject class instance"""
     # extract primary header from input image
     phdu = pyfits.getheader(input)
@@ -148,9 +149,9 @@ def _getInputImage (input):
     try:
         if _instrument == 'ACS':
             import acsData
-            if _detector == 'HRC': return acsData.HRCInputImage(input)
-            if _detector == 'WFC': return acsData.WFCInputImage(input)
-            if _detector == 'SBC': return acsData.SBCInputImage(input)
+            if _detector == 'HRC': return acsData.HRCInputImage(input,group=group)
+            if _detector == 'WFC': return acsData.WFCInputImage(input,group=group)
+            if _detector == 'SBC': return acsData.SBCInputImage(input,group=group)
         if _instrument == 'NICMOS':
             import nicmosData
             if _detector == 1: return nicmosData.NIC1InputImage(input)

@@ -251,7 +251,7 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     else:
         # Otherwise, simply use the reference image specified by the user
         default_wcs = wcsutil.HSTWCS(configObj['refimage'])
-
+    
     # Turn WCS instances into WCSObject instances
     outwcs = createWCSObject(output,default_wcs,default_wcs,imageObjectList)
     

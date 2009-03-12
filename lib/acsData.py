@@ -13,14 +13,15 @@ class ACSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self,filename=None):
-        imageObject.__init__(self,filename)
+    def __init__(self,filename=None,group=None):
+        imageObject.__init__(self,filename,group=group)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
     
         for chip in range(1,self._numchips+1,1):
-            self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
+            if self._image[self.scienceExt,chip].group_member:
+                self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -173,8 +174,8 @@ class ACSInputImage(imageObject):
 
 class WFCInputImage(ACSInputImage):
 
-    def __init__(self,filename=None):
-        ACSInputImage.__init__(self,filename)
+    def __init__(self,filename=None,group=None):
+        ACSInputImage.__init__(self,filename,group=group)
         self._detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (4096,2048)
 
@@ -190,8 +191,8 @@ class WFCInputImage(ACSInputImage):
             
 class HRCInputImage (ACSInputImage):
 
-    def __init__(self, filename=None):
-        ACSInputImage.__init__(self, input, filename)
+    def __init__(self, filename=None,group=None):
+        ACSInputImage.__init__(self, filename,group=group)
         self.detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (1024,1024)
 
@@ -206,8 +207,8 @@ class HRCInputImage (ACSInputImage):
 
 class SBCInputImage (ACSInputImage):
 
-    def __init__(self, filename=None):
-        ACSInputImage.__init__(self,filename)
+    def __init__(self, filename=None,group=None):
+        ACSInputImage.__init__(self,filename,group=group)
         self.full_shape = (1024,1024)
         self._detector=self._image['PRIMARY'].header["DETECTOR"]
 

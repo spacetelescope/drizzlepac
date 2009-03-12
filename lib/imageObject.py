@@ -181,7 +181,7 @@ class baseImageObject:
         extensions = self._findExtnames(extname=extname,exclude=exclude)
                    
         for i in range(1,self._nextend+1,1):
-            if (self._image[i].extname in extensions):
+            if (self._image[i].extname in extensions) and self._image[i].group_member:
                 self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
 
     def returnAllChips(self,extname=None,exclude=None):
@@ -191,7 +191,7 @@ class baseImageObject:
         extensions = self._findExtnames(extname=extname,exclude=exclude)
         chiplist = []
         for i in range(1,self._nextend+1,1):
-            if (self._image[i].extname in extensions):
+            if (self._image[i].extname in extensions) and self._image[i].group_member:
                 chiplist.append(self._image[i])
         return chiplist
         
@@ -373,12 +373,13 @@ class baseImageObject:
     
     def getKeywordList(self,kw):
         """return lists of all attribute values 
-           for all chips in the imageObject
+           for all active chips in the imageObject
         """
         kwlist = []
         for chip in range(1,self._numchips+1,1):
             sci_chip = self._image[self.scienceExt,chip]
-            kwlist.append(sci_chip.__dict__[kw])
+            if sci_chip.group_member:
+                kwlist.append(sci_chip.__dict__[kw])
             
         return kwlist
 
@@ -422,34 +423,6 @@ class baseImageObject:
                           
         return count
     
-    def _averageFromHeader(self, header, keyword):
-        """ Averages out values taken from header. The keywords from which
-            to read values are passed as a comma-separated list.
-        """
-        _list = ''
-        for _kw in keyword.split(','):
-            if header.has_key(_kw):
-                _list = _list + ',' + str(header[_kw])
-            else:
-                return None
-        return self._averageFromList(_list)
-
-    def _averageFromList(self, param):
-        """ Averages out values passed as a comma-separated
-            list, disregarding the zero-valued entries.
-        """
-        _result = 0.0
-        _count = 0
-
-        for _param in param.split(','):
-            if _param != '' and float(_param) != 0.0:
-                _result = _result + float(_param)
-                _count  += 1
-
-        if _count >= 1:
-            _result = _result / _count
-        return _result
-
     def getNumpyType(self,irafType):
         """return the corresponding numpy data type"""
         
@@ -563,7 +536,7 @@ class imageObject(baseImageObject):
     
     """
     
-    def __init__(self,filename):
+    def __init__(self,filename,group=None):
         baseImageObject.__init__(self,filename)
         
         #filutil open returns a pyfits object
@@ -573,7 +546,6 @@ class imageObject(baseImageObject):
         except IOError:
             print "\nUnable to open file:",filename
             raise IOError
-            
 
         #populate the global attributes which are good for all the chips in the file
         self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
@@ -584,7 +556,7 @@ class imageObject(baseImageObject):
          
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
-        
+
         self.proc_unit = None
 
         if (self._numchips == 0):
@@ -592,14 +564,37 @@ class imageObject(baseImageObject):
             self._nextend=0
         else:
             self._isSimpleFits = False
-
+        
+        if group not in [None,'']:
+            # Only use selected chip(s?)
+            group_id = fileutil.parseExtn(str(group))
+            if group_id[0] == '':
+                # find extname/extver which corresponds to this extension number
+                group_extname = self._image[group_id[1]].header['EXTNAME']
+                group_extver = self._image[group_id[1]].header['EXTVER']
+                self.group = [group_extname,group_extver]
+            else:
+                self.group = group_id
+        else:
+            # Use all chips
+            self.group = None
+        
         if not self._isSimpleFits:
             self._nextend=self._image["PRIMARY"].header["NEXTEND"]
 
             #assign chip specific information
             for chip in range(1,self._numchips+1,1):
+                
                 self._assignRootname(chip)
                 sci_chip = self._image[self.scienceExt,chip]
+
+                # Set a flag to indicate whether this chip should be included
+                # or not, based on user input from the 'group' parameter.
+                if self.group is None or (self.group is not None and self.group[1] == chip):
+                    sci_chip.group_member = True
+                else:
+                    sci_chip.group_member = False
+
                 sci_chip.signature = None
                 
                 sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               

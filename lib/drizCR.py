@@ -106,10 +106,11 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
         print "Problem with value of chip or sciImage to drizCR"
         raise AssertionError
  
-    for chip in range(1,sciImage._numchips,1):  
-        exten=scieImage.scienceExt + ',' +str(chip)    
-        scienceChip=sciImage[exten]
-
+    #for chip in range(1,sciImage._numchips+1,1):  
+    for scienceChip in sciImage.returnAllChips(extname=sciImage.scienceExt):  
+        #exten=sciImage.scienceExt + ',' +str(chip)    
+        #scienceChip=sciImage[exten]
+        
         blotImageName=scienceChip.outputNames["blotImage"]
         blotDerivName=scienceChip.outputNames["blotDeriv"]
         crCorImage=scienceChip.outputNames["crcorImage"]
