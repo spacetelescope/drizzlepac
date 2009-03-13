@@ -15,6 +15,7 @@
 import util
 from imageObject import imageObject
 from pytools import cfgpars
+import processInput
 import imagestats
 import numpy as np
 
@@ -66,6 +67,7 @@ def sky(imageList=None,configObj=None, editpars=False, **inputDict):
     where all the science data extensions have been sky subtracted
     
     """
+    
     inputDict["input"]=imageList        
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
