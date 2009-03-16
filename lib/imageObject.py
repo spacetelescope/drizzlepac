@@ -15,6 +15,7 @@ import numpy as np
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
 DQ_EXTNS = {'WFPC2':{'c0h':'sdq','c0f':'sci'}}
+IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
 
 __version__ = '0.1dev1'
 
@@ -122,6 +123,35 @@ class baseImageObject:
         del _image
         return _header
 
+    def _interpretExten(self,exten):
+        #check if the exten is a string or number and translate to the correct chip
+        _extnum=0
+        
+        if ',' in str(exten): #assume a string like "sci,1" has been given
+            _extensplit=exten.split(',')
+            _extname=_extensplit[0]
+            _extver=int(_extensplit[1])
+            _extnum=self.findExtNum(_extname,_extver)
+        else:
+            #assume that a direct extnum has been given    
+            _extnum=int(exten)
+            
+        if(_extnum == None):
+            print "no extension number found"
+            return ValueError
+
+        return _extnum
+    
+    def updateData(self,exten,data):
+        """ Write out updated data and header 
+            to the original input file for this object.
+        """
+        _extnum=self._interpretExten(exten)
+        fimg = fileutil.openImage(self._filename,mode='update')
+        fimg[_extnum].data = data
+        fimg[_extnum].header = self._image[_extnum].header
+        fimg.close()
+
     def putData(self,data=None,exten=None):
         """Now that we are removing the data from the object to save memory,
             we need something that cleanly puts the data array back into
@@ -138,28 +168,11 @@ class baseImageObject:
         """
         if (data == None):
             print "No data supplied"
-        else:   
-        
-            #check if the exten is a string or number and translate to the correct chip
-            _extnum=0
-            
-            if ',' in str(exten): #assume a string like "sci,1" has been given
-                _extensplit=exten.split(',')
-                _extname=_extensplit[0]
-                _extver=int(_extensplit[1])
-                _extnum=self.findExtNum(_extname,_extver)
-            else:
-                #assume that a direct extnum has been given    
-                _extnum=int(exten)
-                
-            if(_extnum == None):
-                print "no extension number found"
-                return ValueError
-                
-            iraf={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
-                    
+        else:           
+            _extnum=_interpretExten(exten)
+                                    
             #update the bitpix to the current datatype, this aint fancy and ignores bscale
-            self._image[_extnum].header["BITPIX"]=iraf[data.dtype.name]
+            self._image[_extnum].header["BITPIX"]=IRAF_DTYPES[data.dtype.name]
             self._image[_extnum].data=data
 
     def getAllData(self,extname=None,exclude=None):
@@ -181,7 +194,8 @@ class baseImageObject:
         extensions = self._findExtnames(extname=extname,exclude=exclude)
                    
         for i in range(1,self._nextend+1,1):
-            if (self._image[i].extname in extensions) and self._image[i].group_member:
+            extver = self._image[i].header['extver']
+            if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
                 self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
 
     def returnAllChips(self,extname=None,exclude=None):
@@ -191,7 +205,8 @@ class baseImageObject:
         extensions = self._findExtnames(extname=extname,exclude=exclude)
         chiplist = []
         for i in range(1,self._nextend+1,1):
-            if (self._image[i].extname in extensions) and self._image[i].group_member:
+            extver = self._image[i].header['extver']
+            if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
                 chiplist.append(self._image[i])
         return chiplist
         
@@ -383,6 +398,9 @@ class baseImageObject:
             
         return kwlist
 
+    def getGain(self,exten):
+        return self._image[exten]._gain
+    
 #the following two functions are basically doing the same thing,
 #how are they used differently in the code?                
     def getExtensions(self,extname='SCI',section=None):
@@ -610,11 +628,40 @@ class imageObject(baseImageObject):
 
                 # record the exptime values for this chip so that it can be
                 # easily used to generate the composite value for the final output image
-                sci_chip._exptime,sci_chip._expstart,sci_chip._expend = util.get_exptime(sci_chip.header,self._image['PRIMARY'].header)
+                sci_chip._expstart,sci_chip._expend = util.get_expstart(sci_chip.header,self._image['PRIMARY'].header)
                             
                 sci_chip.outputNames=self._setChipOutputNames(sci_chip.rootname,chip).copy() #this is a dictionary
                 # Set the units: both bunit and in_units
                 self.set_units(chip)
+                
+                #initialize gain, readnoise, and exptime attributes
+                # the actual values will be set by each instrument based on 
+                # keyword names specific to that instrument by 'setInstrumentParamters()'
+                sci_chip._headergain = 1 # gain value read from header
+                sci_chip._gain = 1.0     # calibrated gain value
+                sci_chip._rdnoise = 1.0  # calibrated readnoise
+                sci_chip._exptime = 1.0
+                
+                # Keep track of the computed sky value for this chip
+                sci_chip.computedSky = 0.0
+                # Keep track of the sky value that was subtracted from this chip
+                sci_chip.subtractedSky = 0.0
+                
+                # The following attributes are used when working with sub-arrays
+                # and get reference file arrays for auto-generation of IVM masks
+                try:
+                    sci_chip.ltv1 = sci_chip.header['LTV1'] * -1
+                    sci_chip.ltv2 = sci_chip.header['LTV2'] * -1
+                except KeyError:
+                    sci_chip.ltv1 = 0
+                    sci_chip.ltv2 = 0
+                sci_chip.size1 = sci_chip.header['NAXIS1'] + sci_chip.ltv1
+                sci_chip.size2 = sci_chip.header['NAXIS2'] + sci_chip.ltv2
+                # Interpret the array dtype by translating the IRAF BITPIX value 
+                for dtype in IRAF_DTYPES.keys():
+                    if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:
+                        sci_chip.image_dtype = dtype
+                        break
 
     def setInstrumentParameters(self,instrpars):
         """ Define instrument-specific parameters for use in the code. 

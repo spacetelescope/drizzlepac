@@ -22,9 +22,8 @@ class ACSInputImage(imageObject):
         for chip in range(1,self._numchips+1,1):
             if self._image[self.scienceExt,chip].group_member:
                 self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
-                #self.setInstrumentParameters({})
                 
-    def _assignSignature(self, chip):
+    def _assignSignature(self, extver):
         """assign a unique signature for the image based 
            on the  instrument, detector, chip, and size
            this will be used to uniquely identify the appropriate
@@ -33,24 +32,26 @@ class ACSInputImage(imageObject):
            this also records the filename for the static mask to the outputNames dictionary
            
         """
-        ny=self._image[self.scienceExt,chip]._naxis1
-        nx=self._image[self.scienceExt,chip]._naxis2
-        detnum = self._image[self.scienceExt,chip].detnum
+        ny=self._image[self.scienceExt,extver]._naxis1
+        nx=self._image[self.scienceExt,extver]._naxis2
+        detnum = self._image[self.scienceExt,extver].detnum
         instr=self._instrument
         
         sig=(instr+self._detector,(nx,ny),detnum) #signature is a tuple
-        self._image[self.scienceExt,chip].signature=sig #signature is a tuple
+        self._image[self.scienceExt,extver].signature=sig #signature is a tuple
         filename=constructFilename(sig)
-        self._image[self.scienceExt,chip].outputNames["staticMask"]=filename #this is the name of the static mask file
+        self._image[self.scienceExt,extver].outputNames["staticMask"]=filename #this is the name of the static mask file
 
         
     def doUnitConversions(self):
         # Effective gain to be used in the driz_cr step.  Since the
         # ACS images have already been converted to electrons,
         # the effective gain is 1.
-        self._effGain = 1
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+            chip._effGain = 1
         
     def _isSubArray(self):
+        # Never used??
         _subarray = False
         _ltv1 = float(fileutil.getKeyword(parlist['data'],'LTV1'))
         _ltv2 = float(fileutil.getKeyword(parlist['data'],'LTV2'))
@@ -78,20 +79,19 @@ class ACSInputImage(imageObject):
             instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
-#        if instrpars['crbit'] == None:
-#            instrpars['crbit'] = self.cr_bits_value
-         
-        self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                 instrpars['gnkeyword'])
-        self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                 instrpars['rnkeyword'])
-        self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                 instrpars['expkeyword'])
-#        self._crbit     = instrpars['crbit']
 
-        if self._gain == None or self._rdnoise == None or self._exptime == None:
-            print 'ERROR: invalid instrument task parameter'
-            raise ValueError
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+            chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+                                                     instrpars['gnkeyword'])
+            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                     instrpars['rnkeyword'])
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            chip._effGain = 1
+
+            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
 
         # Convert the science data to electrons if specified by the user.  Each
         # instrument class will need to define its own version of doUnitConversions
@@ -138,7 +138,7 @@ class ACSInputImage(imageObject):
         return flat
 
 
-    def getdarkcurrent(self,chip):
+    def getdarkcurrent(self,extver):
         """
         
         Purpose
@@ -154,7 +154,7 @@ class ACSInputImage(imageObject):
               
         darkcurrent=0.        
         try:
-            darkcurrent = self._image[self.scienceExt,chip].header['MEANDARK']
+            darkcurrent = self._image[self.scienceExt,extver].header['MEANDARK']
         except:
             str =  "#############################################\n"
             str += "#                                           #\n"
@@ -241,12 +241,9 @@ class SBCInputImage (ACSInputImage):
             instrpars['rnkeyword'] = None
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
-        #if instrpars['crbit'] == None:
-        #    instrpars['crbit'] = self.cr_bits_value
       
         self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                  instrpars['expkeyword'])
-        #self._crbit     = instrpars['crbit']
 
         if self._exptime == None:
             print 'ERROR: invalid instrument task parameter'

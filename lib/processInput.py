@@ -91,7 +91,7 @@ def setCommonInput(configObj,createOutwcs=True):
 
     if configObj['shiftfile'] not in [None,""]:
         # Update all input images with shifts from shiftfile
-        wcs_functions.createHeaderlets(configObj['shiftfile'],verbose=(not configObj['quiet']))
+        wcs_functions.createHeaderlets(configObj['shiftfile'])
         
     if(createOutwcs):
         # Build output WCS and update imageObjectList with output WCS info

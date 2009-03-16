@@ -176,7 +176,7 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
             image=imageSet[myext]
             _skyValue= _computeSky(image, paramDict, memmap=0)
             #scale the sky value by the area on sky
-            pscale=imageSet[myext].wcs.pscale
+            pscale=imageSet[myext].wcs.idcscale
             print 'pixel area on sky=',pscale
             _scaledSky=_skyValue / (pscale**2)
             print 'scaledSky=',_scaledSky
@@ -193,7 +193,8 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
         #and update the chips header keyword with the sub
         for chip in range(1,numchips+1,1):
             image=imageSet._image[sciExt,chip]
-            _scaledSky=_skyValue * (image.wcs.pscale**2)
+            _scaledSky=_skyValue * (image.wcs.idcscale**2)
+            image.subtractedSky = _scaledSky
             print "subtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             _subtractSky(image,(_scaledSky))
             _updateKW(image,skyKW,_skyValue)

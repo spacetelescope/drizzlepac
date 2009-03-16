@@ -142,8 +142,12 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
             __blotImage.close()
 
             #this grabs the original dq mask from the science image
-            __dq = sciImage.maskExt + ',' + str(chip)
-            __dqMask=sciImage.getData(__dq)
+            # This mask needs to take into account any crbits values 
+            # specified by the user to be ignored. A call to the 
+            # buildMask() method may work better here...
+            #__dq = sciImage.maskExt + ',' + str(chip)
+            #__dqMask=sciImage.getData(__dq)
+            __dqMask = sciImage.buildMask(chip,configObj['crbit'])
 
             #parse out the SNR information
             __SNRList=(configObj[step_name]["driz_cr_snr"]).split()
@@ -155,25 +159,26 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
             __mult1 = float(__scaleList[0])
             __mult2 = float(__scaleList[1])
 
-            __gain=scienceChip._effgain
+            __gain=scienceChip._gain
             __rn=scienceChip._rdnoise
+            __backg = scienceChip.subtractedSky
 
             # Define output cosmic ray mask to populate
             __crMask = np.zeros(__inputImage.shape,dtype=np.uint8)
 
             # Determine a scaling factor depending on the units of the input image, "counts" or "cps"
-            if (scienceChip._bunit== "counts"):
+            if (scienceChip.in_units== "counts"):
                 __expmult = 1.
-            elif(scienceChip._bunit=="cps"):
+            elif(scienceChip.in_units=="cps"):
                 __expmult = scienceChip._exptime
             else:
-                print "drizCR found Unrecognized value for BUNIT:", scienceChip._bunit
+                print "drizCR found Unrecognized value in input image for BUNIT:", scienceChip.in_units
                 raise ValueError
 
         ##################   COMPUTATION PART I    ###################
             # Create a temporary array mask
             __t1 = np.absolute(__inputImage - __blotData)
-            __ta = np.sqrt(__gain * np.absolute(__blotData * __expmult + configObj[step_name]["backg"] * __expmult) + __rn * __rn)
+            __ta = np.sqrt(__gain * np.absolute(__blotData * __expmult + __backg * __expmult) + __rn * __rn)
             __tb = ( __mult1 * __blotDeriv + __snr1 * __ta / __gain )
             del __ta
             __t2 = __tb / __expmult
@@ -194,7 +199,7 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
         ##################   COMPUTATION PART II    ###################
             # Create the CR Mask
             __xt1 = np.absolute(__inputImage - __blotData)
-            __xta = np.sqrt(__gain * np.absolute(__blotData * __expmult + paramDict["backg"] * __expmult) + __rn * __rn)
+            __xta = np.sqrt(__gain * np.absolute(__blotData * __expmult + __backg * __expmult) + __rn * __rn)
             __xtb = ( __mult2 *__blotDeriv + __snr2 * __xta / __gain )
             del __xta
             __xt2 = __xtb / __expmult
@@ -263,24 +268,28 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
 
             if(saveFile):
                 # Remove the existing cor file if it exists
-                if(os.access(crcorimage, os.F_OK)):
-                    os.remove(crcorimage)
-                    print "Removing old corr file:",corrName 
+                if(os.access(crCorImage, os.F_OK)):
+                    os.remove(crCorImage)
+                    print "Removing old corr file:",crCorImage 
 
-                util.createFile(__corrFile,outfile=crcorimage,header=None)
+                util.createFile(__corrFile,outfile=crCorImage,header=None)
 
             ######## Save the cosmic ray mask file to disk
             _cr_file = np.zeros(__inputImage.shape,np.uint8)
             _cr_file = np.where(__crMask,1,0).astype(np.uint8)
 
 
-            if(saveFile):
-                # Remove the existing mask file if it exists
-                if(os.access(crmaskimage, os.F_OK)):
-                    os.remove(crmaskimage)
-                    print "Removed old cosmic ray mask file:",crName 
-
-                util.createFile(_cr_file, outfile=crmaskimage, header = None)
+            #if(saveFile):
+            # Always write out crmaskimage, as it is required input for 
+            # the final drizzle step. The final drizzle step combines this 
+            # image with the DQ information on-the-fly.
+            #
+            # Remove the existing mask file if it exists
+            if(os.access(crMaskImage, os.F_OK)):
+                os.remove(crMaskImage)
+                print "Removed old cosmic ray mask file:",crMaskImage 
+        
+            util.createFile(_cr_file, outfile=crMaskImage, header = None)
 
   
             

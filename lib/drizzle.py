@@ -229,7 +229,32 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
         print 'Removing previous output product...'
         os.remove(imageObjectList[0].outputNames['outFinal'])
+        
 
+    # print out parameters being used for drizzling
+    print "Running Drizzle to create output frame with WCS of: "
+    output_wcs.printwcs()
+    print '\n'
+
+    """
+    # these need to be edited to report the correct values...
+    print("drizzle.outnx = "+str(self.assoc.parlist[0]['outnx']))
+    print("drizzle.outny = "+str(self.assoc.parlist[0]['outny']))
+    print("drizzle.scale = "+str(self.assoc.parlist[0]['scale']))
+    print("drizzle.pixfrac = "+str(self.assoc.parlist[0]['pixfrac']))
+    print("drizzle.shft_fr = 'output'")
+    print("drizzle.shft_un = 'output'")
+    print("drizzle.in_un = '"+str(self.assoc.parlist[0]['in_units']))
+    print("drizzle.out_un = '"+self.assoc.parlist[0]['units']+"'")
+    print("drizzle.align = 'center'")
+    print("drizzle.expkey = 'EXPTIME'")
+    print("drizzle.fillval = "+str(self.assoc.parlist[0]['fillval']))
+    print("drizzle.outcont = '"+self.assoc.parlist[0]['outcontext']+"'")
+    print("drizzle.kernel = '"+self.assoc.parlist[0]['kernel']+"'")
+    print("\n")
+
+    """
+    
     # Set parameters for each input and run drizzle on it here.
     #
     # Perform drizzling...
@@ -282,6 +307,31 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             #_extn = chip.header['extname']+str(chip.header['extver'])
             #_sciext = fileutil.getExtn(_handle,extn=_extn)
             _sciext = _handle[chip.header['extname'],chip.header['extver']]
+            """
+            if single:
+                outname = 'outSingle'
+                if build:
+                    outweight = 'outSingle'
+                else:
+                    outweight = 'outSWeight'
+                outmaskname = 'singleDrizMask'
+            else:
+                if build:
+                    outname = 'outFinal'
+                    outweight = 'outFinal'
+                else:
+                    outname = 'outSci'
+                    outweight = 'outWeight'
+                    
+                outmaskname = 'finalMask'
+            print("\ndrizzle "+_expname+" "+chip.outputNames[outname]+
+              " in_mask="+chip.outputNames[outmaskname]+" outweig="+chip.outputNames[outweight]+
+              " xsh="+xsh_str+" ysh="+ysh_str+" rot="+rot_str+
+              " coeffs='"+p['coeffs']+"' wt_scl='"+str(p['wt_scl'])+"'"+
+              " xgeoim='"+p['xgeoim']+"' ygeoim='"+p['ygeoim']+"'\n")
+
+            """
+
 
             ####
             #

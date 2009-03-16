@@ -247,25 +247,22 @@ def get_detnum(hstwcs,filename,extnum):
 
     return detnum,binned
 
-def get_exptime(header,primary_hdr):
+def get_expstart(header,primary_hdr):
     """shouldn't this just be defined in the instrument subclass of imageobject?"""
 
-    if primary_hdr.has_key('exptime'):
+    if primary_hdr.has_key('expstart'):
         exphdr = primary_hdr
     else:
         exphdr = header
-        
-    exptime = float(exphdr['EXPTIME'])
-    if exptime == 0.: exptime = 1.0
-
+            
     if exphdr.has_key('EXPSTART'):
         expstart = float(exphdr['EXPSTART'])
         expend = float(exphdr['EXPEND'])
     else:
         expstart = 0.
-        expend = exptime
+        expend = 0.0
 
-    return (exptime,expstart,expend)
+    return (expstart,expend)
 
 def compute_texptime(imageObjectList):
     """
@@ -348,7 +345,9 @@ def createFile(dataArray=None, outfile=None, header=None):
         assert(dataArray != None), "Please supply a data array for createFiles"
     except AssertionError:
         raise AssertionError
-        
+    
+    print 'Creating output : ',outfile
+
     try:
         # Create the output file
         fitsobj = pyfits.HDUList()
