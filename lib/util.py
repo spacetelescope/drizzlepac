@@ -377,4 +377,4 @@ def createFile(dataArray=None, outfile=None, header=None):
     finally:
         # CLOSE THE IMAGE FILES
         fitsobj.close()
-        del fitsobj
+        del fitsobj  

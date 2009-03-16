@@ -12,9 +12,6 @@ import util,wcs_functions
 import buildmask
 import numpy as np
 
-# Translation table for any image that does not use the DQ extension of the MEF
-# for the DQ array.
-DQ_EXTNS = {'WFPC2':{'c0h':'sdq','c0f':'sci'}}
 IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
 
 __version__ = '0.1dev1'
@@ -364,7 +361,7 @@ class baseImageObject:
         outnames['outContext'] = output_wcs.outputNames['outContext']
         
         
-    def _find_DQ_extension(self):
+    def find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
             which that DQ extension should be read from.
         '''
@@ -375,13 +372,6 @@ class baseImageObject:
                 dqfile = self._filename
                 dq_suffix=self.maskExt
                 break
-        # This should be moved to a WFPC2-specific version of the imageObject class
-        if dqfile == None:
-            # Look for additional file with DQ array, primarily for WFPC2 data
-            indx = self._filename.find('.fits')
-            suffix = self._filename[indx-4:indx]
-            dqfile = self._filename.replace(suffix[:3],'_c1')
-            dq_suffix = DQ_EXTNS[self._instrument][suffix[1:]]
 
         return dqfile,dq_suffix
             
@@ -615,7 +605,7 @@ class imageObject(baseImageObject):
 
                 sci_chip.signature = None
                 
-                sci_chip.dqfile,sci_chip.dq_extn = self._find_DQ_extension()               
+                sci_chip.dqfile,sci_chip.dq_extn = self.find_DQ_extension()               
                 sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
 
                 # build up HSTWCS object for each chip, which will be necessary for drizzling operations

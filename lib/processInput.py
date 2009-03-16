@@ -128,8 +128,17 @@ def createImageObjectList(files,instrpars,group=None):
 
 def _getInputImage (input,group=None):
     """ Factory function to return appropriate imageObject class instance"""
-    # extract primary header from input image
-    phdu = pyfits.getheader(input)
+    # extract primary header and SCI,1 header from input image
+    if group in [None,'']:
+        exten = '[sci,1]'
+    else:
+        if group.find(',') > 0:
+            grp = group.split(',')
+        else:
+            grp = ['SCI',int(group)]
+        exten = '['+str(fileutil.findExtname(input,extname=grp[0],extver=grp[1]))+']'
+        
+    phdu = fileutil.getHeader(input+exten)
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
     _instrument = phdu['INSTRUME']
@@ -158,9 +167,11 @@ def _getInputImage (input,group=None):
             if _detector == 2: return nicmosData.NIC2InputImage(input)
             if _detector == 3: return nicmosData.NIC3InputImage(input)
 
-        """
+
         if _instrument == 'WFPC2':
             import wfpc2Data
+            return wfpc2Data.WFPC2InputImage(input)
+        """
             if _detector == 1: return wfpc2Data.PCInputImage(input)
             if _detector == 2: return wfpc2Data.WF2InputImage(input)
             if _detector == 3: return wfpc2Data.WF3InputImage(input)

@@ -8,6 +8,10 @@ import numpy as np
 from imageObject import imageObject
 from staticMask import constructFilename
 
+# Translation table for any image that does not use the DQ extension of the MEF
+# for the DQ array.
+DQ_EXTNS = {'c0h':'sdq','c0f':'sci'}
+
 #### Calibrated gain and readnoise values for each chip
 WFPC2_GAINS = { 1:{7:[7.12,5.24],15:[13.99,7.02]},
                 2:{7:[7.12,5.51],15:[14.50,7.84]},
@@ -32,6 +36,19 @@ class WFPC2InputImage (imageObject):
         
         # Reference Plate Scale used for updates to MDRIZSKY
         self.refplatescale = 0.0996 # arcsec / pixel
+
+    def find_DQ_extension(self):
+        ''' Return the suffix for the data quality extension and the name of the file
+            which that DQ extension should be read from.
+        '''
+        dqfile = None
+        # Look for additional file with DQ array, primarily for WFPC2 data
+        indx = self._filename.find('.fits')
+        suffix = self._filename[indx-4:indx]
+        dqfile = self._filename.replace(suffix[:3],'_c1')
+        dq_suffix = DQ_EXTNS[suffix[1:]]
+
+        return dqfile,dq_suffix
 
     def getEffGain(self):
         """
@@ -126,7 +143,7 @@ class WFPC2InputImage (imageObject):
 
         """
 
-        extnum = self.interpretExten(exten)
+        extnum = self._interpretExten(exten)
         chip = self._image[exten]
         
         # The keyword for WFPC2 flat fields in the primary header of the flt
