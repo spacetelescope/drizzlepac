@@ -22,7 +22,8 @@ class ACSInputImage(imageObject):
         for chip in range(1,self._numchips+1,1):
             if self._image[self.scienceExt,chip].group_member:
                 self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
-
+                self.setInstrumentParameters({})
+                
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
            on the  instrument, detector, chip, and size
