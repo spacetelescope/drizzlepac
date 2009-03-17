@@ -1,6 +1,6 @@
 from pytools import parseinput, fileutil, readgeis, asnutil,irafglob,check_files
 import pyfits
-import os 
+import os,shutil
 
 import wcs_functions,util
 import mdzhandler
@@ -65,7 +65,7 @@ def setCommonInput(configObj,createOutwcs=True):
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'], 
-            updatewcs=configObj['updatewcs'], shiftfile=configObj['shiftfile'])
+            updatewcs=configObj['updatewcs'], workinplace=configObj['workinplace'])
 
     # convert the filenames from asndict into a list of full filenames
     files = [fileutil.buildRootname(f) for f in asndict['order']]
@@ -202,7 +202,7 @@ def atfile_ivm(f):
     return f.split()[1]    
 
 
-def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, shiftfile=None):
+def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
     
     ivmlist = None
     oldasndict = None
@@ -249,7 +249,9 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     filelist.sort()
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
     
-   
+    if not workinplace:
+        createInputCopies(newfilelist)
+
     if not newfilelist:
         buildEmptyDRZ(input,output)
         return None, None, output 
@@ -265,9 +267,6 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         oldasndict = asnutil.ASNTable(pydr_input, output=output)
         oldasndict.create()
                 
-    if shiftfile:
-        oldasndict.update(shiftfile=shiftfile)
-
     asndict = update_member_names(oldasndict, pydr_input)
 
     # Build output filename
@@ -280,34 +279,6 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     print 'Setting up output name: ',output
 
     return asndict, ivmlist, output
-
-    newflist = []
-    newilist = []
-    
-    if len(filelist) != len(ivmlist):
-        errormsg = "Input file list and ivm list have different lenghts\n"
-        errormsg += "Quitting ...\n"
-        raise ValueError, errormsg
-        
-    for t in zip(filelist, ivmlist):
-        sci_count = check_files.stisObsCount(t[0])
-        if sci_count >1:
-            newfilenames = splitStis(t[0], sci_count)
-            newflist.extend(newfilenames)
-            if t[1] != None:
-                newivmnames = check_files.splitStis(t[1], sci_count)
-                newilist.extend(newivmnames)
-            else:
-                newilist.append(None)
-        elif sci_count == 1:
-            newflist.append(t[0])
-            newilist.append(t[1])
-        else:
-            errormesg = "No valid 'SCI extension in STIS file\n"
-            raise ValueError, errormsg
-
-    return newflist, newilist
-
 
 def runmakewcs(input):
     """
@@ -355,11 +326,40 @@ def update_member_names(oldasndict, pydr_input):
     return oldasndict
 
 
+def createInputCopies(filelist):
+    """
+    Creates copies of all input images in a sub-directory.
+    
+    The copies are made prior to any processing being done to the images at all,
+    including updating the WCS keywords. If there are already copies present,
+    they will NOT be overwritten, but instead will be used to over-write the 
+    current working copies.
+    """
+    # Find out what directory is being used for processing
+    workingdir = os.getcwd()
+    # Create name of sub-directory for copies
+    origdir = os.path.join(workingdir,'OrIg_files')
+    # if sub-directory does not exist yet, create it
+    if not os.path.exists(origdir):
+        os.mkdir(origdir)
+    
+    # check to see if copies already exist for each file
+    for fname in filelist:
+        copyname = os.path.join(origdir,fname)
+        if not os.path.exists(copyname):
+            print 'Preserving original of: ',fname, 'as ',copyname
+            # make a copy of the file in the sub-directory
+            shutil.copy(fname,copyname)
+            os.chmod(copyname,0444) # make files read-only
+        else:
+            print 'Restoring original input for ',fname,' from ',copyname
+            # replace current files with original version
+            shutil.copy(copyname,fname)
 
 def buildEmptyDRZ(input, output):
     """
     
-    METHOD  : _buildEmptyDRZ
+    FUNCTION: buildEmptyDRZ
     PURPOSE : Create an empty DRZ file in a valid FITS format so that the HST
               pipeline can handle the Multidrizzle zero expossure time exception
               where all data has been excluded from processing.

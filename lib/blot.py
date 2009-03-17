@@ -19,6 +19,11 @@ def run(configObj,wcsmap=wcs_functions.WCSMap):
 
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
+
+    # Explicitly turn off making copies so as to not over-write any analysis
+    # already performed on the data.
+    configObj['workinplace'] = False
+
     imgObjList,outwcs = processInput.setCommonInput(configObj)
 
     runblot(imgObjList,outwcs,configObj,wcsmap=wcsmap)

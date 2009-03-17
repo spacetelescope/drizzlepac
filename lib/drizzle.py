@@ -20,6 +20,10 @@ _final_step_num_ = 7
 #
 def run(configObj,wcsmap=wcs_functions.WCSMap):
     
+    # Explicitly turn off making copies so as to not over-write any analysis
+    # already performed on the data.
+    configObj['workinplace'] = False
+
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
     print 'Running drizzle run()...'
