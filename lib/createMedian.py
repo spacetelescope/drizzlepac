@@ -54,6 +54,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     """Create a median image from the list of image Objects 
        that has been given
     """
+    print "Starting median step\n"
     step_name = util.getSectionName(configObj,_step_num_)
     if not configObj[step_name]['median']:
         print 'Median combination step not performed.'
@@ -78,6 +79,8 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     nsigma1 = float(sigmaSplit[0])
     nsigma2 = float(sigmaSplit[1])
     
+    #print "Checking parameters:"
+    #print comb_type,nlow,nhigh,grow,maskpt,nsigma1,nsigma2
     
     if (paramDict['combine_lthresh'] == None):
         lthresh = None
@@ -106,10 +109,12 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     backgroundValueList = []
     singleDrizList=[] #these are the input images
     singleWeightList=[] #pointers to the data arrays
+    skylist=[] #the list of MDRIZSKY values for the images
     _wht_mean = [] # Compute the mean value of each wht image
     
     #for each image object
     for image in imageObjectList:
+            
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
         print singleDriz, singleWeight
@@ -137,6 +142,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             #
             # Get the exposure time from the InputImage object
             exposureTimeList.append(image._exptime)
+            skylist.append(image[1].wcs.pscale)
 
             # Extract the sky value to be used in the model
             # this sky value is in scaled units on the sky,
@@ -145,7 +151,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             # I think this is saved in the header of the single driz (or can be calculated
             # by pulling the wcs information from the object
             #backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * outPlatescale)
-            backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"])
+            backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * skylist[-1])
             
             # Extract the readnoise value for the chip
             sci_chip = image._image[image.scienceExt,1]
