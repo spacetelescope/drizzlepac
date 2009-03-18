@@ -65,10 +65,10 @@ class baseImageObject:
         """return fits information on the _image"""
         #if the file hasn't been closed yet then we can
         #use the pyfits info which looks at the extensions
-        if(self._isSimpleFits):
-            print self._filename," is a simple fits image"
-        else:
-            self._image.info()    
+        #if(self._isSimpleFits):
+        #    print self._filename," is a simple fits image"
+        #else:
+        self._image.info()    
  
     def close(self):
         """close the object nicely
@@ -257,7 +257,7 @@ class baseImageObject:
         extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
         extver=self._image[self.scienceExt,chip].header["EXTVER"]
         expname=self._image[self.scienceExt,chip].header["EXPNAME"].lower()
-
+    
         # record extension-based name to reflect what extension a mask file corresponds to
         self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
         self._image[self.scienceExt,chip].sciname=self._filename + "[" + extname +","+str(extver)+"]"
@@ -366,12 +366,14 @@ class baseImageObject:
             which that DQ extension should be read from.
         '''
         dqfile = None
-        for hdu in self._image:
-            # Look for DQ extension in input file
-            if hdu.header.has_key('extname') and hdu.header['extname'].lower() == self.maskExt.lower():
-                dqfile = self._filename
-                dq_suffix=self.maskExt
-                break
+        dq_suffix=None
+        if(self.maskExt != None):
+            for hdu in self._image:
+                # Look for DQ extension in input file
+                if hdu.header.has_key('extname') and hdu.header['extname'].lower() == self.maskExt.lower():
+                    dqfile = self._filename
+                    dq_suffix=self.maskExt
+                    break
 
         return dqfile,dq_suffix
             
@@ -560,18 +562,31 @@ class imageObject(baseImageObject):
         self.outputNames=self._setOutputNames(self._rootname)
         
         self._exptime=self._image["PRIMARY"].header["EXPTIME"]
-        if(self._exptime == 0): self._exptime =1. #to avoid divide by zero
-         
+        if(self._exptime == 0): 
+            self._exptime =1. #to avoid divide by zero
+            print "Setting exposure time to zero to avoid div/0!"
+            
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
 
         self.proc_unit = None
-
+        
+        self._nextend=self._image["PRIMARY"].header["NEXTEND"]
+        
         if (self._numchips == 0):
-            self._isSimpleFits = True
-            self._nextend=0
-        else:
-            self._isSimpleFits = False
+            #the simple fits image contains the data in the primary extension,
+            #this will help us deal with the rest of the code that looks
+            #and acts on chips :)
+            #self._nextend=1
+            self._numchips=1
+            self.scienceExt="PRIMARY"
+            self.maskExt=None
+            self._image["PRIMARY"].header.update("EXTNAME","PRIMARY")
+            self._image["PRIMARY"].header.update("EXTVER",1)
+            self._image["PRIMARY"].extnum=0
+  
+        self._isSimpleFits = False
+        
         
         if group not in [None,'']:
             # Only use selected chip(s?)
@@ -587,9 +602,9 @@ class imageObject(baseImageObject):
             # Use all chips
             self.group = None
         
+            
         if not self._isSimpleFits:
-            self._nextend=self._image["PRIMARY"].header["NEXTEND"]
-
+            
             #assign chip specific information
             for chip in range(1,self._numchips+1,1):
                 
@@ -604,10 +619,12 @@ class imageObject(baseImageObject):
                     sci_chip.group_member = False
 
                 sci_chip.signature = None
-                
-                sci_chip.dqfile,sci_chip.dq_extn = self.find_DQ_extension()               
-                sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
+                sci_chip.dqname = None
 
+                sci_chip.dqfile,sci_chip.dq_extn = self.find_DQ_extension()   
+                if(sci_chip.dqfile != None):            
+                    sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
+                    
                 # build up HSTWCS object for each chip, which will be necessary for drizzling operations
                 sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.extnum)
                 sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
@@ -652,6 +669,7 @@ class imageObject(baseImageObject):
                     if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:
                         sci_chip.image_dtype = dtype
                         break
+
 
     def setInstrumentParameters(self,instrpars):
         """ Define instrument-specific parameters for use in the code. 
