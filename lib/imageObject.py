@@ -5,7 +5,7 @@ each input filename
 
 """
 
-import sys,copy
+import sys,copy,os
 from pytools import fileutil
 import pyfits
 import util,wcs_functions
@@ -102,12 +102,26 @@ class baseImageObject:
             non FITS input images. openImage returns a pyfits object
         
         """
-        _image=fileutil.openImage(self._filename,clobber=False,memmap=0)
-        _data=fileutil.getExtn(_image,extn=exten).data
-        _image.close()
-        del _image
+        if exten.find('sci') > -1:
+            # For SCI extensions, the current file will have the data
+            fname = self._filename
+        else:
+            # otherwise, the data being requested may need to come from a 
+            # separate file, as is the case with WFPC2 DQ data.
+            #
+            # convert exten to 'sci',extver to get the DQ info for that chip
+            extn = exten.split(',')
+            sci_chip = self._image[self.scienceExt,int(extn[1])]
+            fname = sci_chip.dqfile
+        if os.path.exists(fname):
+            _image=fileutil.openImage(fname,clobber=False,memmap=0)
+            _data=fileutil.getExtn(_image,extn=exten).data
+            _image.close()
+            del _image
+        else: 
+            _data = None
         return _data
-                
+
     def getHeader(self,exten=None):
         """return just the specified header extension
            
@@ -458,12 +472,9 @@ class baseImageObject:
             print 'Writing out DQ mask: ',dqmask_name
             phdu.writeto(dqmask_name)
             del phdu
+            self._image[self.scienceExt,chip].dqmaskname = dqmask_name
         del dqarr            
         return dqmask
-        """
-        ### For WFPC2 Data, build mask files using:
-        buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname,bitvalue=bits,binned=sci_chip.binned)
-        """
 
     def _buildMask(self,dqarr,bitvalue):
         """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
@@ -619,9 +630,12 @@ class imageObject(baseImageObject):
                     sci_chip.group_member = False
 
                 sci_chip.signature = None
+
                 sci_chip.dqname = None
+                sci_chip.dqmaskname = None
 
                 sci_chip.dqfile,sci_chip.dq_extn = self.find_DQ_extension()   
+                self.maskExt = sci_chip.dq_extn
                 if(sci_chip.dqfile != None):            
                     sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
                     

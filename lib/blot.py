@@ -62,7 +62,9 @@ def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMa
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)
         run_blot(imageObjectList, output_wcs.final_wcs, paramDict, wcsmap=wcsmap)
-        
+    else:
+        print 'Blot step not performed.'
+
         
 # Run 'drizzle' here...
 #
@@ -169,7 +171,6 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             build=False
             misval = 0.0
             kscale = 1.0
-            scale = 1.0
 
             xmin = 1
             xmax = img.outputValues['outnx']
@@ -195,14 +196,16 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                     plist['scale'], 0.0, 0.0, 1.0, 1.0, 0.0,
                     'output', _pxg, _pyg, 'center', plist['coeffs'],
                     None, plist['alpha'], plist['beta'])
+                pix_ratio = plist['scale']
             else:
                 # Use user provided mapping function
                 wmap = wcsmap(chip.wcs,output_wcs)
                 mapping = wmap.forward
+                pix_ratio = wmap.get_pix_ratio()
 
             t = arrdriz.tblot(
                 _insci, _outsci,xmin,xmax,ymin,ymax,
-                scale, kscale, 1.0, 1.0,
+                pix_ratio, kscale, 1.0, 1.0,
                 'center',paramDict['blot_interp'], chip._exptime,
                 misval, paramDict['blot_sinscl'], 1, mapping)
             del mapping

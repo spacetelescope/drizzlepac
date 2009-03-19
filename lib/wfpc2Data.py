@@ -2,11 +2,14 @@
 #   Authors: Warren Hack, Ivo Busko, Christopher Hanley
 #   Program: wfpc2_input.py
 #   Purpose: Class used to model WFPC2 specific instrument data.
+import pyfits
+import numpy as np
 
 from pytools import fileutil
-import numpy as np
+
 from imageObject import imageObject
 from staticMask import constructFilename
+import buildmask
 
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
@@ -17,6 +20,8 @@ WFPC2_GAINS = { 1:{7:[7.12,5.24],15:[13.99,7.02]},
                 2:{7:[7.12,5.51],15:[14.50,7.84]},
                 3:{7:[6.90,5.22],15:[13.95,6.99]},
                 4:{7:[7.10,5.19],15:[13.95,8.32]}}
+WFPC2_DETECTOR_NAMES = {1:"PC",2:"WF2",3:"WF3",4:"WF4"}
+
 class WFPC2InputImage (imageObject):
 
     SEPARATOR = '_'
@@ -27,7 +32,7 @@ class WFPC2InputImage (imageObject):
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]        
 
-        self.cte_dir = -1    # independent of amp, chip   
+        #self.cte_dir = -1    # independent of amp, chip   
         
         self._effGain = 1
 
@@ -37,6 +42,10 @@ class WFPC2InputImage (imageObject):
         # Reference Plate Scale used for updates to MDRIZSKY
         self.refplatescale = 0.0996 # arcsec / pixel
 
+        for chip in range(1,self._numchips+1,1):
+            self._assignSignature(chip) #this is used in the static mask
+            self._image[self.scienceExt,chip].cte_dir = -1 # independent of amp, chip   
+            
     def find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
             which that DQ extension should be read from.
@@ -255,6 +264,39 @@ class WFPC2InputImage (imageObject):
         if self.proc_unit == 'native':
             rn = self._rdnoise / self.getGain(exten)
         return rn
+        
+    def buildMask(self,chip,bits=0,write=False):
+        """ Build masks as specified in the user parameters found in the 
+            configObj object.
+        """
+        
+        sci_chip = self._image[self.scienceExt,chip]
+        ### For WFPC2 Data, build mask files using:
+        maskname = sci_chip.dqrootname+'_dqmask.fits'
+        dqmask_name = buildmask.buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname,bitvalue=bits,binned=sci_chip.binned)
+        sci_chip.dqmaskname = dqmask_name
+        dqmask = pyfits.getdata(dqmask_name,0)
+        return dqmask
+
+    def _assignSignature(self, chip):
+        """assign a unique signature for the image based 
+           on the  instrument, detector, chip, and size
+           this will be used to uniquely identify the appropriate
+           static mask for the image
+           
+           this also records the filename for the static mask to the outputNames dictionary
+           
+        """
+        sci_chip = self._image[self.scienceExt,chip] 
+        ny=sci_chip._naxis1
+        nx=sci_chip._naxis2
+        detnum = sci_chip.detnum
+        instr=self._instrument
+        
+        sig=(instr+WFPC2_DETECTOR_NAMES[detnum],(nx,ny),detnum) #signature is a tuple
+        sci_chip.signature=sig #signature is a tuple
+        filename=constructFilename(sig)
+        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
 
     def _setchippars(self):
         for chip in self.returnAllChips(extname=self.scienceExt): 

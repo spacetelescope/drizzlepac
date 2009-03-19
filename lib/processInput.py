@@ -136,7 +136,9 @@ def _getInputImage (input,group=None):
             grp = group.split(',')
         else:
             grp = ['SCI',int(group)]
-        exten = '['+str(fileutil.findExtname(input,extname=grp[0],extver=grp[1]))+']'
+        fimg = fileutil.openImage(input)
+        exten = '['+str(fileutil.findExtname(fimg,extname=grp[0],extver=grp[1]))+']'
+        fimg.close()
         
     phdu = fileutil.getHeader(input+exten)
 
@@ -152,7 +154,6 @@ def _getInputImage (input,group=None):
         _detector = phdu['DETECTOR']
 
     del phdu # just to keep clean
-    
     # Match up the instrument and detector with the right class
     # only importing the instrument modules as needed.
     try:
@@ -170,7 +171,7 @@ def _getInputImage (input,group=None):
 
         if _instrument == 'WFPC2':
             import wfpc2Data
-            return wfpc2Data.WFPC2InputImage(input)
+            return wfpc2Data.WFPC2InputImage(input,group=group)
         """
             if _detector == 1: return wfpc2Data.PCInputImage(input)
             if _detector == 2: return wfpc2Data.WF2InputImage(input)
@@ -249,12 +250,12 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     filelist.sort()
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
     
-    if not workinplace:
-        createInputCopies(newfilelist)
-
     if not newfilelist:
         buildEmptyDRZ(input,output)
         return None, None, output 
+
+    if not workinplace:
+        createInputCopies(newfilelist)
     
     #make an asn table at the end
     if updatewcs:
@@ -347,14 +348,16 @@ def createInputCopies(filelist):
     for fname in filelist:
         copyname = os.path.join(origdir,fname)
         if not os.path.exists(copyname):
-            print 'Preserving original of: ',fname, 'as ',copyname
+            print 'Preserving original of: ',fname, 'as ',os.path.split(origdir)[1]+copyname
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,0444) # make files read-only
         else:
-            print 'Restoring original input for ',fname,' from ',copyname
+            print 'Restoring original input for ',fname,' from ',os.path.split(origdir)[1]+copyname
             # replace current files with original version
+            os.chmod(fname,0666)
             shutil.copy(copyname,fname)
+            os.chmod(fname,0666)
 
 def buildEmptyDRZ(input, output):
     """

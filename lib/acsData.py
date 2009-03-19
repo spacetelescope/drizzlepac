@@ -22,8 +22,15 @@ class ACSInputImage(imageObject):
         for chip in range(1,self._numchips+1,1):
             if self._image[self.scienceExt,chip].group_member:
                 self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
-                
-    def _assignSignature(self, extver):
+        
+    def doUnitConversions(self):
+        # Effective gain to be used in the driz_cr step.  Since the
+        # ACS images have already been converted to electrons,
+        # the effective gain is 1.
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+            chip._effGain = 1
+
+    def _assignSignature(self, chip):
         """assign a unique signature for the image based 
            on the  instrument, detector, chip, and size
            this will be used to uniquely identify the appropriate
@@ -32,23 +39,16 @@ class ACSInputImage(imageObject):
            this also records the filename for the static mask to the outputNames dictionary
            
         """
-        ny=self._image[self.scienceExt,extver]._naxis1
-        nx=self._image[self.scienceExt,extver]._naxis2
-        detnum = self._image[self.scienceExt,extver].detnum
+        sci_chip = self._image[self.scienceExt,chip]
+        ny=sci_chip._naxis1
+        nx=sci_chip._naxis2
+        detnum = sci_chip.detnum
         instr=self._instrument
         
         sig=(instr+self._detector,(nx,ny),detnum) #signature is a tuple
-        self._image[self.scienceExt,extver].signature=sig #signature is a tuple
+        sci_chip.signature=sig #signature is a tuple
         filename=constructFilename(sig)
-        self._image[self.scienceExt,extver].outputNames["staticMask"]=filename #this is the name of the static mask file
-
-        
-    def doUnitConversions(self):
-        # Effective gain to be used in the driz_cr step.  Since the
-        # ACS images have already been converted to electrons,
-        # the effective gain is 1.
-        for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._effGain = 1
+        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
         
     def _isSubArray(self):
         # Never used??
@@ -194,13 +194,13 @@ class HRCInputImage (ACSInputImage):
 
     def __init__(self, filename=None,group=None):
         ACSInputImage.__init__(self, filename,group=group)
-        self.detector=self._image['PRIMARY'].header["DETECTOR"]
+        self._detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (1024,1024)
+        amp=self._image['PRIMARY'].header["CCDAMP"]
 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
             
-            amp=self._image[self.scienceExt,chip].header["CCDAMP"]
             if ( amp == 'A' or amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
                 self._image[self.scienceExt,chip].cte_dir = 1   
             if ( amp == 'C' or amp == 'D' ) :

@@ -188,7 +188,7 @@ class OutputImage:
         prihdu.header.update('EXTEND',pyfits.TRUE,after='NAXIS')
         prihdu.header.update('NEXTEND',nextend)
         prihdu.header.update('FILENAME', self.output)
-
+        
         # Update the ROOTNAME with the new value as well
         _indx = self.output.find('_drz')
         if _indx < 0:
@@ -337,7 +337,9 @@ class OutputImage:
             fo = pyfits.HDUList()
 
             hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
-
+            # explicitly set EXTEND to FALSE for simple FITS files.
+            hdu.header.update('extend',pyfits.FALSE,after='NEXTEND')
+            
             # Append remaining unique header keywords from template DQ
             # header to Primary header...
             if scihdr:

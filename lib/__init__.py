@@ -49,7 +49,8 @@ def MultiDrizzle(input = '*flt.fits',output = None, shiftfile = None, updatewcs 
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
-    
+    # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
+    # called 'run()'.
     if editpars == False:
         run(configObj,wcsmap=wcsmap)
 
@@ -100,19 +101,19 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     sky.subtractSky(imgObjList,configObj)
     
     #drizzle to separate images
-    drizzle.drizSeparate(imgObjList,outwcs,configObj,build=False,wcsmap=wcs_functions.WCSMap)
+    drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
     
     #create the median images from the driz sep images
     createMedian._median(imgObjList,configObj,configObj["clean"])
     
     #blot the images back to the original reference frame
-    blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcs_functions.WCSMap)
+    blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap)
     
     #look for cosmic rays
     drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
     
     #Make your final drizzled image
-    drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcs_functions.WCSMap)
+    drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap)
     
     print '\n[BigBlackBox] mdriz is all finished!\n'
     

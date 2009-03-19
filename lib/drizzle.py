@@ -78,10 +78,11 @@ def drizSeparate(imageObjectList,output_wcs,configObj,build=None,wcsmap=wcs_func
         # for single-drizzle step when called from the top-level. 
         if build is None:
             build = paramDict['build']
-            
         run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, 
                 build=build, wcsmap=wcsmap)
-    
+    else:
+        print 'Single drizzle step not performed.'
+        
 def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap):
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
     final_step = util.getSectionName(configObj,_final_step_num_)
@@ -98,6 +99,8 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_funct
             
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, 
                 build=build, wcsmap=wcsmap)
+    else:
+        print 'Final drizzle step not performed.'
 
 # Run 'drizzle' here...
 #
@@ -135,6 +138,7 @@ def buildDrizParamDict(configObj,single=True):
     chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
     # Initialize paramDict with global parameter(s)
     paramDict = {'build':configObj['build']}
+
     # build appro
     if single:
         driz_prefix = 'driz_sep_'
@@ -384,7 +388,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 _inwht = getWeightMask(chip.outputNames['crmaskImage'],img,chip._chip,bits)
                 updateInputDQArray(chip.dqname,chip.dq_extn,
                                     chip.outputNames['crmaskImage'],crbit)
-                                    
 
             if paramDict['wt_scl'] != None:
                 if isinstance(paramDict['wt_scl'],types.StringType):
@@ -495,21 +498,23 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 mapping = arrdriz.DefaultMapping(
                     _sciext.data.shape[1], _sciext.data.shape[0],
                     _outsci.shape[1], _outsci.shape[0],
-                    0.0, 0.0, 'output', 'output',
-                    0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
-                    0.0, 'output', _pxg, _pyg, 'center', "wcs", _inwcs,
+                    0.5, 0.5, 'output', 'output',
+                    0.000122765270908, 0.999856360905, 0.0, 0.0, 1.0, 1.0,
+                    0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
                     0.0, 0.0)
 
                 print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
+                pix_ratio = _scale
             else:
                 # Use user provided mapping function
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
                 mapping = wmap.forward
+                pix_ratio = wmap.get_pix_ratio()
             
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
-                1.0, 1.0, 1.0, 'center', paramDict['pixfrac'],
+                pix_ratio, 1.0, 1.0, 'center', paramDict['pixfrac'],
                 paramDict['kernel'], _in_units, _expin,_wtscl,
                 fillval, nmiss, nskip, 1, mapping)
             

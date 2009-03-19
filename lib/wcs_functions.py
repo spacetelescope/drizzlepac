@@ -74,6 +74,12 @@ class WCSMap:
             result[1] -= self.shift[1]
         return result
     
+    def get_pix_ratio(self):
+        """ Return the ratio of plate scales between the input and output WCS.
+            This is used to properly distribute the flux in each pixel in 'tdriz'.
+        """
+        return self.output.pscale / self.input.pscale
+    
     def xy2rd(self,wcs,pixx,pixy):
         """ Transform input pixel positions into sky positions in the WCS provided.
         """

@@ -72,7 +72,7 @@ def getSectionName(configObj,stepnum):
             return key
 
 """
-These two functions are for reading in an "at" which contains
+These two functions are for reading in an "at file" which contains
 two columns of filenames, the first column is assumed to
 be the science image and the second column is assumed
 to be the IVM file that is associated with it
