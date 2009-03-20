@@ -65,7 +65,7 @@ def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,ed
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def drizSeparate(imageObjectList,output_wcs,configObj,build=None,wcsmap=wcs_functions.WCSMap):
+def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap):
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
     single_step = util.getSectionName(configObj,_single_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -73,13 +73,15 @@ def drizSeparate(imageObjectList,output_wcs,configObj,build=None,wcsmap=wcs_func
     if configObj[single_step]['driz_separate']:
         paramDict = buildDrizParamDict(configObj)
         paramDict['crbit'] = None
+        # Force 'build' to always be False, so that this step always generates
+        # simple FITS files as output for compatibility with 'createMedian'
+        paramDict['build'] = False
+        
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
         # for single-drizzle step when called from the top-level. 
-        if build is None:
-            build = paramDict['build']
         run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, 
-                build=build, wcsmap=wcsmap)
+                build=False, wcsmap=wcsmap)
     else:
         print 'Single drizzle step not performed.'
         
