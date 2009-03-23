@@ -3,7 +3,6 @@ import util
 from util import _ptime
 import numpy as np
 import pyfits
-
 from pytools import fileutil
 import outputimage,wcs_functions,processInput,util
 try:
@@ -118,10 +117,10 @@ def mergeDQarray(maskname,dqarr):
     if maskname is not None and os.path.exists(maskname):
         mask = fileutil.openImage(maskname)
         maskarr = mask[0].data
-        dqarr = np.bitwise_and(dqarr,maskarr)
+        dqarr = np.bitwise_or(dqarr,maskarr)
         mask.close()
 
-def updateInputDQArray(dqname,dq_extn, crmaskname,cr_bits_value):
+def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
     if not os.path.exists(crmaskname):
         print 'WARNING: No CR mask file found! Input DQ array not updated.'
         return 
@@ -129,10 +128,12 @@ def updateInputDQArray(dqname,dq_extn, crmaskname,cr_bits_value):
         print 'WARNING: Input DQ array not updated!'
         return
     crmask = fileutil.openImage(crmaskname)
-    if os.path.exists(dqname):
-        infile = fileutil.openImage(dqname,mode='update')
+    
+    if os.path.exists(dqfile):
+        fullext=dqfile+"["+dq_extn+str(chip)+"]"
+        infile = fileutil.openImage(fullext,mode='update')
         __bitarray = np.logical_not(crmask[0].data).astype(np.int16) * cr_bits_value
-        np.bitwise_or(infile[dq_extn].data,__bitarray,infile[dq_extn].data)
+        np.bitwise_or(infile[dq_extn,chip].data,__bitarray,infile[dq_extn,chip].data)
         infile.close()
         crmask.close()
 
@@ -388,8 +389,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 _inwht = getWeightMask(chip.outputNames['staticMask'],img,chip._chip,bits)
             else:
                 _inwht = getWeightMask(chip.outputNames['crmaskImage'],img,chip._chip,bits)
-                updateInputDQArray(chip.dqname,chip.dq_extn,
-                                    chip.outputNames['crmaskImage'],crbit)
+                updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,chip.outputNames['crmaskImage'],crbit)
 
             if paramDict['wt_scl'] != None:
                 if isinstance(paramDict['wt_scl'],types.StringType):
