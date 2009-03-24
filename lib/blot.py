@@ -29,7 +29,25 @@ def run(configObj,wcsmap=wcs_functions.WCSMap):
     runblot(imgObjList,outwcs,configObj,wcsmap=wcsmap)
 
 def getHelpAsString():
-    return "Blot Help"
+    """ 
+    return useful help from a file in the script directory called module.help
+    """
+    #get the local library directory where the code is stored
+    localDir=os.path.split(__file__)
+    helpfile=__taskname__.split(".")
+    helpfile=localDir[0]+"/"+helpfile[1]+".help"
+    
+    if os.access(helpfile,os.R_OK):
+        fh=open(helpfile,'r')
+        ss=fh.readlines()
+        fh.close()
+        helpString=""
+        for line in ss:
+            helpString+=line
+    else:    
+        helpString=__doc__
+
+    return helpString
 
 # 
 #### Interactive interface for running drizzle tasks separately

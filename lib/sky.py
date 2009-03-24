@@ -17,24 +17,31 @@ from imageObject import imageObject
 from pytools import cfgpars
 import processInput
 import imagestats
+import os
 import numpy as np
+import sky_help
 
 __taskname__= "BigBlackBox.sky" #looks in BigBlackBox for sky.cfg
 _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():
-    """ I'm thinking we could just make a file called sky.help
-    then use this function to read it into an array or list and return that?
+    """ 
+    return useful help from a file in the script directory called module.help
     """
-
-    helpString="  Since the minimum sky is calculated between all chips,"
-    helpString+= "it is possible that the chips have a different platescale"
-    helpString+= "so the minimum value needs to be compared on the sky." 
-    helpString+= "Each sky minimum is ratioed with the platescale and THAT"
-    helpString+= "value is stored in the MDRIZSKY keyword in the header. It"
-    helpString+= "is also assumed that when the user has subtracted the sky themselves,"
-    helpString+= "that has already taken this into account, so no extra scaling is"
-    helpString+= "done later on in the code to account for it. "
+    #get the local library directory where the code is stored
+    localDir=os.path.split(__file__)
+    helpfile=__taskname__.split(".")
+    helpfile=localDir[0]+"/"+helpfile[1]+".help"
+    
+    if os.access(helpfile,os.R_OK):
+        fh=open(helpfile,'r')
+        ss=fh.readlines()
+        fh.close()
+        helpString=""
+        for line in ss:
+            helpString+=line
+    else:    
+        helpString=__doc__
 
     return helpString
 

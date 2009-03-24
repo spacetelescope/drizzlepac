@@ -38,13 +38,44 @@ def run(configObj,wcsmap=wcs_functions.WCSMap):
         drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)
 
 def getHelpAsString():
-    return "Drizzle Help"
+    """ 
+    return useful help from a file in the script directory called module.help
+    """
+    #get the local library directory where the code is stored
+    localDir=os.path.split(__file__)
+    helpfile=__taskname__.split(".")
+    helpfile=localDir[0]+"/"+helpfile[1]+".help"
+    
+    if os.access(helpfile,os.R_OK):
+        fh=open(helpfile,'r')
+        ss=fh.readlines()
+        fh.close()
+        helpString=""
+        for line in ss:
+            helpString+=line
+    else:    
+        helpString=__doc__
+
+    return helpString
 
 
 # 
 #### Interactive interface for running drizzle tasks separately
 #
 def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
+    """Perform drizzle operation on input to create output.
+     The input parameters originally was a list
+     of dictionaries, one for each input, that matches the
+     primary parameters for an IRAF drizzle task.
+
+     This method would then loop over all the entries in the
+     list and run 'drizzle' for each entry. 
+    
+    Parameters required for input in paramDict:
+        build,single,units,wt_scl,pixfrac,kernel,fillval,
+        rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
+    """    
+
     # Now, merge required input parameters into input_dict
     if input is not None:
         input_dict['input'] = input

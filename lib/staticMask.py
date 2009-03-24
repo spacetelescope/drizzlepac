@@ -26,7 +26,25 @@ _step_num_ = 1
 
 #help information that TEAL will look for
 def getHelpAsString():
-    return "Static Mask Help will eventually be here"
+    """ 
+    return useful help from a file in the script directory called module.help
+    """
+    #get the local library directory where the code is stored
+    localDir=os.path.split(__file__)
+    helpfile=__taskname__.split(".")
+    helpfile=localDir[0]+"/"+helpfile[1]+".help"
+    
+    if os.access(helpfile,os.R_OK):
+        fh=open(helpfile,'r')
+        ss=fh.readlines()
+        fh.close()
+        helpString=""
+        for line in ss:
+            helpString+=line
+    else:    
+        helpString=__doc__
+
+    return helpString
 
 
 #this is called by the user

@@ -18,10 +18,23 @@ __taskname__= "BigBlackBox.drizCR" #looks in BigBlackBox for sky.cfg
 _step_num_ = 6  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():
-    """ I'm thinking we could just make a file called sky.help
-    then use this function to read it into an array or list and return that?
+    """ 
+    return useful help from a file in the script directory called module.help
     """
-    helpString="Help string for drizCR will be here"
+    #get the local library directory where the code is stored
+    localDir=os.path.split(__file__)
+    helpfile=__taskname__.split(".")
+    helpfile=localDir[0]+"/"+helpfile[1]+".help"
+    
+    if os.access(helpfile,os.R_OK):
+        fh=open(helpfile,'r')
+        ss=fh.readlines()
+        fh.close()
+        helpString=""
+        for line in ss:
+            helpString+=line
+    else:    
+        helpString=__doc__
 
     return helpString
 
