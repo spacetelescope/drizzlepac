@@ -117,7 +117,6 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
-        print singleDriz, singleWeight
         
         _singleImage=iterfile.IterFitsFile(singleDriz)#this returns the handles for the image
         singleDrizList.append(_singleImage) #add to an array for bookkeeping

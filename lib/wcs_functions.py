@@ -25,7 +25,7 @@ shift_kwcomments = ['Shift in axis1 from shiftfile','Shift in axis2 from shiftfi
 WCSEXTN_NAME = 'WCSCORR'
 # Default mapping function based on PyWCS 
 class WCSMap:
-    def __init__(self,input,output):
+    def __init__(self,input,output,origin=1):
         # Verify that we have valid WCS input objects
         self.checkWCS(input,'Input')
         self.checkWCS(output,'Output')
@@ -34,6 +34,7 @@ class WCSMap:
         self.input_unshifted = copy.copy(self.input)
         self.output = output
         
+        self.origin = origin
         self.shift = None
 
     def checkWCS(self,obj,name):
@@ -60,15 +61,15 @@ class WCSMap:
             self.input.setOrient()
             self.input.setPscale()
 
-    def forward(self,pixx,pixy,origin=1):
+    def forward(self,pixx,pixy):
         """ Transform the input pixx,pixy positions in the input frame
             to pixel positions in the output frame.
             
             This method gets passed to the drizzle algorithm.
         """
         # This matches WTRAXY results to better than 1e-4 pixels.
-        skyx,skyy = self.input.all_pix2sky(pixx,pixy,origin)
-        result= self.output.wcs_sky2pix(skyx,skyy,origin) 
+        skyx,skyy = self.input.all_pix2sky(pixx,pixy,self.origin)
+        result= self.output.wcs_sky2pix(skyx,skyy,self.origin)  
         if self.shift is not None:
             result[0] -= self.shift[0]
             result[1] -= self.shift[1]

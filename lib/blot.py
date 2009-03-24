@@ -200,6 +200,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             else:
                 # Use user provided mapping function
                 wmap = wcsmap(chip.wcs,output_wcs)
+                wmap.applyShift(img)
                 mapping = wmap.forward
                 pix_ratio = wmap.get_pix_ratio()
 
