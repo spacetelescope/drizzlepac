@@ -117,7 +117,7 @@ def mergeDQarray(maskname,dqarr):
     if maskname is not None and os.path.exists(maskname):
         mask = fileutil.openImage(maskname)
         maskarr = mask[0].data
-        dqarr = np.bitwise_or(dqarr,maskarr)
+        np.bitwise_and(dqarr,maskarr,dqarr)
         mask.close()
 
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):

@@ -197,7 +197,8 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
             image.subtractedSky = _scaledSky
             print "subtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             _subtractSky(image,(_scaledSky))
-            _updateKW(image,skyKW,_skyValue)
+            _updateKW(image,skyKW,_scaledSky) #I updated this so that the keyword in the image is 
+                                            #the sky value actually subtracted from the image
             
         #update the value of MDRIZSKY in the global header
         # This does not make sense for STIS ASN files that

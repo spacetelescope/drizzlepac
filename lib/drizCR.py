@@ -121,7 +121,7 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
 
             #check that sciImage and blotImage are the same size?
             try:
-                fileutil.checkFileExists(blotImageName)
+                os.access(blotImageName,os.F_OK)
             except IOError:
                 print "Could not find the Blotted image on disk:",blotImageName
                 raise IOError
@@ -131,7 +131,7 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
             __inputImage=sciImage.getData(exten)
 
             try:
-                __blotImage=pyfits.open(blotImageName)
+                __blotImage=pyfits.open(blotImageName,mode="readonly")
             except IOError:
                 print "Problem opening blot images"
                 return IOError

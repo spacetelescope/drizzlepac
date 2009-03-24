@@ -635,9 +635,9 @@ class imageObject(baseImageObject):
                 sci_chip.dqmaskname = None
 
                 sci_chip.dqfile,sci_chip.dq_extn = self.find_DQ_extension()   
-                self.maskExt = sci_chip.dq_extn
+                #self.maskExt = sci_chip.dq_extn
                 if(sci_chip.dqfile != None):            
-                    sci_chip.dqname = sci_chip.dqfile+'['+sci_chip.dq_extn+','+str(chip)+']'
+                    sci_chip.dqname = sci_chip.dqfile +'['+sci_chip.dq_extn+','+str(chip)+']'
                     
                 # build up HSTWCS object for each chip, which will be necessary for drizzling operations
                 sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.extnum)

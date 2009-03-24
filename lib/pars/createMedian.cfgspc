@@ -1,5 +1,5 @@
 _task_name_ = string_kw(default="createMedian")
-imageList = string_kw(default="")  #
+imageList = string_kw(default="",comment="List of images to median")  
 mode = string_kw(default="all")
 
 [STEP 4: CREATE MEDIAN IMAGE]
