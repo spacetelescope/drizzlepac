@@ -18,6 +18,7 @@ from pytools import fileutil
 import pyfits
 from imagestats import ImageStats
 import util
+import os
 
 
 __taskname__ = "BigBlackBox.staticMask"

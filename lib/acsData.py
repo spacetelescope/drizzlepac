@@ -71,8 +71,18 @@ class ACSInputImage(imageObject):
             for each detector type?
         """
         pri_header = self._image[0].header
+        
+        if len(instrpars) == 0:
+            instrpars['proc_unit']='native'
+            instrpars['gain']=''
+            instrpars['rdnoise']=''
+            instrpars['exptime']=''
+            instrpars['gnkeyword']=''
+            instrpars['rnkeyword']=''
+            instrpars['expkeyword']=''
+                       
         self.proc_unit = instrpars['proc_unit']
-
+        
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
@@ -97,6 +107,17 @@ class ACSInputImage(imageObject):
         # instrument class will need to define its own version of doUnitConversions
         if self.proc_unit == "electrons":
             self.doUnitConversions()
+
+    def _isNotValid(self, par1, par2):
+        """ Method used to determine if a value or keyword is supplied as
+            input for instrument specific parameters.
+        """
+        if (par1 == None or par1 == '') and (par2 == None or par2 == ''):
+            return True
+        else:
+            return False
+
+
 
     def getflat(self):
         """

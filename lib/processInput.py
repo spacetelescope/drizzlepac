@@ -62,6 +62,13 @@ def setCommonInput(configObj,createOutwcs=True):
     code. 
 
     """
+    if not createOutwcs:
+        configObj['updatewcs']=False #we're probably just working on single images here
+        
+        
+    #maybe we can chunk this part up some more so that we can call just the parts we want
+    
+        
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'], 
@@ -204,19 +211,26 @@ def atfile_sci(f):
 def atfile_ivm(f):
     return f.split()[1]    
 
-
-def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
-    
+def processFilenames(input=None,output=None,infilesOnly=False):
+    """Process the input string which contains the input file information and 
+       return a filelist,output
+    """
     ivmlist = None
     oldasndict = None
 
+    if input is None:
+        print "No input files provided to processInput"
+        raise ValueError
+    
     if (isinstance(input, list) == False) and \
        ('_asn' in input or '_asc' in input) :
         # Input is an association table
         # Get the input files, and run makewcs on them
         oldasndict = asnutil.readASNTable(input, prodonly=prodonly)
-        if not output:
-            output = oldasndict['output']
+        
+        if not infilesOnly:
+            if not output:
+                output = oldasndict['output']
 
         filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
         
@@ -243,13 +257,18 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
                     output = fileutil.buildNewRootname(filelist[0])
                 else: 
                     output = 'final'
-            #filelist.sort()
         except IOError: raise
     
     # sort the list of input files
     # this ensures the list of input files has the same order on all platforms
     # it can have ifferent order because listdir() uses inode order, not unix type order 
     filelist.sort()
+
+    return filelist,output,ivmlist,oldasndict    
+    
+def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
+    
+    filelist,output,ivmlist,oldasndict=processFilenames(input,output)
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
     
     if not newfilelist:
@@ -266,7 +285,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         pydr_input = newfilelist
 
     # AsnTable will handle the case when output==None
-    if not oldasndict:        
+    if not oldasndict and output is not None:        
         oldasndict = asnutil.ASNTable(pydr_input, output=output)
         oldasndict.create()
                 

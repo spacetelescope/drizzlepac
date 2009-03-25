@@ -40,11 +40,18 @@ def getHelpAsString():
     return helpString
 
 #this is the user access function
-def median(imageList=None,configObj=None, editpars=False, **inputDict):
+def median(input=None,configObj=None, editpars=False, **inputDict):
     """
         create a median image from the seperately drizzled images   
     """
-    inputDict["input"]=imageList        
+    
+    if input is not None:
+        inputDict["input"]=input        
+        
+    else:
+        print "Please supply an input image"
+        raise ValueError
+        
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
         return

@@ -1,5 +1,5 @@
 _task_name_ = string_kw(default="sky")
-imageList = string_kw(default="")  #
+input = string_kw(default="", comment="Input files (name, suffix, or @list)")
 mode = string_kw(default="all")
 
 [STEP 2: SKY SUBTRACTION ]

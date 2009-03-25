@@ -19,11 +19,12 @@ import processInput
 import imagestats
 import os
 import numpy as np
-import sky_help
 
 __taskname__= "BigBlackBox.sky" #looks in BigBlackBox for sky.cfg
 _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
+
+    
 def getHelpAsString():
     """ 
     return useful help from a file in the script directory called module.help
@@ -46,12 +47,13 @@ def getHelpAsString():
     return helpString
 
 #this is the user access function
-def sky(imageList=None,configObj=None, editpars=False, **inputDict):
+def sky(input=None,outExt='',configObj=None, group=None, editpars=False, **inputDict):
     """
-    imageList is a python list of image filenames, or just a single filename
+    input is a python list of image filenames, or just a single filename
     configObj is an instance of configObject
     inputDict is an optional list of parameters specified by the user
-    saveFile decided whether to save intermediate files, set to False to delete them
+    outExt is the extension of the output image. If the output already exists
+      then the input image is overwritten
     
     These are parameters that the configObj should contain by default,
     they can be altered on the fly using the inputDict
@@ -74,14 +76,40 @@ def sky(imageList=None,configObj=None, editpars=False, **inputDict):
     where all the science data extensions have been sky subtracted
     
     """
-    
-    inputDict["input"]=imageList        
+    if input is not None:
+        inputDict['input']=input  
+        inputDict['output']=None
+        inputDict['updatewcs']=False
+        inputDict['workinplace']=True      
+    else:
+        print "Please supply an input image"
+        raise ValueError
+
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
+        print "\nEmpty configObject\n"
         return
     
-    run(configObj)
-     
+    output=None
+    
+    #now we really just need the imageObject list created for the dataset
+    filelist,output,ivmlist,oldasndict=processInput.processFilenames(input,output)
+
+    imageObjList=processInput.createImageObjectList(filelist,instrpars={},group=group)
+    configObj['clean']=True
+    
+    #set up the output names, if no extension given the default will be used
+    #otherwise, the user extension is used and if the file already exists it's overwritten
+    if(len(outExt) !=0):    
+        for image in imageObjList:
+            outsky=image.outputNames['outSky']
+            if outExt not in outsky:
+                outsky=outsky.replace("sky",outExt)
+                image.outputNames['outSky']=outsky
+                print outsky
+
+    subtractSky(imageObjList,configObj)
+         
 
 #this is the function that will be called from TEAL
 def run(configObj):
@@ -99,7 +127,7 @@ def subtractSky(imageObjList,configObj):
 
     for image in imageObjList:
         print "Working on sky for: ",image._filename
-        _skySub(configObj,image,configObj["clean"])
+        _skySub(configObj,image,saveFile=configObj['clean'])
     
 
 #this is the main function that does all the real work
@@ -216,6 +244,9 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
         print "Saving output sky subtracted image: ",imageSet.outputNames["outSky"]
         #get the rest of the data extensions
         imageSet.getAllData(exclude="SCI")
+        if os.access(imageSet.outputNames['outSky'],os.F_OK):
+            os.remove(imageSet.outputNames['outSky'])
+            
         try:
             imageSet._image.writeto(imageSet.outputNames['outSky'])
         except IOError:

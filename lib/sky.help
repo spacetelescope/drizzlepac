@@ -1,0 +1,135 @@
+**************************
+*                        *
+*    HELPFILE for SKY    *
+*                        *
+**************************
+
+------------------
+Basic Explanation:
+------------------
+
+Sky subtraction is generally recommended for optimal flagging and removal of CR's, when the sky background 
+is more than a few electrons.  However, some science applications may require the sky to not be removed. 
+Thus, the final drizzle step can be performed with no sky subtraction. If you turn off sky subtraction, 
+you should also set drizzle.pixfrac to 1. Otherwise variations in sky between images will add noise to
+your data.
+
+For cameras with multiple detectors (such as ACS/WFC, WFPC2, or WFC3), the sky values in each exposure are 
+first measured separately for the different detectors. Then these different values are compared, and the 
+lowest measured sky value is used as the estimate for all the detectors for that exposure. This is based 
+on the premise that for targets consisting of large extended or bright sources, the pixel intensity 
+distribution in one or more of the detectors may be significantly skewed toward the bright end by the target 
+itself, thereby overestimating the sky on that detector. If the other detector is less affected by such 
+a target, then its sky value  will be lower, and can therefore also be substituted as the sky value for 
+the detector with the bright source. 
+
+
+Input: Aside from the input parameters, this step requires opening each image to access the science (SCI) extensions 
+       for computing the sky values.
+
+Output: The input file primary headers get updated with the computed sky value, and each input image's SCI 
+        array (or copy, if 'workinplace' is set to False), gets sky subtracted.
+
+For more information on the science applications of the sky task, see the MultiDrizzle Handbook:
+
+http://www.stsci.edu/hst/HST_overview/documents/multidrizzle
+
+
+-----------------------------------
+Current User Accessable Parameters:
+-----------------------------------
+
+skysub:   Turn on or off sky subtraction on the input data.
+
+skywidth: Bin width, in sigma, used to sample the distribution of pixel flux values in order to 
+          compute the sky background statistics.
+
+skystat:  Statistical method for determining the sky value from the image pixel values. 
+          Valid options are:
+
+          * median
+          * mode
+          * mean 
+
+skylower: Lower limit of usable pixel values for computing the sky. This value should be 
+          specified in units of electrons.
+
+skyupper: Upper limit of usable pixel values for computing the sky. This value should be 
+          specified in units of electrons.
+
+skyclip:  Number of clipping iterations to use when computing the sky value.
+
+skylsigma: Lower clipping limit, in sigma, used when computing the sky value.
+
+skyusigma: Upper clipping limit, in sigma, used when computing the sky value.
+
+skyuser:  Name of header keyword which records the sky value already subtracted from 
+          the image by the user.
+
+
+---------------------------------------------------------------
+How to use the tasks stand alone interface in your own scripts:
+---------------------------------------------------------------
+
+These tasks are designed to work together seemlessly when run in the full MultiDrizzle
+interface. More advanced users may wish to create specialized scripts for their own datasets
+which use only some of the predefined MultiDrizzle tasks, or add additional processing
+which might be usefull for their particular data. In these cases, individual access
+to the tasks is important. 
+
+**Something to keep in mind is that the full MultiDrizzle interface will
+make backup copies of your original files and place them in the OrIg/ directory
+of you current working directory. If you are working with the stand alone
+interfaces, it is assumed that the user has already taken care of backing up
+their original datafiles since the input file with be directly altered.
+
+For sky, the user interface function is "sky" and has the following input: 
+
+
+def sky(imageList=None,configObj=None, editpars=False, **inputDict):
+
+    imageList is a python list of image filenames, or just a single filename
+
+    configObj is an instance of configObject
+
+    inputDict is an optional list of parameters specified by the user
+    
+    These are parameters that the configObj should contain by default,
+    they can be altered on the fly using the inputDict.If configObj is
+    set to None and there is no inputDict information, then the values
+    for the parameters will be pulled from the default configuration files
+    for the task. These are the same configuration files that are reference
+    in the TEAL parameter interface GUI. If you wish to edit these parameters
+    by hand in the gui, simply set editpars=True
+
+
+    params that should be in configobj
+    ---------------------------------------
+    skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
+    skysub		'Perform sky subtraction?'
+    skywidth	'Bin width for sampling sky statistics (in sigma)'
+    skystat	 	'Sky correction statistics parameter'
+    skylower	'Lower limit of usable data for sky (always in electrons)'
+    skyupper	'Upper limit of usable data for sky (always in electrons)'
+    skyclip		'Number of clipping iterations'
+    skylsigma	'Lower side clipping factor (in sigma)'
+    skyusigma	'Upper side clipping factor (in sigma)'
+
+
+    the output from sky subtraction is a copy of the original input file
+    where all the science data extensions have been sky subtracted
+
+
+Basic example of how to call sky yourself from a python command line,
+this example will use the default parameter settings and subtract
+a sky value from each *flt.fits image in the current directory, saving
+the output file with the extension of "mysky":
+
+
+>from BigBlackBox import sky
+>sky.sky('*flt.fits',outExt='mysky')
+
+
+
+
+
