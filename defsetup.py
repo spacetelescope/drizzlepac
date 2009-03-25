@@ -25,8 +25,8 @@ cfitsioinc = []
 
 if sys.platform != 'win32':
     pydrizzle_libraries = ['m']
-    cfitsioinc = ['/user/dencheva/mdriz-dev/soft-build/cfitsio']
-    EXTRA_LINK_ARGS = ['-L/user/dencheva/mdriz-dev/soft-build/cfitsio']
+    cfitsioinc = ['/Users/sosey/dev/ssb/development/cfitsio']
+    EXTRA_LINK_ARGS = ['-L/Users/sosey/dev/ssb/development/cfitsio']
 else:
     pydrizzle_libraries = []
     EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT']
@@ -63,7 +63,7 @@ setupargs = {
     'author_email' :    "help@stsci.edu",
     'license' :         "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :       ["Linux","Solaris","Mac OS X","Win"],
-    'data_files' :        [( pkg+"/pars", ['lib/pars/*'])],
+    'data_files' :        [( pkg+"/pars", ['lib/pars/*']),( pkg, ['lib/*.help'])],
     'scripts' :         [] ,
     'ext_modules' :     getNumpyExtensions()
     }
