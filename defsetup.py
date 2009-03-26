@@ -1,5 +1,5 @@
 from distutils.core import Extension
-import sys, os.path
+import sys, os.path, os
 from distutils import sysconfig
 
 try:
@@ -25,8 +25,8 @@ cfitsioinc = []
 
 if sys.platform != 'win32':
     pydrizzle_libraries = ['m']
-    cfitsioinc = ['/Users/sosey/dev/ssb/development/cfitsio']
-    EXTRA_LINK_ARGS = ['-L/Users/sosey/dev/ssb/development/cfitsio']
+    cfitsioinc = [os.environ['CFITSIO_LIB']]
+    EXTRA_LINK_ARGS = ['-L'+os.environ['CFITSIO_LIB']]
 else:
     pydrizzle_libraries = []
     EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT']
