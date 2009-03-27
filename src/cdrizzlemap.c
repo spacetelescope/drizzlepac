@@ -443,8 +443,8 @@ map_value(struct driz_param_t* p,
 
     for (i = 0; i < n; ++i) {
       x += p->x_scale;
-      xtmp[i] = x;
-      ytmp[i] = y;
+      xtmp[i] = x; /* add 1.0 to account for 0-based indexing */
+      ytmp[i] = y; /* add 1.0 to account for 0-based indexing */
     }
   } else {
     xd = yd = 0.0;

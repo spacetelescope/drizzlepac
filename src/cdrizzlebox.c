@@ -795,19 +795,22 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
                 struct driz_error_t* error) {
   integer_t i, ii, jj, nxi, nxa, nyi, nya, nhit, iis, iie, jjs, jje;
   float vc, d, dow;
-  double xxi, xxa, yyi, yya, w, dx, dy, dover;
+  double xxi, xxa, yyi, yya, w, dx, dy, dover,xoi,yoi;
 
   dx = (double)(p->xmin - 1);
   dy = (double)(p->ymin - 1);
 
   nhit = 0;
 
+
   for (i = x1; i <= x2; ++i) {
     /* Offset within the subset */
-    xxi = *mapping_ptr(p, xo, i) - dx - p->pfo;
-    xxa = *mapping_ptr(p, xo, i) - dx + p->pfo;
-    yyi = *mapping_ptr(p, yo, i) - dy - p->pfo;
-    yya = *mapping_ptr(p, yo, i) - dy + p->pfo;
+    xoi = *mapping_ptr(p, xo, i);
+    yoi = *mapping_ptr(p, yo, i);
+    xxi = xoi - dx - p->pfo;
+    xxa = xoi - dx + p->pfo;
+    yyi = yoi - dy - p->pfo;
+    yya = yoi - dy + p->pfo;
 
     nxi = fortran_round(xxi);
     nxa = fortran_round(xxa);
@@ -831,6 +834,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
       w = 1.0;
     }
 
+    
     /* Loop over the output pixels which could be affected */
     for (jj = jjs; jj <= jje; ++jj) {
       for (ii = iis; ii <= iie; ++ii) {

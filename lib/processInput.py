@@ -234,7 +234,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 
         filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
         
-    elif (isinstance(input, list) == False) and \
+    elif (not isinstance(input, list)) and \
        (input[0] == '@') :
         # input is an @ file
         f = open(input[1:])
@@ -257,12 +257,15 @@ def processFilenames(input=None,output=None,infilesOnly=False):
                     output = fileutil.buildNewRootname(filelist[0])
                 else: 
                     output = 'final'
+            if not isinstance(input, list):
+                filelist.sort()
         except IOError: raise
     
     # sort the list of input files
     # this ensures the list of input files has the same order on all platforms
     # it can have ifferent order because listdir() uses inode order, not unix type order 
-    filelist.sort()
+    #filelist.sort()
+ 
 
     return filelist,output,ivmlist,oldasndict    
     
@@ -285,7 +288,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         pydr_input = newfilelist
 
     # AsnTable will handle the case when output==None
-    if not oldasndict and output is not None:        
+    if not oldasndict:# and output is not None:        
         oldasndict = asnutil.ASNTable(pydr_input, output=output)
         oldasndict.create()
                 

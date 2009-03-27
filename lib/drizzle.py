@@ -135,11 +135,6 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_funct
 
 # Run 'drizzle' here...
 #
-def getWeightMask(maskname,imgObject,chip,bits):
-    dqarr = imgObject.buildMask(chip,bits)
-    mergeDQarray(maskname,dqarr)
-    _inwht = dqarr.astype(np.float32)
-    return _inwht
 
 def mergeDQarray(maskname,dqarr):
     """ Merge static or CR mask with mask created from DQ array on-the-fly here.
@@ -415,11 +410,19 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             # and combine it with the static_mask for single_drizzle case...
             #        
             ####
+            # Build basic DQMask from DQ array and bits value
+            dqarr = img.buildMask(chip._chip,bits)
+
+            # Merge appropriate additional mask(s) with DQ mask
             if single:
-                _inwht = getWeightMask(chip.outputNames['staticMask'],img,chip._chip,bits)
+                mergeDQarray(chip.outputNames['staticMask'],dqarr)
             else:
-                _inwht = getWeightMask(chip.outputNames['crmaskImage'],img,chip._chip,bits)
+                mergeDQarray(chip.outputNames['staticMask'],dqarr)
+                mergeDQarray(chip.outputNames['crmaskImage'],dqarr)
                 updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,chip.outputNames['crmaskImage'],crbit)
+            
+            # Convert mask to a datatype expected by 'tdriz'
+            _inwht = dqarr.astype(np.float32)
 
             if paramDict['wt_scl'] != None:
                 if isinstance(paramDict['wt_scl'],types.StringType):

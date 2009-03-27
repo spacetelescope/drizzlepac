@@ -45,7 +45,7 @@ class ACSInputImage(imageObject):
         detnum = sci_chip.detnum
         instr=self._instrument
         
-        sig=(instr+self._detector,(nx,ny),detnum) #signature is a tuple
+        sig=(instr+self._detector,(nx,ny),int(chip)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
         filename=constructFilename(sig)
         sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file

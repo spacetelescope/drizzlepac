@@ -88,7 +88,7 @@ class WFPC2InputImage (imageObject):
             
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
-
+            
         for chip in self.returnAllChips(extname=self.scienceExt): 
             chip._headergain    = self.getInstrParameter(instrpars['gain'], pri_header,
                                                      instrpars['gnkeyword'])    
@@ -114,10 +114,9 @@ class WFPC2InputImage (imageObject):
         usingDefaultReadnoise = False
         if (instrpars['gnkeyword'] == 'ATODGAIN'):
             usingDefaultGain = True
-        if (instrpars['rnkeyword'] == None):
+        if (instrpars['rnkeyword'] == None or instrpars['rnkeyword'] == 'None'):
             usingDefaultReadnoise = True
 
-            
         # If the user has specified either the readnoise or the gain, we need to make sure
         # that they have actually specified both values.  In the default case, the readnoise
         # of the system depends on what the gain
@@ -293,7 +292,7 @@ class WFPC2InputImage (imageObject):
         detnum = sci_chip.detnum
         instr=self._instrument
         
-        sig=(instr+WFPC2_DETECTOR_NAMES[detnum],(nx,ny),detnum) #signature is a tuple
+        sig=(instr+WFPC2_DETECTOR_NAMES[detnum],(nx,ny),chip) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
         filename=constructFilename(sig)
         sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file

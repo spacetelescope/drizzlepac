@@ -102,7 +102,7 @@ class baseImageObject:
             non FITS input images. openImage returns a pyfits object
         
         """
-        if exten.find('sci') > -1:
+        if exten.lower().find('sci') > -1:
             # For SCI extensions, the current file will have the data
             fname = self._filename
         else:
@@ -113,6 +113,7 @@ class baseImageObject:
             extn = exten.split(',')
             sci_chip = self._image[self.scienceExt,int(extn[1])]
             fname = sci_chip.dqfile
+        
         if os.path.exists(fname):
             _image=fileutil.openImage(fname,clobber=False,memmap=0)
             _data=fileutil.getExtn(_image,extn=exten).data
@@ -470,6 +471,7 @@ class baseImageObject:
             phdu = pyfits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
             print 'Writing out DQ mask: ',dqmask_name
+            if os.path.exists(dqmask_name): os.remove(dqmask_name)
             phdu.writeto(dqmask_name)
             del phdu
             self._image[self.scienceExt,chip].dqmaskname = dqmask_name

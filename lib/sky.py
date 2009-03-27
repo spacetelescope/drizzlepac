@@ -14,7 +14,7 @@
 """
 import util
 from imageObject import imageObject
-from pytools import cfgpars
+from pytools import cfgpars, fileutil
 import processInput
 import imagestats
 import os
@@ -188,10 +188,10 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
                 print "**************************************************************\n\n\n"
                 raise KeyError
                 
-            _updateKW(imageSet[sciExt+','+str(chip)],skyKW,_skyValue)
+            _updateKW(imageSet[sciExt+','+str(chip)],imageSet._filename,(sciExt,chip),skyKW,_skyValue)
                         
         #update the value of MDRIZSKY in the global header
-        _updateKW(imageSet["PRIMARY"],skyKW,_skyValue)
+        _updateKW(imageSet["PRIMARY"],imageSet._filename,"PRIMARY",skyKW,_skyValue)
         print skyKW,"=",_skyValue
 
     else:
@@ -228,17 +228,21 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
         #and update the chips header keyword with the sub
         for chip in range(1,numchips+1,1):
             image=imageSet._image[sciExt,chip]
+            myext = sciExt+","+str(chip)
             _scaledSky=_skyValue * (image.wcs.idcscale**2)
             image.subtractedSky = _scaledSky
             print "subtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             _subtractSky(image,(_scaledSky))
-            _updateKW(image,skyKW,_scaledSky) #I updated this so that the keyword in the image is 
+            _updateKW(image,imageSet._filename,(sciExt,chip),skyKW,_scaledSky) #I updated this so that the keyword in the image is 
                                             #the sky value actually subtracted from the image
+
+            # Write out the sky-subtracted array back to the input image
+            imageSet.updateData(sciExt+","+str(chip),image.data)
             
         #update the value of MDRIZSKY in the global header
         # This does not make sense for STIS ASN files that
         #haven't been chunked up into separate fits files already
-        _updateKW(imageSet[0],skyKW,_skyValue)
+        _updateKW(imageSet["PRIMARY"],imageSet._filename,'PRIMARY',skyKW,_skyValue)
    
     if(saveFile):
         print "Saving output sky subtracted image: ",imageSet.outputNames["outSky"]
@@ -314,11 +318,16 @@ def _subtractSky(image,skyValue,memmap=0):
         raise IOError 
 
 
-def _updateKW(image, skyKW, _skyValue):
+def _updateKW(image, filename, exten, skyKW, Value):
     """update the header with the kw,value"""
+    # Update the value in memory
+    image.header.update(skyKW,Value)
 
-    image.header.update(skyKW,_skyValue)
-    
+    # Now update the value on disk
+    print 'Updating keyword ',skyKW,' in ',filename+str(exten)
+    fobj = fileutil.openImage(filename,mode='update')
+    fobj[exten].header.update(skyKW,Value)
+    fobj.close()
     
 #this is really related to each individual chip
 #so pass in the image for that chip, image contains header and data
