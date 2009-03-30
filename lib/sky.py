@@ -86,21 +86,24 @@ def sky(input=None,outExt='',configObj=None, group=None, editpars=False, **input
         raise ValueError
 
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
-    if configObj is None:
-        print "\nEmpty configObject\n"
-        return
-    
-    output=None
-    
-    #now we really just need the imageObject list created for the dataset
-    filelist,output,ivmlist,oldasndict=processInput.processFilenames(input,output)
+        
+    if not editpars:
+        run(configObj,outExt=outExt)
+         
 
-    imageObjList=processInput.createImageObjectList(filelist,instrpars={},group=group)
-    configObj['clean']=True
+#this is the function that will be called from TEAL
+def run(configObj,outExt=None):
+ 
+    #now we really just need the imageObject list created for the dataset
+    filelist,output,ivmlist,oldasndict=processInput.processFilenames(configObj['input'],None)
+
+    imageObjList=processInput.createImageObjectList(filelist,instrpars={},group=configObj['group'])
     
     #set up the output names, if no extension given the default will be used
     #otherwise, the user extension is used and if the file already exists it's overwritten
-    if(len(outExt) !=0):    
+    saveFile = False
+    if(outExt not in [None,'','None']):    
+        saveFile = True
         for image in imageObjList:
             outsky=image.outputNames['outSky']
             if outExt not in outsky:
@@ -108,35 +111,28 @@ def sky(input=None,outExt='',configObj=None, group=None, editpars=False, **input
                 image.outputNames['outSky']=outsky
                 print outsky
 
-    subtractSky(imageObjList,configObj)
-         
-
-#this is the function that will be called from TEAL
-def run(configObj):
- 
-    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
-    subtractSky(imgObjList,configObj)
+    subtractSky(imageObjList,configObj,saveFile=saveFile)
 
 
 #this is the workhorse function
-def subtractSky(imageObjList,configObj):
-    step_name = util.getSectionName(configObj,_step_num_)
-    if not configObj[step_name]['skysub']:
+def subtractSky(imageObjList,configObj,saveFile=False):
+    if not util.getConfigObjPar(configObj,'skysub'):
         print 'Sky Subtraction step not performed.'
         return
 
     for image in imageObjList:
         print "Working on sky for: ",image._filename
-        _skySub(configObj,image,saveFile=configObj['clean'])
+        _skySub(configObj,image,saveFile=saveFile)
     
 
 #this is the main function that does all the real work
-def _skySub(configObj=None,imageSet=None,saveFile=True):
+def _skySub(configObj=None,imageSet=None,saveFile=False):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
     imageSet is a single imageObject reference
     configObj should be an actual config object by now
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
+    else, overwrite the input images with the sky-subtracted results
 
     the output from sky subtraction is a copy of the original input file
     where all the science data extensions have been sky subtracted
@@ -231,13 +227,15 @@ def _skySub(configObj=None,imageSet=None,saveFile=True):
             myext = sciExt+","+str(chip)
             _scaledSky=_skyValue * (image.wcs.idcscale**2)
             image.subtractedSky = _scaledSky
-            print "subtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
+            print "\nsubtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             _subtractSky(image,(_scaledSky))
             _updateKW(image,imageSet._filename,(sciExt,chip),skyKW,_scaledSky) #I updated this so that the keyword in the image is 
                                             #the sky value actually subtracted from the image
 
-            # Write out the sky-subtracted array back to the input image
-            imageSet.updateData(sciExt+","+str(chip),image.data)
+            if not saveFile:
+                print "Updating input image with sky subtracted image"
+                # Write out the sky-subtracted array back to the input image
+                imageSet.updateData(sciExt+","+str(chip),image.data)
             
         #update the value of MDRIZSKY in the global header
         # This does not make sense for STIS ASN files that
@@ -324,7 +322,11 @@ def _updateKW(image, filename, exten, skyKW, Value):
     image.header.update(skyKW,Value)
 
     # Now update the value on disk
-    print 'Updating keyword ',skyKW,' in ',filename+str(exten)
+    if isinstance(exten,tuple):
+        strexten = '[%s,%s]'%(exten[0],str(exten1))
+    else:
+        strexten = '[%s]'%(exten)
+    print 'Updating keyword ',skyKW,' in ',filename+strexten
     fobj = fileutil.openImage(filename,mode='update')
     fobj[exten].header.update(skyKW,Value)
     fobj.close()

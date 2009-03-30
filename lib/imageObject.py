@@ -56,7 +56,8 @@ class baseImageObject:
         """ Method used to determine if a value or keyword is supplied as 
             input for instrument specific parameters.
         """
-        if (par1 == None or par1 == '') and (par2 == None or par2 == ''):
+        invalidValues = [None,'None','INDEF','']
+        if (par1 in invalidValues) and (par2 in invalidValues):
             return True
         else:
             return False

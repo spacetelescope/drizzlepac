@@ -62,7 +62,7 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
+def drizzle(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
     """Perform drizzle operation on input to create output.
      The input parameters originally was a list
      of dictionaries, one for each input, that matches the
@@ -76,20 +76,14 @@ def drizzle(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,ed
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """    
 
-    # Now, merge required input parameters into input_dict
-    if input is not None:
-        input_dict['input'] = input
-    input_dict['output'] = output
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
-    if configObj is None:
-        return
     
-    if editpars == False:
+    if not editpars:
         run(configObj,wcsmap=wcsmap)
 
 #
@@ -337,11 +331,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     for img in imageObjectList:
         for chip in img.returnAllChips(extname=img.scienceExt):
+            
+            # Look for sky-subtracted product. 
+            if os.path.exists(chip.outputNames['outSky']):
+                chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
+                _expname = chip.outputNames['outSky']+chipextn
+            else:
+                # If sky-subtracted product does not exist, use regular input
+                _expname = chip.outputNames['data']
+            print '-Drizzle input: ',_expname
+
             # Open the SCI image
-            _expname = chip.outputNames['data']
             _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
-            #_extn = chip.header['extname']+str(chip.header['extver'])
-            #_sciext = fileutil.getExtn(_handle,extn=_extn)
             _sciext = _handle[chip.header['extname'],chip.header['extver']]
             """
             if single:

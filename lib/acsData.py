@@ -108,17 +108,6 @@ class ACSInputImage(imageObject):
         if self.proc_unit == "electrons":
             self.doUnitConversions()
 
-    def _isNotValid(self, par1, par2):
-        """ Method used to determine if a value or keyword is supplied as
-            input for instrument specific parameters.
-        """
-        if (par1 == None or par1 == '') and (par2 == None or par2 == ''):
-            return True
-        else:
-            return False
-
-
-
     def getflat(self):
         """
 

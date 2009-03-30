@@ -32,23 +32,15 @@ except:
 #
 #### Interactive user interface (functional form)
 #
-def MultiDrizzle(input = '*flt.fits',output = None, shiftfile = None, updatewcs = True, editpars=True,
-                configObj=None, wcsmap=wcs_functions.WCSMap, **input_dict):
+def MultiDrizzle(editpars=False, configObj=None, wcsmap=wcs_functions.WCSMap, **input_dict):
 
-    # Only create an updated input_dict if there is NO configObj provided to
-    # avoid having the positional parameters values override those from the
-    # configObj input.
-    # Now, merge required input parameters into input_dict
-    input_dict['input'] = input
-    input_dict['output'] = output
-    input_dict['shiftfile'] = shiftfile
-    input_dict['updatewcs'] = updatewcs
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
     # called 'run()'.
     if editpars == False:
@@ -90,7 +82,7 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
     imgObjList,outwcs = processInput.setCommonInput(configObj)
-    
+
     # Call rest of MD steps...
     print 'Finished interpreting configObj...\n'
    

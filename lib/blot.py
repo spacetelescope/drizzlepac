@@ -52,11 +52,7 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
-    # Now, merge required input parameters into input_dict
-    if input is not None:
-        input_dict['input'] = input
-    input_dict['output'] = output
+def blot(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
 
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
@@ -64,10 +60,8 @@ def blot(input=None,output=None,configObj=None,wcsmap=wcs_functions.WCSMap,editp
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
-    if configObj is None:
-        return
     
-    if editpars == False:
+    if not editpars:
         run(configObj,wcsmap=wcsmap)
 
 #

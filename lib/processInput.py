@@ -92,7 +92,7 @@ def setCommonInput(configObj,createOutwcs=True):
     instrpars['proc_unit'] = configObj['proc_unit']
 
     if configObj['shiftfile'] not in [None,""]:
-        print '\nApplying shiftfile to images...\n'
+        print '\nApplying shiftfile ',configObj['shiftfile'],' to input images...\n'
         # Update all input images with shifts from shiftfile
         wcs_functions.createHeaderlets(configObj['shiftfile'])
 
@@ -101,7 +101,7 @@ def setCommonInput(configObj,createOutwcs=True):
 
     # Add info about input IVM files at this point to the imageObjectList
     addIVMInputs(imageObjectList,ivmlist)
-        
+                
     if(createOutwcs):
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
