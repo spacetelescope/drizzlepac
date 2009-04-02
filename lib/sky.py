@@ -323,7 +323,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
 
     # Now update the value on disk
     if isinstance(exten,tuple):
-        strexten = '[%s,%s]'%(exten[0],str(exten1))
+        strexten = '[%s,%s]'%(exten[0],str(exten[1]))
     else:
         strexten = '[%s]'%(exten)
     print 'Updating keyword ',skyKW,' in ',filename+strexten
