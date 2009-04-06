@@ -39,12 +39,12 @@ def getHelpAsString():
     return helpString
 
 #this is the user access function
-def drizCR(imageList=None,configObj=None, editpars=False, **inputDict):
+def drizCR(input=None,configObj=None, editpars=False, **inputDict):
     """
         look for cosmic rays
     """
     print inputDict    
-    inputDict["input"]=imageList    
+    inputDict["input"]=input    
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
 
     if editpars == False:

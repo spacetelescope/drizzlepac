@@ -1,0 +1,111 @@
+**************************
+*                        *
+*       HELPFILE         *
+*         for            *
+*     createMedian       *
+*                        *
+**************************
+
+------------------
+Basic Explanation:
+------------------
+
+The singly drizzled science images are combined to create a single median image. This median combination 
+gets performed section-by-section from the input single drizzle images. Each section corresponds to a 
+contiguous set of lines from each image taking up no more than 1Mb in memory, so that combining 10 input 
+images would only require 10Mb for these sections. The goal of this step is to created an estimate of what 
+the fully cleaned image should look like in order to enable better bad pixel detection as well as a chance 
+to improve the alignment of the image stack. Creating a median image from the aligned and undistorted input 
+images allows for a statistical rejection of bad pixels.
+
+
+Input: Aside from the input parameters, this step requires access to the single drizzled images on disk.
+
+Output: The final median image serves as the only output from this step.
+
+
+
+-----------------------------------
+Current User Accessable Parameters:
+-----------------------------------
+
+median: The user can specify whether or not to create a median image with this parameter. This median 
+        image will be used as the comparison 'truth' image :in the cosmic ray rejection step.
+
+
+median_newmasks: The user can specify whether or not to create new mask files when creating the median image. 
+                 These masks are generated from the weight files produced previously by the "driz_separate" step, 
+                 and would contain all the bad pixel information. These pixels will be excluded when calculating 
+                 the median. Generally this step should be set to "yes", unless it is desired to include bad 
+                 pixels in generating the median.
+
+
+combine_type: This parameter allows the user to choose which method is used to create the median image. 
+              Valid options are:
+
+            * average
+            * median
+            * sum
+            * minmed 
+
+    The 'average', 'median', and 'sum' options set the mode of operation for using numcombine , a numpy 
+    method for median-combining arrays, to create the median image. The "minmed" option will produce an image 
+    that is generally the same as the median, except in cases where the median is significantly higher than the 
+    minimum good pixel value, in which case it will choose the minimum. The sigma thresholds for this decision 
+    are provided by the "combine_nsigma" parameter. However, as the "combine_nsigma" parameter does not adjust 
+    for the larger probability of a single "nsigma" event with a greater number of images, "minmed" will bias 
+    the comparison image low for a large number of images. "minmed" is highly recommended for three images, 
+    and good for four to six or more images. "minmed" should definitely be avoided for ten or more images. 
+
+    Median is the recommended method for a large number of images, and works equally well as minmed down to 
+    about four images. However, the user should set the "combine_nhigh" parameter to one when using "median" 
+    with four images, and consider raising this parameter for larger numbers of images. As a median averages 
+    the two inner values when the number of values being considered is even, the user may want to keep the 
+    total number of images minus "combine_nhigh" odd when using "median". 
+
+
+combine_nsigma: Sigmas used for accepting minimum values instead of median values when using the 'minmed' 
+                combination method. If two values are specified, then the first value will be used in the 
+                initial choice between median and minimum, while the second value will be used in the "growing" 
+                step to reject additional pixels around those identified in the first step. If only one value is 
+                specified, then it is used in both steps.
+
+
+combine_nlow: This parameter sets the number of low value pixels to reject automatically during image combination.
+
+combine_nhigh: This parameter sets the number of high value pixels to reject automatically during image combination.
+
+combine_lthresh: Sets the lower threshold for clipping input pixel values during image combination. This value 
+                 gets passed directly to 'imcombine' for use in creating the median image. If None, no thresholds 
+                 are used at all.
+
+
+combine_hthresh: Sets the upper threshold for clipping input pixel values during image combination. This value gets
+                 passed directly to 'imcombine' for use in creating the median image. If None, no thresholds are used at all.
+
+combine_grow: Width in pixels for additional pixels to be rejected in an image with a rejected pixel from one of the 
+              rejection algorithms. This parameter is used to set the 'grow' parameter in 'imcombine' for use in 
+              creating the median image. 
+
+
+For more information on the science applications of the sky task, see the MultiDrizzle Handbook:
+
+http://www.stsci.edu/hst/HST_overview/documents/multidrizzle
+
+
+---------------------------------------------------------------
+How to use the tasks stand alone interface in your own scripts:
+---------------------------------------------------------------
+
+
+For createMedian, the user interface function is "median" and has the following input: 
+
+def median(input=None,configObj=None, editpars=False, **inputDict):
+ 
+    input is the list of images
+    configObj is the alternate configObject which overrides default parameter settings
+    set editpars = True to use the GUI to edit parameters
+    inputDict is a dictionary of parameter settings which can also be used to override the defaults
+    
+>from BigBlackBox import createMedian
+>createMedian.median('*flt.fits')

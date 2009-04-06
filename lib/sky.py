@@ -24,7 +24,9 @@ __taskname__= "BigBlackBox.sky" #looks in BigBlackBox for sky.cfg
 _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
 
-    
+def help():
+    print getHelpAsString()
+        
 def getHelpAsString():
     """ 
     return useful help from a file in the script directory called module.help
@@ -47,7 +49,7 @@ def getHelpAsString():
     return helpString
 
 #this is the user access function
-def sky(input=None,outExt='',configObj=None, group=None, editpars=False, **inputDict):
+def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
     """
     input is a python list of image filenames, or just a single filename
     configObj is an instance of configObject
@@ -76,17 +78,20 @@ def sky(input=None,outExt='',configObj=None, group=None, editpars=False, **input
     where all the science data extensions have been sky subtracted
     
     """
+    
+    
     if input is not None:
         inputDict['input']=input  
         inputDict['output']=None
         inputDict['updatewcs']=False
-        inputDict['workinplace']=True      
+        inputDict['workinplace']=True   
+        inputDict['group']=group   
     else:
         print "Please supply an input image"
         raise ValueError
 
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
-        
+    
     if not editpars:
         run(configObj,outExt=outExt)
          

@@ -1,0 +1,84 @@
+**************************
+*                        *
+*    HELPFILE for BLOT   *
+*                        *
+**************************
+
+------------------
+Basic Explanation:
+------------------
+
+The median image is the combination of the WCS aligned input images which have already had the distortion 
+model applied. Taking the median of the aligned images allows for a statistical rejection of bad pixels from 
+the image stack. The resulting median image can then be input to the blot task with the goal of creating 
+'cleaned' versions of the input images at each of their respective dither locations. These "blotted" images 
+can then be directly compared to the original distorted input images for detection of bad-pixels, hot pixels, 
+and cosmic-rays whose locations will be saved to the output badpixel masks.
+
+
+Input: Aside from the input parameters, this step only requires opening the single median image created
+       from all the input images.
+
+Output: A distorted version of the median image corresponding to each input 'chip' (extension) gets written 
+        out as output from this step as separate simple FITS images.
+
+For more information on the science applications of the sky task, see the MultiDrizzle Handbook:
+
+http://www.stsci.edu/hst/HST_overview/documents/multidrizzle
+
+
+-----------------------------------
+Current User Accessable Parameters:
+-----------------------------------
+
+blot: Perform the blot operation on the median image. The output will be median smoothed images which match 
+      each input chips location, these are used in the cosmic ray rejection step.
+
+
+blot_interp: Type of interpolation to use when blotting drizzled images back to their original WCS. Valid options are:
+
+    * nearest: Nearest neighbor
+    * linear: Bilinear interpolation in x and y
+    * poly3: Third order interior polynomial in x and y
+    * poly5: Fifth order interior polynomial in x and y 
+
+    * sinc: Sinc interpolation; accurate but slow 
+
+    The poly5 interpolation method has been chosen as the default because it is relatively fast and accurate. 
+    If 'sinc' interpolation has been selected, then it will use the value of the parameter 'blot_sinscl' to 
+    specify the size of the sinc interpolation kernel. 
+
+
+blot_sinscl: Size of the sinc interpolation kernel in pixels. 
+
+---------------------------------------------------------------
+How to use the tasks stand alone interface in your own scripts:
+---------------------------------------------------------------
+
+These tasks are designed to work together seemlessly when run in the full MultiDrizzle
+interface. More advanced users may wish to create specialized scripts for their own datasets
+which use only some of the predefined MultiDrizzle tasks, or add additional processing
+which might be usefull for their particular data. In these cases, individual access
+to the tasks is important. 
+
+**Something to keep in mind is that the full MultiDrizzle interface will
+make backup copies of your original files and place them in the OrIg/ directory
+of you current working directory. If you are working with the stand alone
+interfaces, it is assumed that the user has already taken care of backing up
+their original datafiles since the input file with be directly altered.
+
+For blot, the user interface function is "blot" and has the following input: 
+
+def blot(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
+
+    
+Basic example of how to call sky yourself from a python command line,
+this example will use the default parameter settings:
+
+>from BigBlackBox import blot
+>blot.blot()
+
+
+
+
+

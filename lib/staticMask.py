@@ -14,17 +14,22 @@
 """
 
 import numpy as np
-from pytools import fileutil
+from pytools import fileutil, cfgpars
 import pyfits
 from imagestats import ImageStats
 import util
 import os
+import processInput
+
 
 
 __taskname__ = "BigBlackBox.staticMask"
 _step_num_ = 1
 
 
+def help():
+    print getHelpAsString()
+    
 #help information that TEAL will look for
 def getHelpAsString():
     """ 
@@ -49,39 +54,45 @@ def getHelpAsString():
 
 
 #this is called by the user
-def staticMask(imageList=None,static_sig=None,editpars=False,**inputDict):
+def create(input=None, static_sig=4.0, group=None, editpars=False, configObj=None, **inputDict):
     """the user can input a list of images if they like to create static masks
        as well as optional values for static_sig and inputDict
        
        the configObj.cfg file will set the defaults and then override them
        with the user options
     """
-    if not isinstance(imageList,list):
-        imageList=[imageList]
         
-    if(static_sig != None):
+    if input is not None:
         inputDict["static_sig"]=static_sig
-        inputDict["input"]=imageList
+        inputDict["group"]=group
+        inputDict["updatewcs"]=False
+        inputDict["workinplace"]=True   
+        inputDict["input"]=input
 
-    #this accounts for a user called init where config is not defined yet
+    else:
+        print "Please supply an input image\n"
+        raise ValueError
+      
+    #this accounts for a user-called init where config is not defined yet
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
 
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=loadOnly(not editpars))
-    if configObj is None:
-        return
-        
     if editpars == False:
         run(configObj)
     
 #this is called by the TEAL interface
 def run(configObj):
-    
-    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
-    _staticMask(imgObjList,configObj)
+
+    #now we really just need the imageObject list created for the dataset
+    filelist,output,ivmlist,oldasndict=processInput.processFilenames(configObj['input'],None)
+
+    imageObjList=processInput.createImageObjectList(filelist,instrpars={},group=configObj['group'])  
+    _staticMask(imageObjList,configObj)
 
 
 #this is the workhorse function
 def _staticMask(imageObjectList=[],configObj=None):
     step_name = util.getSectionName(configObj,_step_num_)
+    
     if not configObj[step_name]['static']:
         print 'Static Mask step not performed.'
         return
@@ -124,7 +135,7 @@ class staticMask:
         # the signature is created in the imageObject class
         
         self.static_sig=4. #just a reasonable number
-        self.masklist={}        
+        self.masklist={}   
         self.step_name=util.getSectionName(configObj,_step_num_)    
                                
             

@@ -55,7 +55,7 @@ def setCommonInput(configObj,createOutwcs=True):
         configObj = {'input':None,'output':None,
                     'updatewcs':None,'shiftfile':None}
 
-    If provided, the configObj should contain the values of all the MD parameters 
+    If provided, the configObj should contain the values of all the multidrizzle parameters 
     as set by the user with TEAL. If no configObj is given, it will retrieve
     the default values automatically.  In either case, the values from the input_dict
     will be merged in with the configObj before being used by the rest of the 

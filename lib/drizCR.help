@@ -1,0 +1,73 @@
+**************************
+*      HELPFILE          *
+*        for             *
+*      drizCR            *
+**************************
+
+------------------
+Basic Explanation:
+------------------
+
+The blotted median images which are now transformed back into the original reference frame, get compared to 
+the original input images to detect any spurious pixels (which may include pixels impacted by cosmic rays) in 
+each input. Those spurious pixels then get flagged as 'bad' in the output cosmic ray mask files, which get used 
+as input for the final combination, so that they do not show up in the final product.
+
+
+Input: Aside from the input parameters, this step requires:
+
+    * the blotted median images, and
+    * the mask files. 
+
+Output: The identified bad pixels get flagged by updating the input mask files. Optionally, copies of the original images with the bad pixels removed can be created through the use of the 'driz_cr_corr' parameter.
+
+
+-----------------------------------
+Current User Accessable Parameters:
+-----------------------------------
+
+driz_cr: Perform cosmic-ray detection? If set to "yes", it will detect cosmic-rays and create cosmic-ray masks using the algorithms from 'deriv' and 'driz_cr'.
+
+driz_cr_corr: Create a cosmic-ray cleaned input image? The cosmic-ray cleaned _cor image will be generated directly from the input image, and a corresponding _crmask file will be written to document the pixels detected as affected by cosmic-rays.
+
+driz_cr_snr: These values specify the signal-to-noise ratios for the 'driz_cr' task to use in detecting cosmic rays. This parameter value gets passed directly to 'driz_cr'; see the help file for 'driz_cr' for further discussion of this parameter.
+
+driz_cr_scale: Scaling factor applied to the derivative in 'driz_cr' when detecting cosmic-rays. This parameter gets passed directly to 'driz_cr'; see the help file for 'driz_cr' for further discussion of this parameter.
+
+driz_cr_grow : Radius (in pixels) around each detected cosmic-ray to use more stringent detection criteria for additional cosmic rays.
+
+driz_cr_ctegrow: Length (in pixels) of CTE tail to mask in drizzled output.
+
+
+
+---------------------------------------------------------------
+How to use the tasks stand alone interface in your own scripts:
+---------------------------------------------------------------
+
+These tasks are designed to work together seemlessly when run in the full MultiDrizzle
+interface. More advanced users may wish to create specialized scripts for their own datasets
+which use only some of the predefined MultiDrizzle tasks, or add additional processing
+which might be usefull for their particular data. In these cases, individual access
+to the tasks is important. 
+
+**Something to keep in mind is that the full MultiDrizzle interface will
+make backup copies of your original files and place them in the OrIg/ directory
+of you current working directory. If you are working with the stand alone
+interfaces, it is assumed that the user has already taken care of backing up
+their original datafiles since the input file with be directly altered.
+
+For drizCR, the user interface function is "drizCR" and has the following input: 
+
+def drizCR(input=None,configObj=None, editpars=False, **inputDict):
+
+    input is the list of images to use
+    configObj is an instance of configObject which contains parameters to use and will override the default
+    set editpars = True if you would like to edit task parameters using the GUI
+    inputDict is an optional python dictionary which contains parameter settings that will override the defaults
+    
+
+Basic example of how to call static yourself from a python command line,
+using the default parameters for the task. 
+
+>from BigBlackBox import drizCR
+>drizCR.drizCR('*flt.fits')

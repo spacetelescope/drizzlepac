@@ -28,6 +28,9 @@ def run(configObj,wcsmap=wcs_functions.WCSMap):
 
     runblot(imgObjList,outwcs,configObj,wcsmap=wcsmap)
 
+def help():
+    print getHelpAsString()
+    
 def getHelpAsString():
     """ 
     return useful help from a file in the script directory called module.help
