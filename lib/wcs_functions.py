@@ -52,9 +52,12 @@ class WCSMap:
             This method ALWAYS gets called by 'run_driz()' to insure that
             any shifts included in the image are applied.
         """
-        shift,rot,scale = applyHeaderlet(imageObject,self.input,self.output,extname=WCSEXTN_NAME)
-        if shift is not None:
-            self.shift = shift
+        self.shift,rot,scale = applyHeaderlet(imageObject,self.input,self.output,extname=WCSEXTN_NAME)
+        if self.shift is not None and 'shift' not in self.input.__dict__.keys():
+            print ' Correcting WCSMap input WCS for shifts.'
+            # Record the shift applied with the WCS, so that we can tell it
+            # has been applied and not correct the WCS any further
+            self.input.shift = self.shift
             # apply rotation and scale from shiftfile to input WCS
             self.input.rotateCD(rot)
             self.input.wcs.cd *= scale
@@ -69,7 +72,7 @@ class WCSMap:
         """
         # This matches WTRAXY results to better than 1e-4 pixels.
         skyx,skyy = self.input.all_pix2sky(pixx,pixy,self.origin)
-        result= self.output.wcs_sky2pix(skyx,skyy,self.origin)  
+        result= self.output.wcs_sky2pix(skyx,skyy,self.origin)
         if self.shift is not None:
             result[0] -= self.shift[0]
             result[1] -= self.shift[1]
@@ -84,7 +87,7 @@ class WCSMap:
     def xy2rd(self,wcs,pixx,pixy):
         """ Transform input pixel positions into sky positions in the WCS provided.
         """
-        return wcs.wcs_pix2sky(pixx,pixy,1)
+        return wcs.all_pix2sky(pixx,pixy,1)
     def rd2xy(self,wcs,ra,dec):
         """ Transform input sky positions into pixel positions in the WCS provided.
         """
@@ -187,7 +190,7 @@ def addWCSExtn(wcsextn,filename, extname=WCSEXTN_NAME,verbose=True):
     """
     # write out headerlets as new extensions to the input images
     if verbose:
-        print 'Updating ',img,' with shift extension.'
+        print ' Updating ',img,' with shift extension.'
     wcsextn.header.update("EXTNAME",extname)
     fimg = fileutil.openImage(filename,mode='update')
     # Remove any or all pre-existing WCSCORR extensions
@@ -210,7 +213,7 @@ def applyHeaderlet(imageObject,chipwcs,outwcs,extname=WCSEXTN_NAME):
 
     chipname = chipwcs.filename+'["'+chipwcs.extname[0]+'",'+str(chipwcs.extname[1])+']'
 
-    print 'Applying shift information from WCS extension to: ',chipname
+    print ' Getting shift information from WCS extension to: ',chipname
     ref_center = [int(refwcs.naxis1/2) + 1, int(refwcs.naxis2/2) + 1]
     ratio = refwcs.pscale / outwcs.pscale
             

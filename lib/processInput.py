@@ -92,17 +92,19 @@ def setCommonInput(configObj,createOutwcs=True):
     instrpars['proc_unit'] = configObj['proc_unit']
 
     if configObj['shiftfile'] not in [None,""]:
-        print '\nApplying shiftfile ',configObj['shiftfile'],' to input images...\n'
+        print '\n-Applying shiftfile ',configObj['shiftfile'],' to input images...\n'
         # Update all input images with shifts from shiftfile
         wcs_functions.createHeaderlets(configObj['shiftfile'])
 
     # Build imageObject list for all the valid, shift-updated input files
+    print '\n-Creating imageObject List as input for processing steps.\n'
     imageObjectList = createImageObjectList(files,instrpars,group=configObj['group'])
 
     # Add info about input IVM files at this point to the imageObjectList
     addIVMInputs(imageObjectList,ivmlist)
                 
     if(createOutwcs):
+        print '\n-Creating output WCS.\n'
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
         return imageObjectList,outwcs
@@ -372,12 +374,12 @@ def createInputCopies(filelist):
     for fname in filelist:
         copyname = os.path.join(origdir,fname)
         if not os.path.exists(copyname):
-            print 'Preserving original of: ',fname, 'as ',os.path.split(origdir)[1]+copyname
+            print 'Preserving original of: ',fname, 'as ',copyname
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,0444) # make files read-only
         else:
-            print 'Restoring original input for ',fname,' from ',os.path.split(origdir)[1]+copyname
+            print 'Restoring original input for ',fname,' from ',copyname
             # replace current files with original version
             os.chmod(fname,0666)
             shutil.copy(copyname,fname)

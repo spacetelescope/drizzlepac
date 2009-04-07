@@ -60,17 +60,16 @@ check_over(struct driz_param_t* p, const integer_t y, const integer_t margin,
   else
     step = p->dnx / (npoint / 2);
 
-  for (i = 0, np = 0; i < p->dnx; i += step, ++np) {
+  for (i = 1, np = 0; i <= p->dnx; i += step, ++np) {
     assert(np < npoint);
     xval[np] = (double)i;
     yval[np] = (double)y;
   }
-
   assert(np < npoint);
 
   /* Check end point */
-  if (xval[np - 1] < (double)p->dnx - 1) {
-    xval[np] = (double)p->dnx - 1;
+  if (xval[np - 1] < (double)p->dnx) {
+    xval[np] = (double)p->dnx;
     yval[np] = (double)y;
     ++np;
   }
@@ -519,9 +518,10 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
   integer_t i, ii, jj;
   float vc, d, dow;
   double dx, dy;
+  integer_t xarr,yarr;
 
-  dx = (double)(p->xmin - 1);
-  dy = (double)(p->ymin - 1);
+  dx = (double)(p->xmin);
+  dy = (double)(p->ymin);
 
   /* Offset within the subset */
   for (i = x1; i <= x2; ++i) {
@@ -532,13 +532,18 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
     if (ii >= 0 && ii < p->nsx &&
         jj >= 0 && jj < p->nsy) {
       vc = *output_counts_ptr(p, ii, jj);
+    /* Convert i,j 1-based pixel positions into 0-based
+       indices for accessing data array. */
+    xarr = i-1;
+    yarr = j-1;
+
       /* Allow for stretching because of scale change */
-      d = *data_ptr(p, i, j) * (float)p->scale2;
+      d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
 
       /* Scale the weighting mask by the scale factor.  Note that we
          DON'T scale by the Jacobian as it hasn't been calculated */
       if (p->weights) {
-        dow = *weights_ptr(p, i, j) * p->weight_scale;
+        dow = *weights_ptr(p, xarr, yarr) * p->weight_scale;
       } else {
         dow = 1.0;
       }
@@ -568,9 +573,10 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
   integer_t i, ii, jj, nhit, nxi, nxa, nyi, nya;
   float vc, d, dow;
   double xx, yy, xxi, xxa, yyi, yya, dx, dy, ddx, ddy, r2;
+  integer_t xarr,yarr;
 
-  dx = (double)(p->xmin - 1);
-  dy = (double)(p->ymin - 1);
+  dx = (double)(p->xmin);
+  dy = (double)(p->ymin);
 
   for (i = x1; i <= x2; ++i) {
     /* Offset within the subset */
@@ -588,14 +594,19 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
     nya = MIN(fortran_round(yya), p->nsy - 1);
 
     nhit = 0;
+    /* Convert i,j 1-based pixel positions into 0-based
+       indices for accessing data array. */
+    xarr = i-1;
+    yarr = j-1;
+
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, i, j) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
     if (p->weights) {
-      dow = *weights_ptr(p, i, j) * p->weight_scale;
+      dow = *weights_ptr(p, xarr, yarr) * p->weight_scale;
     } else {
       dow = 1.0;
     }
@@ -646,9 +657,10 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
   integer_t i, ii, jj, nxi, nxa, nyi, nya, nhit;
   float vc, d, dow;
   double xx, yy, xxi, xxa, yyi, yya, w, dx, dy, ddx, ddy, r2, dover;
+  integer_t xarr,yarr;
 
-  dx = (double)(p->xmin - 1);
-  dy = (double)(p->ymin - 1);
+  dx = (double)(p->xmin);
+  dy = (double)(p->ymin);
 
   for (i = x1; i <= x2; ++i) {
     xx = *mapping_ptr(p, xo, i) - dx;
@@ -665,14 +677,19 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
     nya = MIN(fortran_round(yya), p->nsy - 1);
 
     nhit = 0;
+    /* Convert i,j 1-based pixel positions into 0-based
+       indices for accessing data array. */
+    xarr = i-1;
+    yarr = j-1;
+
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, i, j) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
     if (p->weights) {
-      w = *weights_ptr(p, i, j) * p->weight_scale;
+      w = *weights_ptr(p, xarr, yarr) * p->weight_scale;
     } else {
       w = 1.0;
     }
@@ -722,9 +739,10 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
   integer_t i, ii, jj, nxi, nxa, nyi, nya, nhit, ix, iy;
   float vc, d, dow;
   double xx, yy, xxi, xxa, yyi, yya, w, dx, dy, dover;
+  integer_t xarr,yarr;
 
-  dx = (double)(p->xmin - 1);
-  dy = (double)(p->ymin - 1);
+  dx = (double)(p->xmin);
+  dy = (double)(p->ymin);
 
   for (i = x1; i <= x2; ++i) {
     xx = *mapping_ptr(p, xo, i) - dx;
@@ -741,14 +759,19 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
     nya = MIN(fortran_round(yya), p->nsy - 1);
 
     nhit = 0;
+    /* Convert i,j 1-based pixel positions into 0-based
+       indices for accessing data array. */
+    xarr = i-1;
+    yarr = j-1;
+
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, i, j) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
     if (p->weights) {
-      w = *weights_ptr(p, i, j) * p->weight_scale;
+      w = *weights_ptr(p, xarr, yarr) * p->weight_scale;
     } else {
       w = 1.0;
     }
@@ -796,9 +819,10 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
   integer_t i, ii, jj, nxi, nxa, nyi, nya, nhit, iis, iie, jjs, jje;
   float vc, d, dow;
   double xxi, xxa, yyi, yya, w, dx, dy, dover,xoi,yoi;
+  integer_t xarr,yarr;
 
-  dx = (double)(p->xmin - 1);
-  dy = (double)(p->ymin - 1);
+  dx = (double)(p->xmin);
+  dy = (double)(p->ymin);
 
   nhit = 0;
 
@@ -823,13 +847,18 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 
     nhit = 0;
 
+    /* Convert i,j 1-based pixel positions into 0-based
+       indices for accessing data array. */
+    xarr = i-1;
+    yarr = j-1;
+
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, i, j) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output. */
     if (p->weights) {
-      w = *weights_ptr(p, i, j) * p->weight_scale;
+      w = *weights_ptr(p, xarr, yarr) * p->weight_scale;
     } else {
       w = 1.0;
     }
@@ -886,8 +915,8 @@ do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
 
   /* TODO: These are constant across calls -- perhaps cache??? */
   dh = 0.5 * p->pixel_fraction;
-  dx = (double)(p->xmin - 1);
-  dy = (double)(p->ymin - 1);
+  dx = (double)(p->xmin)-1;
+  dy = (double)(p->ymin)-1;
   
   /* Next the "classic" drizzle square kernel...  this is different
      because we have to transform all four corners of the shrunken
@@ -895,18 +924,24 @@ do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
   /* Set the start corner positions, only in Y, as X is already
      done. */
 
-  *mapping_4_ptr(p, xi, x1, 0) = (double)x1 - dh;
-  *mapping_4_ptr(p, xi, x1, 1) = (double)x1 + dh;
-  *mapping_4_ptr(p, xi, x1, 2) = (double)x1 + dh;
-  *mapping_4_ptr(p, xi, x1, 3) = (double)x1 - dh;
+  *mapping_4_ptr(p, xi, x1, 0) = (double)x1 - dh-1;
+  *mapping_4_ptr(p, xi, x1, 1) = (double)x1 + dh-1;
+  *mapping_4_ptr(p, xi, x1, 2) = (double)x1 + dh-1;
+  *mapping_4_ptr(p, xi, x1, 3) = (double)x1 - dh-1;
 
-  for (i = 0; i < 4; ++i) {
+  /*for (i = 0; i < 4; ++i) {
     *mapping_4_ptr(p, yi, x1, i) = y;
   }
-  *mapping_4_ptr(p, yi, x1+1, 0) = dh - 1.0;
-  *mapping_4_ptr(p, yi, x1+1, 1) = dh - 1.0;
-  *mapping_4_ptr(p, yi, x1+1, 2) = -dh - 1.0;
-  *mapping_4_ptr(p, yi, x1+1, 3) = -dh - 1.0;
+  */
+  *mapping_4_ptr(p, yi, x1, 0) = y+dh-1;
+  *mapping_4_ptr(p, yi, x1, 1) = y+dh-1;
+  *mapping_4_ptr(p, yi, x1, 2) = y-dh-1;
+  *mapping_4_ptr(p, yi, x1, 3) = y-dh-1;
+
+  *mapping_4_ptr(p, yi, x1+1, 0) = dh;
+  *mapping_4_ptr(p, yi, x1+1, 1) = dh;
+  *mapping_4_ptr(p, yi, x1+1, 2) = -dh;
+  *mapping_4_ptr(p, yi, x1+1, 3) = -dh;
 
   /* Transform onto the output grid */
   for (i = 0; i < 4; ++i) {
@@ -941,12 +976,12 @@ do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
     nhit = 0;
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, i, j) * (float)p->scale2;
+    d = *data_ptr(p, i-1, j) * (float)p->scale2;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
     if (p->weights) {
-      w = *weights_ptr(p, i, j) * p->weight_scale;
+      w = *weights_ptr(p, i-1, j) * p->weight_scale;
     } else {
       w = 1.0;
     }
@@ -1158,10 +1193,10 @@ dobox(struct driz_param_t* p, const integer_t ystart,
 
   if (p->kernel == kernel_square) {
     dh = 0.5 * p->pixel_fraction;
-    *mapping_4_ptr(p, xi, 0, 0) = 1.0 - dh;
-    *mapping_4_ptr(p, xi, 0, 1) = 1.0 + dh;
-    *mapping_4_ptr(p, xi, 0, 2) = 1.0 + dh;
-    *mapping_4_ptr(p, xi, 0, 3) = 1.0 - dh;
+    *mapping_4_ptr(p, xi, 1, 0) = 1.0 - dh;
+    *mapping_4_ptr(p, xi, 1, 1) = 1.0 + dh;
+    *mapping_4_ptr(p, xi, 1, 2) = 1.0 + dh;
+    *mapping_4_ptr(p, xi, 1, 3) = 1.0 - dh;
   } else {
     *mapping_ptr(p, xi, 0) = 1.0;
 
@@ -1196,9 +1231,12 @@ dobox(struct driz_param_t* p, const integer_t ystart,
     }
   }
 
+  printf("-Drizzling using kernel = %s\n",kernel_enum2str(p->kernel));
+
   /* This is the outer loop over all the lines in the input image */
   y = (double)ystart;
-  for (j = 0; j < p->ny; ++j, y+=1.0) {
+  for (j = 0; j < p->ny; ++j) {
+    y+=1.0;
     /* Check the overlap with the output */
     if (check_over(p, (integer_t)y, 5, &ofrac, &x1, &x2, error)) {
       goto dobox_exit_;
@@ -1220,7 +1258,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
         *mapping_ptr(p, xi, x1) = (double)x1;
 
         *mapping_ptr(p, yi, x1) = y;
-        *mapping_ptr(p, yi, x1+1) = -1.0;
+        *mapping_ptr(p, yi, x1+1) = 0.0;
 
         if (map_value(p, TRUE, x2 - x1 + 1,
                       mapping_ptr(p, xi, x1), mapping_ptr(p, yi, x1),
@@ -1232,7 +1270,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
         /* Now we consider the different cases, first the "point"
            option where a single pixel in the output image is
            affected. */
-        if (kernel_handler(p, j, x1, x2, xo, yo,
+        if (kernel_handler(p, y, x1, x2, xo, yo,
                            &oldcon, &newcon, nmiss, error)) {
           goto dobox_exit_;
         }

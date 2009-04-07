@@ -75,6 +75,8 @@ def create(input=None, static_sig=4.0, group=None, editpars=False, configObj=Non
       
     #this accounts for a user-called init where config is not defined yet
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
+    if configObj is None:
+        return
 
     if editpars == False:
         run(configObj)

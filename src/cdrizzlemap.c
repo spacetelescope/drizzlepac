@@ -434,17 +434,17 @@ map_value(struct driz_param_t* p,
 
   /* The built-in "default" mapping needs some pre-processing on its
      input values. */
-
+  
   if (regular) {
-    x = xin[0] - p->x_scale;
-    y = yin[0] + yin[1] + 1.0;
+    x = xin[0];
+    y = yin[0];
     xd = xin[0];
-    yd = yin[1] + 1.0;
+    yd = yin[1];
 
     for (i = 0; i < n; ++i) {
-      x += p->x_scale;
       xtmp[i] = x; /* add 1.0 to account for 0-based indexing */
       ytmp[i] = y; /* add 1.0 to account for 0-based indexing */
+      x += p->x_scale;
     }
   } else {
     xd = yd = 0.0;
