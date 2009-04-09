@@ -863,7 +863,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
       w = 1.0;
     }
 
-    
+
     /* Loop over the output pixels which could be affected */
     for (jj = jjs; jj <= jje; ++jj) {
       for (ii = iis; ii <= iie; ++ii) {
@@ -880,7 +880,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 
           vc = *output_counts_ptr(p, ii, jj);
           dow = (float)(dover * w);
-          
+
           /* If we are create or modifying the context image,
              we do so here. */
           if (update_context(p, ii, jj, dow, oldcon, newcon, error)) {
@@ -917,7 +917,7 @@ do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
   dh = 0.5 * p->pixel_fraction;
   dx = (double)(p->xmin)-1;
   dy = (double)(p->ymin)-1;
-  
+
   /* Next the "classic" drizzle square kernel...  this is different
      because we have to transform all four corners of the shrunken
      pixel */
@@ -1179,13 +1179,13 @@ dobox(struct driz_param_t* p, const integer_t ystart,
     goto dobox_exit_;
   }
 
-  xo = malloc(new_buffer_size * sizeof(double));
+  xo = malloc((new_buffer_size + 1) * sizeof(double));
   if (xo == NULL) {
     driz_error_set_message(error, "Out of memory");
     goto dobox_exit_;
   }
 
-  yo = malloc(new_buffer_size * sizeof(double));
+  yo = malloc((new_buffer_size + 1) * sizeof(double));
   if (yo == NULL) {
     driz_error_set_message(error, "Out of memory");
     goto dobox_exit_;

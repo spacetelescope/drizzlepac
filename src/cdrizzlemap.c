@@ -222,6 +222,8 @@ default_mapping(void* state,
   struct mapping_param_t* m = (struct mapping_param_t*)state;
   integer_t i;
 
+  /* The built-in "default" mapping needs some pre-processing on its
+     input values. */
   for (i = 0; i < n; ++i) {
     xin[i] = m->x_scale * (xin[i] + 1.0 - m->xcen) - 1.0;
     yin[i] = m->y_scale * (yin[i] + 1.0 - m->ycen) - 1.0;
@@ -432,10 +434,9 @@ map_value(struct driz_param_t* p,
   assert(ytmp != yout);
   assert(error);
 
-  /* The built-in "default" mapping needs some pre-processing on its
-     input values. */
-  
   if (regular) {
+    /* x = xin[0] - p->x_scale + 1.0; */
+    /* y = yin[0] + yin[1] + 2.0; */
     x = xin[0];
     y = yin[0];
     xd = xin[0];
