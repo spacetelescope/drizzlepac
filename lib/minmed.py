@@ -194,7 +194,7 @@ class minmed:
         #   rms = sqrt(variance)
         #   This image has units of electrons.
         #
-        # make this the abs value so that negative numbers dont throw an exception??
+        # make this the abs value so that negative numbers dont throw an exception?
         __rms_file = np.sqrt(__median_file_weighted + __bkgd_file + __readnoise_file)
 
         del __bkgd_file, __readnoise_file

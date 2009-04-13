@@ -66,7 +66,7 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def drizzle(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
+def drizzle(input=None,drizSep=False,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
     """Perform drizzle operation on input to create output.
      The input parameters originally was a list
      of dictionaries, one for each input, that matches the
@@ -79,7 +79,17 @@ def drizzle(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_di
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """    
-
+    if input not in [None,""]:
+        input_dict["input"]=input
+        
+    if drizSep:
+        input_dict["driz_separate"]=True
+        input_dict["driz_combine"]=False
+    else:
+        input_dict["driz_separate"]=False
+        input_dict["driz_combine"]=True
+        
+        
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #

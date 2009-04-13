@@ -46,6 +46,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # This insures that all subsequent use of the configObj includes
         # all parameters and their last saved values
         configObj = cfgepar.epar(taskname,loadOnly=True)
+        
         # merge in the user values for this run
         # this, though, does not save the results for use later
         if input_dict not in [None,{}] and configObj not in [None, {}]:

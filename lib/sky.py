@@ -119,7 +119,7 @@ def run(configObj,outExt=None):
     subtractSky(imageObjList,configObj,saveFile=saveFile)
 
 
-#this is the workhorse function
+#this is the workhorse looping function
 def subtractSky(imageObjList,configObj,saveFile=False):
     if not util.getConfigObjPar(configObj,'skysub'):
         print 'Sky Subtraction step not performed.'
@@ -238,7 +238,7 @@ def _skySub(configObj=None,imageSet=None,saveFile=False):
                                             #the sky value actually subtracted from the image
 
             if not saveFile:
-                print "Updating input image with sky subtracted image"
+                print "**Updating input image with sky subtracted image"
                 # Write out the sky-subtracted array back to the input image
                 imageSet.updateData(sciExt+","+str(chip),image.data)
             
