@@ -482,7 +482,7 @@ class baseImageObject:
     def _buildMask(self,dqarr,bitvalue):
         """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
         if bitvalue == None:
-            return (dqarr * 0.0) + 1.0
+            return ((dqarr * 0.0) + 1.0).astype(np.uint8)
         _maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
         return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
 

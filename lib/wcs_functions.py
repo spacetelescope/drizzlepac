@@ -36,6 +36,8 @@ class WCSMap:
         
         self.origin = origin
         self.shift = None
+        self.rot = None
+        self.scale = None
 
     def checkWCS(self,obj,name):
         try:
@@ -53,6 +55,8 @@ class WCSMap:
             any shifts included in the image are applied.
         """
         self.shift,rot,scale = applyHeaderlet(imageObject,self.input,self.output,extname=WCSEXTN_NAME)
+        self.rot = rot
+        self.scale = scale
         if self.shift is not None and 'shift' not in self.input.__dict__.keys():
             print ' Correcting WCSMap input WCS for shifts.'
             # Record the shift applied with the WCS, so that we can tell it
@@ -354,7 +358,13 @@ def mergeWCS(default_wcs,user_pars):
     outwcs = default_wcs.copy()    
 
     # If there are no user set parameters, just return a copy of the original WCS
-    if user_pars == DEFAULT_WCS_PARS:
+    merge = False
+    for upar in user_pars.values():
+        if upar is not None:
+            merge = True
+            break
+        
+    if not merge:
         return outwcs
 
     if (not user_pars.has_key('ra')) or user_pars['ra'] == None:

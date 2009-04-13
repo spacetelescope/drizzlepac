@@ -47,7 +47,7 @@ def getNumpyExtensions():
                      # library_dirs=[],
                      extra_link_args=EXTRA_LINK_ARGS,
                      libraries=['m', 'cfitsio'],
-                     extra_compile_args=['-funroll-loops', '-DPYDRIZZLE'] # , '-fno-inline', '-O0']
+                     extra_compile_args=['-funroll-loops', '-DPYDRIZZLE']#,'-g'] # , '-fno-inline', '-O0']
                      )]
 
     return ext

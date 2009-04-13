@@ -468,7 +468,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   if (fillstr == NULL ||
       *fillstr == 0 ||
       strncmp(fillstr, "INDEF", 6) == 0 ||
-      strncmp(fillstr, "indef", 6) == 0) {
+      strncmp(fillstr, "indef", 6) == 0) 
+  {
     do_fill = 0;
     fill_value = 0.0;
   } else {
@@ -519,7 +520,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   /* Setup reasonable defaults for drizzling */
   p.no_over = FALSE;
-  
+    
   /* Do the drizzling */
   if (dobox(&p, ystart, &nmiss, &nskip, &error)) {
     goto _exit;
@@ -552,7 +553,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
       PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
     return NULL;
   } else {
-    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.7.1 (19th Mar 2008)", nmiss, nskip);
+    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.8 (9th Apr 2009)", nmiss, nskip);
   }
 }
 
