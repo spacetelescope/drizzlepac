@@ -11,6 +11,7 @@ from pytools import iterfile
 from pytools import nimageiter 
 from pytools import numcombine
 from minmed import minmed
+import processInput
 
 __version__ = '1.1'
 
@@ -126,10 +127,10 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     # need to be passed to the minmed routine
     readnoiseList = []
     exposureTimeList = []
-    backgroundValueList = []
+    backgroundValueList = [] #list of  MDRIZSKY *platescale values
     singleDrizList=[] #these are the input images
     singleWeightList=[] #pointers to the data arrays
-    skylist=[] #the list of MDRIZSKY values for the images
+    skylist=[] #the list of platescale values for the images
     _wht_mean = [] # Compute the mean value of each wht image
     
     #for each image object
@@ -170,13 +171,14 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             # I think this is saved in the header of the single driz (or can be calculated
             # by pulling the wcs information from the object
             #backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * outPlatescale)
-            backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * skylist[-1])
+            backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * skylist[-1] *skylist[-1])
             
             # Extract the readnoise value for the chip
             sci_chip = image._image[image.scienceExt,1]
             readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
-
-            print "reference sky value for image ",image._filename," is ", image._image["PRIMARY"].header["MDRIZSKY"]
+            
+            #_refsky=(image.wcs.idcscale**2) * image._image["PRIMARY"].header["MDRIZSKY"]
+            print "reference sky value for image ",image._filename," is ", backgroundValueList[-1]
         #
         # END Loop over input image list
         #
