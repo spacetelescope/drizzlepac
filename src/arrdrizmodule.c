@@ -728,6 +728,7 @@ tblot(PyObject *obj, PyObject *args)
   p.dny = ny;
   p.onx = onx;
   p.ony = ony;
+  p.scale = scale;
   p.kscale = kscale;
   p.x_scale = xscale;
   p.y_scale = yscale;

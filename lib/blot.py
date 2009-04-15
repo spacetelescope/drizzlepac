@@ -76,7 +76,7 @@ def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMa
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)
-        run_blot(imageObjectList, output_wcs.final_wcs, paramDict, wcsmap=wcsmap)
+        run_blot(imageObjectList, output_wcs.single_wcs, paramDict, wcsmap=wcsmap)
     else:
         print 'Blot step not performed.'
 
@@ -218,7 +218,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 wmap.applyShift(img)
                 mapping = wmap.forward
                 pix_ratio = wmap.get_pix_ratio()
-
+                
             t = arrdriz.tblot(
                 _insci, _outsci,xmin,xmax,ymin,ymax,
                 pix_ratio, kscale, 1.0, 1.0,

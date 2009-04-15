@@ -1074,12 +1074,12 @@ doblot(struct driz_param_t* p,
   */
 
   /* Image subset size */
-  nx = (float)(p->xmax - p->xmin);
-  ny = (float)(p->ymax - p->ymin);
+  nx = (float)(p->xmax - p->xmin + 1);
+  ny = (float)(p->ymax - p->ymin + 1);
 
   /* Offsets */
-  dx = (double)(p->xmin - 1);
-  dy = (double)(p->ymin - 1);
+  dx = (double)(p->xmin);
+  dy = (double)(p->ymin);
 
   /* Recalculate the area scaling factor */
   assert(p->scale != 0.0);
@@ -1087,14 +1087,14 @@ doblot(struct driz_param_t* p,
 
   /* Set the X and Y start positions -- most of these don't change
      between iterations. */
-  xin[0] = 0.0;
-  xin[1] = -1.0;
-  yin[1] = -1.0;
+  xin[0] = 1.0;
+  xin[1] = 0.0;
+  yin[1] = 0.0;
   v = 1.0;
 
   /* Outer look over output image pixels (X, Y) */
   for (j = 0; j < p->ony; ++j) {
-    yv = (double)j;
+    yv = (double)j+1;
 
     yin[0] = yv;
 
