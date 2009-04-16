@@ -4,7 +4,7 @@ import os,shutil
 
 import wcs_functions,util
 import mdzhandler
-from pytools import cfgpars
+
 from updatewcs import hstwcs
 
 """

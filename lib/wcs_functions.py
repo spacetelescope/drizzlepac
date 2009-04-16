@@ -61,9 +61,11 @@ class WCSMap:
             print '    Correcting WCSMap input WCS for shifts...'
             # Record the shift applied with the WCS, so that we can tell it
             # has been applied and not correct the WCS any further
+            # Update OUTPUT WCS crpix value with shift, since it was determined
+            # in (and translated to) the output frame.
             self.output.wcs.crpix -= self.shift
 
-            # apply rotation and scale from shiftfile to input WCS
+            # apply translated rotation and scale from shiftfile to input WCS
             self.output.rotateCD(rot)
             self.output.wcs.cd *= scale
             self.output.orientat += rot

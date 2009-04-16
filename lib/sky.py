@@ -14,7 +14,7 @@
 """
 import util
 from imageObject import imageObject
-from pytools import cfgpars, fileutil
+from pytools import fileutil
 import processInput
 import imagestats
 import os

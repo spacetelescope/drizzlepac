@@ -51,7 +51,7 @@ def MultiDrizzle(editpars=False, configObj=None, wcsmap=wcs_functions.WCSMap, **
 #
 
 def getHelpAsString():
-    # Does NOT work with TEAL/cfgepar.epar()
+    # Does NOT work with TEAL/teal.teal()
         help_str = __doc__+'\n'
         help_str += 'Version '+__version__+'\n'
         return help_str
@@ -61,18 +61,18 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     Initial example by Nadia ran MD with configObj EPAR using:
     It can be run in one of two ways:
 
-        from pytools import cfgepar
+        from pytools import teal
 
-        1. Passing a config object to epar
+        1. Passing a config object to teal
 
         from runmdz import mdriz
         mdobj = mdriz('multidrizzle/pars/mdriz.cfg')
-        cfgepar.epar(mdobj)
+        teal.teal(mdobj)
 
 
         2. Passing a task  name:
 
-        cfgepar.epar('multidrizzle')
+        teal.teal('multidrizzle')
 
         The example config files are in multidrizzle/pars
 

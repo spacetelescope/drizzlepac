@@ -14,7 +14,7 @@
 """
 
 import numpy as np
-from pytools import fileutil, cfgpars
+from pytools import fileutil
 import pyfits
 from imagestats import ImageStats
 import util

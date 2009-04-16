@@ -6,7 +6,7 @@ A library of utility functions
 import numpy as np
 import pyfits
 from pytools import asnutil,fileutil
-from pytools import cfgepar,cfgpars
+from pytools import teal
 
 
 __version__ = "0.1.0tng1"
@@ -45,7 +45,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # Start by grabbing the default values without using the GUI
         # This insures that all subsequent use of the configObj includes
         # all parameters and their last saved values
-        configObj = cfgepar.epar(taskname,loadOnly=True)
+        configObj = teal.teal(taskname,loadOnly=True)
         
         # merge in the user values for this run
         # this, though, does not save the results for use later
@@ -58,7 +58,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # We want to run the GUI AFTER merging in any parameters 
         # specified by the user on the command-line and provided in 
         # input_dict
-            configObj = cfgepar.epar(configObj,loadOnly=False)
+            configObj = teal.teal(configObj,loadOnly=False)
 
     if configObj is None:
         print 'No valid input parameters found for: ',taskname
