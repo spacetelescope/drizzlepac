@@ -235,6 +235,10 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     masterList[0].close()
     del _imgarr
 
+    if ( comb_type.lower() == "minmed") and not newmasks:
+        # Issue a warning if minmed is being run with newmasks turned off.
+            print('\nWARNING: Creating median image without the application of bad pixel masks!\n')
+
     for imageSectionsList,prange in nimageiter.FileIter(masterList,overlap=_overlap,bufsize=_bufsize):
 
         if newmasks:
@@ -266,10 +270,8 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
 
         # Do MINMED
         if ( comb_type.lower() == "minmed"):
-            # Issue a warning if minmed is being run with newmasks turned off.
             if (_weight_mask_list in [None,[]]):
-                print('\nWARNING: Creating median image without the application of bad pixel masks!\n')
-
+                _weight_mask_list = None
 
             # Create the combined array object using the minmed algorithm
             result = minmed(imageSectionsList[startDrz:endDrz],  # list of input data to be combined.

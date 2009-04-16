@@ -89,7 +89,9 @@ class minmed:
                                  combinationType="median",nlow=0,nhigh=1,
                                  nkeep=1,upper=None,lower=None)
             __median_file = __tmp.combArrObj
-            
+
+            if self.__weightMaskList in [None,[]]:
+                self.__weightMaskList = [np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)]*len(self.__imageList)
             # The following section of code will address the problem caused by having
             # a value of nhigh = 1.  This will behave in a way similar to the way the
             # IRAF task IMCOMBINE behaves.  In order to accomplish this, the following
@@ -127,6 +129,8 @@ class minmed:
             # __median_file image
             __median_file = np.where(maskSum == self.__numberOfImages-1,sciSum,__median_file)
 
+        if self.__weightMaskList in [None,[]]:
+            self.__weightMaskList = [np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)]*len(self.__imageList)
         # Sum the weightMaskList elements
         __maskSum = self.__sumImages(self.__weightMaskList)
         
@@ -299,6 +303,8 @@ class minmed:
 
     def __sumImages(self,numarrayObjectList):
         """ Sum a list of numarray objects. """
+        if numarrayObjectList in [None,[]]:
+            return None
         __sum = np.zeros(numarrayObjectList[0].shape,dtype=numarrayObjectList[0].dtype)
         for image in numarrayObjectList:
             __sum += image
