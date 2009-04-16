@@ -644,4 +644,4 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # end of loop over each chip
 
 
-    print 'MultiDrizzle drizzling completed at ',_ptime()
+    print 'MultiDrizzle: drizzle task completed at ',_ptime()

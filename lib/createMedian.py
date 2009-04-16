@@ -162,7 +162,8 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             #
             # Get the exposure time from the InputImage object
             exposureTimeList.append(image._exptime)
-            skylist.append(image[1].wcs.pscale)
+            skylist.append(image[1].wcs.idcscale)
+            #skylist.append(image[1].wcs.pscale)
 
             # Extract the sky value to be used in the model
             # this sky value is in scaled units on the sky,
@@ -200,6 +201,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     # Specify the location of the wht image sections
     startWht = len(singleDrizList)+startDrz
     endWht = startWht + len(singleWeightList)
+    _weight_mask_list = None
 
     # Fire up the image iterator
     #
@@ -265,7 +267,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
         # Do MINMED
         if ( comb_type.lower() == "minmed"):
             # Issue a warning if minmed is being run with newmasks turned off.
-            if (_weight_mask_list == None):
+            if (_weight_mask_list in [None,[]]):
                 print('\nWARNING: Creating median image without the application of bad pixel masks!\n')
 
 

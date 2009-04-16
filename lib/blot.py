@@ -135,11 +135,14 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
     _hdrlist = []
 
+    print 'MultiDrizzle: blot task started at ',_ptime()
     
     for img in imageObjectList:
         
         for chip in img.returnAllChips(extname=img.scienceExt):
 
+            print '    Blot: creating blotted image: ',chip.outputNames['data']
+            
             _insci = np.zeros((img.outputValues['outny'],img.outputValues['outnx']),dtype=np.float32)
             _outsci = np.zeros((chip.wcs.naxis2,chip.wcs.naxis1),dtype=np.float32)
 
@@ -250,4 +253,5 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             del _insci,_outsci
         del _outimg
     
-    
+    print 'MultiDrizzle: blot task completed at ',_ptime()
+   

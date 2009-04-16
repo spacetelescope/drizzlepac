@@ -31,8 +31,8 @@ class WCSMap:
         self.checkWCS(output,'Output')
 
         self.input = input
-        self.input_unshifted = copy.copy(self.input)
-        self.output = output
+        self.output = copy.deepcopy(output)
+        #self.output = output
         
         self.origin = origin
         self.shift = None
@@ -57,16 +57,17 @@ class WCSMap:
         self.shift,rot,scale = applyHeaderlet(imageObject,self.input,self.output,extname=WCSEXTN_NAME)
         self.rot = rot
         self.scale = scale
-        if self.shift is not None and 'shift' not in self.input.__dict__.keys():
-            print ' Correcting WCSMap input WCS for shifts.'
+        if self.shift is not None:
+            print '    Correcting WCSMap input WCS for shifts...'
             # Record the shift applied with the WCS, so that we can tell it
             # has been applied and not correct the WCS any further
-            self.input.shift = self.shift
+            self.output.wcs.crpix -= self.shift
+
             # apply rotation and scale from shiftfile to input WCS
-            self.input.rotateCD(rot)
-            self.input.wcs.cd *= scale
-            self.input.setOrient()
-            self.input.setPscale()
+            self.output.rotateCD(rot)
+            self.output.wcs.cd *= scale
+            self.output.orientat += rot
+            self.output.pscale *= scale
 
     def forward(self,pixx,pixy):
         """ Transform the input pixx,pixy positions in the input frame
@@ -77,9 +78,6 @@ class WCSMap:
         # This matches WTRAXY results to better than 1e-4 pixels.
         skyx,skyy = self.input.all_pix2sky(pixx,pixy,self.origin)
         result= self.output.wcs_sky2pix(skyx,skyy,self.origin)
-        if self.shift is not None:
-            result[0] -= self.shift[0]
-            result[1] -= self.shift[1]
         return result
     
     def get_pix_ratio(self):
@@ -222,21 +220,25 @@ def applyHeaderlet(imageObject,chipwcs,outwcs,extname=WCSEXTN_NAME):
     ratio = refwcs.pscale / outwcs.pscale
             
     # Now, in the ref WCS frame, find the offset of this chip from the ref WCS center
-    chip_sky = chipwcs.wcs.crval
-    ref_chip_center = refwcs.wcs_sky2pix([chip_sky[0]],[chip_sky[1]],1)
-    chip_offset = np.array([ref_chip_center[0][0]-ref_center[0], 
-                            ref_chip_center[1][0]-ref_center[1]]) * refwcs.wscale
+    #chip_sky = chipwcs.wcs.crval
+    #ref_chip_center = refwcs.wcs_sky2pix([chip_sky[0]],[chip_sky[1]],1)
+    #chip_offset = np.array([ref_chip_center[0][0]-ref_center[0], 
+    #                        ref_chip_center[1][0]-ref_center[1]]) * refwcs.wscale
 
     # apply shift to this offset 
-    drot = fileutil.buildRotMatrix(-refwcs.wrot)
-    chip_delta = np.dot(chip_offset,drot) + [refwcs.wshift1,refwcs.wshift2] - chip_offset
+    #drot = fileutil.buildRotMatrix(-refwcs.wrot)
+    #chip_delta = np.dot(chip_offset,drot) + [refwcs.wshift1,refwcs.wshift2] - chip_offset
     
     # Transform this offset from refwcs frame back to output wcs frame     
-    delta_orient = outwcs.orientat - refwcs.orientat
-    frot = fileutil.buildRotMatrix(-delta_orient)
-    shift_center = np.dot(chip_delta,frot)*ratio
+    chip_delta = np.array([refwcs.wshift1,refwcs.wshift2])
+    delta_orient = refwcs.orientat - outwcs.orientat 
+    frot = fileutil.buildRotMatrix(delta_orient)
     
-    return shift_center,-refwcs.wrot,refwcs.wscale
+    shift_center = np.dot(chip_delta,frot)*ratio
+    wrot = -((360.0 - refwcs.wrot) % 360.0)
+    wscale = refwcs.wscale * ratio
+
+    return shift_center,wrot,wscale
     
     
 #
