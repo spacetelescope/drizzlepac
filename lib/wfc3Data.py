@@ -7,8 +7,9 @@
 from pytools import fileutil
 from nictools import readTDD
 from imageObject import imageObject
+from staticMask import constructFilename
 
-class WFC3UVISInputImage(imageObject):
+class WFC3InputImage(imageObject):
 
     SEPARATOR = '_'
 
@@ -18,7 +19,6 @@ class WFC3UVISInputImage(imageObject):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
-        self.full_shape = (1024,1024)
 
     def doUnitConversions(self):
         # Effective gain to be used in the driz_cr step.  Since the
@@ -70,12 +70,6 @@ class WFC3UVISInputImage(imageObject):
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
 
-           # get cte direction, which depends on which chip but is independent of amp 
-            if(chip.extnum  == 1):
-                chip.cte_dir = -1
-            if(self.extnum  == 2):
-                chip.cte_dir = 1
- 
             chip._assignSignature(chip) #this is used in the static mask                     
 
         # Convert the science data to electrons if specified by the user.  Each
@@ -119,10 +113,44 @@ class WFC3UVISInputImage(imageObject):
                 data = np.ones(self.image_shape,dtype=self.image_dtype)
                 str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
                 print str
-        flat = data
-        return flat
+
+        return data
+
+    def _assignSignature(self, chip):
+        """assign a unique signature for the image based 
+           on the  instrument, detector, chip, and size
+           this will be used to uniquely identify the appropriate
+           static mask for the image
+           
+           this also records the filename for the static mask to the outputNames dictionary
+           
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        ny=sci_chip._naxis1
+        nx=sci_chip._naxis2
+        detnum = sci_chip.detnum
+        instr=self._instrument
+        
+        sig=(instr+self._detector,(nx,ny),int(chip)) #signature is a tuple
+        sci_chip.signature=sig #signature is a tuple
+        filename=constructFilename(sig)
+        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
 
 
+class WFC3UVISInputImage(imageObject):
+
+    def __init__(self,filename=None,group=None):
+        WFC3InputImage.__init__(self,filename,group=group)
+
+        # define the cosmic ray bits value to use in the dq array
+        self.full_shape = (4096,2051)
+        
+        # get cte direction, which depends on which chip but is independent of amp 
+        if(chip.extnum  == 1):
+            chip.cte_dir = -1
+        if(self.extnum  == 2):
+            chip.cte_dir = 1
+ 
     def getdarkcurrent(self):
         """
         
@@ -156,22 +184,18 @@ class WFC3UVISInputImage(imageObject):
         
         
         return darkcurrent
+ 
 
 
 
 class WFC3IRInputImage(imageObject):
 
     def __init__(self,filename=None,group=None):
-        imageObject.__init__(self,filename,group=group)
+        WFC3InputImage.__init__(self,filename,group=group)
 
         # define the cosmic ray bits value to use in the dq array
-        self.cr_bits_value = 4096
-        self._instrument=self._image["PRIMARY"].header["INSTRUME"]
         self.full_shape = (1024,1024)
-        
-        # define the cosmic ray bits value to use in the dq array
-        self.cr_bits_value = 4096
-        
+              
         # Effective gain to be used in the driz_cr step.  Since the
         # WFC3 images have already been converted to electrons the 
         # effective gain is 1.
@@ -226,44 +250,6 @@ class WFC3IRInputImage(imageObject):
         # instrument class will need to define its own version of doUnitConversions
         if self.proc_unit == "electrons":
             self.doUnitConversions()
-
-    def getflat(self):
-        """
-
-        Purpose
-        =======
-        Method for retrieving a detector's flat field.
-        
-        This method will return an array the same shape as the
-        image.
-
-        :units: electrons
-
-        """
-
-        # The keyword for WFC3 IR flat fields in the primary header of the flt
-        # file is FLATFILE.  This flat file is not already in the required 
-        # units of electrons.
-        
-        filename = self._image["PRIMARY"].header['FLATFILE']
-        
-        try:
-            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn=self.grp)
-            data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-            handle.close()
-        except:
-            try:
-                handle = fileutil.openImage(filename[5:],mode='readonly',memmap=0)
-                hdu = fileutil.getExtn(handle,extn=self.grp)
-                data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-            except:
-                data = np.ones(self.image_shape,dtype=self.image_dtype)
-                str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-                print str
-
-
-        return data
 
     def getdarkimg(self):
         """
