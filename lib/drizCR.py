@@ -172,7 +172,7 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
             __mult1 = float(__scaleList[0])
             __mult2 = float(__scaleList[1])
 
-            __gain=scienceChip._gain
+            __gain=scienceChip._effgain
             __rn=scienceChip._rdnoise
             __backg = scienceChip.subtractedSky
 
