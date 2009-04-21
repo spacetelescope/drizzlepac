@@ -1,7 +1,7 @@
 #
-#   Authors: Christopher Hanley
-#   Program: wfc3_input.py
-#   Purpose: Class used to model WFC3 specific instrument data.
+#   Authors: Megan Sosey, Christopher Hanley
+#   Program: wfc3Data.py
+#   Purpose: Class used to import WFC3 specific instrument data.
 
 
 from pytools import fileutil
@@ -19,13 +19,6 @@ class WFC3InputImage(imageObject):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
-
-    def doUnitConversions(self):
-        # Effective gain to be used in the driz_cr step.  Since the
-        # WFC3 images have already been converted to electrons,
-        # the effective gain is 1.
-        for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._effGain=1.
             
                 
     def _isSubArray(self):
@@ -42,41 +35,7 @@ class WFC3InputImage(imageObject):
             _subarray = True
         return _subarray
 
-    def setInstrumentParameters(self, instrpars, pri_header):
-        """ This method overrides the superclass to set default values into
-            the parameter dictionary, in case empty entries are provided.
-        """
-
-        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
-            instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
-        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
-            instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
-        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
-            instrpars['expkeyword'] = 'EXPTIME'
-        if instrpars['crbit'] == None:
-            instrpars['crbit'] = self.cr_bits_value
  
-        for chip in self.returnAllChips(extname=self.scienceExt): 
-
-            chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                     instrpars['gnkeyword'])
-            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                     instrpars['rnkeyword'])
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                     instrpars['expkeyword'])
-            chip._crbit     = instrpars['crbit']
-
-            if self._gain == None or self._rdnoise == None or self._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
-                raise ValueError
-
-            chip._assignSignature(chip) #this is used in the static mask                     
-
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
-
     def getflat(self):
         """
 
@@ -150,6 +109,49 @@ class WFC3UVISInputImage(imageObject):
             chip.cte_dir = -1
         if(self.extnum  == 2):
             chip.cte_dir = 1
+ 
+    def doUnitConversions(self):
+        # Effective gain to be used in the driz_cr step.  Since the
+        # WFC3 images have already been converted to electrons,
+        # the effective gain is 1.
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+            chip._effGain=1.
+
+   def setInstrumentParameters(self, instrpars, pri_header):
+        """ This method overrides the superclass to set default values into
+            the parameter dictionary, in case empty entries are provided.
+        """
+
+        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
+            instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
+        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
+            instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
+        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
+            instrpars['expkeyword'] = 'EXPTIME'
+        if instrpars['crbit'] == None:
+            instrpars['crbit'] = self.cr_bits_value
+ 
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+
+            chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+                                                     instrpars['gnkeyword'])
+            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                     instrpars['rnkeyword'])
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            chip._crbit     = instrpars['crbit']
+
+            if self._gain == None or self._rdnoise == None or self._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
+
+            chip._assignSignature(chip) #this is used in the static mask                     
+
+        # Convert the science data to electrons if specified by the user.  Each
+        # instrument class will need to define its own version of doUnitConversions
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
+
  
     def getdarkcurrent(self):
         """
