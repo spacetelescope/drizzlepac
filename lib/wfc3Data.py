@@ -105,11 +105,6 @@ class WFC3UVISInputImage(WFC3InputImage):
         self.full_shape = (4096,2051)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
         
-        # get cte direction, which depends on which chip but is independent of amp 
-        if(chip.extnum  == 1):
-            chip.cte_dir = -1
-        if(self.extnum  == 2):
-            chip.cte_dir = 1
  
     def doUnitConversions(self):
         # Effective gain to be used in the driz_cr step.  Since the
@@ -147,6 +142,11 @@ class WFC3UVISInputImage(WFC3InputImage):
                 raise ValueError
 
             chip._assignSignature(chip) #this is used in the static mask                     
+            # get cte direction, which depends on which chip but is independent of amp 
+            if(chip.extnum  == 1):
+                chip.cte_dir = -1
+            if(chip.extnum  == 2):
+                chip.cte_dir = 1
 
         # Convert the science data to electrons if specified by the user.  Each
         # instrument class will need to define its own version of doUnitConversions
