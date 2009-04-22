@@ -96,13 +96,14 @@ class WFC3InputImage(imageObject):
         sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
 
 
-class WFC3UVISInputImage(imageObject):
+class WFC3UVISInputImage(WFC3InputImage):
 
     def __init__(self,filename=None,group=None):
         WFC3InputImage.__init__(self,filename,group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.full_shape = (4096,2051)
+        self._detector=self._image["PRIMARY"].header["DETECTOR"]
         
         # get cte direction, which depends on which chip but is independent of amp 
         if(chip.extnum  == 1):
@@ -116,8 +117,8 @@ class WFC3UVISInputImage(imageObject):
         # the effective gain is 1.
         for chip in self.returnAllChips(extname=self.scienceExt): 
             chip._effGain=1.
-
-   def setInstrumentParameters(self, instrpars, pri_header):
+            
+    def setInstrumentParameters(self, instrpars, pri_header):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
@@ -190,14 +191,15 @@ class WFC3UVISInputImage(imageObject):
 
 
 
-class WFC3IRInputImage(imageObject):
+class WFC3IRInputImage(WFC3InputImage):
 
     def __init__(self,filename=None,group=None):
         WFC3InputImage.__init__(self,filename,group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.full_shape = (1024,1024)
-              
+        self._detector=self._image["PRIMARY"].header["DETECTOR"]     
+        
         # Effective gain to be used in the driz_cr step.  Since the
         # WFC3 images have already been converted to electrons the 
         # effective gain is 1.

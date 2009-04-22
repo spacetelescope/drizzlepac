@@ -18,7 +18,8 @@ class ACSInputImage(imageObject):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
-    
+        self._effGain=1.
+        
         for chip in range(1,self._numchips+1,1):
             if self._image[self.scienceExt,chip].group_member:
                 self._image[self.scienceExt,chip].darkcurrent=self.getdarkcurrent(chip)
@@ -28,7 +29,7 @@ class ACSInputImage(imageObject):
         # ACS images have already been converted to electrons,
         # the effective gain is 1.
         for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._effGain = 1
+            chip._effGain = 1.
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -63,51 +64,7 @@ class ACSInputImage(imageObject):
             _subarray = True
         return _subarray
 
-    def setInstrumentParameters(self,instrpars):
-        """ This method overrides the superclass to set default values into
-            the parameter dictionary, in case empty entries are provided.
-            
-            this should probably be moved to the sub instrument classes
-            for each detector type?
-        """
-        pri_header = self._image[0].header
-        
-        if len(instrpars) == 0:
-            instrpars['proc_unit']='native'
-            instrpars['gain']=''
-            instrpars['rdnoise']=''
-            instrpars['exptime']=''
-            instrpars['gnkeyword']=''
-            instrpars['rnkeyword']=''
-            instrpars['expkeyword']=''
-                       
-        self.proc_unit = instrpars['proc_unit']
-        
-        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
-            instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
-        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
-            instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
-        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
-            instrpars['expkeyword'] = 'EXPTIME'
-
-        for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                     instrpars['gnkeyword'])
-            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                     instrpars['rnkeyword'])
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                     instrpars['expkeyword'])
-            chip._effGain = 1
-
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
-                raise ValueError
-
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
-
+ 
     def getflat(self):
         """
 
@@ -187,9 +144,9 @@ class WFCInputImage(ACSInputImage):
 
     def __init__(self,filename=None,group=None):
         ACSInputImage.__init__(self,filename,group=group)
-        self._detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (4096,2048)
-
+        self._detector=self._image["PRIMARY"].header["DETECTOR"]  
+        
         # get cte direction, which depends on which chip but is independent of amp 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
@@ -198,6 +155,51 @@ class WFCInputImage(ACSInputImage):
                 self._image[self.scienceExt,chip].cte_dir = -1    
             if ( chip == 2) : 
                 self._image[self.scienceExt,chip].cte_dir = 1   
+                    
+    def setInstrumentParameters(self,instrpars):
+        """ This method overrides the superclass to set default values into
+            the parameter dictionary, in case empty entries are provided.
+            
+            this gets called from processInput
+            
+        """
+        pri_header = self._image[0].header
+        
+        if len(instrpars) == 0:
+            instrpars['proc_unit']='native'
+            instrpars['gain']=''
+            instrpars['rdnoise']=''
+            instrpars['exptime']=''
+            instrpars['gnkeyword']=''
+            instrpars['rnkeyword']=''
+            instrpars['expkeyword']=''
+                       
+        self.proc_unit = instrpars['proc_unit']
+        
+        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
+            instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
+        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
+            instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
+        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
+            instrpars['expkeyword'] = 'EXPTIME'
+
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+            chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+                                                     instrpars['gnkeyword'])
+            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                     instrpars['rnkeyword'])
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            chip._effGain = 1.
+
+            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
+
+        # Convert the science data to electrons if specified by the user.  Each
+        # instrument class will need to define its own version of doUnitConversions
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
 
             
 class HRCInputImage (ACSInputImage):
@@ -207,6 +209,7 @@ class HRCInputImage (ACSInputImage):
         self._detector=self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (1024,1024)
         amp=self._image['PRIMARY'].header["CCDAMP"]
+        self._detector=self._image['PRIMARY'].header["DETECTOR"]
 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
@@ -215,6 +218,52 @@ class HRCInputImage (ACSInputImage):
                 self._image[self.scienceExt,chip].cte_dir = 1   
             if ( amp == 'C' or amp == 'D' ) :
                 self._image[self.scienceExt,chip].cte_dir = -1   
+
+    def setInstrumentParameters(self,instrpars):
+        """ This method overrides the superclass to set default values into
+            the parameter dictionary, in case empty entries are provided.
+            
+            this gets called from processInput
+            
+        """
+        pri_header = self._image[0].header
+        
+        if len(instrpars) == 0:
+            instrpars['proc_unit']='native'
+            instrpars['gain']=''
+            instrpars['rdnoise']=''
+            instrpars['exptime']=''
+            instrpars['gnkeyword']=''
+            instrpars['rnkeyword']=''
+            instrpars['expkeyword']=''
+                       
+        self.proc_unit = instrpars['proc_unit']
+        
+        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
+            instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
+        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
+            instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
+        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
+            instrpars['expkeyword'] = 'EXPTIME'
+
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+            chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+                                                     instrpars['gnkeyword'])
+            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                     instrpars['rnkeyword'])
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            chip._effGain = 1.
+
+            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
+
+        # Convert the science data to electrons if specified by the user.  Each
+        # instrument class will need to define its own version of doUnitConversions
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
+
 
 class SBCInputImage (ACSInputImage):
 

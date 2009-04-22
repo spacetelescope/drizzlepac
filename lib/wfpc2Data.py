@@ -31,16 +31,14 @@ class WFPC2InputImage (imageObject):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]        
-
-        #self.cte_dir = -1    # independent of amp, chip   
-        
+        self._detector=self._image["PRIMARY"].header["DETECTOR"]  
         self._effGain = 1
 
         # Attribute defining the pixel dimensions of WFPC2 chips.
         self.full_shape = (800,800)
         
-        # Reference Plate Scale used for updates to MDRIZSKY
-        self.refplatescale = 0.0996 # arcsec / pixel
+        # Reference Plate Scale used for updates to MDRIZSKY, we should get this from the wcs class
+        #self.refplatescale = 0.0996 # arcsec / pixel
 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
@@ -304,45 +302,4 @@ class WFPC2InputImage (imageObject):
             except KeyError:
                 raise ValueError, "! Header gain value is not valid for WFPC2"
 
-    def _getCalibratedGain(self):
-        return self._gain
-
-    def getComputedSky(self):
-        return (self._computedsky * (self.refplatescale / self.platescale)**2 )
-        
-    def setSubtractedSky(self,newValue):
-        self._subtractedsky = (newValue / (self.refplatescale /  self.platescale)**2)
-            
-    def subtractSky(self):
-        try:
-            try:
-                _handle = fileutil.openImage(self.name,mode='update',memmap=0)
-                _sciext = fileutil.getExtn(_handle,extn=self.extn)
-                print "%s (computed sky,subtracted sky)  : (%f,%f)"%(self.name,self.getComputedSky(),self.getSubtractedSky()*(self.refplatescale / self.platescale)**2)
-                np.subtract(_sciext.data,self.getSubtractedSky(),_sciext.data)
-            except:
-                raise IOError, "Unable to open %s for sky subtraction"%self.name
-        finally:
-            _handle.close()
-            del _sciext,_handle
-
-    def updateMDRIZSKY(self,filename=None):
-    
-        if (filename == None):
-            filename = self.name
-            
-        try:
-            _handle = fileutil.openImage(filename,mode='update',memmap=0)
-        except:
-            raise IOError, "Unable to open %s for sky level computation"%filename
-
-         # Compute the sky level subtracted from all the WFPC2 detectors based upon the reference plate scale.
-        skyvalue = (self.getSubtractedSky()  * (self.refplatescale/self.platescale)**2)
-        if self.proc_unit == 'electrons':
-            skyvalue = skyvalue / self.getGain()
-
-        print "Updating MDRIZSKY keyword in primary header with value %f"%skyvalue
-        _handle[0].header.update('MDRIZSKY',skyvalue, comment="Sky value subtracted by Multidrizzle")
-        _handle.close()
-
-
+       

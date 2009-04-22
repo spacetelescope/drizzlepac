@@ -1,5 +1,5 @@
 #
-#   Authors: Christopher Hanley, David Grumm
+#   Authors: Christopher Hanley, David Grumm, Megan Sosey
 #   Program: nicmos_input.py
 #   Purpose: Class used to model NICMOS specific instrument data.
 
@@ -21,7 +21,6 @@ class NICMOSInputImage(imageObject):
 
         # Detector parameters, nic only has 1 detector in each file
         self.full_shape = (256,256)
-        self._detector=self._image["PRIMARY"].header["CAMERA"]
         self._instrument=self._image['PRIMARY'].header["INSTRUME"]
          
         for chip in range(1,self._numchips+1,1):
@@ -51,42 +50,7 @@ class NICMOSInputImage(imageObject):
         
 
 
-    def updateMDRIZSKY(self,filename=None): 
-        if (filename == None): 
-            filename = self.name     
-        try: 
-            _handle = fileutil.openImage(filename,mode='update',memmap=0) 
-        except IOError:
-            raise IOError, "Unable to open %s for sky level computation"%filename 
-        # Get the exposure time for the image.  If the exposure time of the image 
-        # is 0, set the MDRIZSKY value to 0.  Otherwise update the MDRIZSKY value 
-        # in units of counts per second. 
-        if (self.getExpTime() == 0.0): 
-            str =  "*******************************************\n" 
-            str += "*                                         *\n" 
-            str += "* ERROR: Image EXPTIME = 0.               *\n" 
-            str += "* MDRIZSKY header value cannot be         *\n" 
-            str += "* converted to units of 'counts/s'        *\n" 
-            str += "* MDRIZSKY will be set to a value of '0'  *\n" 
-            str += "*                                         *\n" 
-            str =  "*******************************************\n" 
-            _handle[0].header['MDRIZSKY'] = 0 
-            print str 
-        else:
-            # Assume the MDRIZSKY keyword is in the primary header.  Try to update 
-            # the header value
-            if (_handle[0].header['UNITCORR'].strip() == 'PERFORM'): 
-                skyvalue = self.getSubtractedSky()/self.getExpTime() 
-            else: 
-                skyvalue = self.getSubtractedSky() 
-            # We need to convert back to native units if computations were done in electrons
-            if self.proc_unit != "native":
-                skyvalue = skyvalue/self.getGain()
-            print "Updating MDRIZSKY keyword to primary header with value %f"%(skyvalue) 
-            _handle[0].header.update('MDRIZSKY',skyvalue)  
-        _handle.close() 
-
-    def doUnitConversions(self): 
+    def doUnitConversions(self): #change this to operate on all the chips
         # Image information        
         _handle = fileutil.openImage(self.name,mode='update',memmap=0) 
         _sciext = fileutil.getExtn(_handle,extn=self.extn)         
@@ -98,14 +62,14 @@ class NICMOSInputImage(imageObject):
             # Multiply the values of the sci extension pixels by the gain. 
             print "Converting %s from COUNTS/S to ELECTRONS"%(self.name) 
             # If the exptime is 0 the science image will be zeroed out. 
-            conversionFactor = (self.getExpTime() * self.getGain())
+            conversionFactor = (self.getExpTime() * self._gain)
 
         # Counts case 
         else:
             # Multiply the values of the sci extension pixels by the gain. 
             print "Converting %s from COUNTS to ELECTRONS"%(self.name) 
             # If the exptime is 0 the science image will be zeroed out. 
-            conversionFactor = (self.getGain())  
+            conversionFactor = (self._gain)  
 
         np.multiply(_sciext.data,conversionFactor,_sciext.data)
         
@@ -114,69 +78,11 @@ class NICMOSInputImage(imageObject):
 
         # Update the PHOTFLAM value
         photflam = _handle[0].header['PHOTFLAM']
-        _handle[0].header.update('PHOTFLAM',(photflam/self.getGain()))
+        _handle[0].header.update('PHOTFLAM',(photflam/self._gain))
         
         # Close the files and clean-up
         _handle.close() 
-
-    def setInstrumentParameters(self, instrpars):
-        """ This method overrides the superclass to set default values into
-            the parameter dictionary, in case empty entries are provided.
-        """
-        pri_header = self._image[0].header
-        self.proc_unit = instrpars['proc_unit']
-
-        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
-            instrpars['gnkeyword'] = 'ADCGAIN'
-        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
-            instrpars['rnkeyword'] = None
-        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
-            instrpars['expkeyword'] = 'EXPTIME'
-        #if instrpars['crbit'] == None:
-        #    instrpars['crbit'] = self.cr_bits_value
-   
-        self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                 instrpars['gnkeyword'])
-        self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                 instrpars['rnkeyword'])
-        self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                 instrpars['expkeyword'])
-        #self._crbit     = instrpars['crbit']
-
-        if self._gain == None or self._exptime == None:
-            print 'ERROR: invalid instrument task parameter'
-            raise ValueError
-
-        # We need to treat Read Noise as a special case since it is 
-        # not populated in the NICMOS primary header
-        if (instrpars['rnkeyword'] != None):
-            self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                     instrpars['rnkeyword'])                                                 
-        else:
-            self._rdnoise = None
-
-
-        # We need to determine if the user has used the default readnoise/gain value
-        # since if not, they will need to supply a gain/readnoise value as well        
-        
-        usingDefaultReadnoise = False
-        if (instrpars['rnkeyword'] == None):
-            usingDefaultReadnoise = True
-            
-        # Set the default readnoise values based upon the amount of user input given.
-        
-        # User supplied no readnoise information
-        if usingDefaultReadnoise:
-            # Set the default gain and readnoise values
-            self._setchippars()
-        
-        # Set the darkrate for the chips
-        self._setDarkRate()
-        
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        self._effgain = 1.
 
     def _setchippars(self):
         self._setDefaultReadnoise()
@@ -199,7 +105,7 @@ class NICMOSInputImage(imageObject):
         # file is FLATFILE.  This flat file is not already in the required 
         # units of electrons.
         
-        filename = self.header['FLATFILE']
+        filename = self._image["PRIMARY"].header['FLATFILE']
         
         try:
             handle = fileutil.openImage(filename,mode='readonly',memmap=0)
@@ -215,7 +121,7 @@ class NICMOSInputImage(imageObject):
                 str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
                 print str
 
-        flat = (1.0/data) # The flat field is normalized to unity.
+        flat = (1.0/data) # The reference flat field is inverted
 
         return flat
         
@@ -267,7 +173,7 @@ class NICMOSInputImage(imageObject):
         tddobj = readTDD.fromcalfile(self.name)
 
         if tddobj == None:
-            return np.ones(self.image_shape,dtype=self.image_dtype)*self.getdarkcurrent()
+            return np.ones(self.full_shape,dtype=self.image_dtype)*self.getdarkcurrent()
         else:
             # Create Dark Object from AMPGLOW and Lineark Dark components
             darkobj = tddobj.getampglow() + tddobj.getlindark()
@@ -284,7 +190,7 @@ class NICMOSInputImage(imageObject):
         """
         
         if self.header.has_key('BUNIT'):       
-            if self.header['BUINT'].find("/") != -1:
+            if self.header['BUNIT'].find("/") != -1:
                 return True
         else:
             return False
@@ -294,49 +200,243 @@ class NIC1InputImage(NICMOSInputImage):
 
     def __init__(self, filename=None):
         NICMOSInputImage.__init__(self,filename)
-        self._effGain = 1 #get the gain from the detector subclass
-        self._gain=5.4 #measured
-        
+        self._effGain = 1. #get the gain from the detector subclass        
+        self._detector=self._image["PRIMARY"].header["CAMERA"]
 
         
     def _setDarkRate(self):
         self.darkrate = 0.08 #electrons/s
         if self.proc_unit == 'native':
-            self.darkrate = self.darkrate / self.getGain() # DN/s
+            self.darkrate = self.darkrate / self._gain # DN/s
 
     def _setDefaultReadnoise(self):
         """ this could be updated to calculate the readnoise from the NOISFILE            
         """
         self._rdnoise = 26.0 # electrons
         if self.proc_unit == 'native':
-            self._rdnoise = self._rdnoise / self.getGain() # ADU
+            self._rdnoise = self._rdnoise / self._gain # ADU
+
+    def setInstrumentParameters(self, instrpars):
+        """ This method overrides the superclass to set default values into
+            the parameter dictionary, in case empty entries are provided.
+        """
+        pri_header = self._image[0].header
+        self.proc_unit = instrpars['proc_unit']
+
+        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
+            instrpars['gnkeyword'] = 'ADCGAIN'
+        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
+            instrpars['rnkeyword'] = None
+        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
+            instrpars['expkeyword'] = 'EXPTIME'
+        #if instrpars['crbit'] == None:
+        #    instrpars['crbit'] = self.cr_bits_value
+   
+        for chip in self.returnAllChips(extname=self.scienceExt):
+            #self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+            #                                         instrpars['gnkeyword'])
+            self._gain=5.4 #measured
+            
+            self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                     instrpars['rnkeyword'])
+            self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            #self._crbit     = instrpars['crbit']
+
+            if self._gain == None or self._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
+
+            # We need to treat Read Noise as a special case since it is 
+            # not populated in the NICMOS primary header
+            if (instrpars['rnkeyword'] != None):
+                self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                         instrpars['rnkeyword'])                                                 
+            else:
+                self._rdnoise = None
+
+
+        # We need to determine if the user has used the default readnoise/gain value
+        # since if not, they will need to supply a gain/readnoise value as well        
+        
+        usingDefaultReadnoise = False
+        if (instrpars['rnkeyword'] == None):
+            usingDefaultReadnoise = True
+            
+        # Set the default readnoise values based upon the amount of user input given.
+        
+        # User supplied no readnoise information
+        if usingDefaultReadnoise:
+            # Set the default gain and readnoise values
+            self._setchippars()
+        
+        # Set the darkrate for the chips
+        self._setDarkRate()
+        
+        # Convert the science data to electrons if specified by the user.  Each
+        # instrument class will need to define its own version of doUnitConversions
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
+
+        self._effgain= self._gain
+
 
 class NIC2InputImage(NICMOSInputImage):
     def __init__(self,filename=None):
         NICMOSInputImage.__init__(self,filename)
-        self._gain=5.4 #measured
-        
+        self._effgain=1. #measured
+        self._detector=self._image["PRIMARY"].header["CAMERA"]
+
     def _setDarkRate(self):
         self.darkrate = 0.08 #electrons/s
         if self.proc_unit == 'native':
-            self.darkrate = self.darkrate / self.getGain() # DN/s
+            self.darkrate = self.darkrate / self._gain # DN/s
 
     def _setDefaultReadnoise(self):
         self._rdnoise = 26.0 #electrons
         if self.proc_unit == 'native':
-            self._rdnoise = self._rdnoise/self.getGain() #ADU
+            self._rdnoise = self._rdnoise/self._gain #ADU
+
+    def setInstrumentParameters(self, instrpars):
+        """ This method overrides the superclass to set default values into
+            the parameter dictionary, in case empty entries are provided.
+        """
+        pri_header = self._image[0].header
+        self.proc_unit = instrpars['proc_unit']
+
+        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
+            instrpars['gnkeyword'] = 'ADCGAIN'
+        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
+            instrpars['rnkeyword'] = None
+        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
+            instrpars['expkeyword'] = 'EXPTIME'
+        #if instrpars['crbit'] == None:
+        #    instrpars['crbit'] = self.cr_bits_value
+   
+        for chip in self.returnAllChips(extname=self.scienceExt):
+            #self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+            #                                         instrpars['gnkeyword'])
+            self._gain=5.4 #measured
+            
+            self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                     instrpars['rnkeyword'])
+            self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            #self._crbit     = instrpars['crbit']
+
+            if self._gain == None or self._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
+
+            # We need to treat Read Noise as a special case since it is 
+            # not populated in the NICMOS primary header
+            if (instrpars['rnkeyword'] != None):
+                self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                         instrpars['rnkeyword'])                                                 
+            else:
+                self._rdnoise = None
+
+
+        # We need to determine if the user has used the default readnoise/gain value
+        # since if not, they will need to supply a gain/readnoise value as well        
+        
+        usingDefaultReadnoise = False
+        if (instrpars['rnkeyword'] == None):
+            usingDefaultReadnoise = True
+            
+        # Set the default readnoise values based upon the amount of user input given.
+        
+        # User supplied no readnoise information
+        if usingDefaultReadnoise:
+            # Set the default gain and readnoise values
+            self._setchippars()
+        
+        # Set the darkrate for the chips
+        self._setDarkRate()
+        
+        # Convert the science data to electrons if specified by the user.  Each
+        # instrument class will need to define its own version of doUnitConversions
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
+
+        self._effgain = self._gain
+
 
 class NIC3InputImage(NICMOSInputImage):
     def __init__(self,filename=None):
         NICMOSInputImage.__init__(self,filename)
-        self._gain=6.5 #measured
-        
+        self._detector=self._image["PRIMARY"].header["CAMERA"]
+
     def _setDarkRate(self):
         self.darkrate = 0.15 #electrons/s
         if self.proc_unit == 'native':
-            self.darkrate = self.darkrate/self.getGain() #DN/s
+            self.darkrate = self.darkrate/self._gain #DN/s
 
     def _setDefaultReadnoise(self):
         self._rdnoise = 29.0 # electrons
         if self.proc_unit == 'native':
-            self._rdnoise = self._rdnoise/self.getGain() #ADU
+            self._rdnoise = self._rdnoise/self._gain #ADU
+
+    def setInstrumentParameters(self, instrpars):
+        """ This method overrides the superclass to set default values into
+            the parameter dictionary, in case empty entries are provided.
+        """
+        pri_header = self._image[0].header
+        self.proc_unit = instrpars['proc_unit']
+
+        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
+            instrpars['gnkeyword'] = 'ADCGAIN'
+        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
+            instrpars['rnkeyword'] = None
+        if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
+            instrpars['expkeyword'] = 'EXPTIME'
+        #if instrpars['crbit'] == None:
+        #    instrpars['crbit'] = self.cr_bits_value
+   
+        for chip in self.returnAllChips(extname=self.scienceExt):
+            #self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+            #                                         instrpars['gnkeyword'])
+            self._gain=6.5 #measured
+            
+            self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                     instrpars['rnkeyword'])
+            self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            #self._crbit     = instrpars['crbit']
+
+            if self._gain == None or self._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
+
+            # We need to treat Read Noise as a special case since it is 
+            # not populated in the NICMOS primary header
+            if (instrpars['rnkeyword'] != None):
+                self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                         instrpars['rnkeyword'])                                                 
+            else:
+                self._rdnoise = None
+
+
+        # We need to determine if the user has used the default readnoise/gain value
+        # since if not, they will need to supply a gain/readnoise value as well        
+        
+        usingDefaultReadnoise = False
+        if (instrpars['rnkeyword'] == None):
+            usingDefaultReadnoise = True
+            
+        # Set the default readnoise values based upon the amount of user input given.
+        
+        # User supplied no readnoise information
+        if usingDefaultReadnoise:
+            # Set the default gain and readnoise values
+            self._setchippars()
+        
+        # Set the darkrate for the chips
+        self._setDarkRate()
+        
+        # Convert the science data to electrons if specified by the user.  Each
+        # instrument class will need to define its own version of doUnitConversions
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
+
+        self._effgain = self._gain
