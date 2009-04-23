@@ -578,7 +578,7 @@ class imageObject(baseImageObject):
         self._exptime=self._image["PRIMARY"].header["EXPTIME"]
         if(self._exptime == 0): 
             self._exptime =1. #to avoid divide by zero
-            print "Setting exposure time to zero to avoid div/0!"
+            print "Setting exposure time to 1. to avoid div/0!"
             
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
