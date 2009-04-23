@@ -188,6 +188,7 @@ def _getInputImage (input,group=None):
             if _detector == 2: return wfpc2Data.WF2InputImage(input)
             if _detector == 3: return wfpc2Data.WF3InputImage(input)
             if _detector == 4: return wfpc2Data.WF4InputImage(input)
+        """
         if _instrument == 'STIS':
             import stisData 
             if _detector == 'CCD': return stisData.CCDInputImage(input)
@@ -197,7 +198,7 @@ def _getInputImage (input,group=None):
             import wfc3Data
             if _detector == 'UVIS': return wfc3Data.WFC3UVISInputImage(input)
             if _detector == 'IR': return wfc3Data.WFC3IRInputImage(input)
-        """
+        
     except ImportError:
         msg = 'No module implemented for '+str(_instrument)+'!'
         raise ValueError,msg

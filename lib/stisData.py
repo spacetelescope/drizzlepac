@@ -111,6 +111,27 @@ class STISInputImage (imageObject):
             print "Invalid gain value for data, no conversion done"
             return ValueError
 
+    def _assignSignature(self, chip):
+        """assign a unique signature for the image based 
+           on the  instrument, detector, chip, and size
+           this will be used to uniquely identify the appropriate
+           static mask for the image
+           
+           this also records the filename for the static mask to the outputNames dictionary
+           
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        ny=sci_chip._naxis1
+        nx=sci_chip._naxis2
+        detnum = sci_chip.detnum
+        instr=self._instrument
+        
+        sig=(instr+self._detector,(nx,ny),int(chip)) #signature is a tuple
+        sci_chip.signature=sig #signature is a tuple
+        filename=constructFilename(sig)
+        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
+
+
 
 class CCDInputImage(STISInputImage):
 
@@ -145,10 +166,12 @@ class CCDInputImage(STISInputImage):
             return self._rdnoise / self._gain()
         return self._rdnoise
     
-    def setInstrumentParameters(self, instrpars, pri_header):
+    def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
+        pri_header = self._image[0].header
+
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ATODGAIN'
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
@@ -159,22 +182,26 @@ class CCDInputImage(STISInputImage):
             instrpars['crbit'] = self.cr_bits_value
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-            self._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
+            chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
                                                      instrpars['gnkeyword'])
-            self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
                                                      instrpars['rnkeyword'])
-            self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
-            self._crbit     = instrpars['crbit']
+            chip._crbit     = instrpars['crbit']
 
-            if self._gain == None or self._rdnoise == None or self._exptime == None:
+            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
+
+            self._assignSignature(chip.extnum) #this is used in the static mask                     
+
 
         # Convert the science data to electrons if specified by the user.  Each
         # instrument class will need to define its own version of doUnitConversions
         if self.proc_unit == "electrons":
             self.doUnitConversions()
+
     
 class NUVInputImage(STISInputImage):
     def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
@@ -186,10 +213,13 @@ class NUVInputImage(STISInputImage):
         print('\nWARNING: No cte correction will be made for this STIS/NUV-MAMA data.\n')
         self.cte_dir = 0  
 
-    def setInstrumentParameters(self, instrpars, pri_header):
+    def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
+
+        pri_header = self._image[0].header
+
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = None
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
@@ -244,11 +274,11 @@ class NUVInputImage(STISInputImage):
                 pass
 
 
-            self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
-            self._crbit     = instrpars['crbit']
+            self._assignSignature(chip.extnum) #this is used in the static mask                     
 
-            if self._exptime == None:
+            if chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
 
@@ -279,10 +309,13 @@ class FUVInputImage(STISInputImage):
         print('\nWARNING: No cte correction will be made for this STIS/FUV-MAMA data.\n')
         self.cte_dir = 0  
 
-    def setInstrumentParameters(self, instrpars, pri_header):
+    def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
+        
+        pri_header = self._image[0].header   
+             
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = None
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
@@ -291,59 +324,62 @@ class FUVInputImage(STISInputImage):
             instrpars['expkeyword'] = 'EXPTIME'
         if instrpars['crbit'] == None:
             instrpars['crbit'] = self.cr_bits_value
+        for chip in self.returnAllChips(extname=self.scienceExt): 
 
-        self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                 instrpars['expkeyword'])
-        self._crbit     = instrpars['crbit']
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            self.cr_bits_value     = instrpars['crbit']
 
-        if self._exptime == None:
-            print 'ERROR: invalid instrument task parameter'
-            raise ValueError
+            if chip._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
 
-        # We need to treat Read Noise and Gain as a special case since it is 
-        # not populated in the STIS primary header for the MAMAs
-        if (instrpars['rnkeyword'] != None):
-            self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                     instrpars['rnkeyword'])                                                 
-        else:
-            self._rdnoise = None
-        if (instrpars['gnkeyword'] != None):
-            self._gain = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                     instrpars['gnkeyword'])
-        else:
-            self._gain = None
- 
+            # We need to treat Read Noise and Gain as a special case since it is 
+            # not populated in the STIS primary header for the MAMAs
+            if (instrpars['rnkeyword'] != None):
+                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
+                                                         instrpars['rnkeyword'])                                                 
+            else:
+                chip._rdnoise = None
+            if (instrpars['gnkeyword'] != None):
+                chip._gain = self.getInstrParameter(instrpars['gain'], pri_header,
+                                                         instrpars['gnkeyword'])
+            else:
+                chip._gain = None
 
-        if self._exptime == None:
-            print 'ERROR: invalid instrument task parameter'
-            raise ValueError
 
-        # We need to determine if the user has used the default readnoise/gain value
-        # since if not, they will need to supply a gain/readnoise value as well                
-        usingDefaultGain = False
-        usingDefaultReadnoise = False
-        if (instrpars['gnkeyword'] == None):
-            usingDefaultGain = True
-        if (instrpars['rnkeyword'] == None):
-            usingDefaultReadnoise = True
+            if chip._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
 
-        # Set the default readnoise or gain values based upon the amount of user input given.
-        
-        # Case 1: User supplied no gain or readnoise information
-        if usingDefaultReadnoise and usingDefaultGain:
-            # Set the default gain and readnoise values
-            self._setMAMAchippars()
-        # Case 2: The user has supplied a value for gain
-        elif usingDefaultReadnoise and not usingDefaultGain:
-            # Set the default readnoise value
-            self._setMAMADefaultReadnoise()
-        # Case 3: The user has supplied a value for readnoise 
-        elif not usingDefaultReadnoise and usingDefaultGain:
-            # Set the default gain value
-            self._setMAMADefaultGain()
-        else:
-            # In this case, the user has specified both a gain and readnoise values.  Just use them as is.
-            pass
+            # We need to determine if the user has used the default readnoise/gain value
+            # since if not, they will need to supply a gain/readnoise value as well                
+            usingDefaultGain = False
+            usingDefaultReadnoise = False
+            if (instrpars['gnkeyword'] == None):
+                usingDefaultGain = True
+            if (instrpars['rnkeyword'] == None):
+                usingDefaultReadnoise = True
+
+            # Set the default readnoise or gain values based upon the amount of user input given.
+
+            # Case 1: User supplied no gain or readnoise information
+            if usingDefaultReadnoise and usingDefaultGain:
+                # Set the default gain and readnoise values
+                self._setMAMAchippars()
+            # Case 2: The user has supplied a value for gain
+            elif usingDefaultReadnoise and not usingDefaultGain:
+                # Set the default readnoise value
+                self._setMAMADefaultReadnoise()
+            # Case 3: The user has supplied a value for readnoise 
+            elif not usingDefaultReadnoise and usingDefaultGain:
+                # Set the default gain value
+                self._setMAMADefaultGain()
+            else:
+                # In this case, the user has specified both a gain and readnoise values.  Just use them as is.
+                pass
+            
+            self._assignSignature(chip.extnum) #this is used in the static mask                     
         
     def getdarkcurrent(self):
         darkcurrent = 0.07 #electrons/sec
