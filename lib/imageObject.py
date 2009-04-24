@@ -278,7 +278,7 @@ class baseImageObject:
         self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
         self._image[self.scienceExt,chip].sciname=self._filename + "[" + extname +","+str(extver)+"]"
         self._image[self.scienceExt,chip].dqrootname=self._rootname + "_" + extname + str(extver)
-        # Needed to keep EXPTIMEs associated properly (1 EXPTIME for all chips)
+        # Needed to keep EXPNAMEs associated properly (1 EXPNAME for all chips)
         self._image[self.scienceExt,chip]._expname=expname
         self._image[self.scienceExt,chip]._chip =chip
         
@@ -575,10 +575,11 @@ class imageObject(baseImageObject):
         self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
         self.outputNames=self._setOutputNames(self._rootname)
         
-        self._exptime=self._image["PRIMARY"].header["EXPTIME"]
-        if(self._exptime == 0): 
-            self._exptime =1. #to avoid divide by zero
-            print "Setting exposure time to 1. to avoid div/0!"
+        #self._exptime=self._image["PRIMARY"].header["EXPTIME"]
+        #exptime should be set in the image subclass code since it's kept in different places
+#        if(self._exptime == 0): 
+        self._exptime =1. #to avoid divide by zero
+ #           print "Setting exposure time to 1. to avoid div/0!"
             
         #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)

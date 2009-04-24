@@ -459,8 +459,15 @@ def buildEmptyDRZ(input, output):
     print 'self.output', output
     # Modify the ASN_MTYP keyword to contain "PROD-DTH" so it can be properly
     # ingested into the archive catalog.
-    fitsobj[0].header['ASN_MTYP'] = 'PROD-DTH'
     
+    #stis has this keyword in the [1] header, so I am directing the code
+    #to first look in the primary, then the 1
+    try:
+        fitsobj[0].header['ASN_MTYP'] = 'PROD-DTH'
+    except:
+        fitsobj[1].header['ASN_MTYP'] = 'PROD-DTH'
+ 
+        
     errstr =  "#############################################\n"
     errstr += "#                                           #\n"
     errstr += "# ERROR:                                    #\n"
