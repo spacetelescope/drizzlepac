@@ -122,8 +122,11 @@ def addIVMInputs(imageObjectList,ivmlist):
         img.updateIVMName(ivmname)
 
 def checkMultipleFiles(input):
-    a,i,o = process_input(input,updatewcs=False)
-    return len(a['members']) > 1
+    """ Evaluates the input to determine whether there is 1 or more than 1 valid
+    input file. 
+    """
+    f,i,o,a=buildFileList(input)
+    return len(f) > 1
 
 def createImageObjectList(files,instrpars,group=None):
     """ Returns a list of imageObject instances, 1 for each input image in the
@@ -274,10 +277,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     
 def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
     
-    filelist,output,ivmlist,oldasndict=processFilenames(input,output)
-    if not workinplace:
-        createInputCopies(filelist)
-    newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
+    newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,workinplace=workinplace)
     
     if not newfilelist:
         buildEmptyDRZ(input,output)
@@ -306,6 +306,18 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     print 'Setting up output name: ',output
 
     return asndict, ivmlist, output
+
+def buildFileList(input, output=None, ivmlist=None,workinplace=True):
+    """
+    Builds a file list which has undergone various instrument-specific
+    checks for input to MultiDrizzle, including splitting STIS associations. 
+    """
+    filelist,output,ivmlist,oldasndict=processFilenames(input,output)
+    if not workinplace:
+        createInputCopies(filelist)
+    newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
+    
+    return newfilelist,ivmlist,output,oldasndict
 
 def runmakewcs(input):
     """
