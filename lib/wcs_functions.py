@@ -108,6 +108,36 @@ def get_hstwcs(filename,hdulist,extnum):
     
     return hdrwcs
 
+def ddtohms(xsky,ysky,verbose=False):
+
+    """ Convert sky position(s) from decimal degrees to HMS format."""
+
+    xskyh = xsky /15.
+    xskym = (xskyh - np.floor(xskyh)) * 60.
+    xskys = (xskym - np.floor(xskym)) * 60.
+
+    yskym = (np.abs(ysky) - np.floor(N.abs(ysky))) * 60.
+    yskys = (yskym - np.floor(yskym)) * 60.
+
+    if isinstance(xskyh,np.ndarray):
+        rah,dech = [],[]
+        for i in xrange(len(xskyh)):
+            rastr = repr(int(xskyh[i]))+':'+repr(int(xskym[i]))+':'+repr(xskys[i])
+            decstr = repr(int(ysky[i]))+':'+repr(int(yskym[i]))+':'+repr(yskys[i])
+            rah.append(rastr)
+            dech.append(decstr)
+            if verbose:
+                print 'RA = ',rastr,', Dec = ',decstr
+    else:
+        rastr = repr(int(xskyh))+':'+repr(int(xskym))+':'+repr(xskys)
+        decstr = repr(int(ysky))+':'+repr(int(yskym))+':'+repr(yskys)
+        rah = rastr
+        dech = decstr
+        if verbose:
+            print 'RA = ',rastr,', Dec = ',decstr
+
+    return rah,dech
+
 def get_shiftwcs(hdulist,extname=WCSEXTN_NAME):
     """ Return the pywcs.WCS object for the WCSCORR extension which 
         contains the shift information.

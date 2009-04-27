@@ -121,8 +121,8 @@ def addIVMInputs(imageObjectList,ivmlist):
     for img,ivmname in zip(imageObjectList,ivmlist):
         img.updateIVMName(ivmname)
 
-def checkMultipleFiles(configObj):
-    a,i,o = process_input(configObj['input'],updatewcs=False)
+def checkMultipleFiles(input):
+    a,i,o = process_input(input,updatewcs=False)
     return len(a['members']) > 1
 
 def createImageObjectList(files,instrpars,group=None):
@@ -275,14 +275,13 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
     
     filelist,output,ivmlist,oldasndict=processFilenames(input,output)
+    if not workinplace:
+        createInputCopies(filelist)
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
     
     if not newfilelist:
         buildEmptyDRZ(input,output)
         return None, None, output 
-
-    if not workinplace:
-        createInputCopies(newfilelist)
     
     #make an asn table at the end
     if updatewcs:
