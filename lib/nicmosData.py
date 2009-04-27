@@ -26,7 +26,8 @@ class NICMOSInputImage(imageObject):
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
             self._image[self.scienceExt,chip].cte_dir = 0   #no correction for nicmos
-            self._effGain = 1 #get the specific gain from the detector subclass
+       
+        self._effGain = 1. #get the specific gain from the detector subclass
             
 
     def _assignSignature(self, chip):
@@ -49,40 +50,50 @@ class NICMOSInputImage(imageObject):
         self._image[self.scienceExt,chip].outputNames["staticMask"]=filename #this is the name of the static mask file
         
 
-
-    def doUnitConversions(self): #change this to operate on all the chips
-        # Image information        
-        _handle = fileutil.openImage(self.name,mode='update',memmap=0) 
-        _sciext = fileutil.getExtn(_handle,extn=self.extn)         
-
-        # Determine if Multidrizzle is in units of counts/second or counts 
-        # 
-        # Counts per second case 
-        if (_handle[0].header['UNITCORR'].strip() == 'PERFORM'):         
-            # Multiply the values of the sci extension pixels by the gain. 
-            print "Converting %s from COUNTS/S to ELECTRONS"%(self.name) 
-            # If the exptime is 0 the science image will be zeroed out. 
-            conversionFactor = (self.getExpTime() * self._gain)
-
-        # Counts case 
-        else:
-            # Multiply the values of the sci extension pixels by the gain. 
-            print "Converting %s from COUNTS to ELECTRONS"%(self.name) 
-            # If the exptime is 0 the science image will be zeroed out. 
-            conversionFactor = (self._gain)  
-
-        np.multiply(_sciext.data,conversionFactor,_sciext.data)
+    def doUnitConversions(self):
+        """convert the data to electrons
         
-        # Set the BUNIT keyword to 'electrons'
-        _handle[0].header.update('BUNIT','ELECTRONS')
-
-        # Update the PHOTFLAM value
-        photflam = _handle[0].header['PHOTFLAM']
-        _handle[0].header.update('PHOTFLAM',(photflam/self._gain))
+        This converts all science data extensions and saves
+        the results back to disk. We need to make sure
+        the data inside the chips already in memory is altered as well
         
+        """
+        
+
+         # Image information 
+        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+
+        for det in range(1,self._numchips,1):
+
+            chip=self._image[self.scienceExt,det]
+            
+            if chip._gain != None:
+
+                # Multiply the values of the sci extension pixels by the gain. 
+                print "Converting %s from COUNTS to ELECTRONS"%(self._filename) 
+
+                # If the exptime is 0 the science image will be zeroed out. 
+                np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
+                chip.data=_handle[det].data
+
+                # Set the BUNIT keyword to 'electrons'
+                _handle[det].header.update('BUNIT','ELECTRONS')
+
+                # Update the PHOTFLAM value
+                photflam = _handle[det].header['PHOTFLAM']
+                _handle[det].header.update('PHOTFLAM',(photflam/self._gain()))
+                
+                chip._effGain = 1.
+            
+            else:
+                print "Invalid gain value for data, no conversion done"
+                return ValueError
+
         # Close the files and clean-up
         _handle.close() 
-        self._effgain = 1.
+
+        self._effGain = 1.
+
 
     def _setchippars(self):
         self._setDefaultReadnoise()

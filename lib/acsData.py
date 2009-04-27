@@ -29,8 +29,10 @@ class ACSInputImage(imageObject):
         # ACS images have already been converted to electrons,
         # the effective gain is 1.
         for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._effGain = 1.
+            chip._effGain = 1.0 #chip._effGain is was drizCr uses
 
+        self._effGain=1.0
+        
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
            on the  instrument, detector, chip, and size
@@ -253,7 +255,7 @@ class HRCInputImage (ACSInputImage):
                                                      instrpars['rnkeyword'])
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
-            chip._effGain = 1.
+            chip._effGain = chip._gain
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'

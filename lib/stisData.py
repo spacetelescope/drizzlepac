@@ -86,30 +86,48 @@ class STISInputImage (imageObject):
         return flat
 
     def doUnitConversions(self):
-        if self._gain != None:
+        """convert the data to electrons
+        
+        This converts all science data extensions and saves
+        the results back to disk. We need to make sure
+        the data inside the chips already in memory is altered as well
+        
+        """
+        
 
-            # Image information 
-            _handle = fileutil.openImage(self.filename,mode='update',memmap=0) 
-            _sciext = fileutil.getExtn(_handle,extn=self.extn)         
+         # Image information 
+        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
 
-            # Multiply the values of the sci extension pixels by the gain. 
-            print "Converting %s from COUNTS to ELECTRONS"%(self.filename) 
+        for det in range(1,self._numchips,1):
 
-            # If the exptime is 0 the science image will be zeroed out. 
-            np.multiply(_sciext.data,self._gain(),_sciext.data)
+            chip=self._image[self.scienceExt,det]
+            
+            if chip._gain != None:
 
-            # Set the BUNIT keyword to 'electrons'
-            _handle[1].header.update('BUNIT','ELECTRONS')
+                # Multiply the values of the sci extension pixels by the gain. 
+                print "Converting %s from COUNTS to ELECTRONS"%(self._filename) 
 
-            # Update the PHOTFLAM value
-            photflam = _handle[1].header['PHOTFLAM']
-            _handle[1].header.update('PHOTFLAM',(photflam/self._gain()))
+                # If the exptime is 0 the science image will be zeroed out. 
+                np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
+                chip.data=_handle[det].data
 
-            # Close the files and clean-up
-            _handle.close() 
-        else:
-            print "Invalid gain value for data, no conversion done"
-            return ValueError
+                # Set the BUNIT keyword to 'electrons'
+                _handle[det].header.update('BUNIT','ELECTRONS')
+
+                # Update the PHOTFLAM value
+                photflam = _handle[det].header['PHOTFLAM']
+                _handle[det].header.update('PHOTFLAM',(photflam/self._gain()))
+                
+                chip._effGain = 1.
+            
+            else:
+                print "Invalid gain value for data, no conversion done"
+                return ValueError
+
+        # Close the files and clean-up
+        _handle.close() 
+
+        self._effGain = 1.
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -162,6 +180,9 @@ class CCDInputImage(STISInputImage):
         
         :units: DN
         
+        this should work on a chip, since different chips to be consistant with other 
+        detector classes where different chips have different gains
+        
         """
         if self.proc_unit == 'native':
             return self._rdnoise / self._gain()
@@ -193,12 +214,13 @@ class CCDInputImage(STISInputImage):
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
-
+            
+            chip._effGain = chip._gain
+            
             self._assignSignature(chip.extnum) #this is used in the static mask                     
 
 
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
+        # Convert the science data to electrons if specified by the user.  
         if self.proc_unit == "electrons":
             self.doUnitConversions()
 
@@ -272,7 +294,11 @@ class NUVInputImage(STISInputImage):
             if chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
+        # Convert the science data to electrons if specified by the user.  
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
 
+   
 
     def _setMAMAchippars(self):
         self._setMAMADefaultGain()
@@ -300,6 +326,7 @@ class FUVInputImage(STISInputImage):
         # no cte correction for STIS/FUV-MAMA so set cte_dir=0.
         print('\nWARNING: No cte correction will be made for this STIS/FUV-MAMA data.\n')
         self.cte_dir = 0  
+        self.effGain=1.0
 
     def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
@@ -316,19 +343,18 @@ class FUVInputImage(STISInputImage):
             instrpars['rnkeyword'] = None
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
+            
         for chip in self.returnAllChips(extname=self.scienceExt): 
-            pri_header=chip.header
+            pri_header=chip.header #stis stores stuff in the science data header
         
             chip.cte_dir=0
+
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
-
             if chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
 
-            # We need to treat Read Noise and Gain as a special case since it is 
-            # not populated in the STIS primary header for the MAMAs
             if (instrpars['rnkeyword'] != None):
                 chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
                                                          instrpars['rnkeyword'])                                                 
@@ -357,8 +383,13 @@ class FUVInputImage(STISInputImage):
                 chip._gain = self._setMAMADefaultGain()
           
             self._assignSignature(chip.extnum) #this is used in the static mask                     
-            
-            
+            chip._effGain=chip._gain
+
+        # Convert the science data to electrons if specified by the user.  
+        if self.proc_unit == "electrons":
+            self.doUnitConversions()
+
+              
     def getdarkcurrent(self):
         darkcurrent = 0.07 #electrons/sec
         if self.proc_unit == 'native':
