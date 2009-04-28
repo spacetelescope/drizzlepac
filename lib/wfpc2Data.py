@@ -31,7 +31,6 @@ class WFPC2InputImage (imageObject):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]        
-        self._detector=self._image["PRIMARY"].header["DETECTOR"]  
         self._effGain = 1
 
         # Attribute defining the pixel dimensions of WFPC2 chips.
@@ -43,7 +42,9 @@ class WFPC2InputImage (imageObject):
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
             self._image[self.scienceExt,chip].cte_dir = -1 # independent of amp, chip   
-            
+            det=int(self._image[self.scienceExt,chip].header["DETECTOR"])
+            self._image[self.scienceExt,chip]._detector=WFPC2_DETECTOR_NAMES[det]
+
     def find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
             which that DQ extension should be read from.
