@@ -183,7 +183,6 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
         #
         # END Loop over input image list
         #
-    print 'readnoise list in createMedian: ',readnoiseList
     
     # create an array for the median output image, use the size of the first image in the list
     medianImageArray = np.zeros(singleDrizList[0].shape,dtype=singleDrizList[0].type())
