@@ -183,30 +183,40 @@ class WFPC2InputImage (imageObject):
             This insures that all the chips get the same conversions when this 
             gets done, even if only 1 chip was specified to be processed.
         """
-        for chip in range(1,numchips+1,1):
-            myext=self.scienceExt+","+str(chip)
-            
-            image = self._image[myext]
-            #add the data back into the chip, leave it there til the end of this function          
-            image.data = self.getData(myext)
-            
-            # Multiply the values of the sci extension pixels by the gain. 
-            print "Converting %s from COUNTS to ELECTRONS"%(self._filename) 
-            # If the exptime is 0 the science image will be zeroed out. 
-            np.multiply(image.data,image._gain,image.data)
+         # Image information 
+        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        
+        for det in range(1,self._numchips,1):
 
-            # Set the BUNIT keyword to 'electrons'
-            image.header.update('BUNIT','ELECTRONS')
-            # Update the PHOTFLAM value
-            photflam = image.header['PHOTFLAM']
-            image.header.update('PHOTFLAM',(photflam/image._gain))
+            chip=self._image[self.scienceExt,det]
             
-            # Write out converted data array to original FLT image
-            self.updateData(myext,image.data)
+            if chip._gain != None:
+
+                # Multiply the values of the sci extension pixels by the gain. 
+                print "Converting %s from COUNTS to ELECTRONS"%(self._filename) 
+
+                # If the exptime is 0 the science image will be zeroed out. 
+                np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
+                chip.data=_handle[det].data
+
+                # Set the BUNIT keyword to 'electrons'
+                _handle[det].header.update('BUNIT','ELECTRONS')
+
+                # Update the PHOTFLAM value
+                photflam = _handle[det].header['PHOTFLAM']
+                _handle[det].header.update('PHOTFLAM',(photflam/chip._gain))
+                
+                chip._effGain = 1.
             
-        # Delete the converted arrays from memory now that they have been
-        # written out 
-        self.close()
+            else:
+                print "Invalid gain value for data, no conversion done"
+                return ValueError
+
+        # Close the files and clean-up
+        _handle.close() 
+
+        self._effGain = 1.
+          
 
     def getdarkcurrent(self,exten):
         """
