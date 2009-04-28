@@ -100,4 +100,4 @@ expkeyword = string_kw(default="")
 
 [ _RULES_ ]
 
-_rule1_ = string_kw(default='', code='import BigBlackBox.processInput as mdpi;OUT = mdpi.checkMultipleFiles(VAL)')
+_rule1_ = string_kw(default='', code='from pytools import check_files;OUT = (check_files.countInput(VAL) > 1)')
