@@ -263,6 +263,20 @@ class OutputImage:
                             if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
                             (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
                                 del scihdr[k[0]]
+                    # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
+                    # does not try to look for non-existent extensions
+                    del scihdr['D2IMEXT']
+                    del scihdr['D2IMERR']
+                    # Remove paper IV related keywords related to the 
+                    #   DGEO correction here
+                    for k in scihdr.items():
+                        if (k[0][:2] == 'DP'): 
+                            del scihdr[k[0]+'.*']
+                            del scihdr[k[0]+'.*.*']
+                        if (k[0][:2] == 'CP'):
+                            del scihdr[k[0]]
+                    del scihdr['DGEOEXT']
+                    
 
         ##########
         # Now, build the output file
