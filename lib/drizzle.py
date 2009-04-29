@@ -96,6 +96,8 @@ def drizzle(input=None,drizSep=False,configObj=None,wcsmap=wcs_functions.WCSMap,
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    if configObj is None:
+        return
     
     if not editpars:
         run(configObj,wcsmap=wcsmap)

@@ -46,6 +46,8 @@ def drizCR(input=None,configObj=None, editpars=False, **inputDict):
     print inputDict    
     inputDict["input"]=input    
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
+    if configObj is None:
+        return
 
     if editpars == False:
         run(configObj)

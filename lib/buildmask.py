@@ -51,7 +51,8 @@ def run(configObj=None,input_dict={},loadOnly=False):
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
-    
+    if configObj is None:
+        return
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
     imgObjList,outwcs = processInput.setCommonInput(configObj)

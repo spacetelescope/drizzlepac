@@ -59,10 +59,6 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # specified by the user on the command-line and provided in 
         # input_dict
             configObj = teal.teal(configObj,loadOnly=False)
-
-    if configObj is None:
-        print 'No valid input parameters found for: ',taskname
-        raise ValueError
     
     return configObj
 

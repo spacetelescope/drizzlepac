@@ -40,6 +40,8 @@ def MultiDrizzle(editpars=False, configObj=None, wcsmap=wcs_functions.WCSMap, **
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    if configObj is None:
+        return
     
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
     # called 'run()'.

@@ -91,6 +91,8 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         raise ValueError
 
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
+    if configObj is None:
+        return
     
     if not editpars:
         run(configObj,outExt=outExt)
