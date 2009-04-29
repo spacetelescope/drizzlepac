@@ -2,16 +2,16 @@ import os,copy
 import numpy as np
 from numpy import linalg
 
-from updatewcs import wcsutil
-from updatewcs.distortion import utils
+from stwcs import wcsutil
+from stwcs.distortion import utils
 
 from pytools import fileutil,asnutil
 import util
 import imageObject
-import updatewcs
-from updatewcs import pywcs
-from updatewcs import distortion
-from updatewcs.distortion import coeff_converter,utils
+import stwcs
+import pywcs
+from stwcs import distortion
+from stwcs.distortion import coeff_converter,utils
 
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,

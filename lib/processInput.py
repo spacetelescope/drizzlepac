@@ -5,7 +5,7 @@ import os,shutil
 import wcs_functions,util
 import mdzhandler
 
-from updatewcs import hstwcs
+from stwcs import updatewcs
 
 """
 Process input to MultiDrizzle/PyDrizzle.
@@ -326,7 +326,7 @@ def runmakewcs(input):
     output: returns a list of names of the modified files
             (For GEIS files returns the translated names.)
     """
-    newNames = hstwcs.updatewcs(input,checkfiles=False)
+    newNames = updatewcs.updatewcs(input,checkfiles=False)
     #newNames = makewcs.run(input)
     return newNames
 
