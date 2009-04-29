@@ -23,7 +23,7 @@ import processInput
 
 
 
-__taskname__ = "BigBlackBox.staticMask"
+__taskname__ = "betadrizzle.staticMask"
 _step_num_ = 1
 
 

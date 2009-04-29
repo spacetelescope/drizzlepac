@@ -75,7 +75,7 @@ def blot(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict)
 Basic example of how to call sky yourself from a python command line,
 this example will use the default parameter settings:
 
->from BigBlackBox import blot
+>from betadrizzle import blot
 >blot.blot()
 
 

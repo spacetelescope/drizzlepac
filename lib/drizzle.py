@@ -10,7 +10,7 @@ try:
 except ImportError:
     arrdriz = None
 
-__taskname__ = "BigBlackBox.drizzle"
+__taskname__ = "betadrizzle.drizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 

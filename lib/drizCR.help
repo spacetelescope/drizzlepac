@@ -69,5 +69,5 @@ def drizCR(input=None,configObj=None, editpars=False, **inputDict):
 Basic example of how to call static yourself from a python command line,
 using the default parameters for the task. 
 
->from BigBlackBox import drizCR
+>from betadrizzle import drizCR
 >drizCR.drizCR('*flt.fits')

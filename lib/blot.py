@@ -9,7 +9,7 @@ try:
 except ImportError:
     arrdriz = None
     
-__taskname__ = 'BigBlackBox.blot'
+__taskname__ = 'betadrizzle.blot'
 _blot_step_num_ = 5
 
 #

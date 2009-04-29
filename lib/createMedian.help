@@ -107,5 +107,5 @@ def median(input=None,configObj=None, editpars=False, **inputDict):
     set editpars = True to use the GUI to edit parameters
     inputDict is a dictionary of parameter settings which can also be used to override the defaults
     
->from BigBlackBox import createMedian
+>from betadrizzle import createMedian
 >createMedian.median('*flt.fits')

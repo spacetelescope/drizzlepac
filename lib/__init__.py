@@ -1,4 +1,4 @@
-""" BigBlackBox - test implementation of MultiDrizzle: The Next Generation
+""" betadrizzle - test implementation of MultiDrizzle: The Next Generation
 
 """
 import os
@@ -17,7 +17,7 @@ import staticMask
 import util
 import wcs_functions
 
-__taskname__ = "BigBlackBox"
+__taskname__ = "betadrizzle"
 
 # Begin Version Information -------------------------------------------
 __version__ = '4.0.0dev'
@@ -77,7 +77,7 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
         The example config files are in multidrizzle/pars
 
     """
-    print '[BigBlackBox] mdriz is NOW running... \n'
+    print '[betadrizzle] mdriz is NOW running... \n'
 
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
@@ -107,7 +107,7 @@ def run(configObj=None,wcsmap=wcs_functions.WCSMap):
     #Make your final drizzled image
     drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap)
     
-    print '\n[BigBlackBox] mdriz is all finished!\n'
+    print '\n[betadrizzle] mdriz is all finished!\n'
     
     for image in imgObjList:
         image.close()

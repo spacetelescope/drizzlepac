@@ -23,7 +23,7 @@ from imageObject import imageObject
 class mdriz(cfgpars.ConfigObjPars):
     """ This needs to be called using the following syntax:
 
-        mdobj = BigBlackBox.mdriz()
+        mdobj = betadrizzle.mdriz()
         cfgepar.epar(mdobj)
 
     """

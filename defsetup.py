@@ -34,7 +34,7 @@ else:
 
  
 def getNumpyExtensions():
-    ext = [Extension("BigBlackBox.cdriz",['src/arrdrizmodule.c',
+    ext = [Extension("betadrizzle.cdriz",['src/arrdrizmodule.c',
                                           'src/cdrizzleblot.c',
                                           'src/cdrizzlebox.c',
                                           'src/cdrizzleio.c',
@@ -53,7 +53,7 @@ def getNumpyExtensions():
     return ext
 
 
-pkg = "BigBlackBox"
+pkg = "betadrizzle"
 
 setupargs = {
 

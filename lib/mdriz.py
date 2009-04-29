@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import sys, getopt
-from BigBlackBox import MultiDrizzle,util,wcs_functions
-from BigBlackBox import __version__
+from betadrizzle import MultiDrizzle,util,wcs_functions
+from betadrizzle import __version__
     
 
 #-------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ def main() :
             long_help = True
 
     if long_help:
-        print BigBlackBox.getHelpAsString()
+        print betadrizzle.getHelpAsString()
 
     if help:
         print 'Syntax: mdriz.py -[h|g|?] [name=value,...]'

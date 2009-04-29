@@ -38,7 +38,7 @@ import numpy as N
 
 import processInput,util
 
-__taskname__ = 'BigBlackBox.buildmask'
+__taskname__ = 'betadrizzle.buildmask'
 #
 #### Interactive interface 
 #

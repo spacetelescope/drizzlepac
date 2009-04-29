@@ -16,7 +16,7 @@ import processInput
 __version__ = '1.1'
 
 
-__taskname__= "BigBlackBox.createMedian" #looks in BigBlackBox for sky.cfg
+__taskname__= "betadrizzle.createMedian" #looks in betadrizzle for sky.cfg
 _step_num_ = 4  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():

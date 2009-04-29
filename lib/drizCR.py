@@ -14,7 +14,7 @@ from pytools import fileutil
 
 __version__ = '1.1' #we should go through and update all these
 
-__taskname__= "BigBlackBox.drizCR" #looks in BigBlackBox for sky.cfg
+__taskname__= "betadrizzle.drizCR" #looks in betadrizzle for sky.cfg
 _step_num_ = 6  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():
