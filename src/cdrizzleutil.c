@@ -220,12 +220,12 @@ static const char* bool_string_table[] = {
 
 static int
 str2enum(const char* s, const char* table[], int* result, struct driz_error_t* error) {
+  const char** it = table;
+
   assert(s);
   assert(table);
   assert(result);
   assert(error);
-
-  const char** it = table;
 
   while (*it != NULL) {
     if (strncmp(s, *it, 32) == 0) {
