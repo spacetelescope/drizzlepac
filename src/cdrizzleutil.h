@@ -454,12 +454,13 @@ Evaluate a 4th order (quartic) geometric distortion in 2d
 */
 static inline double
 eval4(const double x, const double y, const double* co) {
-  assert(co);
 
   register double x2 = x * x;
   register double y2 = y * y;
   register double x3 = x2 * x;
   register double y3 = y2 * y;
+
+  assert(co);
 
   return
     co[0] +
@@ -492,13 +493,14 @@ Evaluate a 5th order geometric distortion in 2d
 */
 static inline double
 eval5(const double x, const double y, const double* co) {
-  assert(co);
 
   register double x2 = x * x;
   register double y2 = y * y;
   register double x3 = x2 * x;
   register double y3 = y2 * y;
   register double xy = x * y;
+
+  assert(co);
 
   return
     co[0] +
