@@ -422,10 +422,11 @@ Evaluate a cubic geometric distortion in 2D
 */
 static inline double
 eval3(const double x, const double y, const double* co) {
-  assert(co);
 
   register double x2 = x * x;
   register double y2 = y * y;
+
+  assert(co);
 
   return
     co[0] +
