@@ -558,11 +558,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
                 pix_ratio = _scale
             else:
+                """
+                #
+                ##Using the Python class for the WCS-based transformation 
+                #
                 # Use user provided mapping function
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
                 mapping = wmap.forward
-                pix_ratio = wmap.get_pix_ratio()
+                """
+                wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
+                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs)
+                pix_ratio = output_wcs.pscale/chip.wcs.pscale
             
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,

@@ -96,7 +96,37 @@ class WCSMap:
         """ Transform input sky positions into pixel positions in the WCS provided.
         """
         return wcs.wcs_sky2pix(ra,dec,1)
-                    
+
+def applyShift_to_WCS(imageobj,input,output):
+    """ [Functional form of .applyShift() method of WCSMap]
+    Apply shifts defined in header, read into the imageobject, for the input
+    image to update the output WCS for use in coordinate transform later. 
+    
+    This function modifies the output WCS in-place.
+    """
+    shift,rot,scale = applyHeaderlet(imageobj,input,output,extname=WCSEXTN_NAME)
+    if shift is not None:
+        print '    Correcting WCSMap input WCS for shifts...'
+        # Record the shift applied with the WCS, so that we can tell it
+        # has been applied and not correct the WCS any further
+        # Update OUTPUT WCS crpix value with shift, since it was determined
+        # in (and translated to) the output frame.
+        output.wcs.crpix -= shift
+
+        # apply translated rotation and scale from shiftfile to input WCS
+        output.rotateCD(rot)
+        output.wcs.cd *= scale
+        output.orientat += rot
+        output.pscale *= scale
+
+def get_pix_ratio_from_WCS(input,output):
+    """ [Functional form of .get_pix_ratio() method of WCSMap]"""
+    return output.pscale/input.pscale
+##
+#
+#### Stand-alone functions for WCS handling
+#
+##
 def get_hstwcs(filename,hdulist,extnum):
     ''' Return the HSTWCS object for a given chip.
     
@@ -236,11 +266,11 @@ def addWCSExtn(wcsextn,filename, extname=WCSEXTN_NAME,verbose=True):
     fimg.append(wcsextn)
     fimg.close()
     
-def applyHeaderlet(imageObject,chipwcs,outwcs,extname=WCSEXTN_NAME):
+def applyHeaderlet(imageobj,chipwcs,outwcs,extname=WCSEXTN_NAME):
     """ Apply shift information found in headerlet extension to 
         chip in [SCI,extver]. 
     """
-    hdulist = imageObject._image
+    hdulist = imageobj._image
     refwcs = get_shiftwcs(hdulist,extname=extname)
     if refwcs is None:
         return None,None,None
