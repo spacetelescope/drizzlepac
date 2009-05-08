@@ -28,11 +28,14 @@ try:
     __svn_version__ = svn_version.__svn_version__
 except:
     __svn_version__ = 'Unable to determine SVN revision'
-    
+
+# Pointer to the included Python class for WCS-based coordinate transformations
+PYTHON_WCSMAP = wcs_functions.WCSMap
+
 #
 #### Interactive user interface (functional form)
 #
-def MultiDrizzle(editpars=False, configObj=None, wcsmap=wcs_functions.WCSMap, **input_dict):
+def MultiDrizzle(editpars=False, configObj=None, wcsmap=None, **input_dict):
 
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
@@ -58,7 +61,7 @@ def getHelpAsString():
         help_str += 'Version '+__version__+'\n'
         return help_str
     
-def run(configObj=None,wcsmap=wcs_functions.WCSMap):
+def run(configObj=None,wcsmap=None):
     """    
     Initial example by Nadia ran MD with configObj EPAR using:
     It can be run in one of two ways:

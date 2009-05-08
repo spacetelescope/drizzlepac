@@ -118,7 +118,7 @@ def applyShift_to_WCS(imageobj,input,output):
         output.wcs.cd *= scale
         output.orientat += rot
         output.pscale *= scale
-
+        
 def get_pix_ratio_from_WCS(input,output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""
     return output.pscale/input.pscale

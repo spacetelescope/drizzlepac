@@ -327,13 +327,15 @@ default_wcsmap(void* state,
   status = pipeline_all_pixel2world(m->input_wcs,n,2,xyin,skyout);
   if (status)
     return 1;
-      
+  wcsprm_c2python(m->input_wcs->wcs);
+
   /* 
   Finally, call wcs_sky2pix() for the output object.
   */
-  status = wcss2p(m->input_wcs->wcs, n, 2,
+  wcsprm_python2c(m->output_wcs->wcs);
+  status = wcss2p(m->output_wcs->wcs, n, 2,
                   skyout, phi, theta, imgcrd, xyout, stat);
-  wcsprm_c2python(m->input_wcs->wcs);
+  wcsprm_c2python(m->output_wcs->wcs);
 
   /*
   Transform results back to 2 1-D arrays, like the input.
@@ -342,6 +344,7 @@ default_wcsmap(void* state,
       xout[i] = *(xyout+2*i);
       yout[i] = *(xyout+2*i+1);
   }
+
   /* 
   Free memory allocated to internal 2-D arrays 
   */

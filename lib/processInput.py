@@ -64,10 +64,8 @@ def setCommonInput(configObj,createOutwcs=True):
     """
     if not createOutwcs:
         configObj['updatewcs']=False #we're probably just working on single images here
-        
-        
+                
     #maybe we can chunk this part up some more so that we can call just the parts we want
-    
         
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename
