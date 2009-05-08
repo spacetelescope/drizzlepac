@@ -958,6 +958,9 @@ void initcdriz(void)
   if (PyType_Ready(&MappingType) < 0)
     return;
 
+  if (PyType_Ready(&WCSMapType) < 0)
+    return;
+
   m = Py_InitModule("cdriz", cdriz_methods);
   if (m == NULL)
     return;
