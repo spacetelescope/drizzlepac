@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <numpy/arrayobject.h>
+#include "pywcs.h"
 
 #include "cdrizzleblot.h"
 #include "cdrizzlebox.h"
@@ -25,7 +26,7 @@ static PyObject *gl_Error;
  The Python mapping callback must have the following signature:
 
     def mapping(xin, yin):
-        return xout, yout
+	return xout, yout
 
  xin, yin are the input coordinates, and xout and yout are the output
  coordinates.  All are 1-dimensional Numpy DOUBLE arrays of the same
@@ -33,12 +34,12 @@ static PyObject *gl_Error;
 */
 static int
 py_mapping_callback(void* state,
-                    const double xd, const double yd,
-                    const integer_t n,
-                    double* xin /*[n]*/, double* yin /*[n]*/,
-                    /* Output parameters */
-                    double* xout, double* yout,
-                    struct driz_error_t* error) {
+		    const double xd, const double yd,
+		    const integer_t n,
+		    double* xin /*[n]*/, double* yin /*[n]*/,
+		    /* Output parameters */
+		    double* xout, double* yout,
+		    struct driz_error_t* error) {
   PyObject* callback = (PyObject*)state;
   npy_intp dims = n;
   PyArrayObject* py_xin = NULL;
@@ -81,15 +82,15 @@ py_mapping_callback(void* state,
 
   if (PyArray_DIM(py_xout, 0) != n) {
     PyErr_Format(PyExc_ValueError,
-                 "Returned arrays must be same dimension as passed-in arrays.  Expected '%d', got '%d'",
-                 (int)n, (int)PyArray_DIM(py_xout, 0));
+		 "Returned arrays must be same dimension as passed-in arrays.  Expected '%d', got '%d'",
+		 (int)n, (int)PyArray_DIM(py_xout, 0));
     goto _py_mapping_callback_exit;
   }
 
   if (PyArray_DIM(py_yout, 0) != n) {
     PyErr_Format(PyExc_ValueError,
-                 "Returned arrays must be same dimension as passed-in arrays.  Expected '%d', got '%d'",
-                 (int)n, (int)PyArray_DIM(py_yout, 0));
+		 "Returned arrays must be same dimension as passed-in arrays.  Expected '%d', got '%d'",
+		 (int)n, (int)PyArray_DIM(py_yout, 0));
     goto _py_mapping_callback_exit;
   }
 
@@ -138,7 +139,7 @@ static PyObject *
 PyMapping_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
   PyMapping *self;
-
+  
   self = (PyMapping *)type->tp_alloc(type, 0);
   if (self != NULL) {
     mapping_param_init(&self->m);
@@ -177,10 +178,10 @@ PyMapping_init(PyMapping *self, PyObject *args, PyObject *kwds)
   driz_error_init(&error);
 
   if (! PyArg_ParseTuple(args, "llllddssdddddddsOOssOdd:DefaultMapping.__init__",
-                         &dnx, &dny, &onx, &ony, &xsh, &ysh, &shftfr_str,
-                         &shftun_str, &drot, &scale, &xsh2, &ysh2, &xscale,
-                         &yscale, &rot2, &shfr2_str, &pxg_obj, &pyg_obj,
-                         &align_str, &coeffs_str, &wcs_obj, &alpha, &beta)) {
+			 &dnx, &dny, &onx, &ony, &xsh, &ysh, &shftfr_str,
+			 &shftun_str, &drot, &scale, &xsh2, &ysh2, &xscale,
+			 &yscale, &rot2, &shfr2_str, &pxg_obj, &pyg_obj,
+			 &align_str, &coeffs_str, &wcs_obj, &alpha, &beta)) {
     return -1;
   }
 
@@ -221,12 +222,12 @@ PyMapping_init(PyMapping *self, PyObject *args, PyObject *kwds)
 
   /* Create the C struct from all of these mapping parameters */
   istat = default_mapping_init(&self->m, dnx, dny, onx, ony, xsh, ysh,
-                               shftfr, shftun, drot, scale, xsh2, ysh2,
-                               xscale, yscale, rot2, shfr2,
-                               PyArray_DATA(self->pxg),
-                               PyArray_DATA(self->pyg),
-                               xgdim, ygdim, align, coeffs_str,
-                               wcs_data, alpha, beta, &error);
+			       shftfr, shftun, drot, scale, xsh2, ysh2,
+			       xscale, yscale, rot2, shfr2,
+			       PyArray_DATA(self->pxg),
+			       PyArray_DATA(self->pyg),
+			       xgdim, ygdim, align, coeffs_str,
+			       wcs_data, alpha, beta, &error);
  _PyMapping_init_exit:
 
   /* The references to the PyArrayObjects will get automatically
@@ -273,8 +274,8 @@ PyMapping_call(PyMapping* self, PyObject* args, PyObject* kwargs)
 
   if (PyArray_DIM(py_xin, 0) != PyArray_DIM(py_yin, 0)) {
     PyErr_Format(PyExc_ValueError,
-                 "Passed in arrays must have the same dimensions.  Got '%d' and '%d'",
-                 PyArray_DIM(py_xin, 0), PyArray_DIM(py_yin, 0));
+		 "Passed in arrays must have the same dimensions.  Got '%d' and '%d'",
+		 (int)PyArray_DIM(py_xin, 0), (int)PyArray_DIM(py_yin, 0));
     goto _py_mapping_call_exit;
   }
 
@@ -291,9 +292,9 @@ PyMapping_call(PyMapping* self, PyObject* args, PyObject* kwargs)
   }
 
   if (default_mapping(&self->m, 0, 0, (integer_t)dims,
-                      PyArray_DATA(py_xin), PyArray_DATA(py_yin),
-                      PyArray_DATA(py_xout), PyArray_DATA(py_yout),
-                      &error)) {
+		      PyArray_DATA(py_xin), PyArray_DATA(py_yin),
+		      PyArray_DATA(py_xout), PyArray_DATA(py_yout),
+		      &error)) {
     goto _py_mapping_call_exit;
   }
 
@@ -357,6 +358,192 @@ static PyTypeObject MappingType = {
   PyMapping_new,                /* tp_new */
 };
 
+
+/**
+
+Code to implement the WCS-based C interface for the mapping.
+
+It uses the same py_mapping_callback as the DefaultMapping
+(pixel-based default transformation) uses, since we want to 
+retain the support for providing Python-based transformations
+in addition to the C-based transformations.
+
+*/
+typedef struct {
+  PyObject_HEAD
+  struct wcsmap_param_t m;
+} PyWCSMap;
+
+static void
+PyWCSMap_dealloc(PyWCSMap* self)
+{
+  /* Deal with our reference-counted members */
+
+  self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *
+PyWCSMap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+  PyWCSMap *self;
+
+  self = (PyWCSMap *)type->tp_alloc(type, 0);
+  if (self != NULL) {
+    wcsmap_param_init(&self->m);
+  }
+
+  return (PyObject *)self;
+}
+
+static int
+PyWCSMap_init(PyWCSMap *self, PyObject *args, PyObject *kwds)
+{
+  /* Arguments in the order they appear */
+  PyObject *input_obj, *output_obj;
+    
+  /* Other miscellaneous local variables */
+  struct driz_error_t error;
+  int istat = 1;
+
+  driz_error_init(&error);
+
+  if (! PyArg_ParseTuple(args, "OO:DefaultWCSMapping.__init__",&input_obj,&output_obj)){
+    return -1;
+  }
+
+  /* Create the C struct from all of these mapping parameters */
+  istat = default_wcsmap_init(&self->m, (PyWcs *)input_obj, (PyWcs *)output_obj, &error);
+
+  /* The references to the PyArrayObjects will get automatically
+     dereferenced by PyMapping_dealloc.  (Immediately, in the case of
+     an error, or when the object goes out of scope). */
+
+  if (istat || driz_error_is_set(&error)) {
+    if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
+      PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
+    return -1;
+  }
+
+  return 0;
+}
+
+static PyObject*
+PyWCSMap_call(PyWCSMap* self, PyObject* args, PyObject* kwargs)
+{
+  PyObject*           py_xin_obj = NULL;
+  PyObject*           py_yin_obj = NULL;
+  PyArrayObject*      py_xin     = NULL;
+  PyArrayObject*      py_yin     = NULL;
+  PyArrayObject*      py_xout    = NULL;
+  PyArrayObject*      py_yout    = NULL;
+  npy_intp            dims;
+  PyObject*           result     = NULL;
+  
+  struct driz_error_t error;
+
+  driz_error_init(&error);
+
+  if (!PyArg_ParseTuple(args, "OO", &py_xin_obj, &py_yin_obj)) {
+    return NULL;
+  }
+
+  py_xin = (PyArrayObject*)PyArray_ContiguousFromAny(py_xin_obj, PyArray_DOUBLE, 1, 1);
+  if (py_xin == NULL) {
+    goto _py_wcsmap_call_exit;
+  }
+
+  py_yin = (PyArrayObject*)PyArray_ContiguousFromAny(py_yin_obj, PyArray_DOUBLE, 1, 1);
+  if (py_yin == NULL) {
+    goto _py_wcsmap_call_exit;
+  }
+
+  if (PyArray_DIM(py_xin, 0) != PyArray_DIM(py_yin, 0)) {
+    PyErr_Format(PyExc_ValueError,
+		 "Passed in arrays must have the same dimensions.  Got '%d' and '%d'",
+		 (int)PyArray_DIM(py_xin, 0), (int)PyArray_DIM(py_yin, 0));
+    goto _py_wcsmap_call_exit;
+  }
+
+  dims = PyArray_DIM(py_xin, 0);
+    
+  /* Generate output arrays */
+  py_xout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, PyArray_DOUBLE);
+  if (py_xout == NULL) {
+    goto _py_wcsmap_call_exit;
+  }
+
+  py_yout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, PyArray_DOUBLE);
+  if (py_yout == NULL) {
+    goto _py_wcsmap_call_exit;
+  }
+
+  if (default_wcsmap(&self->m, 0, 0, (integer_t)dims,
+		      PyArray_DATA(py_xin), PyArray_DATA(py_yin),
+		      PyArray_DATA(py_xout), PyArray_DATA(py_yout),
+		      &error)) {
+    goto _py_wcsmap_call_exit;
+  }
+
+  result = Py_BuildValue("OO", py_xout, py_yout);
+  if (result == NULL) {
+    goto _py_wcsmap_call_exit;
+  }
+
+ _py_wcsmap_call_exit:
+  Py_XDECREF(py_xin);
+  Py_XDECREF(py_yin);
+  Py_XDECREF(py_xout);
+  Py_XDECREF(py_yout);
+
+  if (driz_error_is_set(&error)) {
+    PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
+  }
+
+  return result;
+}
+
+static PyTypeObject WCSMapType = {
+  PyObject_HEAD_INIT(NULL)
+  0,                            /*ob_size*/
+  "cdriz.DefaultWCSMapping",    /*tp_name*/
+  sizeof(PyWCSMap),            /*tp_basicsize*/
+  0,                            /*tp_itemsize*/
+  (destructor)PyWCSMap_dealloc, /*tp_dealloc*/
+  0,                            /*tp_print*/
+  0,                            /*tp_getattr*/
+  0,                            /*tp_setattr*/
+  0,                            /*tp_compare*/
+  0,                            /*tp_repr*/
+  0,                            /*tp_as_number*/
+  0,                            /*tp_as_sequence*/
+  0,                            /*tp_as_mapping*/
+  0,                            /*tp_hash */
+  (ternaryfunc)PyWCSMap_call,  /*tp_call*/
+  0,                            /*tp_str*/
+  0,                            /*tp_getattro*/
+  0,                            /*tp_setattro*/
+  0,                            /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+  "DefaultWCSMapping(input,output)",   /* tp_doc */
+  0,                            /* tp_traverse */
+  0,                            /* tp_clear */
+  0,                            /* tp_richcompare */
+  0,                            /* tp_weaklistoffset */
+  0,                            /* tp_iter */
+  0,                            /* tp_iternext */
+  0,                            /* tp_methods */
+  0,                            /* tp_members */
+  0,                            /* tp_getset */
+  0,                            /* tp_base */
+  0,                            /* tp_dict */
+  0,                            /* tp_descr_get */
+  0,                            /* tp_descr_set */
+  0,                            /* tp_dictoffset */
+  (initproc)PyWCSMap_init,     /* tp_init */
+  0,                            /* tp_alloc */
+  PyWCSMap_new,                /* tp_new */
+};
+
 static PyObject *
 tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 {
@@ -391,11 +578,11 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   driz_error_init(&error);
 
   if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffslllO:tdriz",
-                        &oimg, &owei, &oout, &owht, &ocon, &uniqid, &ystart,
-                        &xmin, &ymin, &dny, &scale, &xscale, &yscale,
-                        &align_str, &pfract, &kernel_str, &inun_str,
-                        &expin, &wtscl, &fillstr, &nmiss, &nskip, &vflag,
-                        &callback_obj)) {
+			&oimg, &owei, &oout, &owht, &ocon, &uniqid, &ystart,
+			&xmin, &ymin, &dny, &scale, &xscale, &yscale,
+			&align_str, &pfract, &kernel_str, &inun_str,
+			&expin, &wtscl, &fillstr, &nmiss, &nskip, &vflag,
+			&callback_obj)) {
     return PyErr_Format(gl_Error, "cdriz.tdriz: Invalid Parameters.");
   }
 
@@ -477,7 +664,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     fill_value = (float)strtof(fillstr, &fillstr_end);
     if (fillstr == fillstr_end || *fillstr_end != '\0') {
       driz_error_format_message(&error, "Could not convert fill value '%s'",
-                                fillstr);
+				fillstr);
 
       goto _exit;
     }
@@ -589,10 +776,10 @@ twdriz(PyObject *obj, PyObject *args)
     ftnlen coeffs_len, ftnlen filstr_len, ftnlen vers_len);
 
     if (!PyArg_ParseTuple(args,"OOOOllllOOOOdssslll",
-            &oimg,&owei,&oout,&owht, &ystart,&xmin,&ymin,&dny, &owcsin, &owcsout,
-            &opxg, &opyg, &pfract, &kernel,&coeffs, &fillstr,
-            &nmiss, &nskip, &vflag)){
-         return PyErr_Format(gl_Error, "cdriz.twdriz: Invalid Parameters.");
+	    &oimg,&owei,&oout,&owht, &ystart,&xmin,&ymin,&dny, &owcsin, &owcsout,
+	    &opxg, &opyg, &pfract, &kernel,&coeffs, &fillstr,
+	    &nmiss, &nskip, &vflag)){
+	 return PyErr_Format(gl_Error, "cdriz.twdriz: Invalid Parameters.");
     }
 
     img = (PyArrayObject *)NA_InputArray(oimg, tFloat32, C_ARRAY);
@@ -618,15 +805,15 @@ twdriz(PyObject *obj, PyObject *args)
     fillstr_len = strlen(fillstr) + 1;
 
     istat = twdriz_(NA_OFFSETDATA(img), NA_OFFSETDATA(wei),
-                    NA_OFFSETDATA(out),NA_OFFSETDATA(wht),
-                    &ystart,&nx,&ny, &dny, &onx,&ony,
-                    NA_OFFSETDATA(wcsin), NA_OFFSETDATA(wcsout),
-                    NA_OFFSETDATA(pxg),NA_OFFSETDATA(pyg),&xgdim, &ygdim,
-                    &pfract, kernel, coeffs, fillstr,
-                    &vflag, &coeffs_len,
-                    &nmiss, &nskip, vers,
-                    kernel_len, coeffs_len,
-                    fillstr_len, vers_len);
+		    NA_OFFSETDATA(out),NA_OFFSETDATA(wht),
+		    &ystart,&nx,&ny, &dny, &onx,&ony,
+		    NA_OFFSETDATA(wcsin), NA_OFFSETDATA(wcsout),
+		    NA_OFFSETDATA(pxg),NA_OFFSETDATA(pyg),&xgdim, &ygdim,
+		    &pfract, kernel, coeffs, fillstr,
+		    &vflag, &coeffs_len,
+		    &nmiss, &nskip, vers,
+		    kernel_len, coeffs_len,
+		    fillstr_len, vers_len);
 
     Py_DECREF(img);
     Py_DECREF(wei);
@@ -669,9 +856,9 @@ tblot(PyObject *obj, PyObject *args)
   driz_error_init(&error);
 
   if (!PyArg_ParseTuple(args,"OOlllldfddssffflO:tblot", &oimg, &oout, &xmin,
-                        &xmax, &ymin, &ymax, &scale, &kscale, &xscale,
-                        &yscale, &align_str, &interp_str, &ef, &misval,
-                        &sinscl, &vflag, &callback_obj)){
+			&xmax, &ymin, &ymax, &scale, &kscale, &xscale,
+			&yscale, &align_str, &interp_str, &ef, &misval,
+			&sinscl, &vflag, &callback_obj)){
     return PyErr_Format(gl_Error, "cdriz.tblot: Invalid Parameters.");
   }
 
@@ -779,5 +966,8 @@ void initcdriz(void)
 
   Py_INCREF(&MappingType);
   PyModule_AddObject(m, "DefaultMapping", (PyObject *)&MappingType);
+  /* Py_INCREF(&WCSMapType);
+  PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
+  */
 }
 

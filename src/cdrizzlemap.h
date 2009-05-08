@@ -1,8 +1,54 @@
 #ifndef CDRIZZLEDRIZ_H
 #define CDRIZZLEDRIZ_H
 
+#include "pywcs.h"
 #include "cdrizzleutil.h"
 
+/**
+
+Declarations for supporting the DefaultWCSMapping (WCS-based)
+transformations.
+
+*/
+struct wcsmap_param_t {
+  /* Pointers to PyWCS objects for input and output WCS */
+  pipeline_t* input_wcs;
+  pipeline_t* output_wcs;
+};
+
+/**
+Initialize all of the members of the mapping_param_t to sane default
+values, mostly zeroes.  Note, these are not *meaningful* values, just
+ones that help with memory management etc.  It is up to users of the
+struct, e.g. cdrizzle_, to fill the struct with valid parameters.
+*/
+void
+wcsmap_param_init(struct wcsmap_param_t* m);
+
+void
+wcsmap_param_dump(struct wcsmap_param_t* m);
+
+int
+default_wcsmap(void* state,
+                const double xd, const double yd,
+                const integer_t n,
+                double* xin /*[n]*/, double* yin /*[n]*/,
+                /* Output parameters */
+                double* xout, double* yout,
+                struct driz_error_t* error);
+int
+default_wcsmap_init(struct wcsmap_param_t* m,
+                    PyWcs* input,
+                    PyWcs* output,
+                     /* Output parameters */
+                     struct driz_error_t* error);
+
+/**
+
+Declarations for supporting the DefaultMapping (pixel-based)
+transformations.
+
+*/
 struct mapping_param_t {
   /* Geometric distortion coefficients */
   double x_coeffs[MAX_COEFFS]; /* was: XCO */
@@ -97,21 +143,6 @@ y_distortion_ptr(struct mapping_param_t* m, integer_t i0, integer_t i1) {
   return (m->y_distortion + (i1 * m->x_dist_dim) + i0);
 }
 
-/**
-Apply the standard Drizzle transformation from input to output pixel
-coordinates.  This may optionally include a polynomial distortion
-solution or be specified using input and output WCS.
-*/
-int
-map_value(struct driz_param_t* p,
-          const bool_t regular,
-          const integer_t n,
-          const double* xin /*[n]*/, const double* yin /*[n]*/,
-          /* Output parameters */
-          double* xtmp /*[n]*/, double* ytmp /*[n]*/,
-          double* xout /*[n]*/, double* yout /*[n]*/,
-          struct driz_error_t* error);
-
 /* The standard drizzle mapping callback function */
 extern int
 default_mapping(void* state,
@@ -151,5 +182,25 @@ default_mapping_init(struct mapping_param_t* m,
                      const double beta,
                      /* Output parameters */
                      struct driz_error_t* error);
+
+/**
+
+This function will be used by both the pixel-based and WCS-based
+mapping functions; namely, DefaultMapping and DefaultWCSMapping.
+ 
+Apply the standard Drizzle transformation from input to output pixel
+coordinates.  This may optionally include a polynomial distortion
+solution or be specified using input and output WCS.
+*/
+int
+map_value(struct driz_param_t* p,
+          const bool_t regular,
+          const integer_t n,
+          const double* xin /*[n]*/, const double* yin /*[n]*/,
+          /* Output parameters */
+          double* xtmp /*[n]*/, double* ytmp /*[n]*/,
+          double* xout /*[n]*/, double* yout /*[n]*/,
+          struct driz_error_t* error);
+
 
 #endif /* CDRIZZLEDRIZ_H */

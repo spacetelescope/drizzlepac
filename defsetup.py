@@ -8,6 +8,13 @@ try:
 except ImportError:
     "Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Pydrizzle requires numpy v 1.0.2 or later.\n"
 
+try:
+    #import pywcs
+    pywcs_path = ['/user/hack/dev/release/lib/python/pywcs']
+    pywcslib = pywcs_path[0]
+except ImportError:
+    "PyWCS was not found. It may not be installed or it may not be on your PYTHONPATH. \nPydrizzle requires numpy v 1.0.2 or later.\n"
+
 if numpy.__version__ < "1.0.2":
     raise SystemExit, "Numpy 1.0.2 or later required to build pydrizzle."
 
@@ -26,7 +33,6 @@ if 'CFITSIO_LIB' in os.environ :
 else :
     cfitsio = '/usr/stsci/cfitsio'
 
-
 if os.path.exists(cfitsio+"/include") :
     # pointing at the installed library
     cfitsio_inc = cfitsio + "/include"
@@ -40,11 +46,13 @@ else :
 if sys.platform != 'win32':
     pydrizzle_libraries = ['m']
     cfitsioinc = [ cfitsio_inc ]
-    EXTRA_LINK_ARGS = ['-L' + cfitsio_lib ]
+    EXTRA_LINK_ARGS = ['-L'+cfitsio_lib]#,pywcslib+'/_pywcs.so']
 else:
     raise Exception("Nobody ever wrote Windows support for linking with CFITSIO")
     pydrizzle_libraries = []
     EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT']
+
+cfitsioinc += [pywcs_path[0]+'/include']
 
  
 def getNumpyExtensions():
@@ -61,7 +69,7 @@ def getNumpyExtensions():
                      # library_dirs=[],
                      extra_link_args=EXTRA_LINK_ARGS,
                      libraries=['m', 'cfitsio'],
-                     extra_compile_args=['-funroll-loops', '-DPYDRIZZLE']#,'-g'] # , '-fno-inline', '-O0']
+                     extra_compile_args=['-funroll-loops', '-DPYDRIZZLE','-g']#,'-g'] # , '-fno-inline', '-O0']
                      )]
 
     return ext
