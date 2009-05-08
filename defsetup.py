@@ -9,9 +9,9 @@ except ImportError:
     "Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Pydrizzle requires numpy v 1.0.2 or later.\n"
 
 try:
-    #import pywcs
-    pywcs_path = ['/user/hack/dev/release/lib/python/pywcs']
-    pywcslib = pywcs_path[0]
+    import pywcs
+    #pywcs_path = ['/user/hack/dev/release/lib/python/pywcs']
+    pywcslib = pywcs.__path__[0]
 except ImportError:
     "PyWCS was not found. It may not be installed or it may not be on your PYTHONPATH. \nPydrizzle requires numpy v 1.0.2 or later.\n"
 
@@ -46,15 +46,15 @@ else :
 if sys.platform != 'win32':
     pydrizzle_libraries = ['m']
     cfitsioinc = [ cfitsio_inc ]
-    EXTRA_LINK_ARGS = ['-L'+cfitsio_lib]#,pywcslib+'/_pywcs.so']
+    EXTRA_LINK_ARGS = ['-L'+cfitsio_lib, pywcslib+'/_pywcs.so']
 else:
     raise Exception("Nobody ever wrote Windows support for linking with CFITSIO")
     pydrizzle_libraries = []
     EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT']
 
-cfitsioinc += [pywcs_path[0]+'/include']
+cfitsioinc += [os.path.join(pywcslib, 'include'), os.path.join(pywcslib, 'include', 'wcslib')]
 
- 
+
 def getNumpyExtensions():
     ext = [Extension("betadrizzle.cdriz",['src/arrdrizmodule.c',
                                           'src/cdrizzleblot.c',

@@ -139,7 +139,7 @@ static PyObject *
 PyMapping_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
   PyMapping *self;
-  
+
   self = (PyMapping *)type->tp_alloc(type, 0);
   if (self != NULL) {
     mapping_param_init(&self->m);
@@ -364,7 +364,7 @@ static PyTypeObject MappingType = {
 Code to implement the WCS-based C interface for the mapping.
 
 It uses the same py_mapping_callback as the DefaultMapping
-(pixel-based default transformation) uses, since we want to 
+(pixel-based default transformation) uses, since we want to
 retain the support for providing Python-based transformations
 in addition to the C-based transformations.
 
@@ -400,7 +400,7 @@ PyWCSMap_init(PyWCSMap *self, PyObject *args, PyObject *kwds)
 {
   /* Arguments in the order they appear */
   PyObject *input_obj, *output_obj;
-    
+
   /* Other miscellaneous local variables */
   struct driz_error_t error;
   int istat = 1;
@@ -438,7 +438,7 @@ PyWCSMap_call(PyWCSMap* self, PyObject* args, PyObject* kwargs)
   PyArrayObject*      py_yout    = NULL;
   npy_intp            dims;
   PyObject*           result     = NULL;
-  
+
   struct driz_error_t error;
 
   driz_error_init(&error);
@@ -465,7 +465,7 @@ PyWCSMap_call(PyWCSMap* self, PyObject* args, PyObject* kwargs)
   }
 
   dims = PyArray_DIM(py_xin, 0);
-    
+
   /* Generate output arrays */
   py_xout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, PyArray_DOUBLE);
   if (py_xout == NULL) {
@@ -655,7 +655,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   if (fillstr == NULL ||
       *fillstr == 0 ||
       strncmp(fillstr, "INDEF", 6) == 0 ||
-      strncmp(fillstr, "indef", 6) == 0) 
+      strncmp(fillstr, "indef", 6) == 0)
   {
     do_fill = 0;
     fill_value = 0.0;
@@ -707,7 +707,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   /* Setup reasonable defaults for drizzling */
   p.no_over = FALSE;
-    
+
   /* Do the drizzling */
   if (dobox(&p, ystart, &nmiss, &nskip, &error)) {
     goto _exit;
@@ -966,8 +966,7 @@ void initcdriz(void)
 
   Py_INCREF(&MappingType);
   PyModule_AddObject(m, "DefaultMapping", (PyObject *)&MappingType);
-  /* Py_INCREF(&WCSMapType);
+  Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
-  */
 }
 
