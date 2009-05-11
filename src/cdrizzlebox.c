@@ -1291,7 +1291,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
       *nmiss += p->dnx;
     }
   }
-
+ 
  dobox_exit_:
   free(p->lanczos.lut); p->lanczos.lut = NULL;
   free(p->output_done); p->output_done = NULL;

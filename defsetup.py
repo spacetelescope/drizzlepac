@@ -9,9 +9,9 @@ except ImportError:
     "Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Pydrizzle requires numpy v 1.0.2 or later.\n"
 
 try:
-    import pywcs
-    #pywcs_path = ['/user/hack/dev/release/lib/python/pywcs']
-    pywcslib = pywcs.__path__[0]
+    #import pywcs
+    pywcs_path = ['/user/hack/dev/release/lib/python/pywcs']
+    pywcslib = pywcs_path[0]
 except ImportError:
     "PyWCS was not found. It may not be installed or it may not be on your PYTHONPATH. \nPydrizzle requires numpy v 1.0.2 or later.\n"
 

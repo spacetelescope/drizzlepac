@@ -7,6 +7,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <numpy/arrayobject.h>
 #include "pywcs.h"
@@ -573,8 +574,11 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   int istat = 0;
   struct driz_error_t error;
   struct driz_param_t p;
-  struct mapping_param_t* m = NULL;
+  struct wcsmap_param_t* m = NULL;
 
+  clock_t start_t, end_t;
+  double delta_time;
+  
   driz_error_init(&error);
 
   if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffslllO:tdriz",
@@ -602,12 +606,12 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     goto _exit;
   }
 
-  if (PyObject_TypeCheck(callback_obj, &MappingType)) {
+  if (PyObject_TypeCheck(callback_obj, &WCSMapType)) {
     /* If we're using the default mapping, we can set things up to avoid
        the Python/C bridge */
-    callback = default_mapping;
-    callback_state = (void *)&(((PyMapping *)callback_obj)->m);
-    scale = ((PyMapping *)callback_obj)->m.scale;
+    callback = default_wcsmap;
+    callback_state = (void *)&(((PyWCSMap *)callback_obj)->m);
+    /*scale = ((PyWCSMap *)callback_obj)->m.scale; */
   } else {
     callback = py_mapping_callback;
     callback_state = (void *)callback_obj;
@@ -707,26 +711,38 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   /* Setup reasonable defaults for drizzling */
   p.no_over = FALSE;
-
+  
+  start_t = clock();
   /* Do the drizzling */
   if (dobox(&p, ystart, &nmiss, &nskip, &error)) {
     goto _exit;
   }
+  end_t = clock();
+  delta_time = difftime(end_t, start_t)/1e+6;
+  printf("Finished dobox() in %0.3f seconds\n",delta_time);
 
+  start_t = clock();
   /* Put in the fill values (if defined) */
   if (do_fill) {
     put_fill(&p, fill_value);
   }
-
+  end_t = clock();
+  delta_time = difftime(end_t,start_t)/1e+6;
+  printf("    and it took %0.3f seconds to run put_fill().\n",delta_time);
+   
+  m = (struct wcsmap_param_t *)p.mapping_callback_state;
+  printf("==> Coordinate transformation took %0.3f seconds.\n",m->delta_time_coord);
+  
   /* The arrays NDAT and NCOU will have been updated
      Update the WCS, if it needs to be updated.
-     Only need to do once per image, not once per section. */
+     Only need to do once per image, not once per section.
   if (ystart == 0 && callback == default_mapping) {
-    m = (struct mapping_param_t *)p.mapping_callback_state;
+    m = (struct wcsmap_param_t *)p.mapping_callback_state;
     if (update_wcs(&p, m, m->wcs, m->wcs, &error)) {
       goto _exit;
     }
   }
+  */
 
  _exit:
   Py_XDECREF(con);

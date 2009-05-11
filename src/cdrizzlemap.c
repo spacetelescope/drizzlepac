@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 #include "cdrizzleio.h"
 #include "cdrizzlemap.h"
@@ -289,17 +290,22 @@ default_wcsmap(void* state,
   integer_t i;
   int status;
   
-  double *xyin, *skyout, *xyout, *imgcrd;
+  double *xyin, *skyout, *xyout, *d2imout,  *imgcrd;
   double *phi, *theta;
   int *stat;
+  
+  time_t start_t, end_t;
   
   /* Call PyWCS methods here to perform the transformation... */
   /* The input arrays need to be converted to 2-D arrays for input
       to the PyWCS (and related) functions. */
+  start_t = clock();
 
   /* Allocate memory for new 2-D array */
   xyin = (double *) calloc(n*2,sizeof(double*));
   if (xyin == NULL) return (1);
+  d2imout = (double *) calloc(n*2,sizeof(double*));
+  if (d2imout == NULL) return (1);
   xyout = (double *) calloc(n*2,sizeof(double*));
   if (xyout == NULL) return (1);
   skyout = (double *) calloc(n*2,sizeof(double*));
@@ -316,15 +322,16 @@ default_wcsmap(void* state,
       *(xyin+2*i+1) = yin[i];
   }
 
+  wcsprm_python2c(m->input_wcs->wcs);
   /* Start by checking to see whether DET2IM correction needs to 
   be applied and applying it as appropriate. */
 
-
+  status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
+                      n, xyin,d2imout);
   /*  
   Apply pix2sky() transformation from PyWCS 
   */ 
-  wcsprm_python2c(m->input_wcs->wcs);
-  status = pipeline_all_pixel2world(m->input_wcs,n,2,xyin,skyout);
+  status = pipeline_all_pixel2world(m->input_wcs,n,2,d2imout,skyout);
   if (status)
     return 1;
   wcsprm_c2python(m->input_wcs->wcs);
@@ -344,12 +351,15 @@ default_wcsmap(void* state,
       xout[i] = *(xyout+2*i);
       yout[i] = *(xyout+2*i+1);
   }
+  end_t = clock();
+  m->delta_time_coord += difftime(end_t, start_t)/1e+6;
 
   /* 
   Free memory allocated to internal 2-D arrays 
   */
   free(xyin);
   free(skyout);
+  free(d2imout);
   free(imgcrd);
   free(xyout);
   free(phi);
@@ -362,12 +372,13 @@ default_wcsmap(void* state,
 int
 default_wcsmap_init(struct wcsmap_param_t* m,
                     PyWcs* input, PyWcs* output,
-                     struct driz_error_t* error) {
+                    struct driz_error_t* error) {
 
   wcsmap_param_init(m);
     
   m->input_wcs = &input->x;
   m->output_wcs = &output->x;
+
 
   return 0;
 }
@@ -390,6 +401,8 @@ wcsmap_param_init(struct wcsmap_param_t* m) {
   /* Pointers to the PyWCS objects */
   m->input_wcs = NULL;
   m->output_wcs = NULL;  
+  m->delta_time_coord = 0.0;
+  m->delta_time_map = 0.0;
 }
 
 /* 
