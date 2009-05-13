@@ -1,4 +1,4 @@
-#include "pywcs.h" 
+#include "pywcs.h"
 #include "pipeline.h" /* From PyWCS */
 #include "wcs.h"  /* From WCSLIB compiled into PyWCS */
 
@@ -272,7 +272,7 @@ map_value(struct driz_param_t* p,
   return 0;
 }
 
-/* 
+/*
 
 Default WCS mapping code
 
@@ -289,54 +289,63 @@ default_wcsmap(void* state,
 
   integer_t i;
   int status;
-  
-  double *xyin, *skyout, *xyout, *d2imout,  *imgcrd;
-  double *phi, *theta;
-  int *stat;
-  
+  int result = 1;
+
+  double *xyin = NULL;
+  double *skyout = NULL;
+  double *xyout = NULL;
+  double *d2imout = NULL;
+  double *imgcrd = NULL;
+  double *phi = NULL;
+  double *theta = NULL;
+  int *stat = NULL;
+
   time_t start_t, end_t;
-  
+
   /* Call PyWCS methods here to perform the transformation... */
   /* The input arrays need to be converted to 2-D arrays for input
       to the PyWCS (and related) functions. */
   start_t = clock();
 
   /* Allocate memory for new 2-D array */
-  xyin = (double *) calloc(n*2,sizeof(double*));
-  if (xyin == NULL) return (1);
-  d2imout = (double *) calloc(n*2,sizeof(double*));
-  if (d2imout == NULL) return (1);
-  xyout = (double *) calloc(n*2,sizeof(double*));
-  if (xyout == NULL) return (1);
-  skyout = (double *) calloc(n*2,sizeof(double*));
-  if (skyout == NULL) return (1);
-  imgcrd = (double *) calloc(n*2,sizeof(double*));
-  if (imgcrd == NULL) return (1);
+  xyin = (double *) calloc(n*2,sizeof(double));
+  if (xyin == NULL) goto exit;
+  d2imout = (double *) calloc(n*2,sizeof(double));
+  if (d2imout == NULL) goto exit;
+  xyout = (double *) calloc(n*2,sizeof(double));
+  if (xyout == NULL) goto exit;
+  skyout = (double *) calloc(n*2,sizeof(double));
+  if (skyout == NULL) goto exit;
+  imgcrd = (double *) calloc(n*2,sizeof(double));
+  if (imgcrd == NULL) goto exit;
   phi = (double *)malloc(n*sizeof(double));
+  if (phi == NULL) goto exit;
   theta = (double *)malloc(n*sizeof(double));
+  if (theta == NULL) goto exit;
   stat = (int *)malloc(n*sizeof(double));
-  
+  if (stat == NULL) goto exit;
+
   /* Populate new 2-D array with values from x and y input arrays */
-  for (i=0;i<n;i++){
-      *(xyin+2*i) = xin[i];
-      *(xyin+2*i+1) = yin[i];
+  for (i=0;i<n;i++) {
+      xyin[2*i] = xin[i];
+      xyin[2*i+1] = yin[i];
   }
 
   wcsprm_python2c(m->input_wcs->wcs);
-  /* Start by checking to see whether DET2IM correction needs to 
+  /* Start by checking to see whether DET2IM correction needs to
   be applied and applying it as appropriate. */
 
   status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
                       n, xyin,d2imout);
-  /*  
-  Apply pix2sky() transformation from PyWCS 
-  */ 
+  /*
+  Apply pix2sky() transformation from PyWCS
+  */
   status = pipeline_all_pixel2world(m->input_wcs,n,2,d2imout,skyout);
   if (status)
     return 1;
   wcsprm_c2python(m->input_wcs->wcs);
 
-  /* 
+  /*
   Finally, call wcs_sky2pix() for the output object.
   */
   wcsprm_python2c(m->output_wcs->wcs);
@@ -348,14 +357,17 @@ default_wcsmap(void* state,
   Transform results back to 2 1-D arrays, like the input.
   */
   for (i=0;i<n;i++){
-      xout[i] = *(xyout+2*i);
-      yout[i] = *(xyout+2*i+1);
+      xout[i] = xyout[2*i];
+      yout[i] = xyout[2*i+1];
   }
   end_t = clock();
   m->delta_time_coord += difftime(end_t, start_t)/1e+6;
 
-  /* 
-  Free memory allocated to internal 2-D arrays 
+  result = 0;
+
+ exit:
+  /*
+  Free memory allocated to internal 2-D arrays
   */
   free(xyin);
   free(skyout);
@@ -365,8 +377,8 @@ default_wcsmap(void* state,
   free(phi);
   free(stat);
   free(theta);
-  
-  return 0;
+
+  return result;
 }
 
 int
@@ -375,7 +387,7 @@ default_wcsmap_init(struct wcsmap_param_t* m,
                     struct driz_error_t* error) {
 
   wcsmap_param_init(m);
-    
+
   m->input_wcs = &input->x;
   m->output_wcs = &output->x;
 
@@ -400,12 +412,12 @@ wcsmap_param_init(struct wcsmap_param_t* m) {
 
   /* Pointers to the PyWCS objects */
   m->input_wcs = NULL;
-  m->output_wcs = NULL;  
+  m->output_wcs = NULL;
   m->delta_time_coord = 0.0;
   m->delta_time_map = 0.0;
 }
 
-/* 
+/*
 
 Default pixel-based mapping code:DefaultMapping
 
