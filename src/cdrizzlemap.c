@@ -291,10 +291,10 @@ default_wcsmap(void* state,
   int        status;
   int        result  = 1;
   double    *memory  = NULL;
+  double    *ptr     = NULL;
   double    *xyin    = NULL;
   double    *skyout  = NULL;
   double    *xyout   = NULL;
-  double    *d2imout = NULL;
   double    *imgcrd  = NULL;
   double    *phi     = NULL;
   double    *theta   = NULL;
@@ -307,19 +307,19 @@ default_wcsmap(void* state,
   start_t = clock();
 
   /* Allocate memory for new 2-D array */
-  memory = (double *) malloc(n * 10 * sizeof(double));
+  ptr = memory = (double *) malloc(n * 10 * sizeof(double));
   if (memory == NULL) goto exit;
-  xyin = memory;
-  memory += n * 2;
-  xyout = memory;
-  memory += n * 2;
-  skyout = memory;
-  memory += n * 2;
-  imgcrd = memory;
-  memory += n * 2;
-  phi = memory;
-  memory += n;
-  theta = memory;
+  xyin = ptr;
+  ptr += n * 2;
+  xyout = ptr;
+  ptr += n * 2;
+  skyout = ptr;
+  ptr += n * 2;
+  imgcrd = ptr;
+  ptr += n * 2;
+  phi = ptr;
+  ptr += n;
+  theta = ptr;
   stat = (int *)malloc(n * sizeof(int));
   if (stat == NULL) goto exit;
 
