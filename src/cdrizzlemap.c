@@ -287,20 +287,19 @@ default_wcsmap(void* state,
                 struct driz_error_t* error) {
   struct wcsmap_param_t* m = (struct wcsmap_param_t*)state;
 
-  integer_t i;
-  int status;
-  int result = 1;
-
-  double *xyin = NULL;
-  double *skyout = NULL;
-  double *xyout = NULL;
-  double *d2imout = NULL;
-  double *imgcrd = NULL;
-  double *phi = NULL;
-  double *theta = NULL;
-  int *stat = NULL;
-
-  time_t start_t, end_t;
+  integer_t  i;
+  int        status;
+  int        result  = 1;
+  double    *memory  = NULL;
+  double    *xyin    = NULL;
+  double    *skyout  = NULL;
+  double    *xyout   = NULL;
+  double    *d2imout = NULL;
+  double    *imgcrd  = NULL;
+  double    *phi     = NULL;
+  double    *theta   = NULL;
+  int       *stat    = NULL;
+  time_t     start_t, end_t;
 
   /* Call PyWCS methods here to perform the transformation... */
   /* The input arrays need to be converted to 2-D arrays for input
@@ -308,25 +307,24 @@ default_wcsmap(void* state,
   start_t = clock();
 
   /* Allocate memory for new 2-D array */
-  xyin = (double *) calloc(n*2,sizeof(double));
-  if (xyin == NULL) goto exit;
-  d2imout = (double *) calloc(n*2,sizeof(double));
-  if (d2imout == NULL) goto exit;
-  xyout = (double *) calloc(n*2,sizeof(double));
-  if (xyout == NULL) goto exit;
-  skyout = (double *) calloc(n*2,sizeof(double));
-  if (skyout == NULL) goto exit;
-  imgcrd = (double *) calloc(n*2,sizeof(double));
-  if (imgcrd == NULL) goto exit;
-  phi = (double *)malloc(n*sizeof(double));
-  if (phi == NULL) goto exit;
-  theta = (double *)malloc(n*sizeof(double));
-  if (theta == NULL) goto exit;
-  stat = (int *)malloc(n*sizeof(double));
+  memory = (double *) malloc(n * 10 * sizeof(double));
+  if (memory == NULL) goto exit;
+  xyin = memory;
+  memory += n * 2;
+  xyout = memory;
+  memory += n * 2;
+  skyout = memory;
+  memory += n * 2;
+  imgcrd = memory;
+  memory += n * 2;
+  phi = memory;
+  memory += n;
+  theta = memory;
+  stat = (int *)malloc(n * sizeof(int));
   if (stat == NULL) goto exit;
 
   /* Populate new 2-D array with values from x and y input arrays */
-  for (i=0;i<n;i++) {
+  for (i = 0; i < n; ++i) {
       xyin[2*i] = xin[i];
       xyin[2*i+1] = yin[i];
   }
@@ -336,11 +334,11 @@ default_wcsmap(void* state,
   be applied and applying it as appropriate. */
 
   status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
-                      n, xyin,d2imout);
+                      n, xyin, xyin);
   /*
   Apply pix2sky() transformation from PyWCS
   */
-  status = pipeline_all_pixel2world(m->input_wcs,n,2,d2imout,skyout);
+  status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
   if (status)
     return 1;
   wcsprm_c2python(m->input_wcs->wcs);
@@ -356,7 +354,7 @@ default_wcsmap(void* state,
   /*
   Transform results back to 2 1-D arrays, like the input.
   */
-  for (i=0;i<n;i++){
+  for (i = 0; i < n; ++i){
       xout[i] = xyout[2*i];
       yout[i] = xyout[2*i+1];
   }
@@ -369,14 +367,8 @@ default_wcsmap(void* state,
   /*
   Free memory allocated to internal 2-D arrays
   */
-  free(xyin);
-  free(skyout);
-  free(d2imout);
-  free(imgcrd);
-  free(xyout);
-  free(phi);
+  free(memory);
   free(stat);
-  free(theta);
 
   return result;
 }
