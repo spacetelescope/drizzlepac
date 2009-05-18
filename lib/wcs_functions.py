@@ -46,7 +46,7 @@ class WCSMap:
             print name +' object needs to be an instance or subclass of a PyWCS object.'
             raise
 
-    def applyShift(self,imageObject):
+    def applyShift(self,imageobj):
         """ This method pre-computes the correction which needs to be 
             applied to this entire image based on the information 
             stored in any existing WCSCORR extension in the input image.
@@ -54,7 +54,7 @@ class WCSMap:
             This method ALWAYS gets called by 'run_driz()' to insure that
             any shifts included in the image are applied.
         """
-        self.shift,rot,scale = applyHeaderlet(imageObject,self.input,self.output,extname=WCSEXTN_NAME)
+        self.shift,rot,scale = applyHeaderlet(imageobj,self.input,self.output,extname=WCSEXTN_NAME)
         self.rot = rot
         self.scale = scale
         if self.shift is not None:
@@ -122,6 +122,43 @@ def applyShift_to_WCS(imageobj,input,output):
 def get_pix_ratio_from_WCS(input,output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""
     return output.pscale/input.pscale
+##
+#
+#### Default no-op transformation
+#
+##
+class IdentityMap:
+    def __init__(self,input,output):
+        print 'Applying identity transformation...'
+        self.input = input
+        self.output = output
+    def applyShift(self,imageobj):
+        """ This method pre-computes the correction which needs to be 
+            applied to this entire image based on the information 
+            stored in any existing WCSCORR extension in the input image.
+            
+            This method ALWAYS gets called by 'run_driz()' to insure that
+            any shifts included in the image are applied.
+        """
+        self.shift,rot,scale = applyHeaderlet(imageobj,self.input,self.output,extname=WCSEXTN_NAME)
+        self.rot = rot
+        self.scale = scale
+        if self.shift is not None:
+            print '    Correcting WCSMap input WCS for shifts...'
+            # Record the shift applied with the WCS, so that we can tell it
+            # has been applied and not correct the WCS any further
+            # Update OUTPUT WCS crpix value with shift, since it was determined
+            # in (and translated to) the output frame.
+            self.output.wcs.crpix -= self.shift
+
+            # apply translated rotation and scale from shiftfile to input WCS
+            self.output.rotateCD(rot)
+            self.output.wcs.cd *= scale
+            self.output.orientat += rot
+            self.output.pscale *= scale
+        
+    def forward(self,pixx,pixy):
+        return pixx,pixy
 ##
 #
 #### Stand-alone functions for WCS handling
@@ -199,6 +236,40 @@ def get_shiftwcs(hdulist,extname=WCSEXTN_NAME):
         
     return hdrwcs
 
+#
+#### Functions for applying pixel-based transformations
+#
+def build_pixel_transform(chip,output_wcs):
+    driz_pars = {}
+    driz_pars['pxg'] = np.zeros([2,2],dtype=np.float32)
+    driz_pars['pyg'] = np.zeros([2,2],dtype=np.float32)
+    # Use default C mapping function
+    _inwcs = np.zeros([8],dtype=np.float64)
+    driz_pars['inwcs'] = convertWCS(output_wcs.wcs,_inwcs)
+
+    indx = chip.outputNames['data'].find('.fits')
+    driz_pars['coeffs_name'] = chip.outputNames['data'][:indx]+'_coeffs'+str(chip.detnum)+'.dat'
+    #
+    # Need to compute and write out coeffs files for each chip as well.
+    #
+    xcoeffs,ycoeffs = coeff_converter.sip2idc(chip.wcs)
+    xcoeffs /= chip.wcs.idcscale
+    ycoeffs /= chip.wcs.idcscale
+    driz_pars['coeffs'] = [xcoeffs,ycoeffs]
+    
+    abxt,cdyt = wcsfit(chip.wcs,output_wcs)
+    #abxt[2] -= xzero
+    #cdyt[2] -= yzero
+    driz_pars['abxt'] = abxt
+    driz_pars['cdyt'] = cdyt
+
+    driz_pars['delta_rot'] = fileutil.RADTODEG(np.arctan2(abxt[1],cdyt[0]))
+    # Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly
+    driz_pars['scale'] = 1./np.sqrt(abxt[0]**2 + abxt[1]**2)
+    driz_pars['tddalpha'] = chip.header['tddalpha']
+    driz_pars['tddbeta'] = chip.header['tddbeta']    
+
+    return driz_pars
 
 #### Functions for applying shiftfiles
 def createHeaderlets(shiftfile,clobber=True,update=True,verbose=False):

@@ -57,9 +57,30 @@ def MultiDrizzle(editpars=False, configObj=None, wcsmap=None, **input_dict):
 
 def getHelpAsString():
     # Does NOT work with TEAL/teal.teal()
-        help_str = __doc__+'\n'
-        help_str += 'Version '+__version__+'\n'
-        return help_str
+    helpString = __doc__+'\n'
+    helpString += 'Version '+__version__+'\n'
+
+    """ 
+    return useful help from a file in the script directory called module.help
+    """
+    #get the local library directory where the code is stored
+    localDir=os.path.split(__file__)
+    helpfile=__taskname__.split(".")
+    
+    helpfile=localDir[0]+"/"+helpfile[0]+".help"
+    
+    if os.access(helpfile,os.R_OK):
+        fh=open(helpfile,'r')
+        ss=fh.readlines()
+        fh.close()
+        #helpString=""
+        for line in ss:
+            helpString+=line
+    else:    
+        helpString=__doc__
+
+    return helpString
+
     
 def run(configObj=None,wcsmap=None):
     """    

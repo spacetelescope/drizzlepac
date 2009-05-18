@@ -9,6 +9,7 @@ try:
     import cdriz as arrdriz
 except ImportError:
     arrdriz = None
+    print 'C Extensions not available for use...'
 
 __taskname__ = "betadrizzle.drizzle"
 _single_step_num_ = 3
@@ -514,64 +515,58 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 #WARNING: Input array recast as a float32 array
                 _sciext.data = _sciext.data.astype(np.float32)
 
-            if wcsmap is None and arrdriz is not None:
-                """
-                _pxg = np.zeros([2,2],dtype=np.float32)
-                _pyg = np.zeros([2,2],dtype=np.float32)
-                # Use default C mapping function
-                _inwcs = np.zeros([8],dtype=np.float64)
-                _inwcs = wcs_functions.convertWCS(output_wcs.wcs,_inwcs)
-                print 'Default mapping sciext: ',_sciext.data.shape
-                print 'Default mapping outsci: ',_outsci.shape
+            if wcsmap is None: 
+                if arrdriz:
+                    print 'Using default C extension for coordinate transformation...'
+                    wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
+                    mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs)
+                    pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                else:
+                    print 'No valid coordinate transformation, %s, found...'%str(wcsmap)
+                    raise ImportError
+            elif arrdriz is not None and wcsmap == arrdriz.DefaultMapping:
+                if arrdriz:
+                    print 'Using pixel-based C extension for coordinate transformation...'
 
-                indx = chip.outputNames['data'].find('.fits')
-                coeffs_name = chip.outputNames['data'][:indx]+'_coeffs'+str(chip.detnum)+'.dat'
-                #
-                # Need to compute and write out coeffs files for each chip as well.
-                #
-                coeffs = coeff_converter.sip2idc(chip.wcs)
-                coeffs[0] /= chip.wcs.idcscale
-                coeffs[1] /= chip.wcs.idcscale
-                
-                wmap = wcsmap(chip.wcs,output_wcs)
-                
-                
-                abxt,cdyt = wcs_functions.wcsfit(chip.wcs,output_wcs)
-                abxt[2] -= xzero
-                cdyt[2] -= yzero
+                    # Implementing no-op transformation instead of raising an exception
+                    wmap = wcs_functions.IdentityMap(chip.wcs,output_wcs)
+                    wmap.applyShift(img)
+                    mapping = wmap.forward
+                    pix_ratio = output_wcs.pscale/chip.wcs.pscale
 
-                _delta_rot = fileutil.RADTODEG(np.arctan2(abxt[1],cdyt[0]))
-                # Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly
-                _scale = 1./np.sqrt(abxt[0]**2 + abxt[1]**2)
-                tddalpha = chip.header['tddalpha']
-                tddbeta = chip.header['tddbeta']
+                    """
+                    driz_pars = wcs_functions.build_pixel_transform(chip,output_wcs)
 
-                mapping = arrdriz.DefaultMapping(
-                    _sciext.data.shape[1], _sciext.data.shape[0],
-                    _outsci.shape[1], _outsci.shape[0],
-                    abxt[2], cdyt[2], 'output', 'output',
-                    _delta_rot, _scale, 0.0, 0.0, 1.0, 1.0,
-                    0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
-                    tddalpha, tddbeta)
-                
-                # This call does not impose any linear transformation on the 
-                # image and only serves as a test case for comparison with WDRIZZLE
-                mapping = arrdriz.DefaultMapping(
-                    _sciext.data.shape[1], _sciext.data.shape[0],
-                    _outsci.shape[1], _outsci.shape[0],
-                    0.5, 0.5, 'output', 'output',
-                    0.000122765270908, 0.999856360905, 0.0, 0.0, 1.0, 1.0,
-                    0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
-                    0.0, 0.0)
+                    print 'Default mapping sciext: ',_sciext.data.shape
+                    print 'Default mapping outsci: ',_outsci.shape
 
-                print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
-                pix_ratio = _scale
-                """
-                print 'Using default C-based coordinate transformation...'
-                wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
-                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs)
-                pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                    mapping = arrdriz.DefaultMapping(
+                        _sciext.data.shape[1], _sciext.data.shape[0],
+                        _outsci.shape[1], _outsci.shape[0],
+                        abxt[2], cdyt[2], 'output', 'output',
+                        _delta_rot, _scale, 0.0, 0.0, 1.0, 1.0,
+                        0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
+                        tddalpha, tddbeta)
+                    
+                    # This call does not impose any linear transformation on the 
+                    # image and only serves as a test case for comparison with WDRIZZLE
+                    mapping = arrdriz.DefaultMapping(
+                        _sciext.data.shape[1], _sciext.data.shape[0],
+                        _outsci.shape[1], _outsci.shape[0],
+                        0.5, 0.5, 'output', 'output',
+                        0.000122765270908, 0.999856360905, 0.0, 0.0, 1.0, 1.0,
+                        0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
+                        0.0, 0.0)
+
+                    print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
+                    pix_ratio = _scale
+                    """
+                else:
+                    print 'No valid coordinate transformation, %s, found...'%str(wcsmap)
+                    raise ImportError
             else:
+                # Regardless of arrdriz import, we can still use a transform
+                # specified by the user
                 #
                 ##Using the Python class for the WCS-based transformation 
                 #
