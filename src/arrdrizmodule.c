@@ -574,10 +574,12 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   int istat = 0;
   struct driz_error_t error;
   struct driz_param_t p;
-  struct wcsmap_param_t* m = NULL;
 
+  /*
+  struct wcsmap_param_t* m = NULL;
   clock_t start_t, end_t;
   double delta_time;
+  */
   
   driz_error_init(&error);
 
@@ -712,26 +714,30 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   /* Setup reasonable defaults for drizzling */
   p.no_over = FALSE;
   
+  /*
   start_t = clock();
+  */
   /* Do the drizzling */
   if (dobox(&p, ystart, &nmiss, &nskip, &error)) {
     goto _exit;
   }
+  /*
   end_t = clock();
   delta_time = difftime(end_t, start_t)/1e+6;
-  printf("Finished dobox() in %0.3f seconds\n",delta_time);
-
+  printf("==> Finished dobox() in %0.3f seconds\n",delta_time);
+  
   start_t = clock();
+  */
   /* Put in the fill values (if defined) */
   if (do_fill) {
     put_fill(&p, fill_value);
   }
-  end_t = clock();
-  delta_time = difftime(end_t,start_t)/1e+6;
-  printf("    and it took %0.3f seconds to run put_fill().\n",delta_time);
-   
-  m = (struct wcsmap_param_t *)p.mapping_callback_state;
-  printf("==> Coordinate transformation took %0.3f seconds.\n",m->delta_time_coord);
+  /*
+  if (callback == default_wcsmap){
+    m = (struct wcsmap_param_t *)p.mapping_callback_state;
+    printf("==> Coordinate transformation times: total=%0.3f sec, d2im= %0.3f, sip= %0.3f.\n",m->dtime_coord,m->dtime_d2im,m->dtime_dgeosip);
+  }
+  */
   
   /* The arrays NDAT and NCOU will have been updated
      Update the WCS, if it needs to be updated.
@@ -756,7 +762,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
       PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
     return NULL;
   } else {
-    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.8 (9th Apr 2009)", nmiss, nskip);
+    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.8 (20th May 2009)", nmiss, nskip);
   }
 }
 

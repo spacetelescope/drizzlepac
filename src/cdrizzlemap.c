@@ -299,12 +299,14 @@ default_wcsmap(void* state,
   double    *phi     = NULL;
   double    *theta   = NULL;
   int       *stat    = NULL;
+  /*
   time_t     start_t, end_t;
-
+  time_t    d2im_t, dgeosip_t;
+  */
+  
   /* Call PyWCS methods here to perform the transformation... */
   /* The input arrays need to be converted to 2-D arrays for input
       to the PyWCS (and related) functions. */
-  start_t = clock();
 
   /* Allocate memory for new 2-D array */
   ptr = memory = (double *) malloc(n * 10 * sizeof(double));
@@ -329,6 +331,10 @@ default_wcsmap(void* state,
       xyin[2*i+1] = yin[i];
   }
 
+  /*
+  start_t = clock();
+  */
+  
   wcsprm_python2c(m->input_wcs->wcs);
   /* Start by checking to see whether DET2IM correction needs to
   be applied and applying it as appropriate. */
@@ -336,21 +342,37 @@ default_wcsmap(void* state,
   status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
                       n, xyin, xyin);
   /*
+  d2im_t = clock();
+  m->dtime_d2im += difftime(d2im_t,start_t)/1e+6;
+  */
+  /*
   Apply pix2sky() transformation from PyWCS
   */
   status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
   if (status)
     return 1;
+    
   wcsprm_c2python(m->input_wcs->wcs);
-
+  
+  /*
+  dgeosip_t = clock();
+  m->dtime_dgeosip += difftime(dgeosip_t,d2im_t)/1e+6;
+  */
+  
   /*
   Finally, call wcs_sky2pix() for the output object.
-  */
+  */  
   wcsprm_python2c(m->output_wcs->wcs);
+
   status = wcss2p(m->output_wcs->wcs, n, 2,
                   skyout, phi, theta, imgcrd, xyout, stat);
+
   wcsprm_c2python(m->output_wcs->wcs);
 
+  /*
+  end_t = clock();
+  m->dtime_coord += difftime(end_t, start_t)/1e+6;
+  */
   /*
   Transform results back to 2 1-D arrays, like the input.
   */
@@ -358,8 +380,6 @@ default_wcsmap(void* state,
       xout[i] = xyout[2*i];
       yout[i] = xyout[2*i+1];
   }
-  end_t = clock();
-  m->delta_time_coord += difftime(end_t, start_t)/1e+6;
 
   result = 0;
 
@@ -405,8 +425,10 @@ wcsmap_param_init(struct wcsmap_param_t* m) {
   /* Pointers to the PyWCS objects */
   m->input_wcs = NULL;
   m->output_wcs = NULL;
-  m->delta_time_coord = 0.0;
-  m->delta_time_map = 0.0;
+  m->dtime_coord = 0.0;
+  m->dtime_d2im = 0.0;
+  m->dtime_dgeosip = 0.0;
+  m->dtime_map = 0.0;
 }
 
 /*

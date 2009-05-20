@@ -40,8 +40,8 @@ if os.path.exists(cfitsio+"/include") :
 else :
     # pointing at a source distribution
     # (still needs to be compiled with "make" but not installed with "make install")
-    cfitsio_inc = cfitsio + "/include"
-    cfitsio_lib = cfitsio + "/lib"
+    cfitsio_inc = cfitsio 
+    cfitsio_lib = cfitsio 
 
 if sys.platform != 'win32':
     pydrizzle_libraries = ['m']
@@ -69,7 +69,7 @@ def getNumpyExtensions():
                      # library_dirs=[],
                      extra_link_args=EXTRA_LINK_ARGS,
                      libraries=['m', 'cfitsio'],
-                     extra_compile_args=['-funroll-loops', '-DPYDRIZZLE','-g']#,'-g'] # , '-fno-inline', '-O0']
+                     extra_compile_args=['-funroll-loops', '-DPYDRIZZLE','-g'] # , '-fno-inline', '-O0']
                      )]
 
     return ext

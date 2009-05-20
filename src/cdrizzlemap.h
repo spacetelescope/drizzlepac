@@ -13,8 +13,10 @@ struct wcsmap_param_t {
   /* Pointers to PyWCS objects for input and output WCS */
   pipeline_t* input_wcs;
   pipeline_t* output_wcs;
-  double      delta_time_coord;
-  double      delta_time_map;  
+  double      dtime_coord;
+  double      dtime_d2im;
+  double      dtime_dgeosip;
+  double      dtime_map;  
   
 };
 
