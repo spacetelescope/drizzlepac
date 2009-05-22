@@ -160,8 +160,8 @@ def loadFileList(inputFilelist):
     
     # If there is a second column...
     if len(line.split()) == 2:
-    	# ...parse out the names of the IVM files as well 
-    	ivmlist = irafglob.irafglob(input, atfile=atfile_ivm) 
+        # ...parse out the names of the IVM files as well 
+        ivmlist = irafglob.irafglob(input, atfile=atfile_ivm) 
     
     # Parse the @-file with irafglob to extract the input filename
     filelist = irafglob.irafglob(input, atfile=atfile_sci)
