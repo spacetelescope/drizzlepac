@@ -140,7 +140,7 @@ static PyObject *
 PyMapping_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
   PyMapping *self;
-
+  
   self = (PyMapping *)type->tp_alloc(type, 0);
   if (self != NULL) {
     mapping_param_init(&self->m);

@@ -579,15 +579,16 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 print 'Using coordinate transformation defined by user...'
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
-                mapping = wmap.forward
-                pix_ratio = wmap.get_pix_ratio()
-            
+                mapping = wmap.forward                
+                pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                
+            #print 'Starting tdriz at: ',_ptime()
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
                 pix_ratio, 1.0, 1.0, 'center', paramDict['pixfrac'],
                 paramDict['kernel'], _in_units, _expin,_wtscl,
                 fillval, nmiss, nskip, 1, mapping)
-            
+            #print 'Finished tdriz at: ',_ptime()
 
             # Set up information for generating output FITS image
             #### Check to see what names need to be included here for use in _hdrlist

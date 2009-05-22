@@ -14,12 +14,22 @@ __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
 
 def _ptime():
-    import time
-
-    # Format time values for keywords IRAF-TLM, and DATE
-    _ltime = time.localtime(time.time())
-    tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)',_ltime)
-    #date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
+    try:
+        import datetime as dtime
+    except ImportError:
+        import time
+        dtime = None
+    
+    if dtime:
+        # This time stamp includes sub-second timing...
+        _ltime = dtime.datetime.now()
+        tlm_str = _ltime.strftime("%H:%M:%S")+str(_ltime.microsecond/1e+6)[1:-3]+_ltime.strftime(" (%d/%m/%Y)")
+    else:
+        # Basic time stamp which only includes integer seconds
+        # Format time values for keywords IRAF-TLM, and DATE
+        _ltime = time.localtime(time.time())
+        tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)',_ltime)
+        #date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
     return tlm_str
 
 def findrootname(filename):

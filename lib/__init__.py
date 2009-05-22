@@ -42,6 +42,7 @@ def MultiDrizzle(editpars=False, configObj=None, wcsmap=None, **input_dict):
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
+    
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     if configObj is None:
         return
@@ -103,7 +104,7 @@ def run(configObj=None,wcsmap=None):
         The example config files are in multidrizzle/pars
 
     """
-    print '[betadrizzle] mdriz is NOW running... \n'
+    print '[betadrizzle] mdriz started at: ',util._ptime(),'\n'
 
     # Define list of imageObject instances and output WCSObject instance
     # based on input paramters
@@ -133,7 +134,7 @@ def run(configObj=None,wcsmap=None):
     #Make your final drizzled image
     drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap)
     
-    print '\n[betadrizzle] mdriz is all finished!\n'
+    print '\n[betadrizzle] mdriz is all finished at ',util._ptime(),' !\n'
     
     for image in imgObjList:
         image.close()
