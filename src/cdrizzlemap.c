@@ -1,3 +1,4 @@
+#define NO_IMPORT_ARRAY
 #define NO_IMPORT_PYWCS_API
 #include "pywcs_api.h"
 

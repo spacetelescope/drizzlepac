@@ -1,5 +1,7 @@
-#include "cdrizzleblot.h"
+#define NO_IMPORT_ARRAY
+
 #include "cdrizzlemap.h"
+#include "cdrizzleblot.h"
 
 #include <assert.h>
 #include <math.h>

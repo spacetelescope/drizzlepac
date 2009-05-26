@@ -16,8 +16,8 @@ struct wcsmap_param_t {
   double      dtime_coord;
   double      dtime_d2im;
   double      dtime_dgeosip;
-  double      dtime_map;  
-  
+  double      dtime_map;
+
 };
 
 /**
@@ -191,7 +191,7 @@ default_mapping_init(struct mapping_param_t* m,
 
 This function will be used by both the pixel-based and WCS-based
 mapping functions; namely, DefaultMapping and DefaultWCSMapping.
- 
+
 Apply the standard Drizzle transformation from input to output pixel
 coordinates.  This may optionally include a polynomial distortion
 solution or be specified using input and output WCS.

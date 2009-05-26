@@ -576,9 +576,9 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   struct driz_error_t error;
   struct driz_param_t p;
 
-  struct wcsmap_param_t* m = NULL;
-  clock_t start_t, end_t;
-  double delta_time;
+  /* struct wcsmap_param_t* m = NULL; */
+  /* clock_t start_t, end_t; */
+  /* double delta_time; */
 
   driz_error_init(&error);
 
