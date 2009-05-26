@@ -1,6 +1,5 @@
-#include "pywcs.h"
-#include "pipeline.h" /* From PyWCS */
-#include "wcs.h"  /* From WCSLIB compiled into PyWCS */
+#define NO_IMPORT_PYWCS_API
+#include "pywcs_api.h"
 
 #include <math.h>
 #include <string.h>

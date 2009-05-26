@@ -17,6 +17,7 @@
 #include "cdrizzlemap.h"
 #include "cdrizzleutil.h"
 #include "cdrizzlewcs.h"
+#include "pywcs_api.h"
 
 static PyObject *gl_Error;
 
@@ -140,7 +141,7 @@ static PyObject *
 PyMapping_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
   PyMapping *self;
-  
+
   self = (PyMapping *)type->tp_alloc(type, 0);
   if (self != NULL) {
     mapping_param_init(&self->m);
@@ -575,12 +576,10 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   struct driz_error_t error;
   struct driz_param_t p;
 
-  /*
   struct wcsmap_param_t* m = NULL;
   clock_t start_t, end_t;
   double delta_time;
-  */
-  
+
   driz_error_init(&error);
 
   if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffslllO:tdriz",
@@ -713,7 +712,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   /* Setup reasonable defaults for drizzling */
   p.no_over = FALSE;
-  
+
   /*
   start_t = clock();
   */
@@ -725,7 +724,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   end_t = clock();
   delta_time = difftime(end_t, start_t)/1e+6;
   printf("==> Finished dobox() in %0.3f seconds\n",delta_time);
-  
+
   start_t = clock();
   */
   /* Put in the fill values (if defined) */
@@ -738,7 +737,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     printf("==> Coordinate transformation times: total=%0.3f sec, d2im= %0.3f, sip= %0.3f.\n",m->dtime_coord,m->dtime_d2im,m->dtime_dgeosip);
   }
   */
-  
+
   /* The arrays NDAT and NCOU will have been updated
      Update the WCS, if it needs to be updated.
      Only need to do once per image, not once per section.
@@ -988,6 +987,7 @@ void initcdriz(void)
     return;
 
   import_array();
+  import_pywcs();
 
   Py_INCREF(&MappingType);
   PyModule_AddObject(m, "DefaultMapping", (PyObject *)&MappingType);
