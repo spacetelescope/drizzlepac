@@ -902,7 +902,8 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 }
 
 static int
-do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
+do_kernel_square(struct driz_param_t* p, const int last_skipped,
+                 const integer_t j, double y,
                  const integer_t x1, const integer_t x2,
                  /* Input/output parameters */
                  double* xi, double* yi,
@@ -910,7 +911,7 @@ do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
                  double* xo, double* yo,
                  integer_t* oldcon, integer_t* newcon, integer_t* nmiss,
                  struct driz_error_t* error) {
-  integer_t i, nhit, ii, jj, min_ii, max_ii, min_jj, max_jj;
+  integer_t i, nhit, ii, jj, min_ii, max_ii, min_jj, max_jj, n;
   float vc, d, dow;
   double dh, jaco, tem, dover, dx, dy, w;
   double xout[4], yout[4];
@@ -919,6 +920,7 @@ do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
   dh = 0.5 * p->pixel_fraction;
   dx = (double)(p->xmin)-1;
   dy = (double)(p->ymin)-1;
+  n = x2 - x1 + 1;
 
   /* Next the "classic" drizzle square kernel...  this is different
      because we have to transform all four corners of the shrunken
@@ -946,13 +948,29 @@ do_kernel_square(struct driz_param_t* p, const integer_t j, double y,
   *mapping_4_ptr(p, yi, x1+1, 3) = -dh;
 
   /* Transform onto the output grid */
-  for (i = 0; i < 4; ++i) {
-    if (map_value(p, TRUE, x2 - x1 + 1,
-                  mapping_4_ptr(p, xi, x1, i), mapping_4_ptr(p, yi, x1, i),
-                  xtmp, ytmp,
-                  mapping_4_ptr(p, xo, x1, i), mapping_4_ptr(p, yo, x1, i),
-                  error)) {
-      return 1;
+  if (last_skipped) {
+    for (i = 0; i < 4; ++i) {
+      if (map_value(p, TRUE, n,
+                    mapping_4_ptr(p, xi, x1, i), mapping_4_ptr(p, yi, x1, i),
+                    xtmp, ytmp,
+                    mapping_4_ptr(p, xo, x1, i), mapping_4_ptr(p, yo, x1, i),
+                    error)) {
+        return 1;
+      }
+    }
+  } else {
+    memcpy(mapping_4_ptr(p, xo, x1, 3), mapping_4_ptr(p, xo, x1, 0), n * sizeof(double));
+    memcpy(mapping_4_ptr(p, yo, x1, 3), mapping_4_ptr(p, yo, x1, 0), n * sizeof(double));
+    memcpy(mapping_4_ptr(p, xo, x1, 2), mapping_4_ptr(p, xo, x1, 1), n * sizeof(double));
+    memcpy(mapping_4_ptr(p, yo, x1, 2), mapping_4_ptr(p, yo, x1, 1), n * sizeof(double));
+    for (i = 0; i < 2; ++i) {
+      if (map_value(p, TRUE, n,
+                    mapping_4_ptr(p, xi, x1, i), mapping_4_ptr(p, yi, x1, i),
+                    xtmp, ytmp,
+                    mapping_4_ptr(p, xo, x1, i), mapping_4_ptr(p, yo, x1, i),
+                    error)) {
+        return 1;
+      }
     }
   }
 
@@ -1072,6 +1090,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
   double* ytmp = NULL;
   double* xo = NULL;
   double* yo = NULL;
+  int last_skipped = TRUE;
   float inv_exposure_time;
   float* data_begin, *data_end;
   int kernel_order;
@@ -1144,6 +1163,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
     p->pfo = (double)kernel_order * p->pixel_fraction / p->scale;
     p->lanczos.sdp = p->scale / del / p->pixel_fraction;
     break;
+
   default:
     break;
   }
@@ -1241,7 +1261,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
   /* This is the outer loop over all the lines in the input image */
   y = (double)ystart;
   for (j = 0; j < p->ny; ++j) {
-    y+=1.0;
+    y += 1.0;
     /* Check the overlap with the output */
     if (check_over(p, (integer_t)y, 5, &ofrac, &x1, &x2, error)) {
       goto dobox_exit_;
@@ -1281,16 +1301,18 @@ dobox(struct driz_param_t* p, const integer_t ystart,
         }
         /* End of the "single point" transforms */
       } else {
-        if (do_kernel_square(p, j, y, x1, x2,
+        if (do_kernel_square(p, last_skipped, j, y, x1, x2,
                              xi, yi, xtmp, ytmp, xo, yo,
                              &oldcon, &newcon, nmiss, error)) {
           goto dobox_exit_;
         }
       }
+      last_skipped = FALSE;
     } else {
       /* If we are skipping a line, count it */
       ++(*nskip);
       *nmiss += p->dnx;
+      last_skipped = TRUE;
     }
   }
 

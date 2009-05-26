@@ -254,15 +254,19 @@ map_value(struct driz_param_t* p,
     yd = yin[1];
 
     for (i = 0; i < n; ++i) {
-      xtmp[i] = x; /* add 1.0 to account for 0-based indexing */
-      ytmp[i] = y; /* add 1.0 to account for 0-based indexing */
+      xtmp[i] = x;
+      ytmp[i] = y;
       x += p->x_scale;
     }
   } else {
     xd = yd = 0.0;
 
-    memcpy(xtmp, xin, sizeof(double) * n);
-    memcpy(ytmp, yin, sizeof(double) * n);
+    if (xtmp != xin) {
+        memcpy(xtmp, xin, sizeof(double) * n);
+    }
+    if (ytmp != yin) {
+        memcpy(ytmp, yin, sizeof(double) * n);
+    }
   }
 
   if (p->mapping_callback(p->mapping_callback_state, xd, yd, n,
