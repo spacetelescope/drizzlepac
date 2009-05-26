@@ -302,7 +302,7 @@ default_wcsmap(void* state,
   time_t     start_t, end_t;
   time_t    d2im_t, dgeosip_t;
   */
-  
+
   /* Call PyWCS methods here to perform the transformation... */
   /* The input arrays need to be converted to 2-D arrays for input
       to the PyWCS (and related) functions. */
@@ -333,7 +333,7 @@ default_wcsmap(void* state,
   /*
   start_t = clock();
   */
-  
+
   wcsprm_python2c(m->input_wcs->wcs);
   /* Start by checking to see whether DET2IM correction needs to
   be applied and applying it as appropriate. */
@@ -350,17 +350,17 @@ default_wcsmap(void* state,
   status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
   if (status)
     return 1;
-    
+
   wcsprm_c2python(m->input_wcs->wcs);
-  
+
   /*
   dgeosip_t = clock();
   m->dtime_dgeosip += difftime(dgeosip_t,d2im_t)/1e+6;
   */
-  
+
   /*
   Finally, call wcs_sky2pix() for the output object.
-  */  
+  */
   wcsprm_python2c(m->output_wcs->wcs);
 
   status = wcss2p(m->output_wcs->wcs, n, 2,
@@ -639,9 +639,9 @@ mapping_param_dump(struct mapping_param_t* m) {
          "num_coeffs:           %d\n"
          "coeff_type:           %d\n"
          "lambda:               %f\n"
-         "x_distortion:         %x\n"
+         "x_distortion:         %p\n"
          "x_dist_dim:           %d\n"
-         "y_distortion:         %x\n"
+         "y_distortion:         %p\n"
          "y_dist_dim:           %d\n"
          "use_distortion_image: %s\n"
          "scale:                %f\n"
