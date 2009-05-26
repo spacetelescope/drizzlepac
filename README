@@ -1,6 +1,6 @@
 make sure you are using the current pywcs pulled from here:
 
-http://astropy.scipy.org/svn/astrolib/trunk/pywcs
+https://svn.stsci.edu/svn/ssb/astrolib/trunk/pywcs
 
 and the updatewcs that in:
 
