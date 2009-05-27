@@ -1,9 +1,15 @@
+#define NO_IMPORT_ARRAY
+#define NO_IMPORT_PYWCS_API
+#include "pywcs_api.h"
+
+#include <math.h>
+#include <string.h>
+#include <time.h>
+
 #include "cdrizzleio.h"
 #include "cdrizzlemap.h"
 #include "cdrizzlewcs.h"
 
-#include <math.h>
-#include <string.h>
 
 static inline int
 drizzle_polynomial(void* state,
@@ -212,6 +218,230 @@ drizzle_linear_or_secondary(void* state,
 }
 
 int
+map_value(struct driz_param_t* p,
+          const bool_t regular,
+          const integer_t n,
+          const double* xin /*[n]*/, const double* yin /*[n]*/,
+          /* Output parameters */
+          double* xtmp /*[n]*/, double* ytmp /*[n]*/,
+          double* xout /*[n]*/, double* yout /*[n]*/,
+          struct driz_error_t* error) {
+  double x, y, xd, yd;
+  integer_t i;
+
+  assert(p);
+  assert(p->mapping_callback);
+  assert(xin);
+  assert(yin);
+  assert(xtmp);
+  assert(ytmp);
+  assert(xout);
+  assert(yout);
+  assert(xin != xout);
+  assert(yin != yout);
+  assert(xin != xtmp);
+  assert(yin != ytmp);
+  assert(xtmp != xout);
+  assert(ytmp != yout);
+  assert(error);
+
+  if (regular) {
+    /* x = xin[0] - p->x_scale + 1.0; */
+    /* y = yin[0] + yin[1] + 2.0; */
+    x = xin[0];
+    y = yin[0];
+    xd = xin[0];
+    yd = yin[1];
+
+    for (i = 0; i < n; ++i) {
+      xtmp[i] = x;
+      ytmp[i] = y;
+      x += p->x_scale;
+    }
+  } else {
+    xd = yd = 0.0;
+
+    if (xtmp != xin) {
+        memcpy(xtmp, xin, sizeof(double) * n);
+    }
+    if (ytmp != yin) {
+        memcpy(ytmp, yin, sizeof(double) * n);
+    }
+  }
+
+  if (p->mapping_callback(p->mapping_callback_state, xd, yd, n,
+                          xtmp, ytmp, xout, yout, error))
+    return 1;
+
+  return 0;
+}
+
+/*
+
+Default WCS mapping code
+
+*/
+int
+default_wcsmap(void* state,
+                const double xd, const double yd,
+                const integer_t n,
+                double* xin /*[n]*/, double* yin /*[n]*/,
+                /* Output parameters */
+                double* xout, double* yout,
+                struct driz_error_t* error) {
+  struct wcsmap_param_t* m = (struct wcsmap_param_t*)state;
+
+  integer_t  i;
+  int        status;
+  int        result  = 1;
+  double    *memory  = NULL;
+  double    *ptr     = NULL;
+  double    *xyin    = NULL;
+  double    *skyout  = NULL;
+  double    *xyout   = NULL;
+  double    *imgcrd  = NULL;
+  double    *phi     = NULL;
+  double    *theta   = NULL;
+  int       *stat    = NULL;
+  /*
+  time_t     start_t, end_t;
+  time_t    d2im_t, dgeosip_t;
+  */
+
+  /* Call PyWCS methods here to perform the transformation... */
+  /* The input arrays need to be converted to 2-D arrays for input
+      to the PyWCS (and related) functions. */
+
+  /* Allocate memory for new 2-D array */
+  ptr = memory = (double *) malloc(n * 10 * sizeof(double));
+  if (memory == NULL) goto exit;
+  xyin = ptr;
+  ptr += n * 2;
+  xyout = ptr;
+  ptr += n * 2;
+  skyout = ptr;
+  ptr += n * 2;
+  imgcrd = ptr;
+  ptr += n * 2;
+  phi = ptr;
+  ptr += n;
+  theta = ptr;
+  stat = (int *)malloc(n * sizeof(int));
+  if (stat == NULL) goto exit;
+
+  /* Populate new 2-D array with values from x and y input arrays */
+  for (i = 0; i < n; ++i) {
+      xyin[2*i] = xin[i];
+      xyin[2*i+1] = yin[i];
+  }
+
+  /*
+  start_t = clock();
+  */
+
+  wcsprm_python2c(m->input_wcs->wcs);
+  /* Start by checking to see whether DET2IM correction needs to
+  be applied and applying it as appropriate. */
+
+  status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
+                      n, xyin, xyin);
+  /*
+  d2im_t = clock();
+  m->dtime_d2im += difftime(d2im_t,start_t)/1e+6;
+  */
+  /*
+  Apply pix2sky() transformation from PyWCS
+  */
+  status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
+  if (status)
+    return 1;
+
+  wcsprm_c2python(m->input_wcs->wcs);
+
+  /*
+  dgeosip_t = clock();
+  m->dtime_dgeosip += difftime(dgeosip_t,d2im_t)/1e+6;
+  */
+
+  /*
+  Finally, call wcs_sky2pix() for the output object.
+  */
+  wcsprm_python2c(m->output_wcs->wcs);
+
+  status = wcss2p(m->output_wcs->wcs, n, 2,
+                  skyout, phi, theta, imgcrd, xyout, stat);
+
+  wcsprm_c2python(m->output_wcs->wcs);
+
+  /*
+  end_t = clock();
+  m->dtime_coord += difftime(end_t, start_t)/1e+6;
+  */
+  /*
+  Transform results back to 2 1-D arrays, like the input.
+  */
+  for (i = 0; i < n; ++i){
+      xout[i] = xyout[2*i];
+      yout[i] = xyout[2*i+1];
+  }
+
+  result = 0;
+
+ exit:
+  /*
+  Free memory allocated to internal 2-D arrays
+  */
+  free(memory);
+  free(stat);
+
+  return result;
+}
+
+int
+default_wcsmap_init(struct wcsmap_param_t* m,
+                    PyWcs* input, PyWcs* output,
+                    struct driz_error_t* error) {
+
+  wcsmap_param_init(m);
+
+  m->input_wcs = &input->x;
+  m->output_wcs = &output->x;
+
+
+  return 0;
+}
+
+void
+wcsmap_param_dump(struct wcsmap_param_t* m) {
+  assert(m);
+
+  printf("WCS MAPPING PARAMETERS:\n"
+         "input WCS:            \n");
+  wcsprt(m->input_wcs->wcs);
+  printf("output WCS:           \n");
+  wcsprt(m->input_wcs->wcs);
+}
+
+void
+wcsmap_param_init(struct wcsmap_param_t* m) {
+  assert(m);
+
+  /* Pointers to the PyWCS objects */
+  m->input_wcs = NULL;
+  m->output_wcs = NULL;
+  m->dtime_coord = 0.0;
+  m->dtime_d2im = 0.0;
+  m->dtime_dgeosip = 0.0;
+  m->dtime_map = 0.0;
+}
+
+/*
+
+Default pixel-based mapping code:DefaultMapping
+
+*/
+
+int
 default_mapping(void* state,
                 const double xd, const double yd,
                 const integer_t n,
@@ -406,61 +636,6 @@ default_mapping_init(struct mapping_param_t* m,
   return 0;
 }
 
-int
-map_value(struct driz_param_t* p,
-          const bool_t regular,
-          const integer_t n,
-          const double* xin /*[n]*/, const double* yin /*[n]*/,
-          /* Output parameters */
-          double* xtmp /*[n]*/, double* ytmp /*[n]*/,
-          double* xout /*[n]*/, double* yout /*[n]*/,
-          struct driz_error_t* error) {
-  double x, y, xd, yd;
-  integer_t i;
-
-  assert(p);
-  assert(p->mapping_callback);
-  assert(xin);
-  assert(yin);
-  assert(xtmp);
-  assert(ytmp);
-  assert(xout);
-  assert(yout);
-  assert(xin != xout);
-  assert(yin != yout);
-  assert(xin != xtmp);
-  assert(yin != ytmp);
-  assert(xtmp != xout);
-  assert(ytmp != yout);
-  assert(error);
-
-  if (regular) {
-    /* x = xin[0] - p->x_scale + 1.0; */
-    /* y = yin[0] + yin[1] + 2.0; */
-    x = xin[0];
-    y = yin[0];
-    xd = xin[0];
-    yd = yin[1];
-
-    for (i = 0; i < n; ++i) {
-      xtmp[i] = x; /* add 1.0 to account for 0-based indexing */
-      ytmp[i] = y; /* add 1.0 to account for 0-based indexing */
-      x += p->x_scale;
-    }
-  } else {
-    xd = yd = 0.0;
-
-    memcpy(xtmp, xin, sizeof(double) * n);
-    memcpy(ytmp, yin, sizeof(double) * n);
-  }
-
-  if (p->mapping_callback(p->mapping_callback_state, xd, yd, n,
-                          xtmp, ytmp, xout, yout, error))
-    return 1;
-
-  return 0;
-}
-
 void
 mapping_param_dump(struct mapping_param_t* m) {
   assert(m);
@@ -469,9 +644,9 @@ mapping_param_dump(struct mapping_param_t* m) {
          "num_coeffs:           %d\n"
          "coeff_type:           %d\n"
          "lambda:               %f\n"
-         "x_distortion:         %x\n"
+         "x_distortion:         %p\n"
          "x_dist_dim:           %d\n"
-         "y_distortion:         %x\n"
+         "y_distortion:         %p\n"
          "y_dist_dim:           %d\n"
          "use_distortion_image: %s\n"
          "scale:                %f\n"
@@ -499,9 +674,9 @@ mapping_param_dump(struct mapping_param_t* m) {
          m->num_coeffs,
          m->coeff_type,
          m->lambda,
-         (int)m->x_distortion,
+         m->x_distortion,
          m->x_dist_dim,
-         (int)m->y_distortion,
+         m->y_distortion,
          m->y_dist_dim,
          bool2str(m->use_distortion_image),
          m->scale,
@@ -580,5 +755,6 @@ mapping_param_init(struct mapping_param_t* m) {
   m->dnx = 0.0;
   m->dny = 0.0;
 }
+
 
 

@@ -197,6 +197,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             ymin = 1
             ymax = img.outputValues['outny']
             if wcsmap is None and arrdriz is not None:
+                """
                 # Use default C mapping function
                 #
                 # Convert shifts to input units
@@ -217,12 +218,21 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                     'output', _pxg, _pyg, 'center', plist['coeffs'],
                     None, plist['alpha'], plist['beta'])
                 pix_ratio = plist['scale']
+                """
+                print 'Using default C-based coordinate transformation...'
+                wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
+                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs)
+                pix_ratio = output_wcs.pscale/chip.wcs.pscale
             else:
+                #
+                ##Using the Python class for the WCS-based transformation 
+                #
                 # Use user provided mapping function
+                print 'Using coordinate transformation defined by user...'
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
-                mapping = wmap.forward
-                pix_ratio = wmap.get_pix_ratio()
+                mapping = wmap.forward                
+                pix_ratio = output_wcs.pscale/chip.wcs.pscale
                 
             t = arrdriz.tblot(
                 _insci, _outsci,xmin,xmax,ymin,ymax,

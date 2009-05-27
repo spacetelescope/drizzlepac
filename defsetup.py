@@ -2,14 +2,31 @@ from distutils.core import Extension
 import sys, os.path, os
 from distutils import sysconfig
 
+# BUILD should be 'debug', 'profile' or 'release'
+BUILD = 'release'
+
 try:
     import numpy
     import numpy.numarray as nn
 except ImportError:
-    "Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Pydrizzle requires numpy v 1.0.2 or later.\n"
+    print "Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Multidrizzle requires numpy v 1.0.2 or later.\n"
+    raise
+
+# This is the case for building as part of stsci_python
+if os.path.exists('pywcs'):
+    pywcsincludes = [os.path.join('pywcs', 'src'),
+                     os.path.join('pywcs', 'wcslib-4.3', 'C')]
+else:
+    try:
+        import pywcs
+        pywcslib = pywcs.__path__[0]
+        pywcsincludes = [os.path.join(pywcslib, 'include'),
+                         os.path.join(pywcslib, 'include', 'wcslib')]
+    except ImportError:
+        raise ImportError("PyWCS was not found. It may not be installed or it may not be on your PYTHONPATH. \nPydrizzle requires pywcs 1.4 or later.\n")
 
 if numpy.__version__ < "1.0.2":
-    raise SystemExit, "Numpy 1.0.2 or later required to build pydrizzle."
+    raise SystemExit, "Numpy 1.0.2 or later required to build Multidrizzle."
 
 print "Building C extensions using NUMPY."
 
@@ -26,7 +43,6 @@ if 'CFITSIO_LIB' in os.environ :
 else :
     cfitsio = '/usr/stsci/cfitsio'
 
-
 if os.path.exists(cfitsio+"/include") :
     # pointing at the installed library
     cfitsio_inc = cfitsio + "/include"
@@ -34,20 +50,39 @@ if os.path.exists(cfitsio+"/include") :
 else :
     # pointing at a source distribution
     # (still needs to be compiled with "make" but not installed with "make install")
-    cfitsio_inc = cfitsio + "/include"
-    cfitsio_lib = cfitsio + "/lib"
+    cfitsio_inc = cfitsio
+    cfitsio_lib = cfitsio
 
 if sys.platform != 'win32':
-    pydrizzle_libraries = ['m']
     cfitsioinc = [ cfitsio_inc ]
-    EXTRA_LINK_ARGS = ['-L' + cfitsio_lib ]
+    EXTRA_LINK_ARGS = []
 else:
     raise Exception("Nobody ever wrote Windows support for linking with CFITSIO")
-    pydrizzle_libraries = []
-    EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT']
+    EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT', pywcslib+'/_pywcs.dll']
 
- 
 def getNumpyExtensions():
+    define_macros = [('PYDRIZZLE', None)]
+    undef_macros = []
+    if BUILD.lower() == 'debug':
+        define_macros.append(('DEBUG', None))
+        undef_macros.append('NDEBUG')
+        if not sys.platform.startswith('sun') and \
+           not sys.platform == 'win32':
+            extra_compile_args.extend(["-fno-inline", "-O0", "-g"])
+    elif BUILD.lower() == 'profile':
+        define_macros.append(('NDEBUG', None))
+        undef_macros.append('DEBUG')
+        if not sys.platform.startswith('sun'):
+            extra_compile_args.extend(["-O3", "-g"])
+    elif BUILD.lower() == 'release':
+        # Define ECHO as nothing to prevent spurious newlines from
+        # printing within the libwcs parser
+        define_macros.append(('NDEBUG', None))
+        undef_macros.append('DEBUG')
+    else:
+        raise ValueError("BUILD should be one of 'debug', 'profile', or 'release'")
+
+
     ext = [Extension("betadrizzle.cdriz",['src/arrdrizmodule.c',
                                           'src/cdrizzleblot.c',
                                           'src/cdrizzlebox.c',
@@ -55,13 +90,13 @@ def getNumpyExtensions():
                                           'src/cdrizzlemap.c',
                                           'src/cdrizzleutil.c',
                                           'src/cdrizzlewcs.c'],
-                     define_macros=[('NUMPY', '1')],
-                     # undef_macros=['NDEBUG'],
-                     include_dirs=[pythoninc] + [numpyinc]+ cfitsioinc + numpynumarrayinc,
-                     # library_dirs=[],
+                     define_macros=define_macros,
+                     undef_macros=undef_macros,
+                     include_dirs=[pythoninc] + [numpyinc] + cfitsioinc + \
+                         numpynumarrayinc + pywcsincludes,
                      extra_link_args=EXTRA_LINK_ARGS,
-                     libraries=['m', 'cfitsio'],
-                     extra_compile_args=['-funroll-loops', '-DPYDRIZZLE']#,'-g'] # , '-fno-inline', '-O0']
+                     library_dirs=[cfitsio_lib],
+                     libraries=['m', 'cfitsio']
                      )]
 
     return ext

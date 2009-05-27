@@ -1,3 +1,4 @@
+#define NO_IMPORT_ARRAY
 #include "cdrizzlewcs.h"
 #include "cdrizzlemap.h"
 

@@ -17,7 +17,14 @@ _final_step_num_ = 7
 #
 ####  User level interface to run drizzle tasks from TEAL
 #
-def run(configObj,wcsmap=wcs_functions.WCSMap):
+def run(configObj,wcsmap=None):
+    """
+    Values for wcsmap: 
+    The default transformation (wcsmap=None) will use the WCS-based C extension:
+        "cdriz.DefaultWCSMapping"
+    Python WCS transformation: 
+        "wcs_functions.WCSMap"
+    """
     
     # Explicitly turn off making copies so as to not over-write any analysis
     # already performed on the data.
@@ -66,7 +73,7 @@ def getHelpAsString():
 # 
 #### Interactive interface for running drizzle tasks separately
 #
-def drizzle(input=None,drizSep=False,configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
+def drizzle(input=None,drizSep=False,configObj=None,wcsmap=None,editpars=False,**input_dict):
     """Perform drizzle operation on input to create output.
      The input parameters originally was a list
      of dictionaries, one for each input, that matches the
@@ -74,6 +81,9 @@ def drizzle(input=None,drizSep=False,configObj=None,wcsmap=wcs_functions.WCSMap,
 
      This method would then loop over all the entries in the
      list and run 'drizzle' for each entry. 
+    
+    The default transformation will be a C-based WCS extension: cdriz.DefaultWCSMapping.
+    The Python class WCSMap can be used instead by setting 'wcsmap=wcs_functions.WCSMap'.
     
     Parameters required for input in paramDict:
         build,single,units,wt_scl,pixfrac,kernel,fillval,
@@ -105,7 +115,7 @@ def drizzle(input=None,drizSep=False,configObj=None,wcsmap=wcs_functions.WCSMap,
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap):
+def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None):
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
     single_step = util.getSectionName(configObj,_single_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -124,7 +134,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMa
     else:
         print 'Single drizzle step not performed.'
         
-def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap):
+def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None):
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
     final_step = util.getSectionName(configObj,_final_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -503,8 +513,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             if (_sciext.data.dtype > np.float32):
                 #WARNING: Input array recast as a float32 array
                 _sciext.data = _sciext.data.astype(np.float32)
-            
+
             if wcsmap is None and arrdriz is not None:
+                """
                 _pxg = np.zeros([2,2],dtype=np.float32)
                 _pyg = np.zeros([2,2],dtype=np.float32)
                 # Use default C mapping function
@@ -515,7 +526,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
                 indx = chip.outputNames['data'].find('.fits')
                 coeffs_name = chip.outputNames['data'][:indx]+'_coeffs'+str(chip.detnum)+'.dat'
-                """
                 #
                 # Need to compute and write out coeffs files for each chip as well.
                 #
@@ -543,7 +553,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                     _delta_rot, _scale, 0.0, 0.0, 1.0, 1.0,
                     0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
                     tddalpha, tddbeta)
-                """
                 
                 # This call does not impose any linear transformation on the 
                 # image and only serves as a test case for comparison with WDRIZZLE
@@ -557,19 +566,29 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
                 print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
                 pix_ratio = _scale
+                """
+                print 'Using default C-based coordinate transformation...'
+                wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
+                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs)
+                pix_ratio = output_wcs.pscale/chip.wcs.pscale
             else:
+                #
+                ##Using the Python class for the WCS-based transformation 
+                #
                 # Use user provided mapping function
+                print 'Using coordinate transformation defined by user...'
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
-                mapping = wmap.forward
-                pix_ratio = wmap.get_pix_ratio()
-            
+                mapping = wmap.forward                
+                pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                
+            #print 'Starting tdriz at: ',_ptime()
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
                 pix_ratio, 1.0, 1.0, 'center', paramDict['pixfrac'],
                 paramDict['kernel'], _in_units, _expin,_wtscl,
                 fillval, nmiss, nskip, 1, mapping)
-            
+            #print 'Finished tdriz at: ',_ptime()
 
             # Set up information for generating output FITS image
             #### Check to see what names need to be included here for use in _hdrlist
