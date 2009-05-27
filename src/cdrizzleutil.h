@@ -4,8 +4,14 @@
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#if __STDC_VERSION__ >= 199901L
 #include <stdint.h>
+#endif
 #include <stdlib.h>
+
+#ifdef __SUNPRO_C
+#define inline
+#endif
 
 /*****************************************************************
  ERROR HANDLING
@@ -69,7 +75,11 @@ void driz_error_unset(struct driz_error_t* error);
 */
 typedef unsigned int length_t;
 typedef int integer_t;
+#if __STDC_VERSION__ >= 199901L
 typedef int_fast8_t bool_t;
+#else
+typedef unsigned char bool_t;
+#endif
 
 enum e_shift_t {
   shift_input,
@@ -164,7 +174,7 @@ struct driz_param_t {
   integer_t ony;
   float* output_data; /* [ony][onx] */
   float* output_counts; /* [ony][onx] was: COU */
-  int32_t* output_context; /* [ony][onx] was: CONTIM */
+  integer_t* output_context; /* [ony][onx] was: CONTIM */
 
   /* Blotting-specific parameters */
   enum e_interp_t interpolation; /* was INTERP */
@@ -193,7 +203,7 @@ struct driz_param_t {
   integer_t intab[MAXEN*MAXIM]; /* [maxen][maxim] */
   integer_t nen; /* TODO: Rename me */
 
-  int32_t bv;
+  integer_t bv;
   double ac;
   double pfo;
   double pfo2;
@@ -266,7 +276,7 @@ output_counts_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   return (p->output_counts + (y * p->nsx) + x);
 }
 
-static inline int32_t*
+static inline integer_t*
 output_context_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_context);
