@@ -440,10 +440,6 @@ default_wcsmap_init(struct wcsmap_param_t* m,
                     struct driz_error_t* error) {
   int     table_size;
   double *pixcrd = NULL;
-  double *imgcrd = NULL;
-  double *phi = NULL;
-  double *theta = NULL;
-  int    *stat = NULL;
   double *ptr  = NULL;
   int     snx;
   int     sny;
@@ -471,30 +467,6 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     goto exit;
   }
 
-  imgcrd = malloc(table_size * sizeof(double));
-  if (imgcrd == NULL) {
-    driz_error_set_message(error, "Out of memory");
-    goto exit;
-  }
-
-  phi = malloc(table_size * sizeof(double));
-  if (phi == NULL) {
-    driz_error_set_message(error, "Out of memory");
-    goto exit;
-  }
-
-  theta = malloc(table_size * sizeof(double));
-  if (theta == NULL) {
-    driz_error_set_message(error, "Out of memory");
-    goto exit;
-  }
-
-  stat = malloc(table_size * sizeof(int));
-  if (stat == NULL) {
-    driz_error_set_message(error, "Out of memory");
-    goto exit;
-  }
-
   m->table = malloc(table_size * sizeof(double));
   if (m->table == NULL) {
     driz_error_set_message(error, "Out of memory");
@@ -509,10 +481,7 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     }
   }
 
-  /* istat = wcsp2s(input->wcs, table_size / 2, 2, pixcrd, imgcrd, phi, theta, */
-  /*                m->table, stat); */
-  istat = p4_pix2foc(2, (void *)input->cpdis,
-                     table_size / 2, pixcrd, pixcrd);
+  istat = p4_pix2foc(2, (void *)input->cpdis, table_size / 2, pixcrd, pixcrd);
 
   if (istat) {
     free(m->table);
@@ -545,10 +514,6 @@ default_wcsmap_init(struct wcsmap_param_t* m,
  exit:
 
   free(pixcrd);
-  free(imgcrd);
-  free(phi);
-  free(theta);
-  free(stat);
 
   return status;
 }
