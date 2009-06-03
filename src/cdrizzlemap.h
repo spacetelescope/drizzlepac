@@ -13,11 +13,10 @@ struct wcsmap_param_t {
   /* Pointers to PyWCS objects for input and output WCS */
   pipeline_t* input_wcs;
   pipeline_t* output_wcs;
-  double      dtime_coord;
-  double      dtime_d2im;
-  double      dtime_dgeosip;
-  double      dtime_map;
-
+  double*     table;
+  int         nx, ny;
+  int         snx, sny;
+  double      factor;
 };
 
 /**
@@ -32,6 +31,9 @@ wcsmap_param_init(struct wcsmap_param_t* m);
 void
 wcsmap_param_dump(struct wcsmap_param_t* m);
 
+void
+wcsmap_param_free(struct wcsmap_param_t* m);
+
 int
 default_wcsmap(void* state,
                 const double xd, const double yd,
@@ -42,10 +44,11 @@ default_wcsmap(void* state,
                 struct driz_error_t* error);
 int
 default_wcsmap_init(struct wcsmap_param_t* m,
-                    PyWcs* input,
-                    PyWcs* output,
-                     /* Output parameters */
-                     struct driz_error_t* error);
+                    pipeline_t* input,
+                    pipeline_t* output,
+                    int nx, int ny, double factor,
+                    /* Output parameters */
+                    struct driz_error_t* error);
 
 /**
 

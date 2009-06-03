@@ -19,13 +19,13 @@ _final_step_num_ = 7
 #
 def run(configObj,wcsmap=None):
     """
-    Values for wcsmap: 
+    Values for wcsmap:
     The default transformation (wcsmap=None) will use the WCS-based C extension:
         "cdriz.DefaultWCSMapping"
-    Python WCS transformation: 
+    Python WCS transformation:
         "wcs_functions.WCSMap"
     """
-    
+
     # Explicitly turn off making copies so as to not over-write any analysis
     # already performed on the data.
     configObj['workinplace'] = False
@@ -38,7 +38,7 @@ def run(configObj,wcsmap=None):
     # Parse out which mode is to be run: single drizzle or final drizzle
     # Call only the mode of interest
     single_step = util.getSectionName(configObj,_single_step_num_)
-    
+
     if configObj[single_step]['driz_separate']:
         drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
     else:
@@ -47,16 +47,16 @@ def run(configObj,wcsmap=None):
 
 def help():
     print getHelpAsString()
-    
+
 def getHelpAsString():
-    """ 
+    """
     return useful help from a file in the script directory called module.help
     """
     #get the local library directory where the code is stored
     localDir=os.path.split(__file__)
     helpfile=__taskname__.split(".")
     helpfile=localDir[0]+"/"+helpfile[1]+".help"
-    
+
     if os.access(helpfile,os.R_OK):
         fh=open(helpfile,'r')
         ss=fh.readlines()
@@ -64,13 +64,13 @@ def getHelpAsString():
         helpString=""
         for line in ss:
             helpString+=line
-    else:    
+    else:
         helpString=__doc__
 
     return helpString
 
 
-# 
+#
 #### Interactive interface for running drizzle tasks separately
 #
 def drizzle(input=None,drizSep=False,configObj=None,wcsmap=None,editpars=False,**input_dict):
@@ -80,27 +80,27 @@ def drizzle(input=None,drizSep=False,configObj=None,wcsmap=None,editpars=False,*
      primary parameters for an IRAF drizzle task.
 
      This method would then loop over all the entries in the
-     list and run 'drizzle' for each entry. 
-    
+     list and run 'drizzle' for each entry.
+
     The default transformation will be a C-based WCS extension: cdriz.DefaultWCSMapping.
     The Python class WCSMap can be used instead by setting 'wcsmap=wcs_functions.WCSMap'.
-    
+
     Parameters required for input in paramDict:
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
-    """    
+    """
     if input not in [None,""]:
         input_dict["input"]=input
-        
+
     if drizSep:
         input_dict["driz_separate"]=True
         input_dict["driz_combine"]=False
     else:
         input_dict["driz_separate"]=False
         input_dict["driz_combine"]=True
-        
-        
-    # If called from interactive user-interface, configObj will not be 
+
+
+    # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
@@ -108,7 +108,7 @@ def drizzle(input=None,drizSep=False,configObj=None,wcsmap=None,editpars=False,*
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     if configObj is None:
         return
-    
+
     if not editpars:
         run(configObj,wcsmap=wcsmap)
 
@@ -128,12 +128,12 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None):
         paramDict['build'] = False
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
-        # for single-drizzle step when called from the top-level. 
-        run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True, 
+        # for single-drizzle step when called from the top-level.
+        run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True,
                 build=False, wcsmap=wcsmap)
     else:
         print 'Single drizzle step not performed.'
-        
+
 def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None):
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
     final_step = util.getSectionName(configObj,_final_step_num_)
@@ -144,11 +144,11 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None):
         paramDict['crbit'] = configObj['crbit']
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
-        # for single-drizzle step when called from the top-level. 
+        # for single-drizzle step when called from the top-level.
         if build is None:
             build = paramDict['build']
-            
-        run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False, 
+
+        run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False,
                 build=build, wcsmap=wcsmap)
     else:
         print 'Final drizzle step not performed.'
@@ -168,12 +168,12 @@ def mergeDQarray(maskname,dqarr):
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
     if not os.path.exists(crmaskname):
         print 'WARNING: No CR mask file found! Input DQ array not updated.'
-        return 
+        return
     if cr_bits_value == None:
         print 'WARNING: Input DQ array not updated!'
         return
     crmask = fileutil.openImage(crmaskname)
-    
+
     if os.path.exists(dqfile):
         fullext=dqfile+"["+dq_extn+str(chip)+"]"
         infile = fileutil.openImage(fullext,mode='update')
@@ -205,13 +205,13 @@ def buildDrizParamDict(configObj,single=True):
                 paramDict[par] = configObj[section_name][driz_prefix+par]
         else:
             paramDict[par] = configObj[section_name][driz_prefix+par]
-            
+
     return paramDict
 def _setDefaults(configObj={}):
     """set up the default parameters to run drizzle
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
-        
+
         Used exclusively for unit-testing, if any are defined.
     """
 
@@ -247,23 +247,23 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
      primary parameters for an IRAF drizzle task.
 
      This method would then loop over all the entries in the
-     list and run 'drizzle' for each entry. 
-    
+     list and run 'drizzle' for each entry.
+
     Parameters required for input in paramDict:
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
-    """    
+    """
     print 'MultiDrizzle: drizzle task started at ',_ptime()
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
-        
-    # Create a list which points to all the chips being combined 
+
+    # Create a list which points to all the chips being combined
     # by extracting all the chips from each of the input imageObjects
     #chiplist = []
     #for img in imageObjectList:
     #    for chip in range(1,img._numchips+1):
-    #        chiplist.append(img._image[img.scienceExt,chip])    
+    #        chiplist.append(img._image[img.scienceExt,chip])
 
     #
     # Setup the versions info dictionary for output to PRIMARY header
@@ -274,18 +274,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Interpret input parameters for use in drizzling
     crbit = paramDict['crbit']
     bits = paramDict['bits']
-    
+
     # Insure that the fillval parameter gets properly interpreted for use with tdriz
     if paramDict['fillval'] in [None, '']:
         fillval = 'INDEF'
     else:
         fillval = str(paramDict['fillval'])
-    
+
     # Check for existance of output file.
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
         print 'Removing previous output product...'
         os.remove(imageObjectList[0].outputNames['outFinal'])
-        
+
 
     # print out parameters being used for drizzling
     print "Running Drizzle to create output frame with WCS of: "
@@ -310,7 +310,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     print("\n")
 
     """
-    
+
     # Set parameters for each input and run drizzle on it here.
     #
     # Perform drizzling...
@@ -320,7 +320,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     for img in imageObjectList:
         numctx += img._numchips
     _numctx = {'all':numctx}
-    
+
     #            if single:
     # Determine how many chips make up each single image
     for img in imageObjectList:
@@ -357,8 +357,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     for img in imageObjectList:
         for chip in img.returnAllChips(extname=img.scienceExt):
-            
-            # Look for sky-subtracted product. 
+
+            # Look for sky-subtracted product.
             if os.path.exists(chip.outputNames['outSky']):
                 chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
                 _expname = chip.outputNames['outSky']+chipextn
@@ -385,7 +385,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 else:
                     outname = 'outSci'
                     outweight = 'outWeight'
-                    
+
                 outmaskname = 'finalMask'
             print("\ndrizzle "+_expname+" "+chip.outputNames[outname]+
               " in_mask="+chip.outputNames[outmaskname]+" outweig="+chip.outputNames[outweight]+
@@ -404,7 +404,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             # Determine output value of BUNITS
             # and make sure it is not specified as 'ergs/cm...'
             _bunit = chip._bunit
-            
+
             _bindx = _bunit.find('/')
 
             if paramDict['units'] == 'cps':
@@ -435,7 +435,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             #
             # Actually need to generate mask file here 'on-demand'
             # and combine it with the static_mask for single_drizzle case...
-            #        
+            #
             ####
             # Build basic DQMask from DQ array and bits value
             dqarr = img.buildMask(chip._chip,bits)
@@ -447,7 +447,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 mergeDQarray(chip.outputNames['staticMask'],dqarr)
                 mergeDQarray(chip.outputNames['crmaskImage'],dqarr)
                 updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,chip.outputNames['crmaskImage'],crbit)
-            
+
             # Convert mask to a datatype expected by 'tdriz'
             _inwht = dqarr.astype(np.float32)
 
@@ -532,10 +532,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 coeffs = coeff_converter.sip2idc(chip.wcs)
                 coeffs[0] /= chip.wcs.idcscale
                 coeffs[1] /= chip.wcs.idcscale
-                
+
                 wmap = wcsmap(chip.wcs,output_wcs)
-                
-                
+
+
                 abxt,cdyt = wcs_functions.wcsfit(chip.wcs,output_wcs)
                 abxt[2] -= xzero
                 cdyt[2] -= yzero
@@ -553,8 +553,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                     _delta_rot, _scale, 0.0, 0.0, 1.0, 1.0,
                     0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
                     tddalpha, tddbeta)
-                
-                # This call does not impose any linear transformation on the 
+
+                # This call does not impose any linear transformation on the
                 # image and only serves as a test case for comparison with WDRIZZLE
                 mapping = arrdriz.DefaultMapping(
                     _sciext.data.shape[1], _sciext.data.shape[0],
@@ -569,19 +569,19 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 """
                 print 'Using default C-based coordinate transformation...'
                 wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
-                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs)
+                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs,int(chip.size1),int(chip.size2),2.0)
                 pix_ratio = output_wcs.pscale/chip.wcs.pscale
             else:
                 #
-                ##Using the Python class for the WCS-based transformation 
+                ##Using the Python class for the WCS-based transformation
                 #
                 # Use user provided mapping function
                 print 'Using coordinate transformation defined by user...'
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
-                mapping = wmap.forward                
+                mapping = wmap.forward
                 pix_ratio = output_wcs.pscale/chip.wcs.pscale
-                
+
             #print 'Starting tdriz at: ',_ptime()
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
@@ -641,7 +641,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
                 #
                 # Write output arrays to FITS file(s) and reset chip counter
-                #                
+                #
                 _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=build, wcs=output_wcs, single=single)
                 _outimg.set_bunit(_bunit)
                 _outimg.set_units(paramDict['units'])

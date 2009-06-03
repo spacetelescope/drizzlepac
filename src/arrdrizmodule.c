@@ -374,12 +374,17 @@ in addition to the C-based transformations.
 typedef struct {
   PyObject_HEAD
   struct wcsmap_param_t m;
+  PyObject* py_input;
+  PyObject* py_output;
 } PyWCSMap;
 
 static void
 PyWCSMap_dealloc(PyWCSMap* self)
 {
   /* Deal with our reference-counted members */
+  Py_XDECREF(self->py_input);  self->py_input = NULL;
+  Py_XDECREF(self->py_output); self->py_output = NULL;
+  wcsmap_param_free(&self->m);
 
   self->ob_type->tp_free((PyObject*)self);
 }
@@ -390,6 +395,8 @@ PyWCSMap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   PyWCSMap *self;
 
   self = (PyWCSMap *)type->tp_alloc(type, 0);
+  self->py_input = NULL;
+  self->py_output = NULL;
   if (self != NULL) {
     wcsmap_param_init(&self->m);
   }
@@ -401,7 +408,11 @@ static int
 PyWCSMap_init(PyWCSMap *self, PyObject *args, PyObject *kwds)
 {
   /* Arguments in the order they appear */
-  PyObject *input_obj, *output_obj;
+  PyObject *input_obj = NULL;
+  PyObject *output_obj = NULL;
+  int nx, ny;
+  double factor;
+  int status = -1;
 
   /* Other miscellaneous local variables */
   struct driz_error_t error;
@@ -409,24 +420,35 @@ PyWCSMap_init(PyWCSMap *self, PyObject *args, PyObject *kwds)
 
   driz_error_init(&error);
 
-  if (! PyArg_ParseTuple(args, "OO:DefaultWCSMapping.__init__",&input_obj,&output_obj)){
-    return -1;
+  /* TODO: Make factor a kwarg */
+  if (! PyArg_ParseTuple(args, "OOiid:DefaultWCSMapping.__init__",
+                         &input_obj, &output_obj, &nx, &ny, &factor)){
+    goto exit;
   }
 
   /* Create the C struct from all of these mapping parameters */
-  istat = default_wcsmap_init(&self->m, (PyWcs *)input_obj, (PyWcs *)output_obj, &error);
-
-  /* The references to the PyArrayObjects will get automatically
-     dereferenced by PyMapping_dealloc.  (Immediately, in the case of
-     an error, or when the object goes out of scope). */
+  istat = default_wcsmap_init(
+      &self->m,
+      &((PyWcs*)input_obj)->x, &((PyWcs*)output_obj)->x,
+      nx, ny, factor,
+      &error);
 
   if (istat || driz_error_is_set(&error)) {
     if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
       PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
-    return -1;
+    goto exit;
   }
 
-  return 0;
+  Py_INCREF(input_obj);
+  Py_INCREF(output_obj);
+  self->py_input = input_obj;
+  self->py_output = output_obj;
+
+  status = 0;
+
+ exit:
+
+  return status;
 }
 
 static PyObject*
@@ -541,7 +563,7 @@ static PyTypeObject WCSMapType = {
   0,                            /* tp_descr_get */
   0,                            /* tp_descr_set */
   0,                            /* tp_dictoffset */
-  (initproc)PyWCSMap_init,     /* tp_init */
+  (initproc)PyWCSMap_init,      /* tp_init */
   0,                            /* tp_alloc */
   PyWCSMap_new,                /* tp_new */
 };
