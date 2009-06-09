@@ -945,7 +945,7 @@ do_kernel_square(struct driz_param_t* p,
   *mapping_4_ptr(p, yi, x1+1, 3) = -dh;
 
   /* Transform onto the output grid */
-  if (0 && last_x1 <= x1 && last_x2 >= x2) {
+  if (last_x1 <= x1 && last_x2 >= x2) {
     memcpy(mapping_4_ptr(p, xo, x1, 3), mapping_4_ptr(p, xo, x1, 0), n * sizeof(double));
     memcpy(mapping_4_ptr(p, yo, x1, 3), mapping_4_ptr(p, yo, x1, 0), n * sizeof(double));
     memcpy(mapping_4_ptr(p, xo, x1, 2), mapping_4_ptr(p, xo, x1, 1), n * sizeof(double));
