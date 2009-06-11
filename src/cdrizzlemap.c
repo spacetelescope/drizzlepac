@@ -364,8 +364,8 @@ default_wcsmap(void* state,
   optr = skyout;
   table = m->table;
 
-#define TABLE_X(x, y) (table[(y)*m->snx*2 + (x)*2])
-#define TABLE_Y(x, y) (table[(y)*m->snx*2 + (x)*2 + 1])
+#define TABLE_X(x, y) (table[((y)*m->snx + (x))*2])
+#define TABLE_Y(x, y) (table[((y)*m->snx + (x))*2 + 1])
 
   for (i = 0; i < n; ++i) {
     x = *iptr++ / m->factor;
