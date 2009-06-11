@@ -377,10 +377,6 @@ default_wcsmap(void* state,
     ixf = 1.0 - xf;
     iyf = 1.0 - yf;
 
-    if (xi > m->snx || yi > m->sny || xi < 0 || yi < 0) {
-      printf("%f %f %d %d %d %d!!!\n", x, y, xi, yi, m->snx, m->sny);
-    }
-
     *optr++ =
       TABLE_X(xi, yi)     * ixf * iyf +
       TABLE_X(xi+1, yi)   * xf * iyf +
@@ -497,7 +493,6 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     driz_error_set_message(error, wcslib_get_error_message(istat));
     goto exit;
   }
-
 #endif
 
   m->input_wcs = input;
