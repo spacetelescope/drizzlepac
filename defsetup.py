@@ -7,7 +7,6 @@ BUILD = 'release'
 
 try:
     import numpy
-    import numpy.numarray as nn
 except ImportError:
     print "Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Multidrizzle requires numpy v 1.0.2 or later.\n"
     raise
@@ -38,7 +37,6 @@ if numpy.__version__ < "1.0.2":
 print "Building C extensions using NUMPY."
 
 numpyinc = numpy.get_include()
-numpynumarrayinc = nn.get_numarray_include_dirs()
 
 pythonlib = sysconfig.get_python_lib(plat_specific=1)
 pythoninc = sysconfig.get_python_inc()
@@ -100,7 +98,7 @@ def getNumpyExtensions():
                      define_macros=define_macros,
                      undef_macros=undef_macros,
                      include_dirs=[pythoninc] + [numpyinc] + cfitsioinc + \
-                         numpynumarrayinc + pywcsincludes,
+                         pywcsincludes,
                      extra_link_args=EXTRA_LINK_ARGS,
                      library_dirs=[cfitsio_lib],
                      libraries=['m', 'cfitsio']
