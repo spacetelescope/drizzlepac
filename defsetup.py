@@ -14,8 +14,15 @@ except ImportError:
 
 # This is the case for building as part of stsci_python
 if os.path.exists('pywcs'):
-    pywcsincludes = [os.path.join('pywcs', 'src'),
-                     os.path.join('pywcs', 'wcslib-4.3', 'C')]
+    pywcsincludes = [os.path.join('pywcs', 'src')]
+    candidates = []
+    for path in os.listdir('pywcs'):
+        if path.startswith('wcslib-4.3'):
+            candidates.append(path)
+    if len(candidates) == 1:
+        pywcsincludes.append(os.path.join('pywcs', candidates[0], 'C'))
+    else:
+        raise SystemExit, "No suitable version of wcslib found in the current distribution of pywcs"
 else:
     try:
         import pywcs
