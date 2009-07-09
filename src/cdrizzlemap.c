@@ -276,7 +276,7 @@ map_value(struct driz_param_t* p,
   return 0;
 }
 
-/* #define WCSMAP_ORIGINAL_SLOW */
+/*#define WCSMAP_ORIGINAL_SLOW */
 
 /*
 
@@ -344,8 +344,8 @@ default_wcsmap(void* state,
   be applied and applying it as appropriate. */
 
 #ifdef WCSMAP_ORIGINAL_SLOW
-  status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
-                      n, xyin, xyin);
+  /*status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
+                      n, xyin, xyin);*/
   /*
   Apply pix2sky() transformation from PyWCS
   */
@@ -477,13 +477,13 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     }
   }
 
-  istat = p4_pix2foc(2, (void *)input->cpdis, table_size / 2, pixcrd, pixcrd);
+  /*istat = p4_pix2foc(2, (void *)input->cpdis, table_size / 2, pixcrd, pixcrd);
 
   if (istat) {
     free(m->table);
     driz_error_set_message(error, wcslib_get_error_message(istat));
     goto exit;
-  }
+  }*/
 
   istat = pipeline_all_pixel2world(input, table_size / 2, 2, pixcrd,
                                    m->table);
