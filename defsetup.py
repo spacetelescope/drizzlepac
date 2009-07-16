@@ -77,7 +77,8 @@ def getNumpyExtensions():
     elif BUILD.lower() == 'profile':
         define_macros.append(('NDEBUG', None))
         undef_macros.append('DEBUG')
-        if not sys.platform.startswith('sun'):
+        if not sys.platform.startswith('sun') and \
+           not sys.platform == 'win32':
             extra_compile_args.extend(["-O3", "-g"])
     elif BUILD.lower() == 'release':
         # Define ECHO as nothing to prevent spurious newlines from

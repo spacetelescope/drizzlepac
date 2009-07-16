@@ -339,20 +339,20 @@ default_wcsmap(void* state,
       xyin[2*i+1] = yin[i];
   }
 
-  wcsprm_python2c(m->input_wcs->wcs);
   /* Start by checking to see whether DET2IM correction needs to
   be applied and applying it as appropriate. */
 
 #ifdef WCSMAP_ORIGINAL_SLOW
-  /*status = p4_pix2foc(2, (void *)m->input_wcs->cpdis,
-                      n, xyin, xyin);*/
   /*
   Apply pix2sky() transformation from PyWCS
   */
 
+  wcsprm_python2c(m->input_wcs->wcs);
   status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
   if (status)
     return 1;
+  wcsprm_c2python(m->input_wcs->wcs);
+
 #else
   /* TODO: Apply only distortion and sip in this way, and the rest using the lookup table */
   /* status = pipeline_pix2foc(m->input_wcs, n, 2, xyin, xyin); */
@@ -395,16 +395,12 @@ default_wcsmap(void* state,
 
 #endif
 
-  wcsprm_c2python(m->input_wcs->wcs);
-
   /*
   Finally, call wcs_sky2pix() for the output object.
   */
   wcsprm_python2c(m->output_wcs->wcs);
-
   status = wcss2p(m->output_wcs->wcs, n, 2,
                   skyout, phi, theta, imgcrd, xyout, stat);
-
   wcsprm_c2python(m->output_wcs->wcs);
 
   /*
@@ -476,14 +472,6 @@ default_wcsmap_init(struct wcsmap_param_t* m,
       *ptr++ = (double)j * factor;
     }
   }
-
-  /*istat = p4_pix2foc(2, (void *)input->cpdis, table_size / 2, pixcrd, pixcrd);
-
-  if (istat) {
-    free(m->table);
-    driz_error_set_message(error, wcslib_get_error_message(istat));
-    goto exit;
-  }*/
 
   istat = pipeline_all_pixel2world(input, table_size / 2, 2, pixcrd,
                                    m->table);
