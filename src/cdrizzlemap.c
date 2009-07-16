@@ -473,8 +473,10 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     }
   }
 
+  wcsprm_python2c(m->input_wcs->wcs);
   istat = pipeline_all_pixel2world(input, table_size / 2, 2, pixcrd,
                                    m->table);
+  wcsprm_c2python(m->input_wcs->wcs);
 
   if (istat) {
     free(m->table);
