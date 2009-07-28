@@ -221,7 +221,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 """
                 print 'Using default C-based coordinate transformation...'
                 wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
-                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs)
+                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs,int(chip.size1),int(chip.size2),2.0)
                 pix_ratio = output_wcs.pscale/chip.wcs.pscale
             else:
                 #
