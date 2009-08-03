@@ -1,10 +1,12 @@
-import sys,types,os
+import sys,types,os,copy
 import util
 from util import _ptime
 import numpy as np
 import pyfits
 from pytools import fileutil
 import outputimage,wcs_functions,processInput,util
+from stwcs import distortion
+
 try:
     import cdriz as arrdriz
 except ImportError:
@@ -281,6 +283,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     else:
         fillval = str(paramDict['fillval'])
 
+    # Set sub-sampling rate for drizzling
+    subsamp = 2.0
+    print '  **Using sub-sampling value of ',subsamp,' for kernel ',paramDict['kernel']
+    
     # Check for existance of output file.
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
         print 'Removing previous output product...'
@@ -484,6 +490,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 _expin = 1.0
             else:
                 _expin = chip._exptime
+
             _shift_fr = 'output'
             _shift_un = 'output'
             _uniqid = _numchips + 1
@@ -513,6 +520,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             if (_sciext.data.dtype > np.float32):
                 #WARNING: Input array recast as a float32 array
                 _sciext.data = _sciext.data.astype(np.float32)
+
+            # compute the undistorted 'natural' plate scale for this chip
+            wcslin = distortion.utils.undistortWCS(chip.wcs)
 
             if wcsmap is None and arrdriz is not None:
                 """
@@ -568,9 +578,11 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 pix_ratio = _scale
                 """
                 print 'Using default C-based coordinate transformation...'
-                wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
-                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs,int(chip.size1),int(chip.size2),2.0)
-                pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                outwcs = copy.deepcopy(output_wcs)
+                wcs_functions.applyShift_to_WCS(img,chip.wcs,outwcs)
+                mapping = arrdriz.DefaultWCSMapping(chip.wcs,outwcs,int(chip.size1),int(chip.size2),subsamp)
+                
+                pix_ratio = outwcs.pscale/wcslin.pscale
             else:
                 #
                 ##Using the Python class for the WCS-based transformation
@@ -580,7 +592,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
                 mapping = wmap.forward
-                pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                pix_ratio = output_wcs.pscale/wcslin.pscale
 
             #print 'Starting tdriz at: ',_ptime()
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,

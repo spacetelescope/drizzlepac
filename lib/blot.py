@@ -4,6 +4,8 @@ from util import _ptime
 import numpy as np
 from pytools import fileutil
 import outputimage,wcs_functions,processInput,util
+from stwcs import distortion
+
 try:
     import cdriz as arrdriz
 except ImportError:
@@ -196,6 +198,9 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             xmax = img.outputValues['outnx']
             ymin = 1
             ymax = img.outputValues['outny']
+            # compute the undistorted 'natural' plate scale for this chip
+            wcslin = distortion.utils.undistortWCS(chip.wcs)
+
             if wcsmap is None and arrdriz is not None:
                 """
                 # Use default C mapping function
@@ -222,7 +227,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 print 'Using default C-based coordinate transformation...'
                 wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
                 mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs,int(chip.size1),int(chip.size2),2.0)
-                pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                pix_ratio = output_wcs.pscale/wcslin.pscale
             else:
                 #
                 ##Using the Python class for the WCS-based transformation 
@@ -232,7 +237,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
                 mapping = wmap.forward                
-                pix_ratio = output_wcs.pscale/chip.wcs.pscale
+                pix_ratio = output_wcs.pscale/wcslin.pscale
                 
             t = arrdriz.tblot(
                 _insci, _outsci,xmin,xmax,ymin,ymax,
