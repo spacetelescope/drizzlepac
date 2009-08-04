@@ -105,6 +105,8 @@ def applyShift_to_WCS(imageobj,input,output):
     This function modifies the output WCS in-place.
     """
     shift,rot,scale = applyHeaderlet(imageobj,input,output,extname=WCSEXTN_NAME)
+
+    
     if shift is not None:
         print '    Correcting WCSMap input WCS for shifts...'
         # Record the shift applied with the WCS, so that we can tell it
@@ -418,7 +420,7 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         single_pars['dec'] = configObj['dec']
         #single_pars.update(configObj['STEP 3: DRIZZLE SEPARATE IMAGES'])
         single_keys = {'outnx':'driz_sep_outnx','outny':'driz_sep_outny',
-                        'rot':'driz_sep_rot', 'scale':'driz_sep_scale'}
+                        'orient':'driz_sep_rot', 'scale':'driz_sep_scale'}
         for key in single_keys.keys():
             single_pars[key] = configObj['STEP 3: DRIZZLE SEPARATE IMAGES'][single_keys[key]]
         ### Create single_wcs instance based on user parameters
@@ -430,10 +432,11 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         final_pars = DEFAULT_WCS_PARS.copy()
         final_pars['ra'] = configObj['ra']
         final_pars['dec'] = configObj['dec']
-        final_keys = {'outnx':'final_outnx','outny':'final_outny','rot':'final_rot', 'scale':'final_scale'}
+        final_keys = {'outnx':'final_outnx','outny':'final_outny','orient':'final_rot', 'scale':'final_scale'}
         #final_pars.update(configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'])
         for key in final_keys.keys():
             final_pars[key] = configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'][final_keys[key]]
+
         ### Create single_wcs instance based on user parameters
         outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
         outwcs.wcs = outwcs.final_wcs.copy()
@@ -498,7 +501,7 @@ def mergeWCS(default_wcs,user_pars):
         if upar is not None:
             merge = True
             break
-        
+    
     if not merge:
         return outwcs
 
