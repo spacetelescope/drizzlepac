@@ -303,30 +303,18 @@ class SBCInputImage (ACSInputImage):
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
       
-        self._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                 instrpars['expkeyword'])
-
-        if self._exptime == None:
-            print 'ERROR: invalid instrument task parameter'
-            raise ValueError
-
         # We need to treat Read Noise and Gain as a special case since it is 
         # not populated in the SBC primary header for the MAMA
-        if (instrpars['rnkeyword'] != None):
-            self._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                     instrpars['rnkeyword'])                                                 
-        else:
-            self._rdnoise = None
-        if (instrpars['gnkeyword'] != None):
-            self._gain = self.getInstrParameter(instrpars['gain'], pri_header,
+        for chip in self.returnAllChips(extname=self.scienceExt): 
+            chip._gain      = self.getInstrParameter("", pri_header,
                                                      instrpars['gnkeyword'])
-        else:
-            self._gain = None
- 
-
-        if self._exptime == None:
-            print 'ERROR: invalid instrument task parameter'
-            raise ValueError
+            chip._rdnoise   = self.getInstrParameter("", pri_header,
+                                                     instrpars['rnkeyword'])
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+                                                     instrpars['expkeyword'])
+            if chip._exptime == None:
+                print 'ERROR: invalid instrument task parameter'
+                raise ValueError
 
         # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well                
