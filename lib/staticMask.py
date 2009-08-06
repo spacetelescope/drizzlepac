@@ -136,9 +136,13 @@ class staticMask:
 
         # the signature is created in the imageObject class
         
-        self.static_sig=4. #just a reasonable number
         self.masklist={}   
         self.step_name=util.getSectionName(configObj,_step_num_)    
+        if configObj is not None:
+            self.static_sig = configObj[self.step_name]['static_sig']
+        else:
+            self.static_sig = 4. # define a reasonable number
+            print 'WARNING:  Using default of 4. for static mask sigma.'
                                
             
     def addMember(self, imagePtr=None):
@@ -171,7 +175,7 @@ class staticMask:
             rms  = stats.stddev
             del stats
             
-            print('  mode = %9f;   rms = %7f')  %  (mode,rms)
+            print('  mode = %9f;   rms = %7f;   static_sig = %0.2f')  %  (mode,rms,self.static_sig)
 
             sky_rms_diff = mode - (self.static_sig*rms)
             np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage, sky_rms_diff)),self.masklist[signature])

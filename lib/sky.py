@@ -126,6 +126,13 @@ def subtractSky(imageObjList,configObj,saveFile=False):
     if not util.getConfigObjPar(configObj,'skysub'):
         print 'Sky Subtraction step not performed.'
         return
+    
+    #General values to use    
+    step_name=util.getSectionName(configObj,_step_num_)  
+    
+    #get the sub-dictionary of values for this step alone and print them out
+    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
+    util.printParams(configObj[step_name])        
 
     for image in imageObjList:
         print "Working on sky for: ",image._filename
@@ -152,8 +159,6 @@ def _skySub(configObj=None,imageSet=None,saveFile=False):
     #get the sub-dictionary of values for this step alone
     paramDict=configObj[step_name]         
 
-    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
-    util.printParams(paramDict)        
              
     _skyValue=0.0    #this will be the sky value computed for the exposure                                                                  
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted

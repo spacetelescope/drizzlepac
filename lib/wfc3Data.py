@@ -8,6 +8,7 @@ from pytools import fileutil
 from nictools import readTDD
 from imageObject import imageObject
 from staticMask import constructFilename
+import numpy as np
 
 class WFC3InputImage(imageObject):
 
@@ -119,13 +120,24 @@ class WFC3UVISInputImage(WFC3InputImage):
         """
         pri_header = self._image[0].header
 
+        if len(instrpars) == 0:
+            instrpars['proc_unit']='native'
+            instrpars['gain']=''
+            instrpars['rdnoise']=''
+            instrpars['exptime']=''
+            instrpars['gnkeyword']=''
+            instrpars['rnkeyword']=''
+            instrpars['expkeyword']=''
+
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
-  
+
+        self.proc_unit = instrpars['proc_unit']
+
         for chip in self.returnAllChips(extname=self.scienceExt): 
 
             chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
@@ -212,9 +224,22 @@ class WFC3IRInputImage(WFC3InputImage):
         """WF3 IR data come out in electrons, and I imagine  the 
          photometry keywords will be calculated as such, so no image
          manipulation needs be done between native and electrons """
+         # Image information 
+        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+
         for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._effGain = 1.
-         
+            chip._effGain = 1.         
+
+            # Multiply the values of the sci extension pixels by the gain. 
+            print "Converting %s from ELECTRONS/S to ELECTRONS"%(self._filename) 
+
+            # If the exptime is 0 the science image will be zeroed out. 
+            np.multiply(_handle[self.scienceExt,chip._chip].data,chip._exptime,_handle[self.scienceExt,chip._chip].data)
+            chip.data=_handle[self.scienceExt,chip._chip].data
+
+        _handle.close()
+            
+        self._effGain=1.0
 
     def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
@@ -222,12 +247,23 @@ class WFC3IRInputImage(WFC3InputImage):
         """
         pri_header = self._image[0].header
 
+        if len(instrpars) == 0:
+            instrpars['proc_unit']='native'
+            instrpars['gain']=''
+            instrpars['rdnoise']=''
+            instrpars['exptime']=''
+            instrpars['gnkeyword']=''
+            instrpars['rnkeyword']=''
+            instrpars['expkeyword']=''
+
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ATODGNA,ATODGNB,ATODGNC,ATODGND'
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = 'READNSEA,READNSEB,READNSEC,READNSED'
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
+
+        self.proc_unit = instrpars['proc_unit']
   
         for chip in self.returnAllChips(extname=self.scienceExt): 
 
@@ -237,7 +273,7 @@ class WFC3IRInputImage(WFC3InputImage):
                                                      instrpars['rnkeyword'])
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
-            chip._effGain=chip._gain
+            chip._effGain= 1
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
@@ -251,7 +287,8 @@ class WFC3IRInputImage(WFC3InputImage):
 
         # Convert the science data to electrons if specified by the user.  Each
         # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
+        if self.proc_unit:# == "electrons": 
+            #Convert from ELECTRONS/S to ELECTRONS
             self.doUnitConversions()
 
     def getdarkimg(self):
