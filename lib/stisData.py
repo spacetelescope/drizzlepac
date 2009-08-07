@@ -98,14 +98,14 @@ class STISInputImage (imageObject):
          # Image information 
         _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
 
-        for det in range(1,self._numchips,1):
+        for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
             
             if chip._gain != None:
 
                 # Multiply the values of the sci extension pixels by the gain. 
-                print "Converting %s from COUNTS to ELECTRONS"%(self._filename) 
+                print "Converting %s[%s,%d] from COUNTS to ELECTRONS"%(self._filename,self.scienceExt,det) 
 
                 # If the exptime is 0 the science image will be zeroed out. 
                 np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)

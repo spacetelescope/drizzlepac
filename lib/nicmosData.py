@@ -57,30 +57,29 @@ class NICMOSInputImage(imageObject):
         the data inside the chips already in memory is altered as well
         
         """
-        
 
          # Image information 
         _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
 
-        for det in range(1,self._numchips,1):
+        for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
             
             if chip._gain != None:
 
                 # Multiply the values of the sci extension pixels by the gain. 
-                print "Converting %s from COUNTS to ELECTRONS"%(self._filename) 
+                print "Converting %s[%s,%d] from COUNTS to ELECTRONS"%(self._filename,self.scienceExt,det) 
 
                 # If the exptime is 0 the science image will be zeroed out. 
                 np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
-                chip.data=_handle[det].data
+                chip.data=_handle[self.scienceExt,det].data
 
                 # Set the BUNIT keyword to 'electrons'
-                _handle[det].header.update('BUNIT','ELECTRONS')
+                _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
 
                 # Update the PHOTFLAM value
-                photflam = _handle[det].header['PHOTFLAM']
-                _handle[det].header.update('PHOTFLAM',(photflam/chip._gain))
+                photflam = _handle[self.scienceExt,det].header['PHOTFLAM']
+                _handle[self.scienceExt,det].header.update('PHOTFLAM',(photflam/chip._gain))
                 
                 chip._effGain = 1.
             
@@ -270,12 +269,6 @@ class NIC1InputImage(NICMOSInputImage):
             self._assignSignature(chip.extnum) #this is used in the static mask, static mask name also defined here, must be done after outputNames
         
          
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
-
-        
         # Convert the science data to electrons if specified by the user.  Each
         # instrument class will need to define its own version of doUnitConversions
         if self.proc_unit == "electrons":

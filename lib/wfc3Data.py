@@ -233,9 +233,9 @@ class WFC3IRInputImage(WFC3InputImage):
             # Multiply the values of the sci extension pixels by the gain. 
             print "Converting %s[%s,%d] from ELECTRONS/S to ELECTRONS"%(self._filename,self.scienceExt,chip._chip) 
             # Set the BUNIT keyword to 'electrons'
-            _handle[self.scienceExt,chip._chip].header.update('BUNIT','ELECTRONS')
             chip._bunit = 'ELECTRONS'
             chip.header.update('BUNIT','ELECTRONS')
+            _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
             
             # If the exptime is 0 the science image will be zeroed out. 
             np.multiply(_handle[self.scienceExt,chip._chip].data,chip._exptime,_handle[self.scienceExt,chip._chip].data)
