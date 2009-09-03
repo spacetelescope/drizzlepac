@@ -420,19 +420,19 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         single_pars['dec'] = configObj['dec']
         #single_pars.update(configObj['STEP 3: DRIZZLE SEPARATE IMAGES'])
         single_keys = {'outnx':'driz_sep_outnx','outny':'driz_sep_outny',
-                        'orient':'driz_sep_rot', 'scale':'driz_sep_scale'}
+                        'orient':'driz_sep_rot', 'psize':'driz_sep_scale'}
         for key in single_keys.keys():
             single_pars[key] = configObj['STEP 3: DRIZZLE SEPARATE IMAGES'][single_keys[key]]
+
         ### Create single_wcs instance based on user parameters
         outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
-        
-
+            
     final_step = util.getSectionName(configObj,7)
     if final_step and configObj[final_step]['driz_combine']: 
         final_pars = DEFAULT_WCS_PARS.copy()
         final_pars['ra'] = configObj['ra']
         final_pars['dec'] = configObj['dec']
-        final_keys = {'outnx':'final_outnx','outny':'final_outny','orient':'final_rot', 'scale':'final_scale'}
+        final_keys = {'outnx':'final_outnx','outny':'final_outny','orient':'final_rot', 'psize':'final_scale'}
         #final_pars.update(configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'])
         for key in final_keys.keys():
             final_pars[key] = configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'][final_keys[key]]
@@ -444,6 +444,7 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     # Apply user settings to create custom output_wcs instances 
     # for each drizzle step
     updateImageWCS(imageObjectList,outwcs)
+    
     
     return outwcs
 
@@ -493,8 +494,8 @@ def mergeWCS(default_wcs,user_pars):
     #
     # Start by making a copy of the input WCS...
     #    
-    outwcs = default_wcs.copy()    
-
+    outwcs = default_wcs.deepcopy()    
+    
     # If there are no user set parameters, just return a copy of the original WCS
     merge = False
     for upar in user_pars.values():
@@ -517,7 +518,7 @@ def mergeWCS(default_wcs,user_pars):
     else:
         _ratio = outwcs.pscale / user_pars['psize']
         _psize = user_pars['psize']
-
+    
     if (not user_pars.has_key('orient')) or user_pars['orient'] == None:
         _orient = None
         _delta_rot = 0.
@@ -557,7 +558,7 @@ def mergeWCS(default_wcs,user_pars):
     outwcs.wcs.crpix =_crpix
     if _crval is not None:
         outwcs.wcs.crval = _crval
-
+        
     return outwcs
 
 def convertWCS(inwcs,drizwcs):
