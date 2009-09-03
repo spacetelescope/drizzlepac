@@ -20,7 +20,7 @@ import wcs_functions
 __taskname__ = "betadrizzle"
 
 # Begin Version Information -------------------------------------------
-__version__ = '4.0.1dev8260'
+__version__ = '4.0.1dev8265'
 # End Version Information ---------------------------------------------
 # Revision based version info
 try:
