@@ -47,6 +47,7 @@ get_spitzer_coefficients(fitsfile* input_data_file,
   int nc, n, m;
   char key[16];
   int status = 0;
+  double pamscale, rscale, cd11, cd12, cd21, cd22;
 
   assert(input_data_file);
   assert(coeff_type);
@@ -104,16 +105,47 @@ get_spitzer_coefficients(fitsfile* input_data_file,
     return 1;
   }
 
+  /* Read in the photometric scaling parameter */
+  if (fits_read_key(input_data_file, TDOUBLE, "PAMSCALE", &pamscale, NULL, &status)) {
+      &status = 0;
+      if (fits_read_key(input_data_file, TDOUBLE, "IDCSCALE", &pamscale, NULL, &status)) {
+        driz_error_set_message(error, "Could not read PAMSCALE or IDCSCALE record");
+        return 1;
+      }
+  }
+  /* Read in the CD matrix values to compute the area of the ref pixel*/ 
+    if (fits_read_key(input_data_file, TDOUBLE, "CD1_1", &cd11, NULL, &status)) {
+    driz_error_set_message(error, "Could not read CD1_1 record");
+    return 1;
+  }
+    if (fits_read_key(input_data_file, TDOUBLE, "CD1_2", &cd12, NULL, &status)) {
+    driz_error_set_message(error, "Could not read CD1_2 record");
+    return 1;
+  }
+    if (fits_read_key(input_data_file, TDOUBLE, "CD2_1", &cd21, NULL, &status)) {
+    driz_error_set_message(error, "Could not read CD2_1 record");
+    return 1;
+  }
+    if (fits_read_key(input_data_file, TDOUBLE, "CD2_2", &cd22, NULL, &status)) {
+    driz_error_set_message(error, "Could not read CD2_2 record");
+    return 1;
+  }
+  rscale = sqrt(abs(cd11*cd22 - cd12*cd21))*3600;
+  
   /* Set the order to the higher of the two */
   order = MAX(x_order, y_order);
 
   /* Offset to show we have an explicit refpix */
   *coeff_type = MAX_COEFFS + order;
-  *num_coeffs = (order + 1) * (order + 2) / 2 + 1;
+  /* Add an additional 1 to num_coeffs to accomodate photometric scaling terms */
+  *num_coeffs = (order + 1) * (order + 2) / 2 + 1 + 1;
   if (*num_coeffs > MAX_COEFFS) {
     driz_error_set_message(error, "Too many coefficients");
     return 1;
   }
+  /* Record photometric scaling terms */
+  x_coeffs[*num_coeffs-2] = rscale;
+  y_coeffs[*num_coeffs-2] = pamscale;
 
   /* And set the refpix to the CRPIXs */
   x_coeffs[*num_coeffs-1] = crpix1;

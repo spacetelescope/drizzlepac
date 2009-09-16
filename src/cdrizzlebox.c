@@ -1128,6 +1128,18 @@ dobox(struct driz_param_t* p, const integer_t ystart,
 
   /* Recalculate the area scaling factor */
   p->scale2 = p->scale * p->scale;
+  
+  if (p->coeff_type > 100) {
+      norder = p->coeff_type - 100;
+  } else {
+      norder = p->coeff_type; 
+  }
+  ncoeff = (norder+1)*(norder+2)/2 + 1;
+  
+  if (p->num_coeffs > ncoeff) {
+      pratio = p->x_coeffs[ncoeff-1]/p->y_coeffs[ncoeff-1];
+      p->scale2 *= pratio*pratio;
+  }
 
   /* Half pixfrac on output */
   assert(p->scale != 0.0);
