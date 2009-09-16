@@ -5,7 +5,7 @@ each input filename
 
 """
 
-import sys,copy,os
+import sys,copy,os,re
 from pytools import fileutil
 import pyfits
 import util,wcs_functions
@@ -666,6 +666,7 @@ class imageObject(baseImageObject):
                 sci_chip._gain = 1.0     # calibrated gain value
                 sci_chip._rdnoise = 1.0  # calibrated readnoise
                 sci_chip._exptime = 1.0
+                sci_chip._effGain = 1.0
                 
                 # Keep track of the computed sky value for this chip
                 sci_chip.computedSky = 0.0
@@ -718,7 +719,21 @@ class WCSObject(baseImageObject):
                 
         self._image = pyfits.HDUList()
         self._image.append(pyfits.PrimaryHDU())
-        self._rootname = filename[:filename.find(suffix)]
+        
+        # Build rootname, but guard against the rootname being given without
+        # the '_drz.fits' suffix
+        patt = re.compile(r"_drz\w*.fits$")
+        m = patt.search(filename)
+        if m:
+            self._rootname = filename[:m.start()]
+        else:
+            # Guard against having .fits in the rootname
+            indx = filename.find('.fits')
+            if indx>0:
+                self._rootname = filename[:indx]
+            else:
+                self._rootname = filename
+            
         self.outputNames = self._setOutputNames(self._rootname)
         self.nimages = 1
     
