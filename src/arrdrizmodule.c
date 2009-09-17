@@ -783,7 +783,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
       PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
     return NULL;
   } else {
-    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.8 (20th May 2009)", nmiss, nskip);
+    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.8 (17th Sep 2009)", nmiss, nskip);
   }
 }
 
