@@ -13,7 +13,6 @@ import pywcs
 from stwcs import distortion
 from stwcs.distortion import coeff_converter,utils
 
-
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,
                      'outnx':None,'outny':None,'crpix1':None,'crpix2':None,
                      'crval1':None,'crval2':None}
@@ -185,7 +184,7 @@ def ddtohms(xsky,ysky,verbose=False):
     xskym = (xskyh - np.floor(xskyh)) * 60.
     xskys = (xskym - np.floor(xskym)) * 60.
 
-    yskym = (np.abs(ysky) - np.floor(N.abs(ysky))) * 60.
+    yskym = (np.abs(ysky) - np.floor(np.abs(ysky))) * 60.
     yskys = (yskym - np.floor(yskym)) * 60.
 
     if isinstance(xskyh,np.ndarray):
@@ -704,6 +703,140 @@ def fitlin(imgarr,refarr):
 
     _xt = _xoorg - _a*_xorg+_b*_yorg
     _yt = _yoorg - _d*_xorg-_c*_yorg
-
+    
     return [_a,_b,_xt],[_c,_d,_yt]
+
+
+def fitlin_rscale(xy,uv,verbose=False):
+    """ Performs a linear, orthogonal fit between matched
+        lists of positions 'xy' (input) and 'uv' (output).
+        
+        Output: (same as for fit_arrays_general)
+    """
+    mu = uv[:,0].mean()
+    mv = uv[:,1].mean()
+    mx = xy[:,0].mean()
+    my = xy[:,1].mean()
+
+    u = uv[:,0] - mu
+    v = uv[:,1] - mv
+    x = xy[:,0] - mx
+    y = xy[:,1] - my
+    
+    Sxx = np.dot(x,x)
+    Syy = np.dot(y,y)
+    Sux = np.dot(u,x)
+    Suy = np.dot(u,y)
+    Svx = np.dot(v,x)
+    Svy = np.dot(v,y)
+    
+    # implement parity check
+    if (np.dot(Sux,Svy) > 0): 
+        p = 1
+    else:
+        p = -1
+    
+    XX = p*Sux + Svy
+    YY = Suy - p*Svx
+    
+    # derive output values
+    theta_deg = fileutil.RADTODEG(np.arctan2(YY,XX))% 360.0
+    scale = np.sqrt(XX**2 + YY**2) / (Sxx+Syy)
+    shift = (mu-mx,mv-my)
+    if verbose:
+        print 'Linear RSCALE fit: rotation = ',theta_deg,'  scale = ',scale,'  offset = ',shift
+    coeffs = scale * fileutil.buildRotMatrix(-theta_deg)
+
+    P = [coeffs[0,0],coeffs[0,1],shift[0]]
+    Q = [coeffs[1,1],coeffs[1,0],shift[1]]
+    return P,Q
+
+def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
+    """ Perform a clipped fit based on the number of iterations and rejection limit
+        (in sigma) specified by the user. This will more closely replicate the results
+        obtained by 'geomap' using 'maxiter' and 'reject' parameters.
+    """
+    fitting_funcs = {'rscale':fitlin_rscale,'general':fitlin}
+    # Get the fitting function to be used
+    fit_func = fitting_funcs[mode.lower()]
+    # Perform the initial fit
+    P,Q = fit_func(xy,uv)
+    xyc = apply_fitlin(xy,P,Q)
+    
+    # compute residuals from fit for input positions
+    dx = uv[:,0] - xyc[0]
+    dy = uv[:,1] - xyc[1]
+    fit_rms = [dx.std(),dy.std()]
+
+    if nclip > 0:
+        data = xy.copy()
+        outdata = uv.copy()
+
+    numclipped = 0
+    for i in range(nclip):
+        iterclipped = 0
+        xyc = apply_fitlin(data,P,Q)
+        
+        # compute residuals from fit for input positions
+        dx = outdata[:,0] - xyc[0]
+        dy = outdata[:,1] - xyc[1]
+        
+        # find indices of outliers in x and y
+        xout = np.where(np.abs(dx - dx.mean()) > reject*dx.std())
+        yout = np.where(np.abs(dy - dy.mean()) > reject*dy.std())
+        # concatenate those indices and sort them
+        outliers_indx = xout[0].tolist()+yout[0].tolist()
+        outliers_indx.sort()
+        # define the full range of indices for the data points left
+        full_indx = range(data.shape[0])
+        # remove all unique indices specified in outliers from full range
+        for o in outliers_indx:
+            # only remove if it has not been removed already
+            # accounts for the same point being an outlier in both x and y
+            if full_indx.count(o) > 0:
+                full_indx.remove(o)
+            iterclipped += 1
+
+        if iterclipped == 0:
+            break
+
+        numclipped += iterclipped
+        if verbose:
+            print 'Removed a total of ',numclipped,' points through iteration ',i+1
+        # create clipped data 
+        data_iter = np.zeros([len(full_indx),2],dtype=data.dtype)
+        if verbose:
+            print 'Iter #',i+1,' data:',data.shape,data_iter.shape,len(full_indx)
+
+        data_iter[:,0] = data[:,0][full_indx]
+        data_iter[:,1] = data[:,1][full_indx]
+        outdata_iter = np.zeros([len(full_indx),2],dtype=data.dtype)
+        outdata_iter[:,0] = outdata[:,0][full_indx]
+        outdata_iter[:,1] = outdata[:,1][full_indx]
+        
+        # perform the fit again with the clipped data and go to the next iteration
+        data = data_iter
+        outdata = outdata_iter
+        P,Q = fit_func(data,outdata)
+        # compute residuals from fit for input positions
+        xyc = apply_fitlin(data,P,Q)
+        dx = outdata[:,0] - xyc[0]
+        dy = outdata[:,1] - xyc[1]
+        fit_rms = [dx.std(),dy.std()]
+
+    if verbose:
+        print 'Fit clipped ',numclipped,' points over ',nclip,' iterations.'
+    return P,Q,fit_rms
+
+def apply_fitlin(data,P,Q):
+    # start by parsing coefficients into affine matrix and offset
+    fit = np.array([[P[0],P[1]],[Q[1],Q[0]]])
+    xsh = P[2]
+    ysh = Q[2]
+
+    if fit is not None:
+        xy1 = np.dot(data,fit)
+        xy1x = xy1[:,0] + xsh
+        xy1y = xy1[:,1] + ysh
+    return xy1x,xy1y
 
