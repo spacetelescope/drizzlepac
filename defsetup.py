@@ -16,7 +16,7 @@ if os.path.exists('pywcs'):
     pywcsincludes = [os.path.join('pywcs', 'src')]
     candidates = []
     for path in os.listdir('pywcs'):
-        if path.startswith('wcslib-4.3'):
+        if path.startswith('wcslib'):
             candidates.append(path)
     if len(candidates) == 1:
         pywcsincludes.append(os.path.join('pywcs', candidates[0], 'C'))
