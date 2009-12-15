@@ -172,7 +172,12 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             # I think this is saved in the header of the single driz (or can be calculated
             # by pulling the wcs information from the object
             #backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * outPlatescale)
-            backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * skylist[-1] *skylist[-1])
+            if image._image["PRIMARY"].header.has_key("MDRIZSKY"): 
+                mdrizsky = image._image["PRIMARY"].header["MDRIZSKY"]
+            else: 
+                mdrizsky = 0.0
+                image._image["PRIMARY"].header.update('MDRIZSKY',0.0)
+            backgroundValueList.append(mdrizsky * skylist[-1] *skylist[-1])
             
             # Extract the readnoise value for the chip
             sci_chip = image._image[image.scienceExt,1]
