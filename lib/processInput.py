@@ -230,7 +230,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
        ('_asn' in input or '_asc' in input) :
         # Input is an association table
         # Get the input files, and run makewcs on them
-        oldasndict = asnutil.readASNTable(input, prodonly=prodonly)
+        oldasndict = asnutil.readASNTable(input, prodonly=infilesOnly)
         
         if not infilesOnly:
             if not output:
