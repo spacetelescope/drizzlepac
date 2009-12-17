@@ -198,10 +198,8 @@ class WFCInputImage(ACSInputImage):
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
 
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        # Convert the science data to electrons if specified by the user.  
+        self.doUnitConversions()
 
             
 class HRCInputImage (ACSInputImage):
@@ -261,10 +259,8 @@ class HRCInputImage (ACSInputImage):
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
 
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        # Convert the science data to electrons if specified by the user.  
+        self.doUnitConversions()
 
 
 class SBCInputImage (ACSInputImage):

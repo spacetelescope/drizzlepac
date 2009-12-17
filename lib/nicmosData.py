@@ -78,8 +78,8 @@ class NICMOSInputImage(imageObject):
                 _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
 
                 # Update the PHOTFLAM value
-                photflam = _handle[self.scienceExt,det].header['PHOTFLAM']
-                _handle[self.scienceExt,det].header.update('PHOTFLAM',(photflam/chip._gain))
+                photflam = _handle[0].header['PHOTFLAM']
+                _handle[0].header.update('PHOTFLAM',(photflam/chip._gain))
                 
                 chip._effGain = 1.
             
@@ -266,13 +266,11 @@ class NIC1InputImage(NICMOSInputImage):
             chip._darkrate=self._getDarkRate()
             
             chip._effGain = chip._gain
-            self._assignSignature(chip.extnum) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+            self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
         
          
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        # Convert the science data to electrons if specified by the user.  
+        self.doUnitConversions()
 
 
 
@@ -334,13 +332,11 @@ class NIC2InputImage(NICMOSInputImage):
             chip._darkrate=self._getDarkRate()
             
             chip._effGain = chip._gain
-            self._assignSignature(chip.extnum) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+            self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
         
          
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        # Convert the science data to electrons if specified by the user.  
+        self.doUnitConversions()
 
 
     def createHoleMask(self):
@@ -405,12 +401,10 @@ class NIC3InputImage(NICMOSInputImage):
             chip._darkrate=self._getDarkRate()
 
             chip._effGain = chip._gain
-            self._assignSignature(chip.extnum) #this is used in the static mask, static mask name also defined here, must be done after outputNames
+            self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
         
          
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        # Convert the science data to electrons if specified by the user.  
+        self.doUnitConversions()
 
 

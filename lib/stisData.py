@@ -217,12 +217,10 @@ class CCDInputImage(STISInputImage):
             
             chip._effGain = chip._gain
             
-            self._assignSignature(chip.extnum) #this is used in the static mask                     
+            self._assignSignature(chip._chip) #this is used in the static mask                     
 
 
-        # Convert the science data to electrons if specified by the user.  
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        self.doUnitConversions()
 
     
 class NUVInputImage(STISInputImage):
@@ -284,7 +282,7 @@ class NUVInputImage(STISInputImage):
             if usingDefaultGain:
                 chip._gain = self._setMAMADefaultGain()
           
-            self._assignSignature(chip.extnum) #this is used in the static mask                     
+            self._assignSignature(chip._chip) #this is used in the static mask                     
             
 
 
@@ -295,8 +293,7 @@ class NUVInputImage(STISInputImage):
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
         # Convert the science data to electrons if specified by the user.  
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        self.doUnitConversions()
 
    
 
@@ -382,12 +379,11 @@ class FUVInputImage(STISInputImage):
             if usingDefaultGain:
                 chip._gain = self._setMAMADefaultGain()
           
-            self._assignSignature(chip.extnum) #this is used in the static mask                     
+            self._assignSignature(chip._chip) #this is used in the static mask                     
             chip._effGain=chip._gain
 
         # Convert the science data to electrons if specified by the user.  
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        self.doUnitConversions()
 
               
     def getdarkcurrent(self):

@@ -158,12 +158,10 @@ class WFC3UVISInputImage(WFC3InputImage):
             if(chip.extnum  == 2):
                 chip.cte_dir = 1
         
-            self._assignSignature(chip.extnum) #this is used in the static mask                     
+            self._assignSignature(chip._chip) #this is used in the static mask                     
 
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit == "electrons":
-            self.doUnitConversions()
+        # Convert the science data to electrons. 
+        self.doUnitConversions()
 
  
     def getdarkcurrent(self):
@@ -289,11 +287,8 @@ class WFC3IRInputImage(WFC3InputImage):
  
             self._assignSignature(chip.extnum) #this is used in the static mask                     
 
-        # Convert the science data to electrons if specified by the user.  Each
-        # instrument class will need to define its own version of doUnitConversions
-        if self.proc_unit:# == "electrons": 
-            #Convert from ELECTRONS/S to ELECTRONS
-            self.doUnitConversions()
+        #Convert from ELECTRONS/S to ELECTRONS
+        self.doUnitConversions()
 
     def getdarkimg(self):
         """
