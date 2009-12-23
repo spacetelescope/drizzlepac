@@ -21,7 +21,7 @@ class STISInputImage (imageObject):
         self.cr_bits_value = 8192
         self._effGain = 1.
         self._instrument=self._image["PRIMARY"].header["INSTRUME"] #this just shows instrument, not detector, detector asigned by subclass
-        
+        self.native_units='COUNTS'
                 
     def getflat(self):
         """

@@ -22,6 +22,7 @@ class NICMOSInputImage(imageObject):
         # Detector parameters, nic only has 1 detector in each file
         self.full_shape = (256,256)
         self._instrument=self._image['PRIMARY'].header["INSTRUME"]
+        self.native_units = 'COUNTS/S'
          
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0   #no correction for nicmos
@@ -72,7 +73,7 @@ class NICMOSInputImage(imageObject):
 
                 # If the exptime is 0 the science image will be zeroed out. 
                 np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
-                chip.data=_handle[self.scienceExt,det].data
+                chip.data=_handle[self.scienceExt,det].data.copy()
 
                 # Set the BUNIT keyword to 'electrons'
                 _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
@@ -81,7 +82,7 @@ class NICMOSInputImage(imageObject):
                 photflam = _handle[0].header['PHOTFLAM']
                 _handle[0].header.update('PHOTFLAM',(photflam/chip._gain))
                 
-                chip._effGain = 1.
+                chip._effGain = 1.0
             
             else:
                 print "Invalid gain value for data, no conversion done"

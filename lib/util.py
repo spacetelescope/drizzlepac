@@ -7,6 +7,7 @@ import numpy as np
 import pyfits
 from pytools import asnutil,fileutil
 from pytools import teal
+import os
 
 
 __version__ = "0.1.0tng1"
@@ -44,7 +45,12 @@ def findrootname(filename):
             val = num
     return filename[0:val]
 
-
+def removeFileSafely(filename,clobber=True):
+    """ Delete the file specified, but only if it exists and clobber is True
+    """ 
+    if filename is not None and filename.strip() != '':
+        if os.path.exists(filename) and clobber: os.remove(filename)
+    
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated 
         with user-specified values from input_dict.

@@ -20,14 +20,15 @@ import wcs_functions
 __taskname__ = "betadrizzle"
 
 # Begin Version Information -------------------------------------------
-__version__ = '4.0.1dev8493'
-# End Version Information ---------------------------------------------
 # Revision based version info
 try:
     import svn_version
     __svn_version__ = svn_version.__svn_version__
 except:
     __svn_version__ = 'Unable to determine SVN revision'
+
+__version__ = '4.0.1dev8521'
+# End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
@@ -112,7 +113,6 @@ def run(configObj=None,wcsmap=None):
 
     # Call rest of MD steps...
     print 'Finished interpreting configObj...\n'
-   
     #create static masks for each image
     staticMask._staticMask(imgObjList,configObj)
     
@@ -137,6 +137,8 @@ def run(configObj=None,wcsmap=None):
     print '\n[betadrizzle] mdriz is all finished at ',util._ptime(),' !\n'
     
     for image in imgObjList:
+        if configObj['clean']:
+            image.clean()
         image.close()
         
     del imgObjList

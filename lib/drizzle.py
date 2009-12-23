@@ -125,6 +125,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None):
     if configObj[single_step]['driz_separate']:
         paramDict = buildDrizParamDict(configObj)
         paramDict['crbit'] = None
+        paramDict['proc_unit'] = 'electrons'
         # Force 'build' to always be False, so that this step always generates
         # simple FITS files as output for compatibility with 'createMedian'
         paramDict['build'] = False
@@ -144,6 +145,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None):
     if configObj[final_step]['driz_combine']:
         paramDict = buildDrizParamDict(configObj,single=False)
         paramDict['crbit'] = configObj['crbit']
+        paramDict['proc_unit'] = configObj['proc_unit']
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
         # for single-drizzle step when called from the top-level.
@@ -276,6 +278,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Interpret input parameters for use in drizzling
     crbit = paramDict['crbit']
     bits = paramDict['bits']
+    proc_units = paramDict['proc_unit']
 
     # Insure that the fillval parameter gets properly interpreted for use with tdriz
     if paramDict['fillval'] in [None, '']:
@@ -364,6 +367,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     for img in imageObjectList:
         for chip in img.returnAllChips(extname=img.scienceExt):
 
+            native_units = img.native_units
             # Look for sky-subtracted product.
             if os.path.exists(chip.outputNames['outSky']):
                 chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
@@ -525,58 +529,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             wcslin = distortion.utils.undistortWCS(chip.wcs)
 
             if wcsmap is None and arrdriz is not None:
-                """
-                _pxg = np.zeros([2,2],dtype=np.float32)
-                _pyg = np.zeros([2,2],dtype=np.float32)
-                # Use default C mapping function
-                _inwcs = np.zeros([8],dtype=np.float64)
-                _inwcs = wcs_functions.convertWCS(output_wcs.wcs,_inwcs)
-                print 'Default mapping sciext: ',_sciext.data.shape
-                print 'Default mapping outsci: ',_outsci.shape
-
-                indx = chip.outputNames['data'].find('.fits')
-                coeffs_name = chip.outputNames['data'][:indx]+'_coeffs'+str(chip.detnum)+'.dat'
-                #
-                # Need to compute and write out coeffs files for each chip as well.
-                #
-                coeffs = coeff_converter.sip2idc(chip.wcs)
-                coeffs[0] /= chip.wcs.idcscale
-                coeffs[1] /= chip.wcs.idcscale
-
-                wmap = wcsmap(chip.wcs,output_wcs)
-
-
-                abxt,cdyt = wcs_functions.wcsfit(chip.wcs,output_wcs)
-                abxt[2] -= xzero
-                cdyt[2] -= yzero
-
-                _delta_rot = fileutil.RADTODEG(np.arctan2(abxt[1],cdyt[0]))
-                # Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly
-                _scale = 1./np.sqrt(abxt[0]**2 + abxt[1]**2)
-                tddalpha = chip.header['tddalpha']
-                tddbeta = chip.header['tddbeta']
-
-                mapping = arrdriz.DefaultMapping(
-                    _sciext.data.shape[1], _sciext.data.shape[0],
-                    _outsci.shape[1], _outsci.shape[0],
-                    abxt[2], cdyt[2], 'output', 'output',
-                    _delta_rot, _scale, 0.0, 0.0, 1.0, 1.0,
-                    0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
-                    tddalpha, tddbeta)
-
-                # This call does not impose any linear transformation on the
-                # image and only serves as a test case for comparison with WDRIZZLE
-                mapping = arrdriz.DefaultMapping(
-                    _sciext.data.shape[1], _sciext.data.shape[0],
-                    _outsci.shape[1], _outsci.shape[0],
-                    0.5, 0.5, 'output', 'output',
-                    0.000122765270908, 0.999856360905, 0.0, 0.0, 1.0, 1.0,
-                    0.0, 'output', _pxg, _pyg, 'center', coeffs_name, _inwcs,
-                    0.0, 0.0)
-
-                print 'Default Mapping results: ',mapping(np.array([1,4096]),np.array([1,2048]))
-                pix_ratio = _scale
-                """
                 print 'Using default C-based coordinate transformation...'
                 outwcs = copy.deepcopy(output_wcs)
                 wcs_functions.applyShift_to_WCS(img,chip.wcs,outwcs)
@@ -647,6 +599,17 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 else:
                     _expscale = img.outputValues['texptime']
 
+                _gnscale = 1.0
+                
+                # Convert output data from electrons/sec to counts/sec as specified
+                if proc_units.lower() == 'native' and native_units.lower()[:6] == 'counts':
+                    print '[run_driz] converting back to ',native_units,' with gain of ',chip._gain
+                    np.divide(_outsci, chip._gain, _outsci)
+                    _bunit = native_units.lower()
+                    if paramDict['units'] == 'counts': 
+                        indx = _bunit.find('/')
+                        if indx > 0: _bunit = _bunit[:indx]
+                
                 #If output units were set to 'counts', rescale the array in-place
                 if paramDict['units'] == 'counts':
                     np.multiply(_outsci, _expscale, _outsci)

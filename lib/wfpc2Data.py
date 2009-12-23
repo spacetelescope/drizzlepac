@@ -35,6 +35,7 @@ class WFPC2InputImage (imageObject):
 
         # Attribute defining the pixel dimensions of WFPC2 chips.
         self.full_shape = (800,800)
+        self.native_units = "COUNTS"
         
         # Reference Plate Scale used for updates to MDRIZSKY, we should get this from the wcs class
         #self.refplatescale = 0.0996 # arcsec / pixel

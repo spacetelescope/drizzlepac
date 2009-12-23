@@ -209,6 +209,7 @@ class WFC3IRInputImage(WFC3InputImage):
         # define the cosmic ray bits value to use in the dq array
         self.full_shape = (1024,1024)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]     
+        self.native_units = 'ELECTRONS/S'
         
         # Effective gain to be used in the driz_cr step.  Since the
         # WFC3 images have already been converted to electrons the 
@@ -233,7 +234,7 @@ class WFC3IRInputImage(WFC3InputImage):
             # Set the BUNIT keyword to 'electrons'
             chip._bunit = 'ELECTRONS'
             chip.header.update('BUNIT','ELECTRONS')
-            _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
+            _handle[self.scienceExt,chip._chip].header.update('BUNIT','ELECTRONS')
             
             # If the exptime is 0 the science image will be zeroed out. 
             np.multiply(_handle[self.scienceExt,chip._chip].data,chip._exptime,_handle[self.scienceExt,chip._chip].data)

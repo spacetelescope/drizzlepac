@@ -22,6 +22,7 @@ class baseImageObject:
         self.scienceExt= "SCI" # the extension the science image is stored in
         self.maskExt="DQ" #the extension with the mask image in it
         self._filename = filename
+        self.native_units='ELECTRONS'
 
         self._image = None
         self._instrument=None
@@ -91,10 +92,22 @@ class baseImageObject:
             for ext in range(1,self._nextend+1,1):
                 #use the datatype for the extension
                 dtype=self.getNumpyType(self._image[ext].header["BITPIX"])
-                self._image[ext].data = np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet     
+                self._image[ext].data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet     
         else:            
-            self._image.data=np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
+            self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
             
+    def clean(self):
+        """ Deletes intermediate products generated for this imageObject
+        """
+        clean_files = ['blotImage','crcorImage','crmaskImage','finalMask','staticMask','singleDrizMask',
+                        'outSky','outSContext','outSWeight','outSingle','outMedian']
+        print 'Removing intermediate files for ',self._filename
+        # We need to remove the combined products first; namely, median image
+        util.removeFileSafely(self.outputNames['outMedian'])
+        # Now remove chip-specific intermediate files, if any were created.
+        for chip in self.returnAllChips(extname='SCI'):
+            for fname in clean_files:
+                util.removeFileSafely(chip.outputNames[fname])
             
     def getData(self,exten=None):
         """return just the data array from the specified extension 
@@ -114,14 +127,17 @@ class baseImageObject:
             extn = exten.split(',')
             sci_chip = self._image[self.scienceExt,int(extn[1])]
             fname = sci_chip.dqfile
-        
-        if os.path.exists(fname):
-            _image=fileutil.openImage(fname,clobber=False,memmap=0)
-            _data=fileutil.getExtn(_image,extn=exten).data
-            _image.close()
-            del _image
-        else: 
-            _data = None
+        extnum = self._interpretExten(exten)
+        if self._image[extnum].data is None:
+            if os.path.exists(fname):
+                _image=fileutil.openImage(fname,clobber=False,memmap=0)
+                _data=fileutil.getExtn(_image,extn=exten).data
+                _image.close()
+                del _image
+            else: 
+                _data = None
+        else:
+            _data = self._image[extnum].data
         return _data
 
     def getHeader(self,exten=None):
@@ -222,7 +238,7 @@ class baseImageObject:
             if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
                 chiplist.append(self._image[i])
         return chiplist
-        
+
     def _findExtnames(self,extname=None,exclude=None):
         """ This method builds a list of all extensions which have 'EXTNAME'==extname
             and do not include any extensions with 'EXTNAME'==exclude, if any are 

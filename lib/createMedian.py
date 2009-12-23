@@ -94,6 +94,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     nhigh = paramDict['combine_nhigh']
     grow = paramDict['combine_grow']
     maskpt = paramDict['combine_maskpt']
+    proc_units = configObj['proc_unit']
 
     sigma=paramDict["combine_nsigma"]
     sigmaSplit=sigma.split()
@@ -102,7 +103,6 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     
     #print "Checking parameters:"
     #print comb_type,nlow,nhigh,grow,maskpt,nsigma1,nsigma2
-    
     if (paramDict['combine_lthresh'] == None):
         lthresh = None
     else:
@@ -135,6 +135,49 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     
     #for each image object
     for image in imageObjectList:
+        """
+        # Convert the units of the threshold values if necessary
+        native_units = self.assoc.parlist[1]['image'].native_units
+        proc_units = self.assoc.parlist[1]['image'].proc_unit
+        det_gain = self.assoc.parlist[1]['image'].getGain()
+        img_exptime = self.assoc.parlist[1]['image'].getExpTime()
+
+        if (medianpars['lthresh'] == None):
+            lthresh = None
+        else:
+            lthresh = float(medianpars['lthresh'])
+            if proc_units.lower() == 'native':
+                if native_units.lower() == "counts":
+                    lthresh = lthresh * det_gain
+                    if native_units.lower() == "counts/s":
+                        lthresh = lthresh * img_exptime
+
+        if (medianpars['hthresh'] == None):
+            hthresh = None
+        else:
+            hthresh = float(medianpars['hthresh'])
+            if proc_units.lower() == 'native':
+                if native_units.lower() == "counts":
+                    htrhest = hthresh * det_gain
+                    if native_units.lower() == "counts/s":
+                        hthresh = hthresh * img_exptime
+
+        """
+        det_gain = image.getGain(1)
+        img_exptime = image._image['sci',1]._exptime
+        native_units = image.native_units
+        if lthresh is not None:
+            if proc_units.lower() == 'native':
+                if native_units.lower() == "counts":
+                    lthresh = lthresh * det_gain
+                    if native_units.lower() == "counts/s":
+                        lthresh = lthresh * img_exptime
+        if hthresh is not None:
+            if proc_units.lower() == 'native':
+                if native_units.lower() == "counts":
+                    hthresh = hthresh * det_gain
+                    if native_units.lower() == "counts/s":
+                        hthresh = hthresh * img_exptime
             
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
