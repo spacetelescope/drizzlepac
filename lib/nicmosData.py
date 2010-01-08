@@ -68,22 +68,29 @@ class NICMOSInputImage(imageObject):
             
             if chip._gain != None:
 
+                #conversionFactor = (self.getExpTime() * self.getGain())
+                conversionFactor = chip._gain
+                if self.isCountRate():
+                    conversionFactor *= chip._exptime 
+                    counts_str = 'COUNTS/S'
+                else:
+                    counts_str = 'COUNTS'
+
                 # Multiply the values of the sci extension pixels by the gain. 
-                print "Converting %s[%s,%d] from COUNTS to ELECTRONS"%(self._filename,self.scienceExt,det) 
+                print "Converting %s[%s,%d] from %s to ELECTRONS"%(self._filename,self.scienceExt,det,counts_str) 
 
                 # If the exptime is 0 the science image will be zeroed out. 
-                np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
-                chip.data=_handle[self.scienceExt,det].data.copy()
+                np.multiply(_handle[self.scienceExt,det].data,conversionFactor,_handle[self.scienceExt,det].data)
+                #chip.data=_handle[self.scienceExt,det].data.copy()
 
                 # Set the BUNIT keyword to 'electrons'
-                _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
+                chip.header.update('BUNIT','ELECTRONS')
 
                 # Update the PHOTFLAM value
                 photflam = _handle[0].header['PHOTFLAM']
                 _handle[0].header.update('PHOTFLAM',(photflam/chip._gain))
                 
                 chip._effGain = 1.0
-            
             else:
                 print "Invalid gain value for data, no conversion done"
                 return ValueError
@@ -198,12 +205,16 @@ class NICMOSInputImage(imageObject):
         assumes that the keyword 'BUNIT' is in the header of the input
         FITS file.
         """
-        
-        if self.header.has_key('BUNIT'):       
-            if self.header['BUNIT'].find("/") != -1:
-                return True
-        else:
-            return False
+        has_bunit = False
+        if self._image['sci',1].header.has_key('BUNIT') :
+            has_bunit = True
+
+        countrate = False
+        if (self._image[0].header['UNITCORR'].strip() == 'PERFORM') or \
+            (has_bunit and self._image['sci',1].header['bunit'].find('/') != -1) :     
+            countrate = True
+
+        return countrate
         
     
 class NIC1InputImage(NICMOSInputImage):

@@ -603,13 +603,12 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 
                 # Convert output data from electrons/sec to counts/sec as specified
                 if proc_units.lower() == 'native' and native_units.lower()[:6] == 'counts':
-                    print '[run_driz] converting back to ',native_units,' with gain of ',chip._gain
                     np.divide(_outsci, chip._gain, _outsci)
                     _bunit = native_units.lower()
                     if paramDict['units'] == 'counts': 
                         indx = _bunit.find('/')
                         if indx > 0: _bunit = _bunit[:indx]
-                
+
                 #If output units were set to 'counts', rescale the array in-place
                 if paramDict['units'] == 'counts':
                     np.multiply(_outsci, _expscale, _outsci)

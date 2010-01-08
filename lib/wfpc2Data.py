@@ -202,7 +202,6 @@ class WFPC2InputImage (imageObject):
                 # Set the BUNIT keyword to 'electrons'
                 chip._bunit = 'ELECTRONS'
                 chip.header.update('BUNIT','ELECTRONS')
-                _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
                 
                 # Update the PHOTFLAM value
                 photflam = _handle[self.scienceExt,det].header['PHOTFLAM']
