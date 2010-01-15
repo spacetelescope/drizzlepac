@@ -209,12 +209,6 @@ def _getInputImage (input,group=None):
     raise ValueError, msg
 
 #### Remaining functions support process_input()
-def atfile_sci(f):
-    return f.split()[0]
-    
-def atfile_ivm(f):
-    return f.split()[1]    
-
 def processFilenames(input=None,output=None,infilesOnly=False):
     """Process the input string which contains the input file information and 
        return a filelist,output
@@ -247,11 +241,11 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         line = f.readline()
         f.close()
         # Parse the @-file with irafglob to extract the input filename
-        filelist = irafglob.irafglob(input, atfile=atfile_sci)
+        filelist = irafglob.irafglob(input, atfile=util.atfile_sci)
         # If there is a second column...
         if len(line.split()) == 2:
             # ...parse out the names of the IVM files as well 
-            ivmlist = irafglob.irafglob(input, atfile=atfile_ivm)        
+            ivmlist = irafglob.irafglob(input, atfile=util.atfile_ivm)        
     else:
         #input is a string or a python list
         try:
@@ -277,7 +271,11 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     
     newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,workinplace=workinplace)
     
-    if not newfilelist:
+    # check WFPC2 data to convert the DGEOFILE into D2IMFILEs for each image
+    # This does not change the filelist itself, only the files specified in the list
+    checkWFPC2Dgeo(newfilelist)
+
+    if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output 
     
@@ -500,6 +498,76 @@ def buildEmptyDRZ(input, output):
     # Write out the empty DRZ file
     fitsobj.writeto(output)
     return
+
+#### Code to convert WFPC2 DGEOFILE into D2IMFILE
+def checkWFPC2Dgeo(filelist):
+    """ Converts DGEOFILEs for all WFPC2 images into D2IMFILEs.
+    """
+    for inputfile in filelist:
+        if (fileutil.getKeyword(inputfile,'instrume') == 'WFPC2'):
+            d2imfile = update_wfpc2_d2geofile(inputfile)
+    
+def update_wfpc2_d2geofile(filename,fhdu=None):
+    """ Creates a D2IMFILE from the DGEOFILE for a WFPC2 image (input),
+        and modifies the header to reflect the new usage.
+    """
+    close_fhdu = False
+    if fhdu is None:
+        fhdu = fileutil.openImage(filename,mode='update')
+        close_fhdu = True
+        
+    dgeofile = fhdu['PRIMARY'].header.get('DGEOFILE',None)
+    if dgeofile is not None:
+        print 'Converting DGEOFILE ',dgeofile,' into D2IMFILE...'
+        rootname = filename[:filename.find('.fits')]
+        d2imfile = convert_dgeo_to_d2im(dgeofile,rootname)
+        fhdu['PRIMARY'].header.update('ODGEOFIL',dgeofile)
+        fhdu['PRIMARY'].header.update('DGEOFILE','N/A')
+        fhdu['PRIMARY'].header.update('D2IMFILE',d2imfile)
+
+    # Only close the file handle if opened in this function
+    if close_fhdu:
+        fhdu.close()
+    
+    # return the d2imfile name so that calling routine can keep
+    # track of the new file created and delete it later if necessary
+    # (multidrizzle clean=True mode of operation)
+    return d2imfile        
+
+def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
+    """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
+    """
+    dgeo = fileutil.openImage(dgeofile)
+    outname = output+'_d2im.fits'
+
+    util.removeFileSafely(outname)
+    
+    scihdu = pyfits.ImageHDU(data=dgeo['dy',1].data[:,0])
+    dgeo.close()
+    # add required keywords for D2IM header
+    scihdu.header.update('EXTNAME','DY',comment='Extension name')
+    scihdu.header.update('EXTVER',1,comment='Extension version')
+    pyfits_str = 'PYFITS Version '+str(pyfits.__version__)
+    scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
+    scihdu.header.update('INHERIT',False,comment='Inherits global header')
+
+    dnow=pyfits.datetime.datetime.now()
+    scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
+
+    scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
+    scihdu.header.update('CDELT1',0,comment='Grid step size in first coordinate')
+    scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
+    scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
+    scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
+    scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
+
+    d2imhdu = pyfits.HDUList()
+    d2imhdu.append(pyfits.PrimaryHDU())
+    d2imhdu.append(scihdu)
+    d2imhdu.writeto(outname)
+    d2imhdu.close()
+
+    return outname
 
 def _setDefaults(input_dict={}):
     """ Define full set of default values for unit-testing this module."""

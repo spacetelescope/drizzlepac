@@ -220,9 +220,7 @@ def _skySub(configObj=None,imageSet=None,saveFile=False):
             _skyValue= _computeSky(image, paramDict, memmap=0)
             #scale the sky value by the area on sky
             pscale=imageSet[myext].wcs.idcscale
-            print 'pixel area on sky=',pscale
             _scaledSky=_skyValue / (pscale**2)
-            print 'scaledSky=',_scaledSky
             #_skyValue=_scaledSky
             minSky.append(_scaledSky)
             

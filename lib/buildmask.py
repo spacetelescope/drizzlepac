@@ -217,7 +217,6 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             maskarr = _xarr * _yarr
 
             if binned !=1:
-                print 'in buildmask', binned
                 bmaskarr = maskarr[::2,::2]
                 bmaskarr *= maskarr[1::2,::2]
                 bmaskarr *= maskarr[::2,1::2]
@@ -243,6 +242,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
         print 'Copying ',_mask,'to ',maskname,' as input mask file.'
         # Now, copy template mask file to output file, if necessary
         fileutil.copyFile(_mask,maskname,replace=True)
+        os.remove(_mask)
     elif bitvalue == None:
         # If bitvalue was not set, then do not use anything but shadow mask
         fileutil.copyFile(_mask,maskname,replace=True)

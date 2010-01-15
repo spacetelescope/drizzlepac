@@ -100,14 +100,15 @@ class baseImageObject:
         """ Deletes intermediate products generated for this imageObject
         """
         clean_files = ['blotImage','crcorImage','crmaskImage','finalMask','staticMask','singleDrizMask',
-                        'outSky','outSContext','outSWeight','outSingle','outMedian']
+                        'outSky','outSContext','outSWeight','outSingle','outMedian','d2imfile','dqmask']
         print 'Removing intermediate files for ',self._filename
         # We need to remove the combined products first; namely, median image
         util.removeFileSafely(self.outputNames['outMedian'])
         # Now remove chip-specific intermediate files, if any were created.
         for chip in self.returnAllChips(extname='SCI'):
             for fname in clean_files:
-                util.removeFileSafely(chip.outputNames[fname])
+                if chip.outputNames.has_key(fname):
+                    util.removeFileSafely(chip.outputNames[fname])
             
     def getData(self,exten=None):
         """return just the data array from the specified extension 
@@ -492,6 +493,10 @@ class baseImageObject:
             phdu.writeto(dqmask_name)
             del phdu
             self._image[self.scienceExt,chip].dqmaskname = dqmask_name
+            # record the name of this mask file that was created for later 
+            # removal by the 'clean()' method
+            self._image[self.scienceExt,chip].outputnames['dqmask'] = dqmask_name
+            
         del dqarr            
         return dqmask
 

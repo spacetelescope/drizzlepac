@@ -131,7 +131,7 @@ class WFPC2InputImage (imageObject):
             # In this case, the user has specified both a gain and readnoise values.  Just use them as is.
             for chip in self.returnAllChips(extname=self.scienceExt): 
                 chip._gain = chip._headergain
-            print "Using user defined values for gain and readnoise"
+            print "Using user defined values for gain and readnoise"        
 
         # Convert the science data to electrons
         self.doUnitConversions()
@@ -185,13 +185,18 @@ class WFPC2InputImage (imageObject):
         """
          # Image information 
         _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
-        
+
+        # Now convert the SCI array(s) units
         for det in range(1,self._numchips+1):
 
             chip=self._image[self.scienceExt,det]
             
-            if chip._gain != None:
+            # add D2IMFILE to outputNames for removal by 'clean()' method later
+            if _handle[0].header.has_key('D2IMFILE') and _handle[0].header['D2IMFILE'] not in ["","N/A"]:
+                chip.outputNames['d2imfile'] = _handle[0].header['D2IMFILE']
 
+            if chip._gain != None:
+    
                 # Multiply the values of the sci extension pixels by the gain. 
                 print "Converting %s[%d] from COUNTS to ELECTRONS"%(self._filename,det) 
 
@@ -282,6 +287,7 @@ class WFPC2InputImage (imageObject):
         maskname = sci_chip.dqrootname+'_dqmask.fits'
         dqmask_name = buildmask.buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname,bitvalue=bits,binned=sci_chip.binned)
         sci_chip.dqmaskname = dqmask_name
+        sci_chip.outputNames['dqmask'] = dqmask_name
         dqmask = pyfits.getdata(dqmask_name,0)
         return dqmask
 
@@ -312,4 +318,3 @@ class WFPC2InputImage (imageObject):
             except KeyError:
                 raise ValueError, "! Header gain value is not valid for WFPC2"
 
-       
