@@ -608,7 +608,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                     if paramDict['units'] == 'counts': 
                         indx = _bunit.find('/')
                         if indx > 0: _bunit = _bunit[:indx]
-
                 #If output units were set to 'counts', rescale the array in-place
                 if paramDict['units'] == 'counts':
                     np.multiply(_outsci, _expscale, _outsci)

@@ -81,8 +81,8 @@ def setCommonInput(configObj,createOutwcs=True):
     if configObj['mdriztab']:
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
         # Update configObj with values from mpars
-        configObj.update(mdriztab_dict)
-        
+        util.mergeConfigObj(configObj,mdriztab_dict)
+    
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.
     instrpars = configObj['INSTRUMENT PARAMETERS']
@@ -233,7 +233,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         oldasndict = asnutil.readASNTable(input, prodonly=infilesOnly)
         
         if not infilesOnly:
-            if not output:
+            if output in ["",None,"None"]:
                 output = oldasndict['output']
 
         filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
@@ -256,7 +256,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         #input is a string or a python list
         try:
             filelist, output = parseinput.parseinput(input, outputname=output)
-            if output in ['',None]: 
+            if output in ['',None,"None"]: 
                 if len(filelist) == 1: 
                     output = fileutil.buildNewRootname(filelist[0])
                 else: 

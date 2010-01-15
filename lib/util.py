@@ -77,20 +77,10 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
             configObj = teal.teal(configObj,loadOnly=False)
     
     return configObj
-
+                    
 def mergeConfigObj(configObj,input_dict):
-    for key in configObj:
-        if isinstance(configObj[key],dict):
-            keys = configObj[key].keys()
-            for k in keys:
-                for i in input_dict.keys():
-                    if k == i:
-                        configObj[key][k] = input_dict[i]
-                        break
-        else:
-            for i in input_dict.keys():
-                if i == key:
-                    configObj[key] = input_dict[i]
+    for key in input_dict:
+        setConfigObjPar(configObj,key,input_dict[key])
 
 def getSectionName(configObj,stepnum):
     """ Return section label based on step number.
@@ -112,6 +102,19 @@ def getConfigObjPar(configObj,parname):
             if key == parname:
                 return configObj[key]
             
+def setConfigObjPar(configObj,parname,parvalue):
+    """ Sets a parameter's value without having to specify which section
+        holds the parameter.
+    """
+    for key in configObj:
+        if isinstance(configObj[key], dict):
+            for par in configObj[key]:
+                if par == parname:
+                    configObj[key][par] = parvalue
+        else:
+            if key == parname:
+                configObj[key] = parvalue
+
 
 
 """

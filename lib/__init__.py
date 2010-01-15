@@ -27,7 +27,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.1dev8521'
+__version__ = '4.0.1dev8577'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -106,45 +106,42 @@ def run(configObj=None,wcsmap=None):
 
     """
     print '[betadrizzle] mdriz started at: ',util._ptime(),'\n'
+    try:
+        # Define list of imageObject instances and output WCSObject instance
+        # based on input paramters
+        imgObjList,outwcs = processInput.setCommonInput(configObj)
 
-    # Define list of imageObject instances and output WCSObject instance
-    # based on input paramters
-    imgObjList,outwcs = processInput.setCommonInput(configObj)
-
-    # Call rest of MD steps...
-    print 'Finished interpreting configObj...\n'
-    #create static masks for each image
-    staticMask._staticMask(imgObjList,configObj)
-    
-    #subtract the sky
-    sky.subtractSky(imgObjList,configObj)
-    
-    #drizzle to separate images
-    drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
-    
-    #create the median images from the driz sep images
-    createMedian._median(imgObjList,configObj,configObj["clean"])
-    
-    #blot the images back to the original reference frame
-    blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap)
-    
-    #look for cosmic rays
-    drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
-    
-    #Make your final drizzled image
-    drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap)
-    
-    print '\n[betadrizzle] mdriz is all finished at ',util._ptime(),' !\n'
-    
-    for image in imgObjList:
-        if configObj['clean']:
-            image.clean()
-        image.close()
+        # Call rest of MD steps...
+        print 'Finished interpreting configObj...\n'
+        #create static masks for each image
+        staticMask._staticMask(imgObjList,configObj)
         
-    del imgObjList
-    del outwcs
-    
-    
-    
-    
-    
+        #subtract the sky
+        sky.subtractSky(imgObjList,configObj)
+        
+        #drizzle to separate images
+        drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+        
+        #create the median images from the driz sep images
+        createMedian._median(imgObjList,configObj,configObj["clean"])
+        
+        #blot the images back to the original reference frame
+        blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap)
+        
+        #look for cosmic rays
+        drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
+        
+        #Make your final drizzled image
+        drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap)
+        
+        print '\n[betadrizzle] mdriz is all finished at ',util._ptime(),' !\n'
+
+    finally:
+        for image in imgObjList:
+            if configObj['clean']:
+                image.clean()
+            image.close()
+            
+        del imgObjList
+        del outwcs
+        
