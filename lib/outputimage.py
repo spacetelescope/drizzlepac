@@ -232,8 +232,18 @@ class OutputImage:
                 scihdr.update('NCOMBINE', self.parlist[0]['nimages'])
 
             # If BUNIT keyword was found and reset, then 
+        
             if self.bunit is not None:
-                scihdr.update('BUNIT',self.bunit,comment="Units of science product")
+                comment_str = "Units of science product"
+                if self.bunit.lower()[:5] == 'count':
+                    comment_str = "counts * gain = electrons"
+                scihdr.update('BUNIT',self.bunit,comment=comment_str)
+            else:
+                # check to see whether to update already present BUNIT comment
+                if scihdr.has_key('bunit') and scihdr['bunit'].lower()[:5]== 'count':
+                    comment_str = "counts * gain = electrons"
+                    scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str)
+                    
 
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
