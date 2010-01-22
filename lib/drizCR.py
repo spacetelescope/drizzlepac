@@ -182,9 +182,9 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
             __crMask = np.zeros(__inputImage.shape,dtype=np.uint8)
 
             # Determine a scaling factor depending on the units of the input image, "counts" or "cps"
-            if (scienceChip.in_units== "counts"):
+            if (scienceChip.in_units.lower()== "counts"):
                 __expmult = 1.
-            elif(scienceChip.in_units=="cps"):
+            elif(scienceChip.in_units.lower()=="cps"):
                 __expmult = scienceChip._exptime
             else:
                 print "drizCR found Unrecognized value in input image for BUNIT:", scienceChip.in_units
