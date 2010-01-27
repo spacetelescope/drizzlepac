@@ -489,7 +489,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 _wtscl = chip._exptime
 
             # Set additional parameters needed by 'drizzle'
-            _in_units = chip.in_units
+            _in_units = chip.in_units.lower()
             if _in_units == 'cps':
                 _expin = 1.0
             else:

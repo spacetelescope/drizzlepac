@@ -397,7 +397,10 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         hstwcs_list = []
         for img in imageObjectList:
             hstwcs_list += img.getKeywordList('wcs')
-        default_wcs = utils.output_wcs(hstwcs_list)
+        undistort=True
+        if configObj['coeffs'] in ['',None]:
+            undistort=False
+        default_wcs = utils.output_wcs(hstwcs_list,undistort=undistort)
     else:
         # Otherwise, simply use the reference image specified by the user
         default_wcs = wcsutil.HSTWCS(configObj['refimage'])

@@ -240,7 +240,7 @@ class OutputImage:
                 scihdr.update('BUNIT',self.bunit,comment=comment_str)
             else:
                 # check to see whether to update already present BUNIT comment
-                if scihdr.has_key('bunit') and scihdr['bunit'].lower()[:5]== 'count':
+                if scihdr.has_key('bunit') and scihdr['bunit'].lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
                     scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str)
                     
