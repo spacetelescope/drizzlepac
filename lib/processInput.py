@@ -71,7 +71,9 @@ def setCommonInput(configObj,createOutwcs=True):
     # list of input filenames and derived output filename
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'], 
             updatewcs=configObj['updatewcs'], workinplace=configObj['workinplace'])
-
+    
+    if not asndict:
+        return None, None
     # convert the filenames from asndict into a list of full filenames
     files = [fileutil.buildRootname(f) for f in asndict['order']]
 
@@ -273,8 +275,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     
     # check WFPC2 data to convert the DGEOFILE into D2IMFILEs for each image
     # This does not change the filelist itself, only the files specified in the list
-    checkWFPC2Dgeo(newfilelist)
-
+    newfilelist = checkDGEOFile(newfilelist)
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output 
@@ -463,7 +464,6 @@ def buildEmptyDRZ(input, output):
     
     # Change the ROOTNAME keyword to the ROOTNAME of the output PRODUCT
     fitsobj[0].header['ROOTNAME'] = str(output.split('_drz.fits')[0])
-    print 'self.output', output
     # Modify the ASN_MTYP keyword to contain "PROD-DTH" so it can be properly
     # ingested into the archive catalog.
     
@@ -478,9 +478,9 @@ def buildEmptyDRZ(input, output):
     errstr =  "#############################################\n"
     errstr += "#                                           #\n"
     errstr += "# ERROR:                                    #\n"
-    errstr += "#  Multidrizzle has created this empty DRZ  #\n"
+    errstr += "#  Multidrizzle has created an empty DRZ    #\n"
     errstr += "#  product because all input images were    #\n"
-    errstr += "#  excluded from processing because their   #\n"
+    errstr += "#  excluded from processing. because their   #\n"
     errstr += "#  header EXPTIME values were 0.0.  If you  #\n"
     errstr += "#  still wish to use this data make the     #\n"
     errstr += "#  EXPTIME values in the header non-zero.   #\n"
@@ -499,14 +499,75 @@ def buildEmptyDRZ(input, output):
     fitsobj.writeto(output)
     return
 
-#### Code to convert WFPC2 DGEOFILE into D2IMFILE
-def checkWFPC2Dgeo(filelist):
-    """ Converts DGEOFILEs for all WFPC2 images into D2IMFILEs.
+def checkDGEOFile(filenames):
     """
-    for inputfile in filelist:
-        if (fileutil.getKeyword(inputfile,'instrume') == 'WFPC2'):
-            d2imfile = update_wfpc2_d2geofile(inputfile)
+    This function checks for the presence of 'NPOLFILE' kw in the primary header 
+    when 'DGEOFILE' kw is present and valid (i.e. 'DGEOFILE' is not blank or 'N/A').
+    It handles the case of science files downloaded from the archive before the new 
+    software was installed there.
+    If 'DGEOFILE' is present and 'NPOLFILE' is missing, print a message and let the user
+    choose whether to (q)uit and update the headers or (c)ontinue and run betadrizzle 
+    without the non-polynomial correction.
+    'NPOLFILE' will be populated in the pipeline before betadrizzle is run.
     
+    In the case of WFPC2 the old style dgeo files are used to create detector to image
+    correction at runtime.
+    """
+    message = """
+            A 'DGEOFILE' keyword is present in the primary header but 'NPOLFILE' keyword was not found.
+            This version of the software uses a new format for the residual distortion DGEO files. 
+            Please consult the instrument web pages for which reference files to download.
+            A small (new style) dgeofile is needed ('_npl.fits' extension) and possibly a
+            detector to image correction file ('_d2i.fits' extension).
+            The names of these files must be added to the primary header either using the task XXXX
+            or manually, for example:
+
+            hedit %s[0] ngeofile fname_nxy.fits add+
+            hedit %s[0] d2imfile fname_d2i.fits add+
+            
+            where fname_npl.fits is the name of the new style dgeo file and fname_d2i.fits is
+            the name of the detector to image correction. After adding these keywords to the
+            primary header, updatewcs must be run to update the science files:
+            
+            from stwcs import updatewcs
+            updatewcs.updatewcs(%s)
+            
+            Alternatively you may choose to run betadrizzle without DGEO and detector to image correction.
+            
+            To stop betadrizzle and update the dgeo files, type 'q'.
+            To continue running betadrizzle without the non-polynomial distortion correction, type 'c':
+            """ 
+    for inputfile in filenames:
+        message = message % (inputfile, inputfile, inputfile)
+        if (pyfits.getval(inputfile,'INSTRUME') == 'WFPC2'):
+            update_wfpc2_d2geofile(inputfile)
+        else:
+            try:
+                dgeofile = pyfits.getval(inputfile, 'DGEOFILE')
+            except KeyError:
+                return
+            if dgeofile not in ["N/A", "n/a", ""]:
+                try:
+                    npolfile = pyfits.getval(inputfile, 'NPOLFILE')
+                except KeyError:
+                    ustop = userStop(message)
+                    while ustop == None:
+                        ustop = userStop(message)
+                    if ustop == True:
+                        return None
+                    elif ustop == False:
+                        pass          
+    return filenames
+
+def userStop(message):
+    user_input = raw_input(message)
+    if user_input == 'q':
+        return True
+    elif user_input == 'c':
+        return False
+    else:
+        return None
+        
 def update_wfpc2_d2geofile(filename,fhdu=None):
     """ Creates a D2IMFILE from the DGEOFILE for a WFPC2 image (input),
         and modifies the header to reflect the new usage.

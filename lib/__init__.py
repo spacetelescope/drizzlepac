@@ -110,8 +110,11 @@ def run(configObj=None,wcsmap=None):
         try:
             # Define list of imageObject instances and output WCSObject instance
             # based on input paramters
+            imgObjList = None
             imgObjList,outwcs = processInput.setCommonInput(configObj)
-
+            if not imgObjList:
+                return
+            
             # Call rest of MD steps...
             print 'Finished interpreting configObj...\n'
             #create static masks for each image
@@ -137,20 +140,16 @@ def run(configObj=None,wcsmap=None):
             
             print '\n[betadrizzle] mdriz is all finished at ',util._ptime(),' !\n'
 
-        except Exception, detail:
-            print '\n==========\nERROR'
-            print 'Handling run-time error: ',type(detail)
-            for arg in detail.args:
-                print arg
-            print '==========\n'
+        except:  
             raise
 
     finally:
-        for image in imgObjList:
-            if configObj['clean']:
-                image.clean()
-            image.close()
-            
-        del imgObjList
-        del outwcs
+        if imgObjList:
+            for image in imgObjList:
+                if configObj['clean']:
+                    image.clean()
+                image.close()
+                
+            del imgObjList
+            del outwcs
         
