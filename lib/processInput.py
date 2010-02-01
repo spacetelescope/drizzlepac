@@ -272,13 +272,15 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
     
     newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,workinplace=workinplace)
-    
-    # check WFPC2 data to convert the DGEOFILE into D2IMFILEs for each image
-    # This does not change the filelist itself, only the files specified in the list
-    newfilelist = checkDGEOFile(newfilelist)
+        
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output 
+    
+    # check for non-polynomial distortion correction
+    newfilelist = checkDGEOFile(newfilelist)
+    if newfilelist == None:
+        return None, None, None
     
     #make an asn table at the end
     if updatewcs:
@@ -396,13 +398,16 @@ def createInputCopies(filelist):
 
 def buildEmptyDRZ(input, output):
     """
+    Purpose
+    =======
+    Create an empty DRZ file in a valid FITS format so that the HST
+    pipeline can handle the Multidrizzle zero expossure time exception
+    where all data has been excluded from processing.
     
-    FUNCTION: buildEmptyDRZ
-    PURPOSE : Create an empty DRZ file in a valid FITS format so that the HST
-              pipeline can handle the Multidrizzle zero expossure time exception
-              where all data has been excluded from processing.
-    INPUT   : None
-    OUTPUT  : DRZ file on disk
+    :Parameters:
+    
+    `input`   : the initial input to process_input
+    `output`  : a default empty _drz.fits file 
      
     """
     if output == None:
@@ -451,12 +456,9 @@ def buildEmptyDRZ(input, output):
     fitsobj.append(hdu)        
     
     # Add HISTORY comments explaining the creation of this file.
-    fitsobj[0].header.add_history("** Multidrizzle has created this empty DRZ **")
-    fitsobj[0].header.add_history("** product because all input images were   **")
-    fitsobj[0].header.add_history("** excluded from processing because their  **")
-    fitsobj[0].header.add_history("** header EXPTIME values were 0.0.  If you **")
-    fitsobj[0].header.add_history("** still wish to use this data make the    **")
-    fitsobj[0].header.add_history("** EXPTIME values in the header non-zero.  **")
+    fitsobj[0].header.add_history("** Multidrizzle has created this empty DRZ product because**")
+    fitsobj[0].header.add_history("** all input images were excluded from processing.**")
+
     
     # Change the filename in the primary header to reflect the name of the output
     # filename.
@@ -475,17 +477,13 @@ def buildEmptyDRZ(input, output):
         fitsobj[1].header['ASN_MTYP'] = 'PROD-DTH'
  
         
-    errstr =  "#############################################\n"
-    errstr += "#                                           #\n"
-    errstr += "# ERROR:                                    #\n"
-    errstr += "#  Multidrizzle has created an empty DRZ    #\n"
-    errstr += "#  product because all input images were    #\n"
-    errstr += "#  excluded from processing. because their   #\n"
-    errstr += "#  header EXPTIME values were 0.0.  If you  #\n"
-    errstr += "#  still wish to use this data make the     #\n"
-    errstr += "#  EXPTIME values in the header non-zero.   #\n"
-    errstr += "#                                           #\n"
-    errstr += "#############################################\n\n"
+    errstr =  "###############################################################################\n"
+    errstr += "#                                                                             #\n"
+    errstr += "# ERROR:                                                                      #\n"
+    errstr += "# Multidrizzle has created an empty DRZ product because all input images were #\n"
+    errstr += "# excluded from processing or a user requested the program to stop.           #\n"
+    errstr += "#                                                                             #\n"
+    errstr += "###############################################################################\n\n"
     print errstr
     
     # If the file is already on disk delete it and replace it with the
@@ -501,6 +499,9 @@ def buildEmptyDRZ(input, output):
 
 def checkDGEOFile(filenames):
     """
+    Purpose
+    =======
+    
     This function checks for the presence of 'NPOLFILE' kw in the primary header 
     when 'DGEOFILE' kw is present and valid (i.e. 'DGEOFILE' is not blank or 'N/A').
     It handles the case of science files downloaded from the archive before the new 
@@ -512,6 +513,11 @@ def checkDGEOFile(filenames):
     
     In the case of WFPC2 the old style dgeo files are used to create detector to image
     correction at runtime.
+    
+    :Parameters:
+    
+    `filenames`: a list of fits file names
+                 a python list
     """
     message = """
             A 'DGEOFILE' keyword is present in the primary header but 'NPOLFILE' keyword was not found.
