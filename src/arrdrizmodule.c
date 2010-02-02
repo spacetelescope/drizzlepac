@@ -604,15 +604,15 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   driz_error_init(&error);
 
-  if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffslllO:tdriz",
+  if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffsiiiO:tdriz",
 			&oimg, &owei, &oout, &owht, &ocon, &uniqid, &ystart,
 			&xmin, &ymin, &dny, &scale, &xscale, &yscale,
 			&align_str, &pfract, &kernel_str, &inun_str,
-			&expin, &wtscl, &fillstr, &nmiss, &nskip, &vflag,
+			&expin, &wtscl, &fillstr, &nmiss,&nskip, &vflag,
 			&callback_obj)) {
     return PyErr_Format(gl_Error, "cdriz.tdriz: Invalid Parameters.");
-  }
-
+  }  
+  
   /* Check for invalid scale */
   if (scale == 0.0) {
     driz_error_format_message(&error, "Invalid scale %f (must be non-zero)", scale);
@@ -677,7 +677,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
       unit_str2enum(inun_str, &inun, &error)) {
     goto _exit;
   }
-
+  
   /* Convert the fill value string */
   if (fillstr == NULL ||
       *fillstr == 0 ||
