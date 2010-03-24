@@ -272,14 +272,16 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
     
     newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,workinplace=workinplace)
-        
+    
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output 
     
+    print newfilelist
     # check for non-polynomial distortion correction
     newfilelist = checkDGEOFile(newfilelist)
     if newfilelist == None:
+        
         return None, None, None
     
     #make an asn table at the end
@@ -528,7 +530,7 @@ def checkDGEOFile(filenames):
             The names of these files must be added to the primary header either using the task XXXX
             or manually, for example:
 
-            hedit %s[0] ngeofile fname_nxy.fits add+
+            hedit %s[0] npolfile fname_npl.fits add+
             hedit %s[0] d2imfile fname_d2i.fits add+
             
             where fname_npl.fits is the name of the new style dgeo file and fname_d2i.fits is
@@ -544,15 +546,15 @@ def checkDGEOFile(filenames):
             To continue running betadrizzle without the non-polynomial distortion correction, type 'c':
             """ 
     for inputfile in filenames:
-        message = message % (inputfile, inputfile, inputfile)
         if (pyfits.getval(inputfile,'INSTRUME') == 'WFPC2'):
             update_wfpc2_d2geofile(inputfile)
         else:
             try:
                 dgeofile = pyfits.getval(inputfile, 'DGEOFILE')
             except KeyError:
-                return
+                continue
             if dgeofile not in ["N/A", "n/a", ""]:
+                message = message % (inputfile, inputfile, inputfile)
                 try:
                     npolfile = pyfits.getval(inputfile, 'NPOLFILE')
                 except KeyError:
