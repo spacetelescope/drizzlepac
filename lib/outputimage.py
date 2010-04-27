@@ -286,6 +286,7 @@ class OutputImage:
                         if (k[0][:2] == 'CP'):
                             del scihdr[k[0]]
                     del scihdr['DGEOEXT']
+                    del scihdr['NPOLEXT']
                     
 
         ##########

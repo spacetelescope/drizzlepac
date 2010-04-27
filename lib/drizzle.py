@@ -546,7 +546,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 mapping = wmap.forward
                 pix_ratio = output_wcs.pscale/wcslin.pscale
 
-            #print 'Starting tdriz at: ',_ptime()
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
                 pix_ratio, 1.0, 1.0, 'center', paramDict['pixfrac'],
