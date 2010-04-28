@@ -2,6 +2,8 @@
 #   Authors: Warren Hack, Ivo Busko, Christopher Hanley
 #   Program: mdzhandler.py
 #   Purpose: Module that handles the MDRIZTAB reference file.
+from __future__ import division # confidence high
+
 import string
 
 import pyfits

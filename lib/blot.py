@@ -1,3 +1,5 @@
+from __future__ import division # confidence medium
+
 import sys,types,os
 import util
 from util import _ptime

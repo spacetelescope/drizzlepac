@@ -2,6 +2,7 @@
 #   Authors: Megan Sosey, Christopher Hanley
 #   Program: wfc3Data.py
 #   Purpose: Class used to import WFC3 specific instrument data.
+from __future__ import division # confidence high
 
 
 from pytools import fileutil

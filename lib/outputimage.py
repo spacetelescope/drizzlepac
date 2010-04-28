@@ -1,3 +1,5 @@
+from __future__ import division # confidence medium
+
 import types
 import pyfits
 from pytools import fileutil, readgeis
@@ -226,6 +228,7 @@ class OutputImage:
         #self.addDrizKeywords(prihdu.header,versions)
 
         if scihdr:
+            del scihdr['MDRIZSKY']
             del scihdr['OBJECT']
             if scihdr.has_key('CCDCHIP'): scihdr.update('CCDCHIP','-999')
             if scihdr.has_key('NCOMBINE') > 0:

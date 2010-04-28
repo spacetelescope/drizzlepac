@@ -593,7 +593,11 @@ def update_wfpc2_d2geofile(filename,fhdu=None):
         fhdu['PRIMARY'].header.update('ODGEOFIL',dgeofile)
         fhdu['PRIMARY'].header.update('DGEOFILE','N/A')
         fhdu['PRIMARY'].header.update('D2IMFILE',d2imfile)
-
+    else:
+        d2imfile = None
+        fhdu['PRIMARY'].header.update('DGEOFILE','N/A')
+        fhdu['PRIMARY'].header.update('D2IMFILE','N/A')
+        
     # Only close the file handle if opened in this function
     if close_fhdu:
         fhdu.close()

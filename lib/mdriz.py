@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division # confidence high
 
 import sys, getopt
 from betadrizzle import MultiDrizzle,util,wcs_functions

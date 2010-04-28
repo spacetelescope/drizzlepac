@@ -2,6 +2,7 @@
 #   Authors: Megan Sosey, Christopher Hanley
 #   Program: stisData.py
 #   Purpose: Class used to import STIS specific instrument data.
+from __future__ import division # confidence medium
 
 from pytools import fileutil
 import numpy as np

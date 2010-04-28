@@ -2,6 +2,7 @@
 #   Authors: Christopher Hanley
 #   Program: ir_input.py
 #   Purpose: Class used to model IR specific instrument data.
+from __future__ import division # confidence high
 
 from imageObject import imageObject
 

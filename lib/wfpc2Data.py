@@ -2,6 +2,8 @@
 #   Authors: Warren Hack, Ivo Busko, Christopher Hanley
 #   Program: wfpc2_input.py
 #   Purpose: Class used to model WFPC2 specific instrument data.
+from __future__ import division # confidence medium
+
 import pyfits
 import numpy as np
 

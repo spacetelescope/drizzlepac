@@ -3,6 +3,8 @@
 #
 #
 # Import external packages
+from __future__ import division # confidence medium
+
 import numpy as np
 import convolve as NC
 import pyfits

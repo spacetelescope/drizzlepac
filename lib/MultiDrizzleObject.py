@@ -13,6 +13,7 @@ also write a functional script that does the same thing
 
 Megan Sosey
 """
+from __future__ import division # confidence high
 
 from pytools import fileutil,cfgpars
 import os

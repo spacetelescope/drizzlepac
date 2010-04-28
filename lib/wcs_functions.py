@@ -1,3 +1,5 @@
+from __future__ import division # confidence medium
+
 import os,copy
 import numpy as np
 from numpy import linalg

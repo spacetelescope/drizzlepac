@@ -4,6 +4,7 @@ A class which makes image objects for
 each input filename
 
 """
+from __future__ import division # confidence medium
 
 import sys,copy,os,re
 from pytools import fileutil

@@ -1,6 +1,8 @@
 """ betadrizzle - test implementation of MultiDrizzle: The Next Generation
 
 """
+from __future__ import division # confidence high
+
 import os
 
 import buildmask
@@ -27,7 +29,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.1dev8659'
+__version__ = '4.0.1dev9252'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations

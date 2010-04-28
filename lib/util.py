@@ -3,6 +3,8 @@
 A library of utility functions
 
 """
+from __future__ import division # confidence medium
+
 import numpy as np
 import pyfits
 from pytools import asnutil,fileutil

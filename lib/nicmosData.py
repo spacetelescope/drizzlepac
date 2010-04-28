@@ -2,6 +2,7 @@
 #   Authors: Christopher Hanley, David Grumm, Megan Sosey
 #   Program: nicmos_input.py
 #   Purpose: Class used to model NICMOS specific instrument data.
+from __future__ import division # confidence medium
 
 from pytools import fileutil
 from nictools import readTDD

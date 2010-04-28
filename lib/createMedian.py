@@ -1,6 +1,8 @@
 #Create a median image from the singly drizzled images
 
 # Import external packages
+from __future__ import division # confidence medium
+
 import numpy as np
 import pyfits
 import os
@@ -276,7 +278,7 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     # check to see if this buffer size will leave enough rows for
     # the section returned on the last iteration
     if _lastrows < _overlap+1:
-        _delta_rows = (_overlap+1 - _lastrows)/_niter
+        _delta_rows = (_overlap+1 - _lastrows)//_niter
         if _delta_rows < 1 and _delta_rows > 0: _delta_rows = 1
         _bufsize += (_imgarr.shape[1]*_imgarr.itemsize) * _delta_rows
 

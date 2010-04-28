@@ -12,6 +12,8 @@
     :author: Christopher Hanley
     :author: Megan Sosey    
 """
+from __future__ import division # confidence medium
+
 import util
 from imageObject import imageObject
 from pytools import fileutil

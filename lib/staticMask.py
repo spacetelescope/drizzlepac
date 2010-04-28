@@ -12,6 +12,7 @@
     Each static mask array has type Int16, and resides in memory.
 
 """
+from __future__ import division # confidence high
 
 import numpy as np
 from pytools import fileutil

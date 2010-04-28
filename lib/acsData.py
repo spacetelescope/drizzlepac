@@ -2,6 +2,7 @@
 #   Authors: Christopher Hanley, Warren Hack, Ivo Busko, David Grumm
 #   Program: acs_input.py
 #   Purpose: Class used to model ACS specific instrument data.
+from __future__ import division # confidence high
 
 from pytools import fileutil
 import numpy as np
