@@ -42,6 +42,7 @@ class WFPC2InputImage (imageObject):
         # Reference Plate Scale used for updates to MDRIZSKY, we should get this from the wcs class
         #self.refplatescale = 0.0996 # arcsec / pixel
 
+        
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
             self._image[self.scienceExt,chip].cte_dir = -1 # independent of amp, chip   

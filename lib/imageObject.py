@@ -34,7 +34,8 @@ class baseImageObject:
         #this is the number of science chips to be processed in the file
         self._numchips=1
         self._nextend=0
-        
+        # this is the number of chip which will be combined based on 'group' parameter
+        self._nmembers = 0
 
     def __getitem__(self,exten):
         """overload  getitem to return the data and header
@@ -464,7 +465,7 @@ class baseImageObject:
                 
                 if (self._image[i].header["EXTNAME"] == extname):
                     count=count+1    
-                          
+
         return count
     
     def getNumpyType(self,irafType):
@@ -603,7 +604,7 @@ class imageObject(baseImageObject):
         self._exptime =1. #to avoid divide by zero
  #           print "Setting exposure time to 1. to avoid div/0!"
             
-        #this is the number of science chips to be processed in the file
+       #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
 
         self.proc_unit = None
@@ -624,7 +625,6 @@ class imageObject(baseImageObject):
   
         self._isSimpleFits = False
         
-        
         if group not in [None,'']:
             # Only use selected chip(s?)
             group_id = fileutil.parseExtn(str(group))
@@ -638,13 +638,12 @@ class imageObject(baseImageObject):
         else:
             # Use all chips
             self.group = None
-        
             
         if not self._isSimpleFits:
             
             #assign chip specific information
             for chip in range(1,self._numchips+1,1):
-                
+
                 self._assignRootname(chip)
                 sci_chip = self._image[self.scienceExt,chip]
 
@@ -652,6 +651,7 @@ class imageObject(baseImageObject):
                 # or not, based on user input from the 'group' parameter.
                 if self.group is None or (self.group is not None and self.group[1] == chip):
                     sci_chip.group_member = True
+                    self._nmembers += 1
                 else:
                     sci_chip.group_member = False
 

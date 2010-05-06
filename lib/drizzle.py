@@ -329,7 +329,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     numctx = 0
     for img in imageObjectList:
-        numctx += img._numchips
+        numctx += img._nmembers
     _numctx = {'all':numctx}
 
     #            if single:

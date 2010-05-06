@@ -290,6 +290,7 @@ class OutputImage:
                             del scihdr[k[0]]
                     del scihdr['DGEOEXT']
                     del scihdr['NPOLEXT']
+                self.addPhotKeywords(scihdr,prihdu.header)
                     
 
         ##########
@@ -377,6 +378,7 @@ class OutputImage:
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
             hdu.header.update('filename',self.outdata)
+            self.addPhotKeywords(hdu.header,prihdu.header)
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -456,6 +458,28 @@ class OutputImage:
                 fctx.append(hdu)
                 fctx.writeto(self.outcontext)
                 del fctx,hdu
+
+    def addPhotKeywords(self,hdr,phdr):
+        """ Insure that this header contains all the necessary photometry 
+            keywords, moving them into the extension header if necessary.
+            This only moves keywords from the PRIMARY header if the keywords
+            do not already exist in the SCI header.
+        """
+        PHOTKEYS = ['PHOTFLAM','PHOTPLAM','PHOTBW','PHOTZPT','PHOTMODE']
+        for pkey in PHOTKEYS:
+            if not hdr.has_key(pkey):
+                # Make sure there is a copy PRIMARY header, if so, copy it 
+                if phdr.has_key(pkey):
+                    # Copy keyword from PRIMARY header
+                    hdr.update(pkey,phdr[pkey])
+                    # then delete it from PRIMARY header to avoid duplication
+                    del phdr[pkey]
+                else:
+                    # If there is no such keyword to be found, define a default
+                    if pkey != 'PHOTMODE':
+                        hdr.update(pkey,0.0)
+                    else:
+                        hdr.update(pkey,'')
 
 
     def addDrizKeywords(self,hdr,versions):
