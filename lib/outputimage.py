@@ -640,6 +640,7 @@ def getTemplates(fname,extlist):
                 extnum = (extlist[0],fnum)
         errhdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
         errhdr.update('extver',1)
+        errhdr.update('bunit','UNITLESS')
         
 
         if fextn is None:
@@ -656,6 +657,7 @@ def getTemplates(fname,extlist):
                 extnum = (extlist[0],fnum)
         dqhdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
         dqhdr.update('extver',1)
+        dqhdr.update('bunit','UNITLESS')
 
     else:
         # Create default headers from scratch
