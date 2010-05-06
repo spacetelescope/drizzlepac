@@ -102,7 +102,6 @@ class STISInputImage (imageObject):
         for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
-            
             if chip._gain != None:
 
                 # Multiply the values of the sci extension pixels by the gain. 
@@ -110,14 +109,14 @@ class STISInputImage (imageObject):
 
                 # If the exptime is 0 the science image will be zeroed out. 
                 np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
-                chip.data=_handle[det].data
+                chip.data=_handle[self.scienceExt,det].data
 
                 # Set the BUNIT keyword to 'electrons'
-                _handle[det].header.update('BUNIT','ELECTRONS')
+                _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
 
                 # Update the PHOTFLAM value
-                photflam = _handle[det].header['PHOTFLAM']
-                _handle[det].header.update('PHOTFLAM',(photflam/self._gain()))
+                photflam = _handle[self.scienceExt,det].header['PHOTFLAM']
+                _handle[self.scienceExt,det].header.update('PHOTFLAM',(photflam/chip._gain))
                 
                 chip._effGain = 1.
             

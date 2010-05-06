@@ -711,7 +711,7 @@ class imageObject(baseImageObject):
                         sci_chip.image_dtype = dtype
                         break
 
-
+        
     def setInstrumentParameters(self,instrpars):
         """ Define instrument-specific parameters for use in the code. 
             By definition, this definition will need to be overridden by 

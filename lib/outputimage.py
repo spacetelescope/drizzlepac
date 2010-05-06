@@ -290,7 +290,6 @@ class OutputImage:
                             del scihdr[k[0]]
                     del scihdr['DGEOEXT']
                     del scihdr['NPOLEXT']
-                self.addPhotKeywords(scihdr,prihdu.header)
                     
 
         ##########
@@ -378,7 +377,6 @@ class OutputImage:
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
             hdu.header.update('filename',self.outdata)
-            self.addPhotKeywords(hdu.header,prihdu.header)
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -458,28 +456,6 @@ class OutputImage:
                 fctx.append(hdu)
                 fctx.writeto(self.outcontext)
                 del fctx,hdu
-
-    def addPhotKeywords(self,hdr,phdr):
-        """ Insure that this header contains all the necessary photometry 
-            keywords, moving them into the extension header if necessary.
-            This only moves keywords from the PRIMARY header if the keywords
-            do not already exist in the SCI header.
-        """
-        PHOTKEYS = ['PHOTFLAM','PHOTPLAM','PHOTBW','PHOTZPT','PHOTMODE']
-        for pkey in PHOTKEYS:
-            if not hdr.has_key(pkey):
-                # Make sure there is a copy PRIMARY header, if so, copy it 
-                if phdr.has_key(pkey):
-                    # Copy keyword from PRIMARY header
-                    hdr.update(pkey,phdr[pkey])
-                    # then delete it from PRIMARY header to avoid duplication
-                    del phdr[pkey]
-                else:
-                    # If there is no such keyword to be found, define a default
-                    if pkey != 'PHOTMODE':
-                        hdr.update(pkey,0.0)
-                    else:
-                        hdr.update(pkey,'')
 
 
     def addDrizKeywords(self,hdr,versions):
@@ -623,7 +599,10 @@ def getTemplates(fname,extlist):
         print 'No data files for creating FITS output.'
         raise Exception
 
-    ftemplate = fileutil.openImage(fname,mode='readonly')
+    froot,fextn = fileutil.parseFilename(fname)
+    if fextn is not None:
+        fnum = fileutil.parseExtn(fextn)[1]
+    ftemplate = fileutil.openImage(froot,mode='readonly')
     prihdr = pyfits.Header(cards=ftemplate['PRIMARY'].header.ascard.copy())
     del prihdr['pcount']
     del prihdr['gcount']
@@ -634,18 +613,49 @@ def getTemplates(fname,extlist):
         # extension...
         _extkey = 'EXTNAME'
 
+        defnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[0])
         #
         # Now, extract the headers necessary for output (as copies)
         # 1. Find the SCI extension in the template image
         # 2. Make a COPY of the extension header for use in new output file
-        extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[0])
+        if fextn is None:
+            extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[0])
+        else:
+            extnum = (extlist[0],fnum)
         scihdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
+        scihdr.update('extver',1)
 
-        extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[1])
+        if fextn is None:
+            extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[1])
+        else:
+            # there may or may not be a second type of extension in the template
+            count = 0
+            for f in ftemplate:
+                if f.header.has_key('extname') and f.header['extname'] == extlist[1]:
+                    count += 1
+            if count > 0:
+                extnum = (extlist[1],fnum)
+            else:
+                # Use science header for remaining headers
+                extnum = (extlist[0],fnum)
         errhdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
+        errhdr.update('extver',1)
+        
 
-        extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[2])
+        if fextn is None:
+            extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[2])
+        else:
+            count = 0
+            for f in ftemplate:
+                if f.header.has_key('extname') and f.header['extname'] == extlist[2]:
+                    count += 1
+            if count > 0:
+                extnum = (extlist[2],fnum)
+            else:
+                # Use science header for remaining headers
+                extnum = (extlist[0],fnum)
         dqhdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
+        dqhdr.update('extver',1)
 
     else:
         # Create default headers from scratch
