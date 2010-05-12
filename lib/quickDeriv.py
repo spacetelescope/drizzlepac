@@ -9,6 +9,7 @@
 # VERSION: 
 #   Version 0.1.0: created -- CJH 
 #
+from __future__ import division # confidence high
 
 __version__ = '0.1.0'
 
