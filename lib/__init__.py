@@ -107,7 +107,7 @@ def run(configObj=None,wcsmap=None):
         The example config files are in multidrizzle/pars
 
     """
-    print '[betadrizzle] mdriz started at: ',util._ptime(),'\n'
+    print '[betadrizzle]MultiDrizzle Version '+__version__+' started at: ',util._ptime(),'\n'
     try:
         try:
             # Define list of imageObject instances and output WCSObject instance
@@ -140,7 +140,7 @@ def run(configObj=None,wcsmap=None):
             #Make your final drizzled image
             drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap)
             
-            print '\n[betadrizzle] mdriz is all finished at ',util._ptime(),' !\n'
+            print '\n[betadrizzle]MultiDrizzle Version '+__version__+' is all finished at ',util._ptime(),' !\n'
 
         except:  
             raise
