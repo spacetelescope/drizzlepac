@@ -522,7 +522,7 @@ def checkDGEOFile(filenames):
     `filenames`: a list of fits file names
                  a python list
     """
-    message = """
+    msg = """
             A 'DGEOFILE' keyword is present in the primary header but 'NPOLFILE' keyword was not found.
             This version of the software uses a new format for the residual distortion DGEO files. 
             Please consult the instrument web pages for which reference files to download.
@@ -555,7 +555,7 @@ def checkDGEOFile(filenames):
             except KeyError:
                 continue
             if dgeofile not in ["N/A", "n/a", ""]:
-                message = message % (inputfile, inputfile, inputfile)
+                message = msg % (inputfile, inputfile, inputfile)
                 try:
                     npolfile = pyfits.getval(inputfile, 'NPOLFILE')
                 except KeyError:
