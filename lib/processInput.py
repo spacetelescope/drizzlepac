@@ -278,7 +278,6 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         buildEmptyDRZ(input,output)
         return None, None, output 
     
-    print newfilelist
     # check for non-polynomial distortion correction
     newfilelist = checkDGEOFile(newfilelist)
     if newfilelist == None:
