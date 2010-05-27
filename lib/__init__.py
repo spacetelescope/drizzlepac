@@ -107,6 +107,11 @@ def run(configObj=None,wcsmap=None):
         The example config files are in multidrizzle/pars
 
     """
+    #
+    # turn on logging, redirecting stdout/stderr messages to a log file
+    # while also printing them out to stdout as well
+    # 
+    util.init_logging(logfile=configObj['runfile'])
     print '[betadrizzle]MultiDrizzle Version '+__version__+' started at: ',util._ptime(),'\n'
     try:
         try:
@@ -144,8 +149,10 @@ def run(configObj=None,wcsmap=None):
 
         except:  
             raise
-
     finally:
+        # Turn off logging now
+        util.end_logging()
+
         if imgObjList:
             for image in imgObjList:
                 if configObj['clean']:

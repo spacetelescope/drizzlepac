@@ -191,7 +191,7 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
 def buildDrizParamDict(configObj,single=True):
     chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
     # Initialize paramDict with global parameter(s)
-    paramDict = {'build':configObj['build']}
+    paramDict = {'build':configObj['build'],'subsamp':configObj['subsamp']}
 
     # build appro
     if single:
@@ -223,6 +223,7 @@ def _setDefaults(configObj={}):
 
     paramDict={"build":True,
               "single":True,
+              "subsamp":10,
               "in_units":"cps",
               "wt_scl":1.,
               "pixfrac":1.,
@@ -289,7 +290,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         fillval = str(paramDict['fillval'])
 
     # Set sub-sampling rate for drizzling
-    subsamp = 2.0
+    #subsamp = 2.0
+    subsamp = paramDict['subsamp']
     print '  **Using sub-sampling value of ',subsamp,' for kernel ',paramDict['kernel']
     
     # Check for existance of output file.

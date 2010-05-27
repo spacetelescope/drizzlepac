@@ -10,11 +10,60 @@ import pyfits
 from pytools import asnutil,fileutil
 from pytools import teal
 import os
+import logging
+import sys
 
 
 __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
+
+"""
+Logging routines
+"""
+class StreamLogger(object):
+
+    def __init__(self, stream, logfile, mode='w', prefix=''):
+        self.stream = stream
+        if prefix in [None,'',' ']:
+            self.prefix = ''
+        else:
+            self.prefix = '['+prefix+'] '
+        self.data = ''
+        
+        # set up logfile
+        print 'initializing logfile: ',logfile
+        self.log = open(logfile,mode)
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+        self.data += data
+        tmp = str(self.data)
+        if '\x0a' in tmp or '\x0d' in tmp:
+            tmp = tmp.rstrip('\x0a\x0d')
+            self.log.write('%s%s\n' % (self.prefix,tmp))
+            self.data = ''
+            
+def init_logging(logfile='betadrizzle.log'):    
+    """ Set up logfile for capturing stdout/stderr messages.
+        Must be called prior to writing any messages that you want to log.
+    """
+    if logfile in [None," ",""]:
+        return 
+
+    # redirect logging of both stdout and stderr to logfile
+    sys.stdout = StreamLogger(sys.stdout, logfile)
+    sys.stderr = StreamLogger(sys.stderr, logfile, prefix='stderr ',mode='a')
+
+def end_logging():
+    """ Close log file and restore stdout/stderr to system defaults.
+    """
+    sys.stdout.log.close()
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    
 
 def _ptime():
     try:
