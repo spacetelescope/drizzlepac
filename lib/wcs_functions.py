@@ -256,8 +256,12 @@ def build_pixel_transform(chip,output_wcs):
     # Need to compute and write out coeffs files for each chip as well.
     #
     xcoeffs,ycoeffs = coeff_converter.sip2idc(chip.wcs)
-    xcoeffs /= chip.wcs.idcscale
-    ycoeffs /= chip.wcs.idcscale
+    # account for the case where no IDCSCALE has been set, due to a 
+    # lack of IDCTAB or to 'coeffs=None'.
+    idcscale = chip.wcs.idcscale
+    if idcscale is None: idcscale = chip.wcs.pscale
+    xcoeffs /= idcscale
+    ycoeffs /= idcscale
     driz_pars['coeffs'] = [xcoeffs,ycoeffs]
     
     abxt,cdyt = wcsfit(chip.wcs,output_wcs)

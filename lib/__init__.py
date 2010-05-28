@@ -29,7 +29,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.1dev9440'
+__version__ = '4.0.1dev9484'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -110,46 +110,51 @@ def run(configObj=None,wcsmap=None):
     #
     # turn on logging, redirecting stdout/stderr messages to a log file
     # while also printing them out to stdout as well
+    # also, initialize timing of processing steps
     # 
     util.init_logging(logfile=configObj['runfile'])
-    print '[betadrizzle]MultiDrizzle Version '+__version__+' started at: ',util._ptime(),'\n'
+    procSteps = util.ProcSteps()
+    print '[betadrizzle]MultiDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
     try:
         try:
             # Define list of imageObject instances and output WCSObject instance
             # based on input paramters
+            procSteps.addStep('Initialization')
             imgObjList = None
             imgObjList,outwcs = processInput.setCommonInput(configObj)
+            procSteps.endStep('Initialization')
             if not imgObjList:
                 return
             
             # Call rest of MD steps...
             print 'Finished interpreting configObj...\n'
             #create static masks for each image
-            staticMask._staticMask(imgObjList,configObj)
+            staticMask._staticMask(imgObjList,configObj,procSteps=procSteps)
             
             #subtract the sky
-            sky.subtractSky(imgObjList,configObj)
+            sky.subtractSky(imgObjList,configObj,procSteps=procSteps)
             
             #drizzle to separate images
-            drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+            drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap,procSteps=procSteps)
             
             #create the median images from the driz sep images
-            createMedian._median(imgObjList,configObj,configObj["clean"])
+            createMedian._median(imgObjList,configObj,configObj["clean"],procSteps=procSteps)
             
             #blot the images back to the original reference frame
-            blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap)
+            blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
             
             #look for cosmic rays
-            drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
+            drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"],procSteps=procSteps)
             
             #Make your final drizzled image
-            drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap)
+            drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
             
-            print '\n[betadrizzle]MultiDrizzle Version '+__version__+' is all finished at ',util._ptime(),' !\n'
+            print '\n[betadrizzle]MultiDrizzle Version '+__version__+' is all finished at ',util._ptime()[0],' !\n'
 
         except:  
             raise
     finally:
+        procSteps.reportTimes()
         # Turn off logging now
         util.end_logging()
 

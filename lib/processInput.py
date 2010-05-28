@@ -101,6 +101,8 @@ def setCommonInput(configObj,createOutwcs=True):
     print '\n-Creating imageObject List as input for processing steps.\n'
     imageObjectList = createImageObjectList(files,instrpars,group=configObj['group'])
 
+    resetDQBits(imageObjectList,cr_bits_value=configObj['resetbits'])
+        
     # Add info about input IVM files at this point to the imageObjectList
     addIVMInputs(imageObjectList,ivmlist)
                 
@@ -330,6 +332,15 @@ def runmakewcs(input):
     newNames = updatewcs.updatewcs(input,checkfiles=False)
     #newNames = makewcs.run(input)
     return newNames
+
+def resetDQBits(imageObjectList,cr_bits_value=4096):
+    """ Reset the CR bit in each input image's DQ array 
+    """
+    if cr_bits_value > 0:
+        for img in imageObjectList:
+            for chip in range(1,img._numchips+1,1):
+                sci_chip = img._image[img.scienceExt,chip]
+                util.reset_dq_bits(sci_chip.dqfile,cr_bits_value,extver=chip,extname=sci_chip.dq_extn)
 
 def update_member_names(oldasndict, pydr_input):
     """

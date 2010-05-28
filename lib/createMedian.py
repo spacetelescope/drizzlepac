@@ -73,11 +73,14 @@ def run(configObj):
 
 
 #this is the internal function, the user called function is below
-def _median(imageObjectList=None,configObj={},saveFiles=True):
+def _median(imageObjectList=None,configObj={},saveFiles=True,procSteps=None):
     """Create a median image from the list of image Objects 
        that has been given
     """
     print "Starting median step\n"
+    if procSteps is not None:
+        procSteps.addStep('Create Median')
+        
     step_name = util.getSectionName(configObj,_step_num_)
     if not configObj[step_name]['median']:
         print 'Median combination step not performed.'
@@ -207,7 +210,12 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
             #
             # Get the exposure time from the InputImage object
             exposureTimeList.append(image._exptime)
-            skylist.append(image[1].wcs.idcscale)
+            # account for the case where no IDCSCALE has been set, due to a 
+            # lack of IDCTAB or to 'coeffs=None'.
+            idcscale = image[1].wcs.idcscale
+            if idcscale is None:
+                idcscale = image[1].wcs.pscale
+            skylist.append(idcscale)
             #skylist.append(image[1].wcs.pscale)
 
             # Extract the sky value to be used in the model
@@ -388,6 +396,8 @@ def _median(imageObjectList=None,configObj={},saveFiles=True):
     del masterList
     del medianImageArray
 
+    if procSteps is not None:
+        procSteps.endStep('Create Median')
 
 def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
     """ Writes out the result of the combination step.

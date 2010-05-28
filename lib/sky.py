@@ -124,7 +124,10 @@ def run(configObj,outExt=None):
 
 
 #this is the workhorse looping function
-def subtractSky(imageObjList,configObj,saveFile=False):
+def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
+    if procSteps is not None:
+        procSteps.addStep('Subtract Sky')
+
     if not util.getConfigObjPar(configObj,'skysub'):
         print 'Sky Subtraction step not performed.'
         return
@@ -139,6 +142,9 @@ def subtractSky(imageObjList,configObj,saveFile=False):
     for image in imageObjList:
         print "Working on sky for: ",image._filename
         _skySub(configObj,image,saveFile=saveFile)
+
+    if procSteps is not None:
+        procSteps.endStep('Subtract Sky')
     
 
 #this is the main function that does all the real work
@@ -221,7 +227,12 @@ def _skySub(configObj=None,imageSet=None,saveFile=False):
             image=imageSet[myext]
             _skyValue= _computeSky(image, paramDict, memmap=0)
             #scale the sky value by the area on sky
+            # account for the case where no IDCSCALE has been set, due to a 
+            # lack of IDCTAB or to 'coeffs=None'.
             pscale=imageSet[myext].wcs.idcscale
+            if pscale is None:
+                print "No Distortion coefficients available...using default plate scale."
+                pscale = imageSet[myext].wcs.pscale
             _scaledSky=_skyValue / (pscale**2)
             #_skyValue=_scaledSky
             minSky.append(_scaledSky)
@@ -237,7 +248,11 @@ def _skySub(configObj=None,imageSet=None,saveFile=False):
         for chip in range(1,numchips+1,1):
             image=imageSet._image[sciExt,chip]
             myext = sciExt+","+str(chip)
-            _scaledSky=_skyValue * (image.wcs.idcscale**2)
+            # account for the case where no IDCSCALE has been set, due to a 
+            # lack of IDCTAB or to 'coeffs=None'.
+            idcscale = image.wcs.idcscale
+            if idcscale is None: idcscale = image.wcs.pscale
+            _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
             print "\nsubtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             _subtractSky(image,(_scaledSky))

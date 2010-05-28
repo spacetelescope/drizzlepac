@@ -93,7 +93,10 @@ def run(configObj):
 
 
 #this is the workhorse function
-def _staticMask(imageObjectList=[],configObj=None):
+def _staticMask(imageObjectList=[],configObj=None,procSteps=None):
+    if procSteps is not None:
+        procSteps.addStep('Static Mask')
+        
     step_name = util.getSectionName(configObj,_step_num_)
     
     if not configObj[step_name]['static']:
@@ -113,6 +116,9 @@ def _staticMask(imageObjectList=[],configObj=None):
     #save the masks to disk for later access  
     myMask.saveToFile()
     myMask.close()
+
+    if procSteps is not None:
+        procSteps.endStep('Static Mask')
 
 def constructFilename(signature):
     """construct an output filename for the given signature

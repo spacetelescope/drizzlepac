@@ -76,8 +76,12 @@ def blot(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict)
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap):
+def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap,procSteps=None):
+    if procSteps is not None:
+        procSteps.addStep('Blot')
+
     blot_name = util.getSectionName(configObj,_blot_step_num_)
+
     # This can be called directly from MultiDrizle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[blot_name]['blot']:
@@ -85,6 +89,9 @@ def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMa
         run_blot(imageObjectList, output_wcs.single_wcs, paramDict, wcsmap=wcsmap)
     else:
         print 'Blot step not performed.'
+
+    if procSteps is not None:
+        procSteps.endStep('Blot')
 
         
 # Run 'drizzle' here...

@@ -63,7 +63,10 @@ def run(configObj):
     
     
 #the final function that calls the workhorse  
-def rundrizCR(imgObjList,configObj,saveFile=True):
+def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
+
+    if procSteps is not None:
+        procSteps.addStep('Driz_CR')
 
     step_name = util.getSectionName(configObj,_step_num_)
     if not configObj[step_name]['driz_cr']:
@@ -75,6 +78,9 @@ def rundrizCR(imgObjList,configObj,saveFile=True):
  #           print image,chip
 #            _drizCr(image,chip,configObj,saveFile)
         _drizCr(image,configObj,saveFile)
+
+    if procSteps is not None:
+        procSteps.endStep('Driz_CR')
 
 
 #the workhorse function

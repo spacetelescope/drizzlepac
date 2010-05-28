@@ -119,7 +119,10 @@ def drizzle(input=None,drizSep=False,configObj=None,wcsmap=None,editpars=False,*
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None):
+def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None):
+    if procSteps is not None:
+        procSteps.addStep('Separate Drizzle')
+
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
     single_step = util.getSectionName(configObj,_single_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -139,7 +142,13 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None):
     else:
         print 'Single drizzle step not performed.'
 
-def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None):
+    if procSteps is not None:
+        procSteps.endStep('Separate Drizzle')
+
+
+def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,procSteps=None):
+    if procSteps is not None:
+        procSteps.addStep('Final Drizzle')
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
     final_step = util.getSectionName(configObj,_final_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -158,6 +167,9 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None):
                 build=build, wcsmap=wcsmap)
     else:
         print 'Final drizzle step not performed.'
+
+    if procSteps is not None:
+        procSteps.endStep('Final Drizzle')
 
 # Run 'drizzle' here...
 #
@@ -260,7 +272,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """
-    print 'MultiDrizzle: drizzle task started at ',_ptime()
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
@@ -639,6 +650,3 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     del _outsci,_outwht,_outctx, _hdrlist
     # end of loop over each chip
-
-
-    print 'MultiDrizzle: drizzle task completed at ',_ptime()

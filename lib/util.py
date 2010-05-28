@@ -10,7 +10,7 @@ import pyfits
 from pytools import asnutil,fileutil
 from pytools import teal
 import os
-import logging
+import logging,traceback
 import sys
 
 
@@ -32,8 +32,8 @@ class StreamLogger(object):
         self.data = ''
         
         # set up logfile
-        print 'initializing logfile: ',logfile
         self.log = open(logfile,mode)
+        self.filename = logfile
 
     def write(self, data):
         self.stream.write(data)
@@ -53,37 +53,117 @@ def init_logging(logfile='betadrizzle.log'):
     if logfile in [None," ",""]:
         return 
 
+    
+    if '.log' in logfile:
+        logname = logfile
+        elogname = logfile.replace('.log','_err.log')
+    else:
+        logname = logfile+'.log'
+        elogname = logfile + '_err.log'
     # redirect logging of both stdout and stderr to logfile
-    sys.stdout = StreamLogger(sys.stdout, logfile)
-    sys.stderr = StreamLogger(sys.stderr, logfile, prefix='stderr ',mode='a')
+    sys.stdout = StreamLogger(sys.stdout, logname)
+    #sys.stderr = StreamLogger(sys.stderr, elogname, prefix='stderr ')
 
 def end_logging():
     """ Close log file and restore stdout/stderr to system defaults.
     """
+    sys.stdout.log.flush()
     sys.stdout.log.close()
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
+
+    errfile = open(sys.stdout.filename,mode="a")
+    traceback.print_exc(None,errfile)
+    errfile.close()
     
+    sys.stdout = sys.__stdout__
+    
+class ProcSteps:
+    """ This class allows MultiDrizzle to keep track of the 
+        start and end times of each processing step that gets run
+        as well as computing/reporting the elapsed time for each step.
+        
+        The code for each processing step must call the 'addStep()' 
+        method to initialize the information for that step, then
+        the 'endStep()' method to record the end and elapsed times.
+        
+        The 'reportTimes()' method can then be used to provide a summary
+        of all the elapsed times and total run time. 
+    """
+    __report_header = '\n   %20s          %s\n'%('-'*20,'-'*20)
+    __report_header += '   %20s          %s\n'%('Step','Elapsed time')
+    __report_header += '   %20s          %s\n'%('-'*20,'-'*20)
+
+    def __init__(self):
+        self.steps = {}
+        self.order = []
+        self.start = _ptime()
+        self.end = None
+
+    def addStep(self,key):
+        """ Add information about a new step to the dict of steps
+            The value 'ptime' is the output from _ptime containing
+            both the formatted and unformatted time for the start of the 
+            step
+        """
+        ptime = _ptime()
+        print '==== Processing Step ',key,' started at ',ptime[0]
+        self.steps[key] = {'start':ptime}
+        self.order.append(key)
+
+    def endStep(self,key):
+        """ Record the end time for the step.
+        
+        If key==None, simply record ptime as end time for class to represent
+        the overall runtime since the initialization of the class.
+        """
+        ptime = _ptime()
+        if key is not None:
+            self.steps[key]['end'] = ptime
+            self.steps[key]['elapsed'] = ptime[1] - self.steps[key]['start'][1]
+        self.end = ptime
+        
+        print'==== Processing Step ',key,' finished at ',ptime[0]
+    
+    def reportTimes(self):
+        """ Print out a formatted summary of the elapsed times for all 
+            the performed steps
+        """
+        self.end = _ptime()
+        total_time = 0
+        print ProcSteps.__report_header 
+        for step in self.order:
+            if self.steps[step].has_key('elapsed'):
+                _time = self.steps[step]['elapsed']
+            else: 
+                _time = 0.0
+            total_time += _time
+            print '   %20s          %0.4f sec.'%(step,_time)
+
+        print '   %20s          %s'%('='*20,'='*20)
+        print '   %20s          %0.4f sec.'%('Total',total_time)
+        
+        # Compute overall runtime of entire program, including overhead
+        #total = self.end[1] - self.start[1]
+        #print '   %20s          %0.4f sec.'%('Total Runtime',total)
 
 def _ptime():
+    import time
     try:
         import datetime as dtime
     except ImportError:
-        import time
         dtime = None
-    
+    ftime = time.time()
     if dtime:
         # This time stamp includes sub-second timing...
-        _ltime = dtime.datetime.now()
+        _ltime = dtime.datetime.fromtimestamp(ftime)
         tlm_str = _ltime.strftime("%H:%M:%S")+str(_ltime.microsecond/1e+6)[1:-3]+_ltime.strftime(" (%d/%m/%Y)")
     else:
         # Basic time stamp which only includes integer seconds
         # Format time values for keywords IRAF-TLM, and DATE
-        _ltime = time.localtime(time.time())
+        _ltime = time.localtime(ftime)
         tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)',_ltime)
         #date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
-    return tlm_str
-
+    return tlm_str,ftime
+    
 def findrootname(filename):
     """
     return the rootname of the given file
@@ -409,6 +489,61 @@ def getRotatedSize(corners,angle):
         _corners = np.dot(corners,_rotm)
 
     return computeRange(_corners)
+
+def reset_dq_bits(filename,bits,extver=None,extname='dq'):
+    """ This function resets bits in the integer array(s) of a FITS file.
+
+    SYNTAX:
+        reset_dq_bits(filename, bits, extver=None, extname='dq')
+    
+    INPUT:
+        filename - full filename with path 
+        bits     - sum of integers corresponding to all the bits to be reset
+        extver   - List of version numbers of the DQ arrays 
+                   to be corrected (default: None)
+        extname  - EXTNAME of the DQ arrays in the FITS file 
+                   (default: 'dq')
+
+    The default value of None for the 'extver' parameter specifies that all
+    extensions with EXTNAME matching 'dq' (as specified by the 'extname' 
+    parameter) will have their bits reset. 
+
+    USAGE:
+        1. The following command will reset the 4096 bits in all 
+           the DQ arrays of the file input_file_flt.fits:
+
+            reset_dq_bits("input_file_flt.fits", 4096)
+   
+        2. To reset the 2,32,64 and 4096 bits in the second DQ array, 
+           specified as 'dq,2', in the file input_file_flt.fits:
+    
+            reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
+    """  
+    # open input file in write mode to allow updating the DQ array in-place
+    p = pyfits.open(filename,mode='update')
+    
+    # Identify the DQ array to be updated
+    # If no extver is specified, build a list of all DQ arrays in the file
+    if extver is None:
+        extver = []
+        for hdu in p:
+          # find only those extensions which match the input extname
+          # using case-insensitive name comparisons for 'extname'
+          if hdu.header.has_key('extver') and \
+             hdu.header['extname'].lower() == extname.lower():
+              extver.append(int(hdu.header['extver']))
+    else:
+        # Otherwise, insure that input extver values are a list
+        if not isinstance(extver, list): extver = [extver]
+
+    # for each DQ array identified in the file...
+    for extn in extver:
+        dqarr = p[extname,extn].data
+        # reset the desired bits
+        p[extname,extn].data = (dqarr & ~bits).astype(np.int16)
+        print 'Updated bits in '+filename+'['+extname+','+str(extn)+']'
+    # close the file with the updated DQ array(s)
+    p.close()    
 
 def readcols(infile,cols=[0,1,2,3]):
 
