@@ -114,7 +114,7 @@ def run(configObj=None,wcsmap=None):
     # 
     util.init_logging(logfile=configObj['runfile'])
     procSteps = util.ProcSteps()
-    print '[betadrizzle]MultiDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
+    print '[betadrizzle] MultiDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
     try:
         try:
             # Define list of imageObject instances and output WCSObject instance
@@ -125,7 +125,7 @@ def run(configObj=None,wcsmap=None):
             procSteps.endStep('Initialization')
             if not imgObjList:
                 return
-            
+                        
             # Call rest of MD steps...
             print 'Finished interpreting configObj...\n'
             #create static masks for each image
@@ -155,8 +155,6 @@ def run(configObj=None,wcsmap=None):
             raise
     finally:
         procSteps.reportTimes()
-        # Turn off logging now
-        util.end_logging()
 
         if imgObjList:
             for image in imgObjList:
@@ -166,4 +164,7 @@ def run(configObj=None,wcsmap=None):
                 
             del imgObjList
             del outwcs
+
+        # Turn off logging now
+        util.end_logging()
         

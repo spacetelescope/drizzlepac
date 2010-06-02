@@ -32,47 +32,61 @@ class StreamLogger(object):
         self.data = ''
         
         # set up logfile
-        self.log = open(logfile,mode)
-        self.filename = logfile
+        if logfile not in [None,"None","INDEF",""," "]:
+            self.log = open(logfile,mode)
+            self.filename = logfile
+            # clear out any previous exceptions, so that only those generated
+            # by this code will be picked up in the trailer file
+            sys.exc_clear()
+            print '[betadrizzle] Trailer file will be written out to: ',self.filename
+        else:
+            self.log = None
+            self.filename = None
+            print '[betadrizzle] No trailer file will be created...'
 
     def write(self, data):
         self.stream.write(data)
         self.stream.flush()
 
-        self.data += data
-        tmp = str(self.data)
-        if '\x0a' in tmp or '\x0d' in tmp:
-            tmp = tmp.rstrip('\x0a\x0d')
-            self.log.write('%s%s\n' % (self.prefix,tmp))
-            self.data = ''
+        if self.log is not None:
+            self.data += data
+            tmp = str(self.data)
+            if '\x0a' in tmp or '\x0d' in tmp:
+                tmp = tmp.rstrip('\x0a\x0d')
+                self.log.write('%s%s\n' % (self.prefix,tmp))
+                self.data = ''
             
 def init_logging(logfile='betadrizzle.log'):    
     """ Set up logfile for capturing stdout/stderr messages.
         Must be called prior to writing any messages that you want to log.
     """
-    if logfile in [None," ",""]:
-        return 
 
-    
-    if '.log' in logfile:
-        logname = logfile
-        elogname = logfile.replace('.log','_err.log')
+    if logfile not in [None,""," ","INDEF"]:
+        if '.log' in logfile:
+            logname = logfile
+        else:
+            logname = logfile+'.log'
     else:
-        logname = logfile+'.log'
-        elogname = logfile + '_err.log'
-    # redirect logging of both stdout and stderr to logfile
+        logname = None
+    # redirect logging of stdout to logfile
     sys.stdout = StreamLogger(sys.stdout, logname)
-    #sys.stderr = StreamLogger(sys.stderr, elogname, prefix='stderr ')
 
 def end_logging():
     """ Close log file and restore stdout/stderr to system defaults.
     """
-    sys.stdout.log.flush()
-    sys.stdout.log.close()
+    if sys.stdout.log is not None:
+        print '[betadrizzle] Trailer file written to: ',sys.stdout.filename
+        sys.stdout.log.flush()
+        sys.stdout.log.close()
 
-    errfile = open(sys.stdout.filename,mode="a")
-    traceback.print_exc(None,errfile)
-    errfile.close()
+        # Add any traceback information to the trailer file to document
+        # the error that caused the code to stop processing
+        if sys.exc_info()[0] is not None:
+            errfile = open(sys.stdout.filename,mode="a")
+            traceback.print_exc(None,errfile)
+            errfile.close()
+    else:
+        print '[betadrizzle] No trailer file saved...'
     
     sys.stdout = sys.__stdout__
     
@@ -541,7 +555,7 @@ def reset_dq_bits(filename,bits,extver=None,extname='dq'):
         dqarr = p[extname,extn].data
         # reset the desired bits
         p[extname,extn].data = (dqarr & ~bits).astype(np.int16)
-        print 'Updated bits in '+filename+'['+extname+','+str(extn)+']'
+        print 'Reset bit values of ',bits,' to a value of 0 in '+filename+'['+extname+','+str(extn)+']'
     # close the file with the updated DQ array(s)
     p.close()    
 
