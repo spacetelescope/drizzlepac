@@ -554,7 +554,7 @@ def mergeWCS(default_wcs,user_pars):
 
     # Set up the new WCS based on values from old one.
     # Update plate scale
-    outwcs.wcs.cd *= _ratio
+    outwcs.wcs.cd /= _ratio
     outwcs.pscale /= _ratio
     #Update orientation
     outwcs.rotateCD(_delta_rot)
