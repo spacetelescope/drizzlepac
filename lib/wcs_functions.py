@@ -64,11 +64,11 @@ class WCSMap:
             # has been applied and not correct the WCS any further
             # Update OUTPUT WCS crpix value with shift, since it was determined
             # in (and translated to) the output frame.
-            self.output.wcs.crpix -= self.shift
+            self.output.wcs.crpix = self.output.wcs.crpix - self.shift
 
             # apply translated rotation and scale from shiftfile to input WCS
             self.output.rotateCD(rot)
-            self.output.wcs.cd *= scale
+            self.output.wcs.cd = self.output.wcs.cd * scale
             self.output.orientat += rot
             self.output.pscale *= scale
 
@@ -114,11 +114,11 @@ def applyShift_to_WCS(imageobj,input,output):
         # has been applied and not correct the WCS any further
         # Update OUTPUT WCS crpix value with shift, since it was determined
         # in (and translated to) the output frame.
-        output.wcs.crpix -= shift
+        output.wcs.crpix = output.wcs.crpix - shift
 
         # apply translated rotation and scale from shiftfile to input WCS
         output.rotateCD(rot)
-        output.wcs.cd *= scale
+        output.wcs.cd = output.wcs.cd * scale
         output.orientat += rot
         output.pscale *= scale
         
@@ -152,11 +152,11 @@ class IdentityMap:
             # has been applied and not correct the WCS any further
             # Update OUTPUT WCS crpix value with shift, since it was determined
             # in (and translated to) the output frame.
-            self.output.wcs.crpix -= self.shift
+            self.output.wcs.crpix = self.output.wcs.crpix - self.shift
 
             # apply translated rotation and scale from shiftfile to input WCS
             self.output.rotateCD(rot)
-            self.output.wcs.cd *= scale
+            self.output.wcs.cd = self.output.wcs.cd * scale
             self.output.orientat += rot
             self.output.pscale *= scale
         
@@ -554,7 +554,7 @@ def mergeWCS(default_wcs,user_pars):
 
     # Set up the new WCS based on values from old one.
     # Update plate scale
-    outwcs.wcs.cd /= _ratio
+    outwcs.wcs.cd = outwcs.wcs.cd / _ratio
     outwcs.pscale /= _ratio
     #Update orientation
     outwcs.rotateCD(_delta_rot)
@@ -563,9 +563,9 @@ def mergeWCS(default_wcs,user_pars):
     outwcs.naxis1 =  int(shape[0])
     outwcs.naxis2 =  int(shape[1])
     # Update reference position
-    outwcs.wcs.crpix =_crpix
+    outwcs.wcs.crpix = np.array(_crpix,dtype=np.float64)
     if _crval is not None:
-        outwcs.wcs.crval = _crval
+        outwcs.wcs.crval = np.array(_crval,dtype=np.float64)
         
     return outwcs
 
@@ -584,14 +584,12 @@ def convertWCS(inwcs,drizwcs):
 
 def updateWCS(drizwcs,inwcs):
     """ Copy output WCS array from Drizzle into WCSObject."""
-    inwcs.crpix[0]    = drizwcs[0]
-    inwcs.crval[0]   = drizwcs[1]
-    inwcs.crpix[1]   = drizwcs[2]
-    inwcs.crval[1]   = drizwcs[3]
-    inwcs.cd[0][0]     = drizwcs[4]
-    inwcs.cd[1][0]     = drizwcs[5]
-    inwcs.cd[0][1]     = drizwcs[6]
-    inwcs.cd[1][1]     = drizwcs[7]
+    crpix = np.array([drizwcs[0],drizwcs[2]], dtype=np.float64)
+    crval = np.array([drizwcs[1],drizwcs[3]], dtype=np.float64)
+    cd = np.array([[drizwcs[4],drizwcs[6]],[drizwcs[5],drizwcs[7]]], dtype=np.float64)
+    inwcs.cd = cd
+    inwcs.crval = crval
+    inwc.crpix = crpix
     inwcs.pscale = N.sqrt(N.power(inwcs.cd[0][0],2)+N.power(inwcs.cd[1][0],2)) * 3600.
     inwcs.orient = N.arctan2(inwcs.cd[0][1],inwcs.cd[1][1]) * 180./N.pi
 
