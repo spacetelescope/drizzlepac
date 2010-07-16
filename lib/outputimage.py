@@ -366,7 +366,8 @@ class OutputImage:
 
             hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
             # explicitly set EXTEND to FALSE for simple FITS files.
-            hdu.header.update('extend',pyfits.FALSE,after='NEXTEND')
+            dim = len(sciarr.shape)
+            hdu.header.update('extend',pyfits.FALSE,after='NAXIS%s'%dim)
             
             # Append remaining unique header keywords from template DQ
             # header to Primary header...
