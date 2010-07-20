@@ -23,7 +23,7 @@ DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,
 shift_kwlist = ['WSHIFT1','WSHIFT2','WROT','WSCALE']
 shift_kwcomments = ['Shift in axis1 from shiftfile','Shift in axis2 from shiftfile','Rotation from shiftfile','scale change from shiftfile']
 
-WCSEXTN_NAME = 'WCSCORR'
+WCSEXTN_NAME = 'WCSOFF'
 # Default mapping function based on PyWCS 
 class WCSMap:
     def __init__(self,input,output,origin=1):
