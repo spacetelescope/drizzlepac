@@ -18,6 +18,7 @@ import drizCR
 import staticMask
 import util
 import wcs_functions
+import resetbits
 
 __taskname__ = "betadrizzle"
 
@@ -29,7 +30,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.2dev9801'
+__version__ = '4.0.2dev9990'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations

@@ -3,7 +3,7 @@ from pytools import parseinput, fileutil, readgeis, asnutil,irafglob,check_files
 import pyfits
 import os,shutil
 
-import wcs_functions,util
+import wcs_functions,util,resetbits
 import mdzhandler
 
 from stwcs import updatewcs
@@ -340,7 +340,7 @@ def resetDQBits(imageObjectList,cr_bits_value=4096):
         for img in imageObjectList:
             for chip in range(1,img._numchips+1,1):
                 sci_chip = img._image[img.scienceExt,chip]
-                util.reset_dq_bits(sci_chip.dqfile,cr_bits_value,extver=chip,extname=sci_chip.dq_extn)
+                resetbits.reset_dq_bits(sci_chip.dqfile,cr_bits_value,extver=chip,extname=sci_chip.dq_extn)
 
 def update_member_names(oldasndict, pydr_input):
     """

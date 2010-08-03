@@ -1,0 +1,8 @@
+_task_name_ = string_kw(default="resetbits")
+input = string_kw(default="*flt.fits", comment="Input files (name, suffix, or @list)")
+bits = integer_kw(default=4096, comment="Bit value in array to be reset to 0")
+extver = integer_or_none_kw(default=None, comment="EXTVER for arrays to be reset")
+extname = string_kw(default="dq", comment= "EXTNAME for arrays to be reset")
+mode = string_kw(default="all")
+
+[ _RULES_ ]

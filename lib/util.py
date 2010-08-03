@@ -13,7 +13,6 @@ import os
 import logging,traceback
 import sys
 
-
 __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
@@ -503,61 +502,6 @@ def getRotatedSize(corners,angle):
         _corners = np.dot(corners,_rotm)
 
     return computeRange(_corners)
-
-def reset_dq_bits(filename,bits,extver=None,extname='dq'):
-    """ This function resets bits in the integer array(s) of a FITS file.
-
-    SYNTAX:
-        reset_dq_bits(filename, bits, extver=None, extname='dq')
-    
-    INPUT:
-        filename - full filename with path 
-        bits     - sum of integers corresponding to all the bits to be reset
-        extver   - List of version numbers of the DQ arrays 
-                   to be corrected (default: None)
-        extname  - EXTNAME of the DQ arrays in the FITS file 
-                   (default: 'dq')
-
-    The default value of None for the 'extver' parameter specifies that all
-    extensions with EXTNAME matching 'dq' (as specified by the 'extname' 
-    parameter) will have their bits reset. 
-
-    USAGE:
-        1. The following command will reset the 4096 bits in all 
-           the DQ arrays of the file input_file_flt.fits:
-
-            reset_dq_bits("input_file_flt.fits", 4096)
-   
-        2. To reset the 2,32,64 and 4096 bits in the second DQ array, 
-           specified as 'dq,2', in the file input_file_flt.fits:
-    
-            reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
-    """  
-    # open input file in write mode to allow updating the DQ array in-place
-    p = pyfits.open(filename,mode='update')
-    
-    # Identify the DQ array to be updated
-    # If no extver is specified, build a list of all DQ arrays in the file
-    if extver is None:
-        extver = []
-        for hdu in p:
-          # find only those extensions which match the input extname
-          # using case-insensitive name comparisons for 'extname'
-          if hdu.header.has_key('extver') and \
-             hdu.header['extname'].lower() == extname.lower():
-              extver.append(int(hdu.header['extver']))
-    else:
-        # Otherwise, insure that input extver values are a list
-        if not isinstance(extver, list): extver = [extver]
-
-    # for each DQ array identified in the file...
-    for extn in extver:
-        dqarr = p[extname,extn].data
-        # reset the desired bits
-        p[extname,extn].data = (dqarr & ~bits).astype(np.int16)
-        print 'Reset bit values of ',bits,' to a value of 0 in '+filename+'['+extname+','+str(extn)+']'
-    # close the file with the updated DQ array(s)
-    p.close()    
 
 def readcols(infile,cols=[0,1,2,3]):
 
