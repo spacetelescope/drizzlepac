@@ -15,7 +15,7 @@ import buildmask
 
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
-DQ_EXTNS = {'c0h':'sdq','c0f':'sci'}
+DQ_EXTNS = {'c0h':'sdq','c0f':'sci','c0m':'sci'}
 
 #### Calibrated gain and readnoise values for each chip
 WFPC2_GAINS = { 1:{7:[7.12,5.24],15:[13.99,7.02]},
@@ -58,8 +58,9 @@ class WFPC2InputImage (imageObject):
         indx = self._filename.find('.fits')
         suffix = self._filename[indx-4:indx]
         dqfile = self._filename.replace(suffix[:3],'_c1')
-        dq_suffix = DQ_EXTNS[suffix[1:]]
-
+        #dq_suffix = DQ_EXTNS[suffix[1:]]
+        dq_suffix = pyfits.getval(dqfile, "EXTNAME", ext=1)
+        
         return dqfile,dq_suffix
 
     def getEffGain(self):
