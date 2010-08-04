@@ -142,7 +142,7 @@ def help():
     
 def main():
 
-    import getopt
+    import getopt, sys
 
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'h')
