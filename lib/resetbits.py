@@ -59,6 +59,7 @@
 from __future__ import division
 
 import pyfits
+from pytools import parseinput
 
 __taskname__ = "resetbits"
 __version__ = '1.0.0'
@@ -131,7 +132,6 @@ def run(configobj=None):
         extver=configobj['extver'],extname=configobj['extname'])
 
 def getHelpAsString():
-    # Does NOT work with TEAL/teal.teal()
     helpString = 'resetbits Version '+__version__+__vdate__+'\n'
     helpString += __doc__+'\n'
 
