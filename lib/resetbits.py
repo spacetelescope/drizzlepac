@@ -4,20 +4,20 @@
 
     This module allows a user to reset the pixel values of any integer array,
     such as the DQ array from an HST image, to zero.
-       
+
     License: http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
-    
+
     USAGE
     -----
         resetbits filename bits [extver [extname]]
-    
+
     PARAMETERS
     ----------
     filename: str
         full filename with path
     bits: int
         sum of integers corresponding to all the bits to be reset
-    
+
     OPTIONAL PARAMETERS
     -------------------
     extver: int, optional
@@ -31,7 +31,7 @@
     -----
     This module performs a simple bitwise-and on all the pixels in the specified
     array and the integer value provided as input using the operation (array & ~bits).  
-    
+
     EXAMPLES
     --------
     1. The following command will reset the 4096 bits in all 
@@ -40,7 +40,7 @@
         resetbits input_flt.fits 4096
 
         or from the Python command line:
-        
+
         >>> import resetbits
         >>> resetbits.reset_dq_bits("input_file_flt.fits", 4096)
 
@@ -49,15 +49,15 @@
         second DQ array, specified as 'dq,2', in the file 'input_flt.fits':
 
         resetbits input_flt.fits 4194 2
-        
+
         or from the Python command line:
-        
+
         >>> import resetbits
         >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
 """
 from __future__ import division
-
+import numpy as np
 import pyfits
 from pytools import parseinput
 
@@ -70,7 +70,7 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
 
     SYNTAX:
         reset_dq_bits(filename, bits, extver=None, extname='dq')
-    
+
     INPUT:
         filename - full filename with path 
         bits     - sum of integers corresponding to all the bits to be reset
@@ -88,27 +88,27 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
            the DQ arrays of the file input_file_flt.fits:
 
             reset_dq_bits("input_file_flt.fits", 4096)
-   
+
         2. To reset the 2,32,64 and 4096 bits in the second DQ array, 
            specified as 'dq,2', in the file input_file_flt.fits:
-    
+
             reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
     """  
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
         # open input file in write mode to allow updating the DQ array in-place
         p = pyfits.open(filename,mode='update')
-        
+
         # Identify the DQ array to be updated
         # If no extver is specified, build a list of all DQ arrays in the file
         if extver is None:
             extver = []
             for hdu in p:
-              # find only those extensions which match the input extname
-              # using case-insensitive name comparisons for 'extname'
-              if hdu.header.has_key('extver') and \
-                 hdu.header['extname'].lower() == extname.lower():
-                  extver.append(int(hdu.header['extver']))
+                # find only those extensions which match the input extname
+                # using case-insensitive name comparisons for 'extname'
+                if hdu.header.has_key('extver') and \
+                   hdu.header['extname'].lower() == extname.lower():
+                    extver.append(int(hdu.header['extver']))
         else:
             # Otherwise, insure that input extver values are a list
             if not isinstance(extver, list): extver = [extver]
@@ -127,9 +127,9 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
 #
 def run(configobj=None):
     ''' Teal interface for running this code. '''
-   
+
     reset_dq_bits(configobj['input'],configobj['bits'],
-        extver=configobj['extver'],extname=configobj['extname'])
+                  extver=configobj['extver'],extname=configobj['extname'])
 
 def getHelpAsString():
     helpString = 'resetbits Version '+__version__+__vdate__+'\n'
@@ -139,7 +139,7 @@ def getHelpAsString():
 
 def help():
     print getHelpAsString()
-    
+
 def main():
 
     import getopt, sys
@@ -153,7 +153,7 @@ def main():
 
     # initialize default values
     help = 0
-    
+
     # read options
     for opt, value in optlist:
         if opt == "-h":
@@ -163,7 +163,7 @@ def main():
         if len(args) < 3:
             args.append(None)
         args.append('dq')
-    
+
     if (help):
         print __doc__
         print "\t", __version__+'('+__vdate__+')'
