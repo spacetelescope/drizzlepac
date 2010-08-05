@@ -3,6 +3,7 @@
 #   Program: wfpc2_input.py
 #   Purpose: Class used to model WFPC2 specific instrument data.
 from __future__ import division # confidence medium
+import os
 
 import pyfits
 import numpy as np
@@ -59,8 +60,11 @@ class WFPC2InputImage (imageObject):
         suffix = self._filename[indx-4:indx]
         dqfile = self._filename.replace(suffix[:3],'_c1')
         #dq_suffix = DQ_EXTNS[suffix[1:]]
-        dq_suffix = pyfits.getval(dqfile, "EXTNAME", ext=1)
-        
+        if os.path.exists(dqfile):
+            dq_suffix = pyfits.getval(dqfile, "EXTNAME", ext=1)
+        else:
+            dq_suffix = "SCI"
+            
         return dqfile,dq_suffix
 
     def getEffGain(self):
