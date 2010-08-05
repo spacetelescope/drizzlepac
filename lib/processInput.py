@@ -597,7 +597,7 @@ def update_wfpc2_d2geofile(filename,fhdu=None):
         close_fhdu = True
         
     dgeofile = fhdu['PRIMARY'].header.get('DGEOFILE',None)
-    if dgeofile is not None:
+    if dgeofile not in [None, "N/A", "", " "]:
         print 'Converting DGEOFILE ',dgeofile,' into D2IMFILE...'
         rootname = filename[:filename.find('.fits')]
         d2imfile = convert_dgeo_to_d2im(dgeofile,rootname)
