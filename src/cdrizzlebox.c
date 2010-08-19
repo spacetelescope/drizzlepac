@@ -136,6 +136,17 @@ check_over(struct driz_param_t* p, const integer_t y, const integer_t margin,
   *x1 = (first > 0) ? (integer_t)xval[first - 1] : (integer_t)xval[0];
   *x2 = (last < np - 1) ? (integer_t)xval[last + 1] : (integer_t)xval[np - 1];
 
+  assert(*x1 >= 0 && *x1 <= p->dnx);
+  assert(*x2 >= 0 && *x2 <= p->dnx);
+
+  if (*x1 == p->dnx) {
+      *x1 -= 1;
+  }
+
+  if (*x2 == p->dnx) {
+      *x2 -= 1;
+  }
+
   return 0;
 }
 

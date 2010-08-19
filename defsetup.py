@@ -68,18 +68,19 @@ else:
 def getNumpyExtensions():
     define_macros = [('PYDRIZZLE', None)]
     undef_macros = []
+    EXTRA_COMPILE_ARGS = []
     if BUILD.lower() == 'debug':
         define_macros.append(('DEBUG', None))
         undef_macros.append('NDEBUG')
         if not sys.platform.startswith('sun') and \
            not sys.platform == 'win32':
-            extra_compile_args.extend(["-fno-inline", "-O0", "-g"])
+            EXTRA_COMPILE_ARGS.extend(["-fno-inline", "-O0", "-g"])
     elif BUILD.lower() == 'profile':
         define_macros.append(('NDEBUG', None))
         undef_macros.append('DEBUG')
         if not sys.platform.startswith('sun') and \
            not sys.platform == 'win32':
-            extra_compile_args.extend(["-O3", "-g"])
+            EXTRA_COMPILE_ARGS.extend(["-O3", "-g"])
     elif BUILD.lower() == 'release':
         # Define ECHO as nothing to prevent spurious newlines from
         # printing within the libwcs parser
@@ -101,6 +102,7 @@ def getNumpyExtensions():
                      include_dirs=[pythoninc] + [numpyinc] + cfitsioinc + \
                          pywcsincludes,
                      extra_link_args=EXTRA_LINK_ARGS,
+                     extra_compile_args=EXTRA_COMPILE_ARGS,
                      library_dirs=[cfitsio_lib],
                      libraries=['m', 'cfitsio']
                      )]

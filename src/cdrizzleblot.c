@@ -139,11 +139,11 @@ was: IIBIP3
 */
 static inline void
 ii_bipoly5(const float* coeff /* [len_coeff][len_coeff] */,
-       const integer_t len_coeff, const integer_t firstt,
-       const integer_t npts,
-       const float* x /* [npts] */, const float* y /* [npts] */,
-       /* Output parameters */
-       float* zfit /* [npts] */) {
+           const integer_t len_coeff, const integer_t firstt,
+           const integer_t npts,
+           const float* x /* [npts] */, const float* y /* [npts] */,
+           /* Output parameters */
+           float* zfit /* [npts] */) {
   integer_t nxold, nyold;
   integer_t nx, ny;
   float sx, sx2, tx, tx2, sy, sy2, ty, ty2;
@@ -684,6 +684,7 @@ interpolate_sinc_(const float* data, const integer_t firstt,
   integer_t nx, ny;
   integer_t i, j, k, m, index;
   integer_t indices[3][4];
+  integer_t dnx,dny;
 
   assert(x);
   assert(y);
@@ -791,12 +792,15 @@ interpolate_sinc_(const float* data, const integer_t firstt,
     indices[2][2] = firstt + (lenary - 1) * len_coeff;
     indices[2][3] = 0;
 
+    dnx = len_coeff;
+    dny = lenary;
+    
     for (m = 0; m < 3; ++m) {
       for (j = indices[m][0]; j <= indices[m][1]; ++j) {
         sum = 0.0;
         index = indices[m][2] + j * indices[m][3];
-        assert(index >= 0 && index < dnx*dny - 1);
-        assert(index+len_coeff >= 0 && index+len_coeff < dnx*dny);
+        assert(index >= 0 && index < len_coeff*lenary - 1);
+        assert(index+len_coeff >= 0 && index+len_coeff < len_coeff*lenary);
 
         for (k = nx - nsinc; k < mink - 1; ++k) { /* TODO: Bases check */
           assert(k+offk >= 0 && k+offk < INTERPOLATE_SINC_NCONV);
@@ -806,7 +810,7 @@ interpolate_sinc_(const float* data, const integer_t firstt,
 
         for (k = mink; k <= maxk; ++k) { /* TODO: Bases check */
           assert(k+offk >= 0 && k+offk < INTERPOLATE_SINC_NCONV);
-          assert(index+k >= 0 && index+k < dnx*dny);
+          assert(index+k >= 0 && index+k < len_coeff*lenary);
 
           sum += ac[k+offk] * data[index+k];
         }
@@ -1093,7 +1097,7 @@ doblot(struct driz_param_t* p,
   xin[1] = 0.0;
   yin[1] = 0.0;
   v = 1.0;
-
+    
   /* Outer look over output image pixels (X, Y) */
   for (j = 0; j < p->ony; ++j) {
     yv = (double)j+1;
@@ -1110,10 +1114,11 @@ doblot(struct driz_param_t* p,
     for (i = 0; i < p->onx; ++i) {
       xo = (float)(xout[i] - dx);
       yo = (float)(yout[i] - dy);
-
+      
       /* Check it is on the input image */
-      if (xo >= 0.0 && xo <= nx &&
-          yo >= 0.0 && yo <= ny) {
+      if (xo >= 0.0 && xo <= p->dnx &&
+          yo >= 0.0 && yo <= p->dny) {
+        
         /* Check for look-up-table interpolation */
         if (interpolate(state, p->data, p->dnx, p->dny, xo, yo, &v, error)) {
           goto doblot_exit_;
