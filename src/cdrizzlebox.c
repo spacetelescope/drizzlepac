@@ -136,16 +136,8 @@ check_over(struct driz_param_t* p, const integer_t y, const integer_t margin,
   *x1 = (first > 0) ? (integer_t)xval[first - 1] : (integer_t)xval[0];
   *x2 = (last < np - 1) ? (integer_t)xval[last + 1] : (integer_t)xval[np - 1];
 
-  assert(*x1 >= 0 && *x1 <= p->dnx);
-  assert(*x2 >= 0 && *x2 <= p->dnx);
-
-  if (*x1 == p->dnx) {
-      *x1 -= 1;
-  }
-
-  if (*x2 == p->dnx) {
-      *x2 -= 1;
-  }
+  assert(*x1 > 0 && *x1 <= p->dnx);
+  assert(*x2 > 0 && *x2 <= p->dnx);
 
   return 0;
 }
@@ -1278,11 +1270,16 @@ dobox(struct driz_param_t* p, const integer_t ystart,
 
     /* If the line falls completely off the output, then skip it */
     if (ofrac != 0.0) {
-      assert(x1 >= 0 && x1 < p->dnx);
-      assert(x2 >= 0 && x2 < p->dnx);
+      assert(x1 > 0 && x1 <= p->dnx);
+      assert(x2 > 0 && x2 <= p->dnx);
 
-      /* We know there are some misses */
+      /* We know there may be some misses */
       *nmiss += p->dnx - (x2 - x1 + 1);
+
+      /* Don't read past the edge of the image */
+      if (x2 == p->dnx) {
+          x2 -= 1;
+      }
 
       /* At this point we can handle the different kernels separately.
          First the cases where we just transform a single point rather
