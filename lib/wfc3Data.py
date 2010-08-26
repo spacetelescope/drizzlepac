@@ -106,6 +106,15 @@ class WFC3UVISInputImage(WFC3InputImage):
         # define the cosmic ray bits value to use in the dq array
         self.full_shape = (4096,2051)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
+
+        # get cte direction, which depends on which chip but is independent of amp 
+        for chip in range(1,self._numchips+1,1):
+            self._assignSignature(chip) #this is used in the static mask
+            
+            if ( chip == 1) :
+                self._image[self.scienceExt,chip].cte_dir = -1    
+            if ( chip == 2) : 
+                self._image[self.scienceExt,chip].cte_dir = 1   
         
  
     def doUnitConversions(self):
@@ -152,14 +161,6 @@ class WFC3UVISInputImage(WFC3InputImage):
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
-
-            # get cte direction, which depends on which chip but is independent of amp 
-            if(chip.extnum  == 1):
-                chip.cte_dir = -1
-            if(chip.extnum  == 2):
-                chip.cte_dir = 1
-        
-            self._assignSignature(chip._chip) #this is used in the static mask                     
 
         # Convert the science data to electrons. 
         self.doUnitConversions()
@@ -281,10 +282,6 @@ class WFC3IRInputImage(WFC3InputImage):
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
                 raise ValueError
-
-           
-            chip.cte_dir = 0 #no cte
-           
  
             self._assignSignature(chip.extnum) #this is used in the static mask                     
 
