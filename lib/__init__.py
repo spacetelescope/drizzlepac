@@ -22,6 +22,11 @@ import resetbits
 
 __taskname__ = "betadrizzle"
 
+# These lines allow TEAL to print out the names of TEAL-enabled tasks 
+# upon importing this package.
+from pytools import teal
+teal.print_tasknames(__name__, os.path.dirname(__file__))
+
 # Begin Version Information -------------------------------------------
 # Revision based version info
 try:
