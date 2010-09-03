@@ -4,7 +4,7 @@
 #   Purpose: Module that handles the MDRIZTAB reference file.
 from __future__ import division # confidence high
 
-import string
+import string, os
 
 import pyfits
 import numpy as np
@@ -29,10 +29,16 @@ def getMdriztabParameters(files):
         raise KeyError, "No MDRIZTAB found in file " + _fileName
 
     _tableName = fileutil.osfn(_tableName)
-
+    
     # Now get the filters from the primary header.
     _filters = fileutil.getFilterNames(_header)
-
+    
+    # Specifically check to see whether the MDRIZTAB file can be found
+    if not os.path.exists(os.path.split(_tableName)[0]): # check path first
+        raise IOError, "Directory for MDRIZTAB '%s' could not be accessed!"%os.path.split(_tableName)[0]
+    if not os.path.exists(_tableName): # then check for the table itself
+        raise IOError, "MDRIZTAB table '%s' could not be found!"%_tableName
+    
     # Open MDRIZTAB file.
     try:
         _mdriztab = pyfits.open(_tableName)
