@@ -5,7 +5,7 @@ mdriztab = boolean_kw(default=True, comment="Use Multidrizzle parameter file spe
 refimage = string_kw(default="", comment="Reference image from which to obtain a WCS")
 runfile = string_kw(default="betadrizzle.log", comment="File for logging the script commands")
 workinplace = boolean_kw(default=False, comment="Work on input files in place? (NOT RECOMMENDED)")
-updatewcs = boolean_kw(default=False, comment="Update the WCS keywords?")
+updatewcs = boolean_kw(default=True, comment="Update the WCS keywords?")
 proc_unit = option_kw("native", "electrons", default="native", comment="Units used during processing")
 coeffs = string_kw(default="header", comment="Use header-based distortion coefficients?")
 context = boolean_kw(default=True, comment="Create context image during final drizzle?")
