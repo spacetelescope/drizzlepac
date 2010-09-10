@@ -4,15 +4,12 @@ import os,copy
 import numpy as np
 from numpy import linalg
 
-from stwcs import wcsutil
-from stwcs.distortion import utils
-
 from pytools import fileutil,asnutil
 import util
 import imageObject
 import stwcs
 import pywcs
-from stwcs import distortion
+from stwcs import distortion,wcsutil
 from stwcs.distortion import coeff_converter,utils
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,
@@ -406,7 +403,10 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         undistort=True
         if configObj['coeffs'] in ['',None]:
             undistort=False
-        default_wcs = utils.output_wcs(hstwcs_list,undistort=undistort)
+        if not undistort and len(hstwcs_list) == 1:
+            default_wcs = hstwcs_list[0].deepcopy()
+        else:
+            default_wcs = utils.output_wcs(hstwcs_list,undistort=undistort)
     else:
         # Otherwise, simply use the reference image specified by the user
         default_wcs = wcsutil.HSTWCS(configObj['refimage'])
@@ -445,6 +445,8 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         for key in final_keys.keys():
             final_pars[key] = configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'][final_keys[key]]
 
+        print final_pars
+        
         ### Create single_wcs instance based on user parameters
         outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
         outwcs.wcs = outwcs.final_wcs.copy()
