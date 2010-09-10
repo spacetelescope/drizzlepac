@@ -210,6 +210,12 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             # compute the undistorted 'natural' plate scale for this chip
             wcslin = distortion.utils.undistortWCS(chip.wcs)
 
+            if paramDict['coeffs'] in ['',' ','INDEF',None]:
+                chip.wcs.sip = None
+                chip.wcs.cpdis1 = None
+                chip.wcs.cpdis2 = None
+                chip.wcs.det2im = None
+
             if wcsmap is None and arrdriz is not None:
                 """
                 # Use default C mapping function

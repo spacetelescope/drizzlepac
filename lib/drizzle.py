@@ -203,7 +203,7 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
 def buildDrizParamDict(configObj,single=True):
     chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
     # Initialize paramDict with global parameter(s)
-    paramDict = {'build':configObj['build'],'stepsize':configObj['stepsize']}
+    paramDict = {'build':configObj['build'],'stepsize':configObj['stepsize'],'coeffs':configObj['coeffs']}
 
     # build appro
     if single:
@@ -304,12 +304,13 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     #stepsize = 2.0
     stepsize = paramDict['stepsize']
     print '  **Using sub-sampling value of ',stepsize,' for kernel ',paramDict['kernel']
+
+    outwcs = copy.deepcopy(output_wcs)
     
     # Check for existance of output file.
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
         print 'Removing previous output product...'
         os.remove(imageObjectList[0].outputNames['outFinal'])
-
 
     # print out parameters being used for drizzling
     print "Running Drizzle to create output frame with WCS of: "
@@ -542,24 +543,27 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
             # compute the undistorted 'natural' plate scale for this chip
             wcslin = distortion.utils.undistortWCS(chip.wcs)
-
+        
+            if paramDict['coeffs'] in ['',' ','INDEF',None]:
+                chip.wcs.sip = None
+                chip.wcs.cpdis1 = None
+                chip.wcs.cpdis2 = None
+                chip.wcs.det2im = None
             if wcsmap is None and arrdriz is not None:
                 print 'Using default C-based coordinate transformation...'
-                outwcs = copy.deepcopy(output_wcs)
                 wcs_functions.applyShift_to_WCS(img,chip.wcs,outwcs)
-                mapping = arrdriz.DefaultWCSMapping(chip.wcs,outwcs,int(chip.size1),int(chip.size2),stepsize)
-                
-                pix_ratio = outwcs.pscale/wcslin.pscale
+                mapping = arrdriz.DefaultWCSMapping(chip.wcs,outwcs,int(chip.size1),int(chip.size2),stepsize)                
             else:
                 #
                 ##Using the Python class for the WCS-based transformation
                 #
                 # Use user provided mapping function
                 print 'Using coordinate transformation defined by user...'
-                wmap = wcsmap(chip.wcs,output_wcs)
+                wmap = wcsmap(chip.wcs,outwcs)
                 wmap.applyShift(img)
                 mapping = wmap.forward
-                pix_ratio = output_wcs.pscale/wcslin.pscale
+
+            pix_ratio = outwcs.pscale/wcslin.pscale
 
             _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
@@ -626,6 +630,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 if paramDict['units'] == 'counts':
                     np.multiply(_outsci, _expscale, _outsci)
 
+                # record IDCSCALE for output to product header
+                paramDict['idcscale'] = chip.wcs.idcscale
                 #
                 # Write output arrays to FITS file(s) and reset chip counter
                 #
