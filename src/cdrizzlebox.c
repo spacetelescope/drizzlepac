@@ -1247,7 +1247,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
     inv_exposure_time = 1.0f / p->exposure_time;
     /* TODO: Removing this printf causes the results to be
        less accurate.  Frustrating Heisenbug */
-    printf("%f\n", inv_exposure_time);
+    /*printf("%f\n", inv_exposure_time); */
     data_begin = p->data;
     data_end = data_begin + (p->ny * p->dnx);
     for (; data_begin != data_end; ++data_begin) {
