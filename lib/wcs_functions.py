@@ -398,11 +398,19 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     if configObj['refimage'].strip() in ['',None]:        
         # Compute default output WCS, if no refimage specified
         hstwcs_list = []
-        for img in imageObjectList:
-            hstwcs_list += img.getKeywordList('wcs')
         undistort=True
-        if configObj['coeffs'] in ['',None]:
-            undistort=False
+        for img in imageObjectList:
+            chip_wcs = copy.deepcopy(img.getKeywordList('wcs'))
+            # IF the user turned off use of coeffs (coeffs==None or '')
+            if configObj['coeffs'] in ['',' ',None,'INDEF']:
+                for cw in chip_wcs:
+                    # Turn off distortion model for each input
+                    cw.sip = None
+                    cw.cpdis1 = None
+                    cw.cpdis2 = None
+                    cw.det2im = None
+                undistort=False
+            hstwcs_list += chip_wcs
         if not undistort and len(hstwcs_list) == 1:
             default_wcs = hstwcs_list[0].deepcopy()
         else:
@@ -445,8 +453,6 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         for key in final_keys.keys():
             final_pars[key] = configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'][final_keys[key]]
 
-        print final_pars
-        
         ### Create single_wcs instance based on user parameters
         outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
         outwcs.wcs = outwcs.final_wcs.copy()
