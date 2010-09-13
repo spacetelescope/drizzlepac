@@ -6,6 +6,7 @@ import os,shutil
 import wcs_functions,util,resetbits
 import mdzhandler
 
+import stwcs
 from stwcs import updatewcs
 
 """
@@ -71,7 +72,8 @@ def setCommonInput(configObj,createOutwcs=True):
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'], 
-            updatewcs=configObj['updatewcs'], workinplace=configObj['workinplace'])
+            updatewcs=configObj['updatewcs'], workinplace=configObj['workinplace'],
+            wcskey=configObj['wcskey'])
     
     if not asndict:
         return None, None
@@ -272,7 +274,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 
     return filelist,output,ivmlist,oldasndict    
     
-def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True):
+def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True, wcskey=None):
     
     newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,workinplace=workinplace)
     
@@ -287,9 +289,15 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         return None, None, None
     
     #make an asn table at the end
-    if updatewcs:
-        pydr_input = runmakewcs(newfilelist)  
+    if wcskey in ['',' ','INDEF',None]:
+        if updatewcs:
+            print 'Updating input WCS using "updatewcs"'
+            pydr_input = runmakewcs(newfilelist)  
+        else:
+            pydr_input = newfilelist
     else:
+        print 'Resetting input WCS to be based on WCS key = ',wcskey
+        stwcs.utils.restoreWCS(newfilelist,wcskey,clobber=True)
         pydr_input = newfilelist
 
     # AsnTable will handle the case when output==None

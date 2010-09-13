@@ -66,7 +66,10 @@ runfile: This log file will contain the IRAF CL commands necessary for performin
 workinplace: This parameter specifies whether to perform all processing on the original, including skysubtraction and update of the DQ array. If set to 'True', then no copy of the input will be created for processing, and the original input will be modified directly by MultiDrizzle.
 
 
-updatewcs: This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. Also, for ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should usually be set to 'yes', unless the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is'.
+updatewcs: This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. Also, for ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should usually be set to 'yes', unless the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is'. This update will be turned off if a keyed WCS has been selected for processing (see 'wcskey' parameter). 
+
+
+wcskey: The user can select which keyed WCS (based on Multiple WCS Support Standard from FITS Paper I) should be used for processing. If a key is specified, then that WCS will be 'restored' as the Primary WCS in each input file prior to processing.  No update of the WCS specified by the 'updatewcs' parameter will be performed if a key has been specified, since they are mutually exclusive operations.  
 
 
 coeffs: The source of the distortion coefficients gets specified using:
