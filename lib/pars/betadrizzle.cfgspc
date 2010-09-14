@@ -98,5 +98,4 @@ expkeyword = string_kw(default="")
 #mode,s,h,"al",,,
 
 [ _RULES_ ]
-
-_rule1_ = string_kw(default='', code='from pytools import check_files; ans={ True:"yes",False:"no"}; OUT = ans[check_files.countInput(VAL) > 1]')
+_rule1_ = string_kw(default='', when='defaults,entry', code='from pytools import check_files; ans={ True:"yes",False:"no"}; OUT = ans[check_files.countInput(VAL) > 1]')
