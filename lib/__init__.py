@@ -19,6 +19,7 @@ import staticMask
 import util
 import wcs_functions
 import resetbits
+import wcscorr
 
 __taskname__ = "betadrizzle"
 
@@ -44,23 +45,28 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 #
 #### Interactive user interface (functional form)
 #
-def MultiDrizzle(editpars=False, configObj=None, wcsmap=None, **input_dict):
+def MultiDrizzle(files, editpars=False, configObj=None, wcsmap=None, **input_dict):
+    """ Primary user-interface for running betadrizzle """
 
+    # support input of filenames from command-line without a parameter name
+    # then copy this into input_dict for merging with TEAL ConfigObj parameters
+    if input_dict is None:
+        input_dict = {}
+    input_dict['input'] = files
+    
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
-    
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     if configObj is None:
         return
-    
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
     # called 'run()'.
     if editpars == False:
         run(configObj,wcsmap=wcsmap)
-
+        
 #
 #### Interfaces used by TEAL
 #
@@ -68,7 +74,7 @@ def MultiDrizzle(editpars=False, configObj=None, wcsmap=None, **input_dict):
 def getHelpAsString():
     # Does NOT work with TEAL/teal.teal()
     helpString = __doc__+'\n'
-    helpString += 'Version '+__version__+'\n'
+    helpString += 'Version '+__version__+'\n\n'
 
     """ 
     return useful help from a file in the script directory called module.help
@@ -91,7 +97,8 @@ def getHelpAsString():
 
     return helpString
 
-    
+MultiDrizzle.__doc__ += getHelpAsString()
+
 def run(configObj=None,wcsmap=None):
     """    
     Initial example by Nadia ran MD with configObj EPAR using:

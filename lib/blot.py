@@ -100,7 +100,8 @@ def buildBlotParamDict(configObj):
     blot_name = util.getSectionName(configObj,_blot_step_num_)
 
     paramDict = {'blot_interp':configObj[blot_name]['blot_interp'],
-                'blot_sinscl':configObj[blot_name]['blot_sinscl']}
+                'blot_sinscl':configObj[blot_name]['blot_sinscl'],
+                'coeffs':configObj['coeffs']}
     return paramDict
 
 def _setDefaults(configObj={}):

@@ -18,6 +18,7 @@ IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
 __version__ = '0.1dev1'
 
 class baseImageObject:
+    """ base ImageObject which defines the primary set of methods """
     def __init__(self,filename):
 
         self.scienceExt= "SCI" # the extension the science image is stored in
@@ -476,14 +477,15 @@ class baseImageObject:
         return iraf[irafType]
         
     def buildMask(self,chip,bits=0,write=False):
-        """ Build masks as specified in the user parameters found in the 
-            configObj object.
+        """ 
+        Build masks as specified in the user parameters found in the 
+        configObj object.
             
-            we should overload this function in the instrument specific
-            implementations so that we can add other stuff to the badpixel
-            mask? Like vignetting areas and chip boundries in nicmos which
-            are camera dependent? these are not defined in the DQ masks, but
-            should be masked out to get the best results in multidrizzle
+        we should overload this function in the instrument specific
+        implementations so that we can add other stuff to the badpixel
+        mask? Like vignetting areas and chip boundries in nicmos which
+        are camera dependent? these are not defined in the DQ masks, but
+        should be masked out to get the best results in multidrizzle
         """
         dqarr = self.getData(exten=self.maskExt+','+str(chip))
         dqmask = self._buildMask(dqarr,bits)
@@ -572,14 +574,14 @@ class baseImageObject:
         
 class imageObject(baseImageObject):
     """
-    This returns an imageObject that contains all the
-    necessary information to run the image file through
-    any multidrizzle function. It is essentially a 
-    PyFits object with extra attributes
-    
-    There will be generic keywords which are good for
-    the entire image file, and some that might pertain
-    only to the specific chip. 
+        This returns an imageObject that contains all the
+        necessary information to run the image file through
+        any multidrizzle function. It is essentially a 
+        PyFits object with extra attributes
+        
+        There will be generic keywords which are good for
+        the entire image file, and some that might pertain
+        only to the specific chip. 
     
     """
     

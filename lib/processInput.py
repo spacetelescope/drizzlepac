@@ -4,6 +4,7 @@ import pyfits
 import os,shutil
 
 import wcs_functions,util,resetbits
+import wcscorr
 import mdzhandler
 
 import stwcs
@@ -289,17 +290,23 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         return None, None, None
     
     #make an asn table at the end
+    if wcskey not in ['',' ','INDEF',None] or updatewcs:
+        # Make sure there is a WCSCORR table for each input image
+        wcscorr.init_wcscorr(newfilelist)
+        
     if wcskey in ['',' ','INDEF',None]:
         if updatewcs:
             print 'Updating input WCS using "updatewcs"'
-            pydr_input = runmakewcs(newfilelist)  
+            pydr_input = runmakewcs(newfilelist)
+            # update WCSCORR table with newly updated WCS
+            wcscorr.archive_wcs_file(newfilelist,wcs_id='IDC')
         else:
             pydr_input = newfilelist
     else:
         print 'Resetting input WCS to be based on WCS key = ',wcskey
         stwcs.utils.restoreWCS(newfilelist,wcskey,clobber=True)
         pydr_input = newfilelist
-
+    
     # AsnTable will handle the case when output==None
     if not oldasndict:# and output is not None:        
         oldasndict = asnutil.ASNTable(pydr_input, output=output)

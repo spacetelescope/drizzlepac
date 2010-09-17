@@ -26,9 +26,6 @@ class STISInputImage (imageObject):
                 
     def getflat(self):
         """
-
-        Purpose
-        =======
         Method for retrieving a detector's flat field.  For STIS there are three 
         
         

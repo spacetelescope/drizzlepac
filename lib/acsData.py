@@ -70,16 +70,13 @@ class ACSInputImage(imageObject):
  
     def getflat(self):
         """
-
-        Purpose
-        =======
         Method for retrieving a detector's flat field.
         
-        This method will return an array the same shape as the
-        image.
+        Returns
+        -------
+        flat: array
+            This method will return an array the same shape as the image in **units of electrons**.
         
-        :units: electrons
-
         """
 
         # The keyword for ACS flat fields in the primary header of the flt
@@ -110,15 +107,15 @@ class ACSInputImage(imageObject):
 
     def getdarkcurrent(self,extver):
         """
-        
-        Purpose
-        =======
         Return the dark current for the ACS detector.  This value
         will be contained within an instrument specific keyword.
         The value in the image header will be converted to units
         of electrons.
         
-        :units: electrons
+        Returns
+        -------
+        dark: array
+            Dark current array for the ACS detector in **units of electrons**.
         
         """
               
