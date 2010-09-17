@@ -7,6 +7,7 @@ betadrizzle.imageObject
 This class and related sub-classes manage all the instrument-specific images for processing by MultiDrizzle. 
 
 .. inheritance-diagram:: betadrizzle.imageObject betadrizzle.acsData betadrizzle.wfc3Data betadrizzle.wfpc2Data betadrizzle.nicmosData betadrizzle.stisData
+   :parts: 2
 
 .. toctree::
    :maxdepth: 3

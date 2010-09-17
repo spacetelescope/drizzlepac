@@ -18,7 +18,6 @@ Contents:
    betadrizzle
    imageobject
 
-
 Indices and tables
 ==================
 
