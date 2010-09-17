@@ -163,6 +163,14 @@ class CCDInputImage(STISInputImage):
         #    self.cte_dir =  -1  
 
     def getdarkcurrent(self):
+        """
+        Returns the dark current for the STIS CCD chip
+        
+        Returns
+        -------
+        darkcurrent: float
+            Dark current value in **units of electrons** (or counts, if proc_unit=='native')
+        """
         darkcurrent = 0.009 #electrons/sec
         if self.proc_unit == 'native':
             return darkcurrent / self._gain()
@@ -170,10 +178,7 @@ class CCDInputImage(STISInputImage):
     
     def getReadNoise(self):
         """
-        
-        Purpose
-        =======
-        Method for trturning the readnoise of a detector (in DN).
+        Method for returning the readnoise of a detector (in DN).
         
         :units: DN
         
@@ -307,6 +312,15 @@ class NUVInputImage(STISInputImage):
 
  
     def getdarkcurrent(self):
+        """
+        Returns the dark current for the STIS NUV detector
+        
+        Returns
+        -------
+        darkcurrent: float
+            Dark current value in **units of electrons** (or counts, if proc_unit=='native')
+        """
+        
         darkcurrent = 0.0013 #electrons/sec
         if self.proc_unit == 'native':
             return darkcurrent / self._gain()
@@ -384,6 +398,15 @@ class FUVInputImage(STISInputImage):
 
               
     def getdarkcurrent(self):
+        """
+        Returns the dark current for the STIS FUV detector
+        
+        Returns
+        -------
+        darkcurrent: float
+            Dark current value in **units of electrons** (or counts, if proc_unit=='native')
+        """
+        
         darkcurrent = 0.07 #electrons/sec
         if self.proc_unit == 'native':
             return darkcurrent / self._gain()

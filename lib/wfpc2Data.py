@@ -69,14 +69,13 @@ class WFPC2InputImage (imageObject):
 
     def getEffGain(self):
         """
-        
-        Purpose
-        =======
         Method used to return the effective gain of a instrument's
         detector.
         
-        This method returns a single floating point value.
-
+        Returns
+        -------
+        gain: float
+            The effective gain
         """
 
         return self._effGain
@@ -146,14 +145,12 @@ class WFPC2InputImage (imageObject):
 
     def getflat(self,exten):
         """
-
-        Purpose
-        =======
         Method for retrieving a detector's flat field.
         
-        This method will return an array the same shape as the
-        image.
-        
+        Returns
+        -------
+        flat: array
+            The flat-field array in the same shape as the input image
 
         """
 
@@ -233,15 +230,15 @@ class WFPC2InputImage (imageObject):
                       
     def getdarkcurrent(self,exten):
         """
-        
-        Purpose
-        =======
         Return the dark current for the WFPC2 detector.  This value
         will be contained within an instrument specific keyword.
         The value in the image header will be converted to units
         of electrons.
         
-        :units: counts/electrons
+        Returns
+        -------
+        darkcurrent: float
+            Dark current for the WFPC3 detector in **units of counts/electrons**
         
         """        
         darkrate = 0.005 # electrons / s
@@ -271,12 +268,12 @@ class WFPC2InputImage (imageObject):
 
     def getReadNoise(self,exten):
         """
-        
-        Purpose
-        =======
         Method for returning the readnoise of a detector (in counts).
-        
-        :units: counts/electrons
+
+        Returns
+        -------
+        readnoise: float
+            The readnoise of the detector in **units of counts/electrons**
         
         """
         

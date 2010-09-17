@@ -40,16 +40,13 @@ class WFC3InputImage(imageObject):
  
     def getflat(self):
         """
-
-        Purpose
-        =======
         Method for retrieving a detector's flat field.
         
-        This method will return an array the same shape as the
-        image.
+        Returns
+        -------
+        flat: array
+            This method will return an array the same shape as the image with **units of electrons**.
         
-        :units: electrons
-
         """
 
         # The keyword for WFC3 UVIS flat fields in the primary header of the flt
@@ -168,15 +165,13 @@ class WFC3UVISInputImage(WFC3InputImage):
  
     def getdarkcurrent(self):
         """
-        
-        Purpose
-        =======
         Return the dark current for the WFC3 UVIS detector.  This value
         will be contained within an instrument specific keyword.
-        The value is in units of electrons.
         
-        :units: electrons
-        
+        Returns
+        -------
+        darkcurrent: float
+            The dark current value with **units of electrons**.
         """
         
         darkcurrent = 0.
@@ -290,12 +285,12 @@ class WFC3IRInputImage(WFC3InputImage):
 
     def getdarkimg(self):
         """
-        
-        Purpose
-        =======
         Return an array representing the dark image for the detector.
         
-        :units: cps
+        Returns
+        -------
+        dark: array
+            Dark image array in the same shape as the input image with **units of cps**
         
         """
         
@@ -319,14 +314,13 @@ class WFC3IRInputImage(WFC3InputImage):
 
     def getdarkcurrent(self):
         """
-        
-        Purpose
-        =======
         Return the dark current for the WFC3/IR detector.  This value
         will be contained within an instrument specific keyword.
         
-        :units: electrons
-        
+        Returns
+        -------
+        darkcurrent: float
+            The dark current value in **units of electrons**.
         """
         
         darkcurrent = 0

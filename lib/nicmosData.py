@@ -107,16 +107,12 @@ class NICMOSInputImage(imageObject):
                 
     def getflat(self):
         """
-
-        Purpose
-        =======
         Method for retrieving a detector's flat field.
-        
-        This method will return an array the same shape as the
-        image.
-
-        :units: cps
-
+    
+        Returns
+        -------
+        flat: array
+            The flat field array in the same shape as the input image with **units of cps**.
         """
 
         # The keyword for NICMOS flat fields in the primary header of the flt
@@ -146,12 +142,12 @@ class NICMOSInputImage(imageObject):
 
     def getdarkcurrent(self):
         """
-        
-        Purpose
-        =======
         Return the dark current for the NICMOS detectors.
-        
-        :units: cps
+
+        Returns
+        -------
+        darkcurrent: float
+            Dark current value with **units of cps**.
         
         """
                 
@@ -177,12 +173,12 @@ class NICMOSInputImage(imageObject):
         
     def getdarkimg(self):
         """
-        
-        Purpose
-        =======
         Return an array representing the dark image for the detector.
         
-        :units: cps
+        Returns
+        -------
+        dark: array
+            The dark array in the same shape as the image with **units of cps**.
         
         """
 

@@ -114,8 +114,8 @@ class ACSInputImage(imageObject):
         
         Returns
         -------
-        dark: array
-            Dark current array for the ACS detector in **units of electrons**.
+        darkcurrent: float
+            Dark current value for the ACS detector in **units of electrons**.
         
         """
               
