@@ -1,9 +1,9 @@
 .. _imageobjects:
 .. _imageobject:
 
-***********************
-betadrizzle.imageObject
-***********************
+*******************
+imageObject Classes
+*******************
 This class and related sub-classes manage all the instrument-specific images for processing by MultiDrizzle. 
 
 .. inheritance-diagram:: betadrizzle.imageObject betadrizzle.acsData betadrizzle.wfc3Data betadrizzle.wfpc2Data betadrizzle.nicmosData betadrizzle.stisData

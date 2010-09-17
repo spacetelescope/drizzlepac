@@ -17,6 +17,13 @@ Contents:
 
    betadrizzle
    imageobject
+   process 
+   static
+   sky
+   drizzle
+   median
+   blot
+   drizcr
 
 Indices and tables
 ==================
@@ -25,3 +32,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+ 
+ 

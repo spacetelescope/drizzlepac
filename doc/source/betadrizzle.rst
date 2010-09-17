@@ -1,12 +1,12 @@
 .. _betadrizzle:
 
-************************
-betadrizzle.MultiDrizzle
-************************
+**************************************
+Primary User Interface: MultiDrizzle() 
+**************************************
  
 .. currentmodule:: betadrizzle
 
 .. automodule:: betadrizzle
-
+   
 .. autofunction:: MultiDrizzle 
- 
+   
