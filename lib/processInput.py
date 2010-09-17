@@ -12,12 +12,13 @@ from stwcs import updatewcs
 
 """
 Process input to MultiDrizzle/PyDrizzle.
-Input can be one of 
 
-- a python list of files
-- a comma separated string of filenames (including wild card characters)
-- an association table
-- an @file (can have a second column with names of ivm files)
+The input can be one of:
+
+    * a python list of files
+    * a comma separated string of filenames (including wild card characters)
+    * an association table
+    * an @file (can have a second column with names of ivm files)
 
 No mixture of instruments is allowed.
 No mixture of association tables, @files and regular fits files is allowed.
@@ -43,17 +44,17 @@ def setCommonInput(configObj,createOutwcs=True):
     fully setup all inputs for use with the rest of the MultiDrizzle steps either
     as stand-alone tasks or internally to MultiDrizzle itself. 
 
-    Syntax:
-        imageObjectList,outwcs = processInput.processCommonInput(configObj)
-
-        where,
-        configObj: configObj instance or simple dictionary of input parameters        
-        imageObjectList: list of imageObject instances, 1 for each input exposure
-        outwcs: imageObject instance defining the final output frame
-
-        you can set createOutwcs=False for the cases where you only want the
-        images processed and no output wcs information in necessary
+    Parameters
+    ----------
+    configObj: object 
+        configObj instance or simple dictionary of input parameters        
+    imageObjectList: list of imageObject objects 
+        list of imageObject instances, 1 for each input exposure
+    outwcs: object 
+        imageObject instance defining the final output frame
         
+    Notes
+    -----
     At a minimum, the configObj instance (dictionary) should contain:
         configObj = {'input':None,'output':None,
                     'updatewcs':None,'shiftfile':None}
@@ -63,6 +64,14 @@ def setCommonInput(configObj,createOutwcs=True):
     the default values automatically.  In either case, the values from the input_dict
     will be merged in with the configObj before being used by the rest of the 
     code. 
+
+    Examples
+    --------
+    You can set *createOutwcs=False* for the cases where you only want the
+    images processed and no output wcs information in necessary; as in:
+    
+    >>>imageObjectList,outwcs = processInput.processCommonInput(configObj)
+
 
     """
     if not createOutwcs:
@@ -118,8 +127,7 @@ def setCommonInput(configObj,createOutwcs=True):
         return imageObjectList,None
 
 def addIVMInputs(imageObjectList,ivmlist):
-    """ Add IVM filenames provided by user to outputNames dictionary for each
-        input imageObject.
+    """ Add IVM filenames provided by user to outputNames dictionary for each input imageObject.
     """
     if ivmlist is None:
         return
@@ -128,15 +136,13 @@ def addIVMInputs(imageObjectList,ivmlist):
         img.updateIVMName(ivmname)
 
 def checkMultipleFiles(input):
-    """ Evaluates the input to determine whether there is 1 or more than 1 valid
-    input file. 
+    """ Evaluates the input to determine whether there is 1 or more than 1 valid input file. 
     """
     f,i,o,a=buildFileList(input)
     return len(f) > 1
 
 def createImageObjectList(files,instrpars,group=None):
-    """ Returns a list of imageObject instances, 1 for each input image in the
-        list of input filenames.
+    """ Returns a list of imageObject instances, 1 for each input image in the list of input filenames.
     """
     imageObjList = []
     for img in files:
@@ -276,7 +282,9 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     return filelist,output,ivmlist,oldasndict    
     
 def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True, wcskey=None):
-    
+    """ Create the full input list of filenames after verifying and converting 
+        files as needed.
+    """
     newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,workinplace=workinplace)
     
     if not newfilelist or len(newfilelist) == 0:
@@ -340,9 +348,17 @@ def buildFileList(input, output=None, ivmlist=None,workinplace=True):
 def runmakewcs(input):
     """
     Runs make wcs and recomputes the WCS keywords
-    input: a list of files
-    output: returns a list of names of the modified files
-            (For GEIS files returns the translated names.)
+
+    Parameters
+    ----------
+    input: str or list of str 
+        a list of files
+    
+    Returns
+    -------
+    output: list of str 
+        returns a list of names of the modified files
+        (For GEIS files returns the translated names.)
     """
     newNames = updatewcs.updatewcs(input,checkfiles=False)
     #newNames = makewcs.run(input)
@@ -359,8 +375,8 @@ def resetDQBits(imageObjectList,cr_bits_value=4096):
 
 def update_member_names(oldasndict, pydr_input):
     """
-    Purpose
-    =======
+    Update names in a member dictionary. 
+    
     Given an association dictionary with rootnames and a list of full 
     file names, it will update the names in the member dictionary to 
     contain '_*' extension. For example a rootname of 'u9600201m' will 
@@ -426,16 +442,18 @@ def createInputCopies(filelist):
 
 def buildEmptyDRZ(input, output):
     """
-    Purpose
-    =======
-    Create an empty DRZ file in a valid FITS format so that the HST
+    Create an empty DRZ file.
+    
+    This module creates an empty DRZ file in a valid FITS format so that the HST
     pipeline can handle the Multidrizzle zero expossure time exception
     where all data has been excluded from processing.
     
-    :Parameters:
-    
-    `input`   : the initial input to process_input
-    `output`  : a default empty _drz.fits file 
+    Parameters
+    ----------
+    input   : str
+        filename of the initial input to process_input
+    output  : str
+        filename of the default empty _drz.fits file to be generated 
      
     """
     if output == None:
@@ -527,8 +545,7 @@ def buildEmptyDRZ(input, output):
 
 def checkDGEOFile(filenames):
     """
-    Purpose
-    =======
+    Verify that input file has been updated with NPOLFILE
     
     This function checks for the presence of 'NPOLFILE' kw in the primary header 
     when 'DGEOFILE' kw is present and valid (i.e. 'DGEOFILE' is not blank or 'N/A').
@@ -542,10 +559,11 @@ def checkDGEOFile(filenames):
     In the case of WFPC2 the old style dgeo files are used to create detector to image
     correction at runtime.
     
-    :Parameters:
-    
-    `filenames`: a list of fits file names
-                 a python list
+    Parameters
+    ----------    
+    filenames: list of str 
+        file names of all images to be checked
+        
     """
     msg = """
             A 'DGEOFILE' keyword is present in the primary header but 'NPOLFILE' keyword was not found.

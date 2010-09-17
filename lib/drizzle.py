@@ -23,11 +23,13 @@ _final_step_num_ = 7
 #
 def run(configObj,wcsmap=None):
     """
+    Notes
+    ------
     Values for wcsmap:
-    The default transformation (wcsmap=None) will use the WCS-based C extension:
-        "cdriz.DefaultWCSMapping"
-    Python WCS transformation:
-        "wcs_functions.WCSMap"
+        * The default transformation (wcsmap=None) will use the WCS-based C extension:
+            "cdriz.DefaultWCSMapping"
+        * Python WCS transformation: 
+            "wcs_functions.WCSMap"
     """
 
     # Explicitly turn off making copies so as to not over-write any analysis

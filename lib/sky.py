@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 """
 
-    Function for computing and subtracting the backgroud of
-    an image.  The algorithm employed here uses a sigma 
-    clipped median of  each *sci* image in a data file.   
-    Then the sky value for each detector is compared 
-    and the lowest value is  subtracted from all chips
-    in the detector.  Finally, the MDRIZSKY keyword 
-    is updated in the header of the input files.
+Function for computing and subtracting the backgroud of
+an image.  The algorithm employed here uses a sigma 
+clipped median of  each *sci* image in a data file.   
+Then the sky value for each detector is compared 
+and the lowest value is  subtracted from all chips
+in the detector.  Finally, the MDRIZSKY keyword 
+is updated in the header of the input files.
 
-    :author: Christopher Hanley
-    :author: Megan Sosey    
+:Authors: 
+    Christopher Hanley, Megan Sosey    
 """
 from __future__ import division # confidence medium
 
@@ -53,18 +53,30 @@ def getHelpAsString():
 #this is the user access function
 def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
     """
-    input is a python list of image filenames, or just a single filename
-    configObj is an instance of configObject
-    inputDict is an optional list of parameters specified by the user
-    outExt is the extension of the output image. If the output already exists
-      then the input image is overwritten
+    Perform sky subtraction on input list of images
     
+    Parameters
+    ----------
+    input: str or list of str
+        a python list of image filenames, or just a single filename
+    configObj: configObject
+        an instance of configObject
+    inputDict: dict, optional
+        an optional list of parameters specified by the user
+    outExt: str
+        The extension of the output image. If the output already exists 
+        then the input image is overwritten
+    
+    Notes
+    -----
     These are parameters that the configObj should contain by default,
     they can be altered on the fly using the inputDict
 
-
-    params that should be in configobj
-    ---------------------------------------
+    Parameters that should be in configobj:
+    
+    ==========  ===================================================================
+    Name        Definition
+    ==========  ===================================================================
     skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
     skysub		'Perform sky subtraction?'
     skywidth	'Bin width for sampling sky statistics (in sigma)'
@@ -74,10 +86,10 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     skyclip		'Number of clipping iterations'
     skylsigma	'Lower side clipping factor (in sigma)'
     skyusigma	'Upper side clipping factor (in sigma)'
+    ==========  ===================================================================
 
-
-    the output from sky subtraction is a copy of the original input file
-    where all the science data extensions have been sky subtracted
+    The output from sky subtraction is a copy of the original input file
+    where all the science data extensions have been sky subtracted.
     
     """
     
@@ -130,6 +142,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
 
     if not util.getConfigObjPar(configObj,'skysub'):
         print 'Sky Subtraction step not performed.'
+        procSteps.endStep('Subtract Sky')
         return
     
     #General values to use    

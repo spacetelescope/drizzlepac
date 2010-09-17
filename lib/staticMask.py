@@ -1,16 +1,18 @@
 """
-   Authors:    Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
-   Program:    staticMask.py
-   Purpose:    Class that manages the creation of a global static
-               mask which is used to mask pixels that are some
-               sigma BELOW the mode computed for the image.
+This class manages the creation of the global static mask which
+masks pixels which are negative in the SCI array.
+A static mask numpy object gets created for each global
+mask needed, one for each chip from each instrument/detector.
+Each static mask array has type Int16, and resides in memory.
 
-    This class manages the creation of the global static mask which
-    masks pixels which are negative in the SCI array.
-    A static mask numpy object gets created for each global
-    mask needed, one for each chip from each instrument/detector.
-    Each static mask array has type Int16, and resides in memory.
-
+:Authors:    
+    Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
+:Program:
+    staticMask.py
+:Purpose:    
+    Class that manages the creation of a global static
+    mask which is used to mask pixels that are some
+    sigma BELOW the mode computed for the image.
 """
 from __future__ import division # confidence high
 
@@ -101,6 +103,7 @@ def _staticMask(imageObjectList=[],configObj=None,procSteps=None):
     
     if not configObj[step_name]['static']:
         print 'Static Mask step not performed.'
+        procSteps.endStep('Static Mask')
         return
     
     if (not isinstance(imageObjectList,list) or (len(imageObjectList) ==0)):
@@ -121,10 +124,11 @@ def _staticMask(imageObjectList=[],configObj=None,procSteps=None):
         procSteps.endStep('Static Mask')
 
 def constructFilename(signature):
-    """construct an output filename for the given signature
+    """construct an output filename for the given signature::
+    
          signature=[instr+detector,(nx,ny),detnum]
          
-         the signature is in the image object 
+    The signature is in the image object. 
     """
     filename=signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
     return filename        
@@ -155,13 +159,21 @@ class staticMask:
     def addMember(self, imagePtr=None):
         """
         Combines the input image with the static mask that
-        has the same signature.  The signature parameter
-        consists of the tuple:
-        (instrument/detector, (nx,ny), chip_id)
-       
-        signature is defined in the image object for each chip
+        has the same signature.  
+
+        Parameters
+        ----------
+        imagePtr: object
+            An imageObject reference
+
+        Notes
+        -----
+        The signature parameter consists of the tuple::
         
-        imagePtr is an imageObject reference
+            (instrument/detector, (nx,ny), chip_id)
+       
+        The signature is defined in the image object for each chip
+        
         """
         
         numchips=imagePtr._numchips
@@ -203,7 +215,7 @@ class staticMask:
 
     def getFilename(self,signature):
         """returns the name of the output mask file that
-            should reside on disk for the given signature """
+        should reside on disk for the given signature """
              
         filename=constructFilename(signature)
 
@@ -214,11 +226,12 @@ class staticMask:
             return None
             
     def getMaskname(self,chipid):
-        """construct an output filename for the given signature
+        """construct an output filename for the given signature::
+        
              signature=[instr+detector,(nx,ny),detnum]
              
-             the signature is in the image object and the
-             name of the static mask file is saved as sci_chip.outputNames["staticMask"]
+        The signature is in the image object and the
+        name of the static mask file is saved as sci_chip.outputNames["staticMask"]
         """
         
         return self._image[chipid].outputNames["staticMask"]    
