@@ -16,34 +16,41 @@ DTH_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
 
 class OutputImage:
     """
-        This class manages the creation of the array objects
-        which will be used by Drizzle. The three arrays, SCI/WHT/CTX,
-        will be setup either as extensions in a
-        single multi-extension FITS file, or as separate FITS
-        files.
+    This class manages the creation of the array objects
+    which will be used by Drizzle. The three arrays, SCI/WHT/CTX,
+    will be setup either as extensions in a
+    single multi-extension FITS file, or as separate FITS
+    files.
     """
     def __init__(self, plist, input_pars, build=yes, wcs=None, single=no, blot=no):
         """
-        The object 'plist' must contain at least the following members:
-            plist['output']  - name of output FITS image (for SCI)
+        The object 'plist' must contain at least the following members::
+        
+            plist['output']   - name of output FITS image (for SCI)
             plist['outnx']    - size of X axis for output array
             plist['outny']    - size of Y axis for output array
-        If 'single=yes', then 'plist' also needs to contain:
+
+        If 'single=yes', then 'plist' also needs to contain::
+
             plist['outsingle']
             plist['outsweight']
             plist['outscontext']
-        If 'blot=yes', then 'plist' also needs:
+            
+        If 'blot=yes', then 'plist' also needs::
+
             plist['data']
             plist['outblot']
             plist['blotnx'],plist['blotny']
 
         If 'build' is set to 'no', then each extension/array must be
-        in separate FITS objects.  This would also require:
+        in separate FITS objects.  This would also require::
+
           plist['outdata']    - name of output SCI FITS image
           plist['outweight']  - name of output WHT FITS image
           plist['outcontext'] - name of output CTX FITS image
 
-        Optionally, the overall exposure time information can be passed as:
+        Optionally, the overall exposure time information can be passed as::
+
             plist['texptime'] - total exptime for output
             plist['expstart'] - start time of combined exposure
             plist['expend']   - end time of combined exposure
@@ -110,21 +117,25 @@ class OutputImage:
         
 
     def set_bunit(self,bunit):
-        """ Method used to update the value of the bunit attribute."""
+        """ 
+        Method used to update the value of the bunit attribute.
+        """
         self.bunit = bunit
         
     def set_units(self,units):
-        """ Method used to record what units were specified by the user
-        for the output product."""
+        """ 
+        Method used to record what units were specified by the user for the output product.
+        """
         self.units = units
         
 
     def writeFITS(self, template, sciarr, whtarr, ctxarr=None, versions=None, extlist=EXTLIST, overwrite=yes):
-        """ Generate PyFITS objects for each output extension
-            using the file given by 'template' for populating
-            headers.
+        """ 
+        Generate PyFITS objects for each output extension
+        using the file given by 'template' for populating
+        headers.
 
-            The arrays will have the size specified by 'shape'.
+        The arrays will have the size specified by 'shape'.
         """
 
         if fileutil.findFile(self.output):
@@ -466,16 +477,13 @@ class OutputImage:
         _geom = 'User parameters'
 
         _imgnum = 0
+        print self.parlist
         for pl in self.parlist:
 
             # Start by building up the keyword prefix based
             # on the image number for the chip
             _imgnum += 1
             _keyprefix = 'D%03d'%_imgnum
-            if not isinstance(pl['driz_mask'],types.StringType):
-                _driz_mask_name = 'static mask'
-            else:
-                _driz_mask_name = pl['driz_mask']
 
             hdr.update(_keyprefix+'VER',pl['driz_version'][:44],
                 comment='Drizzle, task version')
@@ -501,7 +509,7 @@ class OutputImage:
             hdr.update(_keyprefix+'OUCO',pl['outContext'][:64],
                 comment= 'Drizzle, output context image')
 
-            hdr.update(_keyprefix+'MASK',_driz_mask_name[:64],
+            hdr.update(_keyprefix+'MASK',pl['singleDrizMask'][:64],
                 comment= 'Drizzle, input weighting image')
 
             # Process the values of WT_SCL to be consistent with
@@ -527,6 +535,13 @@ class OutputImage:
 
             hdr.update(_keyprefix+'YGIM',"SIP",
                 comment= 'Drizzle, Y distortion image name ')
+
+            hdr.update(_keyprefix+'SCAL',pl['scale'],
+             comment=   'Drizzle, pixel size (arcsec) of output image')
+                
+            hdr.update(_keyprefix+'ISCL',pl['idcscale'],
+             comment=   'Drizzle, default IDCTAB pixel size(arcsec)')
+            
 
             #hdr.update(_keyprefix+'LAM',pl['plam'],
             #    comment='Drizzle, wavelength applied for transformation (nm)')

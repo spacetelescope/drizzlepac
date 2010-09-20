@@ -23,6 +23,8 @@ shift_kwcomments = ['Shift in axis1 from shiftfile','Shift in axis2 from shiftfi
 WCSEXTN_NAME = 'WCSOFF'
 # Default mapping function based on PyWCS 
 class WCSMap:
+    """ Sample class to demonstrate how to define a coordinate transformation
+    """
     def __init__(self,input,output,origin=1):
         # Verify that we have valid WCS input objects
         self.checkWCS(input,'Input')
@@ -502,10 +504,11 @@ def mergeWCS(default_wcs,user_pars):
         the input configObj object with the output PyWCS object computed 
         using distortion.output_wcs().
         
-        The user_pars dictionary needs to have the following set of keys:
-        user_pars = {'ra':None,'dec':None,'psize':None,'orient':None,
-                     'outnx':None,'outny':None,'crpix1':None,'crpix2':None,
-                     'crval1':None,'crval2':None}
+        The user_pars dictionary needs to have the following set of keys::
+        
+            user_pars = {'ra':None,'dec':None,'psize':None,'orient':None,
+                         'outnx':None,'outny':None,'crpix1':None,'crpix2':None,
+                         'crval1':None,'crval2':None}
     """
     #
     # Start by making a copy of the input WCS...

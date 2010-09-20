@@ -21,6 +21,8 @@ __numpy_version__ = np.__version__
 Logging routines
 """
 class StreamLogger(object):
+    """ Class to manage trapping of STDOUT and STDERR messages to a trailer file
+    """
 
     def __init__(self, stream, logfile, mode='w', prefix=''):
         self.stream = stream
@@ -112,10 +114,11 @@ class ProcSteps:
         self.end = None
 
     def addStep(self,key):
-        """ Add information about a new step to the dict of steps
-            The value 'ptime' is the output from _ptime containing
-            both the formatted and unformatted time for the start of the 
-            step
+        """ 
+        Add information about a new step to the dict of steps
+        The value 'ptime' is the output from '_ptime()' containing
+        both the formatted and unformatted time for the start of the 
+        step
         """
         ptime = _ptime()
         print '==== Processing Step ',key,' started at ',ptime[0]
@@ -123,7 +126,8 @@ class ProcSteps:
         self.order.append(key)
 
     def endStep(self,key):
-        """ Record the end time for the step.
+        """ 
+        Record the end time for the step.
         
         If key==None, simply record ptime as end time for class to represent
         the overall runtime since the initialization of the class.
@@ -198,6 +202,7 @@ def removeFileSafely(filename,clobber=True):
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated 
         with user-specified values from input_dict.
+        
         If configObj already defined, it will simply 
         return configObj unchanged. 
     """    
@@ -262,7 +267,7 @@ def setConfigObjPar(configObj,parname,parvalue):
 
 
 """
-These two functions are for reading in an "at file" which contains
+These two functions are for reading in an 'at file' which contains
 two columns of filenames, the first column is assumed to
 be the science image and the second column is assumed
 to be the IVM file that is associated with it
@@ -312,7 +317,7 @@ def isCommaList(inputFilelist):
     return False        
   
 def loadFileList(inputFilelist):
-    """open up the @ file and read in the science and possible
+    """open up the '@ file' and read in the science and possible
       ivm filenames from the first two columns
     """
     f = open(inputFilelist[1:])
@@ -379,10 +384,18 @@ def getInputAsList(input, output=None, ivmlist=None, prodonly=False):
 
 def runmakewcs(input):
     """
-    Runs make wcs and recomputes the WCS keywords
-    input: a list of files
-    output: returns a list of names of the modified files
-            (For GEIS files returns the translated names.)
+    Runs 'updatewcs' to recompute the WCS keywords for the input image
+    
+    Parameters
+    ----------
+    input: list of str
+        a list of file names
+
+    Returns
+    -------
+    output: list of str 
+        returns a list of names of the modified files
+        (For GEIS files returns the translated names.)
     
     """
     newNames = updatewcs.updatewcs(input, checkfiles=False)
@@ -504,6 +517,24 @@ def getRotatedSize(corners,angle):
     return computeRange(_corners)
 
 def readcols(infile,cols=[0,1,2,3]):
+    """ 
+    Read the columns from an ASCII file as numpy arrays
+    
+    Parameters
+    ----------
+    infile: str
+        filename of ASCII file with array data as columns
+        
+    cols: list of int
+        list of 0-indexed column numbers for columns to be turned into numpy arrays
+        (DEFAULT- [0,1,2,3])
+        
+    Returns
+    -------
+    outarr: list of numpy arrays
+        simple list of numpy arrays in the order as specifed in the 'cols' parameter
+        
+    """
 
     fin = open(infile,'r')
     outarr = []

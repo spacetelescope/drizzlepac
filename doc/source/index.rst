@@ -24,6 +24,7 @@ Contents:
    median
    blot
    drizcr
+   util
 
 Indices and tables
 ==================
