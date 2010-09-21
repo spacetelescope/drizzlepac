@@ -1,9 +1,29 @@
 """ betadrizzle - test implementation of MultiDrizzle: The Next Generation
 
+MultiDrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.  
+
+This process involves a number of steps; namely:
+  1.  Processing the input images and input parameters
+  2.  Creating a static mask
+  3.  Performing sky subtraction
+  4.  Drizzling onto separate output images
+  5.  Creating the median image
+  6.  Blotting the median image
+  7.  Identifying and flagging cosmic-rays
+  8.  Final combination
+
+A full description of this process can be found in the MultiDrizzle Handbook available online at:
+
+http://stsdas.stsci.edu/multidrizzle
+
+**Output**: The primary output from this task is the distortion-corrected, cosmic-ray cleaned combined image as a FITS file.
+
+This task requires numerous user-settable parameters to control the primary aspects of each of the processing steps.  
+
 """
 from __future__ import division # confidence high
 
-import os
+import os,string
 
 import buildmask
 import drizzle
@@ -46,13 +66,14 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 #### Interactive user interface (functional form)
 #
 def MultiDrizzle(files, editpars=False, configObj=None, wcsmap=None, **input_dict):
-    """ Primary user-interface for running betadrizzle """
-
+    """
+    """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if input_dict is None:
-        input_dict = {}
-    input_dict['input'] = files
+    if files not in ['',' ','INDEF', None]:
+        if input_dict is None:
+            input_dict = {}
+        input_dict['input'] = files
     
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
@@ -72,13 +93,11 @@ def MultiDrizzle(files, editpars=False, configObj=None, wcsmap=None, **input_dic
 #
 
 def getHelpAsString():
-    # Does NOT work with TEAL/teal.teal()
-    helpString = __doc__+'\n'
-    helpString += 'Version '+__version__+'\n\n'
-
     """ 
-    return useful help from a file in the script directory called module.help
+    return useful help from a file in the script directory called __taskname__.help
     """
+    helpString = __taskname__+' Version '+__version__+'\n\n'
+
     #get the local library directory where the code is stored
     localDir=os.path.split(__file__)
     helpfile=__taskname__.split(".")
@@ -87,17 +106,14 @@ def getHelpAsString():
     
     if os.access(helpfile,os.R_OK):
         fh=open(helpfile,'r')
-        ss=fh.readlines()
+        fhl=fh.readlines()
         fh.close()
         #helpString=""
-        for line in ss:
-            helpString+=line
-    else:    
-        helpString=__doc__
+        helpString+=string.join(fhl)
 
     return helpString
 
-MultiDrizzle.__doc__ += getHelpAsString()
+MultiDrizzle.__doc__ = getHelpAsString()
 
 def run(configObj=None,wcsmap=None):
     """    

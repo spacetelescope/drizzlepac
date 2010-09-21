@@ -9,4 +9,4 @@ Primary User Interface: MultiDrizzle()
 .. automodule:: betadrizzle
    
 .. autofunction:: MultiDrizzle 
-   
+  
