@@ -1,5 +1,6 @@
 import numpy as np
 import ndimage
+import pywcs
 import stwcs
 from stwcs import wcsutil
 import imagestats
@@ -110,7 +111,7 @@ class Catalog(object):
     def generateRaDec(self):
         """ Convert XY positions into sky coordinates using STWCS methods
         """        
-        if not isinstance(self.wcs,stwcs.pywcs.WCS):
+        if not isinstance(self.wcs,pywcs.WCS):
             print 'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'
             raise InputError
         

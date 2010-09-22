@@ -7,7 +7,7 @@ import wcs_functions,util,resetbits
 import wcscorr
 import mdzhandler
 
-import stwcs
+from stwcs.wcsutil import altwcs
 from stwcs import updatewcs
 
 """
@@ -312,7 +312,8 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
             pydr_input = newfilelist
     else:
         print 'Resetting input WCS to be based on WCS key = ',wcskey
-        stwcs.utils.restoreWCS(newfilelist,wcskey,clobber=True)
+        for nfl in newfilelist:
+            altwcs.restoreWCS(nfl,wcskey,clobber=True)
         pydr_input = newfilelist
     
     # AsnTable will handle the case when output==None

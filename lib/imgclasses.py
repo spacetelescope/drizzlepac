@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import pywcs
 import stwcs
 from stwcs import distortion
 from stwcs.distortion import utils
@@ -133,7 +134,7 @@ class Image(object):
     def transformToRef(self,ref_wcs,force=False):
         """ Transform sky coords from ALL chips into X,Y coords in reference WCS.
         """
-        if not isinstance(ref_wcs,stwcs.pywcs.WCS):
+        if not isinstance(ref_wcs, pywcs.WCS):
             print 'Reference WCS not a valid HSTWCS object'
             raise ValueError
         # Need to concatenate catalogs from each input

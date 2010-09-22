@@ -5,6 +5,7 @@ import numpy as np
 
 from pytools import fileutil
 import pywcs
+from stwcs.wcsutil import altwcs
 import stwcs
 from stwcs import wcsutil,updatewcs
 
@@ -75,7 +76,7 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
         wref = None
         for extn in refimg:
             if extn.header.has_key('extname') and extn.header['extname'] == 'WCS':
-                wref = wcsutil.WCS(refimg['wcs'].header)
+                wref = pywcs.WCS(refimg['wcs'].header)
                 break
         refimg.close()
         # else, we have presumably been provided a full undistorted image 
@@ -89,7 +90,7 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
     wcscorr.init_wcscorr(image,force=force)
 
     # reset header WCS keywords to original (OPUS generated) values
-    stwcs.utils.restoreWCS(image,'O',clobber=True)
+    altwcs.restoreWCS(image,'O',clobber=True)
     
     # compute the matrix for the scale and rotation correction
     fit = scale*fileutil.buildRotMatrix(rot)

@@ -3,7 +3,7 @@ import pyfits
 import numpy as np
 
 from pytools import fileutil
-import stwcs
+from stwcs.wcsutil import altwcs
 
 
 ###
@@ -144,7 +144,7 @@ def update_wcscorr(fimg,hdr,selections=None):
     # Now update the table...
     if selections is None:
         # define the WCS ID for this update
-        wcs_key = stwcs.utils.wcskeys(hdr)[-1]
+        wcs_key = altwcs.wcskeys(hdr)[-1]
         selections = {'WCS_ID':'TWEAK_'+fileutil.getDate(),'EXTVER':hdr['extver'],'WCS_key':wcs_key}
         
     # create new table for hdr and populate it with the newly updated values

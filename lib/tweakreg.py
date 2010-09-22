@@ -3,7 +3,6 @@
 import os
 
 from pytools import parseinput, teal
-import stwcs
 
 import betadrizzle # for util.getDefaultConfigObj()
 
