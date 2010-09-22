@@ -1,0 +1,45 @@
+_task_name_ = string_kw(default="tweakreg")
+input = string_kw(default="*flt.fits", comment="Input files (name, suffix, or @list)")
+output = string_kw(default='shifts.txt', comment="Output shiftfile")
+outwcs = string_kw(default='tweak_wcs.fits', comment="Filename of the OUTPUT shiftfile WCS")
+refimage = string_kw(default="",comment="Filename of reference image")
+findmode = option_kw('imagefind','sextractor',default='imagefind', comment="Generate source catalog with this task")
+editspars = boolean_kw(default=True, comment="Edit Sextractor parameters?")
+editipars = boolean_kw(default=True, comment="Edit imagefind parameters?")
+writecat = boolean_kw(default=True, comment="Write out source catalogs?")
+clean = boolean_kw(default=True, comment="Remove intermediate files?")
+updatehdr = boolean_kw(default=False, comment="Update headers of input files with shifts?")
+verbose = boolean_kw(default=False, comment="Print extra messages during processing?")
+
+[COORDINATE FILE DESCRIPTION]
+catfile = string_kw(default="", triggers="_section_switch_", comment="File containing coordinate filenames for input files")
+xcol = string_kw(default="", comment= "Column name for X positions")
+ycol = string_kw(default="", comment= "Column name for Y positions")
+fluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
+fluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid objects")
+fluxmin = float_or_none_kw(default=None,comment="Minimum flux value for valid objects")
+fluxunits = option_kw("counts","cps","mag",default="counts",comment="Units of flux values")
+xyunits = option_kw("pixels","degrees",default="pixels",comment="Units of X/Y positions")
+nbright = integer_or_none_kw(default=None,comment="Number of brightest objects to keep")
+
+[REFERENCE CATALOG DESCRIPTION]
+refcat = string_kw(default="", triggers="_section_switch_", comment="Filename of reference coordinate catalog")
+refxcol = string_kw(default="RA", comment= "Column name for RA")
+refycol = string_kw(default="Dec", comment= "Column name for Dec")
+rfluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
+rfluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid reference objects")
+rfluxmin = float_or_none_kw(default=None,comment="Minimum flux value for valid reference objects")
+rfluxunits = option_kw("counts","cps","mag",default="mag",comment="Units of flux values")
+refnbright = integer_or_none_kw(default=None,comment="Number of brightest reference objects to keep")
+
+[OBJECT MATCHING PARAMETERS]
+minobj = integer_kw(default=15,comment="Minimum number of objects acceptable for matching")
+nmatch = integer_kw(default=30,comment="Maximum number of objects to match")
+algorithm = option_kw("tolerance","triangles",default="tolerance",comment="The matching algorithm")
+tolerance = float_or_none_kw(default=1.0,comment="The matching tolerance in pixels")
+separation = float_or_none_kw(default=0.0,comment="Minimum object separation") 
+xoffset = float_or_none_kw(default=None,comment="Initial guess for X offset")
+yoffset = float_or_none_kw(default=None,comment="Initial guess for Y offset")
+
+[CATALOG FITTING PARAMETERS]
+fitgeometry = option_kw("shift","rscale","general",default="rscale",comment="Fitting geometry")

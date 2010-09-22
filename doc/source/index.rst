@@ -25,6 +25,18 @@ Contents:
    blot
    drizcr
    util
+   
+Image Registration Tasks
+------------------------
+Documentation for the replacement task for IRAF's `tweakshifts`, currently named `tweakreg`, has been added to this package. These new modules describe how to run the new TEAL-enabled task, as well as use the classes in the task to generate catalogs interactively for any chip and work with that catalog. The current implementation of this code relies on a very basic source finding algorithm loosely patterned after the DAOFIND algorithm and does not provide all the same features or outputs found in DAOFIND. The fitting algorithm also reproduces the fitting performed by IRAF's `geomap` in a limited fashion; primarily, without iterations of outliers and only to perform fits equivalent to `geomap`'s 'shift' and 'rscale' solutions. These algorithms will be upgraded as soon as replacements are available. 
+
+.. toctree::
+   :maxdepth: 2
+   
+   userint 
+   image
+   catalogs
+   
 
 Indices and tables
 ==================

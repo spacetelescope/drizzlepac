@@ -1,0 +1,100 @@
+
+These parameters control the operation of Sextractor in finding sources in the input images, as called by `tweakreg`_.
+
+:Input: The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.
+
+:Output: The primary output, as used by `tweakreg`_, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source. 
+
+A full description of the parameters and how Sextractor works can be found on the Sextractor web page at:
+
+    http://www.astromatic.net/software/sextractor 
+
+Only a subset of the full set of parameters available are actually controlled through this interface. 
+
+
+Parameters
+----------
+config_file: str
+   Name of the user supplied configuration file [Default = ""]
+
+verbose_type: {'QUIET','NORMAL','FULL'}
+    Verbose mode for operation [Default = "QUIET"]
+
+detect_type: {'ccd','photo'}
+    Detection type [Default  = "ccd"]
+
+detect_minarea: int
+    minimum number of pixels above threshold [Default = 5]
+
+detect_thresh: float
+    detection threshold in mag.arcsec-2 [Default = 1.5]
+
+analysis_thresh: float
+    analysis threshold in mag.arcsec-2 [Default = 1.5]
+
+filter: bool 
+    apply filter for detection? [Default = True]
+
+deblend_nthresh: int
+    Number of deblending sub-thresholds [Default = 16]
+
+deblend_mincont: float
+    Minimum contrast parameter for deblending [Default = 0.025]
+
+clean: bool
+    Clean spurious detections? [Default = True]
+
+clean_param: float
+    Cleaning efficiency [Default = 1.0]
+
+mask_type: {'NONE','BLANK','CORRECT'}
+    type of detection MASKing [Default = "CORRECT"]
+
+phot_apertures: float
+    MAG_APER aperture diameter(s) in pixels [Default = 5]
+
+phot_autoparams: str
+    MAG_AUTO parameters: <Kron_fact>,<min_radius> [Default = "2.5,3.5"]
+
+satur_level: float
+    saturation level (in ADUs) [Default = 50000.0]
+
+mag_zeropoint: float
+    magnitude zero-point [Default = 0.0]
+
+mag_gamma: float
+    gamma of emulsion (for photographic scans) [Default = 4.0]
+
+seeing_fwhm: float
+    stellar FWHM in arcsec [Default = 0.1]
+
+back_size: int
+    Background mesh in pixels [Default = 64] 
+
+back_type: {'MANUAL','AUTO'}
+    Subtract MANUAL or AUTO generated background [Default = "MANUAL"]
+
+back_value: str
+    Constant value to MANUALLY subtract [Default = "0.0,0.0"]
+
+back_filtersize: int
+    Background filter in pixels [Default = 3]
+
+backphoto_type: {'GLOBAL','LOCAL'}
+    Background type [Default = "GLOBAL"]
+
+backphoto_thick: int
+    Thickness in pixels of the background local annulus [Default = 24]
+
+checkimage_type: {'NONE', 'BACKGROUND', 'MINIBACKGROUND', '-BACKGROUND', 'OBJECTS', '-OBJECTS', 'SEGMENTATION', 'APERTURES', 'FILTERED '} 
+    Check image type [Default = "NONE"]
+
+memory_objstack: int
+    number of objects in stack [Default = 3000]
+
+memory_pixstack: int
+    number of pixels in stack [Default = 300000]
+
+memory_bufsize: int
+    number of lines in buffer [Default = 1024]
+

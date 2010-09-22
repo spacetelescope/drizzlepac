@@ -5,9 +5,6 @@ import numpy as np
 from pytools import fileutil
 import stwcs
 
-wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2','CRPIX1','CRPIX2','ORIENTAT']
-prihdr_keys = ['PA_V3'] # WCS keywords found in PRIMARY header
-pad_rows = 8
 
 ###
 ### WCSEXT table related keyword archive functions
@@ -22,95 +19,94 @@ def init_wcscorr(input,force=False):
         
         This function works on all SCI extensions at one time.
     """
-    if not isinstance(input,list):
-        input = list(input)
-    for img in input:
-        if isinstance(img,str):
-            # input must be a filename, so open as PyFITS object
-            fimg = pyfits.open(img,mode='update')
-            need_to_close = True
-        else:
-            fimg = img
-            need_to_close = False
 
-        # Verify that a WCSCORR extension does not already exist...
-        for extn in fimg:
-            if extn.header.has_key('extname') and extn.header['extname'] == 'WCSCORR':
-                if not force:
-                    return
-                else:
-                    del fimg['WCSCORR']
-        # define the primary columns of the WCSEXT table with initial rows for each
-        # SCI extension for the original OPUS solution
-        numsci = count_ext(fimg)
-        # create new table with more rows than needed initially to make it easier to
-        # add new rows later
-        wcsext = create_wcscorr(numrows=numsci,padding=numsci*4)
-        # Assign the correct EXTNAME value to this table extension
-        wcsext.header.update('TROWS',numsci*2,comment='Number of updated rows in table')
-        wcsext.header.update('EXTNAME','WCSCORR',comment='Table with WCS Update history')
-        
-        # Now copy original OPUS values into table
-        for extver in xrange(1,numsci+1):
-            rowind = find_wcscorr_row(wcsext.data,{'WCS_ID':'OPUS','EXTVER':extver,'WCS_key':'O'})
-            # There should only EVER be a single row for each extension with OPUS values
+    if isinstance(input,str):
+        # input must be a filename, so open as PyFITS object
+        fimg = pyfits.open(input,mode='update')
+        need_to_close = True
+    else:
+        fimg = input
+        need_to_close = False
+
+    # Verify that a WCSCORR extension does not already exist...
+    for extn in fimg:
+        if extn.header.has_key('extname') and extn.header['extname'] == 'WCSCORR':
+            if not force:
+                return
+            else:
+                del fimg['WCSCORR']
+    # define the primary columns of the WCSEXT table with initial rows for each
+    # SCI extension for the original OPUS solution
+    numsci = count_ext(fimg)
+    # create new table with more rows than needed initially to make it easier to
+    # add new rows later
+    wcsext = create_wcscorr(numrows=numsci,padding=numsci*4)
+    # Assign the correct EXTNAME value to this table extension
+    wcsext.header.update('TROWS',numsci*2,comment='Number of updated rows in table')
+    wcsext.header.update('EXTNAME','WCSCORR',comment='Table with WCS Update history')
+    
+    # Now copy original OPUS values into table
+    for extver in xrange(1,numsci+1):
+        rowind = find_wcscorr_row(wcsext.data,{'WCS_ID':'OPUS','EXTVER':extver,'WCS_key':'O'})
+        # There should only EVER be a single row for each extension with OPUS values
+        rownum = np.where(rowind)[0][0]
+        #print 'Archiving OPUS WCS in row number ',rownum,' in WCSCORR table for SCI,',extver
+
+        hdr = fimg['SCI',extver].header
+
+        # Look for old-style archived keywords for OPUS-generated values
+        prefix = 'O'
+        if not hdr.has_key('O'+wcs_keys[0]):
+            # No such keywords, so turn off this prefix and use primary WCS keywords
+            prefix = ''
+        if wcsext.data.field('CRVAL1')[rownum] != 0:
+            # If we find values for these keywords already in the table, do not
+            # overwrite them again
+            print 'WCS keywords already updated...'
+            break   
+        for key in wcs_keys:
+            wcsext.data.field(key)[rownum] = hdr[(prefix+key)[:8]]
+        # Now get any keywords from PRIMARY header needed for WCS updates
+        for key in prihdr_keys:
+            wcsext.data.field(key)[rownum] = fimg[0].header[key]
+            
+    
+    # Now copy current WCS values into table
+    for extver in xrange(1,numsci+1):
+        hdr = fimg['SCI',extver].header
+
+        # identify next empty row
+        rowind = find_wcscorr_row(wcsext.data,selections={'wcs_id':' '})
+        rows = np.where(rowind)
+        if len(rows[0]) > 0:
             rownum = np.where(rowind)[0][0]
-            #print 'Archiving OPUS WCS in row number ',rownum,' in WCSCORR table for SCI,',extver
+        else:
+            print 'No available rows found for updating. '
+        #print 'Archiving current WCS row number ',rownum,' in WCSCORR table for SCI,',extver
+        
+        # Update selection columns for this row with relevant values
+        idctab =fileutil.osfn(fimg[0].header['idctab'])
+        idcname = os.path.split(idctab)[-1]
+        idcname = idcname[:idcname.find('_')]
+        wcsext.data.field('WCS_ID')[rownum] = 'IDC_'+idcname
+        wcsext.data.field('EXTVER')[rownum] = extver
 
-            hdr = fimg['SCI',extver].header
-
-            # Look for old-style archived keywords for OPUS-generated values
-            prefix = 'O'
-            if not hdr.has_key('O'+wcs_keys[0]):
-                # No such keywords, so turn off this prefix and use primary WCS keywords
-                prefix = ''
-            if wcsext.data.field('CRVAL1')[rownum] != 0:
-                # If we find values for these keywords already in the table, do not
-                # overwrite them again
-                print 'WCS keywords already updated...'
-                break   
-            for key in wcs_keys:
-                wcsext.data.field(key)[rownum] = hdr[(prefix+key)[:8]]
-            # Now get any keywords from PRIMARY header needed for WCS updates
-            for key in prihdr_keys:
-                wcsext.data.field(key)[rownum] = fimg[0].header[key]
+        # Look for standard WCS keyword values
+        for key in wcs_keys:            
+            wcsext.data.field(key)[rownum] = hdr[key]
+        # Now get any keywords from PRIMARY header needed for WCS updates
+        for key in prihdr_keys:
+            wcsext.data.field(key)[rownum] = fimg[0].header[key]
                 
-        
-        # Now copy current WCS values into table
-        for extver in xrange(1,numsci+1):
-            hdr = fimg['SCI',extver].header
-            last_key = stwcs.utils.wcskeys(hdr)[-1]
-            # Only add new rows if additional WCS keys are present...
-            if last_key != 'O':
-                # identify next empty row
-                rowind = find_wcscorr_row(wcsext.data,selections={'wcs_id':' '})
-                rows = np.where(rowind)
-                rownum = np.where(rowind)[0][0]
-
-                #print 'Archiving current WCS row number ',rownum,' in WCSCORR table for SCI,',extver
-                # Update selection columns for this row with relevant values
-                idctab =fileutil.osfn(fimg[0].header['idctab'])
-                idcname = os.path.split(idctab)[-1]
-                idcname = idcname[:idcname.find('_')]
-                wcsext.data.field('WCS_ID')[rownum] = 'IDC_'+idcname
-                wcsext.data.field('EXTVER')[rownum] = extver
-
-                # Look for standard WCS keyword values
-                for key in wcs_keys:            
-                    wcsext.data.field(key)[rownum] = hdr[key]
-                # Now get any keywords from PRIMARY header needed for WCS updates
-                for key in prihdr_keys:
-                    wcsext.data.field(key)[rownum] = fimg[0].header[key]
-                    
-        # Append this table to the image FITS file
-        fimg.append(wcsext)
-        # force an update now
-        # set the verify flag to 'warn' so that it will always succeed, but still
-        # tell the user if PyFITS detects any problems with the file as a whole
-        fimg.flush('warn')
-        
-        if need_to_close:
-            fimg.close()
+    # Append this table to the image FITS file
+    fimg.append(wcsext)
+    # force an update now
+    # set the verify flag to 'warn' so that it will always succeed, but still
+    # tell the user if PyFITS detects any problems with the file as a whole
+    fimg.flush('warn')
+    
+    if need_to_close:
+        fimg.close()
 
 def find_wcscorr_row(wcstab, selections):
     """ Return an array of indices from the table (NOT HDU) 'wcstab' that matches the 
@@ -130,20 +126,17 @@ def find_wcscorr_row(wcstab, selections):
         del bmask
     return mask
 
-def archive_wcs_file(image, wcs_id=None):
+def archive_wcs_file(image):
     """ Update WCSCORR table with rows for each SCI extension to record the 
         newly updated WCS keyword values.
     """
-    if not isinstance(image,list):
-        image = list(image)
-    for img in image:
-        fimg = pyfits.open(img,mode='update')
-        numsci = count_ext(fimg)
-        for extn in range(1,numsci+1):
-            update_wcscorr(fimg,fimg['sci',extn].header,wcs_id=wcs_id)
-        fimg.close()
+    fimg = pyfits.open(image,mode='update')
+    numsci = count_ext(fimg)
+    for extn in range(1,numsci+1):
+        update_wcscorr(fimg,fimg['sci',extn].header)
+    fimg.close()
 
-def update_wcscorr(fimg,hdr,selections=None,wcs_id=None):
+def update_wcscorr(fimg,hdr,selections=None):
     """ Update WCSCORR table with a new row for this extension header. It 
     copies the current set of WCS keywords as a new row of the table based on 
     keyed WCSs as per Paper I Multiple WCS standard). 
@@ -152,15 +145,7 @@ def update_wcscorr(fimg,hdr,selections=None,wcs_id=None):
     if selections is None:
         # define the WCS ID for this update
         wcs_key = stwcs.utils.wcskeys(hdr)[-1]
-        if wcs_id is None:
-            wcs_id = 'TWEAK_'+fileutil.getDate()
-        elif wcs_id == 'IDC':
-            idctab =fileutil.osfn(fimg[0].header['idctab'])
-            idcname = os.path.split(idctab)[-1]
-            idcname = idcname[:idcname.find('_')]
-            wcs_id = 'IDC_'+idcname+'_'+fileutil.getDate()
-
-        selections = {'WCS_ID':wcs_id,'EXTVER':hdr['extver'],'WCS_key':wcs_key}
+        selections = {'WCS_ID':'TWEAK_'+fileutil.getDate(),'EXTVER':hdr['extver'],'WCS_key':wcs_key}
         
     # create new table for hdr and populate it with the newly updated values
     new_table = create_wcscorr()
@@ -199,35 +184,32 @@ def restore_file_from_wcscorr(image,id='OPUS',wcskey=''):
     The default will be to restore the original OPUS-derived values to the Primary WCS.
     If wcskey is specified, the WCS with that key will be updated instead. 
     """
-    if not isinstance(image,list):
-        image = list(image)
-    for img in image:
-        fimg = pyfits.open(img,mode='update')
-        numsci = count_ext(fimg)
-        wcs_table = fimg['WCSCORR']
-        orig_rows = (wcs_table.data.field('WCS_ID') == 'OPUS')
-        for extn in range(1,numsci+1):
-            # find corresponding row from table
-            ext_rows = (wcs_table.data.field('EXTVER') == extn)
-            erow = np.where(np.logical_and(ext_rows,orig_rows))[0][0]
-            for key in wcs_keys:
-                tkey = key
-                if 'orient' in key.lower():
-                    key = 'ORIENT'
-                if wcskey == '':
-                    skey = key
-                else:
-                    skey = key[:7]+wcskey
-                fimg['sci',extn].header[skey] = wcs_table.data.field(tkey)[erow]
-            for key in prihdr_keys:
-                if wcskey == '':
-                    pkey = key
-                else:
-                    pkey = key[:7]+wcskey
-                fimg[0].header.update(pkey,wcs_table.data.field(key)[erow])
-                    
-        # close the image now that the update has been completed.
-        fimg.close()
+    fimg = pyfits.open(image,mode='update')
+    numsci = count_ext(fimg)
+    wcs_table = fimg['WCSCORR']
+    orig_rows = (wcs_table.data.field('WCS_ID') == 'OPUS')
+    for extn in range(1,numsci+1):
+        # find corresponding row from table
+        ext_rows = (wcs_table.data.field('EXTVER') == extn)
+        erow = np.where(np.logical_and(ext_rows,orig_rows))[0][0]
+        for key in wcs_keys:
+            tkey = key
+            if 'orient' in key.lower():
+                key = 'ORIENT'
+            if wcskey == '':
+                skey = key
+            else:
+                skey = key[:7]+wcskey
+            fimg['sci',extn].header[skey] = wcs_table.data.field(tkey)[erow]
+        for key in prihdr_keys:
+            if wcskey == '':
+                pkey = key
+            else:
+                pkey = key[:7]+wcskey
+            fimg[0].header.update(pkey,wcs_table.data.field(key)[erow])
+                
+    # close the image now that the update has been completed.
+    fimg.close()
     
 def create_wcscorr(descrip=False, numrows=1, padding=0):
     """ Return the basic definitions for a WCSCORR table.

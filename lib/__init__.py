@@ -41,6 +41,12 @@ import wcs_functions
 import resetbits
 import wcscorr
 
+# The following modules are for 'tweakreg' and are included here to make
+# it easier to get to this code interactively
+import tweakreg, catalogs, imgclasses, tweakutils, wcscorr
+import imagefindpars, sextractorpars
+
+
 __taskname__ = "betadrizzle"
 
 # These lines allow TEAL to print out the names of TEAL-enabled tasks 
