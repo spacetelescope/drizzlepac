@@ -1,4 +1,4 @@
-__svn_version__ = '10365:10366M'
+__svn_version__ = '10365:10369M'
 
 __full_svn_info__ = '''
 Path: .
@@ -14,4 +14,4 @@ Last Changed Date: 2010-09-20 14:03:29 -0400 (Mon, 20 Sep 2010)
 '''
 
 import datetime # setupdate
-setupdate = datetime.datetime(2010, 9, 22, 11, 39, 20, 139830) # setupdate
+setupdate = datetime.datetime(2010, 9, 23, 11, 45, 20, 510534) # setupdate

@@ -53,7 +53,7 @@ def _managePsets(configobj):
     # Merge all configobj instances into a single object
     configobj['SOURCE FINDING PARS'] = {}
     if configobj['findmode'] == 'imagefind' or (configobj['findmode'] == 'sextractor' and sextractor is None):
-        if sextractor is None:
+        if configobj['findmode'] == 'sextractor' and sextractor is None:
             print '**********\nWARNING\n**********'
             print 'No version of SExtractor found!'
             print ' Defaulting to basic source finding algorithm...'
@@ -64,7 +64,7 @@ def _managePsets(configobj):
         # Load parameters for this source finding mode
         iloadonly = not(configobj['editipars'])
         
-        iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=iloadonly)
+        iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=iloadonly,canExecute=False)
         # Catch the case when the user hit 'CANCEL' for the PSET, we still the parameter values
         if iparsobj is None:
             iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=True)
@@ -76,7 +76,7 @@ def _managePsets(configobj):
         # Load parameters for this source finding mode
         sloadonly = not(configobj['editspars'])
 
-        sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=sloadonly)
+        sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=sloadonly,canExecute=False)
         # Catch the case when the user hit 'CANCEL' for the PSET, we still the parameter values
         if sparsobj is None:
             sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=True)
@@ -99,7 +99,7 @@ def run(configobj):
     input = configobj['input']
     # Start by interpreting the inputs
     use_catfile = True
-    filenames,catnames = tweakutils.process_input(input)
+    filenames,catnames = tweakutils.parse_input(input)
     if catnames in [None,'',' ','INDEF'] or len(catnames) == 0:
         catfile_par = configobj['COORDINATE FILE DESCRIPTION']['catfile']
         # check to see whether the user specified input catalogs through other parameters
@@ -136,7 +136,8 @@ def run(configobj):
     # Update parameter set with 'SOURCE FINDING PARS' now
     kwargs.update(configobj['SOURCE FINDING PARS'])
 
-    print 'Input filenames are: ',filenames
+    print '\n'+__taskname__+': Finding shifts for ',filenames,'\n'
+    
     for imgnum in xrange(len(filenames)):
         # Create Image instances for all input images
         input_images.append(imgclasses.Image(filenames[imgnum],input_catalogs=catnames[imgnum],**kwargs))

@@ -80,10 +80,7 @@ class Image(object):
                 if 'input_xy' not in self.catalog_names:
                     self.catalog_names['input_xy'] = []
                 self.catalog_names['input_xy'].append(catname)
-                
-        # Build a default reference WCS to be used if no other has been specified by the user
-        #self.buildDefaultRefWCS()
-        
+                        
         # Set up products which need to be computed by methods of this class
         self.outxy = None
         self.refWCS = None # reference WCS assigned for the final fit
@@ -209,7 +206,8 @@ class Image(object):
         # Check to see whether or not it is being matched to itself
         if (ref_outxy.shape == self.outxy.shape) and (ref_outxy == self.outxy).all():
             self.identityfit = True
-        if not self.identityfit:
+            print 'NO fit performed for reference image: ',self.name
+        else:
             xoff = 0.
             yoff = 0.
             if matchpars['xoffset'] is not None:
@@ -218,7 +216,7 @@ class Image(object):
                 yoff = matchpars['yoffset']
                 
             xyoff = (xoff,yoff)
-            matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,tolerance=matchpars['tolerance'])
+            matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,tolerance=matchpars['tolerance'],separation=matchpars['separation'])
             
             if len(matches) > minobj:
                 self.matches['image'] = np.column_stack([matches['input_x'][:,np.newaxis],matches['input_y'][:,np.newaxis]])
@@ -227,8 +225,7 @@ class Image(object):
             else:
                 print 'WARNING: Not enough matches found for input image: ',self.name
                 self.goodmatch = False
-        else:
-            print 'NO fit performed for reference image: ',self.name
+            
 
     def performFit(self,**kwargs):
         """ Perform a fit between the matched sources
@@ -263,7 +260,12 @@ class Image(object):
         if not self.identityfit and self.goodmatch:
             updatehdr.updatewcs_with_shift(self.name,self.refWCS,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],rot=self.fit['rot'],scale=self.fit['scale'][0])
-    
+        if self.identityfit:
+            # Update header using 'updatewcs'
+            stwcs.updatewcs.updatewcs(self.name)
+            # Create WCSCORR table to keep track of WCS revisions anyway
+            updatehdr.wcscorr.init_wcscorr(self.name)
+            
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file
         """ 

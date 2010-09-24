@@ -5,7 +5,6 @@ import numpy as np
 
 from pytools import fileutil
 import pywcs
-from stwcs.wcsutil import altwcs
 import stwcs
 from stwcs import wcsutil,updatewcs
 
@@ -85,13 +84,18 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
             wref = wcsutil.HSTWCS(reference)
             
     # Now that we are sure we have a good reference WCS to use, continue with the update
-    print 'Updating header for ',image
+    print '\n....Updating header for ',image,'...\n'
+    
     # Create initial WCSCORR extension
     wcscorr.init_wcscorr(image,force=force)
 
     # reset header WCS keywords to original (OPUS generated) values
-    altwcs.restoreWCS(image,'O',clobber=True)
-    
+    numextn = fileutil.countExtn(image)
+    extlist = []
+    for extn in xrange(1,numextn+1):
+        extlist.append(('SCI',extn))
+    wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
+
     # compute the matrix for the scale and rotation correction
     fit = scale*fileutil.buildRotMatrix(rot)
     
@@ -99,7 +103,8 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
     fimg= pyfits.open(image,mode='update')
 
     #fimg[0].header.update('HPA_V3',fimg[0].header['PA_V3'])
-    fimg[0].header['PA_V3'] += rot
+    pav3 = (fimg[0].header['PA_V3'] + rot)%360
+    fimg[0].header['PA_V3'] = pav3
     fimg.close()
 
     # for each chip in image, apply algorithm
@@ -148,8 +153,10 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
 
     # step 8    
     # Update the 'O' WCS (OPUS generated values) in the header
+    chipwcs_hdr = chip_wcs.wcs2header()
     fimg = pyfits.open(image,mode='update')
-    chip_wcs.copyWCS(header=fimg[extn].header,wcskey='O',wcsname='OPUS')
+    for key in chipwcs_hdr:
+        fimg[extn].header.update(key+"O",chipwcs_hdr[key])
     fimg.close()
     
     # step 9

@@ -6,6 +6,7 @@ import os,shutil
 import wcs_functions,util,resetbits
 import wcscorr
 import mdzhandler
+import convertwcs 
 
 from stwcs.wcsutil import altwcs
 from stwcs import updatewcs
@@ -290,6 +291,11 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output 
+    # Verify that all input files have been updated to include the alternate-WCS
+    # version of the OPUS keywords, since legacy images from OTFR will only
+    # contain OPUS WCS copied into keywords with a prefix of 'O'
+    for file in newfilelist:
+        convertwcs.archive_prefix_OPUS_WCS(file)        
     
     # check for non-polynomial distortion correction
     newfilelist = checkDGEOFile(newfilelist)
@@ -300,7 +306,8 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     #make an asn table at the end
     if wcskey not in ['',' ','INDEF',None] or updatewcs:
         # Make sure there is a WCSCORR table for each input image
-        wcscorr.init_wcscorr(newfilelist)
+        for img in newfilelist:
+            wcscorr.init_wcscorr(img)
         
     if wcskey in ['',' ','INDEF',None]:
         if updatewcs:
@@ -312,8 +319,12 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
             pydr_input = newfilelist
     else:
         print 'Resetting input WCS to be based on WCS key = ',wcskey
-        for nfl in newfilelist:
-            altwcs.restoreWCS(nfl,wcskey,clobber=True)
+        for fname in newfilelist:
+            numext = fileutil.countExtn(fname)
+            extlist = []
+            for extn in xrange(1,numext+1):
+                extlist.append(('SCI',extn))
+            altwcs.restoreWCS(fname,extlist,wcskey=wcskey,clobber=True)
         pydr_input = newfilelist
     
     # AsnTable will handle the case when output==None

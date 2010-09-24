@@ -5,7 +5,7 @@ import ndimage
 from pytools import asnutil,irafglob,parseinput
 import pyfits
 
-def process_input(input,prodonly=False):    
+def parse_input(input,prodonly=False):    
     catlist = None
     
     if (isinstance(input, list) == False) and \
@@ -222,6 +222,9 @@ def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
 def createWcsHDU(wcs):
     """ Generate a WCS header object that can be used to
         populate a reference WCS HDU.
+        
+        For most applications, 
+        stwcs.wcsutil.HSTWCS.wcs2header() will work just as well.
     """
 
     hdu = pyfits.ImageHDU()
