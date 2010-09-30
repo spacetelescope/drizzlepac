@@ -37,6 +37,11 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
    image
    catalogs
    
+Building a TEAL Interface for Tasks
+-----------------------------------
+.. toctree::
+
+   teal_guide
 
 Indices and tables
 ==================

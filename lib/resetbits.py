@@ -5,11 +5,8 @@
     This module allows a user to reset the pixel values of any integer array,
     such as the DQ array from an HST image, to zero.
 
-    License: http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
-
-    USAGE
-    -----
-        resetbits filename bits [extver [extname]]
+    License:
+        http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
 
     PARAMETERS
     ----------
@@ -18,7 +15,7 @@
     bits: int
         sum of integers corresponding to all the bits to be reset
 
-    OPTIONAL PARAMETERS
+    Optional Parameters
     -------------------
     extver: int, optional
         List of version numbers of the arrays to be corrected 
@@ -32,28 +29,37 @@
     This module performs a simple bitwise-and on all the pixels in the specified
     array and the integer value provided as input using the operation (array & ~bits).  
 
+    Usage
+    -----
+    It can be called not only from within Python, but also from the host-level
+    operating system command line using the syntax::
+    
+        resetbits filename bits [extver [extname]]
+
+
     EXAMPLES
     --------
+
     1. The following command will reset the 4096 bits in all 
-       the DQ arrays of the file 'input_flt.fits':
+       the DQ arrays of the file 'input_flt.fits'::
 
-        resetbits input_flt.fits 4096
+            resetbits input_flt.fits 4096
 
-        or from the Python command line:
+       or from the Python command line::
 
-        >>> import resetbits
-        >>> resetbits.reset_dq_bits("input_file_flt.fits", 4096)
+            >>> import resetbits
+            >>> resetbits.reset_dq_bits("input_file_flt.fits", 4096)
 
 
     2. To reset the 2,32,64 and 4096 (sum of 4194) bits in the 
-        second DQ array, specified as 'dq,2', in the file 'input_flt.fits':
+       second DQ array, specified as 'dq,2', in the file 'input_flt.fits'::
 
-        resetbits input_flt.fits 4194 2
+            resetbits input_flt.fits 4194 2
 
-        or from the Python command line:
+       or from the Python command line::
 
-        >>> import resetbits
-        >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
+            >>> import resetbits
+            >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
 """
 from __future__ import division
@@ -68,31 +74,40 @@ __vdate__ = '3-Aug-2010'
 def reset_dq_bits(input,bits,extver=None,extname='dq'):
     """ This function resets bits in the integer array(s) of a FITS file.
 
-    SYNTAX:
-        reset_dq_bits(filename, bits, extver=None, extname='dq')
+    Parameters
+    ----------
+    filename: str
+        full filename with path 
 
-    INPUT:
-        filename - full filename with path 
-        bits     - sum of integers corresponding to all the bits to be reset
-        extver   - List of version numbers of the DQ arrays 
-                   to be corrected (default: None, will do all)
-        extname  - EXTNAME of the DQ arrays in the FITS file 
-                   (default: 'dq')
+    bits: int
+        sum of integers corresponding to all the bits to be reset
 
+    extver: int, optional
+        List of version numbers of the DQ arrays 
+        to be corrected [Default Value: None, will do all]
+            
+    extname: str, optional
+        EXTNAME of the DQ arrays in the FITS file 
+        [Default Value: 'dq']
+
+    Notes
+    -----
     The default value of None for the 'extver' parameter specifies that all
     extensions with EXTNAME matching 'dq' (as specified by the 'extname' 
     parameter) will have their bits reset. 
-
-    USAGE:
+    
+    Examples
+    --------
         1. The following command will reset the 4096 bits in all 
-           the DQ arrays of the file input_file_flt.fits:
+           the DQ arrays of the file input_file_flt.fits::
 
-            reset_dq_bits("input_file_flt.fits", 4096)
+                reset_dq_bits("input_file_flt.fits", 4096)
 
         2. To reset the 2,32,64 and 4096 bits in the second DQ array, 
-           specified as 'dq,2', in the file input_file_flt.fits:
+           specified as 'dq,2', in the file input_file_flt.fits::
 
-            reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
+                reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
+
     """  
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
