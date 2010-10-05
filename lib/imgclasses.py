@@ -9,7 +9,7 @@ import pyfits
 from pytools import fileutil as fu
 import catalogs
 from stimage import xyxymatch
-from mirashift import linearfit
+import linearfit
 import updatehdr
 
 class Image(object):
