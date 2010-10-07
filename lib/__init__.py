@@ -46,6 +46,8 @@ import wcscorr
 import tweakreg, catalogs, imgclasses, tweakutils, wcscorr
 import imagefindpars, sextractorpars
 
+# Add TEAL interface to 'updatewcs' here
+import wcsupdate
 
 __taskname__ = "betadrizzle"
 
