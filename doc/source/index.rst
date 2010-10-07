@@ -11,7 +11,7 @@ This package relies on the STWCS and PyWCS packages in order to provide the supp
 
 
 Contents:
-
+ 
 .. toctree::
    :maxdepth: 2
 
@@ -36,6 +36,7 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
    userint 
    image
    catalogs
+   wcscorr
    
 Building a TEAL Interface for Tasks
 -----------------------------------

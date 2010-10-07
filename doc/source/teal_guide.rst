@@ -209,6 +209,85 @@ The output variable `cobj` can then be passed along or examined depending on wha
 ---------------
 Advanced Topics
 ---------------
+The topics presented here describe how to take advantage of some of TEAL's more advanced functions for controlling the behavior of the GUI and for working with complex sets of parameters. 
+
+Most of the examples for these advanced topics use the ConfgObj files and code defined for betadrizzle. 
+
+
+Parameter Sections
+==================
+The ConfigObj specification allows for parameters to be organized into sections of related parameters.  The parameters defined in these sections remain together in a single dictionary within the ConfigObj instance so that they can be passed into tasks or interpreted as a single unit.  Use of sections within TEAL provides for the opportunity to control the GUI's behaviors based on whether or not the parameters in a given section need to be edited by the user.  
+
+A parameter section can be defined simply by providing a title using the following syntax in both the .cfg and .cfgspc files::
+
+    [<title>]
+
+In betadrizzle, multiple sections are defined within the parameter interface.  One section has been defined in the .cfg file as::
+
+    [STEP 1: STATIC MASK]
+    static = True
+    static_sig = 4.0
+
+The .cfgspc definition for this section was specified as::
+
+    [STEP 1: STATIC MASK ]
+    static = boolean_kw(default=True, triggers='_section_switch_', comment="Create static bad-pixel mask from the data?")
+    static_sig = float_kw(default=4.0, comment= "Sigma*rms below mode to clip for static mask")
+
+These two sets of definitions work together to define the 'STEP 1: STATIC MASK' parameter section within the ConfigObj instance.  A program can then access the parameters in that section using the name of the section as the index in the ConfigObj instance.  The `static` and `static_sig` parameters would be accessed as::
+
+     >>> cobj = teal.teal('betadrizzle',loadOnly=True)
+     >>> step1 = cobj['STEP 1: STATIC MASK']
+     >>> step1
+     {'static': True, 'static_sig': 4.0}
+     >>> step1['static']
+     True
+
+     
+Section Triggers
+================
+The behavior of the TEAL GUI can be controlled for each section in a number of ways, primarily as variations on the behavior of turning off the ability to edit the parameters in a section based on another parameters value.  A section parameter can be defined to allow the user to explicitly specify whether or not they need to work with those parameters.  This can the control whether or not the remainder of the parameters are editable through the use of the `triggers` argument in the .cfgspc file for the section parameter.
+
+The supported values for the `triggers` argument currently understood by TEAL are:
+
+    * ``_section_switch_``: Activates/Deactivates the ability to edit the values of the parameters in this section
+    * ``_rule<#>_``: Runs the code in this rule to automatically set this parameter, and control the behavior of other parameters like section defintions as well.
+    
+The example for defining the section 'STEP 1: STATIC MASK' illustrates how to use the ``_section_switch_`` trigger to control the editing of the parameters in that section.
+
+Another argument defined as ``is_set_by="_rule<#>"`` allows the user to define when this section trigger can be set by other parameters using code and logic provided by the user. The value, ``_rule<#>_`` refers to code in the specified rule (defined at the end of the `.cfgspc` file) to determine what to do. The code which will be run must be found in the configspec file itself, although that code could reference other packages which are already installed. 
+
+Use of Rules
+------------
+A special section can be appended to the end of the ConfigObj files (.cfg and .cfgspc files) to define rules which can implement nearly arbitrary code to determine how the GUI should treat parameter sections or even individual parameter settings. The return value for a rule should always be a boolean value that can be used in the logic of setting parameter values.
+ 
+This capability has been implemented in `betadrizzle` to control whether or not whole sections of parameters are even editable (used) to safeguard the user from performing steps which need more than 1 input when only 1 input is provided. The use of the ``_rule<#>_`` trigger can be seen in the `betadrizzle` .cfgspc file::
+
+    _task_name_ = string_kw(default="betadrizzle")
+    input = string_kw(default="*flt.fits", triggers='_rule1_', comment="Input files (name, suffix, or @list)")
+    
+    <other parameters removed...>
+    
+    [STEP 3: DRIZZLE SEPARATE IMAGES]
+    driz_separate = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment= "Drizzle onto separate output images?")
+    driz_sep_outnx = float_or_none_kw(default=None, comment="Size of separate output frame's X-axis (pixels)" )
+
+    <more parameters removed, until we get to the end of the file...>
+
+    [ _RULES_ ]
+    _rule1_ = string_kw(default='', when='defaults,entry', code='from pytools import check_files; ans={ True:"yes",False:"no"}; OUT = ans[check_files.countInput(VAL) > 1]')
+    
+In this case, ``_rule1_`` gets defined in the special parameter section ``[_RULES_]`` and triggered upon the editing of the parameter ``input``.  The result of this logic will then automatically set the value of any section parameter with the ``is_set_by=_rule1_`` argument, such as the parameter ``driz_separate`` in the section ``[STEP 3: DRIZZLE SEPARATE IMAGES]``
+
+The rule itself can also be defined with an argument to define when the rule will be evaluated.  The currently supported options for the argument ``when`` for rules are:
+ 
+   * ``defaults``: Evaluate the rule upon starting the GUI, or when the TEAL GUI has been configured to evaluate rules on startup.
+   * ``entry``: Evaluate the rule anytime the value changes
+   * ``always``: Evaluate the rule under all circumstances regardless of user settings in the GUI
+
+These options can be provided as a comma-separated list for combinations, although care should be taken to avoid any logic problems for when the rule gets evaluated.
+
+
 
 
 .. _`ConfigObj module`: http://wiki.python.org/moin/ConfigObj
