@@ -1,6 +1,6 @@
 _task_name_ = string_kw(default="betadrizzle")
 input = string_kw(default="*flt.fits", triggers='_rule1_', comment="Input files (name, suffix, or @list)")
-output = string_kw(default='final_drz.fits', comment="Rootname for output drizzled products")
+output = string_kw(default='final', comment="Rootname for output drizzled products")
 mdriztab = boolean_kw(default=True, comment="Use Multidrizzle parameter file specified in header?")
 refimage = string_kw(default="", comment="Reference image from which to obtain a WCS")
 runfile = string_kw(default="betadrizzle.log", comment="File for logging the script commands")
