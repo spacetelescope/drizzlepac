@@ -82,7 +82,8 @@ def create_prefix_OPUS_WCS(fobj,extname='SCI'):
 
         Raises
         ------
-        IOError: if input PyFITS object was not opened in 'update' mode
+        IOError: 
+            if input PyFITS object was not opened in 'update' mode
         
     """
     # List of O-prefix keywords to create

@@ -215,7 +215,8 @@ class WFC3IRInputImage(WFC3InputImage):
  
         # no cte correction for WFC3/IR so set cte_dir=0.
         self.cte_dir = 0   
-
+        self._image[self.scienceExt,1].cte_dir = 0
+        
     def doUnitConversions(self):
         """WF3 IR data come out in electrons, and I imagine  the 
          photometry keywords will be calculated as such, so no image
