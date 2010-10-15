@@ -6,7 +6,7 @@ import convertwcs
 import util
 
 __taskname__ = 'wcsupdate'
-__version__ = updatewcs.__version__
+__version__ = stwcs.__version__
 #
 #### Interactive user interface (functional form)
 #
