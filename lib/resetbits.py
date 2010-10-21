@@ -147,7 +147,7 @@ def run(configobj=None):
                   extver=configobj['extver'],extname=configobj['extname'])
 
 def getHelpAsString():
-    helpString = 'resetbits Version '+__version__+__vdate__+'\n'
+    helpString = 'resetbits Version '+__version__+' '+__vdate__+'\n'
     helpString += __doc__+'\n'
 
     return helpString

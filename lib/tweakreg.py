@@ -28,21 +28,8 @@ __taskname__ = 'tweakreg' # unless someone comes up with anything better
 #
 def getHelpAsString():
     helpString = 'TweakReg Version %s(%s)\n'%(__version__,__vdate__)
-
-    #get the local library directory where the code is stored
-    localDir=os.path.split(__file__)
-    helpfile=__taskname__.split(".")
+    helpString += teal.getHelpFileAsString(__taskname__,__file__)
     
-    helpfile=localDir[0]+"/"+helpfile[0]+".help"
-    
-    if os.access(helpfile,os.R_OK):
-        fh=open(helpfile,'r')
-        ss=fh.readlines()
-        fh.close()
-        #helpString=""
-        for line in ss:
-            helpString+=line
-
     return helpString
 
 def _managePsets(configobj):

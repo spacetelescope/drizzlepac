@@ -12,6 +12,7 @@ import util
 from pytools import iterfile
 from pytools import nimageiter 
 from pytools import numcombine
+from pytools import teal
 from minmed import minmed
 import processInput
 
@@ -25,20 +26,7 @@ def getHelpAsString():
     """ 
     return useful help from a file in the script directory called module.help
     """
-    #get the local library directory where the code is stored
-    localDir=os.path.split(__file__)
-    helpfile=__taskname__.split(".")
-    helpfile=localDir[0]+"/"+helpfile[1]+".help"
-    
-    if os.access(helpfile,os.R_OK):
-        fh=open(helpfile,'r')
-        ss=fh.readlines()
-        fh.close()
-        helpString=""
-        for line in ss:
-            helpString+=line
-    else:    
-        helpString=__doc__
+    helpString = teal.getHelpFileAsString(__taskname__,__file__)
 
     return helpString
 

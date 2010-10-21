@@ -16,7 +16,7 @@ from __future__ import division # confidence medium
 
 import util
 from imageObject import imageObject
-from pytools import fileutil
+from pytools import fileutil, teal
 import processInput
 import imagestats
 import os
@@ -33,20 +33,7 @@ def getHelpAsString():
     """ 
     return useful help from a file in the script directory called module.help
     """
-    #get the local library directory where the code is stored
-    localDir=os.path.split(__file__)
-    helpfile=__taskname__.split(".")
-    helpfile=localDir[0]+"/"+helpfile[1]+".help"
-    
-    if os.access(helpfile,os.R_OK):
-        fh=open(helpfile,'r')
-        ss=fh.readlines()
-        fh.close()
-        helpString=""
-        for line in ss:
-            helpString+=line
-    else:    
-        helpString=__doc__
+    helpString = teal.getHelpFileAsString(__taskname__,__file__)
 
     return helpString
 
