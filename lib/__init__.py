@@ -64,7 +64,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.5dev10309'
+__version__ = '4.0.5dev11137'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -150,7 +150,7 @@ def run(configObj=None,wcsmap=None):
             procSteps.endStep('Initialization')
             if not imgObjList:
                 return
-                        
+                      
             # Call rest of MD steps...
             print 'Finished interpreting configObj...\n'
             #create static masks for each image

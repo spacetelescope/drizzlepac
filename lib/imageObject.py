@@ -31,6 +31,7 @@ class baseImageObject:
         self._rootname=None
         self.outputNames={}
         self.outputValues = {}
+        self.createContext = True
          
         #this is the number of science chips to be processed in the file
         self._numchips=1
@@ -324,7 +325,7 @@ class baseImageObject:
         outWeight = rootname+'_drz_weight.fits'
         outContext = rootname+'_drz_context.fits'
         outMedian = rootname+'_med.fits'
-        
+                
         # Build names based on input name
         indx = self._filename.find('.fits')
         origFilename = self._filename[:indx]+'_OrIg.fits'
@@ -396,6 +397,13 @@ class baseImageObject:
         outnames['outWeight'] = output_wcs.outputNames['outWeight']
         outnames['outContext'] = output_wcs.outputNames['outContext']
         
+    def updateContextImage(self,contextpar):
+        """ Reset the name of the context image to None if parameter `context`== False
+        """
+        self.createContext = contextpar
+        if contextpar == False:
+            print 'No context image will be created for ',self._filename
+            self.outputNames['outContext'] = None
         
     def find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file

@@ -463,7 +463,6 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     # for each drizzle step
     updateImageWCS(imageObjectList,outwcs)
     
-    
     return outwcs
 
 #### Utility functions for working with WCSObjects
@@ -472,6 +471,8 @@ def createWCSObject(output,default_wcs,final_wcs,imageObjectList):
     outwcs = imageObject.WCSObject(output)
     outwcs.default_wcs = default_wcs
     outwcs.wcs = final_wcs
+
+    outwcs.updateContextImage(imageObjectList[0].createContext)
 
     #
     # Add exptime information for use with drizzle

@@ -355,7 +355,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     _nplanes = int((_numctx['all']-1) / 32) + 1
     # For single drizzling or when context is turned off,
     # minimize to 1 plane only...
-    if single or imageObjectList[0][1].outputNames['outContext'] == '' or imageObjectList[0][1].outputNames['outContext'] == None:
+    if single or imageObjectList[0][0].outputNames['outContext'] in [None,'',' ']:
         _nplanes = 1
 
     # Always initialize context images to a 3-D array
@@ -369,7 +369,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     _nimg = 0
     _hdrlist = []
 
-    for img in imageObjectList:
+    for img in imageObjectList:        
         for chip in img.returnAllChips(extname=img.scienceExt):
 
             native_units = img.native_units

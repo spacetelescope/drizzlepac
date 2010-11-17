@@ -114,6 +114,10 @@ def setCommonInput(configObj,createOutwcs=True):
     print '\n-Creating imageObject List as input for processing steps.\n'
     imageObjectList = createImageObjectList(files,instrpars,group=configObj['group'])
 
+    # apply context parameter
+    applyContextPar(imageObjectList,configObj['context'])
+        
+    # reset DQ bits if requested by user
     resetDQBits(imageObjectList,cr_bits_value=configObj['resetbits'])
         
     # Add info about input IVM files at this point to the imageObjectList
@@ -153,6 +157,13 @@ def createImageObjectList(files,instrpars,group=None):
 
     return imageObjList
 
+def applyContextPar(imageObjectList,contextpar):
+    """ Apply the value of the parameter `context` to the input list, setting
+        the name of the output context image to None if `context` is False
+    """
+    for img in imageObjectList:
+        img.updateContextImage(contextpar)
+        
 def _getInputImage (input,group=None):
     """ Factory function to return appropriate imageObject class instance"""
     # extract primary header and SCI,1 header from input image
@@ -291,11 +302,12 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output 
+
     # Verify that all input files have been updated to include the alternate-WCS
     # version of the OPUS keywords, since legacy images from OTFR will only
     # contain OPUS WCS copied into keywords with a prefix of 'O'
     for file in newfilelist:
-        convertwcs.archive_prefix_OPUS_WCS(file)        
+        convertwcs.archive_prefix_OPUS_WCS(file)       
     
     # check for non-polynomial distortion correction
     newfilelist = checkDGEOFile(newfilelist)
@@ -308,7 +320,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         # Make sure there is a WCSCORR table for each input image
         for img in newfilelist:
             wcscorr.init_wcscorr(img)
-        
+            
     if wcskey in ['',' ','INDEF',None]:
         if updatewcs:
             print 'Updating input WCS using "updatewcs"'
@@ -375,6 +387,7 @@ def runmakewcs(input):
     newNames = updatewcs.updatewcs(input,checkfiles=False)
     #newNames = makewcs.run(input)
     return newNames
+
 
 def resetDQBits(imageObjectList,cr_bits_value=4096):
     """ Reset the CR bit in each input image's DQ array 
