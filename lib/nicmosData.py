@@ -86,7 +86,8 @@ class NICMOSInputImage(imageObject):
 
                 # Set the BUNIT keyword to 'electrons'
                 chip.header.update('BUNIT','ELECTRONS')
-
+                _handle[0].header.update('BUNIT','ELECTRONS')
+                
                 # Update the PHOTFLAM value
                 photflam = _handle[0].header['PHOTFLAM']
                 _handle[0].header.update('PHOTFLAM',(photflam/chip._gain))

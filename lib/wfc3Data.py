@@ -232,6 +232,7 @@ class WFC3IRInputImage(WFC3InputImage):
             # Set the BUNIT keyword to 'electrons'
             chip._bunit = 'ELECTRONS'
             chip.header.update('BUNIT','ELECTRONS')
+            _handle[self.scienceExt,chip._chip].header.update('BUNIT','ELECTRONS')
             
             # If the exptime is 0 the science image will be zeroed out. 
             np.multiply(_handle[self.scienceExt,chip._chip].data,chip._exptime,_handle[self.scienceExt,chip._chip].data)
