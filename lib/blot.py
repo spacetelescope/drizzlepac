@@ -73,6 +73,10 @@ def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMa
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)
+        
+        print "\nUSER INPUT PARAMETERS for Blot Step:"
+        util.printParams(paramDict)        
+
         run_blot(imageObjectList, output_wcs.single_wcs, paramDict, wcsmap=wcsmap)
     else:
         print 'Blot step not performed.'
@@ -148,7 +152,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             _outsci = np.zeros((chip.wcs.naxis2,chip.wcs.naxis1),dtype=np.float32)
 
             #### Check to see what names need to be included here for use in _hdrlist
-            chip.outputNames['driz_version'] = _versions
+            chip.outputNames['driz_version'] = _versions['PyDrizzle']
             outputvals = chip.outputNames.copy()
             outputvals.update(img.outputValues)
             outputvals['blotnx'] = chip.wcs.naxis1

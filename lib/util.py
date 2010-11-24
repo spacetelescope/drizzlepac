@@ -56,6 +56,8 @@ class StreamLogger(object):
                 tmp = tmp.rstrip('\x0a\x0d')
                 self.log.write('%s%s\n' % (self.prefix,tmp))
                 self.data = ''
+    def flush(self):
+        self.stream.flush()
             
 def init_logging(logfile='betadrizzle.log'):    
     """ Set up logfile for capturing stdout/stderr messages.
@@ -291,7 +293,7 @@ def atfile_ivm(filename):
     return filename.split()[1]    
     
     
-def printParams(paramDictionary):
+def printParams(paramDictionary,all=False):
     """ Print nicely the parameters from the dictionary
     """
 
@@ -301,8 +303,10 @@ def printParams(paramDictionary):
         keys=paramDictionary.keys()
         keys.sort()
         for key in keys:
-            print key,":\t",paramDictionary[key]
-
+            if all or (not isinstance(paramDictionary[key],dict)):
+                print "\t",key,":\t",paramDictionary[key]
+        print '\n'
+    sys.stdout.flush()
 
 def isASNTable(inputFilelist):
     """return TRUE if inputFilelist is a fits ASN file"""

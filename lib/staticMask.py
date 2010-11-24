@@ -44,7 +44,7 @@ def getHelpAsString():
 
 
 #this is called by the user
-def create(input=None, static_sig=4.0, group=None, editpars=False, configObj=None, **inputDict):
+def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj=None, **inputDict):
     """the user can input a list of images if they like to create static masks
        as well as optional values for static_sig and inputDict
        
@@ -78,11 +78,11 @@ def run(configObj):
     filelist,output,ivmlist,oldasndict=processInput.processFilenames(configObj['input'],None)
 
     imageObjList=processInput.createImageObjectList(filelist,instrpars={},group=configObj['group'])  
-    _staticMask(imageObjList,configObj)
+    createStaticMask(imageObjList,configObj)
 
 
-#this is the workhorse function
-def _staticMask(imageObjectList=[],configObj=None,procSteps=None):
+#this is the workhorse function called by MultiDrizzle
+def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Static Mask')
         
@@ -97,6 +97,9 @@ def _staticMask(imageObjectList=[],configObj=None,procSteps=None):
         print "Invalid image object list given to static mask"
         return ValueError
     
+    print "\nUSER INPUT PARAMETERS for Static Mask Step:"
+    util.printParams(configObj[step_name])        
+
     #create a static mask object
     myMask=staticMask(configObj)
     

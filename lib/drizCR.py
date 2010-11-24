@@ -59,26 +59,31 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
     if not configObj[step_name]['driz_cr']:
         print 'Cosmic-ray identification (driz_cr) step not performed.'
         return
-        
+    paramDict = configObj[step_name]
+    paramDict['crbit'] = configObj['crbit']
+
+    print "\nUSER INPUT PARAMETERS for Driz_CR Step:"
+    util.printParams(paramDict)
+    
     for image in imgObjList:
 #        for chip in range(1,image._numchips,1):
  #           print image,chip
 #            _drizCr(image,chip,configObj,saveFile)
-        _drizCr(image,configObj,saveFile)
+        _drizCr(image,paramDict,saveFile)
 
     if procSteps is not None:
         procSteps.endStep('Driz_CR')
 
 
 #the workhorse function
-def _drizCr(sciImage=None,configObj={},saveFile=True):
+def _drizCr(sciImage,paramDict,saveFile=True):
     """mask blemishes in dithered data by comparison of an image
     with a model image and the derivative of the model image.
 
     sciImage is an imageObject which contains the science data
     blotImage is inferred from the sciImage object here which knows the name of its blotted image :)
     chip should be the science chip that corresponds to the blotted image that was sent
-    configObj contains the user parameters
+    paramDict contains the user parameters derived from the full configObj instance
     dgMask is inferred from the sciImage object, the name of the mask file to combine with the generated Cosmic ray mask
     saveFile saves intermediate files to disk
     
@@ -103,12 +108,9 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
     itself
     
     """    
-    
-    step_name = util.getSectionName(configObj,_step_num_)
 
-    grow=configObj[step_name]["driz_cr_grow"]
-    ctegrow=configObj[step_name]["driz_cr_ctegrow"]
-    
+    grow=paramDict["driz_cr_grow"]
+    ctegrow=paramDict["driz_cr_ctegrow"]    
             
 #    try:
 #        assert(chip != None), 'Please specify a chip to process for blotting'
@@ -157,15 +159,15 @@ def _drizCr(sciImage=None,configObj={},saveFile=True):
             # buildMask() method may work better here...
             #__dq = sciImage.maskExt + ',' + str(chip)
             #__dqMask=sciImage.getData(__dq)
-            __dqMask = sciImage.buildMask(chip,configObj['crbit'])
+            __dqMask = sciImage.buildMask(chip,paramDict['crbit'])
 
             #parse out the SNR information
-            __SNRList=(configObj[step_name]["driz_cr_snr"]).split()
+            __SNRList=(paramDict["driz_cr_snr"]).split()
             __snr1=float(__SNRList[0])
             __snr2=float(__SNRList[1])
 
             #parse out the scaling information 
-            __scaleList = (configObj[step_name]["driz_cr_scale"]).split()
+            __scaleList = (paramDict["driz_cr_scale"]).split()
             __mult1 = float(__scaleList[0])
             __mult2 = float(__scaleList[1])
 

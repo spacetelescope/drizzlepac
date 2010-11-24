@@ -54,18 +54,24 @@ def median(input=None,configObj=None, editpars=False, **inputDict):
 #this is the function that will be called from TEAL
 def run(configObj):
  
-    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
+    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not needed here
 
-    _median(imgObjList,configObj,saveFile=configObj["clean"])
+    createMedian(imgObjList,configObj)
 
-
-
-#this is the internal function, the user called function is below
-def _median(imageObjectList=None,configObj={},saveFiles=True,procSteps=None):
-    """Create a median image from the list of image Objects 
-       that has been given
+#
+#### Top-level interface from inside MultiDrizzle
+#
+def createMedian(imgObjList,configObj,procSteps=None):
+    """ Top-level interface to createMedian step called from top-level MultiDrizzle
+    
+    This function parses the input parameters then calls the `_median()` function
+    to median-combine the input images into a single image.
+    
     """
-    print "Starting median step\n"
+    if(imgObjList == None):
+        print "Please provide a list of imageObjects to the median step"
+        return ValueError
+
     if procSteps is not None:
         procSteps.addStep('Create Median')
         
@@ -73,21 +79,32 @@ def _median(imageObjectList=None,configObj={},saveFiles=True,procSteps=None):
     if not configObj[step_name]['median']:
         print 'Median combination step not performed.'
         return
-    
-    if(imageObjectList == None):
-        print "Please provide a list of imageObjects to the median step"
-        return ValueError
-        
+            
     step_name=util.getSectionName(configObj,_step_num_)    
     paramDict=configObj[step_name]
-        
+    paramDict['proc_unit'] = configObj['proc_unit']
+
+    print "\nUSER INPUT PARAMETERS for Create Median Step:"
+    util.printParams(paramDict)
+
+    _median(imgObjList,paramDict)
+
+    if procSteps is not None:
+        procSteps.endStep('Create Median')
+
+#this is the internal function, the user called function is below
+def _median(imageObjectList,paramDict):
+    """Create a median image from the list of image Objects 
+       that has been given
+    """
+
     newmasks = paramDict['median_newmasks']
     comb_type = paramDict['combine_type']
     nlow = paramDict['combine_nlow']
     nhigh = paramDict['combine_nhigh']
     grow = paramDict['combine_grow']
     maskpt = paramDict['combine_maskpt']
-    proc_units = configObj['proc_unit']
+    proc_units = paramDict['proc_unit']
 
     sigma=paramDict["combine_nsigma"]
     sigmaSplit=sigma.split()
@@ -383,9 +400,6 @@ def _median(imageObjectList=None,configObj={},saveFiles=True,procSteps=None):
 
     del masterList
     del medianImageArray
-
-    if procSteps is not None:
-        procSteps.endStep('Create Median')
 
 def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
     """ Writes out the result of the combination step.

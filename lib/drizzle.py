@@ -123,6 +123,10 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         # Force 'build' to always be False, so that this step always generates
         # simple FITS files as output for compatibility with 'createMedian'
         paramDict['build'] = False
+
+        print "\nUSER INPUT PARAMETERS for Separate Drizzle Step:"
+        util.printParams(paramDict)
+
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
         # for single-drizzle step when called from the top-level.
@@ -151,6 +155,9 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
         # for single-drizzle step when called from the top-level.
         if build is None:
             build = paramDict['build']
+            
+        print "\nUSER INPUT PARAMETERS for Final Drizzle Step:"
+        util.printParams(paramDict)
 
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False,
                 build=build, wcsmap=wcsmap)
@@ -190,7 +197,7 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
         crmask.close()
 
 def buildDrizParamDict(configObj,single=True):
-    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
+    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits','rot']
     # Initialize paramDict with global parameter(s)
     paramDict = {'build':configObj['build'],'stepsize':configObj['stepsize'],'coeffs':configObj['coeffs']}
 
@@ -306,25 +313,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     output_wcs.printwcs()
     print '\n'
 
-    """
-    # these need to be edited to report the correct values...
-    print("drizzle.outnx = "+str(self.assoc.parlist[0]['outnx']))
-    print("drizzle.outny = "+str(self.assoc.parlist[0]['outny']))
-    print("drizzle.scale = "+str(self.assoc.parlist[0]['scale']))
-    print("drizzle.pixfrac = "+str(self.assoc.parlist[0]['pixfrac']))
-    print("drizzle.shft_fr = 'output'")
-    print("drizzle.shft_un = 'output'")
-    print("drizzle.in_un = '"+str(self.assoc.parlist[0]['in_units']))
-    print("drizzle.out_un = '"+self.assoc.parlist[0]['units']+"'")
-    print("drizzle.align = 'center'")
-    print("drizzle.expkey = 'EXPTIME'")
-    print("drizzle.fillval = "+str(self.assoc.parlist[0]['fillval']))
-    print("drizzle.outcont = '"+self.assoc.parlist[0]['outcontext']+"'")
-    print("drizzle.kernel = '"+self.assoc.parlist[0]['kernel']+"'")
-    print("\n")
-
-    """
-
     # Set parameters for each input and run drizzle on it here.
     #
     # Perform drizzling...
@@ -355,7 +343,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     _nplanes = int((_numctx['all']-1) / 32) + 1
     # For single drizzling or when context is turned off,
     # minimize to 1 plane only...
-    if single or imageObjectList[0][0].outputNames['outContext'] in [None,'',' ']:
+    if single or imageObjectList[0][1].outputNames['outContext'] in [None,'',' ']:
         _nplanes = 1
 
     # Always initialize context images to a 3-D array
@@ -385,31 +373,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             # Open the SCI image
             _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
             _sciext = _handle[chip.header['extname'],chip.header['extver']]
-            """
-            if single:
-                outname = 'outSingle'
-                if build:
-                    outweight = 'outSingle'
-                else:
-                    outweight = 'outSWeight'
-                outmaskname = 'singleDrizMask'
-            else:
-                if build:
-                    outname = 'outFinal'
-                    outweight = 'outFinal'
-                else:
-                    outname = 'outSci'
-                    outweight = 'outWeight'
-
-                outmaskname = 'finalMask'
-            print("\ndrizzle "+_expname+" "+chip.outputNames[outname]+
-              " in_mask="+chip.outputNames[outmaskname]+" outweig="+chip.outputNames[outweight]+
-              " xsh="+xsh_str+" ysh="+ysh_str+" rot="+rot_str+
-              " coeffs='"+p['coeffs']+"' wt_scl='"+str(p['wt_scl'])+"'"+
-              " xgeoim='"+p['xgeoim']+"' ygeoim='"+p['ygeoim']+"'\n")
-
-            """
-
 
             ####
             #
@@ -531,13 +494,13 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 _sciext.data = _sciext.data.astype(np.float32)
 
             # compute the undistorted 'natural' plate scale for this chip
-            wcslin = distortion.utils.undistortWCS(chip.wcs)
-        
             if paramDict['coeffs'] in ['',' ','INDEF',None]:
                 chip.wcs.sip = None
                 chip.wcs.cpdis1 = None
                 chip.wcs.cpdis2 = None
                 chip.wcs.det2im = None
+            wcslin = distortion.utils.undistortWCS(chip.wcs)
+        
             if wcsmap is None and arrdriz is not None:
                 print 'Using default C-based coordinate transformation...'
                 wcs_functions.applyShift_to_WCS(img,chip.wcs,outwcs)
@@ -621,6 +584,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
                 # record IDCSCALE for output to product header
                 paramDict['idcscale'] = chip.wcs.idcscale
+
                 #
                 # Write output arrays to FITS file(s) and reset chip counter
                 #

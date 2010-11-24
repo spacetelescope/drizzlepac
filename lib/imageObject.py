@@ -387,8 +387,9 @@ class baseImageObject:
         outputvals['texpstart'] = output_wcs._expstart
         outputvals['texpend'] = output_wcs._expend
         outputvals['nimages'] = output_wcs.nimages
-        # Required for blot?
-        outputvals['scale'] = output_wcs.wcs.pscale / self._image[self.scienceExt,1].wcs.pscale
+
+        outputvals['scale'] = output_wcs.wcs.pscale #/ self._image[self.scienceExt,1].wcs.pscale
+        outputvals['exptime'] = self._exptime
         
         outnames = self.outputNames
         outnames['outMedian'] = output_wcs.outputNames['outMedian']

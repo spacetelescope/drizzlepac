@@ -236,7 +236,8 @@ class OutputImage:
         # Only a subset of these keywords makes sense for the new WCS based
         # transformations. They need to be reviewed to decide what to keep
         # and what to leave out.
-        #self.addDrizKeywords(prihdu.header,versions)
+        if not self.blot:
+            self.addDrizKeywords(prihdu.header,versions)
 
         if scihdr:
             del scihdr['MDRIZSKY']
@@ -477,7 +478,6 @@ class OutputImage:
         _geom = 'User parameters'
 
         _imgnum = 0
-        print self.parlist
         for pl in self.parlist:
 
             # Start by building up the keyword prefix based
@@ -506,7 +506,11 @@ class OutputImage:
             hdr.update(_keyprefix+'OUWE',pl['outWeight'][:64],
                 comment= 'Drizzle, output weighting image')
 
-            hdr.update(_keyprefix+'OUCO',pl['outContext'][:64],
+            if pl['outContext'] is None:
+                outcontext = ""
+            else:
+                outcontext = pl['outContext'][:64]
+            hdr.update(_keyprefix+'OUCO',outcontext,
                 comment= 'Drizzle, output context image')
 
             hdr.update(_keyprefix+'MASK',pl['singleDrizMask'][:64],
@@ -536,23 +540,29 @@ class OutputImage:
             hdr.update(_keyprefix+'YGIM',"SIP",
                 comment= 'Drizzle, Y distortion image name ')
 
+    #       This is not necessary as this information in folded into the output WCS
             hdr.update(_keyprefix+'SCAL',pl['scale'],
              comment=   'Drizzle, pixel size (arcsec) of output image')
                 
             hdr.update(_keyprefix+'ISCL',pl['idcscale'],
              comment=   'Drizzle, default IDCTAB pixel size(arcsec)')
+
+            """
+    #       Convert the rotation angle back to degrees
+            rot = self.input_pars['rot']
+            if rot is None:
+                rot = ""
+            else:
+                rot = float("%0.8f"%pl['rot'])
+            hdr.update(_keyprefix+'ROT',rot,
+             comment= 'Drizzle, rotation angle, degrees anticlockwise')
             
 
             #hdr.update(_keyprefix+'LAM',pl['plam'],
             #    comment='Drizzle, wavelength applied for transformation (nm)')
-            """
     #       Only put the next entries is we are NOT using WCS
             hdr.update(_keyprefix+'SCAL',pl['scale'],
              comment=   'Drizzle, scale (pixel size) of output image')
-
-    #       Convert the rotation angle back to degrees
-            hdr.update(_keyprefix+'ROT',float("%0.8f"%pl['rot']),
-             comment= 'Drizzle, rotation angle, degrees anticlockwise')
 
     #       Check the SCALE and units
     #       The units are INPUT pixels on entry to this routine
@@ -573,12 +583,6 @@ class OutputImage:
 
             hdr.update(_keyprefix+'INUN','counts',
                 comment= 'Drizzle, units of input image - counts or cps')
-            """
-            hdr.update(_keyprefix+'OUUN',self.units,
-                comment= 'Drizzle, units of output image - counts or cps')
-
-            hdr.update(_keyprefix+'FVAL',pl['fillval'],
-                comment= 'Drizzle, fill value for zero weight output pix')
 
             OFF=0.5
 
@@ -593,6 +597,18 @@ class OutputImage:
 
             hdr.update(_keyprefix+'OUYC',float(pl['outny']/2)+OFF,
                 comment= 'Drizzle, reference center of output image (Y)')
+            """
+
+            hdr.update(_keyprefix+'OUUN',self.units,
+                comment= 'Drizzle, units of output image - counts or cps')
+
+            if pl['fillval'] is None:
+                fillval = 'INDEF'
+            else:
+                fillval = pl['fillval']
+            hdr.update(_keyprefix+'FVAL',fillval,
+                comment= 'Drizzle, fill value for zero weight output pix')
+
 
         # Add version information as HISTORY cards to the header
         if versions != None:

@@ -134,25 +134,26 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     
     #General values to use    
     step_name=util.getSectionName(configObj,_step_num_)  
-    
+    paramDict = configObj[step_name]
     #get the sub-dictionary of values for this step alone and print them out
-    print "\nUSER INPUT PARAMETERS for SKY SUBTRACTION:"
-    util.printParams(configObj[step_name])        
+    print "\nUSER INPUT PARAMETERS for Sky Subtraction Step:"
+    util.printParams(paramDict)        
 
     for image in imageObjList:
         print "Working on sky for: ",image._filename
-        _skySub(configObj,image,saveFile=saveFile)
+        _skySub(image,paramDict,saveFile=saveFile)
 
     if procSteps is not None:
         procSteps.endStep('Subtract Sky')
     
 
 #this is the main function that does all the real work
-def _skySub(configObj=None,imageSet=None,saveFile=False):
+def _skySub(imageSet,paramDict,saveFile=False):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
+
     imageSet is a single imageObject reference
-    configObj should be an actual config object by now
+    paramDict should be the subset from an actual config object 
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
     else, overwrite the input images with the sky-subtracted results
 
@@ -161,12 +162,6 @@ def _skySub(configObj=None,imageSet=None,saveFile=False):
 
     """
    
-    #General values to use    
-    step_name=util.getSectionName(configObj,_step_num_)  
-    
-    #get the sub-dictionary of values for this step alone
-    paramDict=configObj[step_name]         
-
              
     _skyValue=0.0    #this will be the sky value computed for the exposure                                                                  
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted

@@ -64,7 +64,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.5dev11168'
+__version__ = '4.0.5dev11215'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -150,11 +150,13 @@ def run(configObj=None,wcsmap=None):
             procSteps.endStep('Initialization')
             if not imgObjList:
                 return
+            
+            print "\nUSER INPUT PARAMETERS common to all Processing Steps:"
+            util.printParams(configObj)
                       
             # Call rest of MD steps...
-            print 'Finished interpreting configObj...\n'
             #create static masks for each image
-            staticMask._staticMask(imgObjList,configObj,procSteps=procSteps)
+            staticMask.createStaticMask(imgObjList,configObj,procSteps=procSteps)
             
             #subtract the sky
             sky.subtractSky(imgObjList,configObj,procSteps=procSteps)
@@ -163,7 +165,7 @@ def run(configObj=None,wcsmap=None):
             drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap,procSteps=procSteps)
             
             #create the median images from the driz sep images
-            createMedian._median(imgObjList,configObj,configObj["clean"],procSteps=procSteps)
+            createMedian.createMedian(imgObjList,configObj,procSteps=procSteps)
             
             #blot the images back to the original reference frame
             blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
