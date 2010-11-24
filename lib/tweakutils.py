@@ -34,7 +34,8 @@ def parse_input(input,prodonly=False):
         #input is a string or a python list
         try:
             filelist, output = parseinput.parseinput(input)
-            filelist.sort()
+            if input.find('*') > -1: # if wild-cards are given, sort for uniform usage
+                filelist.sort()
         except IOError: raise    
 
     return filelist,catlist

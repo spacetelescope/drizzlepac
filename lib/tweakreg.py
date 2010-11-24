@@ -129,7 +129,7 @@ def run(configobj):
         # Create Image instances for all input images
         input_images.append(imgclasses.Image(filenames[imgnum],input_catalogs=catnames[imgnum],**kwargs))
     
-    # create set of paramters to pass to RefImage class
+    # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)
     # Determine a reference image or catalog and 
     #    return the full list of RA/Dec positions
