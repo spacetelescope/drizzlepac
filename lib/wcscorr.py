@@ -177,7 +177,7 @@ def archive_wcs_file(image,wcs_id=None):
 def update_wcscorr(fimg,hdr,selections=None):
     """ Update WCSCORR table with a new row for this extension header. It 
     copies the current set of WCS keywords as a new row of the table based on 
-    keyed WCSs as per FITS Paper I Multiple WCS standard. 
+    keyed WCSs as per Paper I Multiple WCS standard). 
     """
     # Now update the table...
     if selections is None:
