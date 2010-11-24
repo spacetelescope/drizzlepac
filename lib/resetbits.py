@@ -67,7 +67,7 @@ import numpy as np
 import pyfits
 from pytools import parseinput
 
-__taskname__ = "resetbits"
+__taskname__ = "betadrizzle.resetbits"
 __version__ = '1.0.0'
 __vdate__ = '3-Aug-2010'
 
@@ -147,7 +147,7 @@ def run(configobj=None):
                   extver=configobj['extver'],extname=configobj['extname'])
 
 def getHelpAsString():
-    helpString = 'resetbits Version '+__version__+' '+__vdate__+'\n'
+    helpString = 'resetbits Version '+__version__+'['+__vdate__+']\n'
     helpString += __doc__+'\n'
 
     return helpString
