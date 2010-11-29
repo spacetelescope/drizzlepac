@@ -2,7 +2,6 @@ from __future__ import division # confidence medium
 
 import sys,types,os,copy
 import util
-from util import _ptime
 import numpy as np
 import pyfits
 from pytools import fileutil, teal
@@ -197,7 +196,7 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
         crmask.close()
 
 def buildDrizParamDict(configObj,single=True):
-    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits','rot']
+    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
     # Initialize paramDict with global parameter(s)
     paramDict = {'build':configObj['build'],'stepsize':configObj['stepsize'],'coeffs':configObj['coeffs']}
 
@@ -522,7 +521,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 pix_ratio, 1.0, 1.0, 'center', paramDict['pixfrac'],
                 paramDict['kernel'], _in_units, _expin,_wtscl,
                 fillval, nmiss, nskip, 1, mapping)
-            #print 'Finished tdriz at: ',_ptime()
 
             # Set up information for generating output FITS image
             #### Check to see what names need to be included here for use in _hdrlist

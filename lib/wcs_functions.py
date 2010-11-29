@@ -13,9 +13,15 @@ from stwcs import distortion,wcsutil
 from stwcs.distortion import coeff_converter,utils
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,
-                     'outnx':None,'outny':None,'crpix1':None,'crpix2':None,
-                     'crval1':None,'crval2':None}
-
+                     'outnx':None,'outny':None,
+                    'crpix1':None,'crpix2':None}
+         
+# Translation of USER PARAMETERS to WCS Parameters needed by mergeWCS()
+# keys are user parameters
+WCS_USERPARS = {'refimage':'refimage','ra':'ra','dec':'dec',
+                'scale':'psize','rot':'orient',
+                'outnx':'outnx','outny':'outny',
+                'crpix1':'crpix1','crpix2':'crpix2'}
 
 shift_kwlist = ['WSHIFT1','WSHIFT2','WROT','WSCALE']
 shift_kwcomments = ['Shift in axis1 from shiftfile','Shift in axis2 from shiftfile','Rotation from shiftfile','scale change from shiftfile']
@@ -397,32 +403,28 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     if not isinstance(imageObjectList,list): 
         imageObjectList = [imageObjectList]
         
-    if configObj['refimage'].strip() in ['',None]:        
-        # Compute default output WCS, if no refimage specified
-        hstwcs_list = []
-        undistort=True
-        for img in imageObjectList:
-            chip_wcs = copy.deepcopy(img.getKeywordList('wcs'))
-            # IF the user turned off use of coeffs (coeffs==None or '')
-            if configObj['coeffs'] in ['',' ',None,'INDEF']:
-                for cw in chip_wcs:
-                    # Turn off distortion model for each input
-                    cw.sip = None
-                    cw.cpdis1 = None
-                    cw.cpdis2 = None
-                    cw.det2im = None
-                undistort=False
-            hstwcs_list += chip_wcs
-        if not undistort and len(hstwcs_list) == 1:
-            default_wcs = hstwcs_list[0].deepcopy()
-        else:
-            default_wcs = utils.output_wcs(hstwcs_list,undistort=undistort)
+    # Compute default output WCS, replace later if user specifies a refimage
+    hstwcs_list = []
+    undistort=True
+    for img in imageObjectList:
+        chip_wcs = copy.deepcopy(img.getKeywordList('wcs'))
+        # IF the user turned off use of coeffs (coeffs==None or '')
+        if configObj['coeffs'] in ['',' ',None,'INDEF']:
+            for cw in chip_wcs:
+                # Turn off distortion model for each input
+                cw.sip = None
+                cw.cpdis1 = None
+                cw.cpdis2 = None
+                cw.det2im = None
+            undistort=False
+        hstwcs_list += chip_wcs
+    if not undistort and len(hstwcs_list) == 1:
+        default_wcs = hstwcs_list[0].deepcopy()
     else:
-        # Otherwise, simply use the reference image specified by the user
-        default_wcs = wcsutil.HSTWCS(configObj['refimage'])
+        default_wcs = utils.output_wcs(hstwcs_list,undistort=undistort)
     
     # Turn WCS instances into WCSObject instances
-    outwcs = createWCSObject(output,default_wcs,default_wcs,imageObjectList)
+    outwcs = createWCSObject(output,default_wcs,imageObjectList)
     
     # Merge in user-specified attributes for the output WCS
     # as recorded in the input configObj object.
@@ -431,29 +433,36 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     # More interpretation of the configObj needs to be done here to translate
     # the input parameter names to those understood by 'mergeWCS' as defined
     # by the DEFAULT_WCS_PARS dictionary.
-    single_step = util.getSectionName(configObj,3)
-    if single_step and configObj[single_step]['driz_separate']: 
+    single_step = configObj[util.getSectionName(configObj,3)]
+    singleParDict = configObj[util.getSectionName(configObj,'3a')].copy()
+    if single_step['driz_separate'] and singleParDict['driz_sep_wcs']: 
         single_pars = DEFAULT_WCS_PARS.copy()
-        single_pars['ra'] = configObj['ra']
-        single_pars['dec'] = configObj['dec']
-        #single_pars.update(configObj['STEP 3: DRIZZLE SEPARATE IMAGES'])
-        single_keys = {'outnx':'driz_sep_outnx','outny':'driz_sep_outny',
-                        'orient':'driz_sep_rot', 'psize':'driz_sep_scale'}
-        for key in single_keys.keys():
-            single_pars[key] = configObj['STEP 3: DRIZZLE SEPARATE IMAGES'][single_keys[key]]
+        del singleParDict['driz_sep_wcs']
+        keyname = 'driz_sep_'
+        for key in singleParDict:
+            k = key[len(keyname):]
+            single_pars[WCS_USERPARS[k]] = singleParDict[key]
+        #single_pars.update(singleParDict)
+        
+        # Now, account for any user-specified reference image
+        if singleParDict[keyname+'refimage']:
+            default_wcs = wcsutil.HSTWCS(singleParDict[keyname+'refimage'])
 
         ### Create single_wcs instance based on user parameters
         outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
             
-    final_step = util.getSectionName(configObj,7)
-    if final_step and configObj[final_step]['driz_combine']: 
-        final_pars = DEFAULT_WCS_PARS.copy()
-        final_pars['ra'] = configObj['ra']
-        final_pars['dec'] = configObj['dec']
-        final_keys = {'outnx':'final_outnx','outny':'final_outny','orient':'final_rot', 'psize':'final_scale'}
-        #final_pars.update(configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'])
-        for key in final_keys.keys():
-            final_pars[key] = configObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE'][final_keys[key]]
+    final_step = configObj[util.getSectionName(configObj,7)]
+    finalParDict = configObj[util.getSectionName(configObj,'7a')].copy()
+    if final_step['driz_combine'] and finalParDict['final_wcs']:         
+        del finalParDict['final_wcs']
+        keyname = 'final_'
+        for key in finalParDict:
+            k = key[len(keyname):]
+            final_pars[WCS_USERPARS[k]] = finalParDict[key]
+        final_pars.update(finalParDict)
+        # Now, account for any user-specified reference image
+        if finalParDict[keyname+'refimage']:
+            default_wcs = wcsutil.HSTWCS(finalParDict[keyname+'refimage'])
 
         ### Create single_wcs instance based on user parameters
         outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
@@ -464,13 +473,14 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     updateImageWCS(imageObjectList,outwcs)
     
     return outwcs
-
+    
 #### Utility functions for working with WCSObjects
-def createWCSObject(output,default_wcs,final_wcs,imageObjectList):
+def createWCSObject(output,default_wcs,imageObjectList):
     """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
     outwcs = imageObject.WCSObject(output)
     outwcs.default_wcs = default_wcs
-    outwcs.wcs = final_wcs
+    outwcs.wcs = default_wcs.copy()
+    outwcs.final_wcs = default_wcs.copy()
 
     outwcs.updateContextImage(imageObjectList[0].createContext)
 
@@ -507,9 +517,8 @@ def mergeWCS(default_wcs,user_pars):
         
         The user_pars dictionary needs to have the following set of keys::
         
-            user_pars = {'ra':None,'dec':None,'psize':None,'orient':None,
-                         'outnx':None,'outny':None,'crpix1':None,'crpix2':None,
-                         'crval1':None,'crval2':None}
+            user_pars = {'ra':None,'dec':None,'psize':None,'rot':None,
+                         'outnx':None,'outny':None,'crpix1':None,'crpix2':None}
     """
     #
     # Start by making a copy of the input WCS...

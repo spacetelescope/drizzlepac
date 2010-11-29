@@ -2,7 +2,6 @@ from __future__ import division # confidence medium
 
 import sys,types,os
 import util
-from util import _ptime
 import numpy as np
 from pytools import fileutil,teal
 import outputimage,wcs_functions,processInput,util
@@ -139,8 +138,6 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
     _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
 
     _hdrlist = []
-
-    print 'MultiDrizzle: blot task started at ',_ptime()
     
     for img in imageObjectList:
         
@@ -276,6 +273,4 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
             del _insci,_outsci
         del _outimg
-    
-    print 'MultiDrizzle: blot task completed at ',_ptime()
-   
+       
