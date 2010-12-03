@@ -344,8 +344,14 @@ for optimization.
 */
 static inline double
 sgarea(const double x1, const double y1, const double x2, const double y2) {
-  double m, c, dx, xlo, xhi, ylo, yhi, xtop;
+  double m, c, dx, dy, xlo, xhi, ylo, yhi, xtop;
   int negdx;
+
+  dy = y2 - y1;
+
+  /* Trap horizontal line */
+  if (dy == 0.0)
+    return 0.0;
 
   dx = x2 - x1;
 
@@ -370,7 +376,7 @@ sgarea(const double x1, const double y1, const double x2, const double y2) {
   xhi = MIN(xhi, 1.0);
 
   /* Now look at y */
-  m = (y2 - y1) / dx;
+  m = dy / dx;
   assert(m != 0.0);
   c = y1 - m * x1;
   ylo = m * xlo + c;
@@ -794,6 +800,8 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
         /* Count the hits */
         ++nhit;
 
+        /* VALGRIND REPORTS: Address is 1 bytes after a block of size
+           435 */
         vc = *output_counts_ptr(p, ii, jj);
         dow = (float)(dover * w);
 
@@ -922,15 +930,14 @@ do_kernel_square(struct driz_param_t* p,
 
   /* TODO: These are constant across calls -- perhaps cache??? */
   dh = 0.5 * p->pixel_fraction;
-  dx = (double)(p->xmin)-1;
-  dy = (double)(p->ymin)-1;
+  dx = (double)(p->xmin) - 1;
+  dy = (double)(p->ymin) - 1;
   n = x2 - x1 + 1;
 
   /* Next the "classic" drizzle square kernel...  this is different
      because we have to transform all four corners of the shrunken
      pixel */
-  /* Set the start corner positions, only in Y, as X is already
-     done. */
+  /* Set the start corner positions */
 
   *mapping_4_ptr(p, xi, x1, 0) = (double)x1 - dh;
   *mapping_4_ptr(p, xi, x1, 1) = (double)x1 + dh;
@@ -948,29 +955,13 @@ do_kernel_square(struct driz_param_t* p,
   *mapping_4_ptr(p, yi, x1+1, 3) = -dh;
 
   /* Transform onto the output grid */
-  if (last_x1 <= x1 && last_x2 >= x2) {
-    memcpy(mapping_4_ptr(p, xo, x1, 3), mapping_4_ptr(p, xo, x1, 0), n * sizeof(double));
-    memcpy(mapping_4_ptr(p, yo, x1, 3), mapping_4_ptr(p, yo, x1, 0), n * sizeof(double));
-    memcpy(mapping_4_ptr(p, xo, x1, 2), mapping_4_ptr(p, xo, x1, 1), n * sizeof(double));
-    memcpy(mapping_4_ptr(p, yo, x1, 2), mapping_4_ptr(p, yo, x1, 1), n * sizeof(double));
-    for (i = 0; i < 2; ++i) {
-      if (map_value(p, TRUE, n,
-                    mapping_4_ptr(p, xi, x1, i), mapping_4_ptr(p, yi, x1, i),
-                    xtmp, ytmp,
-                    mapping_4_ptr(p, xo, x1, i), mapping_4_ptr(p, yo, x1, i),
-                    error)) {
-        return 1;
-      }
-    }
-  } else {
-    for (i = 0; i < 4; ++i) {
-      if (map_value(p, TRUE, n,
-                    mapping_4_ptr(p, xi, x1, i), mapping_4_ptr(p, yi, x1, i),
-                    xtmp, ytmp,
-                    mapping_4_ptr(p, xo, x1, i), mapping_4_ptr(p, yo, x1, i),
-                    error)) {
-        return 1;
-      }
+  for (i = 0; i < 4; ++i) {
+    if (map_value(p, TRUE, n,
+                  mapping_4_ptr(p, xi, x1, i), mapping_4_ptr(p, yi, x1, i),
+                  xtmp, ytmp,
+                  mapping_4_ptr(p, xo, x1, i), mapping_4_ptr(p, yo, x1, i),
+                  error)) {
+      return 1;
     }
   }
 
