@@ -35,7 +35,7 @@ skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)"
 skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user.")
 
 [STEP 3: DRIZZLE SEPARATE IMAGES]
-driz_separate = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment= "Drizzle onto separate output images?")
+driz_separate = boolean_kw(default=True, triggers='_section_switch_', triggers='_rule3a_', is_set_by='_rule1_', comment= "Drizzle onto separate output images?")
 driz_sep_kernel = option_kw("turbo","square","point", "gaussian", "tophat", "lanczos3", default="turbo", comment="Shape of kernel function")
 driz_sep_wt_scl = string_kw(default="exptime", comment= "Weighting factor for input data image")
 driz_sep_pixfrac = float_kw(default=1., comment="Linear size of drop in input pixels")
@@ -43,7 +43,7 @@ driz_sep_fillval = float_or_none_kw(default=None, comment="Value to be assigned 
 driz_sep_bits = integer_kw(default=0, comment="Integer mask bit values considered good")
 
 [STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS]
-driz_sep_wcs = boolean_kw(default=False, triggers='_section_switch_', comment= "Define custom WCS for separate output images?")
+driz_sep_wcs = boolean_kw(default=False, triggers='_section_switch_', is_disabled_by='_rule3a_', comment= "Define custom WCS for separate output images?")
 driz_sep_refimage = string_kw(default="", comment="Reference image from which to obtain a WCS")
 driz_sep_rot = float_or_none_kw(default=None, comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
 driz_sep_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
@@ -78,7 +78,7 @@ driz_cr_ctegrow = integer_kw(default=0, comment="Driz_cr_ctegrow parameter")
 driz_cr_scale = string_kw(default="1.2 0.7", comment="Driz_cr.scale parameter")
 
 [STEP 7: DRIZZLE FINAL COMBINED IMAGE]
-driz_combine = boolean_kw(default=True, triggers='_section_switch_', comment= "Perform final drizzle image combination?")
+driz_combine = boolean_kw(default=True, triggers='_section_switch_', triggers='_rule7a_', comment= "Perform final drizzle image combination?")
 final_wht_type = option_kw("EXP","ERR","IVM",default="EXP", comment="Type of weighting for final drizzle")
 final_kernel = option_kw("square", "point",  "gaussian", "turbo", "tophat", "lanczos3", default="square", comment="Shape of kernel function")
 final_wt_scl = string_kw(default="exptime", comment="Weighting factor for input data image")
@@ -88,7 +88,7 @@ final_bits = integer_kw(default=0, comment="Integer mask bit values considered g
 final_units = option_kw("counts", "cps", default="cps", comment="Units for final drizzle image (counts or cps)")
 
 [STEP 7a: CUSTOM WCS FOR FINAL OUTPUT]
-final_wcs = boolean_kw(default=False, triggers='_section_switch_', comment= "Define custom WCS for final output image?")
+final_wcs = boolean_kw(default=False, triggers='_section_switch_', is_disabled_by='_rule7a_', comment= "Define custom WCS for final output image?")
 final_refimage = string_kw(default="", comment="Reference image from which to obtain a WCS")
 final_rot = float_or_none_kw(default=0., comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
 final_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
@@ -108,3 +108,5 @@ expkeyword = string_kw(default="")
 
 [ _RULES_ ]
 _rule1_ = string_kw(default='', when='defaults,entry', code='from pytools import check_files; ans={ True:"yes",False:"no"}; OUT = ans[check_files.countInput(VAL) > 1]')
+_rule3a_ = string_kw(default='', code='OUT = VAL')
+_rule7a_ = string_kw(default='', code='OUT = VAL')
