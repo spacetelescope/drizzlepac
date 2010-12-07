@@ -610,7 +610,6 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
     xarr = i-1;
     yarr = j-1;
 
-
     /* Allow for stretching because of scale change */
     d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
 
@@ -849,10 +848,10 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
     yyi = yoi - dy - p->pfo;
     yya = yoi - dy + p->pfo;
 
-    nxi = fortran_round(xxi);
-    nxa = fortran_round(xxa);
-    nyi = fortran_round(yyi);
-    nya = fortran_round(yya);
+    nxi = (integer_t)(xxi);
+    nxa = (integer_t)(xxa);
+    nyi = (integer_t)(yyi);
+    nya = (integer_t)(yya);
     iis = MAX(nxi, 0);
     iie = MIN(nxa, p->nsx - 1);
     jjs = MAX(nyi, 0);
@@ -1001,10 +1000,10 @@ do_kernel_square(struct driz_param_t* p,
     }
 
     /* Loop over output pixels which could be affected */
-    min_jj = MAX(fortran_round(min_doubles(yout, 4)), 0);
-    max_jj = MIN(fortran_round(max_doubles(yout, 4)), p->nsy - 1);
-    min_ii = MAX(fortran_round(min_doubles(xout, 4)), 0);
-    max_ii = MIN(fortran_round(max_doubles(xout, 4)), p->nsx - 1);
+    min_jj = MAX((integer_t)(min_doubles(yout, 4)), 0);
+    max_jj = MIN((integer_t)(max_doubles(yout, 4)), p->nsy - 1);
+    min_ii = MAX((integer_t)(min_doubles(xout, 4)), 0);
+    max_ii = MIN((integer_t)(max_doubles(xout, 4)), p->nsx - 1);
 
     for (jj = min_jj; jj <= max_jj; ++jj) {
       for (ii = min_ii; ii <= max_ii; ++ii) {
