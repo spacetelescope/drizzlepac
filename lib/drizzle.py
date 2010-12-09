@@ -492,13 +492,15 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 #WARNING: Input array recast as a float32 array
                 _sciext.data = _sciext.data.astype(np.float32)
 
+            undistort=True
             # compute the undistorted 'natural' plate scale for this chip
             if paramDict['coeffs'] in ['',' ','INDEF',None]:
                 chip.wcs.sip = None
                 chip.wcs.cpdis1 = None
                 chip.wcs.cpdis2 = None
                 chip.wcs.det2im = None
-            wcslin = distortion.utils.undistortWCS(chip.wcs)
+                undistort=False
+            wcslin = distortion.utils.output_wcs([chip.wcs],undistort=undistort)
         
             if wcsmap is None and arrdriz is not None:
                 print 'Using default C-based coordinate transformation...'
