@@ -481,6 +481,7 @@ def createWCSObject(output,default_wcs,imageObjectList):
     outwcs.default_wcs = default_wcs
     outwcs.wcs = default_wcs.copy()
     outwcs.final_wcs = default_wcs.copy()
+    outwcs.single_wcs = default_wcs.copy()
 
     outwcs.updateContextImage(imageObjectList[0].createContext)
 
