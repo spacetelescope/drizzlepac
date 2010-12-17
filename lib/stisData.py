@@ -207,13 +207,12 @@ class CCDInputImage(STISInputImage):
             instrpars['expkeyword'] = 'EXPTIME'
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-            #pri_header=chip.header
-            
+                    
             chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
                                                      instrpars['gnkeyword'])
             chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
                                                      instrpars['rnkeyword'])
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
@@ -265,7 +264,7 @@ class NUVInputImage(STISInputImage):
 
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-            pri_header=chip.header
+            #pri_header=chip.header
             chip.cte_dir=0
             # We need to treat Read Noise and Gain as a special case since it is 
             # not populated in the STIS primary header for the MAMAs
@@ -293,7 +292,7 @@ class NUVInputImage(STISInputImage):
             
 
 
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
 
             if chip._exptime == None:
@@ -360,11 +359,11 @@ class FUVInputImage(STISInputImage):
             instrpars['expkeyword'] = 'EXPTIME'
             
         for chip in self.returnAllChips(extname=self.scienceExt): 
-            pri_header=chip.header #stis stores stuff in the science data header
+            #pri_header=chip.header #stis stores stuff in the science data header
         
             chip.cte_dir=0
 
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
+            chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
             if chip._exptime == None:
                 print 'ERROR: invalid instrument task parameter'
