@@ -93,10 +93,10 @@ class baseImageObject:
         #valid there afterwards that I can play with
         
         if not self._isSimpleFits: 
-            for ext in range(1,self._nextend+1,1):
+            for ext,hdu in enumerate(self._image):
                 #use the datatype for the extension
-                dtype=self.getNumpyType(self._image[ext].header["BITPIX"])
-                self._image[ext].data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet     
+                dtype=self.getNumpyType(hdu.header["BITPIX"])
+                hdu.data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet     
         else:            
             self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
             
@@ -239,7 +239,10 @@ class baseImageObject:
         extensions = self._findExtnames(extname=extname,exclude=exclude)
         chiplist = []
         for i in range(1,self._nextend+1,1):
-            extver = self._image[i].header['extver']
+            if self._image[i].header.has_key('extver'):
+                extver = self._image[i].header['extver']
+            else:
+                extver = 1
             if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
                 chiplist.append(self._image[i])
         return chiplist
@@ -463,19 +466,20 @@ class baseImageObject:
             count the number of extensions in the file
             with the given name (EXTNAME)
         """
-
         count=0 #simple fits image
-        
-        if (self._image['PRIMARY'].header["EXTEND"]):
-            nextend=int(self._image['PRIMARY'].header["NEXTEND"])
-            for i in range (1,nextend+1,1):
-                self._image[i].extnum=i
-                self._image[i].extname=self._image[i].header["EXTNAME"]
-                self._image[i].extver=self._image[i].header["EXTVER"]
-                
-                if (self._image[i].header["EXTNAME"] == extname):
-                    count=count+1    
 
+        if (self._image['PRIMARY'].header["EXTEND"]):
+            for i,hdu in enumerate(self._image):
+                if i > 0:                    
+                    self._image[i].extnum=i
+                    self._image[i].extname=hdu.header["EXTNAME"]
+                    if hdu.header.has_key('EXTVER'):
+                        self._image[i].extver=hdu.header["EXTVER"]
+                    else:
+                        self._image[i].extver = 1
+                        
+                    if ((extname is not None) and (hdu.header["EXTNAME"] == extname)) or extname is None:
+                        count=count+1    
         return count
     
     def getNumpyType(self,irafType):
@@ -620,7 +624,8 @@ class imageObject(baseImageObject):
 
         self.proc_unit = None
         
-        self._nextend=self._image["PRIMARY"].header["NEXTEND"]
+        #self._nextend=self._image["PRIMARY"].header["NEXTEND"]
+        self._nextend = self._countEXT(extname=None)
         
         if (self._numchips == 0):
             #the simple fits image contains the data in the primary extension,

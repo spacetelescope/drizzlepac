@@ -158,6 +158,9 @@ class CCDInputImage(STISInputImage):
         
         
         #if ( self.amp == 'D' or self.amp == 'C' ) : # cte direction depends on amp 
+        for chip in range(1,self._numchips+1,1):
+            self._image[self.scienceExt,chip].cte_dir = 1
+
         self.cte_dir =  1 
         #if ( self.amp == 'A' or self.amp == 'B' ) :
         #    self.cte_dir =  -1  
@@ -194,7 +197,7 @@ class CCDInputImage(STISInputImage):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
-        #pri_header = self._image[0].header
+        pri_header = self._image[0].header
 
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ATODGAIN'
@@ -204,7 +207,7 @@ class CCDInputImage(STISInputImage):
             instrpars['expkeyword'] = 'EXPTIME'
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-            pri_header=chip.header
+            #pri_header=chip.header
             
             chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
                                                      instrpars['gnkeyword'])
@@ -233,8 +236,10 @@ class NUVInputImage(STISInputImage):
         
         # no cte correction for STIS/NUV-MAMA so set cte_dir=0.
         print('\nWARNING: No cte correction will be made for this STIS/NUV-MAMA data.\n')
-        self.cte_dir = 0  
-
+        
+        for chip in range(1,self._numchips+1,1):
+            self._image[self.scienceExt,chip].cte_dir = 0
+        
     def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
@@ -333,7 +338,9 @@ class FUVInputImage(STISInputImage):
         
         # no cte correction for STIS/FUV-MAMA so set cte_dir=0.
         print('\nWARNING: No cte correction will be made for this STIS/FUV-MAMA data.\n')
-        self.cte_dir = 0  
+        for chip in range(1,self._numchips+1,1):
+            self._image[self.scienceExt,chip].cte_dir = 0
+
         self.effGain=1.0
 
     def setInstrumentParameters(self, instrpars):
