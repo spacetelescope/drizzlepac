@@ -441,16 +441,21 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         keyname = 'driz_sep_'
         for key in singleParDict:
             k = key[len(keyname):]
-            single_pars[WCS_USERPARS[k]] = singleParDict[key]
+            if k != 'refimage':
+                single_pars[k] = singleParDict[key]
         #single_pars.update(singleParDict)
         
         # Now, account for any user-specified reference image
         if singleParDict[keyname+'refimage']:
+            def_wcs = default_wcs.deepcopy()
             default_wcs = wcsutil.HSTWCS(singleParDict[keyname+'refimage'])
 
         ### Create single_wcs instance based on user parameters
         outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
-            
+        # restore global default WCS to original value so single_drizzle WCS does not
+        # influence final_drizzle WCS
+        default_wcs = def_wcs.deepcopy()
+        
     final_step = configObj[util.getSectionName(configObj,7)]
     finalParDict = configObj[util.getSectionName(configObj,'7a')].copy()
     if final_step['driz_combine'] and finalParDict['final_wcs']:         
@@ -458,8 +463,9 @@ def make_outputwcs(imageObjectList,output,configObj=None):
         keyname = 'final_'
         for key in finalParDict:
             k = key[len(keyname):]
-            final_pars[WCS_USERPARS[k]] = finalParDict[key]
-        final_pars.update(finalParDict)
+            if k != 'refimage':
+                final_pars[k] = finalParDict[key]
+        #final_pars.update(finalParDict)
         # Now, account for any user-specified reference image
         if finalParDict[keyname+'refimage']:
             default_wcs = wcsutil.HSTWCS(finalParDict[keyname+'refimage'])

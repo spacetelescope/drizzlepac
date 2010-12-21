@@ -711,7 +711,7 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
         ddx = xx - (double)ii;
         /* Radial distance */
         r2 = ddx*ddx + ddy*ddy;
-
+        
         /* Weight is a scaled Gaussian function of radial
            distance */
         dover = p->gaussian.es * exp(-r2 * p->gaussian.efac);
