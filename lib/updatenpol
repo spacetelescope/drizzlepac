@@ -1,4 +1,4 @@
 #! python
 
-import acstools.updatenpol
-acstools.updatenpol.main()
+import betadrizzle.updatenpol
+betadrizzle.updatenpol.main()
