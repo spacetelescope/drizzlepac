@@ -46,6 +46,9 @@ import wcscorr
 import tweakreg, catalogs, imgclasses, tweakutils, wcscorr
 import imagefindpars, sextractorpars
 
+# Add updatenpol to the list of tasks imported automatically here
+import updatenpol
+
 # Add TEAL interface to 'updatewcs' here
 import wcsupdate
 

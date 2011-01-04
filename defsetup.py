@@ -121,7 +121,7 @@ setupargs = {
     'license' :         "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :       ["Linux","Solaris","Mac OS X","Win"],
     'data_files' :        [( pkg+"/pars", ['lib/pars/*']),( pkg, ['lib/*.help'])],
-    'scripts' :         ["lib/mdriz.py","lib/resetbits"] ,
+    'scripts' :         ["lib/mdriz.py","lib/resetbits","lib/updatenpol"] ,
     'ext_modules' :     getNumpyExtensions()
     }
 
