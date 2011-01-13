@@ -271,27 +271,27 @@ static inline float*
 output_counts_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_counts);
-  assert(x >= 0 && x < p->nsx);
-  assert(y >= 0 && y < p->nsy);
-  return (p->output_counts + (y * p->nsx) + x);
+  assert(x >= 0 && x < p->onx);
+  assert(y >= 0 && y < p->ony);
+  return (p->output_counts + (y * p->onx) + x);
 }
 
 static inline integer_t*
 output_context_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_context);
-  assert(x >= 0 && x < p->nsx);
-  assert(y >= 0 && y < p->nsy);
-  return (p->output_context + (y * p->nsx) + x);
+  assert(x >= 0 && x < p->onx);
+  assert(y >= 0 && y < p->ony);
+  return (p->output_context + (y * p->onx) + x);
 }
 
 static inline integer_t*
 output_done_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_done);
-  assert(x >= 0 && x < p->nsx);
-  assert(y >= 0 && y < p->nsy);
-  return (p->output_done + (y * p->nsx) + x);
+  assert(x >= 0 && x < p->onx);
+  assert(y >= 0 && y < p->ony);
+  return (p->output_done + (y * p->onx) + x);
 }
 
 static inline integer_t*

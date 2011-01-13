@@ -276,8 +276,7 @@ map_value(struct driz_param_t* p,
   return 0;
 }
 
-/*#define WCSMAP_ORIGINAL_SLOW */
-
+#define WCSMAP_ORIGINAL_SLOW
 /*
 
 Default WCS mapping code
@@ -338,11 +337,14 @@ default_wcsmap(void* state,
       xyin[2*i] = xin[i];
       xyin[2*i+1] = yin[i];
   }
-
+  
   /* Start by checking to see whether DET2IM correction needs to
   be applied and applying it as appropriate. */
 
+  /*
 #ifdef WCSMAP_ORIGINAL_SLOW
+  */
+  if (m->factor == 0){
   /*
   Apply pix2sky() transformation from PyWCS
   */
@@ -352,8 +354,9 @@ default_wcsmap(void* state,
   if (status)
     return 1;
   wcsprm_c2python(m->input_wcs->wcs);
+  } else {
 
-#else
+/* #else  */
   /* TODO: Apply only distortion and sip in this way, and the rest using the lookup table */
   /* status = pipeline_pix2foc(m->input_wcs, n, 2, xyin, xyin); */
   /* if (status) */
@@ -392,8 +395,8 @@ default_wcsmap(void* state,
 
 #undef TABLE_X
 #undef TABLE_Y
-
-#endif
+  } /* End of if_then_else for factor == 0 */
+/*#endif */
 
   /*
   Finally, call wcs_sky2pix() for the output object.
@@ -447,7 +450,8 @@ default_wcsmap_init(struct wcsmap_param_t* m,
   assert(m->output_wcs == NULL);
   assert(m->table == NULL);
 
-#ifndef WCSMAP_ORIGINAL_SLOW
+/*#ifndef WCSMAP_ORIGINAL_SLOW */
+  if (factor > 0){
   snx = (int)((double)nx / factor) + 2;
   sny = (int)((double)ny / factor) + 2;
 
@@ -483,7 +487,8 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     driz_error_set_message(error, wcslib_get_error_message(istat));
     goto exit;
   }
-#endif
+  } /* End if_then for factor > 0*/
+/* #endif   */
 
   m->input_wcs = input;
   m->output_wcs = output;

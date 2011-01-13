@@ -499,8 +499,8 @@ over(const integer_t i, const integer_t j,
   assert(xmin <= xmax);
   assert(ymin <= ymax);
 
-  dx = MIN(xmax, (double)i + 0.5) - MAX(xmin, (double)i - 0.5);
-  dy = MIN(ymax, (double)j + 0.5) - MAX(ymin, (double)j - 0.5);
+  dx = MIN(xmax, (double)(i) + 0.5) - MAX(xmin, (double)(i) - 0.5);
+  dy = MIN(ymax, (double)(j) + 0.5) - MAX(ymin, (double)(j) - 0.5);
 
   if (dx > 0.0 && dy > 0.0)
     return dx*dy;
@@ -838,7 +838,6 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 
   nhit = 0;
 
-
   for (i = x1; i <= x2; ++i) {
     /* Offset within the subset */
     xoi = *mapping_ptr(p, xo, i);
@@ -848,13 +847,13 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
     yyi = yoi - dy - p->pfo;
     yya = yoi - dy + p->pfo;
 
-    nxi = (integer_t)(xxi);
-    nxa = (integer_t)(xxa);
-    nyi = (integer_t)(yyi);
-    nya = (integer_t)(yya);
-    iis = MAX(nxi, 0);
+    nxi = fortran_round(xxi);
+    nxa = fortran_round(xxa);
+    nyi = fortran_round(yyi);
+    nya = fortran_round(yya);
+    iis = MAX(nxi, 0);  /* Needed to be set to 0 to avoid edge effects */
     iie = MIN(nxa, p->nsx - 1);
-    jjs = MAX(nyi, 0);
+    jjs = MAX(nyi, 0);  /* Needed to be set to 0 to avoid edge effects */
     jje = MIN(nya, p->nsy - 1);
 
     nhit = 0;
@@ -1000,10 +999,10 @@ do_kernel_square(struct driz_param_t* p,
     }
 
     /* Loop over output pixels which could be affected */
-    min_jj = MAX((integer_t)(min_doubles(yout, 4)), 0);
-    max_jj = MIN((integer_t)(max_doubles(yout, 4)), p->nsy - 1);
-    min_ii = MAX((integer_t)(min_doubles(xout, 4)), 0);
-    max_ii = MIN((integer_t)(max_doubles(xout, 4)), p->nsx - 1);
+    min_jj = MAX(fortran_round(min_doubles(yout, 4)), 0);
+    max_jj = MIN(fortran_round(max_doubles(yout, 4)), p->nsy - 1);
+    min_ii = MAX(fortran_round(min_doubles(xout, 4)), 0);
+    max_ii = MIN(fortran_round(max_doubles(xout, 4)), p->nsx - 1);
 
     for (jj = min_jj; jj <= max_jj; ++jj) {
       for (ii = min_ii; ii <= max_ii; ++ii) {
@@ -1266,11 +1265,11 @@ dobox(struct driz_param_t* p, const integer_t ystart,
       /* We know there may be some misses */
       *nmiss += p->dnx - (x2 - x1 + 1);
 
-      /* Don't read past the edge of the image */
+      /* Don't read past the edge of the image
       if (x2 == p->dnx) {
           x2 -= 1;
       }
-
+      */
       /* At this point we can handle the different kernels separately.
          First the cases where we just transform a single point rather
          than four - every case except the "classic" square-pixel
