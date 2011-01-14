@@ -481,6 +481,16 @@ def buildEmptyDRZ(input, output):
         filename of the default empty _drz.fits file to be generated 
      
     """
+    # Identify the first input image
+    inputfile = parseinput.parseinput(input)[0]
+    if len(inputfile) == 0:
+        print '\n******* ERROR *******'
+        print 'No input file found!  Check specification of parameter "input". '
+        print 'Quitting...'
+        print '******* ***** *******\n'
+        return #raise IOError, "No input file found!"
+
+    # Set up output file here...
     if output == None:
         if len(input) == 1:
             oname = fu.buildNewRootname(input[0])
@@ -493,13 +503,13 @@ def buildEmptyDRZ(input, output):
 
     print 'Setting up output name: ',output
             
-    # Open the first image of the excludedFileList to use as a template to build
+    # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.
-    inputfile = parseinput.parseinput(input)[0]
     try :
         img = pyfits.open(inputfile[0])        
     except:
         raise IOError, 'Unable to open file %s \n' %inputfile
+        
     
     # Create the fitsobject
     fitsobj = pyfits.HDUList()
