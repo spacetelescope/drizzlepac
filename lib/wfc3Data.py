@@ -21,6 +21,8 @@ class WFC3InputImage(imageObject):
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
+
+        self.flatkey = 'PFLTFILE'
             
                 
     def _isSubArray(self):
@@ -36,43 +38,6 @@ class WFC3InputImage(imageObject):
         if (_naxis1 < self.full_shape[0]) or (_naxis2 < self.full_shape[0]):
             _subarray = True
         return _subarray
-
- 
-    def getflat(self):
-        """
-        Method for retrieving a detector's flat field.
-        
-        Returns
-        -------
-        flat: array
-            This method will return an array the same shape as the image with **units of electrons**.
-        
-        """
-
-        # The keyword for WFC3 UVIS flat fields in the primary header of the flt
-        # file is pfltfile.  This flat file is already in the required 
-        # units of electrons.
-        
-        filename = self._image["PRIMARY"].header['PFLTFILE']
-        
-        try:
-            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn=self.extn)
-            data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-            handle.close()
-        except:
-            try:
-                #see if jref$ was appended to the filename
-                handle = fileutil.openImage(filename[5:],mode='readonly',memmap=0)
-                hdu = fileutil.getExtn(handle,extn=self.extn)
-                data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-                handle.close()
-            except:
-                data = np.ones(self.image_shape,dtype=self.image_dtype)
-                str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-                print str
-
-        return data
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
@@ -112,6 +77,8 @@ class WFC3UVISInputImage(WFC3InputImage):
                 self._image[self.scienceExt,chip].cte_dir = -1    
             if ( chip == 2) : 
                 self._image[self.scienceExt,chip].cte_dir = 1   
+            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
+
         
  
     def doUnitConversions(self):
@@ -216,6 +183,7 @@ class WFC3IRInputImage(WFC3InputImage):
         # no cte correction for WFC3/IR so set cte_dir=0.
         self.cte_dir = 0   
         self._image[self.scienceExt,1].cte_dir = 0
+        self._image[self.scienceExt,1].darkcurrent = self.getdarkcurrent()
         
     def doUnitConversions(self):
         """WF3 IR data come out in electrons, and I imagine  the 

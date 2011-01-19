@@ -1,6 +1,6 @@
 from __future__ import division # confidence medium
 
-import sys,types,os,copy
+import sys,os,copy
 import util
 import numpy as np
 import pyfits
@@ -9,9 +9,12 @@ import outputimage,wcs_functions,processInput,util
 from stwcs import distortion
 
 try:
-    import cdriz as arrdriz
+    import cdriz
 except ImportError:
-    arrdriz = None
+    cdriz = None
+    print '\n Coordinate transformation and image resampling library, cdriz, NOT found!'
+    print '\n Please check the installation of this package to insure C code was built successfully.'
+    raise ImportError
 
 __taskname__ = "betadrizzle.drizzle"
 _single_step_num_ = 3
@@ -110,7 +113,7 @@ def drizzle(input=None,drizSep=False,configObj=None,wcsmap=None,editpars=False,*
 def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Separate Drizzle')
-
+    
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
     single_step = util.getSectionName(configObj,_single_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
@@ -119,6 +122,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         paramDict = buildDrizParamDict(configObj)
         paramDict['crbit'] = None
         paramDict['proc_unit'] = 'electrons'
+        paramDict['wht_type'] = None
         # Force 'build' to always be False, so that this step always generates
         # simple FITS files as output for compatibility with 'createMedian'
         paramDict['build'] = False
@@ -149,6 +153,8 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
         paramDict = buildDrizParamDict(configObj,single=False)
         paramDict['crbit'] = configObj['crbit']
         paramDict['proc_unit'] = configObj['proc_unit']
+        paramDict['wht_type'] = configObj[final_step]['final_wht_type']
+        
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
         # for single-drizzle step when called from the top-level.
@@ -288,6 +294,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     crbit = paramDict['crbit']
     bits = paramDict['bits']
     proc_units = paramDict['proc_unit']
+    wht_type = paramDict['wht_type']
 
     # Insure that the fillval parameter gets properly interpreted for use with tdriz
     if paramDict['fillval'] in [None, '']:
@@ -306,7 +313,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
         print 'Removing previous output product...'
         os.remove(imageObjectList[0].outputNames['outFinal'])
-
+    
     # print out parameters being used for drizzling
     print "Running Drizzle to create output frame with WCS of: "
     output_wcs.printwcs()
@@ -373,6 +380,34 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
             _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
+            # compute the undistorted 'natural' plate scale for this chip
+            undistort = True
+            if paramDict['coeffs'] in ['',' ','INDEF',None]:
+                chip.wcs.sip = None
+                chip.wcs.cpdis1 = None
+                chip.wcs.cpdis2 = None
+                chip.wcs.det2im = None
+                undistort=False
+            wcslin = distortion.utils.output_wcs([chip.wcs],undistort=undistort)
+        
+            if wcsmap is None and cdriz is not None:
+                print 'Using WCSLIB-based coordinate transformation...'
+                wcs_functions.applyShift_to_WCS(img,chip.wcs,outwcs)
+                mapping = cdriz.DefaultWCSMapping(chip.wcs,outwcs,int(chip.size1),int(chip.size2),stepsize)                
+            else:
+                #
+                ##Using the Python class for the WCS-based transformation
+                #
+                # Use user provided mapping function
+                print 'Using coordinate transformation defined by user...'
+                if wcsmap is None:
+                    wcsmap = wcs_functions.WCSMap
+                wmap = wcsmap(chip.wcs,outwcs)
+                wmap.applyShift(img)
+                mapping = wmap.forward
+
+            pix_ratio = outwcs.pscale/wcslin.pscale
+
             ####
             #
             # Put the units keyword handling in the imageObject class
@@ -415,7 +450,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             #
             ####
             # Build basic DQMask from DQ array and bits value
-            dqarr = img.buildMask(chip._chip,bits)
+            dqarr = img.buildMask(chip._chip,bits=bits,wht_type=wht_type)
 
             # Merge appropriate additional mask(s) with DQ mask
             if single:
@@ -425,36 +460,17 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 mergeDQarray(chip.outputNames['crmaskImage'],dqarr)
                 updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,chip.outputNames['crmaskImage'],crbit)
 
+            img.set_wtscl(chip._chip,paramDict['wt_scl'])
+
             # Convert mask to a datatype expected by 'tdriz'
-            _inwht = dqarr.astype(np.float32)
-
-            if paramDict['wt_scl'] != None:
-                if isinstance(paramDict['wt_scl'],types.StringType):
-                    if  paramDict['wt_scl'].isdigit() == False :
-                        # String passed in as value, check for 'exptime' or 'expsq'
-                        _wtscl_float = None
-                        try:
-                            _wtscl_float = float(paramDict['wt_scl'])
-                        except ValueError:
-                            _wtscl_float = None
-                        if _wtscl_float != None:
-                            _wtscl = _wtscl_float
-                        elif paramDict['wt_scl'] == 'expsq':
-                            _wtscl = chip._exptime*chip._exptime
-                        else:
-                            # Default to the case of 'exptime', if
-                            #   not explicitly specified as 'expsq'
-                            _wtscl = chip._exptime
-                    else:
-                        # int value passed in as a string, convert to float
-                        _wtscl = float(paramDict['wt_scl'])
-                else:
-                    # We have a non-string value passed in...
-                    _wtscl = float(paramDict['wt_scl'])
-            else:
-                # Default case: wt_scl = exptime
-                _wtscl = chip._exptime
-
+            # Also, base weight mask on ERR or IVM file as requested by user
+            if wht_type == 'ERR':
+                _inwht = img.buildERRmask(chip._chip,dqarr,pix_ratio)
+            elif wht_type == 'IVM':
+                _inwht = img.buildIVMmask(chip._chip,dqarr,pix_ratio)
+            else: # wht_type == 'EXP'
+                _inwht = dqarr.astype(np.float32)
+            
             # Set additional parameters needed by 'drizzle'
             _in_units = chip.in_units.lower()
             if _in_units == 'cps':
@@ -484,7 +500,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 _uniqid = ((_uniqid-1) % 32) + 1
 
             #
-            # This call to 'arrdriz.tdriz' uses the new C syntax
+            # This call to 'cdriz.tdriz' uses the new C syntax
             #
             _dny = _sciext.data.shape[0]
             # Call 'drizzle' to perform image combination
@@ -492,36 +508,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 #WARNING: Input array recast as a float32 array
                 _sciext.data = _sciext.data.astype(np.float32)
 
-            undistort=True
-            # compute the undistorted 'natural' plate scale for this chip
-            if paramDict['coeffs'] in ['',' ','INDEF',None]:
-                chip.wcs.sip = None
-                chip.wcs.cpdis1 = None
-                chip.wcs.cpdis2 = None
-                chip.wcs.det2im = None
-                undistort=False
-            wcslin = distortion.utils.output_wcs([chip.wcs],undistort=undistort)
-        
-            if wcsmap is None and arrdriz is not None:
-                print 'Using default C-based coordinate transformation...'
-                wcs_functions.applyShift_to_WCS(img,chip.wcs,outwcs)
-                mapping = arrdriz.DefaultWCSMapping(chip.wcs,outwcs,int(chip.size1),int(chip.size2),stepsize)                
-            else:
-                #
-                ##Using the Python class for the WCS-based transformation
-                #
-                # Use user provided mapping function
-                print 'Using coordinate transformation defined by user...'
-                wmap = wcsmap(chip.wcs,outwcs)
-                wmap.applyShift(img)
-                mapping = wmap.forward
-
-            pix_ratio = outwcs.pscale/wcslin.pscale
-
-            _vers,nmiss,nskip = arrdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
+            _vers,nmiss,nskip = cdriz.tdriz(_sciext.data,_inwht, _outsci, _outwht,
                 _outctx[_planeid], _uniqid, ystart, 1, 1, _dny,
                 pix_ratio, 1.0, 1.0, 'center', paramDict['pixfrac'],
-                paramDict['kernel'], _in_units, _expin,_wtscl,
+                paramDict['kernel'], _in_units, _expin,chip._wtscl,
                 fillval, nmiss, nskip, 1, mapping)
 
             # Set up information for generating output FITS image

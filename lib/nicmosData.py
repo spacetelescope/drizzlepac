@@ -24,9 +24,12 @@ class NICMOSInputImage(imageObject):
         self.full_shape = (256,256)
         self._instrument=self._image['PRIMARY'].header["INSTRUME"]
         self.native_units = 'COUNTS/S'
+        
+        self.flatkey = 'FLATFILE'
          
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0   #no correction for nicmos
+            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
        
         self._effGain = 1. #get the specific gain from the detector subclass
             
@@ -106,7 +109,7 @@ class NICMOSInputImage(imageObject):
     def _setchippars(self):
         self._setDefaultReadnoise()
                 
-    def getflat(self):
+    def getflat(self,chip):
         """
         Method for retrieving a detector's flat field.
     
@@ -116,28 +119,7 @@ class NICMOSInputImage(imageObject):
             The flat field array in the same shape as the input image with **units of cps**.
         """
 
-        # The keyword for NICMOS flat fields in the primary header of the flt
-        # file is FLATFILE.  This flat file is not already in the required 
-        # units of electrons.
-        
-        filename = self._image["PRIMARY"].header['FLATFILE']
-        
-        try:
-            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn=self.grp)
-            data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-        except:
-            try:
-                handle = fileutil.openImage(filename[5:],mode='readonly',memmap=0)
-                hdu = fileutil.getExtn(handle,extn=self.grp)
-                data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-            except:
-                data = np.ones(self.image_shape,dtype=self.image_dtype)
-                str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-                print str
-
-        flat = (1.0/data) # The reference flat field is inverted
-
+        flat = (1.0/super(NICMOSInputImage,self).getflat(chip))# The reference flat field is inverted
         return flat
         
 

@@ -20,6 +20,7 @@ class ACSInputImage(imageObject):
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
         self._effGain=1.
+        self.flatkey = 'PFLTFILE'
         
         for chip in range(1,self._numchips+1,1):
             if self._image[self.scienceExt,chip].group_member:
@@ -54,6 +55,7 @@ class ACSInputImage(imageObject):
         filename=constructFilename(sig)
         sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
         
+        
     def _isSubArray(self):
         # Never used??
         _subarray = False
@@ -68,43 +70,6 @@ class ACSInputImage(imageObject):
         return _subarray
 
  
-    def getflat(self):
-        """
-        Method for retrieving a detector's flat field.
-        
-        Returns
-        -------
-        flat: array
-            This method will return an array the same shape as the image in **units of electrons**.
-        
-        """
-
-        # The keyword for ACS flat fields in the primary header of the flt
-        # file is pfltfile.  This flat file is already in the required 
-        # units of electrons.
-        
-        filename = self._image["PRIMARY"].header['PFLTFILE']
-        
-        try:
-            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn=self.extn)
-            data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-            handle.close()
-        except:
-            try:
-                #see if jref$ was appended to the filename
-                handle = fileutil.openImage(filename[5:],mode='readonly',memmap=0)
-                hdu = fileutil.getExtn(handle,extn=self.extn)
-                data = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
-                handle.close()
-            except:
-                data = np.ones(self.image_shape,dtype=self.image_dtype)
-                str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-                print str
-        flat = data
-        return flat
-
-
     def getdarkcurrent(self,extver):
         """
         Return the dark current for the ACS detector.  This value

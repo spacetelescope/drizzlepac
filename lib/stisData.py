@@ -24,7 +24,7 @@ class STISInputImage (imageObject):
         self._instrument=self._image["PRIMARY"].header["INSTRUME"] #this just shows instrument, not detector, detector asigned by subclass
         self.native_units='COUNTS'
                 
-    def getflat(self):
+    def getflat(self,chip):
         """
         Method for retrieving a detector's flat field.  For STIS there are three 
         
@@ -33,49 +33,35 @@ class STISInputImage (imageObject):
         image.
         
         """
+        sci_chip = self._image[self.scienceExt,chip]
+        exten = self.errExt+','+str(chip)
 
         # The keyword for STIS flat fields in the primary header of the flt
         
-        lflatfile = self._image["PRIMARY"].header['LFLTFILE']
-        pflatfile = self._image["PRIMARY"].header['PFLTFILE']
+        lflatfile = fileutil.osfn(self._image["PRIMARY"].header['LFLTFILE'])
+        pflatfile = fileutil.osfn(self._image["PRIMARY"].header['PFLTFILE'])
         
         # Try to open the file in the location specified by LFLTFILE.
         try:
             handle = fileutil.openImage(lflatfile,mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn=self.extn)
+            hdu = fileutil.getExtn(handle,extn=exten)
             lfltdata = hdu.data
             if lfltdata.shape != self.full_shape:
                 lfltdata = interp2d.expand2d(lfltdata,self.full_shape)
         except:
-            # If the user forgot to specifiy oref try looking for the reference
-            # file in the current directory
-            try:
-                handle = fileutil.openImage(lfltfile[5:],mode='readonly',memmap=0)
-                hdu = fileutil.getExtn(handle,extn=self.extn)
-                lfltdata = hdu.data
-            # No flat field was found.  Assume the flat field is a constant value of 1.
-            except:
-                lfltdata = np.ones(self.full_shape,dtype=self.image_dtype)
-                str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-                print str
+            lfltdata = np.ones(self.full_shape,dtype=sci_chip.image_dtype)
+            str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
+            print str
         
         # Try to open the file in the location specified by PFLTFILE.
         try:
             handle = fileutil.openImage(pflatfile,mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn=self.extn)
+            hdu = fileutil.getExtn(handle,extn=exten)
             pfltdata = hdu.data
         except:
-            # If the user forgot to specifiy oref try looking for the reference
-            # file in the current directory
-            try:
-                handle = fileutil.openImage(pfltfile[5:],mode='readonly',memmap=0)
-                hdu = fileutil.getExtn(handle,extn=self.extn)
-                pfltdata = hdu.data
-            # No flat field was found.  Assume the flat field is a constant value of 1.
-            except:
-                pfltdata = np.ones(self.image_shape,dtype=self.image_dtype)
-                str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-                print str
+            pfltdata = np.ones(self.image_shape,dtype=sci_chip.image_dtype)
+            str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
+            print str
         
         print "lfltdata shape: ",lfltdata.shape
         print "pfltdata shape: ",pfltdata.shape
@@ -160,6 +146,7 @@ class CCDInputImage(STISInputImage):
         #if ( self.amp == 'D' or self.amp == 'C' ) : # cte direction depends on amp 
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 1
+            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
 
         self.cte_dir =  1 
         #if ( self.amp == 'A' or self.amp == 'B' ) :
@@ -238,6 +225,7 @@ class NUVInputImage(STISInputImage):
         
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0
+            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
         
     def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
@@ -339,6 +327,7 @@ class FUVInputImage(STISInputImage):
         print('\nWARNING: No cte correction will be made for this STIS/FUV-MAMA data.\n')
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0
+            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
 
         self.effGain=1.0
 

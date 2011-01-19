@@ -8,9 +8,12 @@ import outputimage,wcs_functions,processInput,util
 from stwcs import distortion
 
 try:
-    import cdriz as arrdriz
+    import cdriz
 except ImportError:
-    arrdriz = None
+    cdriz = None
+    print '\n Coordinate transformation and image resampling library NOT found!'
+    print '\n Please check the installation of this package to insure C code was built successfully.'
+    raise ImportError
     
 __taskname__ = 'betadrizzle.blot'
 _blot_step_num_ = 5
@@ -205,7 +208,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 chip.wcs.cpdis2 = None
                 chip.wcs.det2im = None
 
-            if wcsmap is None and arrdriz is not None:
+            if wcsmap is None and cdriz is not None:
                 """
                 # Use default C mapping function
                 #
@@ -213,7 +216,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 #
                 xsh = plist['xsh'] * img.outputValues['scale']
                 ysh = plist['ysh'] * img.outputValues['scale']
-                # ARRDRIZ.TBLOT needs to be updated to support 'poly5' interpolation,
+                # CDRIZ.TBLOT needs to be updated to support 'poly5' interpolation,
                 # and exptime scaling of output image.
                 #
                 if (_insci.dtype > np.float32):
@@ -230,7 +233,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 """
                 print 'Using default C-based coordinate transformation...'
                 wcs_functions.applyShift_to_WCS(img,chip.wcs,output_wcs)
-                mapping = arrdriz.DefaultWCSMapping(chip.wcs,output_wcs,int(chip.size1),int(chip.size2),2.0)
+                mapping = cdriz.DefaultWCSMapping(chip.wcs,output_wcs,int(chip.size1),int(chip.size2),2.0)
                 pix_ratio = output_wcs.pscale/wcslin.pscale
             else:
                 #
@@ -238,12 +241,14 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 #
                 # Use user provided mapping function
                 print 'Using coordinate transformation defined by user...'
+                if wcsmap is None:
+                    wcsmap = wcs_functions.WCSMap
                 wmap = wcsmap(chip.wcs,output_wcs)
                 wmap.applyShift(img)
                 mapping = wmap.forward                
                 pix_ratio = output_wcs.pscale/wcslin.pscale
                 
-            t = arrdriz.tblot(
+            t = cdriz.tblot(
                 _insci, _outsci,xmin,xmax,ymin,ymax,
                 pix_ratio, kscale, 1.0, 1.0,
                 'center',paramDict['blot_interp'], chip._exptime,

@@ -12,17 +12,10 @@ import pywcs
 from stwcs import distortion,wcsutil
 from stwcs.distortion import coeff_converter,utils
 
-DEFAULT_WCS_PARS = {'ra':None,'dec':None,'psize':None,'orient':None,
+DEFAULT_WCS_PARS = {'ra':None,'dec':None,'scale':None,'rot':None,
                      'outnx':None,'outny':None,
                     'crpix1':None,'crpix2':None}
          
-# Translation of USER PARAMETERS to WCS Parameters needed by mergeWCS()
-# keys are user parameters
-WCS_USERPARS = {'refimage':'refimage','ra':'ra','dec':'dec',
-                'scale':'psize','rot':'orient',
-                'outnx':'outnx','outny':'outny',
-                'crpix1':'crpix1','crpix2':'crpix2'}
-
 shift_kwlist = ['WSHIFT1','WSHIFT2','WROT','WSCALE']
 shift_kwcomments = ['Shift in axis1 from shiftfile','Shift in axis2 from shiftfile','Rotation from shiftfile','scale change from shiftfile']
 
@@ -465,11 +458,12 @@ def make_outputwcs(imageObjectList,output,configObj=None):
             k = key[len(keyname):]
             if k != 'refimage':
                 final_pars[k] = finalParDict[key]
+
         #final_pars.update(finalParDict)
         # Now, account for any user-specified reference image
         if finalParDict[keyname+'refimage']:
             default_wcs = wcsutil.HSTWCS(finalParDict[keyname+'refimage'])
-
+        
         ### Create single_wcs instance based on user parameters
         outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
         outwcs.wcs = outwcs.final_wcs.copy()
@@ -524,7 +518,7 @@ def mergeWCS(default_wcs,user_pars):
         
         The user_pars dictionary needs to have the following set of keys::
         
-            user_pars = {'ra':None,'dec':None,'psize':None,'rot':None,
+            user_pars = {'ra':None,'dec':None,'scale':None,'rot':None,
                          'outnx':None,'outny':None,'crpix1':None,'crpix2':None}
     """
     #
@@ -533,7 +527,7 @@ def mergeWCS(default_wcs,user_pars):
     outwcs = default_wcs.deepcopy()    
     
     # If there are no user set parameters, just return a copy of the original WCS
-    merge = False
+    merge = False    
     for upar in user_pars.values():
         if upar is not None:
             merge = True
@@ -547,20 +541,20 @@ def mergeWCS(default_wcs,user_pars):
     else:
         _crval = (user_pars['ra'],user_pars['dec'])
 
-    if (not user_pars.has_key('psize')) or user_pars['psize'] == None:
+    if (not user_pars.has_key('scale')) or user_pars['scale'] == None:
         _ratio = 1.0
         _psize = None
         # Need to resize the WCS for any changes in pscale
     else:
-        _ratio = outwcs.pscale / user_pars['psize']
-        _psize = user_pars['psize']
+        _ratio = outwcs.pscale / user_pars['scale']
+        _psize = user_pars['scale']
     
-    if (not user_pars.has_key('orient')) or user_pars['orient'] == None:
+    if (not user_pars.has_key('rot')) or user_pars['rot'] == None:
         _orient = None
         _delta_rot = 0.
     else:
-        _orient = user_pars['orient']
-        _delta_rot = outwcs.orientat - user_pars['orient']
+        _orient = user_pars['rot']
+        _delta_rot = outwcs.orientat - user_pars['rot']
 
     _mrot = fileutil.buildRotMatrix(_delta_rot)
 

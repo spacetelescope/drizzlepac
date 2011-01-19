@@ -6,7 +6,7 @@ each input filename
 """
 from __future__ import division # confidence medium
 
-import sys,copy,os,re
+import sys,types,copy,os,re
 from pytools import fileutil
 import pyfits
 import util,wcs_functions
@@ -23,9 +23,12 @@ class baseImageObject:
 
         self.scienceExt= "SCI" # the extension the science image is stored in
         self.maskExt="DQ" #the extension with the mask image in it
+        self.errExt = "ERR"  # the extension the ERR array can be found in
         self._filename = filename
         self.native_units='ELECTRONS'
 
+        self.flatkey = None  # keyword which points to flat-field reference file
+        
         self._image = None
         self._instrument=None
         self._rootname=None
@@ -440,6 +443,98 @@ class baseImageObject:
 
     def getGain(self,exten):
         return self._image[exten]._gain
+
+    def getflat(self,chip):
+        """
+        Method for retrieving a detector's flat field.
+        
+        Returns
+        -------
+        flat: array
+            This method will return an array the same shape as the image in **units of electrons**.
+        
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        exten = '%s,%d'%(self.errExt,chip)
+        # The keyword for ACS flat fields in the primary header of the flt
+        # file is pfltfile.  This flat file is already in the required 
+        # units of electrons.
+        
+        # The use of fileutil.osfn interprets any environment variable, such as jref$,
+        # used in the specification of the reference filename
+        filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
+        
+        try:
+            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
+            hdu = fileutil.getExtn(handle,extn=exten)
+            data = hdu.data[sci_chip.ltv2:sci_chip.size2,sci_chip.ltv1:sci_chip.size1]
+            handle.close()
+        except:
+            data = np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)
+            str = "Cannot find file "+filename+".\n    Treating flatfield constant value of '1'.\n"
+            print str
+        flat = data
+        return flat
+
+    def getReadNoiseImage(self,chip):
+        """
+        
+        Purpose
+        =======
+        Method for returning the readnoise image of a detector 
+        (in electrons).  
+        
+        The method will return an array of the same shape as the image.
+        
+        :units: electrons
+        
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        
+        return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype) * sci_chip._rdnoise
+
+    def getdarkimg(self,chip):
+        """
+        
+        Purpose
+        =======
+        Return an array representing the dark image for the detector.
+        
+        :units: electrons
+        
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*sci_chip.darkcurrent
+    
+    def getskyimg(self,chip):
+        """
+        
+        Purpose
+        =======
+        Return an array representing the sky image for the detector.  The value
+        of the sky is what would actually be subtracted from the exposure by
+        the skysub step.
+        
+        :units: electrons
+        
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*sci_chip.subtractedSky
+
+    def getdarkcurrent(self):
+        """
+        
+        Purpose
+        =======
+        Return the dark current for the detector.  This value
+        will be contained within an instrument specific keyword.
+        The value in the image header will be converted to units
+        of electrons.
+        
+        :units: electrons
+        
+        """
+        pass
     
 #the following two functions are basically doing the same thing,
 #how are they used differently in the code?                
@@ -489,7 +584,7 @@ class baseImageObject:
         
         return iraf[irafType]
         
-    def buildMask(self,chip,bits=0,write=False):
+    def buildMask(self,chip,bits=0,wht_type='EXP',write=False):
         """ 
         Build masks as specified in the user parameters found in the 
         configObj object.
@@ -502,10 +597,11 @@ class baseImageObject:
         """
         dqarr = self.getData(exten=self.maskExt+','+str(chip))
         dqmask = self._buildMask(dqarr,bits)
+            
         if write:
             phdu = pyfits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
-            print 'Writing out DQ mask: ',dqmask_name
+            print 'Writing out DQ/weight mask: ',dqmask_name
             if os.path.exists(dqmask_name): os.remove(dqmask_name)
             phdu.writeto(dqmask_name)
             del phdu
@@ -524,10 +620,157 @@ class baseImageObject:
         _maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
         return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
 
+    def buildIVMmask(self,chip,dqarr,scale):
+        """ Builds a weight mask from an input DQ array and either an IVM array
+        provided by the user or a self-generated IVM array derived from the 
+        flat-field reference file associated with the input image.
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        ivmname = self.outputNames['ivmFile']
+
+        if ivmname != None:
+            print "Applying user supplied IVM files for chip ",chip
+            #Parse the input file name to get the extension we are working on
+            extn = "IVM,"+chip
+            
+            #Open the mask image for updating and the IVM image
+            ivm =  fileutil.openImage(ivmname,mode='readonly')
+            ivmfile = fileutil.getExtn(ivm,extn)
+            
+            # Multiply the IVM file by the input mask in place.        
+            ivmarr = ivmfile.data * dqarr
+            
+            ivm.close()
+
+        else:
+                        
+            print "Automatically creating IVM files for chip ",chip
+            # If no IVM files were provided by the user we will 
+            # need to automatically generate them based upon 
+            # instrument specific information.
+            
+            flat = self.getflat(chip)
+            RN = self.getReadNoiseImage(chip)
+            darkimg = self.getdarkimg(chip)
+            skyimg = self.getskyimg(chip)
+            
+            ivm = (flat)**2/(darkimg+(skyimg*flat)+RN**2)
+            
+            # Multiply the IVM file by the input mask in place.        
+            ivmarr = ivm * dqarr
+            
+        # Update 'wt_scl' parameter to match use of IVM file
+        sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
+
+        return ivmarr.astype(np.float32)
+        
+    def buildERRmask(self,chip,dqarr,scale):
+        """ Builds a weight mask from an input DQ array and an ERR array
+        associated with the input image.
+        """
+        sci_chip = self._image[self.scienceExt,chip]  
+        
+        # Set default value in case of error, or lack of ERR array
+        errmask = dqarr
+
+        if self.errExt is not None:
+            try:
+                # Attempt to open the ERR image.
+                err = self.getData(exten=self.errExt+','+str(chip))
+
+                print "Applying ERR weighting to DQ mask for chip ",chip
+
+                # Multiply the scaled ERR file by the input mask in place.        
+                errmask = 1/(err)**2 * dqarr
+
+                # Update 'wt_scl' parameter to match use of IVM file
+                sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
+
+                del err
+
+            except:
+            # We cannot find an 'ERR' extension and the data isn't WFPC2.  Print a generic warning message
+            # and continue on with the final drizzle step.
+                generrstr =  "*******************************************\n"
+                generrstr += "*                                         *\n"
+                generrstr += "* WARNING: No ERR weighting will be       *\n"
+                generrstr += "* applied to the mask used in the final   *\n"
+                generrstr += "* drizzle step!  Weighting will be only   *\n"
+                generrstr += "* by exposure time.                       *\n"
+                generrstr += "*                                         *\n"
+                generrstr += "* The data provided as input does not     *\n"
+                generrstr += "* contain an ERR extension.               *\n"
+                generrstr += "*                                         *\n"
+                generrstr =  "*******************************************\n"
+                print generrstr
+                print "\n Continue with final drizzle step..."
+        else:
+        # If we were unable to find an 'ERR' extension to apply, one possible reason was that
+        # the input was a 'standard' WFPC2 data file that does not actually contain an error array.
+        # Test for this condition and issue a Warning to the user and continue on to the final
+        # drizzle.   
+            errstr =  "*******************************************\n"
+            errstr += "*                                         *\n"
+            errstr += "* WARNING: No ERR weighting will be       *\n"
+            errstr += "* applied to the mask used in the final   *\n"
+            errstr += "* drizzle step!  Weighting will be only   *\n"
+            errstr += "* by exposure time.                       *\n"
+            errstr += "*                                         *\n"
+            errstr += "* The WFPC2 data provided as input does   *\n"
+            errstr += "* not contain ERR arrays.  WFPC2 data is  *\n"
+            errstr += "* not supported by this weighting type.   *\n"
+            errstr += "*                                         *\n"
+            errstr += "* A workaround would be to create inverse *\n"
+            errstr += "* variance maps and use 'IVM' as the      *\n"
+            errstr += "* final_wht_type.  See the HELP file for  *\n"
+            errstr += "* more details on using inverse variance  *\n"
+            errstr += "* maps.                                   *\n" 
+            errstr += "*                                         *\n"
+            errstr =  "*******************************************\n"
+            print errstr
+            print "\n Continue with final drizzle step..."
+
+        return errmask.astype(np.float32)
+
     def updateIVMName(self,ivmname):
         """ Update outputNames for image with user-supplied IVM filename."""
         self.outputNames['ivmFile'] = ivmname
 
+    def set_wtscl(self,chip,wtscl_par):
+        """ Sets the value of the wt_scl parameter as needed for drizzling
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+
+        exptime = sci_chip._exptime
+        if wtscl_par != None:
+            if isinstance(wtscl_par,types.StringType):
+                if  wtscl_par.isdigit() == False :
+                    # String passed in as value, check for 'exptime' or 'expsq'
+                    _wtscl_float = None
+                    try:
+                        _wtscl_float = float(wtscl_par)
+                    except ValueError:
+                        _wtscl_float = None
+                    if _wtscl_float != None:
+                        _wtscl = _wtscl_float
+                    elif wtscl_par == 'expsq':
+                        _wtscl = exptime*exptime
+                    else:
+                        # Default to the case of 'exptime', if
+                        #   not explicitly specified as 'expsq'
+                        _wtscl = exptime
+                else:
+                    # int value passed in as a string, convert to float
+                    _wtscl = float(wtscl_par)
+            else:
+                # We have a non-string value passed in...
+                _wtscl = float(wtscl_par)
+        else:
+            # Default case: wt_scl = exptime
+            _wtscl = exptime
+        
+        sci_chip._wtscl = _wtscl
+        
     def set_units(self):
         """ Record the units for this image, both BUNITS from header and 
             in_units as needed internally.
@@ -705,11 +948,13 @@ class imageObject(baseImageObject):
                 sci_chip._rdnoise = 1.0  # calibrated readnoise
                 sci_chip._exptime = 1.0
                 sci_chip._effGain = 1.0
+                sci_chip._wtscl = 1.0
                 
                 # Keep track of the computed sky value for this chip
                 sci_chip.computedSky = 0.0
                 # Keep track of the sky value that was subtracted from this chip
                 sci_chip.subtractedSky = 0.0
+                sci_chip.darkcurrent = 0.0
                 
                 # The following attributes are used when working with sub-arrays
                 # and get reference file arrays for auto-generation of IVM masks
@@ -721,6 +966,7 @@ class imageObject(baseImageObject):
                     sci_chip.ltv2 = 0
                 sci_chip.size1 = sci_chip.header['NAXIS1'] + sci_chip.ltv1
                 sci_chip.size2 = sci_chip.header['NAXIS2'] + sci_chip.ltv2
+                sci_chip.image_shape = (sci_chip.size2,sci_chip.size1)
                 # Interpret the array dtype by translating the IRAF BITPIX value 
                 for dtype in IRAF_DTYPES.keys():
                     if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:

@@ -35,10 +35,13 @@ class WFPC2InputImage (imageObject):
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]        
         self._effGain = 1
+        self.errExt = None
 
         # Attribute defining the pixel dimensions of WFPC2 chips.
         self.full_shape = (800,800)
         self.native_units = "COUNTS"
+        
+        self.flatkey = 'FLATFILE'
         
         # Reference Plate Scale used for updates to MDRIZSKY, we should get this from the wcs class
         #self.refplatescale = 0.0996 # arcsec / pixel
@@ -49,6 +52,7 @@ class WFPC2InputImage (imageObject):
             self._image[self.scienceExt,chip].cte_dir = -1 # independent of amp, chip   
             det=int(self._image[self.scienceExt,chip].header["DETECTOR"])
             self._image[self.scienceExt,chip]._detector=WFPC2_DETECTOR_NAMES[det]
+            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent(chip)
 
     def find_DQ_extension(self):
         ''' Return the suffix for the data quality extension and the name of the file
@@ -143,7 +147,7 @@ class WFPC2InputImage (imageObject):
         # Convert the science data to electrons
         self.doUnitConversions()
 
-    def getflat(self,exten):
+    def getflat(self,chip):
         """
         Method for retrieving a detector's flat field.
         
@@ -153,34 +157,9 @@ class WFPC2InputImage (imageObject):
             The flat-field array in the same shape as the input image
 
         """
-
-        extnum = self._interpretExten(exten)
-        chip = self._image[exten]
-        
-        # The keyword for WFPC2 flat fields in the primary header of the flt
-        # file is FLATFILE.  This flat file is *not* already in the required 
-        # units of electrons.
-        
-        filename = self._image["PRIMARY"].header['FLATFILE']
-        
-        try:
-            handle = fileutil.openImage(filename,mode='readonly',writefits=False,memmap=0)
-            hdu = fileutil.getExtn(handle,extn=extnum)
-            data = hdu.data[chip.ltv2:chip.size2,chip.ltv1:chip.size1]
-            handle.close()
-        except:
-            try:
-                handle = fileutil.openImage(filename[5:],mode='readonly',writefits=False,memmap=0)
-                hdu = fileutil.getExtn(handle,extn=self.grp)
-                data = hdu.data[chip.ltv2:chip.size2,chip.ltv1:chip.size1]
-                handle.close()
-            except:
-                data = np.ones((chip._naxis2,chip._naxis1),dtype=chip.image_dtype)
-                str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-                print str
         # For the WFPC2 flat we need to invert
         # for use in Multidrizzle
-        flat = (1.0/data)
+        flat = (1.0/super(WFPC2InputImage,self).getflat(chip))
         return flat
 
     def doUnitConversions(self):

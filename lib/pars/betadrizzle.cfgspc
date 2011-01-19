@@ -1,7 +1,7 @@
 _task_name_ = string_kw(default="betadrizzle")
 input = string_kw(default="*flt.fits", triggers='_rule1_', comment="Input files (name, suffix, or @list)")
 output = string_kw(default='final', comment="Rootname for output drizzled products")
-mdriztab = boolean_kw(default=True, comment="Use Multidrizzle parameter file specified in header?")
+mdriztab = boolean_kw(default=False, comment="Use Multidrizzle parameter file specified in header?")
 runfile = string_kw(default="betadrizzle.log", comment="File for logging the script commands")
 workinplace = boolean_kw(default=False, comment="Work on input files in place? (NOT RECOMMENDED)")
 updatewcs = boolean_kw(default=True, comment="Update the WCS keywords?")
