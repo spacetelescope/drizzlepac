@@ -176,7 +176,7 @@ def get_hstwcs(filename,hdulist,extnum):
     
     return hdrwcs
 
-def ddtohms(xsky,ysky,verbose=False):
+def ddtohms(xsky,ysky,verbose=False,precision=6):
 
     """ Convert sky position(s) from decimal degrees to HMS format."""
 
@@ -187,18 +187,19 @@ def ddtohms(xsky,ysky,verbose=False):
     yskym = (np.abs(ysky) - np.floor(np.abs(ysky))) * 60.
     yskys = (yskym - np.floor(yskym)) * 60.
 
+    fmt = "%."+repr(precision)+"f"
     if isinstance(xskyh,np.ndarray):
         rah,dech = [],[]
         for i in xrange(len(xskyh)):
-            rastr = repr(int(xskyh[i]))+':'+repr(int(xskym[i]))+':'+repr(xskys[i])
-            decstr = repr(int(ysky[i]))+':'+repr(int(yskym[i]))+':'+repr(yskys[i])
+            rastr = repr(int(xskyh[i]))+':'+repr(int(xskym[i]))+':'+fmt%(xskys[i])
+            decstr = repr(int(ysky[i]))+':'+repr(int(yskym[i]))+':'+fmt%(yskys[i])
             rah.append(rastr)
             dech.append(decstr)
             if verbose:
                 print 'RA = ',rastr,', Dec = ',decstr
     else:
-        rastr = repr(int(xskyh))+':'+repr(int(xskym))+':'+repr(xskys)
-        decstr = repr(int(ysky))+':'+repr(int(yskym))+':'+repr(yskys)
+        rastr = repr(int(xskyh))+':'+repr(int(xskym))+':'+fmt%(xskys)
+        decstr = repr(int(ysky))+':'+repr(int(yskym))+':'+fmt%(yskys)
         rah = rastr
         dech = decstr
         if verbose:

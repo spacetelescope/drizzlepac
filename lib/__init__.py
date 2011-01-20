@@ -40,6 +40,7 @@ import util
 import wcs_functions
 import resetbits
 import wcscorr
+import pixtosky
 
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
@@ -67,7 +68,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.7dev11740'
+__version__ = '4.0.7dev11742'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
