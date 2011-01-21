@@ -154,7 +154,7 @@ class NICMOSInputImage(imageObject):
         
         return darkcurrent
         
-    def getdarkimg(self):
+    def getdarkimg(self,chip):
         """
         Return an array representing the dark image for the detector.
         

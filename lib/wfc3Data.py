@@ -77,7 +77,7 @@ class WFC3UVISInputImage(WFC3InputImage):
                 self._image[self.scienceExt,chip].cte_dir = -1    
             if ( chip == 2) : 
                 self._image[self.scienceExt,chip].cte_dir = 1   
-            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
+            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent(chip)
 
         
  
@@ -253,7 +253,7 @@ class WFC3IRInputImage(WFC3InputImage):
         #Convert from ELECTRONS/S to ELECTRONS
         self.doUnitConversions()
 
-    def getdarkimg(self):
+    def getdarkimg(self,chip):
         """
         Return an array representing the dark image for the detector.
         
@@ -263,20 +263,21 @@ class WFC3IRInputImage(WFC3InputImage):
             Dark image array in the same shape as the input image with **units of cps**
         
         """
-        
+        sci_chip = self._image[self.scienceExt,chip]
+
         # First attempt to get the dark image specified by the "DARKFILE"
         # keyword in the primary keyword of the science data.
         try:
             filename = self.header["DARKFILE"]
             handle = fileutil.openImage(filename,mode='readonly',memmap=0)
-            hdu = fileutil.getExtn(handle,extn="sci")
-            darkobj = hdu.data[self.ltv2:self.size2,self.ltv1:self.size1]
+            hdu = fileutil.getExtn(handle,extn="sci,1")
+            darkobj = hdu.data[sci_chip.ltv2:sci_chip.size2,sci_chip.ltv1:sci_chip.size1]
             
         # If the darkfile cannot be located, create the dark image from
         # what we know about the detector dark current and assume a
         # constant dark current for the whole image.
         except:
-            darkobj = np.ones(self.image_shape,dtype=self.image_dtype)*self.getdarkcurrent()
+            darkobj = np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*self.getdarkcurrent()
  
  
         return darkobj
@@ -296,7 +297,7 @@ class WFC3IRInputImage(WFC3InputImage):
         darkcurrent = 0
         
         try:
-            darkcurrent = self._image["PRIMARY"].header['MEANDARK']
+            darkcurrent = self._image[self.scienceExt,1].header['MEANDARK']
         except:
             str =  "#############################################\n"
             str += "#                                           #\n"
