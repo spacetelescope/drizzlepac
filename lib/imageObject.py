@@ -736,6 +736,16 @@ class baseImageObject:
         """ Update outputNames for image with user-supplied IVM filename."""
         self.outputNames['ivmFile'] = ivmname
 
+    def set_mt_wcs(self,image):
+        """ Reset the WCS for this image based on the WCS information from 
+        another imageObject.
+        """
+        for chip in range(1,self._numchips+1,1):
+            sci_chip = self._image[self.scienceExt,chip]
+            ref_chip = image._image[image.scienceExt,chip]
+            # Do we want to keep track of original WCS or not? No reason now...
+            sci_chip.wcs = ref_chip.wcs.copy()
+            
     def set_wtscl(self,chip,wtscl_par):
         """ Sets the value of the wt_scl parameter as needed for drizzling
         """
