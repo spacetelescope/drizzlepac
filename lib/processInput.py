@@ -155,8 +155,9 @@ def createImageObjectList(files,instrpars,group=None):
     for img in files:
         image = _getInputImage(img,group=group)
         image.setInstrumentParameters(instrpars)
-        # check to see whether we are dealing with moving target observations...
-        mtflag = image._image['PRIMARY'].header['MTFLAG']
+        if image._image['PRIMARY'].header.has_key('MTFLAG'):
+            # check to see whether we are dealing with moving target observations...
+            mtflag = image._image['PRIMARY'].header['MTFLAG']
         if mtflag:
             if mt_refimg is None:
                 mt_refimg = image
