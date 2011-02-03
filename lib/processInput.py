@@ -157,8 +157,12 @@ def createImageObjectList(files,instrpars,group=None):
         image.setInstrumentParameters(instrpars)
         if image._image['PRIMARY'].header.has_key('MTFLAG'):
             # check to see whether we are dealing with moving target observations...
-            mtflag = image._image['PRIMARY'].header['MTFLAG']
-        if mtflag:
+            _keyval = image._image['PRIMARY'].header['MTFLAG']
+            if _keyval not in [""," ", None, "INDEF"] and "T" in _keyval: mtflag = True
+        else:
+            mtflag = False
+        if mtflag is True:
+            print "#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n"
             if mt_refimg is None:
                 mt_refimg = image
             else:
