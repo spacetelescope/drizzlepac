@@ -69,15 +69,8 @@ wcskey: str
     
     .. warning:: Use of this parameter should be done only when all input images have been updated using the Paper I FITS standard for specifying Multiple WCS's in each image header. This parameter assumes that the same WCS letter corresponds to WCS's which have been updated in a consistent manner. For example, all input images have been updated to be consistent with their distortion model in the WCS's with key of *A*. 
 
-coeffs: {'header', 'cubic', 'trauger', 'none'} 
-    The source of the distortion coefficients gets specified using:
-
-        * **header**: use the 'header' for determining what distortion coefficients to use.
-        * **cubic**: use 'cubic' solutions originally provided with 'drizzle'
-        * **trauger**: use 'trauger' solutions originally provided with 'drizzle'
-        * **none**: Do not apply any distortion correction to the images 
-
-    Alternatively, an arbitrary distortion coefficients file can be specified (including optionally the full pathname). This distortion file is used in computing the WCS of the header. NOTE: When the 'header' option has been selected, if the IDCTAB file is not found on disk, then the task will exit for all instruments except for WFPC2 data, which will default to the older "Trauger" model.
+coeffs: bool 
+    This parameter determines whether to use the coefficients stored in the each input image header or not.  If turned off, no distortion coefficients will be applied during the coordinate transformations.  
 
 
 context: bool 
@@ -382,7 +375,7 @@ Notes
 ------
 Something to keep in mind is that the full MultiDrizzle interface will make backup copies of your original files and place them in the **OrIg_files/** directory of you current working directory.
 
-Examples
+EXAMPLES
 --------
 This task also has the ability to be called directly from Python for use in larger tasks. 
 

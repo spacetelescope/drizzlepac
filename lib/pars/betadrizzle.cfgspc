@@ -7,7 +7,7 @@ workinplace = boolean_kw(default=False, comment="Work on input files in place? (
 updatewcs = boolean_kw(default=True, comment="Update the WCS keywords?")
 wcskey = string_kw(default="",comment="WCS version to use in processing")
 proc_unit = option_kw("native", "electrons", default="native", comment="Units used during processing")
-coeffs = string_kw(default="header", comment="Use header-based distortion coefficients?")
+coeffs = boolean_kw(default=True, comment="Use header-based distortion coefficients?")
 context = boolean_kw(default=True, comment="Create context image during final drizzle?")
 clean = boolean_kw(default=False, comment="Remove temporary files?")
 group = string_kw(default="", comment="Single extension or group to be combined/cleaned")

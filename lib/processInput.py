@@ -748,7 +748,7 @@ def _setDefaults(input_dict={}):
         'workinplace':False,
         'updatewcs':True,
         'proc_unit':'native',
-        'coeffs':'header',
+        'coeffs':True,
         'context':False,
         'clean':True,
         'group':None,

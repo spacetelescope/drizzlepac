@@ -29,7 +29,6 @@ import buildmask
 import drizzle
 import blot
 import imageObject
-import MultiDrizzleObject
 import outputimage
 import processInput,mdzhandler
 import sky
@@ -68,7 +67,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.8dev11787'
+__version__ = '4.0.9dev11901'
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations

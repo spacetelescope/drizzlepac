@@ -130,7 +130,7 @@ class WFC3UVISInputImage(WFC3InputImage):
         self.doUnitConversions()
 
  
-    def getdarkcurrent(self):
+    def getdarkcurrent(self,chip):
         """
         Return the dark current for the WFC3 UVIS detector.  This value
         will be contained within an instrument specific keyword.
@@ -144,7 +144,7 @@ class WFC3UVISInputImage(WFC3InputImage):
         darkcurrent = 0.
         
         try:
-            darkcurrent = self._image["PRIMARY"].header['MEANDARK']
+            darkcurrent = self._image[self.scienceExt,chip].header['MEANDARK']
         except:
             str =  "#############################################\n"
             str += "#                                           #\n"

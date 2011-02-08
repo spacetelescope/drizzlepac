@@ -36,7 +36,7 @@ import string,os,types
 from pytools import fileutil, readgeis
 
 import pyfits
-import numpy as N
+import numpy as np
 
 import processInput,util
 
@@ -76,13 +76,12 @@ def buildDQMasks(imageObjectList,configObj):
         img.buildMask(configObj['bits'],configObj['single'])
 
 
-
-def _buildMask(dqarr,bitvalue):
+def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
     if bitvalue == None:
-        return (dqarr * 0.0) + 1.0
-    _maskarr = N.bitwise_or(dqarr,N.array([bitvalue]))
-    return N.choose(N.greater(_maskarr,bitvalue),(1,0)).astype(N.uint8)
+        return ((dqarr * 0.0) + 1.0).astype(np.uint8)
+    _maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
+    return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
 
 
 def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
@@ -122,11 +121,11 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
             _sci_extn = fileutil.findExtname(fdq,'SCI',extver=extver)
             if _sci_extn != None:
                 _shape = fdq[_sci_extn].data.shape
-                dqarr = N.zeros(_shape,dtype=N.uint16)
+                dqarr = np.zeros(_shape,dtype=np.uint16)
             else:
                 raise Exception
         # Build mask array from DQ array
-        maskarr = _buildMask(dqarr,bitvalue)
+        maskarr = buildMask(dqarr,bitvalue)
         #Write out the mask file as simple FITS file
         fmask = pyfits.open(maskname,'append')
         maskhdu = pyfits.PrimaryHDU(data=maskarr)
@@ -214,8 +213,8 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             _funcx = _funcroot+detnum+'x'
             _funcy = _funcroot+detnum+'y'
 
-            _xarr = N.clip(N.fromfunction(eval(_funcx),(800,800)),0.0,1.0).astype(N.uint8)
-            _yarr = N.clip(N.fromfunction(eval(_funcy),(800,800)),0.0,1.0).astype(N.uint8)
+            _xarr = np.clip(np.fromfunction(eval(_funcx),(800,800)),0.0,1.0).astype(np.uint8)
+            _yarr = np.clip(np.fromfunction(eval(_funcy),(800,800)),0.0,1.0).astype(np.uint8)
             maskarr = _xarr * _yarr
 
             if binned !=1:
@@ -260,7 +259,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             #maskarr = fsmask[0].data
 
             # Build mask array from DQ array
-            dqmaskarr = _buildMask(dqarr,bitvalue)
+            dqmaskarr = buildMask(dqarr,bitvalue)
 
             #Write out the mask file as simple FITS file
             fdqmask = pyfits.open(maskname,'append')

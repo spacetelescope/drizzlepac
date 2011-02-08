@@ -46,7 +46,9 @@ class WCSMap:
             raise
 
     def applyShift(self,imageobj):
-        """ This method pre-computes the correction which needs to be 
+        """ DEPRECATED - shifts are already folded into the WCS keywords
+        
+            This method pre-computes the correction which needs to be 
             applied to this entire image based on the information 
             stored in any existing WCSCORR extension in the input image.
             
@@ -97,7 +99,7 @@ class WCSMap:
         return wcs.wcs_sky2pix(ra,dec,1)
 
 def applyShift_to_WCS(imageobj,input,output):
-    """ [Functional form of .applyShift() method of WCSMap]
+    """ [Functional form of .applyShift() method of WCSMap ==> DEPRECATED]
     Apply shifts defined in header, read into the imageobject, for the input
     image to update the output WCS for use in coordinate transform later. 
     
@@ -175,6 +177,23 @@ def get_hstwcs(filename,hdulist,extnum):
     hdrwcs.extver = hdulist[extnum].header['extver']
     
     return hdrwcs
+
+def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orientat):
+    """ Create an HSTWCS object for a default instrument without distortion
+        based on user provided parameter values.
+    """
+    wcsout = wcsutil.HSTWCS()
+    wcsout.wcs.crval = np.array([crval1,crval2])
+    wcsout.wcs.crpix = np.array([crpix1,crpix2])
+    wcsout.naxis1 = naxis1
+    wcsout.naxis2 = naxis2
+    wcsout.wcs.cd = fileutil.buildRotMatrix(orientat)*[-1,1]*pscale/3600.0
+    # Synchronize updates with PyWCS/WCSLIB objects
+    wcsout.wcs.set()
+    wcsout.setPscale()
+    wcsout.setOrient()
+    
+    return wcsout
 
 def ddtohms(xsky,ysky,verbose=False,precision=6):
 
@@ -256,7 +275,7 @@ def build_pixel_transform(chip,output_wcs):
     #
     xcoeffs,ycoeffs = coeff_converter.sip2idc(chip.wcs)
     # account for the case where no IDCSCALE has been set, due to a 
-    # lack of IDCTAB or to 'coeffs=None'.
+    # lack of IDCTAB or to 'coeffs=False'.
     idcscale = chip.wcs.idcscale
     if idcscale is None: idcscale = chip.wcs.pscale
     xcoeffs /= idcscale
@@ -402,8 +421,8 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     undistort=True
     for img in imageObjectList:
         chip_wcs = copy.deepcopy(img.getKeywordList('wcs'))
-        # IF the user turned off use of coeffs (coeffs==None or '')
-        if configObj['coeffs'] in ['',' ',None,'INDEF']:
+        # IF the user turned off use of coeffs (coeffs==False)
+        if not configObj['coeffs']:
             for cw in chip_wcs:
                 # Turn off distortion model for each input
                 cw.sip = None
@@ -474,7 +493,78 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     updateImageWCS(imageObjectList,outwcs)
     
     return outwcs
+
+def calcNewEdges(wcs,shape):
+    """
+    This method will compute sky coordinates for all the pixels around
+    the edge of an image AFTER applying the geometry model.
+
+    Parameters: wcs   - HSTWCS object for image
+                shape - numpy shape tuple for size of image
+
+    Output:   border - array which contains the new positions for
+                      all pixels around the border of the edges in alpha,dec 
+                    
+    """
+    naxis1 = shape[1]
+    naxis2 = shape[0]
+    # build up arrays for pixel positions for the edges
+    # These arrays need to be: array([(x,y),(x1,y1),...])
+    numpix = naxis1*2 + naxis2*2
+    border = np.zeros(shape=(numpix,2),dtype=np.float64)
+
+    # Now determine the appropriate values for this array
+    # We also need to account for any subarray offsets
+    xmin = 1.
+    xmax = naxis1
+    ymin = 1.
+    ymax = naxis2
+
+    # Build range of pixel values for each side
+    # Add 1 to make them consistent with pixel numbering in IRAF
+    # Also include the LTV offsets to represent position in full chip
+    #   since the model works relative to full chip positions.
+    xside = np.arange(naxis1) + xmin
+    yside = np.arange(naxis2) + ymin
+
+    #Now apply them to the array to generate the appropriate tuples
+    #bottom
+    _range0 = 0
+    _range1 = naxis1
+    border[_range0:_range1,0] = xside
+    border[_range0:_range1,1] = ymin
+    #top
+    _range0 = _range1
+    _range1 = _range0 + naxis1
+    border[_range0:_range1,0] = xside
+    border[_range0:_range1,1] = ymax
+    #left
+    _range0 = _range1
+    _range1 = _range0 + naxis2
+    border[_range0:_range1,0] = xmin
+    border[_range0:_range1,1] = yside
+    #right
+    _range0 = _range1
+    _range1 = _range0 + naxis2
+    border[_range0:_range1,0] = xmax
+    border[_range0:_range1,1] = yside
+
+    edges = wcs.all_pix2sky(border[:,0],border[:,1],1)
+    return edges
     
+def computeEdgesCenter(edges):
+    alpha = fileutil.DEGTORAD(edges[0])
+    dec = fileutil.DEGTORAD(edges[1])
+    
+    xmean = np.mean(np.cos(dec)*np.cos(alpha))
+    ymean = np.mean(np.cos(dec)*np.sin(alpha))
+    zmean = np.mean(np.sin(dec))
+    
+    crval1 = fileutil.RADTODEG(np.arctan2(ymean,xmean))%360.0
+    crval2 = fileutil.RADTODEG(np.arctan2(zmean,np.sqrt(xmean*xmean+ymean*ymean)))
+    
+    return crval1,crval2
+
 #### Utility functions for working with WCSObjects
 def createWCSObject(output,default_wcs,imageObjectList):
     """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""

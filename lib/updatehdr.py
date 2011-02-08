@@ -58,13 +58,6 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
             8- update header with new WCS values
             9- run updatewcs to update all chips to be consistent with 
                 input images's updated reference chip's WCS
-        TODO:
-            - Work out how to allow headerlet WCS's as input for 'reference'
-            [The solution would probably be to recognize 'WCSCORR' as the EXTNAME
-            of the headerlet and interpret it much like the shiftfile ref_wcs
-            FITS file implemented here. The shift,rot and scale values would then
-            come directly from the WCSCORR extension, which itself would be
-            appended to the input image as a record of what correction was done.]
             
     """
     # if input reference is a ref_wcs file from tweakshifts, use it

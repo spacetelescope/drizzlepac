@@ -17,6 +17,10 @@ __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
 
+def is_blank(val):
+    blank = False
+    if val in [None,"None","INDEF",""," "]: blank = True
+    return blank
 """
 Logging routines
 """
@@ -26,14 +30,14 @@ class StreamLogger(object):
 
     def __init__(self, stream, logfile, mode='w', prefix=''):
         self.stream = stream
-        if prefix in [None,'',' ']:
+        if is_blank(prefix):
             self.prefix = ''
         else:
             self.prefix = '['+prefix+'] '
         self.data = ''
         
         # set up logfile
-        if logfile not in [None,"None","INDEF",""," "]:
+        if not is_blank(logfile):
             self.log = open(logfile,mode)
             self.filename = logfile
             # clear out any previous exceptions, so that only those generated

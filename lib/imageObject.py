@@ -584,7 +584,7 @@ class baseImageObject:
         
         return iraf[irafType]
         
-    def buildMask(self,chip,bits=0,wht_type='EXP',write=False):
+    def buildMask(self,chip,bits=0,write=False):
         """ 
         Build masks as specified in the user parameters found in the 
         configObj object.
@@ -596,7 +596,7 @@ class baseImageObject:
         should be masked out to get the best results in multidrizzle
         """
         dqarr = self.getData(exten=self.maskExt+','+str(chip))
-        dqmask = self._buildMask(dqarr,bits)
+        dqmask = buildmask.buildMask(dqarr,bits)
             
         if write:
             phdu = pyfits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
@@ -612,13 +612,6 @@ class baseImageObject:
             
         del dqarr            
         return dqmask
-
-    def _buildMask(self,dqarr,bitvalue):
-        """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
-        if bitvalue == None:
-            return ((dqarr * 0.0) + 1.0).astype(np.uint8)
-        _maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
-        return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
 
     def buildIVMmask(self,chip,dqarr,scale):
         """ Builds a weight mask from an input DQ array and either an IVM array

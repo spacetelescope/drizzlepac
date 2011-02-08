@@ -223,7 +223,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             _skyValue= _computeSky(image, paramDict, memmap=0)
             #scale the sky value by the area on sky
             # account for the case where no IDCSCALE has been set, due to a 
-            # lack of IDCTAB or to 'coeffs=None'.
+            # lack of IDCTAB or to 'coeffs=False'.
             pscale=imageSet[myext].wcs.idcscale
             if pscale is None:
                 print "No Distortion coefficients available...using default plate scale."
@@ -244,7 +244,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             image=imageSet._image[sciExt,chip]
             myext = sciExt+","+str(chip)
             # account for the case where no IDCSCALE has been set, due to a 
-            # lack of IDCTAB or to 'coeffs=None'.
+            # lack of IDCTAB or to 'coeffs=False'.
             idcscale = image.wcs.idcscale
             if idcscale is None: idcscale = image.wcs.pscale
             _scaledSky=_skyValue * (idcscale**2)

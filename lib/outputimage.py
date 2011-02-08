@@ -14,6 +14,26 @@ EXTLIST = ('SCI', 'WHT', 'CTX')
 DTH_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
 'CRPIX2','CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2']
 
+# Set up dictionary of default keywords to be written out to the header
+# of the output drizzle image using writeDrizKeywords()
+DRIZ_KEYWORDS = {
+                'VER':{'value':"",'comment':'Drizzle, task version'},
+                'GEOM':{'value':"wcs",'comment':'Drizzle, source of geometric information'},
+                'DATA':{'value':"",'comment':'Drizzle, input data image'},
+                'DEXP':{'value':"",'comment':'Drizzle, input image exposure time (s)'},
+                'OUDA':{'value':"",'comment':'Drizzle, output data image'},
+                'OUWE':{'value':"",'comment':'Drizzle, output weighting image'},
+                'OUCO':{'value':"",'comment':'Drizzle, output context image'},
+                'MASK':{'value':"",'comment':'Drizzle, input weighting image'},
+                'WTSC':{'value':"",'comment':'Drizzle, weighting factor for input image'},
+                'KERN':{'value':"",'comment':'Drizzle, form of weight distribution kernel'},
+                'PIXF':{'value':"1.0",'comment':'Drizzle, linear size of drop'},
+                'COEF':{'value':"SIP",'comment':'Drizzle, source of coefficients'},
+                'OUUN':{'value':"cps",'comment':'Drizzle, units of output image - counts or cps'},
+                'FVAL':{'value':"INDEF",'comment':'Drizzle, fill value for zero weight output pix'},
+                'WKEY':{'value':"",'comment':'Input image WCS Version used'}
+                }
+
 class OutputImage:
     """
     This class manages the creation of the array objects
@@ -39,7 +59,7 @@ class OutputImage:
         If 'blot=yes', then 'plist' also needs::
 
             plist['data']
-            plist['outblot']
+            plist['blotImage']
             plist['blotnx'],plist['blotny']
 
         If 'build' is set to 'no', then each extension/array must be
@@ -179,20 +199,6 @@ class OutputImage:
         # file FITS headers.
         # NOTE: These are HEADER objects, not HDUs
         prihdr,scihdr,errhdr,dqhdr = getTemplates(template,extlist)
-
-        if prihdr == None:
-            # Use readgeis to get header for use as Primary header.
-            _indx = template.find('[')
-            if _indx < 0:
-                _data = template
-            else:
-                _data = template[:_indx]
-
-            fpri = readgeis.readgeis(_data)
-            prihdr = fpri[0].header.copy()
-            fpri.close()
-            del fpri
-
 
         # Setup primary header as an HDU ready for appending to output FITS file
         prihdu = pyfits.PrimaryHDU(header=prihdr,data=None)
@@ -482,72 +488,53 @@ class OutputImage:
 
             # Start by building up the keyword prefix based
             # on the image number for the chip
+            #_keyprefix = 'D%03d'%_imgnum
             _imgnum += 1
-            _keyprefix = 'D%03d'%_imgnum
-
-            hdr.update(_keyprefix+'VER',pl['driz_version'][:44],
-                comment='Drizzle, task version')
-
-    #       Then the source of the geometric information
-            hdr.update(_keyprefix+'GEOM','User parameters',
-                comment= 'Drizzle, source of geometric information')
-
-    #       Now we continue to add the other items using the same
-    #       "stem"
-            hdr.update(_keyprefix+'DATA',pl['data'][:64],
-                comment= 'Drizzle, input data image')
-
-            hdr.update(_keyprefix+'DEXP',pl['exptime'],
-                comment= 'Drizzle, input image exposure time (s)')
-
-            hdr.update(_keyprefix+'OUDA',pl['outFinal'][:64],
-                comment= 'Drizzle, output data image')
-
-            hdr.update(_keyprefix+'OUWE',pl['outWeight'][:64],
-                comment= 'Drizzle, output weighting image')
-
+            
+            drizdict = DRIZ_KEYWORDS.copy()
+            # Update drizdict with current values
+            drizdict['VER']['value'] = pl['driz_version'][:44]
+            drizdict['DATA']['value'] = pl['data'][:64]
+            drizdict['DEXP']['value'] = pl['exptime']
+            drizdict['OUDA']['value'] = pl['outFinal'][:64]
+            drizdict['OUWE']['value'] = pl['outWeight'][:64]
             if pl['outContext'] is None:
                 outcontext = ""
             else:
                 outcontext = pl['outContext'][:64]
-            hdr.update(_keyprefix+'OUCO',outcontext,
-                comment= 'Drizzle, output context image')
-
-            hdr.update(_keyprefix+'MASK',pl['singleDrizMask'][:64],
-                comment= 'Drizzle, input weighting image')
+            drizdict['OUCO']['value'] = outcontext
+            drizdict['MASK']['value'] = pl['singleDrizMask'][:64]
 
             # Process the values of WT_SCL to be consistent with
             # what IRAF Drizzle would output
             if pl['wt_scl'] == 'exptime': _wtscl = pl['exptime']
             elif pl['wt_scl'] == 'expsq': _wtscl = pl['exptime']*pl['exptime']
             else: _wtscl = pl['wt_scl']
+            drizdict['WTSC']['value'] = _wtscl
+            drizdict['KERN']['value'] = pl['kernel']
+            drizdict['PIXF']['value'] = pl['pixfrac']
+            drizdict['OUUN']['value'] = self.units
+            if pl['fillval'] is None:
+                _fillval = 'INDEF'
+            else:
+                _fillval = pl['fillval']
+            drizdict['FVAL']['value'] = _fillval
+            drizdict['WKEY']['value'] = pl['driz_wcskey']
+            
+            drizdict['SCAL'] = {'value':pl['scale'],'comment':'Drizzle, pixel size (arcsec) of output image'}
+            drizdict['ISCL'] = {'value':pl['idcscale'],'comment':'Drizzle, default IDCTAB pixel size(arcsec)'}
 
-            hdr.update(_keyprefix+'WTSC',_wtscl,
-                comment= 'Drizzle, weighting factor for input image')
-
-            hdr.update(_keyprefix+'KERN',pl['kernel'],
-                comment= 'Drizzle, form of weight distribution kernel')
-
-            hdr.update(_keyprefix+'PIXF',pl['pixfrac'],
-                comment= 'Drizzle, linear size of drop')
-
-            hdr.update(_keyprefix+'COEF',"SIP",
-                comment= 'Drizzle, coefficients file name ')
-
+            # Now update header with values
+            writeDrizKeywords(hdr,_imgnum,drizdict)
+            del drizdict
+            
+            """
             hdr.update(_keyprefix+'XGIM',"SIP",
                 comment= 'Drizzle, X distortion image name ')
 
             hdr.update(_keyprefix+'YGIM',"SIP",
                 comment= 'Drizzle, Y distortion image name ')
 
-    #       This is not necessary as this information in folded into the output WCS
-            hdr.update(_keyprefix+'SCAL',pl['scale'],
-             comment=   'Drizzle, pixel size (arcsec) of output image')
-                
-            hdr.update(_keyprefix+'ISCL',pl['idcscale'],
-             comment=   'Drizzle, default IDCTAB pixel size(arcsec)')
-
-            """
     #       Convert the rotation angle back to degrees
             rot = self.input_pars['rot']
             if rot is None:
@@ -598,17 +585,6 @@ class OutputImage:
             hdr.update(_keyprefix+'OUYC',float(pl['outny']/2)+OFF,
                 comment= 'Drizzle, reference center of output image (Y)')
             """
-
-            hdr.update(_keyprefix+'OUUN',self.units,
-                comment= 'Drizzle, units of output image - counts or cps')
-
-            if pl['fillval'] is None:
-                fillval = 'INDEF'
-            else:
-                fillval = pl['fillval']
-            hdr.update(_keyprefix+'FVAL',fillval,
-                comment= 'Drizzle, fill value for zero weight output pix')
-
 
         # Add version information as HISTORY cards to the header
         if versions != None:
@@ -724,3 +700,68 @@ def getTemplates(fname,extlist):
                 dqhdr.update(keyword,scihdr[keyword])
 
     return prihdr,scihdr,errhdr,dqhdr
+
+def writeSimpleFITS(data,wcs,output,template,clobber=True):
+    """ Write out a simple FITS file given a numpy array and the name of another
+    FITS file to use as a template for the output image header.
+    """
+    outname,outextn = fileutil.parseFilename(output)
+    if fileutil.findFile(outname):
+        if clobber:
+            print 'Deleting previous output product: ',outname
+            fileutil.removeFile(outname)
+
+        else:
+            print 'WARNING:  Output file ',outname,' already exists and overwrite not specified!'
+            print 'Quitting... Please remove before resuming operations.'
+            raise IOError
+
+    # Now update WCS keywords with values from provided WCS
+    wcshdr = wcs.to_header(relax=True)
+
+    if template is not None:
+        # Get default headers from multi-extension FITS file
+        # If input data is not in MEF FITS format, it will return 'None'
+        # NOTE: These are HEADER objects, not HDUs
+        prihdr,scihdr,errhdr,dqhdr = getTemplates(template,EXTLIST)
+
+        # Merge Primary Header and SCI header from template into a complete header
+        # Append remaining unique header keywords from template DQ
+        # header to Primary header...
+        if scihdr and prihdr:
+            for _card in prihdr.ascard:
+                if _card.key not in RESERVED_KEYS and scihdr.has_key(_card.key) == 0:
+                    scihdr.ascard.append(_card)
+            del scihdr['PCOUNT']
+            del scihdr['GCOUNT']
+            for _card in wcshdr.ascard:
+                scihdr.update(_card.key, _card.value, comment=_card.comment)
+    else:
+        scihdr = pyfits.Header(cards=wcshdr.ascard)
+
+    # Setup primary header as an HDU ready for appending to output FITS file
+    prihdu = pyfits.PrimaryHDU(header=scihdr,data=data)
+
+    # Start by updating PRIMARY header keywords...
+    prihdu.header.update('EXTEND',pyfits.FALSE,after='NAXIS')
+    prihdu.header.update('FILENAME', outname)
+    
+    prihdu.writeto(outname)
+    
+def writeDrizKeywords(hdr,imgnum,drizdict):
+    """ Write basic drizzle-related keywords out to image header as a record
+        of the processing performed to create the image
+        
+        The dictionary 'drizdict' will contain the keywords and values to be
+        written out to the header.
+    """
+    _keyprefix = 'D%03d'%imgnum
+
+    for key in drizdict:
+        val = drizdict[key]['value']
+        if val is None: val = ""
+        comment = drizdict[key]['comment']
+        if comment is None: comment = ""
+        hdr.update(_keyprefix+key,val,comment=drizdict[key]['comment'])
+
+    
