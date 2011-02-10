@@ -1,7 +1,7 @@
 _task_name_ = string_kw(default="blot")
 data = string_kw(default="",comment="Input data image")
 outdata = string_kw(default="",comment="Output data image") 
-coeffs = string_kw(default="header",comment="Use header-based distortion coefficients?") 
+coeffs = boolean_kw(default=True,comment="Use header-based distortion coefficients?") 
 interpol = option_kw("nearest","linear","poly3", "poly5", "spline3", "sinc", default="poly5",comment="Interpolant") 
 sinscl = float_kw(default=1.,comment="Scale for sinc interpolation kernel") 
 stepsize = integer_or_none_kw(default=10,comment="Number of pixels for WCS interpolation") 

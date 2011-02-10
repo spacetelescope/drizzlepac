@@ -67,7 +67,8 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.9dev11901'
+__version__ = '4.0.9dev11906'
+__vdate__ = "10-Feb-2011"
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations

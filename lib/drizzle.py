@@ -766,12 +766,12 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 def do_driz(insci, input_wcs, inwht, 
             output_wcs, outsci, outwht, outcon,
             expin, in_units, out_units, wt_scl, 
-            undistort=True,uniqid=None, pixfrac=1.0, kernel='square',
+            undistort=True,uniqid=1, pixfrac=1.0, kernel='square',
             fillval="INDEF", stepsize=10,wcsmap=None):
     """ Core routine for performing 'drizzle' operation on a single input image
         All input values will be Python objects such as ndarrays, instead of filenames
         File handling (input and output) will be performed by calling routine.
-    """        
+    """            
     # Insure that the fillval parameter gets properly interpreted for use with tdriz
     if util.is_blank(fillval):
         fillval = 'INDEF'

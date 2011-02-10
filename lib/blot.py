@@ -88,7 +88,7 @@ def run(configObj,wcsmap=None):
             blot_wcs = stwcs.distortion.utils.output_wcs([source_wcs])
     
     # perform blotting operation now
-    _outsci = do_blot(_insci, source_wcs, blot_wcs, _expin, 
+    _outsci = do_blot(_insci, source_wcs, blot_wcs, _expin, coeffs=configObj['coeffs'],
                     interp=configObj['interpol'], sinscl=configObj['sinscl'], 
             stepsize=configObj['stepsize'], wcsmap=wcsmap)
     
@@ -224,11 +224,6 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             plist = outputvals.copy()
             plist.update(paramDict)
             
-            if not paramDict['coeffs']:
-                chip.wcs.sip = None
-                chip.wcs.cpdis1 = None
-                chip.wcs.cpdis2 = None
-                chip.wcs.det2im = None
             # PyFITS can be used here as it will always operate on
             # output from PyDrizzle (which will always be a FITS file)
             # Open the input science file
@@ -243,7 +238,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             del _inimg, _scihdu
             
             _outsci = do_blot(_insci, output_wcs, 
-                   chip.wcs, chip._exptime,  
+                   chip.wcs, chip._exptime, coeffs=paramDict['coeffs'],  
                    interp=paramDict['blot_interp'], sinscl=paramDict['blot_sinscl'],
                    wcsmap=wcsmap)
             
@@ -262,7 +257,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             del _outsci
         del _outimg
        
-def do_blot(source, source_wcs, blot_wcs, exptime, interp='poly5', sinscl=1.0, 
+def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5', sinscl=1.0, 
             stepsize=10, wcsmap=None):
     """ Core functionality of performing the 'blot' operation to create a single
         blotted image from a single source image.
@@ -290,8 +285,15 @@ def do_blot(source, source_wcs, blot_wcs, exptime, interp='poly5', sinscl=1.0,
     ymax = source_wcs.naxis2
     
     # compute the undistorted 'natural' plate scale for this chip
-    wcslin = distortion.utils.undistortWCS(blot_wcs)
-
+    if coeffs:
+        wcslin = distortion.utils.undistortWCS(blot_wcs)
+    else:
+        wcslin = blot_wcs
+        blot_wcs.sip = None
+        blot_wcs.cpdis1 = None
+        blot_wcs.cpdis2 = None
+        blot_wcs.det2im = None
+        
     if wcsmap is None and cdriz is not None:
         """
         Use default C mapping function
