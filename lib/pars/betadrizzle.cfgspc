@@ -4,8 +4,8 @@ output = string_kw(default='final', comment="Rootname for output drizzled produc
 mdriztab = boolean_kw(default=False, comment="Use Multidrizzle parameter file specified in header?")
 runfile = string_kw(default="betadrizzle.log", comment="File for logging the script commands")
 workinplace = boolean_kw(default=False, comment="Work on input files in place? (NOT RECOMMENDED)")
-updatewcs = boolean_kw(default=True, comment="Update the WCS keywords?")
-wcskey = string_kw(default="",comment="WCS version to use in processing")
+updatewcs = boolean_kw(default=True, is_set_by='_rule1a_', comment="Update the WCS keywords?")
+wcskey = string_kw(default="", triggers='_rule1a_', comment="WCS version to use in processing")
 proc_unit = option_kw("native", "electrons", default="native", comment="Units used during processing")
 coeffs = boolean_kw(default=True, comment="Use header-based distortion coefficients?")
 context = boolean_kw(default=True, comment="Create context image during final drizzle?")
@@ -108,5 +108,6 @@ expkeyword = string_kw(default="")
 
 [ _RULES_ ]
 _rule1_ = string_kw(default='', when='defaults,entry', code='from pytools import check_files; ans={ True:"yes",False:"no"}; OUT = ans[check_files.countInput(VAL) > 1]')
+_rule1a_  = string_kw(default='', when='always', code='ans={ True:"yes",False:"no"}; OUT = ans[VAL == ""]')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule7a_ = string_kw(default='', code='OUT = VAL')
