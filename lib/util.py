@@ -11,11 +11,13 @@ from pytools import asnutil,fileutil
 from pytools import teal
 import os
 import logging,traceback
-import sys
+import sys,string
 
 __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
+
+DEFAULT_LOGNAME = 'betadrizzle.log'
 
 def is_blank(val):
     blank = False
@@ -63,39 +65,47 @@ class StreamLogger(object):
     def flush(self):
         self.stream.flush()
             
-def init_logging(logfile='betadrizzle.log'):    
+def init_logging(logfile=DEFAULT_LOGNAME,default=None):    
     """ Set up logfile for capturing stdout/stderr messages.
         Must be called prior to writing any messages that you want to log.
     """
-
-    if logfile not in [None,""," ","INDEF"]:
+    if logfile == "INDEF":
+        if not is_blank(default):
+            logname = fileutil.buildNewRootname(default) +'.log'
+        else:
+            logname = DEFAULT_LOGNAME
+    elif logfile not in [None,""," "]:
         if '.log' in logfile:
             logname = logfile
         else:
             logname = logfile+'.log'
     else:
         logname = None
-    # redirect logging of stdout to logfile
-    sys.stdout = StreamLogger(sys.stdout, logname)
+    if logname is not None:
+        # redirect logging of stdout to logfile
+        sys.stdout = StreamLogger(sys.stdout, logname)
+    else:
+        print '[betadrizzle] No trailer file created...'
 
 def end_logging():
     """ Close log file and restore stdout/stderr to system defaults.
     """
-    if sys.stdout.log is not None:
-        print '[betadrizzle] Trailer file written to: ',sys.stdout.filename
-        sys.stdout.log.flush()
-        sys.stdout.log.close()
+    if hasattr(sys.stdout,'log'): # only need to close the log if one was created
+        if sys.stdout.log is not None:
+            print '[betadrizzle] Trailer file written to: ',sys.stdout.filename
+            sys.stdout.log.flush()
+            sys.stdout.log.close()
 
-        # Add any traceback information to the trailer file to document
-        # the error that caused the code to stop processing
-        if sys.exc_info()[0] is not None:
-            errfile = open(sys.stdout.filename,mode="a")
-            traceback.print_exc(None,errfile)
-            errfile.close()
-    else:
-        print '[betadrizzle] No trailer file saved...'
-    
-    sys.stdout = sys.__stdout__
+            # Add any traceback information to the trailer file to document
+            # the error that caused the code to stop processing
+            if sys.exc_info()[0] is not None:
+                errfile = open(sys.stdout.filename,mode="a")
+                traceback.print_exc(None,errfile)
+                errfile.close()
+        else:
+            print '[betadrizzle] No trailer file saved...'
+        
+        sys.stdout = sys.__stdout__
     
 class ProcSteps:
     """ This class allows MultiDrizzle to keep track of the 

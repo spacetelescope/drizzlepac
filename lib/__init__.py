@@ -67,7 +67,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.9dev11906'
+__version__ = '4.0.10dev11950'
 __vdate__ = "10-Feb-2011"
 # End Version Information ---------------------------------------------
 
@@ -141,9 +141,12 @@ def run(configObj=None,wcsmap=None):
     # while also printing them out to stdout as well
     # also, initialize timing of processing steps
     # 
-    util.init_logging(logfile=configObj['runfile'])
+    # We need to define a default logfile name from the user's parameters
+    def_logname = glob.glob(configObj['input'])[0]
+    util.init_logging(logfile=configObj['runfile'],default=def_logname)
     procSteps = util.ProcSteps()
     print '[betadrizzle] MultiDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
+
     try:
         try:
             # Define list of imageObject instances and output WCSObject instance
@@ -152,6 +155,7 @@ def run(configObj=None,wcsmap=None):
             imgObjList = None
             imgObjList,outwcs = processInput.setCommonInput(configObj)
             procSteps.endStep('Initialization')
+
             if not imgObjList:
                 return
             
