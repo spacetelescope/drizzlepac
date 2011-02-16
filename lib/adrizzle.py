@@ -17,7 +17,7 @@ except ImportError:
     print '\n Please check the installation of this package to insure C code was built successfully.'
     raise ImportError
 
-__taskname__ = "betadrizzle.drizzle"
+__taskname__ = "betadrizzledrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
@@ -64,10 +64,13 @@ def run(configObj, wcsmap=None):
     if util.is_blank(_wcskey):
         _wcskey = ' '
         
+    scale_pars = configObj['Data Scaling Parameters']
+    user_wcs_pars = configObj['User WCS Parameters']
+    
     # Open the SCI (and WHT?) image
     # read file to get science array
     in_sci_handle, insci = get_data(configObj['input'],mode='readonly')
-    expin = fileutil.getKeyword(configObj['input'],configObj['expkey'],handle=in_sci_handle)        
+    expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'],handle=in_sci_handle)        
     in_sci_handle.close()
     in_sci_phdr = pyfits.getheader(fileutil.parseFilename(configObj['input'])[0])
     
@@ -92,7 +95,7 @@ def run(configObj, wcsmap=None):
             # Define a WCS based on user provided WCS values
             # NOTE:
             #   All parameters must be specified, not just one or a few
-            user_wcs_pars = configObj['User WCS Parameters']
+            
             if not util.is_blank(user_wcs_pars['outscale']):
                 output_wcs = wcs_functions.build_hstwcs(
                     user_wcs_pars['raref'], user_wcs_pars['decref'], 
@@ -157,10 +160,10 @@ def run(configObj, wcsmap=None):
     # Perform actual drizzling now...
     _vers = do_driz(insci, input_wcs, inwht, 
             output_wcs, outsci, outwht, outcon,
-            expin, configObj['in_units'], configObj['out_units'], 
+            expin, scale_pars['in_units'], scale_pars['out_units'], 
             wt_scl, undistort=undistort ,uniqid=uniqid, 
             pixfrac=configObj['pixfrac'], kernel=configObj['kernel'],
-            fillval=configObj['fillval'], stepsize=configObj['stepsize'],
+            fillval=scale_pars['fillval'], stepsize=configObj['stepsize'],
             wcsmap=None)    
 
     # Update header of output image with exptime used to scale the output data
@@ -184,7 +187,7 @@ def run(configObj, wcsmap=None):
     out_sci_handle['PRIMARY'].header.update('VAFACTOR',1.0)
 
 
-    if configObj['out_units'] is 'counts':
+    if scale_pars['out_units'] is 'counts':
         np.multiply(outsci, outexptime, outsci)
         out_sci_handle['PRIMARY'].header.update('DRIZEXPT', outexptime)
         
@@ -209,8 +212,8 @@ def run(configObj, wcsmap=None):
     drizdict['WTSC']['value'] = wt_scl
     drizdict['KERN']['value'] = configObj['kernel']
     drizdict['PIXF']['value'] = configObj['pixfrac']
-    drizdict['OUUN']['value'] = configObj['out_units']
-    drizdict['FVAL']['value'] = configObj['fillval']
+    drizdict['OUUN']['value'] = scale_pars['out_units']
+    drizdict['FVAL']['value'] = scale_pars['fillval']
     drizdict['WKEY']['value'] = configObj['wcskey']
     outputimage.writeDrizKeywords(out_sci_handle['PRIMARY'].header,uniqid,drizdict)
 

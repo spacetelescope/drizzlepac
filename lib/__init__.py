@@ -23,11 +23,11 @@ This task requires numerous user-settable parameters to control the primary aspe
 """
 from __future__ import division # confidence high
 
-import os,string
+import os,string,glob
 
 import buildmask
-import drizzle
-import blot
+import adrizzle
+import ablot
 import imageObject
 import outputimage
 import processInput,mdzhandler
@@ -67,8 +67,8 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.10dev11950'
-__vdate__ = "10-Feb-2011"
+__version__ = '4.0.10dev11957'
+__vdate__ = "16-Feb-2011"
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -170,19 +170,19 @@ def run(configObj=None,wcsmap=None):
             sky.subtractSky(imgObjList,configObj,procSteps=procSteps)
             
             #drizzle to separate images
-            drizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap,procSteps=procSteps)
+            adrizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap,procSteps=procSteps)
             
             #create the median images from the driz sep images
             createMedian.createMedian(imgObjList,configObj,procSteps=procSteps)
             
             #blot the images back to the original reference frame
-            blot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
+            ablot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
             
             #look for cosmic rays
             drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"],procSteps=procSteps)
             
             #Make your final drizzled image
-            drizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
+            adrizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
             
             print '\n[betadrizzle]MultiDrizzle Version '+__version__+' is all finished at ',util._ptime()[0],' !\n'
 

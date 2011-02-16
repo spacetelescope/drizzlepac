@@ -16,7 +16,7 @@ except ImportError:
     print '\n Please check the installation of this package to insure C code was built successfully.'
     raise ImportError
     
-__taskname__ = 'betadrizzle.blot'
+__taskname__ = 'betadrizzle.ablot'
 _blot_step_num_ = 5
 
 #
@@ -45,20 +45,32 @@ def run(configObj,wcsmap=None):
     """ Run the blot task based on parameters provided interactively by the user
     """ 
 
+    scale_pars = configObj['Data Scaling Parameters']
+    user_wcs_pars = configObj['User WCS Parameters']
+
     # PyFITS can be used here as it will always operate on
     # output from PyDrizzle (which will always be a FITS file)
     # Open the input (drizzled?) image
     _fname,_sciextn = fileutil.parseFilename(configObj['data'])
     _inimg = fileutil.openImage(_fname)
-    _expin = fileutil.getKeyword(configObj['data'],configObj['expkey'],handle=_inimg)
+    _expin = fileutil.getKeyword(configObj['data'],scale_pars['expkey'],handle=_inimg)
 
     # Return the PyFITS HDU corresponding to the named extension
     _scihdu = fileutil.getExtn(_inimg,_sciextn)
     _insci = _scihdu.data.copy()
 
-    _inexptime = _inimg['PRIMARY'].header['DRIZEXPT']
+    _inexptime = 1.0
+    if scale_pars['in_units'] == 'counts':
+        if scale_pars['expkey'] in _inimg['PRIMARY'].header:
+            _inexptime = _inimg['PRIMARY'].header[scale_pars['expkey']]
+        elif 'DRIZEXPT' in _inimg['PRIMARY'].header:
+            # Try keyword written out by new 'drizzle' if no valid 'expkey' was given
+            _inexptime = _inimg['PRIMARY'].header['DRIZEXPT']
+        else:
+            errstr = 'No valid exposure time keyword could be found for input ',configObj['data']
+            raise ValueError, errstr
     # always convert input to 'cps' for blot() algorithm
-    if _inexptime != 0.0:
+    if _inexptime != 0.0 or _inexptime != 1.0:
         np.divide(_insci, _inexptime, _insci)
 
     _inimg.close()
@@ -74,16 +86,18 @@ def run(configObj,wcsmap=None):
         blot_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
     else:
         # define blot WCS based on input images or specified reference WCS values
-        if not util.is_blank(configObj['User WCS Parameters']['refimage']):
-            blot_wcs = stwcs.wcsutil.HSTWCS(configObj['User WCS Parameters']['refimage'])
+        if not util.is_blank(user_wcs_pars['refimage']):
+            blot_wcs = stwcs.wcsutil.HSTWCS(user_wcs_pars['refimage'])
         else:
-            user_wcs_pars = configObj['User WCS Parameters']            
             if not util.is_blank(user_wcs_pars['outscale']):
                 blot_wcs = wcs_functions.build_hstwcs(
                     user_wcs_pars['raref'], user_wcs_pars['decref'], 
                     user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'], 
                     user_wcs_pars['outnx'], user_wcs_pars['outny'], 
                     user_wcs_pars['outscale'], user_wcs_pars['orient'] )
+                configObj['coeffs'] = None
+                
+        # If blot_wcs is still not defined at this point, we have a problem...
         if blot_wcs is None:
             blot_wcs = stwcs.distortion.utils.output_wcs([source_wcs])
     
@@ -93,8 +107,8 @@ def run(configObj,wcsmap=None):
             stepsize=configObj['stepsize'], wcsmap=wcsmap)
     
     # create output with proper units and exptime-scaling
-    if configObj['out_units'] == 'counts':
-        if configObj['expout'] == 'input':
+    if scale_pars['out_units'] == 'counts':
+        if scale_pars['expout'] == 'input':
             _outscale = _expin
         else:
             _outscale = float(expout)
@@ -103,7 +117,7 @@ def run(configObj,wcsmap=None):
     # Write output Numpy objects to a PyFITS file
     # Blotting only occurs from a drizzled SCI extension
     # to a blotted SCI extension...
-    outputimage.writeSimpleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['data'])
+    outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['data'])
 
 def help():
     print getHelpAsString()

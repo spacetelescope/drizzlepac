@@ -701,11 +701,13 @@ def getTemplates(fname,extlist):
 
     return prihdr,scihdr,errhdr,dqhdr
 
-def writeSimpleFITS(data,wcs,output,template,clobber=True):
+def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.
     """
     outname,outextn = fileutil.parseFilename(output)
+    outextname,outextver = fileutil.parseExtn(outextn)
+
     if fileutil.findFile(outname):
         if clobber:
             print 'Deleting previous output product: ',outname
@@ -717,7 +719,11 @@ def writeSimpleFITS(data,wcs,output,template,clobber=True):
             raise IOError
 
     # Now update WCS keywords with values from provided WCS
-    wcshdr = wcs.to_header(relax=True)
+    if hasattr(wcs.wcs,'a_order'):
+        siphdr = True
+    else:
+        siphdr = False
+    wcshdr = wcs.wcs2header(sip2hdr=siphdr)
 
     if template is not None:
         # Get default headers from multi-extension FITS file
@@ -725,29 +731,44 @@ def writeSimpleFITS(data,wcs,output,template,clobber=True):
         # NOTE: These are HEADER objects, not HDUs
         prihdr,scihdr,errhdr,dqhdr = getTemplates(template,EXTLIST)
 
-        # Merge Primary Header and SCI header from template into a complete header
-        # Append remaining unique header keywords from template DQ
-        # header to Primary header...
-        if scihdr and prihdr:
-            for _card in prihdr.ascard:
-                if _card.key not in RESERVED_KEYS and scihdr.has_key(_card.key) == 0:
-                    scihdr.ascard.append(_card)
-            del scihdr['PCOUNT']
-            del scihdr['GCOUNT']
-            for _card in wcshdr.ascard:
-                scihdr.update(_card.key, _card.value, comment=_card.comment)
+        if scihdr is None:
+            scihdr = pyfits.Header()
+            indx = 0
+            for c in prihdr.ascard:
+                if c.key not in ['INHERIT','EXPNAME']: indx += 1
+                else: break
+            for i in range(indx,len(prihdr.ascard)):
+                scihdr.ascard.append(prihdr.ascard[i])
+            for i in range(indx,len(prihdr.ascard)):
+                del prihdr.ascard[indx]
     else:
-        scihdr = pyfits.Header(cards=wcshdr.ascard)
+        scihdr = pyfits.Header()
+        prihdr = pyfits.Header()
+        # Start by updating PRIMARY header keywords...
+        prihdr.update('EXTEND',pyfits.TRUE,after='NAXIS')
+        prihdr.update('FILENAME', outname)
 
+    for _card in wcshdr.ascard:
+        scihdr.update(_card.key, _card.value, comment=_card.comment)
+
+    if outextname == '':
+        outextname = 'sci'
+    if outextver == 0: outextver = 1
+    scihdr.update('EXTNAME',outextname.upper())
+    scihdr.update('EXTVER',outextver)
+
+    # Create PyFITS HDUList for all extensions
+    outhdu = pyfits.HDUList()
     # Setup primary header as an HDU ready for appending to output FITS file
-    prihdu = pyfits.PrimaryHDU(header=scihdr,data=data)
-
-    # Start by updating PRIMARY header keywords...
-    prihdu.header.update('EXTEND',pyfits.FALSE,after='NAXIS')
-    prihdu.header.update('FILENAME', outname)
+    prihdu = pyfits.PrimaryHDU(header=prihdr)
+    scihdu = pyfits.ImageHDU(header=scihdr,data=data)
     
-    prihdu.writeto(outname)
-    
+    outhdu.append(prihdu)
+    outhdu.append(scihdu)
+    outhdu.writeto(outname)
+    if verbose:
+        print 'Created output image: ',outname
+        
 def writeDrizKeywords(hdr,imgnum,drizdict):
     """ Write basic drizzle-related keywords out to image header as a record
         of the processing performed to create the image
