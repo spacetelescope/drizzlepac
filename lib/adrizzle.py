@@ -778,8 +778,6 @@ def do_driz(insci, input_wcs, inwht,
     # Insure that the fillval parameter gets properly interpreted for use with tdriz
     if util.is_blank(fillval):
         fillval = 'INDEF'
-    else:
-        fillval = str(paramDict['fillval'])
 
     if in_units == 'cps':
         expscale = 1.0
