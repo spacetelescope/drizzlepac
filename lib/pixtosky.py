@@ -102,7 +102,7 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         if colnames in blank_list:
             colnames = ['c1','c2']
         # Determine columns which contain pixel positions
-        cols = parse_colnames(colnames,coords)
+        cols = util.parse_colnames(colnames,coords)
         # read in columns from input coordinates file
         xyvals = np.loadtxt(coords,usecols=cols,delimiter=separator)
         xlist = xyvals[:,0].copy()
@@ -151,61 +151,16 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         print 'Wrote out results to: ',output
         
     return ra,dec
-
-def parse_colnames(colnames,coords=None):
-    """ Convert colnames input into list of column numbers
-    """
-    cols = []
-    
-    # parse column names from coords file and match to input values
-    if coords is not None and fileutil.isFits(coords)[0]:
-        # Open FITS file with table
-        ftab = pyfits.open(coords)
-        # determine which extension has the table
-        for extn in ftab:
-            if isinstance(extn,pyfits.BinTableHDU):
-                # parse column names from table and match to inputs
-                cnames = extn.columns.names
-                if colnames is not None:
-                    for c in colnames:
-                        for name,i in zip(cnames,xrange(len(cnames))):
-                            if c == name.lower(): cols.append(i)
-                    if len(cols) < len(colnames):
-                        errmsg = "Not all input columns found in table..."
-                        ftab.close()
-                        raise ValueError, errmsg
-                else:
-                    cols = cnames[:2]
-                break
-        ftab.close()
-    else:        
-        for c in colnames:
-            if isinstance(c, str):
-                if c[0].lower() == 'c': cols.append(int(c[1:])-1)
-                else:
-                    cols.append(int(c))
-            else:
-                if isinstance(c, int):
-                    cols.append(c)
-                else:
-                    errmsg = "Unsupported column names..."
-                    raise ValueError, errmsg
-    return cols
-             
-def check_blank(cvar):
-    if cvar in blank_list: val = None 
-    else: val = cvar
-    return val
-    
+   
 #--------------------------
 # TEAL Interface functions
 #--------------------------
 def run(configObj):
     
-    coords = check_blank(configObj['coords'])
-    colnames = check_blank(configObj['colnames'])
-    sep = check_blank(configObj['separator'])
-    outfile = check_blank(configObj['output'])
+    coords = util.check_blank(configObj['coords'])
+    colnames = util.check_blank(configObj['colnames'])
+    sep = util.check_blank(configObj['separator'])
+    outfile = util.check_blank(configObj['output'])
 
     xy2rd(configObj['input'],
             x = configObj['x'], y = configObj['y'],

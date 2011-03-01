@@ -67,8 +67,8 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.10dev11959'
-__vdate__ = "17-Feb-2011"
+__version__ = '4.0.10dev12063'
+__vdate__ = "1-Mar-2011"
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -142,7 +142,13 @@ def run(configObj=None,wcsmap=None):
     # also, initialize timing of processing steps
     # 
     # We need to define a default logfile name from the user's parameters
-    def_logname = glob.glob(configObj['input'])[0]
+    input_list = glob.glob(configObj['input'])
+    if len(input_list) > 0:
+        def_logname = input_list[0]
+    else:
+        print 'No input files found...'
+        def_logname = None
+        
     util.init_logging(logfile=configObj['runfile'],default=def_logname)
     procSteps = util.ProcSteps()
     print '[betadrizzle] MultiDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'

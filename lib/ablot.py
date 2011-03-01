@@ -324,7 +324,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
         wmap = wcsmap(blot_wcs,source_wcs)
-        mapping = wmap.forward                
+        mapping = wmap.forward
         pix_ratio = source_wcs.pscale/wcslin.pscale
         
     t = cdriz.tblot(

@@ -83,6 +83,14 @@ class WCSMap:
         result= self.output.wcs_sky2pix(skyx,skyy,self.origin)
         return result
     
+    def backward(self,pixx,pixy):
+        """ Transform pixx,pixy positions from the output frame back onto their
+            original positions in the input frame.
+        """
+        skyx,skyy = self.output.wcs_pix2sky(pixx,pixy,self.origin)
+        result = self.input.all_sky2pix(skyx,skyy,self.origin)
+        return result
+    
     def get_pix_ratio(self):
         """ Return the ratio of plate scales between the input and output WCS.
             This is used to properly distribute the flux in each pixel in 'tdriz'.

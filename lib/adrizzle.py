@@ -160,7 +160,7 @@ def run(configObj, wcsmap=None):
     # Perform actual drizzling now...
     _vers = do_driz(insci, input_wcs, inwht, 
             output_wcs, outsci, outwht, outcon,
-            expin, scale_pars['in_units'], scale_pars['out_units'], 
+            expin, scale_pars['in_units'], 
             wt_scl, undistort=undistort ,uniqid=uniqid, 
             pixfrac=configObj['pixfrac'], kernel=configObj['kernel'],
             fillval=scale_pars['fillval'], stepsize=configObj['stepsize'],
@@ -683,7 +683,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             
             # New interface to performing the drizzle operation on a single chip/image
             _vers = do_driz(_sciext.data, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
-                        _expin, _in_units, paramDict['units'], chip._wtscl, 
+                        _expin, _in_units, chip._wtscl, 
                         undistort=undistort, uniqid=_uniqid,
                         pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
                         fillval=paramDict['fillval'], stepsize=stepsize,wcsmap=wcsmap)
@@ -768,7 +768,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     
 def do_driz(insci, input_wcs, inwht, 
             output_wcs, outsci, outwht, outcon,
-            expin, in_units, out_units, wt_scl, 
+            expin, in_units, wt_scl, 
             undistort=True,uniqid=1, pixfrac=1.0, kernel='square',
             fillval="INDEF", stepsize=10,wcsmap=None):
     """ Core routine for performing 'drizzle' operation on a single input image

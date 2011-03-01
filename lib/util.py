@@ -18,11 +18,22 @@ __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
 
 DEFAULT_LOGNAME = 'betadrizzle.log'
+blank_list = [None, '', ' ',"None","INDEF"]
 
 def is_blank(val):
+    """ Determines whether or not a value is considered 'blank'.
+    """
     blank = False
-    if val in [None,"None","INDEF",""," "]: blank = True
+    if val in blank_list: blank = True
     return blank
+
+def check_blank(cvar):
+    """ Converts blank value (from configObj?) into a value of None
+    """
+    if cvar in blank_list: val = None 
+    else: val = cvar
+    return val
+
 """
 Logging routines
 """
@@ -534,7 +545,7 @@ def getRotatedSize(corners,angle):
 
     return computeRange(_corners)
 
-def readcols(infile,cols=[0,1,2,3]):
+def readcols(infile,cols=[0,1,2,3],hms=False):
     """ 
     Read the columns from an ASCII file as numpy arrays
     
@@ -559,22 +570,67 @@ def readcols(infile,cols=[0,1,2,3]):
     for l in fin.readlines():
         l = l.strip()
         if len(l) == 0 or len(l.split()) < len(cols) or (len(l) > 0 and l[0] == '#' or (l.find("INDEF") > -1)): continue
-
         for i in range(10):
             lnew = l.replace("  "," ")
             if lnew == l: break
             else: l = lnew
-            lspl = lnew.split(" ")
+        lspl = lnew.split(" ")
 
         if len(outarr) == 0:
             for c in range(len(cols)): outarr.append([])
 
         for c,n in zip(cols,range(len(cols))):
-            outarr[n].append(float(lspl[c]))
+            if not hms:
+                val = float(lspl[c])
+            else:
+                val = lspl[c]
+            outarr[n].append(val)
     fin.close()
     for n in range(len(cols)):
-        outarr[n] = np.array(outarr[n],np.float64)
+        outarr[n] = np.array(outarr[n])
     return outarr            
+
+def parse_colnames(colnames,coords=None):
+    """ Convert colnames input into list of column numbers
+    """
+    cols = []
+    if not isinstance(colnames,list):
+        colnames = colnames.split(',')
+    # parse column names from coords file and match to input values
+    if coords is not None and fileutil.isFits(coords)[0]:
+        # Open FITS file with table
+        ftab = pyfits.open(coords)
+        # determine which extension has the table
+        for extn in ftab:
+            if isinstance(extn,pyfits.BinTableHDU):
+                # parse column names from table and match to inputs
+                cnames = extn.columns.names
+                if colnames is not None:
+                    for c in colnames:
+                        for name,i in zip(cnames,xrange(len(cnames))):
+                            if c == name.lower(): cols.append(i)
+                    if len(cols) < len(colnames):
+                        errmsg = "Not all input columns found in table..."
+                        ftab.close()
+                        raise ValueError, errmsg
+                else:
+                    cols = cnames[:2]
+                break
+        ftab.close()
+    else:        
+        for c in colnames:
+            if isinstance(c, str):
+                if c[0].lower() == 'c': cols.append(int(c[1:])-1)
+                else:
+                    cols.append(int(c))
+            else:
+                if isinstance(c, int):
+                    cols.append(c)
+                else:
+                    errmsg = "Unsupported column names..."
+                    raise ValueError, errmsg
+    return cols
+             
 
 def createFile(dataArray=None, outfile=None, header=None):
     """Create a simple fits file for the given data array and header"""
