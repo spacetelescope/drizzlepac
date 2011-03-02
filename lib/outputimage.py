@@ -719,11 +719,16 @@ def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
             raise IOError
 
     # Now update WCS keywords with values from provided WCS
-    if hasattr(wcs.wcs,'a_order'):
+    if hasattr(wcs.sip,'a_order'):
         siphdr = True
     else:
         siphdr = False
     wcshdr = wcs.wcs2header(sip2hdr=siphdr)
+    if siphdr:
+        for a in wcs.__dict__:
+            if 'oc' in a[:3]:
+                wcshdr.update(a,wcs.__dict__[a])
+        wcshdr.update('idcscale',wcs.idcscale)
 
     if template is not None:
         # Get default headers from multi-extension FITS file

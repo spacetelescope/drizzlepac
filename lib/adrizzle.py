@@ -83,11 +83,14 @@ def run(configObj, wcsmap=None):
     else:
         # Generate a default weight map of all good pixels
         inwht = np.ones(insci.shape,dtype=insci.dtype)
-    
+
+    output_exists = False
+    if os.path.exists(configObj['outdata']):
+        output_exists = True
     # Output was specified as a filename, so open it in 'update' mode
     out_sci_handle, outsci = get_data(configObj['outdata'])
 
-    if os.path.exists(configObj['outdata']):
+    if output_exists:
         # we also need to read in the output WCS from pre-existing output
         output_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])            
     else: # otherwise, define the output WCS either from user pars or refimage
@@ -95,7 +98,6 @@ def run(configObj, wcsmap=None):
             # Define a WCS based on user provided WCS values
             # NOTE:
             #   All parameters must be specified, not just one or a few
-            
             if not util.is_blank(user_wcs_pars['outscale']):
                 output_wcs = wcs_functions.build_hstwcs(
                     user_wcs_pars['raref'], user_wcs_pars['decref'], 
@@ -156,7 +158,7 @@ def run(configObj, wcsmap=None):
     undistort = True
     if not configObj['coeffs']:
         undistort = False
-
+    
     # Perform actual drizzling now...
     _vers = do_driz(insci, input_wcs, inwht, 
             output_wcs, outsci, outwht, outcon,
