@@ -724,12 +724,7 @@ def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
     else:
         siphdr = False
     wcshdr = wcs.wcs2header(sip2hdr=siphdr)
-    if siphdr:
-        for a in wcs.__dict__:
-            if 'oc' in a[:3]:
-                wcshdr.update(a,wcs.__dict__[a])
-        wcshdr.update('idcscale',wcs.idcscale)
-
+    
     if template is not None:
         # Get default headers from multi-extension FITS file
         # If input data is not in MEF FITS format, it will return 'None'
