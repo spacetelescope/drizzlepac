@@ -17,7 +17,7 @@ except ImportError:
     print '\n Please check the installation of this package to insure C code was built successfully.'
     raise ImportError
 
-__taskname__ = "betadrizzledrizzle"
+__taskname__ = "betadrizzle.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
@@ -745,7 +745,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
                 #
                 # Write output arrays to FITS file(s) and reset chip counter
-                #
+                #                
                 _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=build, wcs=output_wcs, single=single)
                 _outimg.set_bunit(_bunit)
                 _outimg.set_units(paramDict['units'])

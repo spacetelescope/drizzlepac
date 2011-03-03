@@ -156,8 +156,7 @@ class OutputImage:
         headers.
 
         The arrays will have the size specified by 'shape'.
-        """
-
+        """        
         if fileutil.findFile(self.output):
             if overwrite:
                 print 'Deleting previous output product: ',self.output
@@ -264,52 +263,10 @@ class OutputImage:
                 if scihdr.has_key('bunit') and scihdr['bunit'].lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
                     scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str)
+                                
+            # Add WCS keywords to SCI header
+            self.addWCSKeywords(scihdr)
                     
-
-            if self.wcs:
-                # Update WCS Keywords based on PyDrizzle product's value
-                # since 'drizzle' itself doesn't update that keyword.
-                scihdr.update('ORIENTAT',self.wcs.orientat)
-                scihdr.update('CD1_1',self.wcs.wcs.cd[0][0])
-                scihdr.update('CD1_2',self.wcs.wcs.cd[0][1])
-                scihdr.update('CD2_1',self.wcs.wcs.cd[1][0])
-                scihdr.update('CD2_2',self.wcs.wcs.cd[1][1])
-                scihdr.update('CRVAL1',self.wcs.wcs.crval[0])
-                scihdr.update('CRVAL2',self.wcs.wcs.crval[1])
-                scihdr.update('CRPIX1',self.wcs.wcs.crpix[0])
-                scihdr.update('CRPIX2',self.wcs.wcs.crpix[1])
-                scihdr.update('VAFACTOR',1.0)
-                if not self.blot:
-                    # Remove any reference to TDD correction from 
-                    #    distortion-corrected products
-                    if scihdr.has_key('TDDALPHA'):
-                        del scihdr['TDDALPHA']
-                        del scihdr['TDDBETA']
-                    # Remove '-SIP' from CTYPE for output product
-                    if scihdr['ctype1'].find('SIP') > -1:
-                        scihdr.update('ctype1', scihdr['ctype1'][:-4])
-                        scihdr.update('ctype2',scihdr['ctype2'][:-4])
-                        # Remove SIP coefficients from DRZ product
-                        for k in scihdr.items():
-                            if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
-                            (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
-                                del scihdr[k[0]]
-                    # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
-                    # does not try to look for non-existent extensions
-                    del scihdr['D2IMEXT']
-                    del scihdr['D2IMERR']
-                    # Remove paper IV related keywords related to the 
-                    #   DGEO correction here
-                    for k in scihdr.items():
-                        if (k[0][:2] == 'DP'): 
-                            del scihdr[k[0]+'.*']
-                            del scihdr[k[0]+'.*.*']
-                        if (k[0][:2] == 'CP'):
-                            del scihdr[k[0]]
-                    del scihdr['DGEOEXT']
-                    del scihdr['NPOLEXT']
-                    
-
         ##########
         # Now, build the output file
         ##########
@@ -396,6 +353,9 @@ class OutputImage:
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
             hdu.header.update('filename',self.outdata)
+            
+            # Add WCS keywords to header
+            self.addWCSKeywords(hdu.header)
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -476,6 +436,51 @@ class OutputImage:
                 fctx.writeto(self.outcontext)
                 del fctx,hdu
 
+    def addWCSKeywords(self,hdr):
+        """ Update input header 'hdr' with WCS keywords.
+        """
+        if self.wcs:
+            # Update WCS Keywords based on PyDrizzle product's value
+            # since 'drizzle' itself doesn't update that keyword.
+            hdr.update('ORIENTAT',self.wcs.orientat)
+            hdr.update('CD1_1',self.wcs.wcs.cd[0][0])
+            hdr.update('CD1_2',self.wcs.wcs.cd[0][1])
+            hdr.update('CD2_1',self.wcs.wcs.cd[1][0])
+            hdr.update('CD2_2',self.wcs.wcs.cd[1][1])
+            hdr.update('CRVAL1',self.wcs.wcs.crval[0])
+            hdr.update('CRVAL2',self.wcs.wcs.crval[1])
+            hdr.update('CRPIX1',self.wcs.wcs.crpix[0])
+            hdr.update('CRPIX2',self.wcs.wcs.crpix[1])
+            hdr.update('VAFACTOR',1.0)
+            if not self.blot:
+                # Remove any reference to TDD correction from 
+                #    distortion-corrected products
+                if hdr.has_key('TDDALPHA'):
+                    del hdr['TDDALPHA']
+                    del hdr['TDDBETA']
+                # Remove '-SIP' from CTYPE for output product
+                if hdr['ctype1'].find('SIP') > -1:
+                    hdr.update('ctype1', hdr['ctype1'][:-4])
+                    hdr.update('ctype2',hdr['ctype2'][:-4])
+                    # Remove SIP coefficients from DRZ product
+                    for k in hdr.items():
+                        if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
+                        (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
+                            del hdr[k[0]]
+                # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
+                # does not try to look for non-existent extensions
+                del hdr['D2IMEXT']
+                del hdr['D2IMERR']
+                # Remove paper IV related keywords related to the 
+                #   DGEO correction here
+                for k in hdr.items():
+                    if (k[0][:2] == 'DP'): 
+                        del hdr[k[0]+'.*']
+                        del hdr[k[0]+'.*.*']
+                    if (k[0][:2] == 'CP'):
+                        del hdr[k[0]]
+                del hdr['DGEOEXT']
+                del hdr['NPOLEXT']
 
     def addDrizKeywords(self,hdr,versions):
         """ Add drizzle parameter keywords to header. """
