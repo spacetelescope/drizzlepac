@@ -39,13 +39,21 @@ import util
 import wcs_functions
 import resetbits
 import wcscorr
+
+# These modules provide the user-interfaces to coordinate transformation tasks
 import pixtosky
+import skytopix
+import pixtopix
 
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
-import tweakreg, catalogs, imgclasses, tweakutils, wcscorr
-import imagefindpars, sextractorpars
-
+try:
+    import tweakreg, catalogs, imgclasses, tweakutils, wcscorr
+    import imagefindpars, sextractorpars
+except:
+    print 'The libraries needed for "tweakreg" were not available!'
+    print 'None of the code related to that task can be used at this time.'
+    
 # Add updatenpol to the list of tasks imported automatically here
 import updatenpol
 
@@ -67,8 +75,8 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.10dev12063'
-__vdate__ = "1-Mar-2011"
+__version__ = '4.0.11dev12213'
+__vdate__ = "17-Mar-2011"
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations

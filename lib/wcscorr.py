@@ -44,9 +44,6 @@ def init_wcscorr(input,force=False):
     # define the primary columns of the WCSEXT table with initial rows for each
     # SCI extension for the original OPUS solution
     numsci = fileutil.countExtn(fimg)
-    # insure OPUS WCS has been copied from legacy, prefix WCS keywords into
-    # alternate WCS using wcskey="O" and wcsname="OPUS"
-    convertwcs.archive_prefix_OPUS_WCS(fimg)
     
     # create new table with more rows than needed initially to make it easier to
     # add new rows later

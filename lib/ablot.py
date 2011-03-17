@@ -99,8 +99,8 @@ def run(configObj,wcsmap=None):
                 
         # If blot_wcs is still not defined at this point, we have a problem...
         if blot_wcs is None:
-            blot_wcs = stwcs.distortion.utils.output_wcs([source_wcs])
-    
+            blot_wcs = stwcs.distortion.utils.output_wcs([source_wcs],undistort=False)
+            
     # perform blotting operation now
     _outsci = do_blot(_insci, source_wcs, blot_wcs, _expin, coeffs=configObj['coeffs'],
                     interp=configObj['interpol'], sinscl=configObj['sinscl'], 
@@ -117,7 +117,7 @@ def run(configObj,wcsmap=None):
     # Write output Numpy objects to a PyFITS file
     # Blotting only occurs from a drizzled SCI extension
     # to a blotted SCI extension...
-    outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['data'])
+    outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['data'],blot=True)
 
 def help():
     print getHelpAsString()

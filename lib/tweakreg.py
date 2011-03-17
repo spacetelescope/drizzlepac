@@ -157,7 +157,7 @@ def run(configobj):
     # then perform the fit between the reference catalog positions and 
     #    each image's positions    
     for img in input_images:
-        img.match(refimage.outxy, refimage.wcs,**configobj['OBJECT MATCHING PARAMETERS'])
+        img.match(refimage.outxy, refimage.wcs,refimage.name,**configobj['OBJECT MATCHING PARAMETERS'])
         img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
         if configobj['updatehdr']:
             img.updateHeader()

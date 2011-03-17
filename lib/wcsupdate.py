@@ -1,9 +1,13 @@
+import os
 import stwcs
 from stwcs import updatewcs
-from pytools import parseinput
+from pytools import parseinput,fileutil
+import pyfits
 
 import convertwcs
 import util
+
+allowed_corr_dict = {'vacorr':'VACorr','tddcorr':'TDDCorr','npolcorr':'NPOLCorr','d2imcorr':'DET2IMCorr'}
 
 __taskname__ = 'wcsupdate'
 __version__ = stwcs.__version__
@@ -44,19 +48,7 @@ def getHelpAsString():
 
     # Start by using the docstring for the underlying task for this docstring
     helpString += updatewcs.updatewcs.__doc__
-    """
-    #get the local library directory where the code is stored
-    localDir=os.path.split(__file__)
-    helpfile=__taskname__.split(".")
-    
-    helpfile=localDir[0]+"/"+helpfile[0]+".help"
-    
-    if os.access(helpfile,os.R_OK):
-        fh=open(helpfile,'r')
-        fhl=fh.readlines()
-        fh.close()
-        helpString+=string.join(fhl)
-    """
+
     return helpString
 
 update.__doc__ = getHelpAsString()
@@ -90,8 +82,25 @@ def run(configObj=None):
     #   OPUS keyword values get archived for use with updatewcs.
     #
     for file in input:
-        convertwcs.archive_prefix_OPUS_WCS(file)
+        # Check to insure that there is a valid reference file to be used
+        idctab = pyfits.getval(file,'idctab')
+        if not os.path.exists(fileutil.osfn(idctab)):
+            print 'No valid distortion reference file ',idctab,' found in ',file,'!'
+            raise ValueError
 
-    # Call 'updatewcs' on correctly archived file
-    updatewcs.updatewcs(input,**cdict)
+    # Re-define 'cdict' to only have switches for steps supported by that instrument
+    # the set of supported steps are defined by the dictionary 
+    #    updatewcs.apply_corrections.allowed_corrections
+    #
+    for file in input:
+        # get instrument name from input file
+        instr = pyfits.getval(file,'INSTRUME')
+        # make copy of input parameters dict for this file
+        fdict = cdict.copy()
+        # Remove any parameter that is not part of this instrument's allowed corrections
+        for step in allowed_corr_dict:
+            if allowed_corr_dict[step] not in updatewcs.apply_corrections.allowed_corrections[instr]:
+                fdict[step]
+        # Call 'updatewcs' on correctly archived file
+        updatewcs.updatewcs(file,**fdict)
     

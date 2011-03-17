@@ -112,7 +112,7 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         read from each image's header.
     """
     if coords is not None:
-        if colnames in blank_list:
+        if colnames in util.blank_list:
             colnames = ['c1','c2']
         # Determine columns which contain pixel positions
         cols = util.parse_colnames(colnames,coords)

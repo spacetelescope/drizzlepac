@@ -89,6 +89,7 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
         extlist.append(('SCI',extn))
     wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
 
+
     # compute the matrix for the scale and rotation correction
     fit = scale*fileutil.buildRotMatrix(rot)
     
@@ -98,10 +99,8 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
     #fimg[0].header.update('HPA_V3',fimg[0].header['PA_V3'])
     pav3 = (fimg[0].header['PA_V3'] + rot)%360
     fimg[0].header['PA_V3'] = pav3
-    fimg.close()
 
     # for each chip in image, apply algorithm
-    fimg = pyfits.open(image)
     nchip,extn = updatewcs.getNrefchip(fimg)
     extver = fimg[extn].header['extver']
     fimg.close()

@@ -318,12 +318,6 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output 
-
-    # Verify that all input files have been updated to include the alternate-WCS
-    # version of the OPUS keywords, since legacy images from OTFR will only
-    # contain OPUS WCS copied into keywords with a prefix of 'O'
-    for file in newfilelist:
-        convertwcs.archive_prefix_OPUS_WCS(file)       
     
     # check for non-polynomial distortion correction
     newfilelist = checkDGEOFile(newfilelist)

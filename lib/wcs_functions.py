@@ -200,9 +200,45 @@ def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orienta
     wcsout.wcs.set()
     wcsout.setPscale()
     wcsout.setOrient()
+    wcsout.wcs.ctype = ['RA---TAN','DEC--TAN']
     
     return wcsout
 
+def update_linCD(cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0,1.0], cy=[1.0,0.0]):
+    """ Modify an existing linear CD matrix with rotation and/or scale changes
+        and return a new CD matrix.  If 'cx' and 'cy' are specified, it will
+        return a distorted CD matrix.
+    
+        Only those terms which are varying need to be specified on input.
+    """
+    rotmat = fileutil.buildRotMatrix(delta_rot)*delta_scale
+    new_lincd = np.dot(cdmat,rotmat)
+    
+    cxymat = np.array([[cx[1],cx[0]],[cy[1],cy[0]]])
+    new_cd = np.dot(new_lincd,cxymat)
+    
+    return new_cd
+    
+def create_CD(orient, scale, cx=None, cy=None):
+    """ Create a (un?)distorted CD matrix from the basic inputs
+    
+    The 'cx' and 'cy' parameters, if given, provide the X and Y coefficients of
+    the distortion as returned by reading the IDCTAB.  Only the first 2 elements
+    are used and should correspond to the 'OC[X/Y]10' and 'OC[X/Y]11' terms in that
+    order as read from the expanded SIP headers.
+    
+    The units of 'scale' should be 'arcseconds/pixel' of the reference pixel.
+    The value of 'orient' should be the absolute orientation on the sky of the 
+    reference pixel.
+    """
+    
+    cxymat = np.array([[cx[1],cx[0]],[cy[1],cy[0]]])
+    rotmat = fileutil.buildRotMatrix(orient)*scale/3600.
+    
+    new_cd = np.dot(rotmat,cxymat)
+    
+    return new_cd
+    
 def ddtohms(xsky,ysky,verbose=False,precision=6):
 
     """ Convert sky position(s) from decimal degrees to HMS format."""

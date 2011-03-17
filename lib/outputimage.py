@@ -265,7 +265,8 @@ class OutputImage:
                     scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str)
                                 
             # Add WCS keywords to SCI header
-            self.addWCSKeywords(scihdr)
+            if self.wcs:
+                addWCSKeywords(self.wcs,scihdr,blot=self.blot)
                     
         ##########
         # Now, build the output file
@@ -354,8 +355,9 @@ class OutputImage:
             del hdu.header['GCOUNT']
             hdu.header.update('filename',self.outdata)
             
-            # Add WCS keywords to header
-            self.addWCSKeywords(hdu.header)
+            if self.wcs:
+                # Add WCS keywords to header
+                addWCSKeywords(self.wcs, hdu.header, blot=self.blot)
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -436,51 +438,6 @@ class OutputImage:
                 fctx.writeto(self.outcontext)
                 del fctx,hdu
 
-    def addWCSKeywords(self,hdr):
-        """ Update input header 'hdr' with WCS keywords.
-        """
-        if self.wcs:
-            # Update WCS Keywords based on PyDrizzle product's value
-            # since 'drizzle' itself doesn't update that keyword.
-            hdr.update('ORIENTAT',self.wcs.orientat)
-            hdr.update('CD1_1',self.wcs.wcs.cd[0][0])
-            hdr.update('CD1_2',self.wcs.wcs.cd[0][1])
-            hdr.update('CD2_1',self.wcs.wcs.cd[1][0])
-            hdr.update('CD2_2',self.wcs.wcs.cd[1][1])
-            hdr.update('CRVAL1',self.wcs.wcs.crval[0])
-            hdr.update('CRVAL2',self.wcs.wcs.crval[1])
-            hdr.update('CRPIX1',self.wcs.wcs.crpix[0])
-            hdr.update('CRPIX2',self.wcs.wcs.crpix[1])
-            hdr.update('VAFACTOR',1.0)
-            if not self.blot:
-                # Remove any reference to TDD correction from 
-                #    distortion-corrected products
-                if hdr.has_key('TDDALPHA'):
-                    del hdr['TDDALPHA']
-                    del hdr['TDDBETA']
-                # Remove '-SIP' from CTYPE for output product
-                if hdr['ctype1'].find('SIP') > -1:
-                    hdr.update('ctype1', hdr['ctype1'][:-4])
-                    hdr.update('ctype2',hdr['ctype2'][:-4])
-                    # Remove SIP coefficients from DRZ product
-                    for k in hdr.items():
-                        if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
-                        (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
-                            del hdr[k[0]]
-                # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
-                # does not try to look for non-existent extensions
-                del hdr['D2IMEXT']
-                del hdr['D2IMERR']
-                # Remove paper IV related keywords related to the 
-                #   DGEO correction here
-                for k in hdr.items():
-                    if (k[0][:2] == 'DP'): 
-                        del hdr[k[0]+'.*']
-                        del hdr[k[0]+'.*.*']
-                    if (k[0][:2] == 'CP'):
-                        del hdr[k[0]]
-                del hdr['DGEOEXT']
-                del hdr['NPOLEXT']
 
     def addDrizKeywords(self,hdr,versions):
         """ Add drizzle parameter keywords to header. """
@@ -706,7 +663,57 @@ def getTemplates(fname,extlist):
 
     return prihdr,scihdr,errhdr,dqhdr
 
-def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
+def addWCSKeywords(wcs,hdr,blot=False):
+    """ Update input header 'hdr' with WCS keywords.
+    """
+    # Update WCS Keywords based on PyDrizzle product's value
+    # since 'drizzle' itself doesn't update that keyword.
+    hdr.update('ORIENTAT',wcs.orientat)
+    hdr.update('CD1_1',wcs.wcs.cd[0][0])
+    hdr.update('CD1_2',wcs.wcs.cd[0][1])
+    hdr.update('CD2_1',wcs.wcs.cd[1][0])
+    hdr.update('CD2_2',wcs.wcs.cd[1][1])
+    hdr.update('CRVAL1',wcs.wcs.crval[0])
+    hdr.update('CRVAL2',wcs.wcs.crval[1])
+    hdr.update('CRPIX1',wcs.wcs.crpix[0])
+    hdr.update('CRPIX2',wcs.wcs.crpix[1])
+    hdr.update('VAFACTOR',1.0)
+    if not hdr.has_key('ctype1'):
+        hdr.update('CTYPE1',wcs.wcs.ctype[0])
+        hdr.update('CTYPE2',wcs.wcs.ctype[1])
+        
+    if not blot:
+        # Remove any reference to TDD correction from 
+        #    distortion-corrected products
+        if hdr.has_key('TDDALPHA'):
+            del hdr['TDDALPHA']
+            del hdr['TDDBETA']
+        # Remove '-SIP' from CTYPE for output product
+        if hdr['ctype1'].find('SIP') > -1:
+            hdr.update('ctype1', hdr['ctype1'][:-4])
+            hdr.update('ctype2',hdr['ctype2'][:-4])
+            # Remove SIP coefficients from DRZ product
+            for k in hdr.items():
+                if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
+                (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
+                    del hdr[k[0]]
+        # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
+        # does not try to look for non-existent extensions
+        del hdr['D2IMEXT']
+        del hdr['D2IMERR']
+        # Remove paper IV related keywords related to the 
+        #   DGEO correction here
+        for k in hdr.items():
+            if (k[0][:2] == 'DP'): 
+                del hdr[k[0]+'.*']
+                del hdr[k[0]+'.*.*']
+            if (k[0][:2] == 'CP'):
+                del hdr[k[0]]
+        del hdr['DGEOEXT']
+        del hdr['NPOLEXT']
+    
+    
+def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.
     """
@@ -762,6 +769,9 @@ def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
     scihdr.update('EXTNAME',outextname.upper())
     scihdr.update('EXTVER',outextver)
 
+    for card in wcshdr.ascard:
+        scihdr.update(card.key,card.value,comment=card.comment)
+    
     # Create PyFITS HDUList for all extensions
     outhdu = pyfits.HDUList()
     # Setup primary header as an HDU ready for appending to output FITS file

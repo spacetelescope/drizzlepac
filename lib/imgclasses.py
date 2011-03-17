@@ -71,6 +71,7 @@ class Image(object):
         self.buildSkyCatalog()
         if self.pars['writecat']:
             catname = self.rootname+"_sky_catalog.coo"
+            self.catalog_names['match'] = self.rootname+"_xy_catalog.match"
             self.write_skycatalog(catname)
             self.catalog_names['sky'] = catname # Keep track of catalogs being written out
             for nsci in range(1,num_sci+1):
@@ -190,7 +191,7 @@ class Image(object):
             self.all_radec[2] = all_radec[2][nbright_indx]
         
         
-    def match(self,ref_outxy, refWCS, **kwargs):
+    def match(self,ref_outxy, refWCS, refname, **kwargs):
         """ Uses xyxymatch to cross-match sources between this catalog and
             a reference catalog (refCatalog).  
         """
@@ -217,11 +218,23 @@ class Image(object):
                 
             xyoff = (xoff,yoff)
             matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,tolerance=matchpars['tolerance'],separation=matchpars['separation'])
-            
             if len(matches) > minobj:
                 self.matches['image'] = np.column_stack([matches['input_x'][:,np.newaxis],matches['input_y'][:,np.newaxis]])
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,np.newaxis],matches['ref_y'][:,np.newaxis]])
                 print 'Found %d matches for %s...'%(len(matches),self.name)
+                
+                if self.pars['writecat']:
+                    matchfile = open(self.catalog_names['match'],mode='w+')
+                    matchfile.write('#Reference: %s\n'%refname)
+                    matchfile.write('#Input: %s\n'%self.name)
+                    matchfile.write('#Ref_X        Ref_Y            Input_X        Input_Y         Ref_ID    Input_ID\n')
+                    for i in xrange(len(matches['input_x'])): 
+                        linestr = "%0.6f    %0.6f        %0.6f    %0.6f        %d    %d\n"%\
+                            (matches['ref_x'][i],matches['ref_y'][i],\
+                             matches['input_x'][i],matches['input_y'][i],
+                            matches['ref_idx'][i],matches['input_idx'][i])
+                        matchfile.write(linestr)
+                    matchfile.close()
             else:
                 print 'WARNING: Not enough matches found for input image: ',self.name
                 self.goodmatch = False
