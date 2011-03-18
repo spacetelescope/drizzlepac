@@ -53,7 +53,11 @@ def init_wcscorr(input,force=False):
     wcsext.header.update('EXTNAME','WCSCORR',comment='Table with WCS Update history')
     
     used_wcskeys = None
-    wcs_keywords = stwcs.wcsutil.HSTWCS(fimg,ext=('SCI',1)).wcs2header().keys()
+    wcs1 = stwcs.wcsutil.HSTWCS(fimg,ext=('SCI',1))
+    idc2header = True
+    if wcs1.idcscale is None:
+        idc2header = False
+    wcs_keywords = wcs1.wcs2header(idc2hdr=idc2header).keys()
     # Now copy original OPUS values into table
     for extver in xrange(1,numsci+1):
         rowind = find_wcscorr_row(wcsext.data,{'WCS_ID':'OPUS','EXTVER':extver,'WCS_key':'O'})
@@ -72,7 +76,7 @@ def init_wcscorr(input,force=False):
             wkey = 'O'
         else:
             wkey = " "
-        wcshdr = stwcs.wcsutil.HSTWCS(fimg,ext=('SCI',extver),wcskey=wkey).wcs2header()
+        wcshdr = stwcs.wcsutil.HSTWCS(fimg,ext=('SCI',extver),wcskey=wkey).wcs2header(idc2hdr=idc2header)
             
         for key in DEFAULT_PRI_KEYS:
             prihdr_keys = []
