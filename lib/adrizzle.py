@@ -106,7 +106,10 @@ def run(configObj, wcsmap=None):
                     user_wcs_pars['outscale'], user_wcs_pars['orient'] )
             else:
                 # Define default WCS based on input image
-                output_wcs = stwcs.distortion.utils.output_wcs([input_wcs])
+                applydist = True
+                if input_wcs.sip is None:
+                    applydist = False
+                output_wcs = stwcs.distortion.utils.output_wcs([input_wcs],undistort=applydist)
         else:
             # Define the output WCS based on a user specified reference image WCS
             output_wcs = stwcs.wcsutil.HSTWCS(configObj['User WCS Parameters']['refimage'])
@@ -174,6 +177,12 @@ def run(configObj, wcsmap=None):
     # of all input image regardless of the output units
     out_sci_handle['PRIMARY'].header.update('EXPTIME', outexptime)
 
+    # create CTYPE strings
+    ctype1 = input_wcs.wcs.ctype[0]
+    ctype2 = input_wcs.wcs.ctype[1]
+    if ctype1.find('-SIP'): ctype1 = ctype1.replace('-SIP','')
+    if ctype2.find('-SIP'): ctype2 = ctype2.replace('-SIP','')
+    
     # Update header with WCS keywords
     out_sci_handle['PRIMARY'].header.update('ORIENTAT',output_wcs.orientat)
     out_sci_handle['PRIMARY'].header.update('CD1_1',output_wcs.wcs.cd[0][0])
@@ -184,8 +193,8 @@ def run(configObj, wcsmap=None):
     out_sci_handle['PRIMARY'].header.update('CRVAL2',output_wcs.wcs.crval[1])
     out_sci_handle['PRIMARY'].header.update('CRPIX1',output_wcs.wcs.crpix[0])
     out_sci_handle['PRIMARY'].header.update('CRPIX2',output_wcs.wcs.crpix[1])
-    out_sci_handle['PRIMARY'].header.update('CTYPE1',input_wcs.wcs.ctype[0][:-4])
-    out_sci_handle['PRIMARY'].header.update('CTYPE2',input_wcs.wcs.ctype[1][:-4])
+    out_sci_handle['PRIMARY'].header.update('CTYPE1',ctype1)
+    out_sci_handle['PRIMARY'].header.update('CTYPE2',ctype2)
     out_sci_handle['PRIMARY'].header.update('VAFACTOR',1.0)
 
 
