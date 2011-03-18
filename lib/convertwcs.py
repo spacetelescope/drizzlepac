@@ -28,6 +28,7 @@ def archive_prefix_OPUS_WCS(fobj,extname='SCI'):
         print '====================='
         raise ImportError
 
+    
     closefits = False
     if isinstance(fobj,str):
         # A filename was provided as input
