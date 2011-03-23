@@ -324,9 +324,7 @@ update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
   if (vc == 0.0) {
     *output_data_ptr(p, ii, jj) = d;
   } else {
-    if (vc_plus_dow == 0.0) {
-      *output_data_ptr(p, ii, jj) = d;
-    } else {
+    if (vc_plus_dow != 0.0) {
       *output_data_ptr(p, ii, jj) =
         (*output_data_ptr(p, ii, jj) * vc + dow * d) / (vc_plus_dow);
     }
@@ -567,6 +565,7 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
 
       update_data(p, ii, jj, d, vc, dow);
     } else {
+
       ++(*nmiss);
     }
   }
@@ -1029,7 +1028,7 @@ do_kernel_square(struct driz_param_t* p,
         }
       }
     }
-
+    
     /* Count cases where the pixel is off the output image */
     if (nhit == 0) ++(*nmiss);
   }
@@ -1279,6 +1278,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
 
         *mapping_ptr(p, yi, x1) = y;
         *mapping_ptr(p, yi, x1+1) = 0.0;
+        
 
         if (map_value(p, TRUE, x2 - x1 + 1,
                       mapping_ptr(p, xi, x1), mapping_ptr(p, yi, x1),
@@ -1291,7 +1291,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
                            &oldcon, &newcon, nmiss, error)) {
           goto dobox_exit_;
         }
-      } else {
+      } else {        
         if (do_kernel_square(p, j, y, x1, x2, last_x1, last_x2,
                              xi, yi, xtmp, ytmp, xo, yo,
                              &oldcon, &newcon, nmiss, error)) {

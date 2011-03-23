@@ -276,7 +276,7 @@ map_value(struct driz_param_t* p,
   return 0;
 }
 
-#define WCSMAP_ORIGINAL_SLOW
+/*#define WCSMAP_ORIGINAL_SLOW */
 /*
 
 Default WCS mapping code
@@ -310,6 +310,7 @@ default_wcsmap(void* state,
   double     x, y;
   int        xi, yi;
   double     xf, yf, ixf, iyf;
+  double    tabx00, tabx01, tabx10, tabx11;
 
   /* Call PyWCS methods here to perform the transformation... */
   /* The input arrays need to be converted to 2-D arrays for input
@@ -337,7 +338,7 @@ default_wcsmap(void* state,
       xyin[2*i] = xin[i];
       xyin[2*i+1] = yin[i];
   }
-  
+
   /* Start by checking to see whether DET2IM correction needs to
   be applied and applying it as appropriate. */
 
@@ -380,11 +381,21 @@ default_wcsmap(void* state,
     ixf = 1.0 - xf;
     iyf = 1.0 - yf;
 
+    tabx00 = TABLE_X(xi, yi);
+    tabx10 = TABLE_X(xi+1, yi);
+    tabx01 = TABLE_X(xi, yi+1);
+    tabx11 = TABLE_X(xi+1, yi+1);
+    /* Account for interpolating across 360-0 boundary */
+    if (tabx00 - tabx10 > 359){ 
+        tabx00 -= 360.0;
+        tabx01 -= 360.0;
+    }
+     
     *optr++ =
-      TABLE_X(xi, yi)     * ixf * iyf +
-      TABLE_X(xi+1, yi)   * xf * iyf +
-      TABLE_X(xi, yi+1)   * ixf * yf +
-      TABLE_X(xi+1, yi+1) * xf * yf;
+      tabx00 * ixf * iyf +
+      tabx10 * xf * iyf +
+      tabx01 * ixf * yf +
+      tabx11 * xf * yf;
 
     *optr++ =
       TABLE_Y(xi, yi)     * ixf * iyf +
@@ -405,6 +416,7 @@ default_wcsmap(void* state,
   status = wcss2p(m->output_wcs->wcs, n, 2,
                   skyout, phi, theta, imgcrd, xyout, stat);
   wcsprm_c2python(m->output_wcs->wcs);
+  
 
   /*
   Transform results back to 2 1-D arrays, like the input.
@@ -413,6 +425,7 @@ default_wcsmap(void* state,
       xout[i] = xyout[2*i];
       yout[i] = xyout[2*i+1];
   }
+
 
   result = 0;
 
