@@ -9,6 +9,7 @@ import outputimage,wcs_functions,processInput,util
 import stwcs
 from stwcs import distortion
 
+from matplotlib import pyplot as pl
 try:
     import cdriz
 except ImportError:
@@ -69,30 +70,37 @@ def run(configObj, wcsmap=None):
 
     # Open the SCI (and WHT?) image
     # read file to get science array
-    in_sci_handle, insci = get_data(configObj['input'],mode='readonly')
-    expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'],handle=in_sci_handle)
-    in_sci_handle.close()
+    insci = get_data(configObj['input'])
+    expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'])
     in_sci_phdr = pyfits.getheader(fileutil.parseFilename(configObj['input'])[0])
 
     # we need to read in the input WCS
     input_wcs = stwcs.wcsutil.HSTWCS(configObj['input'],wcskey=_wcskey)
 
     if not util.is_blank(configObj['inweight']):
-        in_wht_handle, inwht = get_data(configObj['inweight'],mode='readonly')
-        in_wht_handle.close()
+        inwht = get_data(configObj['inweight']).astype(np.float32)
     else:
         # Generate a default weight map of all good pixels
         inwht = np.ones(insci.shape,dtype=insci.dtype)
 
     output_exists = False
-    if os.path.exists(configObj['outdata']):
+    outname = fileutil.osfn(fileutil.parseFilename(configObj['outdata'])[0])
+    if os.path.exists(outname):
         output_exists = True
     # Output was specified as a filename, so open it in 'update' mode
-    out_sci_handle, outsci = get_data(configObj['outdata'])
+    outsci = get_data(configObj['outdata'])
 
     if output_exists:
         # we also need to read in the output WCS from pre-existing output
         output_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
+
+        out_sci_hdr = pyfits.getheader(outname)
+        outexptime = out_sci_hdr['DRIZEXPT']
+        if out_sci_hdr.has_key('ndrizim'):
+            uniqid = out_sci_hdr['ndrizim']+1
+        else:
+            uniqid = 1
+        
     else: # otherwise, define the output WCS either from user pars or refimage
         if util.is_blank(configObj['User WCS Parameters']['refimage']):
             # Define a WCS based on user provided WCS values
@@ -113,42 +121,42 @@ def run(configObj, wcsmap=None):
         else:
             # Define the output WCS based on a user specified reference image WCS
             output_wcs = stwcs.wcsutil.HSTWCS(configObj['User WCS Parameters']['refimage'])
-        # Also, define default header based on input image Primary header
-        out_sci_handle['PRIMARY'].header = in_sci_phdr.copy()
+
+        # Initialize values used for combining results
+        outexptime = 0.0
+        uniqid = 1
 
     # Set up the output data array and insure that the units for that array is 'cps'
     if outsci is None:
         # Define a default blank array based on definition of output_wcs
         outsci = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
-        outexptime = 0.0
     else:
         # Convert array to units of 'cps', if needed
-        outexptime = out_sci_handle['PRIMARY'].header['DRIZEXPT']
         if outexptime != 0.0:
             np.divide(outsci, outexptime, outsci)
+        outsci = outsci.astype(np.float32)
 
     # Now update output exposure time for additional input file
     outexptime += expin
 
-
     outwht = None
     if not util.is_blank(configObj['outweight']):
-        out_wht_handle, outwht = get_data(configObj['outweight'])
+        outwht = get_data(configObj['outweight'])
+
     if outwht is None:
         outwht = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
-
+    else:
+        outwht = outwht.astype(np.float32)
+        
     outcon = None
     keep_con = False
     if not util.is_blank(configObj['outcontext']):
-        out_con_handle, outcon = get_data(configObj['outcontext'])
+        outcon = get_data(configObj['outcontext'])
         keep_con = True
-
-    # If not provided on input, read in 'uniqid' from output image header
-    if out_sci_handle['PRIMARY'].header.has_key('NDRIZIM'):
-        uniqid = out_sci_handle['PRIMARY'].header['NDRIZIM'] + 1
-    else:
-        uniqid = 1
-
+        if outcon is None:
+            outcon = np.zeros((1,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+        else:
+            outcon = outcon.astype(np.int32)
     # Interpret wt_scl parameter
     if configObj['wt_scl'] == 'exptime':
         wt_scl = expin
@@ -159,7 +167,7 @@ def run(configObj, wcsmap=None):
 
     # Interpret coeffs parameter to determine whether to apply coeffs or not
     undistort = True
-    if not configObj['coeffs']:
+    if not configObj['coeffs'] or input_wcs.sip is None:
         undistort = False
 
     # Perform actual drizzling now...
@@ -171,11 +179,16 @@ def run(configObj, wcsmap=None):
             fillval=scale_pars['fillval'], stepsize=configObj['stepsize'],
             wcsmap=None)
 
+    out_sci_handle,outextn = create_output(configObj['outdata'])
+    if not output_exists:
+        # Also, define default header based on input image Primary header
+        out_sci_handle[outextn].header = in_sci_phdr.copy()
+
     # Update header of output image with exptime used to scale the output data
     # if out_units is not counts, this will simply be a value of 1.0
     # the keyword 'exptime' will always contain the total exposure time
     # of all input image regardless of the output units
-    out_sci_handle['PRIMARY'].header.update('EXPTIME', outexptime)
+    out_sci_handle[outextn].header.update('EXPTIME', outexptime)
 
     # create CTYPE strings
     ctype1 = input_wcs.wcs.ctype[0]
@@ -184,30 +197,30 @@ def run(configObj, wcsmap=None):
     if ctype2.find('-SIP'): ctype2 = ctype2.replace('-SIP','')
     
     # Update header with WCS keywords
-    out_sci_handle['PRIMARY'].header.update('ORIENTAT',output_wcs.orientat)
-    out_sci_handle['PRIMARY'].header.update('CD1_1',output_wcs.wcs.cd[0][0])
-    out_sci_handle['PRIMARY'].header.update('CD1_2',output_wcs.wcs.cd[0][1])
-    out_sci_handle['PRIMARY'].header.update('CD2_1',output_wcs.wcs.cd[1][0])
-    out_sci_handle['PRIMARY'].header.update('CD2_2',output_wcs.wcs.cd[1][1])
-    out_sci_handle['PRIMARY'].header.update('CRVAL1',output_wcs.wcs.crval[0])
-    out_sci_handle['PRIMARY'].header.update('CRVAL2',output_wcs.wcs.crval[1])
-    out_sci_handle['PRIMARY'].header.update('CRPIX1',output_wcs.wcs.crpix[0])
-    out_sci_handle['PRIMARY'].header.update('CRPIX2',output_wcs.wcs.crpix[1])
-    out_sci_handle['PRIMARY'].header.update('CTYPE1',ctype1)
-    out_sci_handle['PRIMARY'].header.update('CTYPE2',ctype2)
-    out_sci_handle['PRIMARY'].header.update('VAFACTOR',1.0)
+    out_sci_handle[outextn].header.update('ORIENTAT',output_wcs.orientat)
+    out_sci_handle[outextn].header.update('CD1_1',output_wcs.wcs.cd[0][0])
+    out_sci_handle[outextn].header.update('CD1_2',output_wcs.wcs.cd[0][1])
+    out_sci_handle[outextn].header.update('CD2_1',output_wcs.wcs.cd[1][0])
+    out_sci_handle[outextn].header.update('CD2_2',output_wcs.wcs.cd[1][1])
+    out_sci_handle[outextn].header.update('CRVAL1',output_wcs.wcs.crval[0])
+    out_sci_handle[outextn].header.update('CRVAL2',output_wcs.wcs.crval[1])
+    out_sci_handle[outextn].header.update('CRPIX1',output_wcs.wcs.crpix[0])
+    out_sci_handle[outextn].header.update('CRPIX2',output_wcs.wcs.crpix[1])
+    out_sci_handle[outextn].header.update('CTYPE1',ctype1)
+    out_sci_handle[outextn].header.update('CTYPE2',ctype2)
+    out_sci_handle[outextn].header.update('VAFACTOR',1.0)
 
 
-    if scale_pars['out_units'] is 'counts':
+    if scale_pars['out_units'] == 'counts':
         np.multiply(outsci, outexptime, outsci)
-        out_sci_handle['PRIMARY'].header.update('DRIZEXPT', outexptime)
+        out_sci_handle[outextn].header.update('DRIZEXPT', outexptime)
 
     else:
-        out_sci_handle['PRIMARY'].header.update('DRIZEXPT', 1.0)
+        out_sci_handle[outextn].header.update('DRIZEXPT', 1.0)
 
     # Update header keyword NDRIZIM to keep track of how many images have
     # been combined in this product so far
-    out_sci_handle['PRIMARY'].header.update('NDRIZIM', uniqid)
+    out_sci_handle[outextn].header.update('NDRIZIM', uniqid)
 
     #define keywords to be written out to product header
     drizdict = outputimage.DRIZ_KEYWORDS.copy()
@@ -226,18 +239,21 @@ def run(configObj, wcsmap=None):
     drizdict['OUUN']['value'] = scale_pars['out_units']
     drizdict['FVAL']['value'] = scale_pars['fillval']
     drizdict['WKEY']['value'] = configObj['wcskey']
-    outputimage.writeDrizKeywords(out_sci_handle['PRIMARY'].header,uniqid,drizdict)
+    outputimage.writeDrizKeywords(out_sci_handle[outextn].header,uniqid,drizdict)
 
     # add output array to output file
-    out_sci_handle['PRIMARY'].data = outsci
+    out_sci_handle[outextn].data = outsci
     out_sci_handle.close()
 
-    out_wht_handle['PRIMARY'].header = out_sci_handle['PRIMARY'].header.copy()
-    out_wht_handle['PRIMARY'].data = outwht
-    out_wht_handle.close()
+    if not util.is_blank(configObj['outweight']):
+        out_wht_handle,outwhtext = create_output(configObj['outweight'])
+        out_wht_handle[outwhtext].header = out_sci_handle[outextn].header.copy()
+        out_wht_handle[outwhtext].data = outwht
+        out_wht_handle.close()
 
-    if keep_con is True:
-        out_con_handle['PRIMARY'].data = outcon
+    if keep_con:
+        out_con_handle,outconext = create_output(configObj['outcontext'])
+        out_con_handle[outconext].data = outcon
         out_con_handle.close()
 
 
@@ -853,6 +869,7 @@ def do_driz(insci, input_wcs, inwht,
 
     if wcsmap is None and cdriz is not None:
         print 'Using WCSLIB-based coordinate transformation...'
+        print 'stepsize = ',stepsize
         mapping = cdriz.DefaultWCSMapping(input_wcs,output_wcs,int(input_wcs.naxis1),int(input_wcs.naxis2),stepsize)
     else:
         #
@@ -870,7 +887,6 @@ def do_driz(insci, input_wcs, inwht,
     ystart = 0
     nmiss = 0
     nskip = 0
-
     #
     # This call to 'cdriz.tdriz' uses the new C syntax
     #
@@ -879,7 +895,7 @@ def do_driz(insci, input_wcs, inwht,
     if (insci.dtype > np.float32):
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
-
+        
     _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
         outctx, uniqid, ystart, 1, 1, _dny,
         pix_ratio, 1.0, 1.0, 'center', pixfrac,
@@ -893,9 +909,23 @@ def do_driz(insci, input_wcs, inwht,
 
     return _vers
 
-def get_data(filename,mode='update'):
+def get_data(filename):
     fileroot,extn = fileutil.parseFilename(filename)
     extname = fileutil.parseExtn(extn)
+    if extname[0] == '': extname = "PRIMARY"
+    if os.path.exists(fileroot):
+        handle = fileutil.openImage(filename)
+        data = handle[extname].data
+        handle.close()
+    else: 
+        data = None
+    return data
+
+def create_output(filename):
+    fileroot,extn = fileutil.parseFilename(filename)
+    extname = fileutil.parseExtn(extn)
+    if extname[0] == '': extname = "PRIMARY"
+
     if not os.path.exists(fileroot):
         # We need to create the new file
         pimg = pyfits.HDUList()
@@ -904,15 +934,16 @@ def get_data(filename,mode='update'):
         pimg.append(phdu)
         if extn is not None:
             # Create a MEF file with the specified extname
-            ehdu = pyfits.ImageHDU()
+            ehdu = pyfits.ImageHDU(data=arr)
             ehdu.header.update('EXTNAME',extname[0])
             ehdu.header.update('EXTVER',extname[1])
             pimg.append(ehdu)
+        print 'Creating new output file: ',fileroot
         pimg.writeto(fileroot)
-        print 'Created new output file: ',fileroot
+        del pimg
+    else:
+        print 'Updating existing output file: ',fileroot
+    
+    handle = pyfits.open(fileroot,mode='update')
 
-    if extname[0] == '': extname = "PRIMARY"
-    handle = fileutil.openImage(filename,mode=mode)
-    data = handle[extname].data
-
-    return handle,data
+    return handle,extname

@@ -347,12 +347,7 @@ sgarea(const double x1, const double y1, const double x2, const double y2) {
 
   dy = y2 - y1;
 
-  /* Trap horizontal line */
-  if (dy == 0.0)
-    return 0.0;
-
   dx = x2 - x1;
-
   /* Trap vertical line */
   if (dx == 0.0)
     return 0.0;
@@ -463,6 +458,7 @@ boxer(double is, double js,
   js -= 0.5;
   /* Set up coords relative to unit square at origin Note that the
      +0.5s were added when this code was included in DRIZZLE */
+
   for (i = 0; i < 4; ++i) {
     px[i] = x[i] - is;
     py[i] = y[i] - js;
@@ -476,7 +472,7 @@ boxer(double is, double js,
   for (i = 0; i < 4; ++i) {
     sum += sgarea(px[i], py[i], px[(i+1) & 0x3], py[(i+1) & 0x3]);
   }
-
+  
   return sum;
 }
 
@@ -961,7 +957,8 @@ do_kernel_square(struct driz_param_t* p,
       return 1;
     }
   }
-
+   
+  
   for (i = x1; i <= x2; ++i) {
     /* Offset within the subset */
     for (ii = 0; ii < 4; ++ii) {
@@ -983,7 +980,6 @@ do_kernel_square(struct driz_param_t* p,
       tem = xout[1]; xout[1] = xout[3]; xout[3] = tem;
       tem = yout[1]; yout[1] = yout[3]; yout[3] = tem;
     }
-
     nhit = 0;
 
     /* Allow for stretching because of scale change */
@@ -1028,7 +1024,6 @@ do_kernel_square(struct driz_param_t* p,
         }
       }
     }
-    
     /* Count cases where the pixel is off the output image */
     if (nhit == 0) ++(*nmiss);
   }

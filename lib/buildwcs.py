@@ -1,6 +1,6 @@
 from __future__ import division # confidence medium
 
-import sys,types,os
+import sys,types,os,copy
 import util
 import numpy as np
 import pyfits
@@ -163,13 +163,9 @@ def build(outname, wcsname, refimage, undistort=False,
         
     if not util.is_blank(refimage):
         refwcs = stwcs.wcsutil.HSTWCS(refimage)
-        if userwcs:
-            # replace (some/all?) WCS values from refimage with user WCS values
-            # by running 'updatewcs' functions on input WCS
-            refwcs = mergewcs(refwcs,refimage,customwcs,user_wcs_pars)
     else:
         refwcs = customwcs
-
+    
     ### Apply distortion model (if any) to update WCS
     if applycoeffs and not util.is_blank(coeffsfile):
         if not util.is_blank(refimage):
@@ -187,6 +183,12 @@ def build(outname, wcsname, refimage, undistort=False,
     else:
         outwcs = refwcs
 
+    if userwcs:
+        # replace (some/all?) WCS values from refimage with user WCS values
+        # by running 'updatewcs' functions on input WCS
+        outwcs = mergewcs(outwcs,customwcs,user_wcs_pars)
+
+
     ### Create the final headerlet and write it out, if specified
     if not util.is_blank(refimage):
         template = refimage
@@ -194,11 +196,18 @@ def build(outname, wcsname, refimage, undistort=False,
         template = coeffsfile
     else:
         template = None
+    
 
     # create default WCSNAME if None was given
     wcsname = create_WCSname(wcsname)
     print 'Creating final headerlet with name ',wcsname,' using template ',template
     outhdr = generate_headerlet(outwcs,template,wcsname,outname=outname)
+
+    # synchronize this new WCS with the rest of the chips in the image
+    for ext in outhdr:
+        if ext.header.has_key('extname') and ext.header['extname'] == 'SIPWCS':
+            ext_wcs = wcsutil.HSTWCS(ext)
+            stwcs.updatewcs.makewcs.MakeWCS.updateWCS(ext_wcs,outwcs)
     
     return outwcs
 
@@ -221,19 +230,21 @@ def convert_user_pars(wcspars):
         default_pars[user_hstwcs_pars[kw]] = wcspars[kw]
     return default_pars
 
-def mergewcs(refwcs, refimage, customwcs, wcspars):
+def mergewcs(outwcs, customwcs, wcspars):
     """ Merge the WCS keywords from user specified values into a full HSTWCS object
         This function will essentially follow the same algorithm as used by 
         updatehdr only it will use direct calls to updatewcs.Makewcs methods 
         instead of using 'updatewcs' as a whole
     """
     # start by working on a copy of the refwcs
-    wcslin = stwcs.distortion.utils.undistortWCS(refwcs)
-    outwcs = refwcs.deepcopy()
-    outwcs.wcs.cd = wcslin.wcs.cd
-    outwcs.wcs.set()
-    outwcs.setOrient()
-    outwcs.setPscale()
+    if outwcs.sip is not None:
+        wcslin = stwcs.distortion.utils.undistortWCS(outwcs)
+        outwcs.wcs.cd = wcslin.wcs.cd
+        outwcs.wcs.set()
+        outwcs.setOrient()
+        outwcs.setPscale()
+    else:
+        wcslin = outwcs
     if customwcs is None:
         # update valid pars from wcspars
         if wcspars['crval1'] is not None:
@@ -243,9 +254,16 @@ def mergewcs(refwcs, refimage, customwcs, wcspars):
         if wcspars['naxis1'] is not None:
             outwcs.naxis1 = wcspars['naxis1']
             outwcs.naxis2 = wcspars['naxis2']
-        if wcspars['pscale'] is not None:
-            pix_ratio = wcspars['pscale']/outwcs.pscale
-            delta_rot_mat = fileutil.buildRotMatrix(wcspars['orientat'] - outwcs.orientat)
+            outwcs.wcs.crpix = np.array([outwcs.naxis1/2.,outwcs.naxis2/2.])
+
+        pscale = wcspars['pscale']
+        orient = wcspars['orientat']
+        if pscale is not None or orient is not None:
+            if pscale is None: pscale = wcslin.pscale
+            if orient is None: orient = wcslin.orientat
+            pix_ratio = pscale/wcslin.pscale
+            delta_rot = wcslin.orientat - orient
+            delta_rot_mat = fileutil.buildRotMatrix(delta_rot)
             outwcs.wcs.cd = np.dot(outwcs.wcs.cd,delta_rot_mat)*pix_ratio
             # apply model to new linear CD matrix
             apply_model(outwcs)
@@ -256,8 +274,7 @@ def mergewcs(refwcs, refimage, customwcs, wcspars):
         outwcs.wcs.crpix = customwcs.wcs.crpix
         outwcs.naxis1 = customwcs.naxis1
         outwcs.naxis2 = customwcs.naxis2
-    # synchronize this new WCS with the rest of the chips in the image
-    
+    return outwcs
     
 def add_model(refwcs, newcoeffs):
     """ Add (new?) distortion model to existing HSTWCS object
@@ -273,11 +290,13 @@ def apply_model(refwcs):
         
     """
     # apply distortion model to CD matrix
-    linmat = np.array([[refwcs.ocx11,refwcs.ocx10],[refwcs.ocy11,refwcs.ocy10]])
-    refwcs.wcs.cd = np.dot(refwcs.wcs.cd,linmat)
-    refwcs.wcs.set()
-    refwcs.setOrient()
-    refwcs.setPscale()
+    if refwcs.__dict__.has_key('ocx10') and refwcs.ocx10 is not None:
+        linmat = np.array([[refwcs.ocx11,refwcs.ocx10],[refwcs.ocy11,refwcs.ocy10]])/refwcs.idcscale
+        refwcs.wcs.cd = np.dot(refwcs.wcs.cd,linmat)
+        
+        refwcs.wcs.set()
+        refwcs.setOrient() 
+        refwcs.setPscale()
     
 def replace_model(refwcs, newcoeffs):
     """ Replace the distortion model in a current WCS with a new model
@@ -304,9 +323,8 @@ def replace_model(refwcs, newcoeffs):
 def undistortWCS(refwcs):
     """ Generate an undistorted HSTWCS from an HSTWCS object with a distortion model
     """  
-    print 'Undistorting WCS object..'
     wcslin = stwcs.distortion.utils.output_wcs([refwcs])
-    print wcslin
+    
     outwcs = stwcs.wcsutil.HSTWCS()
     outwcs.wcs = wcslin.wcs
     outwcs.wcs.set()
@@ -341,7 +359,6 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
     outwcs_hdr.update('NPIX1',outwcs.naxis1)
     outwcs_hdr.update('NPIX2',outwcs.naxis2)
 
-    print 'SIP in outwcs: ',siphdr
     # create headerlet object in memory; either from a file or from scratch
     if template is not None and siphdr:
         print 'Creating headerlet from template...'

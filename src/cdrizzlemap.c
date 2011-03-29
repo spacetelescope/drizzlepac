@@ -390,7 +390,7 @@ default_wcsmap(void* state,
         tabx00 -= 360.0;
         tabx01 -= 360.0;
     }
-     
+
     *optr++ =
       tabx00 * ixf * iyf +
       tabx10 * xf * iyf +
