@@ -45,6 +45,9 @@ def run(configObj,wcsmap=None):
     """ Run the blot task based on parameters provided interactively by the user
     """ 
 
+    # Insure all output filenames specified have .fits extensions
+    if configObj['outdata'][-5:] != '.fits': configObj['outdata'] += '.fits'
+
     scale_pars = configObj['Data Scaling Parameters']
     user_wcs_pars = configObj['User WCS Parameters']
 

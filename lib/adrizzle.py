@@ -33,6 +33,7 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
         input_dict = {}
     input_dict['input'] = input
     input_dict['outdata'] = outdata
+    
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
@@ -53,6 +54,12 @@ def run(configObj, wcsmap=None):
     This code performs all file I/O to set up the use of the drizzle code for
     a single exposure to replicate the functionality of the original 'wdrizzle'.
     """
+
+    # Insure all output filenames specified have .fits extensions
+    if configObj['outdata'][-5:] != '.fits': configObj['outdata'] += '.fits'
+    if not util.is_blank(configObj['outweight']) and configObj['outweight'][-5:] != '.fits': configObj['outweight'] += '.fits'
+    if not util.is_blank(configObj['outcontext']) and configObj['outcontext'][-5:] != '.fits': configObj['outcontext'] += '.fits'
+
     # Keep track of any files we need to open
     in_sci_handle = None
     in_wht_handle = None
@@ -148,7 +155,8 @@ def run(configObj, wcsmap=None):
         outwht = outwht.astype(np.float32)
         
     outcon = None
-    keep_con = False
+    keep_con = False    
+    
     if not util.is_blank(configObj['outcontext']):
         outcon = get_data(configObj['outcontext'])
         keep_con = True
