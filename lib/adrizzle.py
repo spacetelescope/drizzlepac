@@ -9,7 +9,6 @@ import outputimage,wcs_functions,processInput,util
 import stwcs
 from stwcs import distortion
 
-from matplotlib import pyplot as pl
 try:
     import cdriz
 except ImportError:
