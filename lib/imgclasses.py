@@ -1,14 +1,17 @@
 import copy
 import numpy as np
+
+import pyfits
 import pywcs
 import stwcs
+
 from stwcs import distortion
 from stwcs.distortion import utils
-import pyfits
-
+from stwcs.wcsutil import wcscorr
 from pytools import fileutil as fu
-import catalogs
 from stimage import xyxymatch
+
+import catalogs
 import linearfit
 import updatehdr
 
@@ -22,13 +25,13 @@ class Image(object):
         ----------
         filename: str
             filename for image
-            
+
         input_catalogs: list of str or None
             filename of catalog files for each chip, if specified by user
-        
+
         kwargs: dict
-            parameters necessary for processing derived from input configObj object 
-        
+            parameters necessary for processing derived from input configObj object
+
         """
         self.name = filename
         self.rootname = filename[:filename.find('.')]
@@ -40,7 +43,7 @@ class Image(object):
             num_sci = 0
         else:
             # WCS required, so verify that we can get one
-            # Need to count number of SCI extensions 
+            # Need to count number of SCI extensions
             #  (assume a valid WCS with each SCI extension)
             num_sci,extname = count_sci_extensions(filename)
             if num_sci < 1:
@@ -49,7 +52,7 @@ class Image(object):
             use_wcs = True
         # Record this for use with methods
         self.use_wcs = use_wcs
-        
+
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
         # For each SCI extension, generate a catalog and WCS
@@ -75,13 +78,13 @@ class Image(object):
             self.write_skycatalog(catname)
             self.catalog_names['sky'] = catname # Keep track of catalogs being written out
             for nsci in range(1,num_sci+1):
-                catname = "%s_sci%d_xy_catalog.coo"%(self.rootname,nsci)                
+                catname = "%s_sci%d_xy_catalog.coo"%(self.rootname,nsci)
                 self.chip_catalogs[nsci]['catalog'].writeXYCatalog(catname)
                 # Keep track of catalogs being written out
                 if 'input_xy' not in self.catalog_names:
                     self.catalog_names['input_xy'] = []
                 self.catalog_names['input_xy'].append(catname)
-                        
+
         # Set up products which need to be computed by methods of this class
         self.outxy = None
         self.refWCS = None # reference WCS assigned for the final fit
@@ -100,9 +103,9 @@ class Image(object):
         for chip in self.chip_catalogs:
             wcslist.append(self.chip_catalogs[chip]['wcs'])
         return wcslist
-    
+
     def buildSkyCatalog(self):
-        """ Convert sky catalog for all chips into a single catalog for 
+        """ Convert sky catalog for all chips into a single catalog for
             the entire field-of-view of this image
         """
         ralist = []
@@ -118,9 +121,9 @@ class Image(object):
         self.all_radec = [np.concatenate(ralist),np.concatenate(declist),np.concatenate(fluxlist)]
         self.all_radec_orig = copy.deepcopy(self.all_radec)
         print "Found %d sources in %s"%(len(self.all_radec[0]),self.name)
-        
+
     def buildDefaultRefWCS(self):
-        """ Generate a default reference WCS for this image 
+        """ Generate a default reference WCS for this image
         """
         self.default_refWCS = None
         if self.use_wcs:
@@ -128,7 +131,7 @@ class Image(object):
             for scichip in self.chip_catalogs:
                 wcslist.append(self.chip_catalogs[scichip]['wcs'])
             self.default_refWCS = utils.output_wcs(wcslist)
-            
+
     def transformToRef(self,ref_wcs,force=False):
         """ Transform sky coords from ALL chips into X,Y coords in reference WCS.
         """
@@ -175,7 +178,7 @@ class Image(object):
                     fluxmin = self.pars[clip_prefix+'fluxmax']
                 else:
                     fluxmin = self.all_radec[2].max()
-                
+
             if self.pars[clip_prefix+'nbright'] is not None:
                 clip_catalog = True
                 # pick out only the brightest 'nbright' sources
@@ -185,15 +188,15 @@ class Image(object):
                     nbslice = slice(nbright,None)
 
             all_radec = copy.deepcopy(self.all_radec_orig) # work on copy of all original data
-            nbright_indx = np.argsort(all_radec[2])[nbslice] # find indices of brightest 
+            nbright_indx = np.argsort(all_radec[2])[nbslice] # find indices of brightest
             self.all_radec[0] = all_radec[0][nbright_indx]
             self.all_radec[1] = all_radec[1][nbright_indx]
             self.all_radec[2] = all_radec[2][nbright_indx]
-        
-        
+
+
     def match(self,ref_outxy, refWCS, refname, **kwargs):
         """ Uses xyxymatch to cross-match sources between this catalog and
-            a reference catalog (refCatalog).  
+            a reference catalog (refCatalog).
         """
         self.sortSkyCatalog() # apply any catalog sorting specified by the user
         self.transformToRef(refWCS)
@@ -203,7 +206,7 @@ class Image(object):
         self.match_pars = matchpars
         minobj = matchpars['minobj'] # needed for later
         del matchpars['minobj'] # not needed in xyxymatch
-        
+
         # Check to see whether or not it is being matched to itself
         if (ref_outxy.shape == self.outxy.shape) and (ref_outxy == self.outxy).all():
             self.identityfit = True
@@ -215,20 +218,20 @@ class Image(object):
                 xoff = matchpars['xoffset']
             if matchpars['yoffset'] is not None:
                 yoff = matchpars['yoffset']
-                
+
             xyoff = (xoff,yoff)
             matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,tolerance=matchpars['tolerance'],separation=matchpars['separation'])
             if len(matches) > minobj:
                 self.matches['image'] = np.column_stack([matches['input_x'][:,np.newaxis],matches['input_y'][:,np.newaxis]])
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,np.newaxis],matches['ref_y'][:,np.newaxis]])
                 print 'Found %d matches for %s...'%(len(matches),self.name)
-                
+
                 if self.pars['writecat']:
                     matchfile = open(self.catalog_names['match'],mode='w+')
                     matchfile.write('#Reference: %s\n'%refname)
                     matchfile.write('#Input: %s\n'%self.name)
                     matchfile.write('#Ref_X        Ref_Y            Input_X        Input_Y         Ref_ID    Input_ID\n')
-                    for i in xrange(len(matches['input_x'])): 
+                    for i in xrange(len(matches['input_x'])):
                         linestr = "%0.6f    %0.6f        %0.6f    %0.6f        %d    %d\n"%\
                             (matches['ref_x'][i],matches['ref_y'][i],\
                              matches['input_x'][i],matches['input_y'][i],
@@ -238,19 +241,19 @@ class Image(object):
             else:
                 print 'WARNING: Not enough matches found for input image: ',self.name
                 self.goodmatch = False
-            
+
 
     def performFit(self,**kwargs):
         """ Perform a fit between the matched sources
-            
+
             Parameters
             ----------
             kwargs: dict
                 Parameter necessary to perform the fit; namely, *fitgeometry*
 
             Notes
-            ----- 
-            This task still needs to implement (eventually) interactive iteration of 
+            -----
+            This task still needs to implement (eventually) interactive iteration of
                    the fit to remove outliers
         """
         pars = kwargs.copy()
@@ -263,7 +266,7 @@ class Image(object):
                 else:
                     self.fit = linearfit.fit_shifts(self.matches['image'],self.matches['ref'])
                 print 'Computed fit for ',self.name,': '
-                print self.fit     
+                print self.fit
         else:
             self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}
 
@@ -277,11 +280,11 @@ class Image(object):
             # Update header using 'updatewcs'
             stwcs.updatewcs.updatewcs(self.name)
             # Create WCSCORR table to keep track of WCS revisions anyway
-            updatehdr.wcscorr.init_wcscorr(self.name)
-            
+            wcscorr.init_wcscorr(self.name)
+
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file
-        """ 
+        """
         f = open(filename,'w')
         f.write("#Sky positions for: "+self.name+'\n')
         f.write("#RA        Dec\n")
@@ -289,20 +292,20 @@ class Image(object):
         for i in xrange(self.all_radec[0].shape[0]):
             f.write('%g  %g\n'%(self.all_radec[0][i],self.all_radec[1][i]))
         f.close()
-        
+
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file
-        """ 
+        """
         f = open(filename,'w')
         f.write("#Pixel positions for: "+self.name+'\n')
         f.write("#X           Y\n")
         f.write("#(pix)       (pix)\n")
         for i in xrange(self.all_radec[0].shape[0]):
             f.write('%g  %g\n'%(self.outxy[i,0],self.outxy[i,1]))
-        f.close()        
+        f.close()
 
     def get_shiftfile_row(self):
-        """ Return the information for a shiftfile for this image to provide 
+        """ Return the information for a shiftfile for this image to provide
             compatability with the IRAF-based MultiDrizzle
         """
         if self.fit is not None:
@@ -310,14 +313,14 @@ class Image(object):
         else:
             rowstr = None
         return rowstr
-    
-    
+
+
     def clean(self):
         """ Remove intermediate files created
         """
         for f in self.catalog_names:
             os.remove(f)
-        
+
 class RefImage(object):
     """ This class provides all the information needed by to define a reference
         tangent plane and list of source positions on the sky.
@@ -341,13 +344,13 @@ class RefImage(object):
         self.catalog.buildCatalogs()
         self.all_radec = self.catalog.radec
         self.origin = 1
-        
+
         # convert sky positions to X,Y positions on reference tangent plane
         self.transformToRef()
-        
+
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file
-        """ 
+        """
         f = open(filename,'w')
         f.write("#Sky positions for: "+self.name+'\n')
         f.write("#RA        Dec\n")
@@ -357,7 +360,7 @@ class RefImage(object):
         f.close()
 
     def transformToRef(self):
-        """ Transform reference catalog sky positions (self.all_radec) 
+        """ Transform reference catalog sky positions (self.all_radec)
         to reference tangent plane (self.wcs) to create output X,Y positions
         """
         self.refWCS = self.wcs
@@ -366,7 +369,7 @@ class RefImage(object):
         self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
 
     def get_shiftfile_row(self):
-        """ Return the information for a shiftfile for this image to provide 
+        """ Return the information for a shiftfile for this image to provide
             compatability with the IRAF-based MultiDrizzle
         """
         rowstr = '%s    0.0  0.0    0.0     1.0\n'%(self.name)
@@ -392,5 +395,5 @@ def count_sci_extensions(filename):
     if num_sci == 0:
         extname = 'PRIMARY'
         num_sci = 1
-        
+
     return num_sci,extname

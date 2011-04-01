@@ -1,10 +1,11 @@
 import os
+
+import pyfits
 import stwcs
 from stwcs import updatewcs
-from pytools import parseinput,fileutil
-import pyfits
+from stwcs.wcsutil import convertwcs
+from pytools import parseinput, fileutil
 
-import convertwcs
 import util
 
 allowed_corr_dict = {'vacorr':'VACorr','tddcorr':'TDDCorr','npolcorr':'NPOLCorr','d2imcorr':'DET2IMCorr'}
@@ -23,8 +24,8 @@ def update(files, editpars=False, configObj=None, **input_dict):
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = files
-    
-    # If called from interactive user-interface, configObj will not be 
+
+    # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
@@ -36,12 +37,12 @@ def update(files, editpars=False, configObj=None, **input_dict):
     # called 'run()'.
     if editpars == False:
         run(configObj)
-        
+
 #
 #### Interfaces used by TEAL
 #
 def getHelpAsString():
-    """ 
+    """
     return useful help from a file in the script directory called __taskname__.help
     """
     helpString = __taskname__+' Version '+__version__+'\n\n'
@@ -67,11 +68,11 @@ def run(configObj=None):
     del cdict['_task_name_']
     del cdict['input']
     del cdict['extname']
-    
-    # parse input 
+
+    # parse input
     input,altfiles = parseinput.parseinput(configObj['input'])
 
-    # Insure that all input files have a correctly archived 
+    # Insure that all input files have a correctly archived
     #    set of OPUS WCS keywords
     # Legacy files from OTFR, like all WFPC2 data from OTFR, will only
     #   have the OPUS WCS keywords archived using a prefix of 'O'
@@ -89,7 +90,7 @@ def run(configObj=None):
             raise ValueError
 
     # Re-define 'cdict' to only have switches for steps supported by that instrument
-    # the set of supported steps are defined by the dictionary 
+    # the set of supported steps are defined by the dictionary
     #    updatewcs.apply_corrections.allowed_corrections
     #
     for file in input:
@@ -103,4 +104,4 @@ def run(configObj=None):
                 fdict[step]
         # Call 'updatewcs' on correctly archived file
         updatewcs.updatewcs(file,**fdict)
-    
+

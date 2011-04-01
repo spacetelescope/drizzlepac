@@ -38,7 +38,6 @@ import staticMask
 import util
 import wcs_functions
 import resetbits
-import wcscorr
 
 # These modules provide the user-interfaces to coordinate transformation tasks
 import pixtosky
@@ -48,7 +47,7 @@ import pixtopix
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
 try:
-    import tweakreg, catalogs, imgclasses, tweakutils, wcscorr
+    import tweakreg, catalogs, imgclasses, tweakutils
     import imagefindpars, sextractorpars
 except:
     print 'The libraries needed for "tweakreg" were not available!'
