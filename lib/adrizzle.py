@@ -17,6 +17,15 @@ except ImportError:
     print '\n Please check the installation of this package to insure C code was built successfully.'
     raise ImportError
 
+can_parallel = False
+if 'BETADRIZ_TRY_MULTIPROC' in os.environ:
+    try:
+        import multiprocessing
+        can_parallel = True
+    except:
+        multiprocessing = None
+        print '\nCould not import multiprocessing, will only be able to take advantage of a single CPU core'
+
 __taskname__ = "betadrizzle.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
@@ -519,13 +528,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
 
-    # Create a list which points to all the chips being combined
-    # by extracting all the chips from each of the input imageObjects
-    #chiplist = []
-    #for img in imageObjectList:
-    #    for chip in range(1,img._numchips+1):
-    #        chiplist.append(img._image[img.scienceExt,chip])
-
     #
     # Setup the versions info dictionary for output to PRIMARY header
     # The keys will be used as the name reported in the header, as-is
@@ -571,8 +573,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # with respect to byteorder and byteswapping.
     # This buffer should be reused for each input.
     #
-    _outsci = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
-    _outwht = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+    _outsci = _outwht = _outctx = None
+    if not single or not can_parallel:
+        _outsci=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+        _outwht=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
 
     # Compute how many planes will be needed for the context image.
     _nplanes = int((_numctx['all']-1) / 32) + 1
@@ -583,7 +587,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     # Always initialize context images to a 3-D array
     # and only pass the appropriate plane to drizzle as needed
-    _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+    if not single or not can_parallel:
+        _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
 
     # Keep track of how many chips have been processed
     # For single case, this will determine when to close
@@ -595,34 +600,69 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # exposure time used to make this; in particular, TIME-OBS and DATE-OBS.
     template = None
 
+    subprocs = []
+
     for img in imageObjectList:
         for chip in img.returnAllChips(extname=img.scienceExt):
+            # set template - the name of the 1st image
             if _numchips == 0:
                 template = chip.outputNames['data']
-            _numchips = \
-            run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
-                          single,build,_versions,_numctx,_nplanes,_numchips,
-                          _outsci,_outwht,_outctx,_hdrlist,wcsmap=wcsmap)
+            # determine how many inputs should go into this product
+            num_in_prod = _numctx['all']
+            if single:
+                num_in_prod = _numctx[chip.outputNames['outSingle']]
+
+            # See if we will be writing out data
+            doWrite = _numchips+1 == num_in_prod
+
+            # run_driz_chip
+            if single and can_parallel:
+                p = multiprocessing.Process(target=run_driz_chip,
+                        args=(img,chip,output_wcs,outwcs,template,paramDict,
+                        single, doWrite,build,_versions,_numctx,_nplanes,
+                        _numchips, None,None,None,[],wcsmap))
+                subprocs.append(p)
+                p.start() # ! just first cut - we will use a pool for this
+            else:
+                run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
+                    single, doWrite,build,_versions,_numctx,_nplanes,_numchips,
+                    _outsci,_outwht,_outctx,_hdrlist,wcsmap)
+
+            # Increment/reset chip counter
+            if doWrite:
+                _numchips = 0
+            else:
+                _numchips += 1
+
+    # do the join if we spawned tasks
+    if len(subprocs) > 0:
+        for p in subprocs:
+            p.join()
 
     del _outsci,_outwht,_outctx, _hdrlist
     # end of loop over each chip
 
 
-# !!!
-# OK, this may look a little rough, but this is just a start at pulling out
-# this inside-the-loop functionality into it's own function.
+#
 # Still to check:
 #    - why have both output_wcs and outwcs?
 
-def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
-                  single,build,_versions,_numctx,_nplanes,_numchips,
-                  _outsci,_outwht,_outctx,_hdrlist,wcsmap=None):
+def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
+                  doWrite,build,_versions,_numctx,_nplanes,_numchips,
+                  _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform drizzle operation on a single image/chip.
     This is separated out from run_driz() so as to collect
     the entirety of the code which is inside the loop over
     images/chips.  See the calling code for more documentation.
     """
-    native_units = img.native_units
+    # Check for unintialized inputs
+    if _outsci is None:
+        _outsci=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+    if _outwht is None:
+        _outwht=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+    if _outctx is None:
+       _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+
     # Look for sky-subtracted product.
     if os.path.exists(chip.outputNames['outSky']):
         chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
@@ -681,25 +721,12 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
             #    overwrite what is already in header
             _bunit = None
 
-    # Compute what plane of the context image this input would
-    # correspond to:
-    # _numchips increments as each chip is drizzled
-    _planeid = int(_numchips /32)
-
-    # determine how many inputs should go into this product as _imgctx
-    _imgctx = _numctx['all']
-    if single:
-        _imgctx = _numctx[chip.outputNames['outSingle']]
-
-    _con = True
     _uniqid = _numchips + 1
     if _nplanes == 1:
-        _con = False
         # We need to reset what gets passed to TDRIZ
         # when only 1 context image plane gets generated
         # to prevent overflow problems with trying to access
         # planes that weren't created for large numbers of inputs.
-        _planeid = 0
         _uniqid = ((_uniqid-1) % 32) + 1
 
     # Select which mask needs to be read in for drizzling
@@ -754,9 +781,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
     outputvals.update(img.outputNames)
     _hdrlist.append(outputvals)
 
-    # Increment number of chips processed for single output
-    _numchips += 1
-    if _numchips == _imgctx:
+    if doWrite:
         ###########################
         #
         #   IMPLEMENTATION REQUIREMENT:
@@ -774,8 +799,8 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
         else:
             _expscale = img.outputValues['texptime']
 
-        _gnscale = 1.0
         # Convert output data from electrons/sec to counts/sec as specified
+        native_units = img.native_units
         if paramDict['proc_unit'].lower() == 'native' and native_units.lower()[:6] == 'counts':
             np.divide(_outsci, chip._gain, _outsci)
             _bunit = native_units.lower()
@@ -800,16 +825,13 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
         _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,versions=_versions)
         del _outimg
         #
-        # Reset chip counter for next output image...
+        # Reset for next output image...
         #
-        _numchips = 0
         np.multiply(_outsci,0.,_outsci)
         np.multiply(_outwht,0.,_outwht)
         np.multiply(_outctx,0,_outctx)
         # this was "_hdrlist=[]", but we need to preserve the var ptr itself
         while len(_hdrlist)>0: _hdrlist.pop()
-
-    return _numchips # it has possibly been edited
 
 
 def do_driz(insci, input_wcs, inwht,
@@ -834,7 +856,6 @@ def do_driz(insci, input_wcs, inwht,
 
     # Compute what plane of the context image this input would
     # correspond to:
-    # _numchips increments as each chip is drizzled
     _planeid = int((uniqid-1) /32)
     # Compute how many planes will be needed for the context image.
     _nplanes = _planeid + 1
