@@ -385,10 +385,14 @@ default_wcsmap(void* state,
     tabx10 = TABLE_X(xi+1, yi);
     tabx01 = TABLE_X(xi, yi+1);
     tabx11 = TABLE_X(xi+1, yi+1);
+
     /* Account for interpolating across 360-0 boundary */
-    if (tabx00 - tabx10 > 359){ 
+    if ((tabx00 - tabx10) > 359){ 
         tabx00 -= 360.0;
         tabx01 -= 360.0;
+    } else if ((tabx00 - tabx10) < -359) {
+        tabx10 -= 360.0;
+        tabx11 -= 360.0;
     }
 
     *optr++ =
