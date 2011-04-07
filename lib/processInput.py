@@ -338,7 +338,10 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
             print 'Updating input WCS using "updatewcs"'
             pydr_input = runmakewcs(newfilelist)
             # update WCSCORR table with newly updated WCS
-            wcscorr.archive_wcs_file(newfilelist,wcs_id='IDC')
+            for imgname in newfilelist:
+                idcname = os.path.split(fileutil.osfn(pyfits.getval(imgname,'idctab')))[1]
+                idcname = idcname[:idcname.find('_idc.fits')]
+                wcscorr.archive_wcs_file(imgname,wcs_id='IDC_'+idcname)
         else:
             pydr_input = newfilelist
     else:
