@@ -1,4 +1,5 @@
 from __future__ import division # confidence high
+import datetime
 import os
 import shutil
 
@@ -718,7 +719,7 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
     scihdu.header.update('INHERIT',False,comment='Inherits global header')
 
-    dnow=pyfits.datetime.datetime.now()
+    dnow = datetime.datetime.now()
     scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
 
     scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
