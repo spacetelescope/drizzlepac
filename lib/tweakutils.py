@@ -4,6 +4,7 @@ import ndimage
 
 from pytools import asnutil,irafglob,parseinput
 import pyfits
+import coords
 
 def parse_input(input,prodonly=False):    
     catlist = None
@@ -103,6 +104,38 @@ def isfloat(value):
         return True
     else:
         return False
+
+def radec_hmstodd(ra,dec):
+    """ Function to convert HMS values into decimal degrees.
+        Formats supported: 
+            ["nn","nn","nn.nn"]
+            "nn nn nn.nnn"
+            "nn:nn:nn.nn"
+            "nnH nnM nn.nnS" or "nnD nnM nn.nnS"
+    """
+    hmstrans = string.maketrans(string.letters,' '*len(string.letters))
+
+    if isinstance(ra,list):
+        rastr = ':'.join(ra)
+    elif ra.find(':') < 0:
+            # convert any non-numeric characters to spaces (we already know the units)
+            rastr = string.translate(ra,hmstrans).strip()
+            # convert 'nn nn nn.nn' to final 'nn:nn:nn.nn' string
+            rastr = rastr.replace(' ',':')
+    else:
+        rastr = ra
+       
+    if isinstance(dec,list):
+        decstr = ':'.join(dec)
+    elif dec.find(':') < 0:
+        decstr = string.translate(dec,hmstrans).strip()
+        decstr = decstr.replace(' ',':')
+    else:
+        decstr = dec
+        
+    pos = coords.Position(rastr+' '+decstr,units='hours')
+    return pos.dd()
+    
         
 def readcols(infile, cols=None):
     """ Function which reads specified columns from either FITS tables or 
@@ -156,7 +189,6 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
                 cname = colname
             colnums.append(int(cname)-1)
     outarr = [] # initialize output result
-    print 'colnums: ',colnums,cols
     # Open catalog file
     fin = open(infile,'r')
     for l in fin.readlines(): # interpret each line from catalog file
@@ -167,19 +199,35 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
             if lnew == l: break
             else: l = lnew
         lspl = lnew.split(" ")
+        nsplit = len(lspl)
         
         if len(outarr) == 0:
             if len(colnums) == 0: # No columns were specified, return them all
                 colnums = range(len(lspl))
             for c in range(len(colnums)): outarr.append([])
 
+        ra=None
+        dec=None
         for c,n in zip(colnums,range(len(colnums))):
-            if isfloat(lspl[c]):
-                cval = float(lspl[c])
-            else:
-                cval = lspl[c]
+            if (n < (len(colnums)-1) and (colnums[n+1]-colnums[n]) == 1) or n == nsplit-1:
+                if isfloat(lspl[c]):
+                    cval = float(lspl[c])
+                else:
+                    cval = lspl[c]
+                    
+                outarr[n].append(cval)
+
+            elif ra is None:
+                ra = ''
+                for i in range(3): ra += lspl[c+i]+' '
+
+            elif dec is None:
+                dec = ''
+                for i in range(3): dec += lspl[c+i]+' '
+                radd,decdd = radec_hmstodd(ra,dec)
+                outarr[n].append(decdd)
+                outarr[n-1].append(radd)
                 
-            outarr[n].append(cval)
     fin.close()
 
     for n in range(len(colnums)):

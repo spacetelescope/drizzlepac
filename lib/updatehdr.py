@@ -86,16 +86,13 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
         extlist.append(('SCI',extn))
     wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
 
-
-    # compute the matrix for the scale and rotation correction
-    fit = scale*fileutil.buildRotMatrix(rot)
-
     # archive and update PA_V3
     fimg= pyfits.open(image,mode='update')
 
     #fimg[0].header.update('HPA_V3',fimg[0].header['PA_V3'])
     pav3 = (fimg[0].header['PA_V3'] + rot)%360
     fimg[0].header['PA_V3'] = pav3
+    fimg.flush()
 
     # for each chip in image, apply algorithm
     nchip,extn = updatewcs.getNrefchip(fimg)
@@ -106,46 +103,14 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
         print 'Processing SCI,',extver
     chip_wcs = wcsutil.HSTWCS(image,('sci',extver))
 
-    # step 1
-    xpix = [chip_wcs.wcs.crpix[0],chip_wcs.wcs.crpix[0]+1,chip_wcs.wcs.crpix[0]]
-    ypix = [chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1]+1]
-
-    # This full transformation includes all parts of model, including DGEO
-    Rc_i,Dc_i = chip_wcs.all_pix2sky(xpix,ypix,1)
-
-    # step 2
-    Xc_i,Yc_i = wref.wcs_sky2pix([Rc_i],[Dc_i],1)
-    Xc_i -= wref.wcs.crpix[0]#+xsh
-    Yc_i -= wref.wcs.crpix[1]#+ysh
-    # step 3
-    Xcs_i,Ycs_i = apply_db_fit([Xc_i,Yc_i],fit,xsh=-1*xsh,ysh=-1*ysh)
-    Xcs_i += wref.wcs.crpix[0]#+xsh
-    Ycs_i += wref.wcs.crpix[1]#+ysh
-
-    chip_fit = fit
-    # step 4
-    Rcs_i,Dcs_i = wref.wcs_pix2sky(Xcs_i,Ycs_i,1)
-    # step 5
-    # new crval should be first member
-    chip_wcs.wcs.crval = np.array([Rcs_i[0],Dcs_i[0]])
-    new_crval1 = Rcs_i[0]
-    new_crval2 = Dcs_i[0]
-    # step 6
-    # see about computing the CD matrix directly from the 3 points around
-    # the shifted/rotated CRPIX position in the output frame as projected
-    # back onto the sky
-    am1 = Rcs_i[1]-new_crval1
-    bm1 = Rcs_i[2]-new_crval1
-    cm1 = Dcs_i[1]-new_crval2
-    dm1 = Dcs_i[2]-new_crval2
-    new_cdmat = chip_wcs.wcs.cd = np.array([[am1*np.cos(new_crval2*np.pi/180),bm1*np.cos(new_crval2*np.pi/180)],[cm1,dm1]],dtype=np.float64)
-
+    update_refchip_with_shift(chip_wcs,wref,rot=rot,scale=scale,xsh=xsh,ysh=ysh)
+    
     # step 8
     # Update the 'O' WCS (OPUS generated values) in the header
     chipwcs_hdr = chip_wcs.wcs2header()
     fimg = pyfits.open(image,mode='update')
     for key in chipwcs_hdr:
-        fimg[extn].header.update(key+"O",chipwcs_hdr[key])
+        fimg[extn].header.update(key[:7]+"O",chipwcs_hdr[key])
     fimg.close()
 
     # step 9
@@ -172,6 +137,46 @@ def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
         xy1x = xy1[:,0] + xsh
         xy1y = xy1[:,1] + ysh
     return xy1x,xy1y
+
+def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.0):
+    # compute the matrix for the scale and rotation correction
+    fit = scale*fileutil.buildRotMatrix(rot)
+
+    # step 1
+    xpix = [chip_wcs.wcs.crpix[0],chip_wcs.wcs.crpix[0]+1,chip_wcs.wcs.crpix[0]]
+    ypix = [chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1]+1]
+
+    # This full transformation includes all parts of model, including DGEO
+    Rc_i,Dc_i = chip_wcs.all_pix2sky(xpix,ypix,1)
+
+    # step 2
+    Xc_i,Yc_i = wcslin.wcs_sky2pix([Rc_i],[Dc_i],1)
+    Xc_i -= wcslin.wcs.crpix[0]#+xsh
+    Yc_i -= wcslin.wcs.crpix[1]#+ysh
+    # step 3
+    Xcs_i,Ycs_i = apply_db_fit([Xc_i,Yc_i],fit,xsh=-1*xsh,ysh=-1*ysh)
+    Xcs_i += wcslin.wcs.crpix[0]#+xsh
+    Ycs_i += wcslin.wcs.crpix[1]#+ysh
+
+    chip_fit = fit
+    # step 4
+    Rcs_i,Dcs_i = wcslin.wcs_pix2sky(Xcs_i,Ycs_i,1)
+    # step 5
+    # new crval should be first member
+    chip_wcs.wcs.crval = np.array([Rcs_i[0],Dcs_i[0]])
+    new_crval1 = Rcs_i[0]
+    new_crval2 = Dcs_i[0]
+    # step 6
+    # see about computing the CD matrix directly from the 3 points around
+    # the shifted/rotated CRPIX position in the output frame as projected
+    # back onto the sky
+    am1 = Rcs_i[1]-new_crval1
+    bm1 = Rcs_i[2]-new_crval1
+    cm1 = Dcs_i[1]-new_crval2
+    dm1 = Dcs_i[2]-new_crval2
+    chip_wcs.wcs.cd = np.array([[am1*np.cos(new_crval2*np.pi/180),
+                                bm1*np.cos(new_crval2*np.pi/180)],[cm1,dm1]],
+                                dtype=np.float64)
 
 ###
 ### Header keyword prefix related archive functions

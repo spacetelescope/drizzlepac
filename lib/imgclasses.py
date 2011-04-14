@@ -1,4 +1,4 @@
-import copy
+import copy,os
 import numpy as np
 
 import pyfits
@@ -116,7 +116,10 @@ class Image(object):
             xycat = self.chip_catalogs[scichip]['catalog'].xypos
             ralist.append(skycat[0])
             declist.append(skycat[1])
-            fluxlist.append(xycat[2])
+            if len(xycat) > 2:
+                fluxlist.append(xycat[2])
+            else:
+                fluxlist.append([999.0]*len(skycat[0]))
 
         self.all_radec = [np.concatenate(ralist),np.concatenate(declist),np.concatenate(fluxlist)]
         self.all_radec_orig = copy.deepcopy(self.all_radec)
@@ -344,7 +347,7 @@ class RefImage(object):
         self.catalog.buildCatalogs()
         self.all_radec = self.catalog.radec
         self.origin = 1
-
+        
         # convert sky positions to X,Y positions on reference tangent plane
         self.transformToRef()
 

@@ -149,8 +149,11 @@ class Catalog(object):
         f.write("# Columns: \n")
         f.write('#    X      Y         Flux \n')
         f.write('#   (%s)   (%s)\n'%(self.in_units,self.in_units))
-        for x,y,flux in zip(self.xypos[0],self.xypos[1],self.xypos[2]):
-            f.write("%g  %g    %g\n"%(x,y,flux))
+        for row in range(len(self.xypos[0])):
+            for i in range(len(self.xypos)):
+                f.write("%g  "%(self.xypos[row][i]))
+            f.write("\n")
+            
         f.close()
         
         
