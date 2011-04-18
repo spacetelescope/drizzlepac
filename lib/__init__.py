@@ -48,7 +48,7 @@ import pixtopix
 # it easier to get to this code interactively
 try:
     import tweakreg, catalogs, imgclasses, tweakutils
-    import imagefindpars, sextractorpars
+    import imagefindpars, sextractorpars,sextractor,sexcatalog
 except:
     print 'The libraries needed for "tweakreg" were not available!'
     print 'None of the code related to that task can be used at this time.'
@@ -74,8 +74,8 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.13dev12464'
-__vdate__ = "14-Apr-2011"
+__version__ = '4.0.13dev12517'
+__vdate__ = "18-Apr-2011"
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations

@@ -163,10 +163,69 @@ from sexcatalog import *
 __version__ = "1.15.0 (2005-07-06)"
 
 # ======================================================================
-
 class SExtractorException(Exception):
     pass
 
+def setup(path=None):
+    """
+    Look for SExtractor program ('sextractor', or 'sex').
+    If a full path is provided, only this path is checked.
+    Raise a SExtractorException if it failed.
+    Return program and version if it succeed.
+    """
+
+    # -- Finding sextractor program and its version
+    # first look for 'sextractor', then 'sex'
+
+    candidates = ['sextractor', 'sex']
+
+    if (path):
+        candidates = [path]
+    
+    selected=None
+    for candidate in candidates:
+        try:
+            (_out_err, _in) = popen2.popen4(candidate)
+            versionline = _out_err.read()
+            if (versionline.find("SExtractor") != -1):
+                selected=candidate
+                break
+        except IOError:
+            continue
+            
+    if not(selected):
+        raise SExtractorException, \
+              """
+              Cannot find SExtractor program. Check your PATH,
+              or provide the SExtractor program path in the constructor.
+              """
+
+    _program = selected
+
+    # print versionline
+    _version_match = re.search("[Vv]ersion ([0-9\.])+", versionline)
+    if not _version_match:
+        raise SExtractorException, \
+              "Cannot determine SExtractor version."
+
+    _version = _version_match.group()[8:]
+    if not _version:
+        raise SExtractorException, \
+              "Cannot determine SExtractor version."
+
+    # print "Use " + self.program + " [" + self.version + "]"
+
+    return _program, _version
+
+# Check to see whether the SExtractor program has been installed
+
+def is_installed(verbose=False):
+    installed = True
+    try:
+        program, version = setup()
+    except:
+        installed = False
+    return installed
 # ======================================================================
 
 nnw_config = \
@@ -400,56 +459,7 @@ class SExtractor:
 
 
     def setup(self, path=None):
-        """
-        Look for SExtractor program ('sextractor', or 'sex').
-        If a full path is provided, only this path is checked.
-        Raise a SExtractorException if it failed.
-        Return program and version if it succeed.
-        """
-
-        # -- Finding sextractor program and its version
-        # first look for 'sextractor', then 'sex'
-
-        candidates = ['sextractor', 'sex']
-
-        if (path):
-            candidates = [path]
-        
-        selected=None
-        for candidate in candidates:
-            try:
-                (_out_err, _in) = popen2.popen4(candidate)
-                versionline = _out_err.read()
-                if (versionline.find("SExtractor") != -1):
-                    selected=candidate
-                    break
-            except IOError:
-                continue
-                
-        if not(selected):
-            raise SExtractorException, \
-                  """
-                  Cannot find SExtractor program. Check your PATH,
-                  or provide the SExtractor program path in the constructor.
-                  """
-
-        _program = selected
-
-        # print versionline
-        _version_match = re.search("[Vv]ersion ([0-9\.])+", versionline)
-        if not _version_match:
-            raise SExtractorException, \
-                  "Cannot determine SExtractor version."
-
-        _version = _version_match.group()[8:]
-        if not _version:
-            raise SExtractorException, \
-                  "Cannot determine SExtractor version."
-
-        # print "Use " + self.program + " [" + self.version + "]"
-
-        return _program, _version
-
+        return setup(path=path)
 
 
     def update_config(self):

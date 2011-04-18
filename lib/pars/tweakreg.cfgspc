@@ -4,7 +4,7 @@ output = string_kw(default='shifts.txt', comment="Output shiftfile")
 outwcs = string_kw(default='tweak_wcs.fits', comment="Filename of the OUTPUT shiftfile WCS")
 refimage = string_kw(default="",comment="Filename of reference image")
 findmode = option_kw('imagefind','sextractor',default='imagefind', comment="Generate source catalog with this task")
-editspars = boolean_kw(default=True, comment="Edit Sextractor parameters?")
+editspars = boolean_kw(default=True, triggers='_rule1_', active_if='_rule1_', comment="Edit Sextractor parameters?")
 editipars = boolean_kw(default=True, comment="Edit imagefind parameters?")
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=True, comment="Remove intermediate files?")
@@ -43,3 +43,7 @@ yoffset = float_or_none_kw(default=None,comment="Initial guess for Y offset")
 
 [CATALOG FITTING PARAMETERS]
 fitgeometry = option_kw("shift","rscale","general",default="rscale",comment="Fitting geometry")
+
+[ _RULES_ ]
+_rule1_ = boolean_kw(default=True, code='from betadrizzle import sextractor; OUT = sextractor.is_installed()')
+

@@ -1,7 +1,6 @@
 import copy,os
 import numpy as np
 
-import pyfits
 import pywcs
 import stwcs
 
@@ -57,15 +56,18 @@ class Image(object):
         self.chip_catalogs = {}
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
+            chip_filename = filename+'[%s,%d]'%(extname,sci_extn)
             if use_wcs:
-                wcs = stwcs.wcsutil.HSTWCS(filename+'[%s,%d]'%(extname,sci_extn))
+                wcs = stwcs.wcsutil.HSTWCS(chip_filename)
             if input_catalogs is None:
                 # if we already have a set of catalogs provided on input,
                 #  we only need the array to get original XY input positions
-                source = pyfits.getdata(wcs.filename,ext=wcs.extname)
+                source = chip_filename
+                catalog_mode='automatic'
             else:
                 source = input_catalogs[sci_extn-1]
-            catalog = catalogs.generateCatalog(wcs,catalog=source,**kwargs)
+                catalog_mode='user'
+            catalog = catalogs.generateCatalog(wcs,mode=catalog_mode,catalog=source,**kwargs)
             catalog.buildCatalogs() # read in and convert all catalog positions to RA/Dec
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
 
@@ -323,6 +325,8 @@ class Image(object):
         """
         for f in self.catalog_names:
             os.remove(f)
+        if not util.is_blank(self.catalog.catname) and os.path.exists(self.catalog.catname):
+            os.remove(self.catalog.catname)
 
 class RefImage(object):
     """ This class provides all the information needed by to define a reference

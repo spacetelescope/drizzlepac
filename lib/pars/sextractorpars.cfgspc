@@ -1,7 +1,7 @@
 _task_name_ = string_kw(default="sextractorpars")
 
 [USER SUPPLIED PARAMETERS]
-config_file = string_kw(default="",triggers="_section_switch_",comment="Name of the user supplied configuration file")
+config_file = string_kw(default="",comment="Name of the user supplied configuration file")
 verbose_type = option_kw("QUIET","NORMAL","FULL",default="QUIET", comment="Verbose mode for operation")
 detect_type  = option_kw("ccd","photo",default="ccd", comment="Detection type")
 detect_minarea = integer_kw(default=5, comment="minimum number of pixels above threshold")
@@ -30,4 +30,4 @@ memory_objstack = integer_kw(default=3000, comment="number of objects in stack")
 memory_pixstack = integer_kw(default=300000, comment="number of pixels in stack")
 memory_bufsize = integer_kw(default=1024, comment="number of lines in buffer")
 
-[RULES]
+[_RULES_]

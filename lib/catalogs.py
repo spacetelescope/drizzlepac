@@ -3,11 +3,10 @@ import ndimage
 import pywcs
 import stwcs
 from stwcs import wcsutil
+import pyfits
 import imagestats
-try:
-    import sextractor
-except:
-    sextractor = None
+
+import sextractor
 
 #import idlphot
 import tweakutils
@@ -23,7 +22,7 @@ CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','fluxmax','fluxmin','fluxuni
 REFCOL_PARS = ['refxcol','refycol','rfluxcol']
 REFCAT_ARGS = ['rfluxmax','rfluxmin','rfluxunits','refnbright']+REFCOL_PARS
 
-def generateCatalog(wcs,catalog=None,**kwargs):
+def generateCatalog(wcs,mode='automatic',catalog=None,**kwargs):
     """ Function which determines what type of catalog object needs to be 
         instantiated based on what type of source selection algorithm the user 
         specified.  
@@ -45,11 +44,11 @@ def generateCatalog(wcs,catalog=None,**kwargs):
             associated source catalog
     """
     if not isinstance(catalog,Catalog):
-        if isinstance(catalog,np.ndarray): # if an array is provided as the source
+        if mode == 'automatic': # if an array is provided as the source
             # Create a new catalog directly from the image
-            if kwargs['findmode'] == 'sextractor' and sextractor is not None:
-                #catalog = ExtractorCatalog(wcs)
-                catalog = ImageCatalog(wcs,catalog,**kwargs)
+            if kwargs['findmode'] == 'sextractor' and sextractor.is_installed():
+                catalog = ExtractorCatalog(wcs,catalog,**kwargs)
+                #catalog = ImageCatalog(wcs,catalog,**kwargs)
             else: 
                 catalog = ImageCatalog(wcs,catalog,**kwargs)
         else: # a catalog file was provided as the catalog source
@@ -88,7 +87,9 @@ class Catalog(object):
         self.origin = 1 # X,Y coords will ALWAYS be FITS 1-based, not numpy 0-based
         self.pars = kwargs
 
+        self.fname = catalog_source
         self.source = catalog_source
+        self.catname = None
         
         self.radec = None # catalog of sky positions for all sources on this chip/image
         self.set_colnames()
@@ -130,12 +131,40 @@ class Catalog(object):
         self.generateRaDec()
     
     def plotXYCatalog(self,**kwargs):
-        """ Built-in method to accurately display the catalog, overlaid on
-            the source image if provided as input
-            
-            Each sub-class will implement a version specific to it's inputs
         """
-        pass
+        Method which displays the original image and overlays the positions
+        of the detected sources from this image's catalog. 
+        
+        Plotting `kwargs` that can be provided are::
+        
+            vmin, vmax, cmap, marker
+
+        Default colormap is `summer`.
+
+        """
+        if pl is not None: # If the pyplot package could be loaded...
+            pl.clf()
+            pars = kwargs.copy()
+            
+            if not pars.has_key('marker'):
+                pars['marker'] = 'b+'
+
+            if pars.has_key('cmap'):
+                pl_cmap = pars['cmap']
+                del pars['cmap']
+            else:
+                pl_cmap = 'summer'
+            pl_vmin = None
+            pl_vmax = None
+            if pars.has_key('vmin'):
+                pl_vmin = pars['vmin']
+                del pars['vmin']
+            if pars.has_key('vmax'):
+                pl_vmax = pars['vmax']
+                del pars['vmax']
+
+            pl.imshow(self.source,cmap=pl_cmap,vmin=pl_vmin,vmax=pl_vmax)
+            pl.plot(self.xypos[0]-1,self.xypos[1]-1,pars['marker'])
         
     def writeXYCatalog(self,filename):
         """ Write out the X,Y catalog to a file
@@ -157,6 +186,77 @@ class Catalog(object):
         f.close()
         
         
+class ExtractorCatalog(Catalog):
+    """ Class which generates a source catalog from an image using
+        Sextractor as installed by the user on their system.
+    
+    """
+    SEXTRACTOR_OUTPUT = ["X_IMAGE", "Y_IMAGE", "FLUX_BEST", "FLUXERR_BEST","FLAGS", "FWHM_IMAGE","NUMBER"]
+       
+    def generateXY(self,gain=1.0):
+
+        imgname = self.source
+        catname = imgname[:imgname.rfind('.fits')]+'_sextractor.cat'
+        self.catname = catname
+        
+        # Create a SExtractor instance
+        s = sextractor.SExtractor()
+
+        # Modify the SExtractor configuration
+        s.config['GAIN'] = gain
+        s.config['PIXEL_SCALE'] = self.wcs.pscale
+        s.config['CATALOG_NAME'] = catname
+        # Add a parameter to the parameter list
+        s.config['PARAMETERS_LIST'] = SEXTRACTOR_OUTPUT
+        
+        if util.is_blank(self.pars['config_file']):
+            # Update in-memory parameters as set by user
+            for key in self.pars:
+                if self.pars[key] != "" and key not in ['$nargs','mode','config_file']:
+                    if key != 'phot_autoparams':
+                        s.config[key.upper()] = self.pars[key]
+                    else:
+                        vals = []
+                        for v in self.pars[key].split(','):
+                            vals.append(float(v))
+                        s.config[key.upper()] = vals
+            s.update_config()                    
+        else:
+            s.update_config()
+            s.config['CONFIG_FILE'] = self.pars['config_file']
+            
+        try:
+            # Lauch SExtractor on a FITS file
+            s.run(self.source,updateconfig=False)
+            seobjects.append(s)
+            
+            # Removing the configuration files, the catalog and
+            # the check image
+            s.clean(config=True, catalog=False, check=True)
+        except sextractor.SExtractorException:
+            print 'WARNING: Problem running the SExtractor executable.'
+            if os.path.exists(catname):
+                os.remove(catname)
+            del s
+            return
+                    
+        """ Read object catalog produced by SExtractor and
+            return positions for specific chip extension.
+        
+        """
+        secatalog = seobjects[0].catalog()
+        x = []
+        y = []
+        fluxes = []
+        for obj in secatalog:
+            x.append(obj['X_IMAGE'])
+            y.append(obj['Y_IMAGE'])
+            fluxes.append(obj['FLUX_BEST'])
+        self.xypos = [np.array(x),np.array(y),np.array(flux)] 
+        self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
+        self.sharp = None # sharp
+        self.round = None # round
+        self.numcols = 3  # 5
         
 class ImageCatalog(Catalog):
     """ Class which generates a source catalog from an image using
@@ -168,6 +268,9 @@ class ImageCatalog(Catalog):
             hmin, fwhmpsf, [roundlim, sharplim]
             
     """
+    def __init__(self,wcs,catalog_source,**kwargs):
+        Catalog.__init__(self,wcs,catalog_source,**kwargs)
+        self.source = pyfits.getdata(self.wcs.filename,ext=self.wcs.extname)
 
     def generateXY(self):
         """ Generate source catalog from input image using DAOFIND-style algorithm
@@ -196,40 +299,7 @@ class ImageCatalog(Catalog):
         self.sharp = None # sharp
         self.round = None # round
         self.numcols = 3  # 5
-        
-    def plotXYCatalog(self,**kwargs):
-        """
-        Method which displays the original image and overlays the positions
-        of the detected sources from this image's catalog. 
-        
-        Plotting `kwargs` that can be provided are::
-        
-            vmin, vmax, cmap, marker
-
-        Default colormap is `summer`.
-
-        """
-        if pl is not None: # If the pyplot package could be loaded...
-            pl.clf()
-            pars = kwargs.copy()
-
-            if pars.has_key('cmap'):
-                pl_cmap = pars['cmap']
-                del pars['cmap']
-            else:
-                pl_cmap = 'summer'
-            pl_vmin = None
-            pl_vmax = None
-            if pars.has_key('vmin'):
-                pl_vmin = pars['vmin']
-                del pars['vmin']
-            if pars.has_key('vmax'):
-                pl_vmax = pars['vmax']
-                del pars['vmax']
-
-            pl.imshow(self.source,cmap=pl_cmap,vmin=pl_vmin,vmax=pl_vmax)
-            pl.plot(self.xypos[0]-1,self.xypos[1]-1,pars['marker'])
-        
+                
         
 class UserCatalog(Catalog):
     """ Class to manage user-supplied catalogs as inputs.
