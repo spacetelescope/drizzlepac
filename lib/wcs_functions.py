@@ -500,11 +500,10 @@ def make_outputwcs(imageObjectList,output,configObj=None):
             k = key[len(keyname):]
             if k != 'refimage':
                 single_pars[k] = singleParDict[key]
-        #single_pars.update(singleParDict)
         
         # Now, account for any user-specified reference image
+        def_wcs = default_wcs.deepcopy()
         if singleParDict[keyname+'refimage']:
-            def_wcs = default_wcs.deepcopy()
             default_wcs = wcsutil.HSTWCS(singleParDict[keyname+'refimage'])
 
         ### Create single_wcs instance based on user parameters
@@ -523,7 +522,6 @@ def make_outputwcs(imageObjectList,output,configObj=None):
             if k != 'refimage':
                 final_pars[k] = finalParDict[key]
 
-        #final_pars.update(finalParDict)
         # Now, account for any user-specified reference image
         if finalParDict[keyname+'refimage']:
             default_wcs = wcsutil.HSTWCS(finalParDict[keyname+'refimage'])
