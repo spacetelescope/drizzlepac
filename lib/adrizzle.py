@@ -18,10 +18,15 @@ except ImportError:
     raise ImportError
 
 can_parallel = False
-if 'BETADRIZ_TRY_MULTIPROC' in os.environ:
+num_processors = 1
+if not 'BETADRIZ_NO_PARALLEL' in os.environ:
     try:
         import multiprocessing
         can_parallel = True
+        # sanity check - do we have the hardware?
+        num_processors = multiprocessing.cpu_count()
+        if num_processors < 2:
+            can_parallel = False
     except:
         multiprocessing = None
         print '\nCould not import multiprocessing, will only be able to take advantage of a single CPU core'
@@ -607,6 +612,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             # set template - the name of the 1st image
             if _numchips == 0:
                 template = chip.outputNames['data']
+
             # determine how many inputs should go into this product
             num_in_prod = _numctx['all']
             if single:
