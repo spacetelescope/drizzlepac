@@ -215,7 +215,7 @@ class Image(object):
         # Check to see whether or not it is being matched to itself
         if (ref_outxy.shape == self.outxy.shape) and (ref_outxy == self.outxy).all():
             self.identityfit = True
-            print 'NO fit performed for reference image: ',self.name
+            print 'NO fit performed for reference image: ',self.name,'\n'
         else:
             xoff = 0.
             yoff = 0.
@@ -271,19 +271,21 @@ class Image(object):
                 else:
                     self.fit = linearfit.fit_shifts(self.matches['image'],self.matches['ref'])
                 print 'Computed fit for ',self.name,': '
-                print self.fit
+                print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g\n'%(
+                    self.fit['offset'][0],self.fit['offset'][1], 
+                    self.fit['rot'],self.fit['scale'][0])
         else:
             self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}
 
-    def updateHeader(self):
+    def updateHeader(self,wcsname=None):
         """ Update header of image with shifts computed by *perform_fit()*
         """
         if not self.identityfit and self.goodmatch:
-            updatehdr.updatewcs_with_shift(self.name,self.refWCS,
+            updatehdr.updatewcs_with_shift(self.name,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],rot=self.fit['rot'],scale=self.fit['scale'][0])
         if self.identityfit:
             # Update header using 'updatewcs'
-            stwcs.updatewcs.updatewcs(self.name)
+            stwcs.updatewcs.updatewcs(self.name,wcsname=wcsname)
             # Create WCSCORR table to keep track of WCS revisions anyway
             wcscorr.init_wcscorr(self.name)
 

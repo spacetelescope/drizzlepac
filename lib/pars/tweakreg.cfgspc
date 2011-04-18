@@ -1,15 +1,21 @@
 _task_name_ = string_kw(default="tweakreg")
 input = string_kw(default="*flt.fits", comment="Input files (name, suffix, or @list)")
-output = string_kw(default='shifts.txt', comment="Output shiftfile")
-outwcs = string_kw(default='tweak_wcs.fits', comment="Filename of the OUTPUT shiftfile WCS")
 refimage = string_kw(default="",comment="Filename of reference image")
 findmode = option_kw('imagefind','sextractor',default='imagefind', comment="Generate source catalog with this task")
 editspars = boolean_kw(default=True, triggers='_rule1_', active_if='_rule1_', comment="Edit Sextractor parameters?")
 editipars = boolean_kw(default=True, comment="Edit imagefind parameters?")
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=True, comment="Remove intermediate files?")
-updatehdr = boolean_kw(default=False, comment="Update headers of input files with shifts?")
 verbose = boolean_kw(default=False, comment="Print extra messages during processing?")
+
+[UPDATE HEADER]
+updatehdr = boolean_kw(default=False, triggers='_section_switch_', comment="Update headers of input files with shifts?")
+wcsname = string_kw(default='TWEAK', comment="Name of updated WCS")
+
+[OPTIONAL SHIFTFILE OUTPUT]
+shiftfile = boolean_kw(default=False,triggers='_section_switch_',comment="Create output shiftfile?")
+outshifts = string_kw(default='shifts.txt', comment="Filename of generated shiftfile")
+outwcs = string_kw(default='shifts_wcs.fits',comment="Filename of shiftfile reference WCS") 
 
 [COORDINATE FILE DESCRIPTION]
 catfile = string_kw(default="", triggers="_section_switch_", comment="File containing coordinate filenames for input files")

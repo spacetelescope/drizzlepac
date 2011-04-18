@@ -32,7 +32,7 @@ def update_from_shiftfile(shiftfile,force=False):
                 rot=img['rot'],scale=img['scale'],
                 xsh=img['xsh'],ysh=img['ysh'],force=force)
 
-def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
+def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
                             verbose=False,force=False):
     """ Update the SCI headers in 'image' based on the fit provided as determined
         in the WCS specified by 'reference'.  The fit should be a 2-D matrix as
@@ -116,7 +116,10 @@ def updatewcs_with_shift(image,reference,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
     # step 9
     # Apply shifted reference WCS to remainder of chips (if any)
     # and archive the new primary WCS as a new keyed WCS
-    updatewcs.updatewcs(image,checkfiles=False,wcsname='TWEAK_'+fileutil.getDate())
+    if wcsname is None or wcsname == 'TWEAK':
+        wcsname = 'TWEAK_'+fileutil.getDate()
+        
+    updatewcs.updatewcs(image,checkfiles=False,wcsname=wcsname)
 
     # Restore the 'O' WCS (OPUS generated values) from the WCSCORR table
     wcscorr.restore_file_from_wcscorr(image,id='OPUS',wcskey='O')

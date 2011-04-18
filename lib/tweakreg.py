@@ -4,7 +4,7 @@ import os
 
 from pytools import parseinput, teal
 
-import betadrizzle # for util.getDefaultConfigObj()
+import util
 
 import tweakutils
 import imgclasses
@@ -157,14 +157,15 @@ def run(configobj):
     for img in input_images:
         img.match(refimage.outxy, refimage.wcs,refimage.name,**configobj['OBJECT MATCHING PARAMETERS'])
         img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
-        if configobj['updatehdr']:
-            img.updateHeader()
+        if configobj['UPDATE HEADER']['updatehdr']:
+            img.updateHeader(wcsname=configobj['UPDATE HEADER']['wcsname'])
         if configobj['clean']:
             img.clean()
 
     # write out shiftfile (if specified)
-    if configobj['output'] not in [None,'',' ','INDEF']:
-        tweakutils.write_shiftfile(input_images,configobj['output'],outwcs=configobj['outwcs'])
+    shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']
+    if shiftpars['shiftfile']:
+        tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
 
 # 
 # Primary interface for running this task from Python
@@ -183,7 +184,7 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
-    configObj = betadrizzle.util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     if configObj is None:
         return
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
