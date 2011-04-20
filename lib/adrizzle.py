@@ -19,7 +19,7 @@ except ImportError:
 
 can_parallel = False
 num_processors = 1
-if not 'BETADRIZ_NO_PARALLEL' in os.environ:
+if 'BETADRIZ_NO_PARALLEL' in os.environ:
     try:
         import multiprocessing
         can_parallel = True
