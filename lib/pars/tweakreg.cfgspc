@@ -24,7 +24,7 @@ ycol = string_kw(default="", comment= "Column name for Y positions")
 fluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
 fluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid objects")
 fluxmin = float_or_none_kw(default=None,comment="Minimum flux value for valid objects")
-fluxunits = option_kw("counts","cps","mag",default="counts",comment="Units of flux values")
+fluxunits = option_kw("counts","mag",default="counts",comment="Units of flux values")
 xyunits = option_kw("pixels","degrees",default="pixels",comment="Units of X/Y positions")
 nbright = integer_or_none_kw(default=None,comment="Number of brightest objects to keep")
 
@@ -35,7 +35,7 @@ refycol = string_kw(default="Dec", comment= "Column name for Dec")
 rfluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
 rfluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid reference objects")
 rfluxmin = float_or_none_kw(default=None,comment="Minimum flux value for valid reference objects")
-rfluxunits = option_kw("counts","cps","mag",default="mag",comment="Units of flux values")
+rfluxunits = option_kw("counts","mag",default="mag",comment="Units of flux values")
 refnbright = integer_or_none_kw(default=None,comment="Number of brightest reference objects to keep")
 
 [OBJECT MATCHING PARAMETERS]
