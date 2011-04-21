@@ -16,7 +16,7 @@ shiftfile = string_kw(default="", comment="Shiftfile name")
 staticfile = string_kw(default="", comment="Name of (optional) input static bad-pixel mask")
 crbit = integer_kw(default=4096, comment="Bit value for CR ident. in DQ array")
 stepsize = integer_kw(default=10, comment="Step size for drizzle coordinate computation")
-resetbits = integer_kw(default=4096, comment="Bit values to reset in all input DQ arrays")
+resetbits = integer_or_none_kw(default=4096, comment="Bit values to reset in all input DQ arrays")
 mode = string_kw(default="all")
 
 [STEP 1: STATIC MASK ]
