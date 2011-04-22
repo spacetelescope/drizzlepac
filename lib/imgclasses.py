@@ -3,6 +3,7 @@ import numpy as np
 
 import pywcs
 import stwcs
+import pyfits
 
 from stwcs import distortion
 from stwcs.distortion import utils
@@ -56,7 +57,8 @@ class Image(object):
         self.chip_catalogs = {}
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
-            chip_filename = filename+'[%s,%d]'%(extname,sci_extn)
+            extnum = fu.findExtname(pyfits.open(filename),extname,extver=sci_extn)
+            chip_filename = filename+'[%d]'%(extnum)
             if use_wcs:
                 wcs = stwcs.wcsutil.HSTWCS(chip_filename)
             if input_catalogs is None:
@@ -96,7 +98,7 @@ class Image(object):
         self.fit_pars = None
         self.identityfit = False # set to True when matching/fitting to itself
         self.goodmatch = True # keep track of whether enough matches were found for a fit
-
+        
     def get_wcs(self):
         """ Helper method to return a list of all the input WCS objects associated
             with this image
@@ -292,12 +294,14 @@ class Image(object):
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file
         """
+        ralist = self.all_radec[0].tolist()
+        declist = self.all_radec[1].tolist()
         f = open(filename,'w')
         f.write("#Sky positions for: "+self.name+'\n')
         f.write("#RA        Dec\n")
         f.write("#(deg)     (deg)\n")
-        for i in xrange(self.all_radec[0].shape[0]):
-            f.write('%g  %g\n'%(self.all_radec[0][i],self.all_radec[1][i]))
+        for i in xrange(len(ralist)):
+            f.write('%0.8g  %0.8g\n'%(ralist[i],declist[i]))
         f.close()
 
     def write_outxy(self,filename):
@@ -353,6 +357,7 @@ class RefImage(object):
         self.catalog.buildCatalogs()
         self.all_radec = self.catalog.radec
         self.origin = 1
+        self.pars = kwargs
         
         # convert sky positions to X,Y positions on reference tangent plane
         self.transformToRef()
@@ -372,10 +377,18 @@ class RefImage(object):
         """ Transform reference catalog sky positions (self.all_radec)
         to reference tangent plane (self.wcs) to create output X,Y positions
         """
-        self.refWCS = self.wcs
-        outxy = self.wcs.wcs_sky2pix(self.all_radec[0],self.all_radec[1],self.origin)
-        # convert outxy list to a Nx2 array
-        self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
+        if self.pars['refxyunits'] == 'pixels':
+            print 'Creating RA/Dec positions for reference sources...'
+            self.outxy = self.all_radec
+            print self.all_radec[0],self.all_radec[1]
+            skypos = self.wcs.wcs_pix2sky(self.all_radec[0],self.all_radec[1],self.origin)
+            self.all_radec = np.column_stack([skypos[0][:,np.newaxis],skypos[1][:,np.newaxis]])
+        else:
+            print 'Converting RA/Dec positions of reference sources to X,Y positions in reference WCS...'
+            self.refWCS = self.wcs
+            outxy = self.wcs.wcs_sky2pix(self.all_radec[0],self.all_radec[1],self.origin)
+            # convert outxy list to a Nx2 array
+            self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
 
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
