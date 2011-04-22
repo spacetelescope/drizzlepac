@@ -118,10 +118,11 @@ def radec_hmstodd(ra,dec):
     if isinstance(ra,list):
         rastr = ':'.join(ra)
     elif ra.find(':') < 0:
-            # convert any non-numeric characters to spaces (we already know the units)
-            rastr = string.translate(ra,hmstrans).strip()
-            # convert 'nn nn nn.nn' to final 'nn:nn:nn.nn' string
-            rastr = rastr.replace(' ',':')
+        # convert any non-numeric characters to spaces (we already know the units)
+        rastr = string.translate(ra,hmstrans).strip()
+        rastr = rastr.replace('  ',' ')
+        # convert 'nn nn nn.nn' to final 'nn:nn:nn.nn' string
+        rastr = rastr.replace(' ',':')
     else:
         rastr = ra
        
@@ -129,6 +130,7 @@ def radec_hmstodd(ra,dec):
         decstr = ':'.join(dec)
     elif dec.find(':') < 0:
         decstr = string.translate(dec,hmstrans).strip()
+        decstr = decstr.replace('  ',' ')
         decstr = decstr.replace(' ',':')
     else:
         decstr = dec
@@ -208,25 +210,34 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
 
         ra=None
         dec=None
-        for c,n in zip(colnums,range(len(colnums))):
-            if (n < (len(colnums)-1) and (colnums[n+1]-colnums[n]) == 1) or n == nsplit-1:
-                if isfloat(lspl[c]):
-                    cval = float(lspl[c])
-                else:
-                    cval = lspl[c]
-                    
-                outarr[n].append(cval)
+        c1 = cols[0]-1
+        c2 = cols[1]-2
+        if lspl[c1].find(':') > 0:
+            radd,decdd = radec_hmstodd(lspl[c1],lspl[c2])
+            outarr[0].append(radd)
+            outarr[1].append(decdd)
+        else:
+            for c,n in zip(cols,range(len(colnums))):
+                c -= 1
+                if (n < (len(colnums)-1) and (colnums[n+1]-colnums[n]) == 1) or n == nsplit-1:
+                    if isfloat(lspl[c]):
+                        cval = float(lspl[c])
+                    else:
+                        cval = lspl[c]
+                        
+                    outarr[n].append(cval)
 
-            elif ra is None:
-                ra = ''
-                for i in range(3): ra += lspl[c+i]+' '
+                elif ra is None:
+                    ra = ''
+                    for i in range(3): 
+                        ra += lspl[c+i]+' '
 
-            elif dec is None:
-                dec = ''
-                for i in range(3): dec += lspl[c+i]+' '
-                radd,decdd = radec_hmstodd(ra,dec)
-                outarr[n].append(decdd)
-                outarr[n-1].append(radd)
+                elif dec is None:
+                    dec = ''
+                    for i in range(3): dec += lspl[c+i]+' '
+                    radd,decdd = radec_hmstodd(ra,dec)
+                    outarr[n].append(decdd)
+                    outarr[n-1].append(radd)
                 
     fin.close()
 
