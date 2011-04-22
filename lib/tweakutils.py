@@ -210,21 +210,19 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
 
         ra=None
         dec=None
-        c1 = cols[0]-1
-        c2 = cols[1]-2
-        if lspl[c1].find(':') > 0:
-            radd,decdd = radec_hmstodd(lspl[c1],lspl[c2])
+
+        if lspl[colnums[0]].find(':') > 0:
+            radd,decdd = radec_hmstodd(lspl[colnums[0]],lspl[colnums[1]])
             outarr[0].append(radd)
             outarr[1].append(decdd)
         else:
-            for c,n in zip(cols,range(len(colnums))):
-                c -= 1
-                if (n < (len(colnums)-1) and (colnums[n+1]-colnums[n]) == 1) or n == nsplit-1:
+            for c,n in zip(colnums,range(len(colnums))):
+                if (n < (len(colnums))) or \
+                (n < (len(colnums)-1) and (colnums[n+1]-colnums[n]) == 1) or n == nsplit-1:
                     if isfloat(lspl[c]):
                         cval = float(lspl[c])
                     else:
                         cval = lspl[c]
-                        
                     outarr[n].append(cval)
 
                 elif ra is None:
