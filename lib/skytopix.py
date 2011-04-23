@@ -132,7 +132,7 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         xstr.append(fmt%x)
         ystr.append(fmt%y)
     
-    if verbose:
+    if verbose or util.is_blank(output):
         print '# Coordinate transformations for ',input
         print '# X      Y         RA             Dec\n'
         for x,y,r,d in zip(xstr,ystr,xlist,ylist):

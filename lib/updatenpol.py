@@ -67,6 +67,8 @@ import os,sys,shutil
 import pyfits
 from pytools import fileutil as fu
 from pytools import parseinput
+from pytools import teal
+
 
 def update(input,refdir="jref$",local=None,interactive=False):
     """ 
@@ -251,9 +253,12 @@ def find_npolfile(flist,detector,filters):
 #
 #### Interfaces used by TEAL
 #
-def run(configobj=None):
+def run(configobj=None,editpars=False):
     ''' Teal interface for running this code. '''
-   
+    
+    if configobj is None: 
+        configobj =teal.teal(__taskname__,loadOnly=(not editpars))
+    
     update(configobj['input'],configobj['refdir'],
         local=configobj['local'],interactive=configobj['interactive'])
 

@@ -145,7 +145,7 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         xstr.append(fmt%x)
         ystr.append(fmt%y)
     
-    if verbose:
+    if verbose or util.is_blank(output):
         print '# Coordinate transformations for ',inimage
         print '# X(in)      Y(in)             X(out)         Y(out)\n'
         for x,y,a,b in zip(xlist,ylist,xstr,ystr):

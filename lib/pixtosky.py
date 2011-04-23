@@ -135,7 +135,7 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         ra = dra
         dec = ddec
 
-    if verbose:
+    if verbose or util.is_blank(output):
         print '# Coordinate transformations for ',input
         print '# X      Y         RA             Dec\n'
         for x,y,r,d in zip(xlist,ylist,rastr,decstr):

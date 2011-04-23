@@ -118,6 +118,8 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     # and archive the new primary WCS as a new keyed WCS
     if wcsname is None or wcsname == 'TWEAK':
         wcsname = 'TWEAK_'+fileutil.getDate()
+    elif wcsname == '':
+        wcsname = ' '
         
     updatewcs.updatewcs(image,checkfiles=False,wcsname=wcsname)
 

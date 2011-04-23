@@ -282,6 +282,7 @@ class Image(object):
     def updateHeader(self,wcsname=None):
         """ Update header of image with shifts computed by *perform_fit()*
         """
+
         if not self.identityfit and self.goodmatch:
             updatehdr.updatewcs_with_shift(self.name,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],rot=self.fit['rot'],scale=self.fit['scale'][0])
@@ -379,8 +380,7 @@ class RefImage(object):
         """
         if self.pars['refxyunits'] == 'pixels':
             print 'Creating RA/Dec positions for reference sources...'
-            self.outxy = self.all_radec
-            print self.all_radec[0],self.all_radec[1]
+            self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
             skypos = self.wcs.wcs_pix2sky(self.all_radec[0],self.all_radec[1],self.origin)
             self.all_radec = np.column_stack([skypos[0][:,np.newaxis],skypos[1][:,np.newaxis]])
         else:

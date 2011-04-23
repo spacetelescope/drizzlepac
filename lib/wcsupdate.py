@@ -60,6 +60,9 @@ def run(configObj=None):
     extname = configObj['extname']
     input = configObj['input']
 
+    if configObj['wcsname'] in [None, '','INDEF']: 
+        configObj['wcsname'] = ' '
+        
     # create dictionary of remaining parameters, deleting extraneous ones
     # such as those above
     cdict = configObj.dict()
