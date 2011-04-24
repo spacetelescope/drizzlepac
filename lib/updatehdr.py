@@ -79,7 +79,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
 
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image)
-
+    archive_wcsname = ""
     if numextn > 0:
         # Create initial WCSCORR extension
         wcscorr.init_wcscorr(image,force=force)
@@ -89,6 +89,10 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
             extlist.append(('SCI',extn))
         wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
 
+    else:
+        next_key = wcsutil.altwcs.next_wcskey(pyfits.getheader(image))
+        archive_wcsname = "DRZ_"+fileutil.getDate()
+        
     # archive and update PA_V3
     fimg= pyfits.open(image,mode='update')
 
@@ -101,35 +105,47 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     if numextn > 0:
         nchip,extn = updatewcs.getNrefchip(fimg)
         extver = ('sci',fimg[extn].header['extver'])
+        update_key = 'O'
     else:
         extn = 0
         extver = (0)
-    fimg.close()
 
     if verbose:
         print 'Processing ',extver
     chip_wcs = wcsutil.HSTWCS(image,extver)
 
+    if numextn == 0:
+        chipwcs_hdr = chip_wcs.wcs2header(idc2hdr=False)
+        for key in chipwcs_hdr:
+            fimg[extn].header.update(key[:7]+next_key,chipwcs_hdr[key])
+        fimg[extn].header.update('WCSNAME'+next_key,archive_wcsname)
+
+        update_key = wcsutil.altwcs.next_wcskey(fimg[0].header)
+    fimg.close()
+
     update_refchip_with_shift(chip_wcs,wref,rot=rot,scale=scale,xsh=xsh,ysh=ysh)
+    if wcsname is None or wcsname == 'TWEAK':
+        wcsname = 'TWEAK_'+fileutil.getDate()
+    elif wcsname == '':
+        wcsname = ' '
     
     # step 8
     # Update the 'O' WCS (OPUS generated values) in the header
     idchdr = True
     if chip_wcs.idcscale is None:
         idchdr = False
+
     chipwcs_hdr = chip_wcs.wcs2header(idc2hdr=idchdr)
     fimg = pyfits.open(image,mode='update')
     for key in chipwcs_hdr:
-        fimg[extn].header.update(key[:7]+"O",chipwcs_hdr[key])
+        fimg[extn].header.update(key[:7]+update_key,chipwcs_hdr[key])
+    if update_key != 'O':
+        fimg[extn].header.update('WCSNAME'+update_key,wcsname)
     fimg.close()
 
     # step 9
     # Apply shifted reference WCS to remainder of chips (if any)
     # and archive the new primary WCS as a new keyed WCS
-    if wcsname is None or wcsname == 'TWEAK':
-        wcsname = 'TWEAK_'+fileutil.getDate()
-    elif wcsname == '':
-        wcsname = ' '
         
     if numextn > 0:
         updatewcs.updatewcs(image,checkfiles=False,wcsname=wcsname)
