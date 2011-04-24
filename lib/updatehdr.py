@@ -76,38 +76,48 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     # Now that we are sure we have a good reference WCS to use, continue with the update
     print '\n....Updating header for ',image,'...\n'
 
-    # Create initial WCSCORR extension
-    wcscorr.init_wcscorr(image,force=force)
 
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image)
-    extlist = []
-    for extn in xrange(1,numextn+1):
-        extlist.append(('SCI',extn))
-    wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
+
+    if numextn > 0:
+        # Create initial WCSCORR extension
+        wcscorr.init_wcscorr(image,force=force)
+
+        extlist = []
+        for extn in xrange(1,numextn+1):
+            extlist.append(('SCI',extn))
+        wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
 
     # archive and update PA_V3
     fimg= pyfits.open(image,mode='update')
 
     #fimg[0].header.update('HPA_V3',fimg[0].header['PA_V3'])
     pav3 = (fimg[0].header['PA_V3'] + rot)%360
-    fimg[0].header['PA_V3'] = pav3
+    fimg[0].header.update('PA_V3', pav3)
     fimg.flush()
 
     # for each chip in image, apply algorithm
-    nchip,extn = updatewcs.getNrefchip(fimg)
-    extver = fimg[extn].header['extver']
+    if numextn > 0:
+        nchip,extn = updatewcs.getNrefchip(fimg)
+        extver = ('sci',fimg[extn].header['extver'])
+    else:
+        extn = 0
+        extver = (0)
     fimg.close()
 
     if verbose:
-        print 'Processing SCI,',extver
-    chip_wcs = wcsutil.HSTWCS(image,('sci',extver))
+        print 'Processing ',extver
+    chip_wcs = wcsutil.HSTWCS(image,extver)
 
     update_refchip_with_shift(chip_wcs,wref,rot=rot,scale=scale,xsh=xsh,ysh=ysh)
     
     # step 8
     # Update the 'O' WCS (OPUS generated values) in the header
-    chipwcs_hdr = chip_wcs.wcs2header()
+    idchdr = True
+    if chip_wcs.idcscale is None:
+        idchdr = False
+    chipwcs_hdr = chip_wcs.wcs2header(idc2hdr=idchdr)
     fimg = pyfits.open(image,mode='update')
     for key in chipwcs_hdr:
         fimg[extn].header.update(key[:7]+"O",chipwcs_hdr[key])
@@ -121,13 +131,14 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     elif wcsname == '':
         wcsname = ' '
         
-    updatewcs.updatewcs(image,checkfiles=False,wcsname=wcsname)
+    if numextn > 0:
+        updatewcs.updatewcs(image,checkfiles=False,wcsname=wcsname)
 
-    # Restore the 'O' WCS (OPUS generated values) from the WCSCORR table
-    wcscorr.restore_file_from_wcscorr(image,id='OPUS',wcskey='O')
+        # Restore the 'O' WCS (OPUS generated values) from the WCSCORR table
+        wcscorr.restore_file_from_wcscorr(image,id='OPUS',wcskey='O')
 
-    # Record updated values in WCSCORR extension now
-    wcscorr.archive_wcs_file(image)
+        # Record updated values in WCSCORR extension now
+        wcscorr.archive_wcs_file(image)
 
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):

@@ -58,6 +58,7 @@ class Image(object):
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
             extnum = fu.findExtname(pyfits.open(filename),extname,extver=sci_extn)
+            if extnum is None: extnum = 0
             chip_filename = filename+'[%d]'%(extnum)
             if use_wcs:
                 wcs = stwcs.wcsutil.HSTWCS(chip_filename)
@@ -342,7 +343,10 @@ class RefImage(object):
     def __init__(self,wcs_list,catalog,**kwargs):
         if isinstance(wcs_list,list):
             # generate a reference tangent plane from a list of STWCS objects
-            self.wcs = utils.output_wcs(wcs_list)
+            undistort = True
+            if wcs_list[0].sip is None:
+                undistort=False
+            self.wcs = utils.output_wcs(wcs_list,undistort=undistort)
             self.wcs.filename = wcs_list[0].filename
         else:
             # only a single WCS provided, so use that as the definition

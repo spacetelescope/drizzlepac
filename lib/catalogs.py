@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import ndimage
 import pywcs
@@ -9,7 +10,7 @@ import imagestats
 import sextractor
 
 #import idlphot
-import tweakutils
+import tweakutils,util
 
 try:
     from matplotlib import pyplot as pl
@@ -114,7 +115,10 @@ class Catalog(object):
         """        
         if not isinstance(self.wcs,pywcs.WCS):
             print 'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'
-            raise InputError
+            raise ValueError
+        if self.xypos is None:
+            print 'No objects found for this image.'
+            raise ValueError
         
         if self.radec is None or force:
             if self.wcs is not None:
@@ -193,12 +197,35 @@ class ExtractorCatalog(Catalog):
     
     """
     SEXTRACTOR_OUTPUT = ["X_IMAGE", "Y_IMAGE", "FLUX_BEST", "FLUXERR_BEST","FLAGS", "FWHM_IMAGE","NUMBER"]
-       
+    SEXTRACTOR_BOOL = {True:'Y', False:'N'}
+    
+    def _convert_MEF2SF(self):
+        indx = self.source.find('[')
+        if indx > 0:
+            rootname = self.source[:indx]
+            lindx = self.source.find(']')
+            extn = int(self.source[indx+1:lindx])
+        else:
+            rootname = self.source
+            extn = 0
+        fimg = pyfits.open(rootname)
+
+        new_fname = rootname[:rootname.rfind('.fits')]+'_extract_sci'+str(extn)+'.fits'            
+        if os.path.exists(new_fname): os.remove(new_fname)
+        phdu = pyfits.PrimaryHDU(data=fimg['sci',extn].data,header=fimg['sci',extn].header)
+        phdu.writeto(new_fname)
+        del phdu
+        return new_fname
+            
     def generateXY(self,gain=1.0):
 
-        imgname = self.source
+        seobjects = []
+        
+        imgname = self._convert_MEF2SF()
+    
         catname = imgname[:imgname.rfind('.fits')]+'_sextractor.cat'
         self.catname = catname
+        sextractor_pars = self.pars['USER SUPPLIED PARAMETERS']
         
         # Create a SExtractor instance
         s = sextractor.SExtractor()
@@ -208,32 +235,38 @@ class ExtractorCatalog(Catalog):
         s.config['PIXEL_SCALE'] = self.wcs.pscale
         s.config['CATALOG_NAME'] = catname
         # Add a parameter to the parameter list
-        s.config['PARAMETERS_LIST'] = SEXTRACTOR_OUTPUT
+        s.config['PARAMETERS_LIST'] = self.SEXTRACTOR_OUTPUT
         
-        if util.is_blank(self.pars['config_file']):
+        if util.is_blank(sextractor_pars['config_file']):
             # Update in-memory parameters as set by user
-            for key in self.pars:
-                if self.pars[key] != "" and key not in ['$nargs','mode','config_file']:
+            for key in sextractor_pars:
+                # convert booleans returned by configObj/Python in Y/N values 
+                # used by SExtractor
+                if isinstance(sextractor_pars[key], bool):
+                    sextractor_pars[key] = self.SEXTRACTOR_BOOL[sextractor_pars[key]]
+                # Populate the SExtractor object with values provided by user
+                if sextractor_pars[key] != "" and key not in ['$nargs','mode','config_file']:
                     if key != 'phot_autoparams':
-                        s.config[key.upper()] = self.pars[key]
+                        s.config[key.upper()] = sextractor_pars[key]
                     else:
                         vals = []
-                        for v in self.pars[key].split(','):
+                        for v in sextractor_pars[key].split(','):
                             vals.append(float(v))
                         s.config[key.upper()] = vals
             s.update_config()                    
         else:
             s.update_config()
-            s.config['CONFIG_FILE'] = self.pars['config_file']
-            
+            s.config['CONFIG_FILE'] = sextractor_pars['config_file']
+                    
         try:
+            print 'Running SExtractor on ',imgname
             # Lauch SExtractor on a FITS file
-            s.run(self.source,updateconfig=False)
+            s.run(self.source)
             seobjects.append(s)
             
             # Removing the configuration files, the catalog and
             # the check image
-            s.clean(config=True, catalog=False, check=True)
+            #s.clean(config=True, catalog=False, check=True)
         except sextractor.SExtractorException:
             print 'WARNING: Problem running the SExtractor executable.'
             if os.path.exists(catname):
@@ -253,7 +286,7 @@ class ExtractorCatalog(Catalog):
             x.append(obj['X_IMAGE'])
             y.append(obj['Y_IMAGE'])
             fluxes.append(obj['FLUX_BEST'])
-        self.xypos = [np.array(x),np.array(y),np.array(flux)] 
+        self.xypos = [np.array(x),np.array(y),np.array(fluxes)] 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = None # sharp
         self.round = None # round
@@ -271,6 +304,7 @@ class ImageCatalog(Catalog):
     """
     def __init__(self,wcs,catalog_source,**kwargs):
         Catalog.__init__(self,wcs,catalog_source,**kwargs)
+        if self.wcs.extname == ('',None): self.wcs.extname = (0)
         self.source = pyfits.getdata(self.wcs.filename,ext=self.wcs.extname)
 
     def generateXY(self):
