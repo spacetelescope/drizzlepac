@@ -190,10 +190,22 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
             else:
                 cname = colname
             colnums.append(int(cname)-1)
-    outarr = [] # initialize output result
+    c = []
+    if colnums[1] - colnums[0] > 1:
+        cnum = range(colnums[0],colnums[1])
+        c.extend(cnum)
+        cnum = range(colnums[1],colnums[1]+(colnums[1]-colnums[0]))
+        c.extend(cnum)
+        colnums = c
+
+    numcols = len(colnums)    
+    outarr = [[],[]] # initialize output result
+
     # Open catalog file
     fin = open(infile,'r')
     for l in fin.readlines(): # interpret each line from catalog file
+        if l[0] == '#':
+            continue
         l = l.strip()
         if len(l) == 0 or len(l.split()) < len(colnums) or (len(l) > 0 and l[0] == '#' or (l.find("INDEF") > -1)): continue
         for i in range(10):
@@ -203,10 +215,6 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
         lspl = lnew.split(" ")
         nsplit = len(lspl)
         
-        if len(outarr) == 0:
-            if len(colnums) == 0: # No columns were specified, return them all
-                colnums = range(len(lspl))
-            for c in range(len(colnums)): outarr.append([])
 
         ra=None
         dec=None
@@ -216,9 +224,9 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
             outarr[0].append(radd)
             outarr[1].append(decdd)
         else:
-            for c,n in zip(colnums,range(len(colnums))):
-                if (n < (len(colnums))) or \
-                (n < (len(colnums)-1) and (colnums[n+1]-colnums[n]) == 1) or n == nsplit-1:
+            
+            for c,n in zip(colnums,range(numcols)):
+                if numcols == 2:
                     if isfloat(lspl[c]):
                         cval = float(lspl[c])
                     else:
@@ -232,14 +240,15 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
 
                 elif dec is None:
                     dec = ''
-                    for i in range(3): dec += lspl[c+i]+' '
+                    for j in range(3): dec += lspl[c+i+j]+' '
                     radd,decdd = radec_hmstodd(ra,dec)
-                    outarr[n].append(decdd)
-                    outarr[n-1].append(radd)
+                    outarr[1].append(decdd)
+                    outarr[0].append(radd)
+                    break
                 
     fin.close()
 
-    for n in range(len(colnums)):
+    for n in range(2):
         outarr[n] = np.array(outarr[n])
 
     return outarr            

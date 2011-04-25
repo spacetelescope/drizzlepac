@@ -79,7 +79,7 @@ import numpy as np
 
 import pyfits
 from pytools import fileutil
-import util,wcs_functions
+import util,wcs_functions,tweakutils
 import stwcs
 from stwcs import distortion,wcsutil
 import coords
@@ -100,10 +100,13 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     if coordfile is not None:
         if colnames in blank_list:
             colnames = ['c1','c2']
+        else:
+            colnames = colnames.split(',')
+        """
         # Determine columns which contain pixel positions
-        cols = util.parse_colnames(colnames,coordfile)
+        #cols = util.parse_colnames(colnames,coordfile)
         # read in columns from input coordinates file
-        rlist,dlist = util.readcols(coordfile,cols=cols,hms=True)       
+        #rlist,dlist = util.readcols(coordfile,cols=cols,hms=True)
         xlist = np.zeros(rlist.shape,dtype=np.float64)
         ylist = np.zeros(rlist.shape,dtype=np.float64)
         try:
@@ -118,6 +121,8 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
             for i in range(len(rlist)):
                 c = coords.Position(rlist[i]+' '+dlist[i])
                 xlist[i],ylist[i] = c.dd()
+        """
+        xlist,ylist = tweakutils.readcols(coordfile,cols=colnames)
     else:
         xlist = [ra]
         ylist = [dec]
