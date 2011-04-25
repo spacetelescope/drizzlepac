@@ -106,11 +106,18 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         rlist,dlist = util.readcols(coordfile,cols=cols,hms=True)       
         xlist = np.zeros(rlist.shape,dtype=np.float64)
         ylist = np.zeros(rlist.shape,dtype=np.float64)
-        
-        # Parse the RA and Dec strings and convert (as necessary) into decimal degrees
-        for i in range(len(rlist)):
-            c = coords.Position(rlist[i]+' '+dlist[i])
-            xlist[i],ylist[i] = c.dd()
+        try:
+            # check to see whether the values need to be converted to 
+            # decimal degrees at all
+            x0 = float(rlist[0])
+            # Parse the RA and Dec strings and convert (as necessary) into decimal degrees
+            xlist = rlist.astype(np.float64)
+            ylist = dlist.astype(np.float64)
+        except ValueError:
+            # Parse the RA and Dec strings and convert (as necessary) into decimal degrees
+            for i in range(len(rlist)):
+                c = coords.Position(rlist[i]+' '+dlist[i])
+                xlist[i],ylist[i] = c.dd()
     else:
         xlist = [ra]
         ylist = [dec]
