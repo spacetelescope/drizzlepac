@@ -14,6 +14,7 @@ from stimage import xyxymatch
 import catalogs
 import linearfit
 import updatehdr
+import util
 
 class Image(object):
     """ Primary class to keep track of all WCS and catalog information for
@@ -330,11 +331,17 @@ class Image(object):
 
     def clean(self):
         """ Remove intermediate files created
-        """
+        """            
         for f in self.catalog_names:
-            os.remove(f)
-        if not util.is_blank(self.catalog.catname) and os.path.exists(self.catalog.catname):
-            os.remove(self.catalog.catname)
+            if f == 'match':
+                if os.path.exists(self.catalog_names[f]): 
+                    print 'Deleting intermediate match file: ',self.catalog_names[f]
+                    os.remove(self.catalog_names[f])
+            else:
+                for extn in f:
+                    if os.path.exists(extn): 
+                        print 'Deleting intermediate catalog: ',extn
+                        os.remove(extn)
 
 class RefImage(object):
     """ This class provides all the information needed by to define a reference
@@ -382,7 +389,7 @@ class RefImage(object):
         """ Transform reference catalog sky positions (self.all_radec)
         to reference tangent plane (self.wcs) to create output X,Y positions
         """
-        if self.pars['refxyunits'] == 'pixels':
+        if self.pars.has_key('refxyunits') and self.pars['refxyunits'] == 'pixels':
             print 'Creating RA/Dec positions for reference sources...'
             self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
             skypos = self.wcs.wcs_pix2sky(self.all_radec[0],self.all_radec[1],self.origin)
@@ -400,6 +407,12 @@ class RefImage(object):
         """
         rowstr = '%s    0.0  0.0    0.0     1.0\n'%(self.name)
         return rowstr
+
+    def clean(self):
+        """ Remove intermediate files created
+        """
+        if not util.is_blank(self.catalog.catname) and os.path.exists(self.catalog.catname):
+            os.remove(self.catalog.catname)
 
 def build_referenceWCS(catalog_list):
     """ Compute default reference WCS from list of Catalog objects
