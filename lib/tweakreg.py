@@ -14,8 +14,8 @@ import imagefindpars
 
 import sextractor
     
-__version__ = '0.1'
-__vdate__ = '20-Sep-2010'
+__version__ = '0.2'
+__vdate__ = '27-Apr-2011'
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
@@ -67,7 +67,7 @@ def _managePsets(configobj):
             sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=True)
 
         # merge these parameters into full set
-        configobj['SOURCE FINDING PARS'].merge(sparsobj['USER SUPPLIED PARAMETERS'])
+        configobj['SOURCE FINDING PARS']['USER SUPPLIED PARAMETERS'] = sparsobj['USER SUPPLIED PARAMETERS']
         
     # clean up configobj a little to make it easier for later...
     if '_RULES_' in configobj:

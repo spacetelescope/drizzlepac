@@ -259,14 +259,17 @@ class ExtractorCatalog(Catalog):
             s.config['CONFIG_FILE'] = sextractor_pars['config_file']
                     
         try:
-            print 'Running SExtractor on ',imgname
+            print 'Running SExtractor on ',self.source
             # Lauch SExtractor on a FITS file
-            s.run(self.source)
+            s.run(imgname)
             seobjects.append(s)
             
             # Removing the configuration files, the catalog and
             # the check image
-            #s.clean(config=True, catalog=False, check=True)
+            s.clean(config=True, catalog=False, check=True)
+            # also clean up the intermediate file that was generated
+            os.remove(imgname)
+
         except sextractor.SExtractorException:
             print 'WARNING: Problem running the SExtractor executable.'
             if os.path.exists(catname):
