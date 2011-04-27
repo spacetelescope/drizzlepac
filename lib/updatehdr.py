@@ -124,10 +124,8 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     fimg.close()
 
     update_refchip_with_shift(chip_wcs,wref,rot=rot,scale=scale,xsh=xsh,ysh=ysh)
-    if wcsname is None or wcsname == 'TWEAK':
-        wcsname = 'TWEAK_'+fileutil.getDate()
-    elif wcsname == '':
-        wcsname = ' '
+    if wcsname in [None,' ','','INDEF']:
+        wcsname = 'TWEAK'
     
     # step 8
     # Update the 'O' WCS (OPUS generated values) in the header

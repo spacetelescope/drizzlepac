@@ -191,7 +191,7 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
                 cname = colname
             colnums.append(int(cname)-1)
     c = []
-    if colnums[1] - colnums[0] > 1:
+    if (colnums[1] - colnums[0]) > 1:
         cnum = range(colnums[0],colnums[1])
         c.extend(cnum)
         cnum = range(colnums[1],colnums[1]+(colnums[1]-colnums[0]))

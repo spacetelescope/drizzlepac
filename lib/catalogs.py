@@ -349,10 +349,17 @@ class UserCatalog(Catalog):
 
     def set_colnames(self):
         self.colnames = []
+
+        cnum = 1
         for cname in self.COLNAMES:
-            if cname not in self.pars:
-                break
-            self.colnames.append(self.pars[cname])
+            if cname in self.pars and not util.is_blank(self.pars[cname]):
+                self.colnames.append(self.pars[cname])
+            else:
+                # Insure that at least x and y columns had default values
+                if 'fluxcol' not in cname:
+                    self.colnames.append(str(cnum))
+                cnum += 1
+
         # count the number of columns
         self.numcols = len(self.colnames)
         

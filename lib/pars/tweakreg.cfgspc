@@ -19,8 +19,8 @@ outwcs = string_kw(default='shifts_wcs.fits',comment="Filename of shiftfile refe
 
 [COORDINATE FILE DESCRIPTION]
 catfile = string_kw(default="", triggers="_section_switch_", comment="File containing coordinate filenames for input files")
-xcol = string_kw(default="", comment= "Column name for X positions")
-ycol = string_kw(default="", comment= "Column name for Y positions")
+xcol = string_kw(default="c1", comment= "Column name for X positions")
+ycol = string_kw(default="c2", comment= "Column name for Y positions")
 fluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
 fluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid objects")
 fluxmin = float_or_none_kw(default=None,comment="Minimum flux value for valid objects")
