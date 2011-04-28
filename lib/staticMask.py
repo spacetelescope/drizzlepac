@@ -56,9 +56,7 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
         inputDict["static_sig"]=static_sig
         inputDict["group"]=group
         inputDict["updatewcs"]=False
-        inputDict["workinplace"]=True   
         inputDict["input"]=input
-
     else:
         print "Please supply an input image\n"
         raise ValueError

@@ -565,15 +565,20 @@ class baseImageObject:
 
         if (self._image['PRIMARY'].header["EXTEND"]):
             for i,hdu in enumerate(self._image):
-                if i > 0:                    
-                    self._image[i].extnum=i
-                    self._image[i].extname=hdu.header["EXTNAME"]
+                if i > 0:                
+                    hduExtname = False  
+                    if hdu.header.has_key('EXTNAME'):  
+                        self._image[i].extnum=i
+                        self._image[i].extname=hdu.header["EXTNAME"]
+                        hduExtname = True
                     if hdu.header.has_key('EXTVER'):
                         self._image[i].extver=hdu.header["EXTVER"]
                     else:
                         self._image[i].extver = 1
                         
-                    if ((extname is not None) and (hdu.header["EXTNAME"] == extname)) or extname is None:
+                    if ((extname is not None) and \
+                            (hduExtname and (hdu.header["EXTNAME"] == extname))) \
+                            or extname is None:
                         count=count+1    
         return count
     

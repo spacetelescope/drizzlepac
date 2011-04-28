@@ -85,7 +85,6 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         inputDict['input']=input  
         inputDict['output']=None
         inputDict['updatewcs']=False
-        inputDict['workinplace']=True   
         inputDict['group']=group   
     else:
         print "Please supply an input image"
@@ -201,6 +200,8 @@ def _skySub(imageSet,paramDict,saveFile=False):
                 
             _updateKW(imageSet[sciExt+','+str(chip)],imageSet._filename,(sciExt,chip),skyKW,_skyValue)
                         
+        # Update internal record with subtracted sky value
+        image.subtractedSky = _skyValue
         #update the value of MDRIZSKY in the global header
         _updateKW(imageSet["PRIMARY"],imageSet._filename,"PRIMARY",skyKW,_skyValue)
         print skyKW,"=",_skyValue

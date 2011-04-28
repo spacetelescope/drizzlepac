@@ -137,16 +137,6 @@ def getHelpAsString():
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def run_old(configObj,wcsmap=wcs_functions.WCSMap):
-
-    # Explicitly turn off making copies so as to not over-write any analysis
-    # already performed on the data.
-    configObj['workinplace'] = False
-
-    imgObjList,outwcs = processInput.setCommonInput(configObj)
-
-    runblot(imgObjList,outwcs,configObj,wcsmap=wcsmap)
-
 def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap,procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Blot')

@@ -86,8 +86,8 @@ def setCommonInput(configObj,createOutwcs=True):
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename
     asndict,ivmlist,output = process_input(configObj['input'], configObj['output'],
-            updatewcs=configObj['updatewcs'], workinplace=configObj['workinplace'],
-            wcskey=configObj['wcskey'])
+            updatewcs=configObj['updatewcs'], wcskey=configObj['wcskey'],
+            **configObj['STATE OF INPUT FILES'])
 
     if not asndict:
         return None, None
@@ -312,11 +312,11 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 
     return filelist,output,ivmlist,oldasndict
 
-def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False, workinplace=True, wcskey=None):
+def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False,  wcskey=None, **workinplace):
     """ Create the full input list of filenames after verifying and converting
         files as needed.
     """
-    newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,workinplace=workinplace)
+    newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,**workinplace)
 
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
@@ -373,14 +373,15 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
 
     return asndict, ivmlist, output
 
-def buildFileList(input, output=None, ivmlist=None,workinplace=True):
+def buildFileList(input, output=None, ivmlist=None,**workinplace):
     """
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
     """
     filelist,output,ivmlist,oldasndict=processFilenames(input,output)
-    if not workinplace:
-        createInputCopies(filelist)
+
+    manageInputCopies(filelist,**workinplace)
+
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
 
     return newfilelist,ivmlist,output,oldasndict
@@ -449,7 +450,7 @@ def update_member_names(oldasndict, pydr_input):
     return oldasndict
 
 
-def createInputCopies(filelist):
+def manageInputCopies(filelist, **workinplace):
     """
     Creates copies of all input images in a sub-directory.
 
@@ -458,6 +459,7 @@ def createInputCopies(filelist):
     they will NOT be overwritten, but instead will be used to over-write the
     current working copies.
     """
+    
     # Find out what directory is being used for processing
     workingdir = os.getcwd()
     # Create name of sub-directory for copies
@@ -466,15 +468,29 @@ def createInputCopies(filelist):
     if not os.path.exists(origdir):
         os.mkdir(origdir)
 
+    printMsg = True
     # check to see if copies already exist for each file
     for fname in filelist:
         copyname = os.path.join(origdir,fname)
-        if not os.path.exists(copyname):
+        if workinplace['archive']:
+            print 'Forcibly archiving original of: ',fname, 'as ',copyname
+            # make a copy of the file in the sub-directory
+            if os.path.exists(copyname): os.chmod(copyname, 0666)
+            shutil.copy(fname,copyname)
+            os.chmod(copyname,0444) # make files read-only
+            if printMsg:
+                print '\nTurning OFF "preserve" and "restore" actions...\n'
+                printMsg = False # We only need to print this one time...
+                
+        if (workinplace['preserve'] and not os.path.exists(copyname)) \
+                and not workinplace['archive']:
+            # Preserving a copy of the input, but only if not already archived            
             print 'Preserving original of: ',fname, 'as ',copyname
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,0444) # make files read-only
-        else:
+            
+        if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['archive']:
             print 'Restoring original input for ',fname,' from ',copyname
             # replace current files with original version
             os.chmod(fname,0666)
@@ -738,7 +754,7 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     return outname
 
 def _setDefaults(input_dict={}):
-    """ Define full set of default values for unit-testing this module."""
+    """ Define full set of default values for unit-testing this module.[OBSOLETE]"""
     paramDict = {
         'input':'*flt.fits',
         'output':None,

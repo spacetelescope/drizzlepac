@@ -74,7 +74,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.14dev12617'
+__version__ = '4.0.14dev12631'
 __vdate__ = "28-Apr-2011"
 # End Version Information ---------------------------------------------
 
@@ -155,6 +155,8 @@ def run(configObj=None,wcsmap=None):
     else:
         print 'No input files found...'
         def_logname = None
+
+    stateObj = configObj['STATE OF INPUT FILES']
         
     util.init_logging(logfile=configObj['runfile'],default=def_logname)
     procSteps = util.ProcSteps()
@@ -192,7 +194,7 @@ def run(configObj=None,wcsmap=None):
             ablot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
             
             #look for cosmic rays
-            drizCR.rundrizCR(imgObjList,configObj,saveFile=configObj["clean"],procSteps=procSteps)
+            drizCR.rundrizCR(imgObjList,configObj,saveFile=stateObj["clean"],procSteps=procSteps)
             
             #Make your final drizzled image
             adrizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
@@ -206,7 +208,7 @@ def run(configObj=None,wcsmap=None):
 
         if imgObjList:
             for image in imgObjList:
-                if configObj['clean']:
+                if stateObj['clean']:
                     image.clean()
                 image.close()
                 
