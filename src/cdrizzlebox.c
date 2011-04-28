@@ -957,7 +957,6 @@ do_kernel_square(struct driz_param_t* p,
       return 1;
     }
   }
-   
   
   for (i = x1; i <= x2; ++i) {
     /* Offset within the subset */

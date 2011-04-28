@@ -115,252 +115,6 @@ py_mapping_callback(void* state,
   return result;
 }
 
-typedef struct {
-  PyObject_HEAD
-  struct mapping_param_t m;
-  /* These elements are kept around for reference-counting purposes.
-     The pointers to the actual C-array data is part of
-     mapping_param_t, which is otherwise Python-unaware. */
-  PyArrayObject* pxg;
-  PyArrayObject* pyg;
-  PyArrayObject* wcs;
-} PyMapping;
-
-static void
-PyMapping_dealloc(PyMapping* self)
-{
-  /* Deal with our reference-counted members */
-  Py_XDECREF(self->pxg);
-  Py_XDECREF(self->pyg);
-  Py_XDECREF(self->wcs);
-
-  self->ob_type->tp_free((PyObject*)self);
-}
-
-static PyObject *
-PyMapping_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-  PyMapping *self;
-
-  self = (PyMapping *)type->tp_alloc(type, 0);
-  if (self != NULL) {
-    mapping_param_init(&self->m);
-    self->pxg = NULL;
-    self->pyg = NULL;
-    self->wcs = NULL;
-  }
-
-  return (PyObject *)self;
-}
-
-static int
-PyMapping_init(PyMapping *self, PyObject *args, PyObject *kwds)
-{
-  /* Arguments in the order they appear */
-  integer_t dnx, dny, onx, ony;
-  double xsh, ysh;
-  char *shftfr_str, *shftun_str;
-  double drot, scale, xsh2, ysh2, xscale, yscale, rot2;
-  char *shfr2_str;
-  PyObject *pxg_obj, *pyg_obj;
-  char *align_str, *coeffs_str;
-  PyObject *wcs_obj;
-  double alpha, beta;
-
-  /* Values derived from the arguments */
-  enum e_shift_t shftfr, shftun, shfr2;
-  enum e_align_t align;
-  double* wcs_data = NULL;
-  integer_t xgdim, ygdim;
-
-  /* Other miscellaneous local variables */
-  struct driz_error_t error;
-  int istat = 1;
-
-  driz_error_init(&error);
-
-  if (! PyArg_ParseTuple(args, "iiiiddssdddddddsOOssOdd:DefaultMapping.__init__",
-                         &dnx, &dny, &onx, &ony, &xsh, &ysh, &shftfr_str,
-                         &shftun_str, &drot, &scale, &xsh2, &ysh2, &xscale,
-                         &yscale, &rot2, &shfr2_str, &pxg_obj, &pyg_obj,
-                         &align_str, &coeffs_str, &wcs_obj, &alpha, &beta)) {
-    return -1;
-  }
-
-  /* Get array data */
-  self->pxg = (PyArrayObject *)PyArray_ContiguousFromAny(pxg_obj, PyArray_FLOAT, 2, 2);
-  if (!self->pxg) {
-    driz_error_set_message(&error, "Invalid distortion array");
-    goto _PyMapping_init_exit;
-  }
-
-  self->pyg = (PyArrayObject *)PyArray_ContiguousFromAny(pyg_obj, PyArray_FLOAT, 2, 2);
-  if (!self->pyg) {
-    driz_error_set_message(&error, "Invalid distortion array");
-    goto _PyMapping_init_exit;
-  }
-
-  /* wcs is optional -- it might be None */
-  if (wcs_obj != Py_None) {
-    self->wcs  = (PyArrayObject *)PyArray_ContiguousFromAny(wcs_obj, PyArray_DOUBLE, 1, 1);
-    if (!self->wcs) {
-      driz_error_set_message(&error, "Invalid WCS array");
-      goto _PyMapping_init_exit;
-    }
-    wcs_data = PyArray_DATA(self->wcs);
-  }
-
-  /* Convert string parameters to enums */
-  if (shift_str2enum(shftfr_str, &shftfr, &error) ||
-      shift_str2enum(shftun_str, &shftun, &error) ||
-      shift_str2enum(shfr2_str, &shfr2, &error) ||
-      align_str2enum(align_str, &align, &error)) {
-    goto _PyMapping_init_exit;
-  }
-
-  /* Get the dimensions of the distortion arrays */
-  xgdim = self->pxg->dimensions[1];
-  ygdim = self->pxg->dimensions[0];
-
-  /* Create the C struct from all of these mapping parameters */
-  istat = default_mapping_init(&self->m, dnx, dny, onx, ony, xsh, ysh,
-                               shftfr, shftun, drot, scale, xsh2, ysh2,
-                               xscale, yscale, rot2, shfr2,
-                               PyArray_DATA(self->pxg),
-                               PyArray_DATA(self->pyg),
-                               xgdim, ygdim, align, coeffs_str,
-                               wcs_data, alpha, beta, &error);
- _PyMapping_init_exit:
-
-  /* The references to the PyArrayObjects will get automatically
-     dereferenced by PyMapping_dealloc.  (Immediately, in the case of
-     an error, or when the object goes out of scope). */
-
-  if (istat || driz_error_is_set(&error)) {
-    if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
-      PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
-    return -1;
-  }
-
-  return 0;
-}
-
-static PyObject*
-PyMapping_call(PyMapping* self, PyObject* args, PyObject* kwargs)
-{
-  PyObject*           py_xin_obj = NULL;
-  PyObject*           py_yin_obj = NULL;
-  PyArrayObject*      py_xin     = NULL;
-  PyArrayObject*      py_yin     = NULL;
-  PyArrayObject*      py_xout    = NULL;
-  PyArrayObject*      py_yout    = NULL;
-  npy_intp            dims;
-  PyObject*           result     = NULL;
-  struct driz_error_t error;
-
-  driz_error_init(&error);
-
-  if (!PyArg_ParseTuple(args, "OO", &py_xin_obj, &py_yin_obj)) {
-    return NULL;
-  }
-
-  py_xin = (PyArrayObject*)PyArray_ContiguousFromAny(py_xin_obj, PyArray_DOUBLE, 1, 1);
-  if (py_xin == NULL) {
-    goto _py_mapping_call_exit;
-  }
-
-  py_yin = (PyArrayObject*)PyArray_ContiguousFromAny(py_yin_obj, PyArray_DOUBLE, 1, 1);
-  if (py_yin == NULL) {
-    goto _py_mapping_call_exit;
-  }
-
-  if (PyArray_DIM(py_xin, 0) != PyArray_DIM(py_yin, 0)) {
-    PyErr_Format(PyExc_ValueError,
-                 "Passed in arrays must have the same dimensions.  Got '%d' and '%d'",
-                 (int)PyArray_DIM(py_xin, 0), (int)PyArray_DIM(py_yin, 0));
-    goto _py_mapping_call_exit;
-  }
-
-  dims = PyArray_DIM(py_xin, 0);
-
-  py_xout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, PyArray_DOUBLE);
-  if (py_xout == NULL) {
-    goto _py_mapping_call_exit;
-  }
-
-  py_yout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, PyArray_DOUBLE);
-  if (py_yout == NULL) {
-    goto _py_mapping_call_exit;
-  }
-
-  if (default_mapping(&self->m, 0, 0, (integer_t)dims,
-                      PyArray_DATA(py_xin), PyArray_DATA(py_yin),
-                      PyArray_DATA(py_xout), PyArray_DATA(py_yout),
-                      &error)) {
-    goto _py_mapping_call_exit;
-  }
-
-  result = Py_BuildValue("OO", py_xout, py_yout);
-  if (result == NULL) {
-    goto _py_mapping_call_exit;
-  }
-
- _py_mapping_call_exit:
-  Py_XDECREF(py_xin);
-  Py_XDECREF(py_yin);
-  Py_XDECREF(py_xout);
-  Py_XDECREF(py_yout);
-
-  if (driz_error_is_set(&error)) {
-    PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
-  }
-
-  return result;
-}
-
-static PyTypeObject MappingType = {
-  PyObject_HEAD_INIT(NULL)
-  0,                            /*ob_size*/
-  "cdriz.DefaultMapping",     /*tp_name*/
-  sizeof(PyMapping),            /*tp_basicsize*/
-  0,                            /*tp_itemsize*/
-  (destructor)PyMapping_dealloc, /*tp_dealloc*/
-  0,                            /*tp_print*/
-  0,                            /*tp_getattr*/
-  0,                            /*tp_setattr*/
-  0,                            /*tp_compare*/
-  0,                            /*tp_repr*/
-  0,                            /*tp_as_number*/
-  0,                            /*tp_as_sequence*/
-  0,                            /*tp_as_mapping*/
-  0,                            /*tp_hash */
-  (ternaryfunc)PyMapping_call,  /*tp_call*/
-  0,                            /*tp_str*/
-  0,                            /*tp_getattro*/
-  0,                            /*tp_setattro*/
-  0,                            /*tp_as_buffer*/
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-  "DefaultMapping(dnx, dny, onx, ony, xsh, ysh, shftfr, shftun, drot, scale, xsh2, ysh2, xscale, yscale, rot2, shfr2, pxg, pyg, align, coeffs, wcs, alpha, beta)", /* tp_doc */
-  0,                            /* tp_traverse */
-  0,                            /* tp_clear */
-  0,                            /* tp_richcompare */
-  0,                            /* tp_weaklistoffset */
-  0,                            /* tp_iter */
-  0,                            /* tp_iternext */
-  0,                            /* tp_methods */
-  0,                            /* tp_members */
-  0,                            /* tp_getset */
-  0,                            /* tp_base */
-  0,                            /* tp_dict */
-  0,                            /* tp_descr_get */
-  0,                            /* tp_descr_set */
-  0,                            /* tp_dictoffset */
-  (initproc)PyMapping_init,     /* tp_init */
-  0,                            /* tp_alloc */
-  PyMapping_new,                /* tp_new */
-};
-
-
 /**
 
 Code to implement the WCS-based C interface for the mapping.
@@ -760,17 +514,6 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   }
   */
 
-  /* The arrays NDAT and NCOU will have been updated
-     Update the WCS, if it needs to be updated.
-     Only need to do once per image, not once per section.
-  if (ystart == 0 && callback == default_mapping) {
-    m = (struct wcsmap_param_t *)p.mapping_callback_state;
-    if (update_wcs(&p, m, m->wcs, m->wcs, &error)) {
-      goto _exit;
-    }
-  }
-  */
-
  _exit:
   Py_XDECREF(con);
   Py_XDECREF(img);
@@ -916,14 +659,8 @@ tblot(PyObject *obj, PyObject *args)
     goto _exit;
   }
 
-  if (PyObject_TypeCheck(callback_obj, &MappingType)) {
-    callback = default_mapping;
-    callback_state = (void *)&(((PyMapping *)callback_obj)->m);
-    scale = ((PyMapping *)callback_obj)->m.scale;
-  } else {
-    callback = py_mapping_callback;
-    callback_state = (void *)callback_obj;
-  }
+  callback = py_mapping_callback;
+  callback_state = (void *)callback_obj;
 
   img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
   if (!img) {
@@ -998,9 +735,6 @@ void initcdriz(void)
 {
   PyObject* m;
 
-  if (PyType_Ready(&MappingType) < 0)
-    return;
-
   if (PyType_Ready(&WCSMapType) < 0)
     return;
 
@@ -1011,8 +745,6 @@ void initcdriz(void)
   import_array();
   import_pywcs();
 
-  Py_INCREF(&MappingType);
-  PyModule_AddObject(m, "DefaultMapping", (PyObject *)&MappingType);
   Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
 }

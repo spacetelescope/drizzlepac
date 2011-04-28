@@ -1,10 +1,11 @@
-#include "cdrizzleio.h"
+#include "cdrizzleutil.h"
 
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
+#ifdef WITH_CFITSIO
 /**
 Read Spitzer-format WCS distortion coefficients from an image header
 and populate the distortion arrays.
@@ -275,6 +276,7 @@ get_geometric_distortion_filename_from_header(fitsfile* input_data_file,
   return 0;
 }
 
+#endif 
 #ifndef BUFSIZ
 #define BUFSIZ (1 << 16)
 #endif
@@ -687,95 +689,4 @@ get_coefficients_from_file(FILE* fd,
   free(line); line = NULL;
   free(buffer); buffer = NULL;
   return stat;
-}
-
-/* See header file for documentation */
-#define COEFF_FILENAME_LENGTH 512
-int
-get_geometric_distortion(const char* coeff_source,
-                         fitsfile* input_data_file,
-                         /* Output arguments */
-                         double* lambda,
-                         integer_t* coeff_type,
-                         integer_t* num_coeffs,
-                         double* x_coeffs /* [num_coeffs] */,
-                         double* y_coeffs /* [num_coeffs] */,
-                         struct driz_error_t* error) {
-  integer_t i;
-  const size_t coeff_filename_length = COEFF_FILENAME_LENGTH;
-  char coeff_filename[COEFF_FILENAME_LENGTH];
-  FILE* fd;
-
-  assert(lambda);
-  assert(num_coeffs);
-  assert(x_coeffs);
-  assert(y_coeffs);
-  assert(error);
-
-  if (coeff_source == NULL || coeff_source[0] == 0 ||
-      (coeff_source[0] == ' ' && coeff_source[1] == 0)) {
-    for (i = 0; i < MAX_COEFFS; ++i) {
-      x_coeffs[i] = 0.0;
-      y_coeffs[i] = 0.0;
-    }
-    /* To avoid problems later set the linear terms to the identity, not
-       just zero (added, Richard Hook, July 2005) */
-    x_coeffs[1] = 1.0;
-    y_coeffs[2] = 1.0;
-    *num_coeffs = 1;
-    *coeff_type = 0;
-
-    return 0;
-  } else if (strncmp(coeff_source, "header", 8) == 0) {
-    if (input_data_file == NULL) {
-      driz_error_set_message(error,
-                             "Requested geometric distortion coefficients from "
-                             "header, but no FITS file provided.");
-      return 1;
-    }
-
-    if (get_geometric_distortion_filename_from_header(input_data_file,
-                                                      coeff_filename,
-                                                      coeff_filename_length,
-                                                      lambda,
-                                                      error)) {
-      return 1;
-    }
-  } else if (strncmp(coeff_source, "wcs", 8) == 0) {
-    /* Check for WCS coefficients - Spitzer format in image
-       header */
-      if (input_data_file == NULL) {
-        driz_error_set_message(error,
-                               "Requested geometric distortion Spitzer "
-                               "coefficients from header, but no FITS file "
-                               "provided.");
-        return 1;
-      }
-
-      return get_spitzer_coefficients(input_data_file, coeff_type, num_coeffs,
-                                      x_coeffs, y_coeffs, error);
-  } else {
-    strncpy(coeff_filename, coeff_source, coeff_filename_length);
-  }
-
-  /* Open the coefficients file */
-  fd = fopen(coeff_filename, "r");
-  if (fd == NULL) {
-    driz_error_format_message(error, "Could not open coefficients file '%s'",
-                              coeff_filename);
-    return 1;
-  }
-
-  /* Read in the coefficients from the file */
-  if (get_coefficients_from_file(fd, lambda, coeff_type, num_coeffs,
-                                 x_coeffs, y_coeffs, error)) {
-    fclose(fd);
-    return 1;
-  }
-
-  /* Close the coefficients file */
-  fclose(fd);
-
-  /* Return a good status */
-  return 0;
 }

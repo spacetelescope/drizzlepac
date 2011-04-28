@@ -90,7 +90,7 @@ driz_param_dump(struct driz_param_t* p) {
          "x_scale:              %f\n"
          "y_scale:              %f\n",
          (unsigned long)p->mapping_callback,
-         (unsigned long)&default_mapping,
+         (unsigned long)&default_wcsmap,
          kernel_enum2str(p->kernel),
          p->pixel_fraction,
          p->exposure_time,

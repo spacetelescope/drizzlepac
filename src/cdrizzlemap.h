@@ -120,17 +120,6 @@ struct mapping_param_t {
   integer_t dny;
 };
 
-/**
-Initialize all of the members of the mapping_param_t to sane default
-values, mostly zeroes.  Note, these are not *meaningful* values, just
-ones that help with memory management etc.  It is up to users of the
-struct, e.g. cdrizzle_, to fill the struct with valid parameters.
-*/
-void
-mapping_param_init(struct mapping_param_t* m);
-
-void
-mapping_param_dump(struct mapping_param_t* m);
 
 static inline const float*
 x_distortion_ptr(struct mapping_param_t* m, integer_t i0, integer_t i1) {
@@ -149,46 +138,6 @@ y_distortion_ptr(struct mapping_param_t* m, integer_t i0, integer_t i1) {
   assert(i1 >= 0 && i1 < m->y_dist_dim);
   return (m->y_distortion + (i1 * m->x_dist_dim) + i0);
 }
-
-/* The standard drizzle mapping callback function */
-extern int
-default_mapping(void* state,
-                const double xd, const double yd,
-                const integer_t n,
-                double* xin, double* yin,
-                /* Output parameters */
-                double* xout /*[n]*/, double* yout /*[n]*/,
-                struct driz_error_t* error);
-
-int
-default_mapping_init(struct mapping_param_t* m,
-                     const integer_t dnx,
-                     const integer_t dny,
-                     const integer_t onx,
-                     const integer_t ony,
-                     const double xsh,
-                     const double ysh,
-                     const enum e_shift_t shftfr,
-                     const enum e_shift_t shftun,
-                     const double drot,
-                     const double scale,
-                     const double xsh2,
-                     const double ysh2,
-                     const double xscale,
-                     const double yscale,
-                     const double rot2,
-                     enum e_shift_t shfr2,
-                     const float* pxg,
-                     const float* pyg,
-                     const integer_t xgdim,
-                     const integer_t ygdim,
-                     const enum e_align_t align,
-                     const char* coeffs,
-                     const double wcs[8],
-                     const double alpha,
-                     const double beta,
-                     /* Output parameters */
-                     struct driz_error_t* error);
 
 /**
 

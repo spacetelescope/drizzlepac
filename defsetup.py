@@ -43,26 +43,9 @@ pythoninc = sysconfig.get_python_inc()
 ver = sysconfig.get_python_version()
 pythonver = 'python' + ver
 
-if 'CFITSIO_LIB' in os.environ :
-    cfitsio = os.environ['CFITSIO_LIB']
-else :
-    cfitsio = '/usr/stsci/cfitsio'
-
-if os.path.exists(cfitsio+"/include") :
-    # pointing at the installed library
-    cfitsio_inc = cfitsio + "/include"
-    cfitsio_lib = cfitsio + "/lib"
-else :
-    # pointing at a source distribution
-    # (still needs to be compiled with "make" but not installed with "make install")
-    cfitsio_inc = cfitsio
-    cfitsio_lib = cfitsio
-
 if sys.platform != 'win32':
-    cfitsioinc = [ cfitsio_inc ]
     EXTRA_LINK_ARGS = []
 else:
-    raise Exception("Nobody ever wrote Windows support for linking with CFITSIO")
     EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT', pywcslib+'/_pywcs.dll']
 
 def getNumpyExtensions():
@@ -99,12 +82,11 @@ def getNumpyExtensions():
                                           'src/cdrizzlewcs.c'],
                      define_macros=define_macros,
                      undef_macros=undef_macros,
-                     include_dirs=[pythoninc] + [numpyinc] + cfitsioinc + \
+                     include_dirs=[pythoninc] + [numpyinc] + \
                          pywcsincludes,
                      extra_link_args=EXTRA_LINK_ARGS,
                      extra_compile_args=EXTRA_COMPILE_ARGS,
-                     library_dirs=[cfitsio_lib],
-                     libraries=['m', 'cfitsio']
+                     libraries=['m']
                      )]
 
     return ext
