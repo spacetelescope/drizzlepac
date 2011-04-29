@@ -472,7 +472,7 @@ def manageInputCopies(filelist, **workinplace):
     # check to see if copies already exist for each file
     for fname in filelist:
         copyname = os.path.join(origdir,fname)
-        if workinplace['archive']:
+        if workinplace['overwrite']:
             print 'Forcibly archiving original of: ',fname, 'as ',copyname
             # make a copy of the file in the sub-directory
             if os.path.exists(copyname): os.chmod(copyname, 0666)
@@ -483,19 +483,20 @@ def manageInputCopies(filelist, **workinplace):
                 printMsg = False # We only need to print this one time...
                 
         if (workinplace['preserve'] and not os.path.exists(copyname)) \
-                and not workinplace['archive']:
+                and not workinplace['overwrite']:
             # Preserving a copy of the input, but only if not already archived            
             print 'Preserving original of: ',fname, 'as ',copyname
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,0444) # make files read-only
             
-        if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['archive']:
-            print 'Restoring original input for ',fname,' from ',copyname
-            # replace current files with original version
-            os.chmod(fname,0666)
-            shutil.copy(copyname,fname)
-            os.chmod(fname,0666)
+        if 'restore' in workinplace:
+            if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['overwrite']:
+                print 'Restoring original input for ',fname,' from ',copyname
+                # replace current files with original version
+                os.chmod(fname,0666)
+                shutil.copy(copyname,fname)
+                os.chmod(fname,0666)
 
 def buildEmptyDRZ(input, output):
     """
