@@ -227,9 +227,14 @@ class Image(object):
                 xoff = matchpars['xoffset']
             if matchpars['yoffset'] is not None:
                 yoff = matchpars['yoffset']
+            
+            # convert tolerance from units of arcseconds to pixels, as needed
+            radius = matchpars['searchrad']
+            if matchpars['searchunits'] == 'arcseconds':
+                radius /= refWCS.pscale
 
             xyoff = (xoff,yoff)
-            matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,tolerance=matchpars['tolerance'],separation=matchpars['separation'])
+            matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,tolerance=radius,separation=matchpars['separation'])
             if len(matches) > minobj:
                 self.matches['image'] = np.column_stack([matches['input_x'][:,np.newaxis],matches['input_y'][:,np.newaxis]])
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,np.newaxis],matches['ref_y'][:,np.newaxis]])

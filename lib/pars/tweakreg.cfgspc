@@ -31,7 +31,7 @@ nbright = integer_or_none_kw(default=None,comment="Number of brightest objects t
 [REFERENCE CATALOG DESCRIPTION]
 refcat = string_kw(default="", triggers="_section_switch_", comment="Filename of reference coordinate catalog")
 refxcol = string_kw(default="1", comment= "Column name for RA")
-refycol = string_kw(default="4", comment= "Column name for Dec")
+refycol = string_kw(default="2", comment= "Column name for Dec")
 refxyunits = option_kw("degrees","pixels",default="degrees",comment="Units of sky positions")
 rfluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
 rfluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid reference objects")
@@ -43,8 +43,9 @@ refnbright = integer_or_none_kw(default=None,comment="Number of brightest refere
 minobj = integer_kw(default=15,comment="Minimum number of objects acceptable for matching")
 nmatch = integer_kw(default=30,comment="Maximum number of objects to match")
 algorithm = option_kw("tolerance","triangles",default="tolerance",comment="The matching algorithm")
-tolerance = float_or_none_kw(default=1.0,comment="The matching tolerance in pixels")
-separation = float_or_none_kw(default=0.0,comment="Minimum object separation") 
+searchrad = float_kw(default=1.0, comment="The search radius for a match")
+searchunits = option_kw("arcseconds","pixels", default="arcseconds", comment="Units for search radius")
+separation = float_kw(default=0.0,comment="Minimum object separation") 
 xoffset = float_or_none_kw(default=None,comment="Initial guess for X offset")
 yoffset = float_or_none_kw(default=None,comment="Initial guess for Y offset")
 

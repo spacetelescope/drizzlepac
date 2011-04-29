@@ -74,7 +74,7 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.14dev12685'
+__version__ = '4.0.14dev12686'
 __vdate__ = "29-Apr-2011"
 # End Version Information ---------------------------------------------
 
