@@ -284,23 +284,15 @@ class OutputImage:
             # Build WHT extension here, if requested...
             if errhdr:
                 errhdr.update('CCDCHIP','-999')
+            
 
             hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=extlist[1])
             hdu.header.update('EXTVER',1)
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
-                hdu.header.update('ORIENTAT',self.wcs.orientat)
-                hdu.header.update('CD1_1',self.wcs.wcs.cd[0][0])
-                hdu.header.update('CD1_2',self.wcs.wcs.cd[0][1])
-                hdu.header.update('CD2_1',self.wcs.wcs.cd[1][0])
-                hdu.header.update('CD2_2',self.wcs.wcs.cd[1][1])
-                hdu.header.update('CRVAL1',self.wcs.wcs.crval[0])
-                hdu.header.update('CRVAL2',self.wcs.wcs.crval[1])
-                hdu.header.update('CRPIX1',self.wcs.wcs.crpix[0])
-                hdu.header.update('CRPIX2',self.wcs.wcs.crpix[1])
-                hdu.header.update('VAFACTOR',1.0)
-
+                addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
+                
             fo.append(hdu)
 
             # Build CTX extension here
@@ -318,17 +310,7 @@ class OutputImage:
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
-                hdu.header.update('ORIENTAT',self.wcs.orientat)
-                hdu.header.update('CD1_1',self.wcs.wcs.cd[0][0])
-                hdu.header.update('CD1_2',self.wcs.wcs.cd[0][1])
-                hdu.header.update('CD2_1',self.wcs.wcs.cd[1][0])
-                hdu.header.update('CD2_2',self.wcs.wcs.cd[1][1])
-                hdu.header.update('CRVAL1',self.wcs.wcs.crval[0])
-                hdu.header.update('CRVAL2',self.wcs.wcs.crval[1])
-                hdu.header.update('CRPIX1',self.wcs.wcs.crpix[0])
-                hdu.header.update('CRPIX2',self.wcs.wcs.crpix[1])
-                hdu.header.update('VAFACTOR',1.0)
-                
+                addWCSKeywords(self.wcs,hdu.header,blot=self.blot)                
 
             fo.append(hdu)
 
@@ -384,16 +366,7 @@ class OutputImage:
                 if self.wcs:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
-                    hdu.header.update('ORIENTAT',self.wcs.orientat)
-                    hdu.header.update('CD1_1',self.wcs.wcs.cd[0][0])
-                    hdu.header.update('CD1_2',self.wcs.wcs.cd[0][1])
-                    hdu.header.update('CD2_1',self.wcs.wcs.cd[1][0])
-                    hdu.header.update('CD2_2',self.wcs.wcs.cd[1][1])
-                    hdu.header.update('CRVAL1',self.wcs.wcs.crval[0])
-                    hdu.header.update('CRVAL2',self.wcs.wcs.crval[1])
-                    hdu.header.update('CRPIX1',self.wcs.wcs.crpix[0])
-                    hdu.header.update('CRPIX2',self.wcs.wcs.crpix[1])
-                    hdu.header.update('VAFACTOR',1.0)
+                    addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
 
                 # Add primary header to output file...
                 fwht.append(hdu)
@@ -423,16 +396,7 @@ class OutputImage:
                 if self.wcs:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
-                    hdu.header.update('ORIENTAT',self.wcs.orientat)
-                    hdu.header.update('CD1_1',self.wcs.wcs.cd[0][0])
-                    hdu.header.update('CD1_2',self.wcs.wcs.cd[0][1])
-                    hdu.header.update('CD2_1',self.wcs.wcs.cd[1][0])
-                    hdu.header.update('CD2_2',self.wcs.wcs.cd[1][1])
-                    hdu.header.update('CRVAL1',self.wcs.wcs.crval[0])
-                    hdu.header.update('CRVAL2',self.wcs.wcs.crval[1])
-                    hdu.header.update('CRPIX1',self.wcs.wcs.crpix[0])
-                    hdu.header.update('CRPIX2',self.wcs.wcs.crpix[1])
-                    hdu.header.update('VAFACTOR',1.0)
+                    addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
 
                 fctx.append(hdu)
                 fctx.writeto(self.outcontext)
@@ -692,11 +656,11 @@ def addWCSKeywords(wcs,hdr,blot=False):
         if hdr['ctype1'].find('SIP') > -1:
             hdr.update('ctype1', hdr['ctype1'][:-4])
             hdr.update('ctype2',hdr['ctype2'][:-4])
-            # Remove SIP coefficients from DRZ product
-            for k in hdr.items():
-                if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
-                (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
-                    del hdr[k[0]]
+        # Remove SIP coefficients from DRZ product
+        for k in hdr.items():
+            if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
+            (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
+                del hdr[k[0]]
         # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
         # does not try to look for non-existent extensions
         del hdr['D2IMEXT']

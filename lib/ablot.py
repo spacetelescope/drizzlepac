@@ -114,7 +114,7 @@ def run(configObj,wcsmap=None):
         if scale_pars['expout'] == 'input':
             _outscale = _expin
         else:
-            _outscale = float(expout)
+            _outscale = float(scale_pars['expout'])
         np.multiply(_outsci, _outscale, _outsci)
 
     # Write output Numpy objects to a PyFITS file
