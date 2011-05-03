@@ -3,5 +3,5 @@ input = string_kw(default="*flt.fits", comment="Input files (name, suffix, or @l
 refdir = string_kw(default='jref$', comment="Directory containing new reference files")
 local = boolean_kw(default=False, comment="Copy new reference files to local directory?")
 interactive = boolean_kw(default=False, comment="Prompt user to update each file?")
-mode = string_kw(default="all")
+wcsupdate = boolean_kw(default=True, comment="Update WCS information using new reference files?")
 [ _RULES_ ]

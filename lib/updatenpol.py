@@ -69,8 +69,10 @@ from pytools import fileutil as fu
 from pytools import parseinput
 from pytools import teal
 
+from stwcs import updatewcs
 
-def update(input,refdir="jref$",local=None,interactive=False):
+
+def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     """ 
     Updates headers of files given as input to point to the new reference files 
     NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle. 
@@ -98,6 +100,10 @@ def update(input,refdir="jref$",local=None,interactive=False):
                 Specifies whether or not to interactively ask the user for the
                 exact names of the new reference files instead of automatically
                 searching a directory for them.
+
+    `updatewcs': boolean
+                Specifies whether or not to update the WCS information in this
+                file to use the new reference files.
 
     Examples
     --------
@@ -223,6 +229,8 @@ def update(input,refdir="jref$",local=None,interactive=False):
         # Close this input file header and go on to the next
         fimg.close()
         
+        if wcsupdate:
+            updatewcs.updatewcs(f)
         
 def find_d2ifile(flist,detector):
     """ Search a list of files for one that matches the detector specified
@@ -260,7 +268,8 @@ def run(configobj=None,editpars=False):
         configobj =teal.teal(__taskname__,loadOnly=(not editpars))
     
     update(configobj['input'],configobj['refdir'],
-        local=configobj['local'],interactive=configobj['interactive'])
+        local=configobj['local'],interactive=configobj['interactive'],
+        wcsupdate=configobj['wcsupdate'])
 
 def getHelpAsString():
     helpString = 'updatenpol Version '+__version__+__vdate__+'\n'
