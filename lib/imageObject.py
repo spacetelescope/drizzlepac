@@ -231,9 +231,10 @@ class baseImageObject:
         extensions = self._findExtnames(extname=extname,exclude=exclude)
                    
         for i in range(1,self._nextend+1,1):
-            extver = self._image[i].header['extver']
-            if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
-                self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
+            if self._image[i].__dict__.has_key('_xtn') and "IMAGE" in self._image[i]._xtn:
+                extver = self._image[i].header['extver']
+                if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
+                    self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
 
     def returnAllChips(self,extname=None,exclude=None):
         """ Returns a list containing all the chips which match the extname given
@@ -246,8 +247,9 @@ class baseImageObject:
                 extver = self._image[i].header['extver']
             else:
                 extver = 1
-            if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
-                chiplist.append(self._image[i])
+            if self._image[i].__dict__.has_key('_xtn') and "IMAGE" in self._image[i]._xtn:
+                if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
+                    chiplist.append(self._image[i])
         return chiplist
 
     def _findExtnames(self,extname=None,exclude=None):
@@ -265,8 +267,9 @@ class baseImageObject:
         #restore all the extensions data from the original file, be careful here
         #if you've altered data in memory you want to keep!
             for i in range(1,self._nextend+1,1):
-                if self._image[i].extname.upper() not in extensions:
-                    extensions.append(self._image[i].extname)
+                if self._image[i].__dict__.has_key('_xtn') and "IMAGE" in self._image[i]._xtn:
+                    if self._image[i].extname.upper() not in extensions:
+                        extensions.append(self._image[i].extname)
         #remove this extension from the list
         if exclude != None:
             exclude.upper()
@@ -286,7 +289,9 @@ class baseImageObject:
          
         if not self._isSimpleFits:
             for ext in range(1,self._nextend+1,1):
-                if (self._image[ext].extname == _extname):
+                if self._image[ext].__dict__.has_key('_xtn') and \
+                "IMAGE" in self._image[ext]._xtn and \
+                (self._image[ext].extname == _extname):
                     if (self._image[ext].extver == extver):
                         extnum=self._image[ext].extnum
         else:
