@@ -117,8 +117,8 @@ class Catalog(object):
             print 'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'
             raise ValueError
         if self.xypos is None:
-            print 'No objects found for this image.'
-            raise ValueError
+            print 'No objects found for this image from catalog: ',self.source
+            return
         
         if self.radec is None or force:
             if self.wcs is not None:
@@ -378,8 +378,10 @@ class UserCatalog(Catalog):
 
         # read the catalog now, one for each chip/mosaic
         # Currently, this only supports ASCII catalog files
-        # Support for FITS tables needs to be added
+        # Support for FITS tables needs to be added        
         catcols = tweakutils.readcols(self.source, cols=self.colnames)        
+        if len(catcols[0]) == 0:
+            catcols = None
         return catcols
 
     def generateXY(self):
@@ -388,14 +390,14 @@ class UserCatalog(Catalog):
         """
         
         xycols = self._readCatalog()
-        
-        # convert the catalog into attribute
-        self.xypos = xycols[:3]
-        # convert optional columns if they are present
-        if self.numcols > 3:
-            self.sharp = xycols[3]
-        if self.numcols > 4:
-            self.round = xycols[4]
+        if xycols is not None:
+            # convert the catalog into attribute
+            self.xypos = xycols[:3]
+            # convert optional columns if they are present
+            if self.numcols > 3:
+                self.sharp = xycols[3]
+            if self.numcols > 4:
+                self.round = xycols[4]
 
     def plotXYCatalog(self,**kwargs):
         """

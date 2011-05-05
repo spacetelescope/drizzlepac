@@ -120,16 +120,17 @@ class Image(object):
         for scichip in self.chip_catalogs:
             skycat = self.chip_catalogs[scichip]['catalog'].radec
             xycat = self.chip_catalogs[scichip]['catalog'].xypos
-            ralist.append(skycat[0])
-            declist.append(skycat[1])
-            if len(xycat) > 2:
-                fluxlist.append(xycat[2])
-            else:
-                fluxlist.append([999.0]*len(skycat[0]))
+            if skycat is not None:
+                ralist.append(skycat[0])
+                declist.append(skycat[1])
+                if len(xycat) > 2:
+                    fluxlist.append(xycat[2])
+                else:
+                    fluxlist.append([999.0]*len(skycat[0]))
 
         self.all_radec = [np.concatenate(ralist),np.concatenate(declist),np.concatenate(fluxlist)]
         self.all_radec_orig = copy.deepcopy(self.all_radec)
-        print "Found %d sources in %s"%(len(self.all_radec[0]),self.name)
+        
 
     def buildDefaultRefWCS(self):
         """ Generate a default reference WCS for this image
@@ -405,6 +406,7 @@ class RefImage(object):
             outxy = self.wcs.wcs_sky2pix(self.all_radec[0],self.all_radec[1],self.origin)
             # convert outxy list to a Nx2 array
             self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
+            
 
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
