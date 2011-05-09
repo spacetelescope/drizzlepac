@@ -2,9 +2,12 @@ import string,os
 import numpy as np
 import ndimage
 
-from pytools import asnutil,irafglob,parseinput
+from pytools import asnutil,irafglob,parseinput,fileutil
 import pyfits
 import coords
+
+import pylab as pl
+import imagestats 
 
 def parse_input(input,prodonly=False):    
     catlist = None
@@ -389,3 +392,139 @@ def gauss_array(nx,ny=None,sigma_x=1.0,sigma_y=None,zero_norm=False):
 def gauss(x,sigma):
     """ Compute 1-D value of gaussian at position x relative to center."""
     return np.exp(-np.power(x,2)/(2*np.power(sigma,2))) / (sigma*np.sqrt(2*np.pi))
+
+
+#### Plotting Utilities for betadrizzle
+def make_vector_plot(coordfile,columns=[0,1,2,3],data=None,title=None, axes=None, every=1,
+                    limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
+                    xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,append=False,linfit=False,rms=True):
+    """ Convert a XYXYMATCH file into a vector plot. """
+    if data is None:
+        data = readcols(coordfile,cols=columns)
+
+    xy1x = data[0]
+    xy1y = data[1]
+    xy2x = data[2]
+    xy2y = data[3]
+    numpts = xy1x.shape[0]
+    if fit is not None:
+        xy1x,xy1y = apply_db_fit(data,fit,xsh=xsh,ysh=ysh)
+        fitstr = '-Fit applied'
+        dx = xy2x - xy1x
+        dy = xy2y - xy1y
+    else:
+        dx = xy2x - xy1x - xsh
+        dy = xy2y - xy1y - ysh
+    # apply scaling factor to deltas
+    dx *= scale
+    dy *= scale
+
+    print 'Total # points: ',len(dx)
+    if limit is not None:
+        indx = (np.sqrt(dx**2 + dy**2) <= limit)
+        dx = dx[indx].copy()
+        dy = dy[indx].copy()
+        xy1x = xy1x[indx].copy()
+        xy1y = xy1y[indx].copy()
+    if xlower is not None:
+        xindx = (np.abs(dx) >= xlower)
+        dx = dx[xindx].copy()
+        dy = dy[xindx].copy()
+        xy1x = xy1x[xindx].copy()
+        xy1y = xy1y[xindx].copy()
+    print '# of points after clipping: ',len(dx)
+    
+    if output is not None:
+        write_xy_file(output,[xy1x,xy1y,dx,dy])
+        
+    if not append:
+        pl.clf()
+    if vector: 
+        dxs = imagestats.ImageStats(dx.astype(np.float32))
+        dys = imagestats.ImageStats(dy.astype(np.float32))
+        minx = xy1x.min()
+        maxx = xy1x.max()
+        miny = xy1y.min()
+        maxy = xy1y.max()
+        xrange = maxx - minx
+        yrange = maxy - miny
+
+        pl.quiver(xy1x[::every],xy1y[::every],dx[::every],dy[::every],\
+                  units='y',headwidth=headw,headlength=headl)
+        pl.text(minx+xrange*0.01, miny-yrange*(0.005*textscale),'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
+        pl.text(minx+xrange*0.01, miny-yrange*(0.01*textscale),'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
+        pl.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(xy1x.shape[0],numpts,title))
+    else:
+        plot_defs = [[xy1x,dx,"X (pixels)","DX (pixels)"],\
+                    [xy1y,dx,"Y (pixels)","DX (pixels)"],\
+                    [xy1x,dy,"X (pixels)","DY (pixels)"],\
+                    [xy1y,dy,"Y (pixels)","DY (pixels)"]]
+        if axes is None:
+            # Compute a global set of axis limits for all plots
+            minx = xy1x.min()
+            maxx = xy1x.max()
+            miny = dx.min()
+            maxy = dx.max()
+            
+            if xy1y.min() < minx: minx = xy1y.min()
+            if xy1y.max() > maxx: maxx = xy1y.max()
+            if dy.min() < miny: miny = dy.min()
+            if dy.max() > maxy: maxy = dy.max()
+        else:
+            minx = axes[0][0]
+            maxx = axes[0][1]
+            miny = axes[1][0]
+            maxy = axes[1][1]
+        xrange = maxx - minx
+        yrange = maxy - miny 
+        
+        for pnum,plot in zip(range(1,5),plot_defs):
+            ax = pl.subplot(2,2,pnum)
+            ax.plot(plot[0],plot[1],'.')
+            if title is None:
+                ax.set_title("Residuals [%d/%d]: No FIT applied"%(xy1x.shape[0],numpts))
+            else:
+                # This definition of the title supports math symbols in the title
+                ax.set_title(r"$"+title+"$")
+            pl.xlabel(plot[2])
+            pl.ylabel(plot[3])
+            lx=[ int((plot[0].min()-500)/500) * 500,int((plot[0].max()+500)/500) * 500]
+            pl.plot([lx[0],lx[1]],[0.0,0.0],'k')
+            pl.axis([minx,maxx,miny,maxy])
+            if rms:
+                pl.text(minx+xrange*0.01, maxy-yrange*(0.01*textscale),'RMS(X) = %f, RMS(Y) = %f'%(dx.std(),dy.std()))
+            if linfit:
+                lxr = int((lx[-1] - lx[0])/100)
+                lyr = int((plot[1].max() - plot[1].min())/100)
+                A = np.vstack([plot[0],np.ones(len(plot[0]))]).T
+                m,c = np.linalg.lstsq(A,plot[1])[0]
+                yr = [m*lx[0]+c,lx[-1]*m+c]
+                pl.plot([lx[0],lx[-1]],yr,'r')
+                pl.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
+    
+def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
+    xy1x = data[0]
+    xy1y = data[1]
+    numpts = xy1x.shape[0]
+    if fit is not None:
+        xy1 = np.zeros((xy1x.shape[0],2),np.float64)
+        xy1[:,0] = xy1x 
+        xy1[:,1] = xy1y 
+        xy1 = np.dot(xy1,fit)
+        xy1x = xy1[:,0] + xsh
+        xy1y = xy1[:,1] + ysh
+    return xy1x,xy1y
+
+def write_xy_file(outname,xydata,append=False,format="%20.6f"):
+    if not append:
+        if os.path.exists(outname): os.remove(outname)
+    fout1 = open(outname,'a+')
+    for row in range(len(xydata[0])):
+        outstr = ""
+        for col in range(len(xydata)):
+            outstr += format%(xydata[col][row])
+        fout1.write(outstr+"\n")
+    fout1.close()
+    print 'wrote XY data to: ',outname  
+ 
+

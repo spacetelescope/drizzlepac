@@ -51,6 +51,7 @@ yoffset = float_or_none_kw(default=None,comment="Initial guess for Y offset")
 
 [CATALOG FITTING PARAMETERS]
 fitgeometry = option_kw("shift","rscale","general",default="rscale",comment="Fitting geometry")
+residplot= boolean_kw(default=True,comment="Plot residuals from fit?")
 
 [ _RULES_ ]
 _rule1_ = boolean_kw(default=True, code='from betadrizzle import sextractor; OUT = sextractor.is_installed()')

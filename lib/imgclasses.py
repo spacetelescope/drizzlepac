@@ -15,6 +15,7 @@ import catalogs
 import linearfit
 import updatehdr
 import util
+import tweakutils
 
 class Image(object):
     """ Primary class to keep track of all WCS and catalog information for
@@ -284,6 +285,15 @@ class Image(object):
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g\n'%(
                     self.fit['offset'][0],self.fit['offset'][1], 
                     self.fit['rot'],self.fit['scale'][0])
+                # Plot residuals, if requested by the user
+                if pars.has_key('residplot') and pars['residplot']:
+                    xy = self.matches['image']
+                    resids = linearfit.compute_resids(xy,self.matches['ref'],self.fit)
+                    xy_fit = xy + resids
+                    title_str = 'Residuals\ for\ %s'%(self.name.replace('_','\_'))
+                    tweakutils.make_vector_plot(None,data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
+                            vector=False,title=title_str)
+                    raw_input("Press ENTER to continue to the next image's fit...")
         else:
             self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}
 

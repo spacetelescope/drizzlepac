@@ -74,8 +74,8 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.14dev12725'
-__vdate__ = "05-May-2011"
+__version__ = '4.0.14dev12793'
+__vdate__ = "09-May-2011"
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -111,16 +111,23 @@ def MultiDrizzle(files, editpars=False, configObj=None, wcsmap=None, **input_dic
 #### Interfaces used by TEAL
 #
 
-def getHelpAsString():
+def getHelpAsString(docstring=False):
     """ 
     return useful help from a file in the script directory called __taskname__.help
     """
-    helpString = __taskname__+' Version '+__version__+'\n\n'
-    helpString += teal.getHelpFileAsString(__taskname__,__file__)
-    
+    install_dir = os.path.dirname(__file__)
+    htmlfile = os.path.join(install_dir,__taskname__+'.html')
+    helpfile = os.path.join(install_dir,__taskname__+'.help')
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(__taskname__,__file__)
+    else:
+        helpString = 'file://'+htmlfile
+
     return helpString
 
-MultiDrizzle.__doc__ = getHelpAsString()
+MultiDrizzle.__doc__ = getHelpAsString(docstring=True)
 
 def run(configObj=None,wcsmap=None):
     """    
