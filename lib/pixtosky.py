@@ -80,6 +80,7 @@ import os,copy
 import numpy as np
 
 import pyfits
+from pytools import teal
 from pytools import fileutil
 import util,wcs_functions
 import stwcs

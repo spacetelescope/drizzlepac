@@ -78,7 +78,7 @@ import os,copy
 import numpy as np
 
 import pyfits
-from pytools import fileutil
+from pytools import fileutil, teal
 import util,wcs_functions,tweakutils
 import stwcs
 from stwcs import distortion,wcsutil

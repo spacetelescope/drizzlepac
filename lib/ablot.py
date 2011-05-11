@@ -19,6 +19,8 @@ except ImportError:
 __taskname__ = 'betadrizzle.ablot'
 _blot_step_num_ = 5
 
+__version__ = '4.0.14dev12793'
+__vdate__ = "11-May-2011"
 #
 #### User level interface run from TEAL
 #
@@ -129,8 +131,11 @@ def getHelpAsString():
     """ 
     return useful help from a file in the script directory called module.help
     """
-    helpString = teal.getHelpFileAsString(__taskname__,__file__)
-
+    helpString = 'ABLOT Version '+__version__+' Revision date: '+__vdate__
+    try:
+        helpString += teal.getHelpFileAsString(__taskname__,__file__)
+    except IndexError:
+        pass
     return helpString
 
 

@@ -1,6 +1,6 @@
-""" betadrizzle - test implementation of MultiDrizzle: The Next Generation
+""" astrodrizzle - test implementation of MultiDrizzle: The Next Generation
 
-MultiDrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.  
+astrodrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.  
 
 This process involves a number of steps; namely:
   1.  Processing the input images and input parameters
@@ -74,8 +74,8 @@ try:
 except:
     __svn_version__ = 'Unable to determine SVN revision'
 
-__version__ = '4.0.14dev12793'
-__vdate__ = "09-May-2011"
+__version__ = '4.0.14dev12799'
+__vdate__ = "11-May-2011"
 # End Version Information ---------------------------------------------
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -84,15 +84,15 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 #
 #### Interactive user interface (functional form)
 #
-def MultiDrizzle(files, editpars=False, configObj=None, wcsmap=None, **input_dict):
+def MultiDrizzle(input, editpars=False, configObj=None, wcsmap=None, **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if files not in ['',' ','INDEF', None]:
+    if input not in ['',' ','INDEF', None]:
         if input_dict is None:
             input_dict = {}
-        input_dict['input'] = files
+        input_dict['input'] = input
     
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.

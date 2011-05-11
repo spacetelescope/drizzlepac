@@ -94,7 +94,7 @@ import os,copy
 import numpy as np
 
 import pyfits
-from pytools import fileutil
+from pytools import fileutil, teal
 import wcs_functions, util
 import stwcs
 from stwcs import wcsutil

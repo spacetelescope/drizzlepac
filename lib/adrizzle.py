@@ -35,7 +35,8 @@ __taskname__ = "betadrizzle.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
-
+__version__ = '4.0.14dev12793'
+__vdate__ = "11-May-2011"
 #
 #### Interactive interface for running drizzle tasks separately
 #
@@ -285,8 +286,11 @@ def getHelpAsString():
     """
     return useful help from a file in the script directory called module.help
     """
-    helpString = teal.getHelpFileAsString(__taskname__,__file__)
-
+    helpString = 'ADRIZZLE Version '+__version__+' Revision date: '+__vdate__
+    try:
+        helpString = teal.getHelpFileAsString(__taskname__,__file__)
+    except IndexError:
+        pass
     return helpString
 
 

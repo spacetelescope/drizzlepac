@@ -278,21 +278,28 @@ class Image(object):
         if not self.identityfit:
             if self.matches is not None and self.goodmatch:
                 if pars['fitgeometry'] in ['rscale','general']:
-                    self.fit = linearfit.fit_arrays(self.matches['image'],self.matches['ref'])
+                    self.fit = linearfit.iter_fit_arrays(self.matches['image'],self.matches['ref'],pars['nclip'],pars['sigma'])
                 else:
-                    self.fit = linearfit.fit_shifts(self.matches['image'],self.matches['ref'])
+                    self.fit = linearfit.iter_fit_shifts(self.matches['image'],self.matches['ref'],pars['nclip'],pars['sigma'])
+
                 print 'Computed fit for ',self.name,': '
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g\n'%(
                     self.fit['offset'][0],self.fit['offset'][1], 
                     self.fit['rot'],self.fit['scale'][0])
+                print 'Final solution based on ',self.fit['img_coords'].shape[0],' objects.'
+                
                 # Plot residuals, if requested by the user
-                if pars.has_key('residplot') and pars['residplot']:
-                    xy = self.matches['image']
-                    resids = linearfit.compute_resids(xy,self.matches['ref'],self.fit)
+                if pars.has_key('residplot') and "No" not in pars['residplot']:
+                    xy = self.fit['img_coords']
+                    resids = linearfit.compute_resids(xy,self.fit['ref_coords'],self.fit)
                     xy_fit = xy + resids
                     title_str = 'Residuals\ for\ %s'%(self.name.replace('_','\_'))
+                    if pars['residplot'] == 'vector':
+                        ptype = True
+                    else:
+                        ptype = False
                     tweakutils.make_vector_plot(None,data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                            vector=False,title=title_str)
+                            vector=ptype,title=title_str)
                     raw_input("Press ENTER to continue to the next image's fit...")
         else:
             self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}

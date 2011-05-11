@@ -20,10 +20,47 @@ def RADTODEG(rad):
 def DEGTORAD(deg):
     return (deg * np.pi / 180.)
 
-def iter_fits_shifts(xy,uv,nclip=1,sigma=3.0):
+def iter_fit_shifts(xy,uv,nclip=3,sigma=3.0):
     """ Perform an iterative-fit with 'nclip' iterations 
     """
-    pass
+    fit = fit_shifts(xy,uv)
+    if nclip is None: nclip = 0
+    # define index to initially include all points
+    for n in range(nclip):
+        resids = compute_resids(xy,uv,fit)
+        resids1d = np.sqrt(np.power(resids[:,0],2)+np.power(resids[:,1],2))
+        sig = resids1d.std()
+        # redefine what pixels will be included in next iteration
+        goodpix = resids1d < sigma*sig
+        xy = xy[goodpix]
+        uv = uv[goodpix]
+        fit = fit_shifts(xy,uv)
+    
+    fit['img_coords'] = xy
+    fit['ref_coords'] = uv
+    
+    return fit
+def iter_fit_arrays(xy,uv,nclip=3,sigma=3.0):
+    """ Perform an iterative-fit with 'nclip' iterations 
+    """
+    fit = fit_arrays(xy,uv)
+    
+    if nclip is None: nclip = 0
+    # define index to initially include all points
+    for n in range(nclip):
+        resids = compute_resids(xy,uv,fit)
+        resids1d = np.sqrt(np.power(resids[:,0],2)+np.power(resids[:,1],2))
+        sig = resids1d.std()
+        # redefine what pixels will be included in next iteration
+        goodpix = resids1d < sigma*sig
+        xy = xy[goodpix]
+        uv = uv[goodpix]
+        fit = fit_arrays(xy,uv)
+
+    fit['img_coords'] = xy
+    fit['ref_coords'] = uv
+    return fit
+
 def fit_shifts(xy,uv):
     """ Performs a simple fit for the shift only between
         matched lists of positions 'xy' and 'uv'.

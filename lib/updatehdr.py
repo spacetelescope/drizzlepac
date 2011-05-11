@@ -113,7 +113,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     if verbose:
         print 'Processing ',extver
     chip_wcs = wcsutil.HSTWCS(image,extver)
-
+    
     if numextn == 0:
         chipwcs_hdr = chip_wcs.wcs2header(idc2hdr=False)
         for key in chipwcs_hdr:
@@ -134,9 +134,11 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
         idchdr = False
 
     chipwcs_hdr = chip_wcs.wcs2header(idc2hdr=idchdr)
+        
     fimg = pyfits.open(image,mode='update')
     for key in chipwcs_hdr:
         fimg[extn].header.update(key[:7]+update_key,chipwcs_hdr[key])
+        fimg[extn].header.update(key,chipwcs_hdr[key])
     if update_key != 'O':
         fimg[extn].header.update('WCSNAME'+update_key,wcsname)
     fimg.close()
