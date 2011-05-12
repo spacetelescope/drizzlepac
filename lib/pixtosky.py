@@ -5,40 +5,40 @@
 
     PARAMETERS
     ----------
-    input: str
+    input : str
         full filename with path of input image, an extension name ['sci',1] should be 
         provided if input is a multi-extension FITS file 
 
     Optional Parameters
     -------------------
-    x: float, optional
+    x : float, optional
         X position from input image
-    y: float, optional
+    y : float, optional
         Y position from input image
-    coords: str, optional
+    coords : str, optional
         full filename with path of file with x,y coordinates
-    colnames: str, optional
+    colnames : str, optional
         comma separated list of column names from 'coords' files 
         containing x,y coordinates, respectively. Will default to 
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
-    separator: str, optional
+    separator : str, optional
         non-blank separator used as the column delimiter in the coords file
-    hms: bool, optional
+    hms : bool, optional
         Produce output in HH:MM:SS.S format instead of decimal degrees? (default: False)
-    precision: int, optional
+    precision : int, optional
         Number of floating-point digits in output values 
-    output: str, optional
+    output : str, optional
         Name of output file with results, if desired
-    verbose: bool
+    verbose : bool
         Print out full list of transformation results (default: False)
 
     RETURNS
     -------
-    ra: float
+    ra : float
         Right Ascension of pixel. If more than 1 input value, then it will be a 
         numpy array. 
-    dec: float
+    dec : float
         Declination of pixel. If more than 1 input value, then it will be a 
         numpy array.
 

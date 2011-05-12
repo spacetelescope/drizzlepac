@@ -24,10 +24,10 @@ a target, then its sky value  will be lower, and can therefore also be substitut
 the detector with the bright source. 
 
 
-Input: Aside from the input parameters, this step requires opening each image to access the science (SCI) extensions 
+:Input: Aside from the input parameters, this step requires opening each image to access the science (SCI) extensions 
        for computing the sky values.
 
-Output: The input file primary headers get updated with the computed sky value, and each input image's SCI 
+:Output: The input file primary headers get updated with the computed sky value, and each input image's SCI 
         array (or copy, if 'workinplace' is set to False), gets sky subtracted.
 
 For more information on the science applications of the sky task, see the MultiDrizzle Handbook:
@@ -39,31 +39,31 @@ http://www.stsci.edu/hst/HST_overview/documents/multidrizzle
 Current User Accessable Parameters:
 -----------------------------------
 
-skysub:   Turn on or off sky subtraction on the input data.
+skysub :   Turn on or off sky subtraction on the input data.
 
-skywidth: Bin width, in sigma, used to sample the distribution of pixel flux values in order to 
+skywidth : Bin width, in sigma, used to sample the distribution of pixel flux values in order to 
           compute the sky background statistics.
 
-skystat:  Statistical method for determining the sky value from the image pixel values. 
+skystat :  Statistical method for determining the sky value from the image pixel values. 
           Valid options are:
 
           * median
           * mode
           * mean 
 
-skylower: Lower limit of usable pixel values for computing the sky. This value should be 
+skylower : Lower limit of usable pixel values for computing the sky. This value should be 
           specified in units of electrons.
 
-skyupper: Upper limit of usable pixel values for computing the sky. This value should be 
+skyupper : Upper limit of usable pixel values for computing the sky. This value should be 
           specified in units of electrons.
 
-skyclip:  Number of clipping iterations to use when computing the sky value.
+skyclip :  Number of clipping iterations to use when computing the sky value.
 
-skylsigma: Lower clipping limit, in sigma, used when computing the sky value.
+skylsigma : Lower clipping limit, in sigma, used when computing the sky value.
 
-skyusigma: Upper clipping limit, in sigma, used when computing the sky value.
+skyusigma : Upper clipping limit, in sigma, used when computing the sky value.
 
-skyuser:  Name of header keyword which records the sky value already subtracted from 
+skyuser :  Name of header keyword which records the sky value already subtracted from 
           the image by the user.
 
 

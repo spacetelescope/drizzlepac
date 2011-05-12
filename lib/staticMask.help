@@ -23,10 +23,10 @@ for the resulting science. For example, if your field is very crowded, contains 
 objects, the statistcs could be heavily skewed and the mask could end up containing sources.
 
 
-Input: Aside from the input parameters, this step requires opening each input image to access the science 
+:Input: Aside from the input parameters, this step requires opening each input image to access the science 
        (SCI) extensions for generating the static masks.
 
-Output: The generated static masks are saved to disk for use in later steps with the following naming convention:
+:Output: The generated static masks are saved to disk for use in later steps with the following naming convention:
 
         [Instrument][Detector]_[xsize]x[ysize]_[detector number]_staticMask.fits
 

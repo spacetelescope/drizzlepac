@@ -5,38 +5,38 @@
 
     PARAMETERS
     ----------
-    input: str
+    input : str
         full filename with path of input image, an extension name ['sci',1] should be 
         provided if input is a multi-extension FITS file 
 
     Optional Parameters
     -------------------
-    ra: string, optional
+    ra : string, optional
         RA from input image
-    dec: string, optional
+    dec : string, optional
         Dec from input image
-    coordfile: str, optional
+    coordfile : str, optional
         full filename with path of file with sky coordinates
-    colnames: str, optional
+    colnames : str, optional
         comma separated list of column names from 'coordfile' files 
         containing x,y coordinates, respectively. Will default to 
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
-    separator: str, optional
+    separator : str, optional
         non-blank separator used as the column delimiter in the coords file
-    precision: int, optional
+    precision : int, optional
         Number of floating-point digits in output values 
-    output: str, optional
+    output : str, optional
         Name of output file with results, if desired
-    verbose: bool
+    verbose : bool
         Print out full list of transformation results (default: False)
 
     RETURNS
     -------
-    x: float
+    x : float
         X position of pixel. If more than 1 input value, then it will be a 
         numpy array. 
-    y: float
+    y : float
         Y position of pixel. If more than 1 input value, then it will be a 
         numpy array.
 

@@ -16,10 +16,10 @@ can then be directly compared to the original distorted input images for detecti
 and cosmic-rays whose locations will be saved to the output badpixel masks.
 
 
-Input: Aside from the input parameters, this step only requires opening the single median image created
+:Input: Aside from the input parameters, this step only requires opening the single median image created
        from all the input images.
 
-Output: A distorted version of the median image corresponding to each input 'chip' (extension) gets written 
+:Output: A distorted version of the median image corresponding to each input 'chip' (extension) gets written 
         out as output from this step as separate simple FITS images.
 
 For more information on the science applications of the sky task, see the MultiDrizzle Handbook:
@@ -31,11 +31,11 @@ http://www.stsci.edu/hst/HST_overview/documents/multidrizzle
 Current User Accessable Parameters:
 -----------------------------------
 
-blot: Perform the blot operation on the median image. The output will be median smoothed images which match 
+blot : Perform the blot operation on the median image. The output will be median smoothed images which match 
       each input chips location, these are used in the cosmic ray rejection step.
 
 
-blot_interp: Type of interpolation to use when blotting drizzled images back to their original WCS. Valid options are:
+blot_interp : Type of interpolation to use when blotting drizzled images back to their original WCS. Valid options are:
 
     * nearest: Nearest neighbor
     * linear: Bilinear interpolation in x and y
@@ -49,7 +49,7 @@ blot_interp: Type of interpolation to use when blotting drizzled images back to 
     specify the size of the sinc interpolation kernel. 
 
 
-blot_sinscl: Size of the sinc interpolation kernel in pixels. 
+blot_sinscl : Size of the sinc interpolation kernel in pixels. 
 
 ---------------------------------------------------------------
 How to use the tasks stand alone interface in your own scripts:

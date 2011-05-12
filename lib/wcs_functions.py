@@ -541,11 +541,19 @@ def calcNewEdges(wcs,shape):
     This method will compute sky coordinates for all the pixels around
     the edge of an image AFTER applying the geometry model.
 
-    Parameters: wcs   - HSTWCS object for image
-                shape - numpy shape tuple for size of image
+    Parameters
+    ----------
+    wcs : obj  
+        HSTWCS object for image
+        
+    shape : tuple
+        numpy shape tuple for size of image
 
-    Output:   border - array which contains the new positions for
-                      all pixels around the border of the edges in alpha,dec 
+    Output
+    ------
+    border : arr 
+        array which contains the new positions for
+        all pixels around the border of the edges in alpha,dec 
                     
     """
     naxis1 = shape[1]
@@ -756,9 +764,13 @@ def wcsfit(img_wcs, ref_wcs):
     allow for differences in reference positions assumed by PyDrizzle's
     distortion model and the coeffs used by 'drizzle'.
 
-    Parameters:
-        img      - ObsGeometry instance for input image
-        ref_wcs  - Undistorted WCSObject instance for output frame
+    Parameters
+    ----------
+        img  : obj
+            ObsGeometry instance for input image
+        ref_wcs : obj 
+            Undistorted WCSObject instance for output frame
+            
     """
     # Define objects that we need to use for the fit...
     #in_refpix = img_geom.model.refpix

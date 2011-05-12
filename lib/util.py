@@ -417,12 +417,12 @@ def runmakewcs(input):
     
     Parameters
     ----------
-    input: list of str
+    input : list of str
         a list of file names
 
     Returns
     -------
-    output: list of str 
+    output : list of str 
         returns a list of names of the modified files
         (For GEIS files returns the translated names.)
     
@@ -551,16 +551,16 @@ def readcols(infile,cols=[0,1,2,3],hms=False):
     
     Parameters
     ----------
-    infile: str
+    infile : str
         filename of ASCII file with array data as columns
         
-    cols: list of int
+    cols : list of int
         list of 0-indexed column numbers for columns to be turned into numpy arrays
         (DEFAULT- [0,1,2,3])
         
     Returns
     -------
-    outarr: list of numpy arrays
+    outarr : list of numpy arrays
         simple list of numpy arrays in the order as specifed in the 'cols' parameter
         
     """

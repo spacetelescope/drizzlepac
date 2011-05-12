@@ -25,20 +25,20 @@ This task can be run from either the TEAL GUI or from the Python command-line. T
 
 Parameters
 ----------
-files: str or list of str
+files : str or list of str
     Input files which are being registered. For more details, see description
     of `input` parameter.
-editpars: bool
+editpars : bool
     Specify whether or not to edit the parameters using the TEAL GUI
-configObj: obj or None
+configObj : obj or None
     ConfigObj object containing user-specified parameters for running
     this task
-input_dict: dict
+input_dict : dict
     User-specified parameter values for only those parameters which they
     want to change
 
 :Other Parameters from input_dict:
-input: str or list of str
+input : str or list of str
     Input files (passed in from *files* parameter) 
     This paramater can be provided in any of several forms:
 
@@ -58,12 +58,12 @@ input: str or list of str
     with each IVM filename listed on the same line as a second entry,
     after its corresponding exposure filename.
 
-output: str
+output : str
     The name for the output shift file created by tweakshifts.  This
     shiftfile will be formatted for use as direct input to MultiDrizzle.
     [Default value: "shifts.txt"]
 
-outwcs: str
+outwcs : str
     Filename to be given to the OUTPUT reference WCS file created
     by tweakshifts.  This reference WCS defines the WCS in which the
     shifts get measured, and will be used by MultiDrizzle to interpret
@@ -72,11 +72,11 @@ outwcs: str
     data itself.  The values will be derived from the FIRST input image
     specified.  [Default value: "tweak_wcs.fits"]
 
-refimage: str
+refimage : str
     Filename of reference image. Sources derived from this image will be 
     used as the reference for matching with sources from all input images.
 
-findmode:  {'imagefind', 'sextractor'}
+findmode :  {'imagefind', 'sextractor'}
     This parameter specifies what method should be used to extract source
     catalogs from each input image. 
     
@@ -85,7 +85,7 @@ findmode:  {'imagefind', 'sextractor'}
     'tweakshifts' will default to using the built-in function similar
     in operation to DAOFIND.
 
-editspars: bool
+editspars : bool
     This parameter allows the user to specify whether or not they want to
     edit the parameters associated with the Sextractor PSET if 'findmode'
     was set to 'sextractor' and if Sextractor has been installed. This
@@ -96,28 +96,28 @@ editspars: bool
     in the executable. These parameters are described in the help for
     `sextractorpars`_.
 
-editipars: bool
+editipars : bool
     This parameter allows the user to specify whether or not they want to 
     edit the parameters for the built-in source finding algorithm if 'findmode'
     has been set to 'imagefind'. These parameters are described in the help for 
     `imagefind`_.
 
-writecat: bool
+writecat : bool
     Specify whether or not to write out the source catalogs generated for
     each input image by the built-in source extraction algorithm.
     
-clean: bool
+clean : bool
     Specify whether or not to remove the temporary files created by
     'tweakshifts', including any catalog files generated for the shift
     determination. [Default value = False]
 
-updatehdr: bool
+updatehdr : bool
     Specify whether or not to update the headers of each input image
     directly with the shifts that were determined. This will allow the
     input images to be combined by MultiDrizzle without having to provide
     the shiftfile as well. [Default value = False]
 
-verbose: bool
+verbose : bool
     Specify whether or not to print extra messages during
     processing. [Default value = False]
 
@@ -127,21 +127,21 @@ catfile:str
     contain the name of an input image in the first column and the name
     of the catalog file for that image in the second column.
 
-xcol: int
+xcol : int
     Column number of X position from the user-generated catalog files
     specified in the catfile. [Default value = 1]
 
-ycol: int
+ycol : int
     Column number of Y position from the user-generated catalog files
     specified in the catfile.[Default value = 2]
 
-fluxcol: int
+fluxcol : int
     Column number for the flux values from the user-generated catalog
     files specified in the catfile.  These values will only be used if
     a flux limit has been specified by the user using the 'fluxmax' or
     'fluxmin' parameters.  [Default value = 3]
 
-fluxmax: float
+fluxmax : float
     Limiting flux value for selecting valid objects in the input image's
     catalog.  If specified, this flux will serve as the upper limit of a
     range for selecting objects to use in matching with objects identified
@@ -149,7 +149,7 @@ fluxmax: float
     than the minimum specified in 'fluxmin' will be used.  If both are
     set to INDEF, all objects will be used.
 
-fluxmin: float
+fluxmin : float
     Limiting flux value for selecting valid objects in the input image's
     catalog.  If specified, this flux will serve as the lower limit
     of a range for selecting objects to use in matching with objects
@@ -157,37 +157,37 @@ fluxmin: float
     than the limit specified by 'fluxmax' will be used. If both are set
     to INDEF, all objects will be used.
 
-fluxunits: {'counts', 'cps', 'mag'}
+fluxunits : {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
     by 'fluxmax' and 'fluxmin' when sorting the object list for trimming
     of the fainter objects.
 
-xyunits: {'pixels', 'degrees'}
+xyunits : {'pixels', 'degrees'}
     Specifies whether the positions in this catalog are pixel positions which
     still need to be transformed to the sky or whether the positions are 
     sky positions already. 
     
-nbright: int
+nbright : int
     Number of brightest objects to keep after sorting the full object list.
     If set to None, all objects will be used. [Default value = None]
 
-refcat: str
+refcat : str
     Name of external reference catalog file to use instead of the catalog
     extracted from one of the input images.
 
-refxcol: int
+refxcol : int
     Column number of RA in the external catalog file specified by the
     refcat. [Default value = 1]
 
-refycol: int
+refycol : int
     Column number of Dec in the external catalog file specified by the
     refcat. [Default value = 2]
 
-rfluxcol: int
+rfluxcol : int
     Column number of flux/magnitude values in the external catalog file
     specified by the refcat. [Default value = 3]
 
-rfluxmax: float
+rfluxmax : float
     Limiting flux value for selecting valid objects in the external
     catalog.  If specified, this flux will serve as the upper limit of a
     range for selecting objects to use in matching with objects identified
@@ -195,7 +195,7 @@ rfluxmax: float
     than the minimum specified in 'rfluxmin' will be used.  If both are
     set to INDEF, all objects will be used.
 
-rfluxmin: float
+rfluxmin : float
     Limiting flux value for selecting valid objects in the external
     catalog.  If specified, this flux will serve as the lower limit
     of a range for selecting objects to use in matching with objects
@@ -203,21 +203,21 @@ rfluxmin: float
     than the limit specified by 'rfluxmax' will be used. If both are
     set to INDEF, all objects will be used.
 
-rfluxunits: {'counts', 'cps', 'mag'}
+rfluxunits : {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
     by 'rfluxmax' and 'rfluxmin' when sorting the object list for trimming
     of the fainter objects.
 
-refnbright: int
+refnbright : int
     Number of brightest objects to keep after sorting the full object
     list.  If set to None, all objects will be used. Used in conjunction
     with refcat. [Default value = None]
 
-minobj: int
+minobj : int
     Minimum number of identified objects from each input image to use
     in matching objects from other images.  [Default value = 15]
 
-nmatch: int
+nmatch : int
     The maximum number of reference and input coordinates used by the
     'triangles' pattern matching algorithm in `xyxymatch`.  This parameter
     is passed directly to the IRAF task `xyxymatch`.  If either list
@@ -226,16 +226,16 @@ nmatch: int
     and memory requirements for the 'triangles' algorithm depend on a high
     power of the lengths of the respective lists. [Default value = 30]
  
-algorithm: {'tolerance', 'triangles'}
+algorithm : {'tolerance', 'triangles'}
     The matching algorithm used in `xyxymatch`. [Default value = 'tolerance']
     
-tolerance: float 
+tolerance : float 
     The matching tolerance in pixels after applying an initial solution
     derived from the 'triangles' algorithm.  This parameter gets passed
     directly to `xyxymatch` for use in matching the object lists from each
     image with the reference image's object list. [Default value = 1.0]
 
-separation: float 
+separation : float 
     The  minimum  separation  for objects in the input and reference
     coordinate lists. Objects closer together than separation pixels
     are  removed from the input and reference coordinate lists prior
@@ -243,20 +243,20 @@ separation: float
     use in matching the object lists from each image with the reference
     image's object list. [Default value = 0.0]
 
-xoffset: float
+xoffset : float
     Initial estimate for the offset in X between the images and the
     reference frame.  If None, no offset will be assumed in matching
     sources in 'xyxymatch'.  This offset will be used for all input
     images provided.
 
-yoffset: float
+yoffset : float
     Initial estimate for the offset in Y between the images and the
     reference frame.  If None, no offset will be assumed in matching
     sources in 'xyxymatch'.  This offset will be used for all input
     images provided.
     
 
-fitgeometry: {'shift', 'rscale', 'general'}
+fitgeometry : {'shift', 'rscale', 'general'}
     The fitting geometry to be used for fitting the matched object lists.
     This parameter gets used in fitting the offsets, rotations and/or
     scale changes from the matched object lists.

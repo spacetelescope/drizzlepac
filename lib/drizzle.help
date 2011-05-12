@@ -14,14 +14,14 @@ necessary for refining the image registration for each of the input images. They
 images which will later be combined into a median image used for the later blot and cosmic ray 
 detection steps.
 
-Input: Aside from the input parameters, this step requires:
+:Input: Aside from the input parameters, this step requires:
 
     * valid input images with SCI extensions
     * valid distortion coefficients tables
     * any optional secondary distortion correction images
     * numarray object (in memory) for static mask 
 
-Output: This step produces:
+:Output: This step produces:
 
     * singly drizzled science image (simple FITS format)
     * singly drizzled weight images (simple FITS format) 
@@ -38,20 +38,20 @@ http://www.stsci.edu/hst/HST_overview/documents/multidrizzle
 -----------------------------------
 Current User Accessable Parameters:
 -----------------------------------
-driz_separate: This parameter specifies whether or not to drizzle each input image onto separate output images. 
+driz_separate : This parameter specifies whether or not to drizzle each input image onto separate output images. 
                 The separate output images will all have the same WCS as the final combined output frame. These 
                 images are used to create the median image, needed for the cosmic ray rejection step further on.
 
 
-driz_sep_outnx: Size of the X axis of the output images, in pixels, on which each input will be drizzled onto. 
+driz_sep_outnx : Size of the X axis of the output images, in pixels, on which each input will be drizzled onto. 
                 If no value is specified, it will use the smallest size that can accommodate the full dithered field.
 
 
-driz_sep_outny: Size of the Y axis of the output images, in pixels, on which each input will be drizzled onto. 
+driz_sep_outny : Size of the Y axis of the output images, in pixels, on which each input will be drizzled onto. 
                 If no value is specified, it will use the smallest size that can accommodate the full dithered field.
 
 
-driz_sep_kernel: For the initial separate drizzling operation only, this specifies the form of the kernel function 
+driz_sep_kernel : For the initial separate drizzling operation only, this specifies the form of the kernel function 
                 used to distribute flux onto the separate output images. The options are currently:
 
     * square: original classic drizzling kernel
@@ -71,19 +71,19 @@ driz_sep_kernel: For the initial separate drizzling operation only, this specifi
     of generating the median image. More information about the different kernels can be found in the help file for the drizzle task. 
 
 
-driz_sep_wt_scl: Weighting factor for input image. If driz_sep_wt_scl=exptime then the scaling value will be set equal 
+driz_sep_wt_scl : Weighting factor for input image. If driz_sep_wt_scl=exptime then the scaling value will be set equal 
                 to the exposure time found in the image header. This is the default recommended behavior. It is also 
                 possible to give wt_scl=expsq for weighting by the square of exposure time, which is optimal for 
                 read-noise dominated images.
 
 
-driz_sep_scale: Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (to be used 
+driz_sep_scale : Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (to be used 
                 in creating the median for cosmic ray rejection). The default value of INDEF specifies that the 
                 undistorted pixel scale for the first input image, as computed by PyDrizzle, will be used as the 
                 pixel scale for all the output images.
 
 
-driz_sep_pixfrac: Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, 
+driz_sep_pixfrac : Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, 
                     given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", 
                     of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel get 
                     reset to 'point' for more efficient processing. For the step of drizzling each input image onto a 
@@ -92,14 +92,14 @@ driz_sep_pixfrac: Fraction by which input pixels are "shrunk" before being drizz
                     the task 'drizzle'.
 
 
-driz_sep_rot: Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output 
+driz_sep_rot : Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output 
               image with North up. The default of INDEF specifies that the images will not be rotated, but will instead 
               be drizzled in the default orientation for the camera, with the x and y axes of the drizzled image 
               corresponding approximately to the detector axes. This conserves disk space, since these single 
               drizzled images are only used in the intermediate step of creating a median image.
 
 
-driz_sep_fillval: Value to be assigned to output pixels that have zero weight or did not receive flux from any 
+driz_sep_fillval : Value to be assigned to output pixels that have zero weight or did not receive flux from any 
                 input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' 
                 task. If the default of 'INDEF' is used and if the weight in both the input and output images for a 
                 given pixel are zero, then the output pixel will be set to the value it would have had if the input 
@@ -107,7 +107,7 @@ driz_sep_fillval: Value to be assigned to output pixels that have zero weight or
                 be set to that value.
 
 
-driz_sep_bits: Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' 
+driz_sep_bits : Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' 
                 when building the weighting mask. This can also be used to reset pixels to good if they had been flagged 
                 as cosmic rays during a previous run of MultiDrizzle, by adding the value 4096 for ACS and WFPC2 data.
                 Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.

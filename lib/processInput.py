@@ -50,11 +50,11 @@ def setCommonInput(configObj,createOutwcs=True):
 
     Parameters
     ----------
-    configObj: object
+    configObj : object
         configObj instance or simple dictionary of input parameters
-    imageObjectList: list of imageObject objects
+    imageObjectList : list of imageObject objects
         list of imageObject instances, 1 for each input exposure
-    outwcs: object
+    outwcs : object
         imageObject instance defining the final output frame
 
     Notes
@@ -392,12 +392,12 @@ def runmakewcs(input):
 
     Parameters
     ----------
-    input: str or list of str
+    input : str or list of str
         a list of files
 
     Returns
     -------
-    output: list of str
+    output : list of str
         returns a list of names of the modified files
         (For GEIS files returns the translated names.)
     """
@@ -508,9 +508,9 @@ def buildEmptyDRZ(input, output):
 
     Parameters
     ----------
-    input   : str
+    input : str
         filename of the initial input to process_input
-    output  : str
+    output : str
         filename of the default empty _drz.fits file to be generated
 
     """
@@ -629,7 +629,7 @@ def checkDGEOFile(filenames):
 
     Parameters
     ----------
-    filenames: list of str
+    filenames : list of str
         file names of all images to be checked
 
     """

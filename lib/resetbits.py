@@ -10,17 +10,17 @@
 
     PARAMETERS
     ----------
-    filename: str
+    filename : str
         full filename with path
-    bits: int
+    bits : int
         sum of integers corresponding to all the bits to be reset
 
     Optional Parameters
     -------------------
-    extver: int, optional
+    extver : int, optional
         List of version numbers of the arrays to be corrected 
         (default: None, will reset all matching arrays)
-    extname: str, optional
+    extname : str, optional
         EXTNAME of the arrays in the FITS files to be reset
         (default: 'dq')
 
@@ -76,17 +76,17 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
 
     Parameters
     ----------
-    filename: str
+    filename : str
         full filename with path 
 
-    bits: int
+    bits : int
         sum of integers corresponding to all the bits to be reset
 
-    extver: int, optional
+    extver : int, optional
         List of version numbers of the DQ arrays 
         to be corrected [Default Value: None, will do all]
             
-    extname: str, optional
+    extname : str, optional
         EXTNAME of the DQ arrays in the FITS file 
         [Default Value: 'dq']
 

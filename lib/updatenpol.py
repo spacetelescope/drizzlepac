@@ -79,7 +79,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     
     Parameters
     -----------
-    `input`: string or list
+    `input` : string or list
                 Name of input file or files
                 Acceptable forms: 
                   - single filename with or without directory
@@ -88,15 +88,15 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                   - python list of filenames
                   - wildcard specification of filenames
                 
-    `refdir`: string
+    `refdir` : string
                 path to directory containing new reference files, either 
                 environment variable or full path
 
-    `local`: boolean
+    `local` : boolean
                 Specifies whether or not to copy new reference files to local
                 directory for use with the input files
 
-    `interactive': boolean 
+    `interactive` : boolean 
                 Specifies whether or not to interactively ask the user for the
                 exact names of the new reference files instead of automatically
                 searching a directory for them.

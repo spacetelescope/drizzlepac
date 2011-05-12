@@ -151,7 +151,7 @@ class staticMask:
 
         Parameters
         ----------
-        imagePtr: object
+        imagePtr : object
             An imageObject reference
 
         Notes

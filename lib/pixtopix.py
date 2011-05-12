@@ -6,13 +6,13 @@
 
     PARAMETERS
     ----------
-    inimage: str
+    inimage : str
         full filename with path of input image, an extension name ['sci',1] should be 
         provided if input is a multi-extension FITS file 
-    outimage: str
+    outimage : str
         full filename with path of output image, an extension name ['sci',1] should be 
         provided if output is a multi-extension FITS file 
-    direction: str
+    direction : str
         Direction of transform (forward or backward). The 'forward' transform 
         takes the pixel positions (assumed to be from the 'input' image) and determines 
         their position in the 'output' image. The 'backward' transform converts 
@@ -22,32 +22,32 @@
 
     Optional Parameters
     -------------------
-    x: float, optional
+    x : float, optional
         X position from image
-    y: float, optional
+    y : float, optional
         Y position from image
-    coords: str, optional
+    coords : str, optional
         full filename with path of file with starting x,y coordinates
-    colnames: str, optional
+    colnames : str, optional
         comma separated list of column names from 'coords' files 
         containing x,y coordinates, respectively. Will default to 
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
-    separator: str, optional
+    separator : str, optional
         non-blank separator used as the column delimiter in the coords file
-    precision: int, optional
+    precision : int, optional
         Number of floating-point digits in output values 
-    output: str, optional
+    output : str, optional
         Name of output file with results, if desired
-    verbose: bool
+    verbose : bool
         Print out full list of transformation results (default: False)
 
     RETURNS
     -------
-    outx: float
+    outx : float
         X position of transformed pixel. If more than 1 input value, then it 
         will be a numpy array. 
-    outy: float
+    outy : float
         Y position of transformed pixel. If more than 1 input value, then it 
         will be a numpy array.
 

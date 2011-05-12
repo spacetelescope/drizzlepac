@@ -8,7 +8,7 @@ These parameters control the operation of the algorithm which extracts sources f
 
 Parameters
 ----------
-computesig: bool
+computesig : bool
     This parameter controls whether or not to automatically compute a
     sigma value to be used for object identification. If set to True, then
     the value computed will override any user input for the parameter
@@ -21,20 +21,20 @@ computesig: bool
 
     This single value will then be used for object identification for all input exposures. [Default: True] 
 
-sigma: float
+sigma : float
     The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0] 
 
-fwhmpsf: float
+fwhmpsf : float
     The full-width at half-maximum of the point spread function in pixels.[Default: 2.5] 
 
-datamin: float
+datamin : float
     The minimum good pixel value to be considered when examining the image for objects.  [Default: None] 
 
-datamax: float 
+datamax : float 
     The maximum good pixel value to be considered when examining the image for objects. [Default: None]
 
-threshold: float
+threshold : float
     The object detection threshold above the local background in units of sigma. [Default: 4.0]
 
-nsigma: float
+nsigma : float
     The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]

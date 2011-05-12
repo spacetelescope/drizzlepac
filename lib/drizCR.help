@@ -14,29 +14,29 @@ each input. Those spurious pixels then get flagged as 'bad' in the output cosmic
 as input for the final combination, so that they do not show up in the final product.
 
 
-Input: Aside from the input parameters, this step requires:
+:Input: Aside from the input parameters, this step requires:
 
     * the blotted median images, and
     * the mask files. 
 
-Output: The identified bad pixels get flagged by updating the input mask files. Optionally, copies of the original images with the bad pixels removed can be created through the use of the 'driz_cr_corr' parameter.
+:Output: The identified bad pixels get flagged by updating the input mask files. Optionally, copies of the original images with the bad pixels removed can be created through the use of the 'driz_cr_corr' parameter.
 
 
 -----------------------------------
 Current User Accessable Parameters:
 -----------------------------------
 
-driz_cr: Perform cosmic-ray detection? If set to "yes", it will detect cosmic-rays and create cosmic-ray masks using the algorithms from 'deriv' and 'driz_cr'.
+driz_cr : Perform cosmic-ray detection? If set to "yes", it will detect cosmic-rays and create cosmic-ray masks using the algorithms from 'deriv' and 'driz_cr'.
 
-driz_cr_corr: Create a cosmic-ray cleaned input image? The cosmic-ray cleaned _cor image will be generated directly from the input image, and a corresponding _crmask file will be written to document the pixels detected as affected by cosmic-rays.
+driz_cr_corr : Create a cosmic-ray cleaned input image? The cosmic-ray cleaned _cor image will be generated directly from the input image, and a corresponding _crmask file will be written to document the pixels detected as affected by cosmic-rays.
 
-driz_cr_snr: These values specify the signal-to-noise ratios for the 'driz_cr' task to use in detecting cosmic rays. This parameter value gets passed directly to 'driz_cr'; see the help file for 'driz_cr' for further discussion of this parameter.
+driz_cr_snr : These values specify the signal-to-noise ratios for the 'driz_cr' task to use in detecting cosmic rays. This parameter value gets passed directly to 'driz_cr'; see the help file for 'driz_cr' for further discussion of this parameter.
 
-driz_cr_scale: Scaling factor applied to the derivative in 'driz_cr' when detecting cosmic-rays. This parameter gets passed directly to 'driz_cr'; see the help file for 'driz_cr' for further discussion of this parameter.
+driz_cr_scale : Scaling factor applied to the derivative in 'driz_cr' when detecting cosmic-rays. This parameter gets passed directly to 'driz_cr'; see the help file for 'driz_cr' for further discussion of this parameter.
 
 driz_cr_grow : Radius (in pixels) around each detected cosmic-ray to use more stringent detection criteria for additional cosmic rays.
 
-driz_cr_ctegrow: Length (in pixels) of CTE tail to mask in drizzled output.
+driz_cr_ctegrow : Length (in pixels) of CTE tail to mask in drizzled output.
 
 
 

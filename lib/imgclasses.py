@@ -25,13 +25,13 @@ class Image(object):
         """
         Parameters
         ----------
-        filename: str
+        filename : str
             filename for image
 
-        input_catalogs: list of str or None
+        input_catalogs : list of str or None
             filename of catalog files for each chip, if specified by user
 
-        kwargs: dict
+        kwargs : dict
             parameters necessary for processing derived from input configObj object
 
         """
@@ -264,7 +264,7 @@ class Image(object):
 
             Parameters
             ----------
-            kwargs: dict
+            kwargs : dict
                 Parameter necessary to perform the fit; namely, *fitgeometry*
 
             Notes

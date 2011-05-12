@@ -19,9 +19,9 @@ to improve the alignment of the image stack. Creating a median image from the al
 images allows for a statistical rejection of bad pixels.
 
 
-Input: Aside from the input parameters, this step requires access to the single drizzled images on disk.
+:Input: Aside from the input parameters, this step requires access to the single drizzled images on disk.
 
-Output: The final median image serves as the only output from this step.
+:Output: The final median image serves as the only output from this step.
 
 
 
@@ -29,18 +29,18 @@ Output: The final median image serves as the only output from this step.
 Current User Accessable Parameters:
 -----------------------------------
 
-median: The user can specify whether or not to create a median image with this parameter. This median 
+median : The user can specify whether or not to create a median image with this parameter. This median 
         image will be used as the comparison 'truth' image :in the cosmic ray rejection step.
 
 
-median_newmasks: The user can specify whether or not to create new mask files when creating the median image. 
+median_newmasks : The user can specify whether or not to create new mask files when creating the median image. 
                  These masks are generated from the weight files produced previously by the "driz_separate" step, 
                  and would contain all the bad pixel information. These pixels will be excluded when calculating 
                  the median. Generally this step should be set to "yes", unless it is desired to include bad 
                  pixels in generating the median.
 
 
-combine_type: This parameter allows the user to choose which method is used to create the median image. 
+combine_type : This parameter allows the user to choose which method is used to create the median image. 
               Valid options are:
 
             * average
@@ -64,26 +64,26 @@ combine_type: This parameter allows the user to choose which method is used to c
     total number of images minus "combine_nhigh" odd when using "median". 
 
 
-combine_nsigma: Sigmas used for accepting minimum values instead of median values when using the 'minmed' 
+combine_nsigma : Sigmas used for accepting minimum values instead of median values when using the 'minmed' 
                 combination method. If two values are specified, then the first value will be used in the 
                 initial choice between median and minimum, while the second value will be used in the "growing" 
                 step to reject additional pixels around those identified in the first step. If only one value is 
                 specified, then it is used in both steps.
 
 
-combine_nlow: This parameter sets the number of low value pixels to reject automatically during image combination.
+combine_nlow : This parameter sets the number of low value pixels to reject automatically during image combination.
 
-combine_nhigh: This parameter sets the number of high value pixels to reject automatically during image combination.
+combine_nhigh : This parameter sets the number of high value pixels to reject automatically during image combination.
 
-combine_lthresh: Sets the lower threshold for clipping input pixel values during image combination. This value 
+combine_lthresh : Sets the lower threshold for clipping input pixel values during image combination. This value 
                  gets passed directly to 'imcombine' for use in creating the median image. If None, no thresholds 
                  are used at all.
 
 
-combine_hthresh: Sets the upper threshold for clipping input pixel values during image combination. This value gets
+combine_hthresh : Sets the upper threshold for clipping input pixel values during image combination. This value gets
                  passed directly to 'imcombine' for use in creating the median image. If None, no thresholds are used at all.
 
-combine_grow: Width in pixels for additional pixels to be rejected in an image with a rejected pixel from one of the 
+combine_grow : Width in pixels for additional pixels to be rejected in an image with a rejected pixel from one of the 
               rejection algorithms. This parameter is used to set the 'grow' parameter in 'imcombine' for use in 
               creating the median image. 
 

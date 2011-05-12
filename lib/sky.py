@@ -44,13 +44,13 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     
     Parameters
     ----------
-    input: str or list of str
+    input : str or list of str
         a python list of image filenames, or just a single filename
-    configObj: configObject
+    configObj : configObject
         an instance of configObject
-    inputDict: dict, optional
+    inputDict : dict, optional
         an optional list of parameters specified by the user
-    outExt: str
+    outExt : str
         The extension of the output image. If the output already exists 
         then the input image is overwritten
     
