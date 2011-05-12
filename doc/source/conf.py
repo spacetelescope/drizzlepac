@@ -31,6 +31,7 @@ extensions += ['sphinx.ext.autodoc', 'sphinx.ext.pngmath','numpydoc',
                 'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
                 'sphinx.ext.autosummary',
                 'sphinx.ext.doctest']
+extensions += ['parameter_anchor']
 
 
 # Add any paths that contain templates here, relative to this directory.
