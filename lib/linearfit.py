@@ -61,6 +61,110 @@ def iter_fit_arrays(xy,uv,nclip=3,sigma=3.0):
     fit['ref_coords'] = uv
     return fit
 
+def iter_fit_all(xy,uv,mode='rscale',nclip=3,sigma=3.0):
+
+    fit = fit_all(xy,uv,mode=mode)
+    
+    if nclip is None: nclip = 0
+    # define index to initially include all points
+    for n in range(nclip):
+        resids = compute_resids(xy,uv,fit)
+        resids1d = np.sqrt(np.power(resids[:,0],2)+np.power(resids[:,1],2))
+        sig = resids1d.std()
+        # redefine what pixels will be included in next iteration
+        goodx = (resids[:,0] < sigma*sig)
+        goody = (resids[:,1] < sigma*sig)
+        goodpix = np.bitwise_and(goodx,goody)
+
+        xy = xy[goodpix]
+        uv = uv[goodpix]
+        if xy.shape[1] > 2:
+            fit = fit_all(xy,uv,mode=mode)
+    
+    fit['img_coords'] = xy
+    fit['ref_coords'] = uv
+    return fit
+
+def fit_all(xy,uv,mode='rscale'):
+    """ Performs an 'rscale' fit between matched lists of pixel positions xy and uv"""
+    if mode not in ['general','shift','rscale']: 
+        mode = 'rscale'
+    if not isinstance(xy,np.ndarray): 
+        # cast input list as numpy ndarray for fitting
+        xy = np.array(xy)
+    if not isinstance(uv,np.ndarray): 
+        # cast input list as numpy ndarray for fitting
+        uv = np.array(uv)
+
+    if mode == 'shift':
+        diff_pts = xy - uv
+        Pcoeffs = np.array([1.0,0.0,diff_pts[:,0].mean()])
+        Qcoeffs = np.array([0.0,1.0,diff_pts[:,1].mean()])
+        result = build_fit(Pcoeffs,Qcoeffs)
+    elif mode == 'general':
+        # Set up products used for computing the fit
+        gxy = uv
+        guv = xy
+        Sx = gxy[:,0].sum()
+        Sy = gxy[:,1].sum()
+        Su = guv[:,0].sum()
+        Sv = guv[:,1].sum()
+        
+        Sux = np.dot(guv[:,0],gxy[:,0])
+        Svx = np.dot(guv[:,1],gxy[:,0])
+        Suy = np.dot(guv[:,0],gxy[:,1])
+        Svy = np.dot(guv[:,1],gxy[:,1])
+        Sxx = np.dot(gxy[:,0],gxy[:,0])
+        Syy = np.dot(gxy[:,1],gxy[:,1])
+        Sxy = np.dot(gxy[:,0],gxy[:,1])
+        
+        n = len(xy[:,0])
+        M = np.array([[Sx, Sy, n], [Sxx, Sxy, Sx], [Sxy, Syy, Sy]])
+        U = np.array([Su,Sux,Suy])
+        V = np.array([Sv,Svx,Svy])
+        
+        # The fit solutioN...
+        # where 
+        #   u = P0 + P1*x + P2*y
+        #   v = Q0 + Q1*x + Q2*y
+        #
+        P = np.dot(npla.inv(M),U)
+        Q = np.dot(npla.inv(M),V)
+        
+        # Return the shift, rotation, and scale changes
+        result = build_fit(P,Q)        
+    else:
+        x = xy[:,0] - xy[:,0].mean()
+        y = xy[:,1] - xy[:,1].mean()
+        u = uv[:,0] - uv[:,0].mean()
+        v = uv[:,1] - uv[:,1].mean()
+        Sxx = np.dot(x,x)
+        Syy = np.dot(y,y)
+        Sux = np.dot(u,x)
+        Suy = np.dot(u,y)
+        Svx = np.dot(v,x)
+        Svy = np.dot(v,y)
+        
+        XX = Sux + Svy
+        YY = Suy - Svx
+        theta = (np.pi*2) - np.arctan2(YY,XX)
+        theta_deg = np.rad2deg(theta)
+        avg_scale = 1.0/(np.sqrt(np.power(XX,2)+np.power(YY,2))/(Sxx+Syy))
+        rotmat = np.zeros(shape=(2,2),dtype=np.float64)
+        rotmat[0] = (np.cos(theta),np.sin(theta))
+        rotmat[1] = (-np.sin(theta),np.cos(theta))
+        rotmat *= avg_scale
+        dxy = np.dot(xy,rotmat) - uv
+        xsh = dxy[:,0].mean()
+        ysh = dxy[:,1].mean()
+        mrot = np.zeros(shape=(2,3),dtype=np.float64)
+        mrot[0] = (rotmat[0][0],rotmat[0][1],xsh)
+        mrot[1] = (rotmat[1][0],rotmat[1][1],ysh)
+
+        result = {'offset':(xsh,ysh),'rot':theta_deg,'scale':(avg_scale,avg_scale,avg_scale),
+                  'coeffs':(mrot[0],mrot[1])}
+    
+    return result
 def fit_shifts(xy,uv):
     """ Performs a simple fit for the shift only between
         matched lists of positions 'xy' and 'uv'.
@@ -191,6 +295,7 @@ def apply_fit(xy,coeffs):
 def compute_resids(xy,uv,fit):
     """ Compute the residuals based on fit and input arrays to the fit
     """
+    print 'FIT coeffs: ',fit['coeffs']
     xn,yn = apply_fit(uv,fit['coeffs'])
     resids = xy - np.transpose([xn,yn])
     return resids

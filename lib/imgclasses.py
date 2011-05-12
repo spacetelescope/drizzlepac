@@ -277,12 +277,11 @@ class Image(object):
 
         if not self.identityfit:
             if self.matches is not None and self.goodmatch:
-                if pars['fitgeometry'] in ['rscale','general']:
-                    self.fit = linearfit.iter_fit_arrays(self.matches['image'],self.matches['ref'],pars['nclip'],pars['sigma'])
-                else:
-                    self.fit = linearfit.iter_fit_shifts(self.matches['image'],self.matches['ref'],pars['nclip'],pars['sigma'])
+                self.fit = linearfit.iter_fit_all(
+                    self.matches['image'],self.matches['ref'],
+                    mode=pars['fitgeometry'],nclip=pars['nclip'],sigma=pars['sigma'])
 
-                print 'Computed fit for ',self.name,': '
+                print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g\n'%(
                     self.fit['offset'][0],self.fit['offset'][1], 
                     self.fit['rot'],self.fit['scale'][0])
