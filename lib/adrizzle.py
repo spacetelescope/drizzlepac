@@ -48,7 +48,7 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
         input_dict = {}
     input_dict['input'] = input
     input_dict['outdata'] = outdata
-    
+
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
@@ -121,7 +121,7 @@ def run(configObj, wcsmap=None):
             uniqid = out_sci_hdr['ndrizim']+1
         else:
             uniqid = 1
-        
+
     else: # otherwise, define the output WCS either from user pars or refimage
         if util.is_blank(configObj['User WCS Parameters']['refimage']):
             # Define a WCS based on user provided WCS values
@@ -168,10 +168,10 @@ def run(configObj, wcsmap=None):
         outwht = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
     else:
         outwht = outwht.astype(np.float32)
-        
+
     outcon = None
-    keep_con = False    
-    
+    keep_con = False
+
     if not util.is_blank(configObj['outcontext']):
         outcon = get_data(configObj['outcontext'])
         keep_con = True
@@ -217,7 +217,7 @@ def run(configObj, wcsmap=None):
     ctype2 = input_wcs.wcs.ctype[1]
     if ctype1.find('-SIP'): ctype1 = ctype1.replace('-SIP','')
     if ctype2.find('-SIP'): ctype2 = ctype2.replace('-SIP','')
-    
+
     # Update header with WCS keywords
     out_sci_handle[outextn].header.update('ORIENTAT',output_wcs.orientat)
     out_sci_handle[outextn].header.update('CD1_1',output_wcs.wcs.cd[0][0])
@@ -544,15 +544,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     subprocs = []
 
     for img in imageObjectList:
-        for chip in img.returnAllChips(extname=img.scienceExt):
+
+        allchips = img.returnAllChips(extname=img.scienceExt)
+
+        # How many inputs should go into this product?
+        num_in_prod = _numctx['all']
+        if single:
+            num_in_prod = _numctx[allchips[0].outputNames['outSingle']]
+
+        for chip in allchips:
             # set template - the name of the 1st image
             if _numchips == 0:
                 template = chip.outputNames['data']
-
-            # determine how many inputs should go into this product
-            num_in_prod = _numctx['all']
-            if single:
-                num_in_prod = _numctx[chip.outputNames['outSingle']]
 
             # See if we will be writing out data
             doWrite = _numchips+1 == num_in_prod
@@ -561,13 +564,13 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             if single and can_parallel:
                 p = multiprocessing.Process(target=run_driz_chip,
                         args=(img,chip,output_wcs,outwcs,template,paramDict,
-                        single, doWrite,build,_versions,_numctx,_nplanes,
-                        _numchips, None,None,None,[],wcsmap))
+                        single,doWrite,build,_versions,_numctx,_nplanes,
+                        _numchips,None,None,None,[],wcsmap))
                 subprocs.append(p)
-                p.start() # ! just first cut - we will use a pool for this
+                p.start() # ! just first cut - we might use a pool for this
             else:
                 run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
-                    single, doWrite,build,_versions,_numctx,_nplanes,_numchips,
+                    single,doWrite,build,_versions,_numctx,_nplanes,_numchips,
                     _outsci,_outwht,_outctx,_hdrlist,wcsmap)
 
             # Increment/reset chip counter
@@ -865,7 +868,7 @@ def do_driz(insci, input_wcs, inwht,
     if (insci.dtype > np.float32):
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
-        
+
     _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
         outctx, uniqid, ystart, 1, 1, _dny,
         pix_ratio, 1.0, 1.0, 'center', pixfrac,
@@ -887,7 +890,7 @@ def get_data(filename):
         handle = fileutil.openImage(filename)
         data = handle[extname].data
         handle.close()
-    else: 
+    else:
         data = None
     return data
 
@@ -913,7 +916,7 @@ def create_output(filename):
         del pimg
     else:
         print 'Updating existing output file: ',fileroot
-    
+
     handle = pyfits.open(fileroot,mode='update')
 
     return handle,extname
