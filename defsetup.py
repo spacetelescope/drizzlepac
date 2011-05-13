@@ -102,7 +102,12 @@ setupargs = {
     'author_email' :    "help@stsci.edu",
     'license' :         "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :       ["Linux","Solaris","Mac OS X","Win"],
-    'data_files' :        [( pkg+"/pars", ['lib/pars/*']),( pkg, ['lib/*.help'])],
+    'data_files' :        [( pkg+"/pars", ['lib/pars/*']),
+                            ( pkg+"/htmlhelp/_images", ['lib/htmlhelp/_images/*']),
+                            ( pkg+"/htmlhelp/_sources", ['lib/htmlhelp/_sources/*']),
+                            ( pkg+"/htmlhelp/_static", ['lib/htmlhelp/_static/*']),
+                            ( pkg+"/htmlhelp", ['lib/htmlhelp/*.html']),
+                            ( pkg, ['lib/*.help'])],
     'scripts' :         ["lib/mdriz.py","lib/resetbits","lib/updatenpol"] ,
     'ext_modules' :     getNumpyExtensions()
     }
