@@ -534,7 +534,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Keep track of how many chips have been processed
     # For single case, this will determine when to close
     # one product and open the next.
-    _numchips = 0
+    _chipIdx = 0
     _hdrlist = []
     # Remember the name of the 1st image that goes into this particular product
     # Insure that the header reports the proper values for the start of the
@@ -543,41 +543,32 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     subprocs = []
 
+    #
+    # Work on each image
+    #
     for img in imageObjectList:
 
-        allchips = img.returnAllChips(extname=img.scienceExt)
+        chiplist = img.returnAllChips(extname=img.scienceExt)
 
         # How many inputs should go into this product?
         num_in_prod = _numctx['all']
         if single:
-            num_in_prod = _numctx[allchips[0].outputNames['outSingle']]
+            num_in_prod = _numctx[chiplist[0].outputNames['outSingle']]
 
-        for chip in allchips:
-            # set template - the name of the 1st image
-            if _numchips == 0:
-                template = chip.outputNames['data']
+        # The name of the 1st image
+        if _chipIdx == 0:
+            template = chiplist[0].outputNames['data']
 
-            # See if we will be writing out data
-            doWrite = _numchips+1 == num_in_prod
+        # Work this image
+        run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
+                     num_in_prod,build,_versions,_numctx,_nplanes,_chipIdx,
+                     _outsci,_outwht,_outctx,_hdrlist,wcsmap)
+#                    None,   None,   None,   None,    wcsmap)
 
-            # run_driz_chip
-            if single and can_parallel:
-                p = multiprocessing.Process(target=run_driz_chip,
-                        args=(img,chip,output_wcs,outwcs,template,paramDict,
-                        single,doWrite,build,_versions,_numctx,_nplanes,
-                        _numchips,None,None,None,[],wcsmap))
-                subprocs.append(p)
-                p.start() # ! just first cut - we might use a pool for this
-            else:
-                run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
-                    single,doWrite,build,_versions,_numctx,_nplanes,_numchips,
-                    _outsci,_outwht,_outctx,_hdrlist,wcsmap)
-
-            # Increment/reset chip counter
-            if doWrite:
-                _numchips = 0
-            else:
-                _numchips += 1
+        # Increment/reset chip counter
+        _chipIdx += len(chiplist)
+        if _chipIdx == num_in_prod:
+            _chipIdx = 0
 
     # do the join if we spawned tasks
     if len(subprocs) > 0:
@@ -585,21 +576,22 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             p.join()
 
     del _outsci,_outwht,_outctx, _hdrlist
-    # end of loop over each chip
+    # have looped over each img/chip
 
 
 #
 # Still to check:
 #    - why have both output_wcs and outwcs?
 
-def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
-                  doWrite,build,_versions,_numctx,_nplanes,_numchips,
-                  _outsci,_outwht,_outctx,_hdrlist,wcsmap):
-    """ Perform drizzle operation on a single image/chip.
-    This is separated out from run_driz() so as to collect
+def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
+                 num_in_prod,build,_versions,_numctx,_nplanes,chipIdxCopy,
+                 _outsci,_outwht,_outctx,_hdrlist,wcsmap):
+    """ Perform the drizzle operation on a single image.
+    This is separated out from run_driz() so as to keep together
     the entirety of the code which is inside the loop over
-    images/chips.  See the calling code for more documentation.
+    images.  See the run_driz() code for more documentation.
     """
+
     # Check for unintialized inputs
     if _outsci is None:
         _outsci=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
@@ -607,8 +599,43 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _outwht=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
     if _outctx is None:
        _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+    if _hdrlist is None:
+       _hdrlist = []
 
-    # Look for sky-subtracted product.
+    # Work on each chip - note that they share access to the arrays above
+    for chip in chiplist:
+        # See if we will be writing out data
+        doWrite = chipIdxCopy == num_in_prod-1
+
+        # run_driz_chip
+        run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
+                      single,doWrite,build,_versions,_numctx,_nplanes,
+                      chipIdxCopy,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
+
+        # Increment/reset chip counter
+        chipIdxCopy += 1
+
+    #
+    # Reset for next output image...
+    #
+    if single:  # (was if doWrite)
+        np.multiply(_outsci,0.,_outsci)
+        np.multiply(_outwht,0.,_outwht)
+        np.multiply(_outctx,0,_outctx)
+        # this was "_hdrlist=[]", but we need to preserve the var ptr itself
+        while len(_hdrlist)>0: _hdrlist.pop()
+
+
+def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
+                  doWrite,build,_versions,_numctx,_nplanes,_numchips,
+                  _outsci,_outwht,_outctx,_hdrlist,wcsmap):
+    """ Perform the drizzle operation on a single chip.
+    This is separated out from run_driz() so as to keep together
+    the entirety of the code which is inside the loop over
+    chips.  See the run_driz() code for more documentation.
+    """
+
+    # Look for sky-subtracted product
     if os.path.exists(chip.outputNames['outSky']):
         chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
         _expname = chip.outputNames['outSky']+chipextn
@@ -769,14 +796,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
         _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,versions=_versions)
         del _outimg
-        #
-        # Reset for next output image...
-        #
-        np.multiply(_outsci,0.,_outsci)
-        np.multiply(_outwht,0.,_outwht)
-        np.multiply(_outctx,0,_outctx)
-        # this was "_hdrlist=[]", but we need to preserve the var ptr itself
-        while len(_hdrlist)>0: _hdrlist.pop()
 
 
 def do_driz(insci, input_wcs, inwht,
