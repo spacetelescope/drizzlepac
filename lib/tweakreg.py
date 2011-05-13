@@ -14,8 +14,8 @@ import imagefindpars
 
 import sextractor
     
-__version__ = '0.2'
-__vdate__ = '27-Apr-2011'
+__version__ = '0.3'
+__vdate__ = '13-May-2011'
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
@@ -23,10 +23,20 @@ __taskname__ = 'tweakreg' # unless someone comes up with anything better
 # 
 # Interfaces used by TEAL
 #
-def getHelpAsString():
-    helpString = 'TweakReg Version %s(%s)\n'%(__version__,__vdate__)
-    helpString += teal.getHelpFileAsString(__taskname__,__file__)
-    
+def getHelpAsString(docstring=False):
+    """ 
+    return useful help from a file in the script directory called __taskname__.help
+    """
+    install_dir = os.path.dirname(__file__)
+    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
+    helpfile = os.path.join(install_dir,__taskname__+'.help')
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(__taskname__,__file__)
+    else:
+        helpString = 'file://'+htmlfile
+
     return helpString
 
 def _managePsets(configobj):
@@ -193,5 +203,8 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
         # Pass full set of parameters on to the task
         run(configObj)
 
+def help():
+    print getHelpAsString(docstring=True)
+    
 # Append help file as docstring for use in Sphinx-generated documentation/web pages
 TweakReg.__doc__ = getHelpAsString()

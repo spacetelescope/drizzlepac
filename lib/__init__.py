@@ -116,7 +116,7 @@ def getHelpAsString(docstring=False):
     return useful help from a file in the script directory called __taskname__.help
     """
     install_dir = os.path.dirname(__file__)
-    htmlfile = os.path.join(install_dir,__taskname__+'.html')
+    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
     helpfile = os.path.join(install_dir,__taskname__+'.help')
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
@@ -225,3 +225,5 @@ def run(configObj=None,wcsmap=None):
         # Turn off logging now
         util.end_logging()
         
+def help():
+    print getHelpAsString(docstring=True)
