@@ -19,7 +19,7 @@ except ImportError:
 
 can_parallel = False
 num_processors = 1
-if 'BETADRIZ_NO_PARALLEL' in os.environ:
+if 'BETADRIZ_NO_PARALLEL' not in os.environ:
     try:
         import multiprocessing
         can_parallel = True
@@ -494,7 +494,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Set parameters for each input and run drizzle on it here.
     #
     # Perform drizzling...
-    #
 
     numctx = 0
     for img in imageObjectList:
@@ -540,7 +539,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Insure that the header reports the proper values for the start of the
     # exposure time used to make this; in particular, TIME-OBS and DATE-OBS.
     template = None
-
     subprocs = []
 
     #
@@ -559,13 +557,21 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         if _chipIdx == 0:
             template = chiplist[0].outputNames['data']
 
-        # Work this image
-        run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
-                     num_in_prod,build,_versions,_numctx,_nplanes,_chipIdx,
-                     _outsci,_outwht,_outctx,_hdrlist,wcsmap)
-#                    None,   None,   None,   None,    wcsmap)
+        # Work each image, posibly in parallel
+        if single and can_parallel:
+            p = multiprocessing.Process(target=run_driz_img,
+                args=(img,chiplist,output_wcs,outwcs,template,paramDict,
+                      single,num_in_prod,build,_versions,_numctx,_nplanes,
+                      _chipIdx,None,None,None,None,wcsmap))
 
-        # Increment/reset chip counter
+            subprocs.append(p)
+            p.start()
+        else:
+            run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,
+                         single,num_in_prod,build,_versions,_numctx,_nplanes,
+                         _chipIdx,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
+
+        # Increment/reset master chip counter
         _chipIdx += len(chiplist)
         if _chipIdx == num_in_prod:
             _chipIdx = 0
@@ -575,7 +581,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         for p in subprocs:
             p.join()
 
-    del _outsci,_outwht,_outctx, _hdrlist
+    del _outsci,_outwht,_outctx,_hdrlist
     # have looped over each img/chip
 
 
@@ -593,6 +599,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     """
 
     # Check for unintialized inputs
+    here = _outsci==None and _outwht==None and _outctx==None and _hdrlist==None
     if _outsci is None:
         _outsci=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
     if _outwht is None:
@@ -612,18 +619,21 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
                       single,doWrite,build,_versions,_numctx,_nplanes,
                       chipIdxCopy,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
 
-        # Increment/reset chip counter
+        # Increment chip counter (also done outside of this function)
         chipIdxCopy += 1
 
     #
     # Reset for next output image...
     #
-    if single:  # (was if doWrite)
+    if here:
+        del _outsci,_outwht,_outctx,_hdrlist
+    elif single:
         np.multiply(_outsci,0.,_outsci)
         np.multiply(_outwht,0.,_outwht)
         np.multiply(_outctx,0,_outctx)
         # this was "_hdrlist=[]", but we need to preserve the var ptr itself
         while len(_hdrlist)>0: _hdrlist.pop()
+    # else, these were intended to live and be used beyond this function call
 
 
 def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
@@ -787,13 +797,12 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
             np.multiply(_outsci, _expscale, _outsci)
 
         #
-        # Write output arrays to FITS file(s) and reset chip counter
+        # Write output arrays to FITS file(s)
         #
         _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=build,
                                           wcs=output_wcs, single=single)
         _outimg.set_bunit(_bunit)
         _outimg.set_units(paramDict['units'])
-
         _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,versions=_versions)
         del _outimg
 
