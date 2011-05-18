@@ -29,6 +29,7 @@ if 'BETADRIZ_NO_PARALLEL' not in os.environ:
             can_parallel = False
     except:
         multiprocessing = None
+        can_parallel = False
         print '\nCould not import multiprocessing, will only be able to take advantage of a single CPU core'
 
 __taskname__ = "betadrizzle.adrizzle"
