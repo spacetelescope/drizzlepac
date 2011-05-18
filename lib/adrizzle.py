@@ -18,18 +18,17 @@ except ImportError:
     raise ImportError
 
 can_parallel = False
-num_processors = 1
 if 'BETADRIZ_NO_PARALLEL' not in os.environ:
     try:
         import multiprocessing
         can_parallel = True
-        # sanity check - do we have the hardware?
-        num_processors = multiprocessing.cpu_count()
-        if num_processors < 2:
+        # sanity check - do we even have the hardware?
+        try:
+            can_parallel = multiprocessing.cpu_count() > 1
+        except:
             can_parallel = False
-    except:
+    except ImportError:
         multiprocessing = None
-        can_parallel = False
         print '\nCould not import multiprocessing, will only be able to take advantage of a single CPU core'
 
 __taskname__ = "betadrizzle.adrizzle"
