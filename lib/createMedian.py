@@ -214,7 +214,13 @@ def _median(imageObjectList,paramDict):
             # with Multidrizzle.
             #
             # Get the exposure time from the InputImage object
-            exposureTimeList.append(image._exptime)
+            # 
+            # MRD 19-May-2011
+            # Changed exposureTimeList to take exposure time from img_exptime
+            # variable instead of hte image._exptime attribute, since
+            # image._exptime was just giving 1.
+            # 
+            exposureTimeList.append(img_exptime)
             # account for the case where no IDCSCALE has been set, due to a 
             # lack of IDCTAB or to 'coeffs=None'.
             idcscale = image[1].wcs.idcscale
@@ -335,7 +341,7 @@ def _median(imageObjectList,paramDict):
         if ( comb_type.lower() == "minmed"):
             if (_weight_mask_list in [None,[]]):
                 _weight_mask_list = None
-
+            
             # Create the combined array object using the minmed algorithm
             result = minmed(imageSectionsList[startDrz:endDrz],  # list of input data to be combined.
                                 imageSectionsList[startWht:endWht],# list of input data weight images to be combined.
