@@ -382,8 +382,8 @@ def geomap_rscale(xyin,xyref):
     yshift = yi0 - (-xr0*sthetay + yr0*cthetay)
     rotmat = np.array([[cthetax,sthetax],[-sthetay,cthetay]])
     
-    P = np.array([cthetax,sthetax,xshift])
-    Q = np.array([-sthetay,cthetay,yshift])
+    P = np.array([cthetax,-sthetax,xshift])
+    Q = np.array([sthetay,cthetay,yshift])
     resids = np.dot(xyin,rotmat)-xyref - [xshift,yshift]
     rms = [resids[:,0].std(),resids[:,1].std()]
     
