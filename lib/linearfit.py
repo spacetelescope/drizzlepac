@@ -142,6 +142,7 @@ def fit_all(xy,uv,mode='rscale'):
         result = build_fit(P,Q)        
     else:
         """
+        # Colin's algorithm for the 'rscale' fit
         x = xy[:,0] - xy[:,0].mean()
         y = xy[:,1] - xy[:,1].mean()
         u = uv[:,0] - uv[:,0].mean()
@@ -168,12 +169,16 @@ def fit_all(xy,uv,mode='rscale'):
         mrot = np.zeros(shape=(2,3),dtype=np.float64)
         mrot[0] = (rotmat[0][0],rotmat[0][1],xsh)
         mrot[1] = (rotmat[1][0],rotmat[1][1],ysh)
+        dxy[:,0] -= xsh
+        dxy[:,1] -= ysh
+        rms = [dxy[:,0].std(),dxy[:,1].std()]
+        
 
         result = {'offset':(xsh,ysh),'rot':theta_deg,'scale':(avg_scale,avg_scale,avg_scale),
-                  'coeffs':(mrot[0],mrot[1])}
+                  'coeffs':(mrot[0],mrot[1]),'resids':dxy,'rms':rms}
         """
         result = geomap_rscale(xy,uv)
-    
+
     return result
 def fit_shifts(xy,uv):
     """ Performs a simple fit for the shift only between
@@ -310,112 +315,78 @@ def compute_resids(xy,uv,fit):
     resids = xy - np.transpose([xn,yn])
     return resids
 
-##### Geomapy derived functions for fitting
-def accuMatrix(xyref,xyin):
+##### My interpretation of geomap 'rscale' fitting based on 'lib/geofit.x'
+def geomap_rscale(xyin,xyref):
     """
-    Set up the products used for computing the fit
+    Set up the products used for computing the fit derived using the code from 
+    lib/geofit.x for the function 'geo_fmagnify()'. Comparisons with results from
+    geomap (no additional clipping) were made and produced the same results 
+    out to 5 decimal places.
+    
     Output
     ------
-    M : tuple of arrays
-        Matrix and two arrays  with the products.
+    fit: dict
+        Dictionary containing full solution for fit.
     """
     n = xyref.shape[0]
     Sx = xyref[:,0].sum()
     Sy = xyref[:,1].sum()
     Su = xyin[:,0].sum()
     Sv = xyin[:,1].sum()
-    Sux = np.dot(xyin[:,0],xyref[:,0])
-    Svx = np.dot(xyin[:,1],xyref[:,0])
-    Suy = np.dot(xyin[:,0],xyref[:,1])
-    Svy = np.dot(xyin[:,1],xyref[:,1])
-    Sxx = np.dot(xyref[:,0],xyref[:,0])
-    Syy = np.dot(xyref[:,1],xyref[:,1])
-    Sxy = np.dot(xyref[:,0],xyref[:,1])
-    M = np.array([[Sx, Sy, n], [Sxx, Sxy, Sx], [Sxy, Syy, Sy]])
-    U = np.array([Su,Sux,Suy])
-    V = np.array([Sv,Svx,Svy])
-    return M,U,V
-
-def geomap_rscale(xyin,xyref):
-    """
-    Function that does a rscale using Power Series polynomial.
-    """
-    _n = xyin.shape[0]
-    M,U,V=accuMatrix(xyin,xyref)
-    P = np.dot(npla.inv(M),U)
-    Q = np.dot(npla.inv(M),V)
-    det = P[0]*Q[1] - P[1]*Q[0]
-    theta,theta_deg,p = geomap_buildFit(P,Q)
-    det=p*det
-    mag= np.sqrt(det)
-    yrot=theta_deg
-    xrot=yrot
-    if p < 0 :
-        xrot=xrot+180
-        if 360 < xrot:
-            xrot=xrot-360
-    cthetax=np.cos(np.deg2rad(xrot))
-    sthetax=np.sin(np.deg2rad(xrot))
-    cthetay=np.cos(np.deg2rad(yrot))
-    sthetay=np.sin(np.deg2rad(yrot))
-    _b=mag*cthetax
-    _c=mag*sthetay
-    _e=-mag*sthetax
-    _f=mag*cthetay
-    diff_pts=[]
-    for i in xrange(_n):
-        diff_pts+=[[xyref[i,0]-_b*xyin[i,0]-_c*xyin[i,1],xyref[i,1]-_e*xyin[i,0]-_f*xyin[i,1]]]
-    diff_pts=np.array(diff_pts)
-    _a=diff_pts[:,0].mean()
-    _d=diff_pts[:,1].mean()
-    P[2] = _a
-    Q[2] = _d
-    xyfit = []
-    for i in xrange(_n):
-        xyfit+=[[_a+_b*xyin[i,0]+_c*xyin[i,1],_d+_e*xyin[i,0]+_f*xyin[i,1]]]
-    xyfit=np.array(xyfit)
-    residuals= xyfit - xyref
-    xrms = np.sqrt(np.power(residuals[:,0],2).mean())
-    yrms = np.sqrt(np.power(residuals[:,1],2).mean())
-    xshift,yshift,xmag,ymag=_a,_d,mag,mag
+    xr0 = Sx/n
+    yr0 = Sy/n
+    xi0 = Su/n
+    yi0 = Sv/n
+    Sxrxr = np.power((xyref[:,0]-xr0),2).sum()
+    Syryr = np.power((xyref[:,1]-yr0),2).sum()
+    Syrxi = ((xyref[:,1]-yr0)*(xyin[:,0]-xi0)).sum()
+    Sxryi = ((xyref[:,0]-xr0)*(xyin[:,1]-yi0)).sum()
+    Sxrxi = ((xyref[:,0]-xr0)*(xyin[:,0]-xi0)).sum()
+    Syryi = ((xyref[:,1]-yr0)*(xyin[:,1]-yi0)).sum()
     
-    return {'offset':(xshift,yshift),'rot':theta_deg,'scale':(mag,mag,mag),'coeffs':(P,Q),'resids':residuals,'rms':[xrms,yrms]}
-
-def geomap_buildFit(P,Q):
-    """
-    Calculate the rotation angle.
-    @param P: Array calculated as dot(NLA.inverse(M),U). It will be something like: P = np.array([-0.434589, -0.893084, 285.420816])
-    @type P: Array
-    @param Q: Array calculated as dot(NLA.inverse(M),V). It will be something like: Q = np.array([0.907435, -0.433864, 45.553862])
-    @return: The rotation angle, and a factor.
-    @rtype: Angle in radians, Angle in degrees, Factor
-    """
-    det = P[0]*Q[1] - P[1]*Q[0]
-    if det > 0:
-        p=1
+    rot_num = Sxrxi * Syryi
+    rot_denom = Syrxi * Sxryi
+    if rot_num == rot_denom: det = 0.0
+    else: det = rot_num - rot_denom
+    if (det < 0):
+        rot_num = Syrxi + Sxryi
+        rot_denom = -Sxrxi + Syryi
     else:
-        p=-1
-    theta = np.arctan2(P[1] - p*Q[0], p*P[0] + Q[1])
-    theta_deg = np.rad2deg(theta) % 360.0
-    return theta,theta_deg,p
-
-def geomap_getRms(residuals):
-    """
-    Calculate the rms value for x y y axis.
-    @param residuals: 2-D array with the residual values
-    @type residuals: 2-D Array list.
-    @return: x rms value, y rms value
-    @rtype: Float,Float
-    """
-
-    n = residuals.shape[0]
-    xrms = 0
-    yrms = 0
-    for i in xrange(n):
-        xrms+=residuals[i,0]**2
-        yrms+=residuals[i,1]**2
-    xrms=xrms/n
-    yrms=yrms/n
-    xrms=np.sqrt(xrms)
-    yrms=np.sqrt(yrms)
-    return xrms,yrms
+        rot_num = Syrxi - Sxryi
+        rot_denom = Sxrxi + Syryi
+    if rot_num == rot_denom: theta = 0.0
+    else:
+        theta = np.rad2deg(np.arctan2(rot_num,rot_denom))
+        if theta < 0:
+            theta += 360.0
+        
+    ctheta = np.cos(np.deg2rad(theta))
+    stheta = np.sin(np.deg2rad(theta))
+    s_num = rot_denom*ctheta + rot_num*stheta
+    s_denom = Sxrxr + Syryr
+    if s_denom < 0:
+        mag = 1.0
+    else:
+        mag = s_num/s_denom
+    
+    if det < 0:
+        cthetax = -mag*ctheta
+        sthetay = -mag*stheta
+    else:
+        cthetax = mag*ctheta
+        sthetay = mag*stheta
+    sthetax = mag*stheta
+    cthetay = mag*ctheta
+    
+    xshift = xi0 - (xr0*cthetax + yr0*sthetax)
+    yshift = yi0 - (-xr0*sthetay + yr0*cthetay)
+    rotmat = np.array([[cthetax,sthetax],[-sthetay,cthetay]])
+    
+    P = np.array([cthetax,sthetax,xshift])
+    Q = np.array([-sthetay,cthetay,yshift])
+    resids = np.dot(xyin,rotmat)-xyref - [xshift,yshift]
+    rms = [resids[:,0].std(),resids[:,1].std()]
+    
+    rscale_fit = {'offset':(xshift,yshift),'rot':theta,'scale':(mag,mag,mag),'coeffs':(P,Q),'resids':resids,'rms':rms}
+    return rscale_fit
+    
