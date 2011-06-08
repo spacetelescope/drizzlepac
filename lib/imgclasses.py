@@ -295,7 +295,7 @@ class Image(object):
             if self.matches is not None and self.goodmatch:
                 self.fit = linearfit.iter_fit_all(
                     self.matches['image'],self.matches['ref'],
-                    mode=pars['fitgeometry'],nclip=pars['nclip'],sigma=pars['sigma'])
+                    mode=pars['fitgeometry'],nclip=pars['nclip'],sigma=pars['sigma'],minobj=pars['minobj'])
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g\n'%(

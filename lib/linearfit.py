@@ -61,26 +61,30 @@ def iter_fit_arrays(xy,uv,nclip=3,sigma=3.0):
     fit['ref_coords'] = uv
     return fit
 
-def iter_fit_all(xy,uv,mode='rscale',nclip=3,sigma=3.0):
+def iter_fit_all(xy,uv,mode='rscale',nclip=3,sigma=3.0,minobj=3):
 
     fit = fit_all(xy,uv,mode=mode)
-
+    npts = xy.shape[0]
+    npts0 = 0
     if nclip is None: nclip = 0
     # define index to initially include all points
     for n in range(nclip):
         if 'resids' in fit: 
             resids = fit['resids']
-            sig = (fit['rms'][0]+fit['rms'][1])/2.0
         else:
             resids = compute_resids(xy,uv,fit)
-            sig = (resids[:,0]+resids[:,1]).mean()
 
         # redefine what pixels will be included in next iteration
-        goodx = (np.abs(resids[:,0]) < sigma*sig)
-        goody = (np.abs(resids[:,1]) < sigma*sig)
+        whtfrac = npts/(npts-npts0-1)
+        cutx = sigma*np.sqrt(fit['rms'][0]/whtfrac)
+        cuty = sigma*np.sqrt(fit['rms'][1]/whtfrac)        
+        
+        goodx = (np.abs(resids[:,0]) < cutx)
+        goody = (np.abs(resids[:,1]) < cuty)
         goodpix = np.bitwise_and(goodx,goody)
 
         if np.where(goodpix == True)[0].shape[0] > 2:
+            npts0 = npts - goodpix.shape[0]
             xy = xy[goodpix]
             uv = uv[goodpix]
             fit = fit_all(xy,uv,mode=mode)
@@ -380,11 +384,11 @@ def geomap_rscale(xyin,xyref):
     
     xshift = xi0 - (xr0*cthetax + yr0*sthetax)
     yshift = yi0 - (-xr0*sthetay + yr0*cthetay)
-    rotmat = np.array([[cthetax,sthetax],[-sthetay,cthetay]])
+    rotmat = np.array([[cthetax,-sthetax],[sthetay,cthetay]])
     
     P = np.array([cthetax,-sthetax,xshift])
     Q = np.array([sthetay,cthetay,yshift])
-    resids = np.dot(xyin,rotmat)-xyref - [xshift,yshift]
+    resids = xyin - np.dot(xyref,rotmat) - [xshift,yshift]
     rms = [resids[:,0].std(),resids[:,1].std()]
     
     rscale_fit = {'offset':(xshift,yshift),'rot':theta,'scale':(mag,mag,mag),'coeffs':(P,Q),'resids':resids,'rms':rms}

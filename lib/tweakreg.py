@@ -166,6 +166,7 @@ def run(configobj):
     #    each image's positions    
     for img in input_images:
         img.match(refimage.outxy, refimage.wcs,refimage.name,**configobj['OBJECT MATCHING PARAMETERS'])
+        configobj['CATALOG FITTING PARAMETERS']['minobj'] = configobj['OBJECT MATCHING PARAMETERS']['minobj']
         img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
         if configobj['UPDATE HEADER']['updatehdr']:
             img.updateHeader(wcsname=configobj['UPDATE HEADER']['wcsname'])
