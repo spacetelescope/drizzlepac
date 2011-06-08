@@ -91,6 +91,7 @@ class Image(object):
                 if 'input_xy' not in self.catalog_names:
                     self.catalog_names['input_xy'] = []
                 self.catalog_names['input_xy'].append(catname)
+            self.catalog_names['fitmatch'] = self.rootname+"_catalog_fit.match"
 
         # Set up products which need to be computed by methods of this class
         self.outxy = None
@@ -176,6 +177,7 @@ class Image(object):
                     # find prefix (if any)
                     clip_prefix = p[:pindx].strip()
 
+        all_radec = None
         if clip_catalog:
             # Start by clipping by any specified flux range
             if self.pars[clip_prefix+'fluxmax'] is not None or self.pars[clip_prefix+'fluxmin'] is not None:
@@ -186,23 +188,37 @@ class Image(object):
                     fluxmin = self.all_radec[2].min()
 
                 if self.pars[clip_prefix+'fluxmax'] is not None:
-                    fluxmin = self.pars[clip_prefix+'fluxmax']
+                    fluxmax = self.pars[clip_prefix+'fluxmax']
                 else:
-                    fluxmin = self.all_radec[2].max()
+                    fluxmax = self.all_radec[2].max()
+                
+                # apply flux limit clipping
+                minindx = self.all_radec_orig[2] >= fluxmin
+                maxindx = self.all_radec_orig[2] <= fluxmax
+                flux_indx = np.bitwise_and(minindx,maxindx)
+                all_radec = []
+                all_radec.append(self.all_radec_orig[0][flux_indx])
+                all_radec.append(self.all_radec_orig[1][flux_indx])
+                all_radec.append(self.all_radec_orig[2][flux_indx])
 
-            if self.pars[clip_prefix+'nbright'] is not None:
+            if self.pars.has_key(clip_prefix+'nbright') and self.pars[clip_prefix+'nbright'] is not None:
                 clip_catalog = True
                 # pick out only the brightest 'nbright' sources
                 if self.pars[clip_prefix+'fluxunits'] == 'mag':
                     nbslice = slice(None,nbright)
                 else:
                     nbslice = slice(nbright,None)
-
-            all_radec = copy.deepcopy(self.all_radec_orig) # work on copy of all original data
-            nbright_indx = np.argsort(all_radec[2])[nbslice] # find indices of brightest
-            self.all_radec[0] = all_radec[0][nbright_indx]
-            self.all_radec[1] = all_radec[1][nbright_indx]
-            self.all_radec[2] = all_radec[2][nbright_indx]
+                
+                if all_radec is None:
+                    all_radec = copy.deepcopy(self.all_radec_orig) # work on copy of all original data                
+                nbright_indx = np.argsort(all_radec[2])[nbslice] # find indices of brightest
+                self.all_radec[0] = all_radec[0][nbright_indx]
+                self.all_radec[1] = all_radec[1][nbright_indx]
+                self.all_radec[2] = all_radec[2][nbright_indx]
+    
+            else:
+                if all_radec is not None:
+                    self.all_radec = copy.deepcopy(all_radec)            
 
 
     def match(self,ref_outxy, refWCS, refname, **kwargs):
@@ -219,7 +235,7 @@ class Image(object):
         del matchpars['minobj'] # not needed in xyxymatch
 
         # Check to see whether or not it is being matched to itself
-        if (ref_outxy.shape == self.outxy.shape) and (ref_outxy == self.outxy).all():
+        if (refname.strip() == self.name.strip()) or (ref_outxy.shape == self.outxy.shape) and (ref_outxy == self.outxy).all():
             self.identityfit = True
             print 'NO fit performed for reference image: ',self.name,'\n'
         else:
@@ -287,10 +303,13 @@ class Image(object):
                     self.fit['rot'],self.fit['scale'][0])
                 print 'Final solution based on ',self.fit['img_coords'].shape[0],' objects.'
                 
+                self.write_fit_catalog()
+
                 # Plot residuals, if requested by the user
                 if pars.has_key('residplot') and "No" not in pars['residplot']:
                     xy = self.fit['img_coords']
-                    resids = linearfit.compute_resids(xy,self.fit['ref_coords'],self.fit)
+                    #resids = linearfit.compute_resids(xy,self.fit['ref_coords'],self.fit)
+                    resids = self.fit['resids']
                     xy_fit = xy + resids
                     title_str = 'Residuals\ for\ %s'%(self.name.replace('_','\_'))
                     if pars['residplot'] == 'vector':
@@ -329,6 +348,37 @@ class Image(object):
             f.write('%0.8g  %0.8g\n'%(ralist[i],declist[i]))
         f.close()
 
+    def write_fit_catalog(self):
+        """ Write out the catalog of all sources and resids used in the final fit.
+        """
+        if self.pars['writecat']:
+            print 'Creating catalog for the fit: ',self.catalog_names['fitmatch']
+            f = open(self.catalog_names['fitmatch'],'w')
+            f.write('# Input image: %s\n'%self.rootname)
+            f.write('# Coordinate mapping parameters: \n')
+            f.write('#    X and Y rms: %20.6g  %20.6g\n'%(self.fit['rms'][0],self.fit['rms'][1]))
+            f.write('#    X and Y shift: %20.6g  %20.6g\n '%(self.fit['offset'][0],self.fit['offset'][1]))
+            f.write('#    X and Y scale: %20.6g  %20.6g\n'%(self.fit['scale'][0],self.fit['scale'][1]))
+            f.write('#    X and Y rotation: %20.6g \n'%(self.fit['rot']))
+            f.write('# \n# Input Coordinate Listing\n')
+            f.write('#     Column 1: X (reference)\n') 
+            f.write('#     Column 2: Y (reference)\n')
+            f.write('#     Column 3: X (input)\n')
+            f.write('#     Column 4: Y (input)\n')
+            f.write('#     Column 5: X (fit)\n')
+            f.write('#     Column 6: Y (fit)\n')
+            f.write('#     Column 7: X (residual)\n')
+            f.write('#     Column 8: Y (residual)\n')
+            f.write('#\n')
+            f.close()
+            fitvals = self.fit['img_coords']+self.fit['resids']
+            xydata = [self.fit['ref_coords'][:,0],self.fit['ref_coords'][:,1],
+                      self.fit['img_coords'][:,0],self.fit['img_coords'][:,1],
+                      fitvals[:,0],fitvals[:,1],
+                      self.fit['resids'][:,0],self.fit['resids'][:,1]
+                    ]
+            tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,append=True,format="%20.6f")
+        
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file
         """
@@ -355,7 +405,7 @@ class Image(object):
         """ Remove intermediate files created
         """            
         for f in self.catalog_names:
-            if f == 'match':
+            if 'match' in f:
                 if os.path.exists(self.catalog_names[f]): 
                     print 'Deleting intermediate match file: ',self.catalog_names[f]
                     os.remove(self.catalog_names[f])

@@ -331,7 +331,17 @@ class ImageCatalog(Catalog):
             source = np.where(source >= self.pars['datamax'],0.,source)
         
         x,y,flux = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'])
- 
+        """
+        if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
+            fminindx = flux >= self.pars['fluxmin']
+        else:
+            fminindx = flux == flux
+        if self.pars.has_key('fluxmax') and self.pars['fluxmax'] is not None:
+            fmaxindx = flux <= self.pars['fluxmax']
+        else:
+            fmaxindx = flux == flux
+        findx = np.bitwise_and(fminindx,fmaxindx)
+        """
         self.xypos = [x+1,y+1,flux] # convert the positions from numpy 0-based to FITS 1-based
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = None # sharp

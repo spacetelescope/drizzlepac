@@ -188,7 +188,7 @@ def _median(imageObjectList,paramDict):
                     hthresh = hthresh * det_gain
                     if native_units.lower() == "counts/s":
                         hthresh = hthresh * img_exptime
-            
+                    
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
         

@@ -64,7 +64,7 @@ def iter_fit_arrays(xy,uv,nclip=3,sigma=3.0):
 def iter_fit_all(xy,uv,mode='rscale',nclip=3,sigma=3.0):
 
     fit = fit_all(xy,uv,mode=mode)
-    
+
     if nclip is None: nclip = 0
     # define index to initially include all points
     for n in range(nclip):

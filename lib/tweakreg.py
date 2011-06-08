@@ -15,7 +15,7 @@ import imagefindpars
 import sextractor
     
 __version__ = '0.3'
-__vdate__ = '13-May-2011'
+__vdate__ = '08-Jun-2011'
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
@@ -103,7 +103,7 @@ def run(configobj):
             catnames = tweakutils.parse_atfile_cat('@'+catfile_par)
         else:
             use_catfile = False
-        
+    
     # Verify that we have the same number of catalog files as input images
     if catnames is not None and (len(catnames) > 0):
         rcat = configobj['REFERENCE CATALOG DESCRIPTION']['refcat']

@@ -29,5 +29,7 @@ checkimage_type = option_kw("NONE", "BACKGROUND", "MINIBACKGROUND", "-BACKGROUND
 memory_objstack = integer_kw(default=3000, comment="number of objects in stack")
 memory_pixstack = integer_kw(default=300000, comment="number of pixels in stack")
 memory_bufsize = integer_kw(default=1024, comment="number of lines in buffer")
+fluxmin = float_or_none_kw(default=None,comment="Minimum good flux value")
+fluxmax = float_or_none_kw(default=None,comment="Maximum good flux value")
 
 [_RULES_]

@@ -17,7 +17,6 @@ from __future__ import division # confidence medium
 import numpy as np
 import convolve as NC
 
-import imagestats
 from pytools import numcombine
 from pytools.numcombine import numCombine
 
