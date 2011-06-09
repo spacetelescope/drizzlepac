@@ -61,7 +61,7 @@ def setCommonInput(configObj,createOutwcs=True):
     -----
     At a minimum, the configObj instance (dictionary) should contain:
         configObj = {'input':None,'output':None,
-                    'updatewcs':None,'shiftfile':None}
+                    'updatewcs':None}
 
     If provided, the configObj should contain the values of all the multidrizzle parameters
     as set by the user with TEAL. If no configObj is given, it will retrieve
@@ -96,7 +96,7 @@ def setCommonInput(configObj,createOutwcs=True):
 
     # interpret MDRIZTAB, if specified, and update configObj accordingly
     # This can be done here because MDRIZTAB does not include values for
-    # input, output, updatewcs, or shiftfile.
+    # input, output, or updatewcs.
     if configObj['mdriztab']:
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
         # Update configObj with values from mpars
@@ -107,11 +107,6 @@ def setCommonInput(configObj,createOutwcs=True):
     instrpars = configObj['INSTRUMENT PARAMETERS']
     # pass in 'proc_unit' to initialize unit conversions as necessary
     instrpars['proc_unit'] = configObj['proc_unit']
-
-    if configObj['shiftfile'] not in [None,""]:
-        print '\n-Applying shiftfile ',configObj['shiftfile'],' to input images...\n'
-        # Update all input images with shifts from shiftfile
-        wcs_functions.createHeaderlets(configObj['shiftfile'])
 
     # Build imageObject list for all the valid, shift-updated input files
     print '\n-Creating imageObject List as input for processing steps.\n'
@@ -772,7 +767,6 @@ def _setDefaults(input_dict={}):
         'ra':None,
         'dec':None,
         'build':True,
-        'shiftfile':None,
         'gain':None,
         'gnkeyword':None,
         'readnoise':None,
@@ -780,7 +774,6 @@ def _setDefaults(input_dict={}):
         'exptime':None,
         'expkeyword':None,
         'crbitval':4096,
-        'shiftfile':None,
         'static':True,
         'staticfile':None,
         'static_sig':4.0,

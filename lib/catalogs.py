@@ -354,7 +354,7 @@ class UserCatalog(Catalog):
 
         Required input `kwargs` parameters::
 
-            xyunits, xcol, ycol, fluxcol, [sharpcol, roundcol]
+            xyunits, xcol, ycol[, fluxcol, [idcol]]
             
     """
     COLNAMES = COLNAME_PARS
