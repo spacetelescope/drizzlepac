@@ -54,9 +54,12 @@ class Image(object):
             use_wcs = True
         # Record this for use with methods
         self.use_wcs = use_wcs
+        self.num_sci = num_sci
+        self.ext_name = extname
 
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
+        num_sources = 0
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
             extnum = fu.findExtname(pyfits.open(filename),extname,extver=sci_extn)
@@ -72,8 +75,10 @@ class Image(object):
             else:
                 source = input_catalogs[sci_extn-1]
                 catalog_mode='user'
+            kwargs['start_id'] = num_sources
             catalog = catalogs.generateCatalog(wcs,mode=catalog_mode,catalog=source,**kwargs)
             catalog.buildCatalogs() # read in and convert all catalog positions to RA/Dec
+            num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
 
         self.catalog_names = {}
@@ -119,6 +124,7 @@ class Image(object):
         ralist = []
         declist = []
         fluxlist = []
+        idlist = []
         for scichip in self.chip_catalogs:
             skycat = self.chip_catalogs[scichip]['catalog'].radec
             xycat = self.chip_catalogs[scichip]['catalog'].xypos
@@ -127,10 +133,13 @@ class Image(object):
                 declist.append(skycat[1])
                 if len(xycat) > 2:
                     fluxlist.append(xycat[2])
+                    idlist.append(xycat[3])
                 else:
                     fluxlist.append([999.0]*len(skycat[0]))
+                    idlist.append(np.arange(len(skycat[0])))
 
-        self.all_radec = [np.concatenate(ralist),np.concatenate(declist),np.concatenate(fluxlist)]
+        self.all_radec = [np.concatenate(ralist),np.concatenate(declist),
+                        np.concatenate(fluxlist),np.concatenate(idlist)]
         self.all_radec_orig = copy.deepcopy(self.all_radec)
         
 
@@ -200,6 +209,7 @@ class Image(object):
                 all_radec.append(self.all_radec_orig[0][flux_indx])
                 all_radec.append(self.all_radec_orig[1][flux_indx])
                 all_radec.append(self.all_radec_orig[2][flux_indx])
+                all_radec.append(self.all_radec_orig[3][flux_indx])
 
             if self.pars.has_key(clip_prefix+'nbright') and self.pars[clip_prefix+'nbright'] is not None:
                 clip_catalog = True
@@ -215,6 +225,7 @@ class Image(object):
                 self.all_radec[0] = all_radec[0][nbright_indx]
                 self.all_radec[1] = all_radec[1][nbright_indx]
                 self.all_radec[2] = all_radec[2][nbright_indx]
+                self.all_radec[3] = all_radec[3][nbright_indx]
     
             else:
                 if all_radec is not None:
@@ -256,6 +267,8 @@ class Image(object):
             if len(matches) > minobj:
                 self.matches['image'] = np.column_stack([matches['input_x'][:,np.newaxis],matches['input_y'][:,np.newaxis]])
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,np.newaxis],matches['ref_y'][:,np.newaxis]])
+                self.matches['ref_indx'] = matches['ref_idx']
+                self.matches['img_indx'] = self.all_radec[3][matches['input_idx']]
                 print 'Found %d matches for %s...'%(len(matches),self.name)
 
                 if self.pars['writecat']:
@@ -295,12 +308,17 @@ class Image(object):
             if self.matches is not None and self.goodmatch:
                 self.fit = linearfit.iter_fit_all(
                     self.matches['image'],self.matches['ref'],
-                    mode=pars['fitgeometry'],nclip=pars['nclip'],sigma=pars['sigma'],minobj=pars['minobj'])
+                    self.matches['img_indx'],self.matches['ref_indx'],
+                    mode=pars['fitgeometry'],nclip=pars['nclip'],
+                    sigma=pars['sigma'],minobj=pars['minobj'],
+                    center=self.refWCS.wcs.crpix)
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
-                print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g\n'%(
+                print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
                     self.fit['offset'][0],self.fit['offset'][1], 
                     self.fit['rot'],self.fit['scale'][0])
+                print 'XRMS: %0.6g    YRMS: %0.6g\n'%(
+                        self.fit['rms'][0],self.fit['rms'][1])
                 print 'Final solution based on ',self.fit['img_coords'].shape[0],' objects.'
                 
                 self.write_fit_catalog()
@@ -326,14 +344,27 @@ class Image(object):
         """ Update header of image with shifts computed by *perform_fit()*
         """
 
+        # Create WCSCORR table to keep track of WCS revisions anyway
+        wcscorr.init_wcscorr(self.name)
+
         if not self.identityfit and self.goodmatch:
             updatehdr.updatewcs_with_shift(self.name,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],rot=self.fit['rot'],scale=self.fit['scale'][0])
         if self.identityfit:
-            # Update header using 'updatewcs'
-            stwcs.updatewcs.updatewcs(self.name,wcsname=wcsname)
-            # Create WCSCORR table to keep track of WCS revisions anyway
-            wcscorr.init_wcscorr(self.name)
+            # archive current WCS as alternate WCS with specified WCSNAME
+            extlist = []
+            if self.num_sci > 0:
+                for ext in range(1,self.num_sci+1):
+                    extlist.append((self.ext_name,ext))
+            else:
+                extlist = [0]
+            next_key = stwcs.wcsutil.altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
+            stwcs.wcsutil.altwcs.archiveWCS(self.name,extlist,wcskey=next_key,wcsname=wcsname)
+
+            # copy updated WCS info to WCSCORR table
+            fimg = pyfits.open(self.name,mode='update')
+            stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
+            fimg.close()
 
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file
@@ -369,15 +400,19 @@ class Image(object):
             f.write('#     Column 6: Y (fit)\n')
             f.write('#     Column 7: X (residual)\n')
             f.write('#     Column 8: Y (residual)\n')
+            f.write('#     Column 9: Ref ID\n')
+            f.write('#     Column 10: Input ID\n')
+            
             f.write('#\n')
             f.close()
             fitvals = self.fit['img_coords']+self.fit['resids']
-            xydata = [self.fit['ref_coords'][:,0],self.fit['ref_coords'][:,1],
+            xydata = [[self.fit['ref_coords'][:,0],self.fit['ref_coords'][:,1],
                       self.fit['img_coords'][:,0],self.fit['img_coords'][:,1],
                       fitvals[:,0],fitvals[:,1],
-                      self.fit['resids'][:,0],self.fit['resids'][:,1]
+                      self.fit['resids'][:,0],self.fit['resids'][:,1]],
+                      [self.fit['ref_indx'],self.fit['img_indx']]
                     ]
-            tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,append=True,format="%20.6f")
+            tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,append=True,format=["%20.6f","%8d"])
         
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file

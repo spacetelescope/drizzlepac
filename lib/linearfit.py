@@ -61,9 +61,26 @@ def iter_fit_arrays(xy,uv,nclip=3,sigma=3.0):
     fit['ref_coords'] = uv
     return fit
 
-def iter_fit_all(xy,uv,mode='rscale',nclip=3,sigma=3.0,minobj=3):
+def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,center=None):
 
-    fit = fit_all(xy,uv,mode=mode)
+    if not isinstance(xy,np.ndarray): 
+        # cast input list as numpy ndarray for fitting
+        xy = np.array(xy)
+    if not isinstance(uv,np.ndarray): 
+        # cast input list as numpy ndarray for fitting
+        uv = np.array(uv)
+
+    if center is not None:
+        xcen = center[0]
+        ycen = center[1]
+    else:
+        xcen = uv[:,0].mean()
+        ycen = uv[:,1].mean()
+        center = [xcen,ycen]
+    xy -= center
+    uv -= center
+
+    fit = fit_all(xy,uv,mode=mode,center=center)
     npts = xy.shape[0]
     npts0 = 0
     if nclip is None: nclip = 0
@@ -87,17 +104,21 @@ def iter_fit_all(xy,uv,mode='rscale',nclip=3,sigma=3.0,minobj=3):
             npts0 = npts - goodpix.shape[0]
             xy = xy[goodpix]
             uv = uv[goodpix]
-            fit = fit_all(xy,uv,mode=mode)
+            xyindx = xyindx[goodpix]
+            uvindx = uvindx[goodpix]
+            fit = fit_all(xy,uv,mode=mode,center=center,verbose=False)
             del goodpix,goodx,goody
         else:
             break
     
     fit['img_coords'] = xy
     fit['ref_coords'] = uv
+    fit['img_indx'] = xyindx
+    fit['ref_indx'] = uvindx
     return fit
 
-def fit_all(xy,uv,mode='rscale'):
-    """ Performs an 'rscale' fit between matched lists of pixel positions xy and uv"""
+def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
+    """ Performs an 'rscale' fit between matched lists of pixel positions xy and uv"""    
     if mode not in ['general','shift','rscale']: 
         mode = 'rscale'
     if not isinstance(xy,np.ndarray): 
@@ -106,13 +127,14 @@ def fit_all(xy,uv,mode='rscale'):
     if not isinstance(uv,np.ndarray): 
         # cast input list as numpy ndarray for fitting
         uv = np.array(uv)
-
+    
     if mode == 'shift':
-        diff_pts = xy - uv
-        Pcoeffs = np.array([1.0,0.0,diff_pts[:,0].mean()])
-        Qcoeffs = np.array([0.0,1.0,diff_pts[:,1].mean()])
-        result = build_fit(Pcoeffs,Qcoeffs)
+        if verbose:
+            print 'Performing "shift" fit'
+        result = fit_shifts(xy,uv)
     elif mode == 'general':
+        if verbose:
+            print 'Performing "general" fit'
         # Set up products used for computing the fit
         gxy = uv
         guv = xy
@@ -145,43 +167,9 @@ def fit_all(xy,uv,mode='rscale'):
         # Return the shift, rotation, and scale changes
         result = build_fit(P,Q)        
     else:
-        """
-        # Colin's algorithm for the 'rscale' fit
-        x = xy[:,0] - xy[:,0].mean()
-        y = xy[:,1] - xy[:,1].mean()
-        u = uv[:,0] - uv[:,0].mean()
-        v = uv[:,1] - uv[:,1].mean()
-        Sxx = np.dot(x,x)
-        Syy = np.dot(y,y)
-        Sux = np.dot(u,x)
-        Suy = np.dot(u,y)
-        Svx = np.dot(v,x)
-        Svy = np.dot(v,y)
-        
-        XX = Sux + Svy
-        YY = Suy - Svx
-        theta = (np.pi*2) - np.arctan2(YY,XX)
-        theta_deg = np.rad2deg(theta)
-        avg_scale = 1.0/(np.sqrt(np.power(XX,2)+np.power(YY,2))/(Sxx+Syy))
-        rotmat = np.zeros(shape=(2,2),dtype=np.float64)
-        rotmat[0] = (np.cos(theta),np.sin(theta))
-        rotmat[1] = (-np.sin(theta),np.cos(theta))
-        rotmat *= avg_scale
-        dxy = np.dot(xy,rotmat) - uv
-        xsh = dxy[:,0].mean()
-        ysh = dxy[:,1].mean()
-        mrot = np.zeros(shape=(2,3),dtype=np.float64)
-        mrot[0] = (rotmat[0][0],rotmat[0][1],xsh)
-        mrot[1] = (rotmat[1][0],rotmat[1][1],ysh)
-        dxy[:,0] -= xsh
-        dxy[:,1] -= ysh
-        rms = [dxy[:,0].std(),dxy[:,1].std()]
-        
-
-        result = {'offset':(xsh,ysh),'rot':theta_deg,'scale':(avg_scale,avg_scale,avg_scale),
-                  'coeffs':(mrot[0],mrot[1]),'resids':dxy,'rms':rms}
-        """
-        result = geomap_rscale(xy,uv)
+        if verbose:
+            print 'Performing "rscale" fit'
+        result = geomap_rscale(xy,uv,center=center)
 
     return result
 def fit_shifts(xy,uv):
@@ -198,8 +186,14 @@ def fit_shifts(xy,uv):
     diff_pts = xy - uv
     Pcoeffs = np.array([1.0,0.0,diff_pts[:,0].mean()])
     Qcoeffs = np.array([0.0,1.0,diff_pts[:,1].mean()])
-
-    return build_fit(Pcoeffs,Qcoeffs)
+    
+    fit = build_fit(Pcoeffs,Qcoeffs)
+    resids = diff_pts - fit['offset']
+    rms = [resids[:,0].std(),resids[:,1].std()]
+    fit['resids'] = resids
+    fit['rms'] = rms
+    
+    return fit
 
 def fit_arrays(uv,xy):
     """ Performs a generalized fit between matched lists of positions
@@ -320,7 +314,7 @@ def compute_resids(xy,uv,fit):
     return resids
 
 ##### My interpretation of geomap 'rscale' fitting based on 'lib/geofit.x'
-def geomap_rscale(xyin,xyref):
+def geomap_rscale(xyin,xyref,center=None):
     """
     Set up the products used for computing the fit derived using the code from 
     lib/geofit.x for the function 'geo_fmagnify()'. Comparisons with results from
@@ -332,21 +326,33 @@ def geomap_rscale(xyin,xyref):
     fit: dict
         Dictionary containing full solution for fit.
     """
+    if center is not None:
+        xcen = center[0]
+        ycen = center[1]
+    else:
+        xcen = xyref[:,0].mean()
+        ycen = xyref[:,1].mean()
+
+    dx = xyref[:,0] 
+    dy = xyref[:,1] 
+    du = xyin[:,0] 
+    dv = xyin[:,1]
+    
     n = xyref.shape[0]
-    Sx = xyref[:,0].sum()
-    Sy = xyref[:,1].sum()
-    Su = xyin[:,0].sum()
-    Sv = xyin[:,1].sum()
+    Sx = dx.sum()
+    Sy = dy.sum()
+    Su = du.sum() 
+    Sv = dv.sum() 
     xr0 = Sx/n
     yr0 = Sy/n
     xi0 = Su/n
     yi0 = Sv/n
-    Sxrxr = np.power((xyref[:,0]-xr0),2).sum()
-    Syryr = np.power((xyref[:,1]-yr0),2).sum()
-    Syrxi = ((xyref[:,1]-yr0)*(xyin[:,0]-xi0)).sum()
-    Sxryi = ((xyref[:,0]-xr0)*(xyin[:,1]-yi0)).sum()
-    Sxrxi = ((xyref[:,0]-xr0)*(xyin[:,0]-xi0)).sum()
-    Syryi = ((xyref[:,1]-yr0)*(xyin[:,1]-yi0)).sum()
+    Sxrxr = np.power((dx-xr0),2).sum()
+    Syryr = np.power((dy-yr0),2).sum()
+    Syrxi = ((dy-yr0)*(du-xi0)).sum()
+    Sxryi = ((dx-xr0)*(dv-yi0)).sum()
+    Sxrxi = ((dx-xr0)*(du-xi0)).sum()
+    Syryi = ((dy-yr0)*(dv-yi0)).sum()
     
     rot_num = Sxrxi * Syryi
     rot_denom = Syrxi * Sxryi
@@ -388,7 +394,7 @@ def geomap_rscale(xyin,xyref):
     
     P = np.array([cthetax,-sthetax,xshift])
     Q = np.array([sthetay,cthetay,yshift])
-    resids = xyin - np.dot(xyref,rotmat) - [xshift,yshift]
+    resids = xyin - np.dot((xyref),rotmat) - [xshift,yshift]
     rms = [resids[:,0].std(),resids[:,1].std()]
     
     rscale_fit = {'offset':(xshift,yshift),'rot':theta,'scale':(mag,mag,mag),'coeffs':(P,Q),'resids':resids,'rms':rms}

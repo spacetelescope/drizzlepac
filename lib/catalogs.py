@@ -88,9 +88,15 @@ class Catalog(object):
         self.origin = 1 # X,Y coords will ALWAYS be FITS 1-based, not numpy 0-based
         self.pars = kwargs
 
+        self.start_id = 0
+        if self.pars.has_key('start_id'): 
+            self.start_id = self.pars['start_id']
+
         self.fname = catalog_source
         self.source = catalog_source
         self.catname = None
+        
+        self.num_objects = None
         
         self.radec = None # catalog of sky positions for all sources on this chip/image
         self.set_colnames()
@@ -180,7 +186,7 @@ class Catalog(object):
         f = open(filename,'w')
         f.write("# Source catalog derived for %s\n"%self.wcs.filename)
         f.write("# Columns: \n")
-        f.write('#    X      Y         Flux \n')
+        f.write('#    X      Y         Flux       ID\n')
         f.write('#   (%s)   (%s)\n'%(self.in_units,self.in_units))
         
         for row in range(len(self.xypos[0])):
@@ -289,11 +295,12 @@ class ExtractorCatalog(Catalog):
             x.append(obj['X_IMAGE'])
             y.append(obj['Y_IMAGE'])
             fluxes.append(obj['FLUX_BEST'])
-        self.xypos = [np.array(x),np.array(y),np.array(fluxes)] 
+        self.xypos = [np.array(x),np.array(y),np.array(fluxes),np.arange(len(x))+self.start_id] 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = None # sharp
         self.round = None # round
         self.numcols = 3  # 5
+        self.num_objects = len(x)
         
 class ImageCatalog(Catalog):
     """ Class which generates a source catalog from an image using
@@ -330,7 +337,7 @@ class ImageCatalog(Catalog):
         if self.pars.has_key('datamin') and self.pars['datamax'] is not None:
             source = np.where(source >= self.pars['datamax'],0.,source)
         
-        x,y,flux = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'])
+        x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'])
         """
         if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
             fminindx = flux >= self.pars['fluxmin']
@@ -342,11 +349,12 @@ class ImageCatalog(Catalog):
             fmaxindx = flux == flux
         findx = np.bitwise_and(fminindx,fmaxindx)
         """
-        self.xypos = [x+1,y+1,flux] # convert the positions from numpy 0-based to FITS 1-based
+        self.xypos = [x+1,y+1,flux,id+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = None # sharp
         self.round = None # round
         self.numcols = 3  # 5
+        self.num_objects = len(x)
                 
         
 class UserCatalog(Catalog):
@@ -408,6 +416,10 @@ class UserCatalog(Catalog):
                 self.sharp = xycols[3]
             if self.numcols > 4:
                 self.round = xycols[4]
+
+        self.num_objects = 0
+        if xycols is not None:
+            self.num_objects = len(xycols[0])
 
     def plotXYCatalog(self,**kwargs):
         """

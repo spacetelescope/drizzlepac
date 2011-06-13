@@ -95,7 +95,7 @@ def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5):
             ypos.append(yx[0]+s[0].start)
             flux.append((array[s]*cmask[s]).sum())
     # Still need to implement sharpness and roundness limits
-    return np.array(xpos),np.array(ypos),np.array(flux)
+    return np.array(xpos),np.array(ypos),np.array(flux),np.arange(len(xpos))
 
 def isfloat(value):
     """ Return True if all characters are part of a floating point value
@@ -179,27 +179,42 @@ def read_FITS_cols(infile,cols=None):
     ftab.close()
     return outarr
 
-def read_ASCII_cols(infile,cols=[1,2,3,4]):
+def read_ASCII_cols(infile,cols=[1,2]):
     """ Copied from 'reftools.wtraxyutils'.
         Input column numbers must be 1-based, or 'c'+1-based ('c1','c2',...')
     """
-    # Convert input column names into column numbers 
     colnums = []
-    for colname in cols:
-        cnum = None
-        if colname not in [None,""," ","INDEF"]:
-            if isinstance(colname, str) and colname[0] == 'c':
-                cname = colname[1:]
+    if isinstance(cols[0],str) and cols[0][0] != 'c':
+        fin = open(infile,'r')
+        for l in fin.readlines(): # interpret each line from catalog file
+            if l[0] == '#':
+                if cols[0] in l:
+                    print 'Parsing line for column numbers'
+                    print l
+                # Parse colnames directly from column headers
+                    lspl = l.split()
+                    for c in cols:
+                        colnums.append(lspl.index(c)-1)
             else:
-                cname = colname
-            colnums.append(int(cname)-1)
-    c = []
-    if (colnums[1] - colnums[0]) > 1:
-        cnum = range(colnums[0],colnums[1])
-        c.extend(cnum)
-        cnum = range(colnums[1],colnums[1]+(colnums[1]-colnums[0]))
-        c.extend(cnum)
-        colnums = c
+                break
+        fin.close()
+    if len(colnums) == 0:
+        # Convert input column names into column numbers 
+        for colname in cols:
+            cnum = None
+            if colname not in [None,""," ","INDEF"]:
+                if isinstance(colname, str) and colname[0] == 'c':
+                    cname = colname[1:]
+                else:
+                    cname = colname
+                colnums.append(int(cname)-1)
+        c = []
+        if (colnums[1] - colnums[0]) > 1:
+            cnum = range(colnums[0],colnums[1])
+            c.extend(cnum)
+            cnum = range(colnums[1],colnums[1]+(colnums[1]-colnums[0]))
+            c.extend(cnum)
+            colnums = c
 
     numcols = len(colnums)    
     outarr = [[],[]] # initialize output result
@@ -211,14 +226,9 @@ def read_ASCII_cols(infile,cols=[1,2,3,4]):
             continue
         l = l.strip()
         if len(l) == 0 or len(l.split()) < len(colnums) or (len(l) > 0 and l[0] == '#' or (l.find("INDEF") > -1)): continue
-        for i in range(10):
-            lnew = l.replace("  "," ")
-            if lnew == l: break
-            else: l = lnew
-        lspl = lnew.split(" ")
+        lspl = l.split()
         nsplit = len(lspl)
         
-
         ra=None
         dec=None
 
@@ -515,16 +525,20 @@ def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
         xy1y = xy1[:,1] + ysh
     return xy1x,xy1y
 
-def write_xy_file(outname,xydata,append=False,format="%20.6f"):
+def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
+    if not isinstance(xydata,list):
+        xydata = list(xydata)
     if not append:
         if os.path.exists(outname): os.remove(outname)
     fout1 = open(outname,'a+')
-    for row in range(len(xydata[0])):
+    for row in range(len(xydata[0][0])):
         outstr = ""
-        for col in range(len(xydata)):
-            outstr += format%(xydata[col][row])
+        for cols,fmts in zip(xydata,format):
+            for col in range(len(cols)):
+                outstr += fmts%(cols[col][row])
         fout1.write(outstr+"\n")
     fout1.close()
     print 'wrote XY data to: ',outname  
  
 
+        
