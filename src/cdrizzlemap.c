@@ -275,7 +275,6 @@ map_value(struct driz_param_t* p,
   return 0;
 }
 
-/*#define WCSMAP_ORIGINAL_SLOW */
 /*
 
 Default WCS mapping code
@@ -311,124 +310,124 @@ default_wcsmap(void* state,
   double     xf, yf, ixf, iyf;
   double    tabx00, tabx01, tabx10, tabx11;
 
-  /* Call PyWCS methods here to perform the transformation... */
+  if (m->factor == 0) {
+    /* Allocate memory for new 2-D array */
+    ptr = memory = (double *) malloc(n * 10 * sizeof(double));
+    if (memory == NULL) goto exit;
+    xyin = ptr;
+    ptr += n * 2;
+    xyout = ptr;
+    ptr += n * 2;
+    skyout = ptr;
+    ptr += n * 2;
+    imgcrd = ptr;
+    ptr += n * 2;
+    phi = ptr;
+    ptr += n;
+    theta = ptr;
+    stat = (int *)malloc(n * sizeof(int));
+    if (stat == NULL) goto exit;
+  } else {
+    /* Allocate memory for new 2-D array */
+    ptr = memory = (double *) malloc(n * 4 * sizeof(double));
+    if (memory == NULL) goto exit;
+    xyin = ptr;
+    ptr += n * 2;
+    xyout = ptr;
+    ptr += n * 2;
+  }
+
   /* The input arrays need to be converted to 2-D arrays for input
       to the PyWCS (and related) functions. */
 
-  /* Allocate memory for new 2-D array */
-  ptr = memory = (double *) malloc(n * 10 * sizeof(double));
-  if (memory == NULL) goto exit;
-  xyin = ptr;
-  ptr += n * 2;
-  xyout = ptr;
-  ptr += n * 2;
-  skyout = ptr;
-  ptr += n * 2;
-  imgcrd = ptr;
-  ptr += n * 2;
-  phi = ptr;
-  ptr += n;
-  theta = ptr;
-  stat = (int *)malloc(n * sizeof(int));
-  if (stat == NULL) goto exit;
-
   /* Populate new 2-D array with values from x and y input arrays */
   for (i = 0; i < n; ++i) {
-      xyin[2*i] = xin[i];
-      xyin[2*i+1] = yin[i];
+    xyin[2*i] = xin[i];
+    xyin[2*i+1] = yin[i];
   }
 
   /* Start by checking to see whether DET2IM correction needs to
   be applied and applying it as appropriate. */
 
-  /*
-#ifdef WCSMAP_ORIGINAL_SLOW
-  */
-  if (m->factor == 0){
-  /*
-  Apply pix2sky() transformation from PyWCS
-  */
+  if (m->factor == 0) {
+    /*
+      Apply pix2sky() transformation from PyWCS
+    */
 
-  wcsprm_python2c(m->input_wcs->wcs);
-  status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
-  if (status)
-    return 1;
-  wcsprm_c2python(m->input_wcs->wcs);
+    wcsprm_python2c(m->input_wcs->wcs);
+    status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
+    wcsprm_c2python(m->input_wcs->wcs);
+    if (status) {
+      goto exit;
+    }
+
+    /*
+      Finally, call wcs_sky2pix() for the output object.
+    */
+    wcsprm_python2c(m->output_wcs->wcs);
+    status = wcss2p(m->output_wcs->wcs, n, 2,
+                    skyout, phi, theta, imgcrd, xyout, stat);
+    wcsprm_c2python(m->output_wcs->wcs);
+    if (status) {
+      goto exit;
+    }
   } else {
-
-/* #else  */
-  /* TODO: Apply only distortion and sip in this way, and the rest using the lookup table */
-  /* status = pipeline_pix2foc(m->input_wcs, n, 2, xyin, xyin); */
-  /* if (status) */
-  /*   return 1; */
-
-  /* do the bilinear interpolation */
-  iptr = xyin;
-  optr = skyout;
-  table = m->table;
+    /* do the bilinear interpolation */
+    iptr = xyin;
+    optr = xyout;
+    table = m->table;
 
 #define TABLE_X(x, y) (table[((y)*m->snx + (x))*2])
 #define TABLE_Y(x, y) (table[((y)*m->snx + (x))*2 + 1])
 
-  for (i = 0; i < n; ++i) {
-    x = *iptr++ / m->factor;
-    y = *iptr++ / m->factor;
-    xi = (int)floor(x);
-    yi = (int)floor(y);
-    xf = x - (double)xi;
-    yf = y - (double)yi;
-    ixf = 1.0 - xf;
-    iyf = 1.0 - yf;
+    for (i = 0; i < n; ++i) {
+      x = *iptr++ / m->factor;
+      y = *iptr++ / m->factor;
+      xi = (int)floor(x);
+      yi = (int)floor(y);
+      xf = x - (double)xi;
+      yf = y - (double)yi;
+      ixf = 1.0 - xf;
+      iyf = 1.0 - yf;
 
-    tabx00 = TABLE_X(xi, yi);
-    tabx10 = TABLE_X(xi+1, yi);
-    tabx01 = TABLE_X(xi, yi+1);
-    tabx11 = TABLE_X(xi+1, yi+1);
+      tabx00 = TABLE_X(xi, yi);
+      tabx10 = TABLE_X(xi+1, yi);
+      tabx01 = TABLE_X(xi, yi+1);
+      tabx11 = TABLE_X(xi+1, yi+1);
 
-    /* Account for interpolating across 360-0 boundary */
-    if ((tabx00 - tabx10) > 359){ 
+      /* Account for interpolating across 360-0 boundary */
+      if ((tabx00 - tabx10) > 359) {
         tabx00 -= 360.0;
         tabx01 -= 360.0;
-    } else if ((tabx00 - tabx10) < -359) {
+      } else if ((tabx00 - tabx10) < -359) {
         tabx10 -= 360.0;
         tabx11 -= 360.0;
+      }
+
+      *optr++ =
+        tabx00 * ixf * iyf +
+        tabx10 * xf * iyf +
+        tabx01 * ixf * yf +
+        tabx11 * xf * yf;
+
+      *optr++ =
+        TABLE_Y(xi, yi)     * ixf * iyf +
+        TABLE_Y(xi+1, yi)   * xf * iyf +
+        TABLE_Y(xi, yi+1)   * ixf * yf +
+        TABLE_Y(xi+1, yi+1) * xf * yf;
     }
-
-    *optr++ =
-      tabx00 * ixf * iyf +
-      tabx10 * xf * iyf +
-      tabx01 * ixf * yf +
-      tabx11 * xf * yf;
-
-    *optr++ =
-      TABLE_Y(xi, yi)     * ixf * iyf +
-      TABLE_Y(xi+1, yi)   * xf * iyf +
-      TABLE_Y(xi, yi+1)   * ixf * yf +
-      TABLE_Y(xi+1, yi+1) * xf * yf;
-  }
 
 #undef TABLE_X
 #undef TABLE_Y
   } /* End of if_then_else for factor == 0 */
-/*#endif */
-
-  /*
-  Finally, call wcs_sky2pix() for the output object.
-  */
-  wcsprm_python2c(m->output_wcs->wcs);
-  status = wcss2p(m->output_wcs->wcs, n, 2,
-                  skyout, phi, theta, imgcrd, xyout, stat);
-  wcsprm_c2python(m->output_wcs->wcs);
-  
 
   /*
   Transform results back to 2 1-D arrays, like the input.
   */
   for (i = 0; i < n; ++i){
-      xout[i] = xyout[2*i];
-      yout[i] = xyout[2*i+1];
+    xout[i] = xyout[2*i];
+    yout[i] = xyout[2*i+1];
   }
-
 
   result = 0;
 
@@ -449,9 +448,15 @@ default_wcsmap_init(struct wcsmap_param_t* m,
                     int nx, int ny,
                     double factor,
                     struct driz_error_t* error) {
+  int     n;
   int     table_size;
   double *pixcrd = NULL;
-  double *ptr  = NULL;
+  double *ptr    = NULL;
+  double *tmp    = NULL;
+  double *phi    = NULL;
+  double *theta  = NULL;
+  double *imgcrd = NULL;
+  int    *stat   = NULL;
   int     snx;
   int     sny;
   int     i;
@@ -466,45 +471,83 @@ default_wcsmap_init(struct wcsmap_param_t* m,
   assert(m->output_wcs == NULL);
   assert(m->table == NULL);
 
-/*#ifndef WCSMAP_ORIGINAL_SLOW */
-  if (factor > 0){
-  snx = (int)((double)nx / factor) + 2;
-  sny = (int)((double)ny / factor) + 2;
+  if (factor > 0) {
+    snx = (int)((double)nx / factor) + 2;
+    sny = (int)((double)ny / factor) + 2;
 
-  table_size = (snx + 1) * (sny + 1) * 2;
+    n = (snx + 1) * (sny + 1);
+    table_size = n << 1;
 
-  pixcrd = malloc(table_size * sizeof(double));
-  if (pixcrd == NULL) {
-    driz_error_set_message(error, "Out of memory");
-    goto exit;
-  }
-
-  m->table = malloc(table_size * sizeof(double));
-  if (m->table == NULL) {
-    driz_error_set_message(error, "Out of memory");
-    goto exit;
-  }
-
-  ptr = pixcrd;
-  for (j = 0; j < sny; ++j) {
-    for (i = 0; i < snx; ++i) {
-      *ptr++ = (double)i * factor;
-      *ptr++ = (double)j * factor;
+    pixcrd = malloc(table_size * sizeof(double));
+    if (pixcrd == NULL) {
+      driz_error_set_message(error, "Out of memory");
+      goto exit;
     }
-  }
 
-  wcsprm_python2c(input->wcs);
-  istat = pipeline_all_pixel2world(input, table_size / 2, 2, pixcrd,
-                                   m->table);
-  wcsprm_c2python(input->wcs);
+    m->table = malloc(table_size * sizeof(double));
+    if (m->table == NULL) {
+      driz_error_set_message(error, "Out of memory");
+      goto exit;
+    }
 
-  if (istat) {
-    free(m->table);
-    driz_error_set_message(error, wcslib_get_error_message(istat));
-    goto exit;
-  }
-  } /* End if_then for factor > 0*/
-/* #endif   */
+    tmp = malloc(table_size * sizeof(double));
+    if (tmp == NULL) {
+      driz_error_set_message(error, "Out of memory");
+      goto exit;
+    }
+
+    phi = malloc(n * sizeof(double));
+    if (phi == NULL) {
+      driz_error_set_message(error, "Out of memory");
+      goto exit;
+    }
+
+    theta = malloc(n * sizeof(double));
+    if (theta == NULL) {
+      driz_error_set_message(error, "Out of memory");
+      goto exit;
+    }
+
+    imgcrd = malloc(table_size * sizeof(double));
+    if (imgcrd == NULL) {
+      driz_error_set_message(error, "Out of memory");
+      goto exit;
+    }
+
+    stat = malloc(n * sizeof(int));
+    if (stat == NULL) {
+      driz_error_set_message(error, "Out of memory");
+      goto exit;
+    }
+
+    ptr = pixcrd;
+    for (j = 0; j < sny; ++j) {
+      for (i = 0; i < snx; ++i) {
+        *ptr++ = (double)i * factor;
+        *ptr++ = (double)j * factor;
+      }
+    }
+
+    wcsprm_python2c(input->wcs);
+    istat = pipeline_all_pixel2world(input, n, 2, pixcrd, tmp);
+    wcsprm_c2python(input->wcs);
+
+    if (istat) {
+      free(m->table);
+      driz_error_set_message(error, wcslib_get_error_message(istat));
+      goto exit;
+    }
+
+    wcsprm_python2c(output->wcs);
+    istat = wcss2p(output->wcs, n, 2, tmp, phi, theta, imgcrd, m->table, stat);
+    wcsprm_c2python(output->wcs);
+
+    if (istat) {
+      free(m->table);
+      driz_error_set_message(error, wcslib_get_error_message(istat));
+      goto exit;
+    }
+  } /* End if_then for factor > 0 */
 
   m->input_wcs = input;
   m->output_wcs = output;
@@ -520,6 +563,11 @@ default_wcsmap_init(struct wcsmap_param_t* m,
  exit:
 
   free(pixcrd);
+  free(tmp);
+  free(phi);
+  free(theta);
+  free(imgcrd);
+  free(stat);
 
   return status;
 }
