@@ -275,20 +275,14 @@ map_value(struct driz_param_t* p,
   return 0;
 }
 
-/*
-
-Default WCS mapping code
-
-*/
-int
-default_wcsmap(void* state,
-                const double xd, const double yd,
-                const integer_t n,
-                double* xin /*[n]*/, double* yin /*[n]*/,
-                /* Output parameters */
-                double* xout, double* yout,
-                struct driz_error_t* error) {
-  struct wcsmap_param_t* m = (struct wcsmap_param_t*)state;
+static int
+default_wcsmap_direct(struct wcsmap_param_t* m,
+                      const double xd, const double yd,
+                      const integer_t n,
+                      double* xin /*[n]*/, double* yin /*[n]*/,
+                      /* Output parameters */
+                      double* xout, double* yout,
+                      struct driz_error_t* error) {
 
   integer_t  i;
   int        status;
@@ -302,43 +296,26 @@ default_wcsmap(void* state,
   double    *phi    = NULL;
   double    *theta  = NULL;
   int       *stat   = NULL;
-  double    *iptr;
-  double    *optr;
-  double    *table;
-  double     x, y;
-  int        xi, yi;
-  double     xf, yf, ixf, iyf;
-  double    tabx00, tabx01, tabx10, tabx11;
 
-  if (m->factor == 0) {
-    /* Allocate memory for new 2-D array */
-    ptr = memory = (double *) malloc(n * 10 * sizeof(double));
-    if (memory == NULL) goto exit;
-    xyin = ptr;
-    ptr += n * 2;
-    xyout = ptr;
-    ptr += n * 2;
-    skyout = ptr;
-    ptr += n * 2;
-    imgcrd = ptr;
-    ptr += n * 2;
-    phi = ptr;
-    ptr += n;
-    theta = ptr;
-    stat = (int *)malloc(n * sizeof(int));
-    if (stat == NULL) goto exit;
-  } else {
-    /* Allocate memory for new 2-D array */
-    ptr = memory = (double *) malloc(n * 4 * sizeof(double));
-    if (memory == NULL) goto exit;
-    xyin = ptr;
-    ptr += n * 2;
-    xyout = ptr;
-    ptr += n * 2;
-  }
+  /* Allocate memory for new 2-D array */
+  ptr = memory = (double *) malloc(n * 10 * sizeof(double));
+  if (memory == NULL) goto exit;
+  xyin = ptr;
+  ptr += n * 2;
+  xyout = ptr;
+  ptr += n * 2;
+  skyout = ptr;
+  ptr += n * 2;
+  imgcrd = ptr;
+  ptr += n * 2;
+  phi = ptr;
+  ptr += n;
+  theta = ptr;
+  stat = (int *)malloc(n * sizeof(int));
+  if (stat == NULL) goto exit;
 
   /* The input arrays need to be converted to 2-D arrays for input
-      to the PyWCS (and related) functions. */
+     to the PyWCS (and related) functions. */
 
   /* Populate new 2-D array with values from x and y input arrays */
   for (i = 0; i < n; ++i) {
@@ -346,83 +323,30 @@ default_wcsmap(void* state,
     xyin[2*i+1] = yin[i];
   }
 
-  /* Start by checking to see whether DET2IM correction needs to
-  be applied and applying it as appropriate. */
+  /*
+    Apply pix2sky() transformation from PyWCS
+  */
 
-  if (m->factor == 0) {
-    /*
-      Apply pix2sky() transformation from PyWCS
-    */
-
-    wcsprm_python2c(m->input_wcs->wcs);
-    status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
-    wcsprm_c2python(m->input_wcs->wcs);
-    if (status) {
-      goto exit;
-    }
-
-    /*
-      Finally, call wcs_sky2pix() for the output object.
-    */
-    wcsprm_python2c(m->output_wcs->wcs);
-    status = wcss2p(m->output_wcs->wcs, n, 2,
-                    skyout, phi, theta, imgcrd, xyout, stat);
-    wcsprm_c2python(m->output_wcs->wcs);
-    if (status) {
-      goto exit;
-    }
-  } else {
-    /* do the bilinear interpolation */
-    iptr = xyin;
-    optr = xyout;
-    table = m->table;
-
-#define TABLE_X(x, y) (table[((y)*m->snx + (x))*2])
-#define TABLE_Y(x, y) (table[((y)*m->snx + (x))*2 + 1])
-
-    for (i = 0; i < n; ++i) {
-      x = *iptr++ / m->factor;
-      y = *iptr++ / m->factor;
-      xi = (int)floor(x);
-      yi = (int)floor(y);
-      xf = x - (double)xi;
-      yf = y - (double)yi;
-      ixf = 1.0 - xf;
-      iyf = 1.0 - yf;
-
-      tabx00 = TABLE_X(xi, yi);
-      tabx10 = TABLE_X(xi+1, yi);
-      tabx01 = TABLE_X(xi, yi+1);
-      tabx11 = TABLE_X(xi+1, yi+1);
-
-      /* Account for interpolating across 360-0 boundary */
-      if ((tabx00 - tabx10) > 359) {
-        tabx00 -= 360.0;
-        tabx01 -= 360.0;
-      } else if ((tabx00 - tabx10) < -359) {
-        tabx10 -= 360.0;
-        tabx11 -= 360.0;
-      }
-
-      *optr++ =
-        tabx00 * ixf * iyf +
-        tabx10 * xf * iyf +
-        tabx01 * ixf * yf +
-        tabx11 * xf * yf;
-
-      *optr++ =
-        TABLE_Y(xi, yi)     * ixf * iyf +
-        TABLE_Y(xi+1, yi)   * xf * iyf +
-        TABLE_Y(xi, yi+1)   * ixf * yf +
-        TABLE_Y(xi+1, yi+1) * xf * yf;
-    }
-
-#undef TABLE_X
-#undef TABLE_Y
-  } /* End of if_then_else for factor == 0 */
+  wcsprm_python2c(m->input_wcs->wcs);
+  status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
+  wcsprm_c2python(m->input_wcs->wcs);
+  if (status) {
+    goto exit;
+  }
 
   /*
-  Transform results back to 2 1-D arrays, like the input.
+    Finally, call wcs_sky2pix() for the output object.
+  */
+  wcsprm_python2c(m->output_wcs->wcs);
+  status = wcss2p(m->output_wcs->wcs, n, 2,
+                  skyout, phi, theta, imgcrd, xyout, stat);
+  wcsprm_c2python(m->output_wcs->wcs);
+  if (status) {
+    goto exit;
+  }
+
+  /*
+    Transform results back to 2 1-D arrays, like the input.
   */
   for (i = 0; i < n; ++i){
     xout[i] = xyout[2*i];
@@ -439,6 +363,109 @@ default_wcsmap(void* state,
   free(stat);
 
   return result;
+}
+
+static int
+default_wcsmap_interpolate(struct wcsmap_param_t* m,
+                           const double xd, const double yd,
+                           const integer_t n,
+                           double* xin /*[n]*/, double* yin /*[n]*/,
+                           /* Output parameters */
+                           double* xout, double* yout,
+                           struct driz_error_t* error) {
+
+  int     i;
+  int     result = 1;
+  double *xiptr;
+  double *yiptr;
+  double *xoptr;
+  double *yoptr;
+  double *table;
+  double  x, y;
+  int     xi, yi;
+  double  xf, yf, ixf, iyf;
+  double  tabx00, tabx01, tabx10, tabx11;
+
+  /* do the bilinear interpolation */
+  xiptr = xin;
+  yiptr = yin;
+  xoptr = xout;
+  yoptr = yout;
+  table = m->table;
+
+#define TABLE_X(x, y) (table[((y)*m->snx + (x))*2])
+#define TABLE_Y(x, y) (table[((y)*m->snx + (x))*2 + 1])
+
+  for (i = 0; i < n; ++i) {
+    x = *xiptr++ / m->factor;
+    y = *yiptr++ / m->factor;
+    xi = (int)floor(x);
+    yi = (int)floor(y);
+    xf = x - (double)xi;
+    yf = y - (double)yi;
+    ixf = 1.0 - xf;
+    iyf = 1.0 - yf;
+
+    tabx00 = TABLE_X(xi, yi);
+    tabx10 = TABLE_X(xi+1, yi);
+    tabx01 = TABLE_X(xi, yi+1);
+    tabx11 = TABLE_X(xi+1, yi+1);
+
+    /* Account for interpolating across 360-0 boundary */
+    if ((tabx00 - tabx10) > 359) {
+      tabx00 -= 360.0;
+      tabx01 -= 360.0;
+    } else if ((tabx00 - tabx10) < -359) {
+      tabx10 -= 360.0;
+      tabx11 -= 360.0;
+    }
+
+    *xoptr++ =
+      tabx00 * ixf * iyf +
+      tabx10 * xf * iyf +
+      tabx01 * ixf * yf +
+      tabx11 * xf * yf;
+
+    *yoptr++ =
+      TABLE_Y(xi, yi)     * ixf * iyf +
+      TABLE_Y(xi+1, yi)   * xf * iyf +
+      TABLE_Y(xi, yi+1)   * ixf * yf +
+      TABLE_Y(xi+1, yi+1) * xf * yf;
+  }
+
+#undef TABLE_X
+#undef TABLE_Y
+
+  result = 0;
+
+ exit:
+
+  return result;
+}
+
+
+
+/*
+
+Default WCS mapping code
+
+*/
+int
+default_wcsmap(void* state,
+               const double xd, const double yd,
+               const integer_t n,
+               double* xin /*[n]*/, double* yin /*[n]*/,
+               /* Output parameters */
+               double* xout, double* yout,
+               struct driz_error_t* error) {
+
+  struct wcsmap_param_t* m = (struct wcsmap_param_t*)state;
+
+  if (m->factor == 0) {
+    return default_wcsmap_direct(m, xd, yd, n, xin, yin, xout, yout, error);
+  } else {
+    return default_wcsmap_interpolate(m, xd, yd, n, xin, yin, xout, yout, error);
+  }
 }
 
 int
