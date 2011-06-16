@@ -7,6 +7,8 @@ from pytools import fileutil
 from stwcs import wcsutil, updatewcs
 from stwcs.wcsutil import wcscorr
 
+import linearfit
+
 wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2','CRPIX1','CRPIX2','ORIENTAT']
 
 def update_from_shiftfile(shiftfile,force=False):
@@ -95,7 +97,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
         if verbose:
             print 'Processing %s[',ext,']'
         chip_wcs = wcsutil.HSTWCS(image,ext=ext)
-        
+
         update_refchip_with_shift(chip_wcs,wref,rot=rot,scale=scale,xsh=xsh,ysh=ysh)
         if wcsname in [None,' ','','INDEF']:
             wcsname = 'TWEAK'
@@ -265,8 +267,15 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     xpix = [chip_wcs.wcs.crpix[0],chip_wcs.wcs.crpix[0]+1,chip_wcs.wcs.crpix[0]]
     ypix = [chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1]+1]
 
-    # This full transformation includes all parts of model, including DGEO
-    Rc_i,Dc_i = chip_wcs.all_pix2sky(xpix,ypix,1)
+    # This full transformation includes all parts of model, excluding DGEO/NPOL
+    #Rc_i,Dc_i = chip_wcs.all_pix2sky(xpix,ypix,1)
+    dpx,dpy = chip_wcs.det2im(xpix,ypix,1)  #Apply the detector to image correction
+    dpx = xpix + (dpx[0] - xpix[0])
+    dpy = ypix + (dpy[0] - ypix[0])
+    spx,spy = chip_wcs.sip_pix2foc(dpx,dpy,1)
+    fx = dpx + (spx - dpx)
+    fy = dpy + (spy - dpy)
+    Rc_i,Dc_i = chip_wcs.wcs_pix2sky(fx,fy,1)
 
     # step 2
     Xc_i,Yc_i = wcslin.wcs_sky2pix([Rc_i],[Dc_i],1)
@@ -282,20 +291,36 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     Rcs_i,Dcs_i = wcslin.wcs_pix2sky(Xcs_i,Ycs_i,1)
     # step 5
     # new crval should be first member
-    chip_wcs.wcs.crval = np.array([Rcs_i[0],Dcs_i[0]])
     new_crval1 = Rcs_i[0]
     new_crval2 = Dcs_i[0]
+    chip_wcs.wcs.crval = np.array([new_crval1,new_crval2])
+    chip_wcs.wcs.set()
     # step 6
-    # see about computing the CD matrix directly from the 3 points around
-    # the shifted/rotated CRPIX position in the output frame as projected
-    # back onto the sky
-    am1 = Rcs_i[1]-new_crval1
-    bm1 = Rcs_i[2]-new_crval1
-    cm1 = Dcs_i[1]-new_crval2
-    dm1 = Dcs_i[2]-new_crval2
-    chip_wcs.wcs.cd = np.array([[am1*np.cos(new_crval2*np.pi/180),
-                                bm1*np.cos(new_crval2*np.pi/180)],[cm1,dm1]],
-                                dtype=np.float64)
+    # compute new sky positions (with full model) based on new CRVAL
+    """
+    Rc_iu,Dc_iu = chip_wcs.all_pix2sky(xpix,ypix,1) # may need to remove 'dgeo' from this step
+    """
+    dpx,dpy = chip_wcs.det2im(xpix,ypix,1)  #Apply the detector to image correction
+    dpx = xpix + (dpx[0] - xpix[0])
+    dpy = ypix + (dpy[0] - ypix[0])
+    spx,spy = chip_wcs.sip_pix2foc(dpx,dpy,1)
+    fx = dpx + (spx - dpx)
+    fy = dpy + (spy - dpy)
+    Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(fx,fy,1)
+
+    Xc_iu,Yc_iu = wcslin.wcs_sky2pix([Rc_iu],[Dc_iu],1)
+    # step 7
+    # Perform rscale (linear orthogonal) fit between previously updated positions
+    # and newly updated positions
+    XYc_iu = np.transpose([Xc_iu,Yc_iu])
+    XYcs_i = np.transpose([Xcs_i,Ycs_i])
+    rfit = linearfit.fit_all(XYcs_i,XYc_iu,mode='rscale',center=[new_crval1,new_crval2],verbose=False)
+    rmat = fileutil.buildRotMatrix(rfit['rot'])*rfit['scale'][0]
+    
+    # Step 8
+    # apply final fit to CD matrix
+    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd,rmat)
+    
 
 ###
 ### Header keyword prefix related archive functions

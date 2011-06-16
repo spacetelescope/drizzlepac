@@ -108,6 +108,7 @@ class Image(object):
         self.identityfit = False # set to True when matching/fitting to itself
         self.goodmatch = True # keep track of whether enough matches were found for a fit
         
+        self.perform_update = True
     def get_wcs(self):
         """ Helper method to return a list of all the input WCS objects associated
             with this image
@@ -336,14 +337,18 @@ class Image(object):
                         ptype = False
                     tweakutils.make_vector_plot(None,data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
                             vector=ptype,title=title_str)
-                    raw_input("Press ENTER to continue to the next image's fit...")
+                    a = raw_input("Press ENTER to continue to the next image's fit or 'q' to quit immediately...")
+                    if 'q' in a.lower():
+                        self.perform_update = False
+                        
         else:
             self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}
 
     def updateHeader(self,wcsname=None):
         """ Update header of image with shifts computed by *perform_fit()*
         """
-
+        if not self.perform_update:
+            return
         # Create WCSCORR table to keep track of WCS revisions anyway
         wcscorr.init_wcscorr(self.name)
 
@@ -353,18 +358,20 @@ class Image(object):
         if self.identityfit:
             # archive current WCS as alternate WCS with specified WCSNAME
             extlist = []
-            if self.num_sci > 0:
+            if self.num_sci == 1 and self.ext_name == "PRIMARY":
+                extlist = [0]
+            else:
                 for ext in range(1,self.num_sci+1):
                     extlist.append((self.ext_name,ext))
-            else:
-                extlist = [0]
+
             next_key = stwcs.wcsutil.altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
             stwcs.wcsutil.altwcs.archiveWCS(self.name,extlist,wcskey=next_key,wcsname=wcsname)
 
             # copy updated WCS info to WCSCORR table
-            fimg = pyfits.open(self.name,mode='update')
-            stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
-            fimg.close()
+            if self.num_sci > 0 and self.ext_name != "PRIMARY":
+                fimg = pyfits.open(self.name,mode='update')
+                stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
+                fimg.close()
 
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file
@@ -430,7 +437,7 @@ class Image(object):
             compatability with the IRAF-based MultiDrizzle
         """
         if self.fit is not None:
-            rowstr = '%s    %g  %g    %g     %g\n'%(self.name,self.fit['offset'][0],self.fit['offset'][1],self.fit['rot'],self.fit['scale'][0])
+            rowstr = '%s    %0.6g  %0.6g    %0.6g     %0.6g\n'%(self.name,self.fit['offset'][0],self.fit['offset'][1],self.fit['rot'],self.fit['scale'][0])
         else:
             rowstr = None
         return rowstr
@@ -536,7 +543,9 @@ def count_sci_extensions(filename):
     """
     num_sci = 0
     extname = 'SCI'
+    num_ext = 0
     for extn in fu.openImage(filename):
+        num_ext += 1
         if extn.header.has_key('extname') and extn.header['extname'] == extname:
             num_sci += 1
     if num_sci == 0:

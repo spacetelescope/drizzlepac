@@ -122,12 +122,15 @@ class Catalog(object):
         if not isinstance(self.wcs,pywcs.WCS):
             print 'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'
             raise ValueError
+        if len(self.xypos[0]) == 0:
+            self.xypos = None
         if self.xypos is None:
             print 'No objects found for this image from catalog: ',self.source
             return
         
         if self.radec is None or force:
             if self.wcs is not None:
+                print 'Number of objects in catalog: ',len(self.xypos[0])
                 self.radec = self.wcs.all_pix2sky(self.xypos[0],self.xypos[1],self.origin)
             else:
                 # If we have no WCS, simply pass along the XY input positions

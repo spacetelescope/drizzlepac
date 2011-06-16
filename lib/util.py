@@ -4,14 +4,15 @@ A library of utility functions
 
 """
 from __future__ import division # confidence medium
-
-import numpy as np
-import pyfits
-from pytools import asnutil,fileutil
-from pytools import teal
 import os
 import logging,traceback
 import sys,string
+
+import numpy as np
+import pyfits
+
+from pytools import asnutil,fileutil
+from pytools import teal,cfgpars
 
 __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
@@ -244,6 +245,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         if input_dict not in [None,{}] and configObj not in [None, {}]:
             mergeConfigObj(configObj,input_dict)
             # Update the input .cfg file with the updated parameter values 
+            configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
             configObj.write()
             
         if not loadOnly: 

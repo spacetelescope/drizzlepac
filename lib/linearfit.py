@@ -192,7 +192,8 @@ def fit_shifts(xy,uv):
     rms = [resids[:,0].std(),resids[:,1].std()]
     fit['resids'] = resids
     fit['rms'] = rms
-    
+    fit['fit_matrix'] = np.array([[1.0,0.0],[0.0,1.0]])
+
     return fit
 
 def fit_arrays(uv,xy):
@@ -278,7 +279,7 @@ def build_fit(P,Q):
     scale_x = avg_scale + d
     scale_y = avg_scale - d
 
-    return {'offset':(P[2],Q[2]),'rot':theta_deg,'scale':(avg_scale,scale_x,scale_y),'coeffs':(P,Q)}
+    return {'offset':(P[2],Q[2]),'fit_matrix':np.array([[P[0],P[1]],[Q[0],Q[1]]]),'rot':theta_deg,'scale':(avg_scale,scale_x,scale_y),'coeffs':(P,Q)}
 
 def apply_old_coeffs(xy,coeffs):
     """ Apply the offset/shift/rot values from a linear fit 
@@ -397,6 +398,6 @@ def geomap_rscale(xyin,xyref,center=None):
     resids = xyin - np.dot((xyref),rotmat) - [xshift,yshift]
     rms = [resids[:,0].std(),resids[:,1].std()]
     
-    rscale_fit = {'offset':(xshift,yshift),'rot':theta,'scale':(mag,mag,mag),'coeffs':(P,Q),'resids':resids,'rms':rms}
+    rscale_fit = {'offset':(xshift,yshift),'rot':theta,'scale':(mag,mag,mag),'fit_matrix':rotmat,'coeffs':(P,Q),'resids':resids,'rms':rms}
     return rscale_fit
     
