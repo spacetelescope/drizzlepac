@@ -8,6 +8,7 @@ import os
 import logging,traceback
 import sys,string
 
+import tkMessageBox
 import numpy as np
 import pyfits
 
@@ -293,7 +294,16 @@ def setConfigObjPar(configObj,parname,parvalue):
             if key == parname:
                 configObj[key] = parvalue
 
-
+def displayMakewcsWarningBox(display=True, parent=None):
+    """ Displays a warning box for the 'makewcs' parameter.
+    """
+    ans = {'yes':True,'no':False}
+    if ans[display]:
+        msg = 'Setting "updatewcs=yes" will result '+ \
+              'in all input WCS values to be recomputed '+ \
+              'using the original distortion model and alignment.'
+        tkMessageBox.showwarning(parent=parent,message=msg, title="WCS will be overwritten!")
+    return True
 
 """
 These two functions are for reading in an 'at file' which contains

@@ -268,6 +268,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     ypix = [chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1]+1]
 
     # This full transformation includes all parts of model, excluding DGEO/NPOL
+    """
     #Rc_i,Dc_i = chip_wcs.all_pix2sky(xpix,ypix,1)
     dpx,dpy = chip_wcs.det2im(xpix,ypix,1)  #Apply the detector to image correction
     dpx = xpix + (dpx[0] - xpix[0])
@@ -276,7 +277,13 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     fx = dpx + (spx - dpx)
     fy = dpy + (spy - dpy)
     Rc_i,Dc_i = chip_wcs.wcs_pix2sky(fx,fy,1)
-
+    """
+    """
+    spx,spy = chip_wcs.sip_pix2foc(xpix,ypix,1)
+    Rc_i,Dc_i = chip_wcs.wcs_pix2sky(spx,spy,1)
+    """
+    Rc_i,Dc_i = chip_wcs.wcs_pix2sky(xpix,ypix,1)
+    
     # step 2
     Xc_i,Yc_i = wcslin.wcs_sky2pix([Rc_i],[Dc_i],1)
     Xc_i -= wcslin.wcs.crpix[0]
@@ -299,7 +306,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     # compute new sky positions (with full model) based on new CRVAL
     """
     Rc_iu,Dc_iu = chip_wcs.all_pix2sky(xpix,ypix,1) # may need to remove 'dgeo' from this step
-    """
+
     dpx,dpy = chip_wcs.det2im(xpix,ypix,1)  #Apply the detector to image correction
     dpx = xpix + (dpx[0] - xpix[0])
     dpy = ypix + (dpy[0] - ypix[0])
@@ -307,7 +314,12 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     fx = dpx + (spx - dpx)
     fy = dpy + (spy - dpy)
     Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(fx,fy,1)
-
+    """
+    """
+    spx,spy = chip_wcs.sip_pix2foc(xpix,ypix,1)
+    Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(spx,spy,1)
+    """
+    Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(xpix,ypix,1)
     Xc_iu,Yc_iu = wcslin.wcs_sky2pix([Rc_iu],[Dc_iu],1)
     # step 7
     # Perform rscale (linear orthogonal) fit between previously updated positions

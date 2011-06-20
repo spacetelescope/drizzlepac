@@ -3,7 +3,7 @@ input = string_kw(default="*flt.fits", triggers='_rule1_', comment="Input files 
 output = string_kw(default='final', comment="Rootname for output drizzled products")
 mdriztab = boolean_kw(default=False, comment="Use Multidrizzle parameter file specified in header?")
 runfile = string_kw(default="betadrizzle.log", comment="File for logging the script commands")
-updatewcs = boolean_kw(default=False, comment="Update the WCS keywords?")
+updatewcs = boolean_kw(default=False, triggers='_rule1a_',comment="Update the WCS keywords?")
 wcskey = string_kw(default="",comment="WCS version to use in processing")
 proc_unit = option_kw("native", "electrons", default="native", comment="Units used during processing")
 coeffs = boolean_kw(default=True, comment="Use header-based distortion coefficients?")
@@ -109,5 +109,6 @@ expkeyword = string_kw(default="")
 
 [ _RULES_ ]
 _rule1_ = string_kw(default='', when='defaults,entry', code='from pytools import check_files; ans={ True:"yes",False:"no"}; OUT = ans[check_files.countInput(VAL) > 1]')
+_rule1a_ = string_kw(default='', when='defaults,entry', code='from betadrizzle import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule7a_ = string_kw(default='', code='OUT = VAL')
