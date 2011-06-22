@@ -10,7 +10,7 @@
 # copy it to these places:
 #   stsci_python/multidrizzle/version.py 
 #   stsci_python/pydrizzle/version.py    
-#   stsci_python/pytools/version.py
+#   stsci_python/stsci.tools/version.py
 #
 # If you need to _use_ this file in your package, edit the list above to
 # add your package, commit the changes, then copy the committed file into 

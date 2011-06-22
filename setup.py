@@ -1,31 +1,34 @@
+#!/usr/bin/env python
 
-# This setup.py does not follow our usual pattern, because it is
-# the setup for pytools -- it can't use pytools to install itself..
+try:
+    from setuptools import setup
+except ImportError:
+    from distribute_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
 
-import sys
-
-# We can't import this because we are not installed yet, so
-# exec it instead.  We only want it to initialize itself,
-# so we don't need to keep the symbol table.
-
-syms = { }
-f=open("lib/stsci_distutils_hack.py","r")
-exec f in syms
-f.close()
-
-syms['__set_svn_version__']()
-syms['__set_setup_date__']()
-
-if "version" in sys.argv :
-    sys.exit(0)
-
-from distutils.core import setup
-
-from defsetup import setupargs, pkg
+try:
+    from stsci.distutils.command.easier_install import easier_install
+except ImportError:
+    import os
+    import sys
+    stsci_distutils = os.path.abspath(os.path.join('..', 'distutils', 'lib'))
+    if os.path.exists(stsci_distutils) and stsci_distutils not in sys.path:
+        sys.path.append(stsci_distutils)
+    try:
+        from stsci.distutils.command.easier_install import easier_install
+        import setuptools.command.easy_install
+    except ImportError:
+        # If even this failed, we're not in an stsci_python source checkout,
+        # so there's nothing gained from using easier_install
+        from setuptools.command.easy_install import easy_install
+        easier_install = easy_install
+# This is required so that easier_install can be used for setup_requires
+import setuptools
+setuptools.command.easy_install.easy_install = easier_install
 
 setup(
-    name =              pkg,
-    packages =          [ pkg ],
-    package_dir =       { pkg : 'lib' },
-    **setupargs
-    )
+    setup_requires=['d2to1>=0.2.2', 'stsci.distutils>=0.2dev'],
+    d2to1=True,
+    use_2to3=True
+)
