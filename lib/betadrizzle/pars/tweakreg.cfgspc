@@ -41,13 +41,14 @@ refnbright = integer_or_none_kw(default=None,comment="Number of brightest refere
 
 [OBJECT MATCHING PARAMETERS]
 minobj = integer_kw(default=15,comment="Minimum number of objects acceptable for matching")
-nmatch = integer_kw(default=30,comment="Maximum number of objects to match")
-algorithm = option_kw("tolerance","triangles",default="tolerance",comment="The matching algorithm")
 searchrad = float_kw(default=1.0, comment="The search radius for a match")
 searchunits = option_kw("arcseconds","pixels", default="arcseconds", comment="Units for search radius")
-separation = float_kw(default=0.0,comment="Minimum object separation") 
-xoffset = float_or_none_kw(default=None,comment="Initial guess for X offset")
-yoffset = float_or_none_kw(default=None,comment="Initial guess for Y offset")
+use2dhist = boolean_kw(default=True, triggers="_rule2_", comment="Use 2d histogram to find initial offset?")
+see2dplot = boolean_kw(default=False, active_if='_rule2_',comment="See 2d histogram for initial offset?")
+tolerance = float_or_none_kw(default=None, inactive_if='_rule2_', comment="Matching tolerance for xyxymatch(pixels)")
+separation = float_kw(default=0.0, inactive_if='_rule2_', comment="Minimum object separation (pixels)") 
+xoffset = float_or_none_kw(default=None, inactive_if='_rule2_',comment="Initial guess for X offset(pixels)")
+yoffset = float_or_none_kw(default=None,inactive_if='_rule2_',comment="Initial guess for Y offset(pixels)")
 
 [CATALOG FITTING PARAMETERS]
 fitgeometry = option_kw("shift","rscale","general",default="rscale",comment="Fitting geometry")
@@ -56,5 +57,5 @@ nclip = integer_kw(default=0,comment="Number of clipping iterations in fit")
 sigma = float_or_none_kw(default=3.0,comment="Clipping limit in sigma units")
 
 [ _RULES_ ]
-_rule1_ = boolean_kw(default=True, code='from betadrizzle import sextractor; OUT = sextractor.is_installed()')
-
+_rule1_ = string_kw(default=True, code='from betadrizzle import sextractor; OUT = sextractor.is_installed()')
+_rule2_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')

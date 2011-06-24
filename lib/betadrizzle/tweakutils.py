@@ -540,5 +540,69 @@ def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
     fout1.close()
     print 'wrote XY data to: ',outname  
  
+def find_xy_peak(img,center=None):
+    """ Find the center of the peak of offsets
+    """
+    # find level of noise in histogram
+    istats = imagestats.ImageStats(img.astype(np.float32),nclip=3)
+    imgsum = img.sum()
+    
+    # clip out all values below mean+3*sigma from histogram
+    imgc =img[:,:].copy()
+    imgc[imgc < istats.mean+istats.stddev*3] = 0.0
+    # identify position of peak
+    yp0,xp0 = np.where(imgc == imgc.max())
 
+    # take sum of 13x13 pixel box around peak
+    xp_slice = (slice(int(yp0[0])-13,int(yp0[0])+15),
+                slice(int(xp0[0])-13,int(xp0[0])+15))
+    yp,xp = ndimage.center_of_mass(img[xp_slice])
+    xp += xp_slice[1].start
+    yp += xp_slice[0].start
+
+    # compute S/N criteria for this peak: flux/sqrt(mean of rest of array)
+    flux = imgc[xp_slice].sum()
+    zpqual = flux/np.sqrt((imgsum - flux)/(img.size - imgc[xp_slice].size))
+
+    if center is not None:
+        xp -= center[0]
+        yp -= center[1]
+    
+    del imgc
+    return xp,yp,flux,zpqual
+
+def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False):
+    """ Create a matrix which contains the delta between each XY position and 
+        each UV position. 
+    """
+    print 'Computing initial guess for X and Y shifts...'
+    xyshape = int(searchrad*2)+1
+    zpmat = np.zeros([xyshape,xyshape],dtype=np.int32)
+
+    for xy in imgxy:        
+        deltax = xy[0] - refxy[:,0]
+        deltay = xy[1] - refxy[:,1]
+        xyind = np.bitwise_and(np.abs(deltax) < searchrad,np.abs(deltay) < searchrad)
         
+        deltax = (deltax+searchrad)[xyind].astype(np.int32)
+        deltay = (deltay+searchrad)[xyind].astype(np.int32)
+        zpmat[deltay,deltax] += 1
+    
+    zpsum = zpmat.sum()
+    xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
+    print 'Found initial X and Y shifts of ',xp,yp,'\n     with significance of ',zpqual
+    if histplot:
+        zpstd = (((zpsum-flux)/zpmat.size)+zpmat.std())
+        pl.clf()
+        a=pl.imshow(zpmat,vmin=1,vmax=zpstd,interpolation='nearest')
+        pl.gray()
+        pl.colorbar()
+        pl.title("Histogram of offsets: Peak S/N=%0.2f at (%0.4g, %0.4g)"%(zpqual,xp,yp))
+        pl.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
+        pl.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
+        pl.text(searchrad,searchrad,"Offset=0,0",
+                verticalalignment='bottom',color='yellow')
+        a = raw_input("Press 'Enter' to continue...")
+
+    return xp,yp,flux,zpqual
+    

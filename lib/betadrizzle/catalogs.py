@@ -217,10 +217,10 @@ class ExtractorCatalog(Catalog):
             rootname = self.source
             extn = 0
         fimg = pyfits.open(rootname)
-
-        new_fname = rootname[:rootname.rfind('.fits')]+'_extract_sci'+str(extn)+'.fits'
+        extver = fimg[extn].header['extver']
+        new_fname = rootname[:rootname.rfind('.fits')]+'_extract_sci'+str(extver)+'.fits'
         if os.path.exists(new_fname): os.remove(new_fname)
-        phdu = pyfits.PrimaryHDU(data=fimg['sci',extn].data,header=fimg['sci',extn].header)
+        phdu = pyfits.PrimaryHDU(data=fimg['sci',extver].data,header=fimg['sci',extver].header)
         phdu.writeto(new_fname)
         del phdu
         return new_fname
@@ -234,6 +234,8 @@ class ExtractorCatalog(Catalog):
         catname = imgname[:imgname.rfind('.fits')]+'_sextractor.cat'
         self.catname = catname
         sextractor_pars = self.pars['USER SUPPLIED PARAMETERS']
+        fluxmin = sextractor_pars['fluxmin']
+        fluxmax = sextractor_pars['fluxmax']
 
         # Create a SExtractor instance
         s = sextractor.SExtractor()
@@ -253,7 +255,8 @@ class ExtractorCatalog(Catalog):
                 if isinstance(sextractor_pars[key], bool):
                     sextractor_pars[key] = self.SEXTRACTOR_BOOL[sextractor_pars[key]]
                 # Populate the SExtractor object with values provided by user
-                if sextractor_pars[key] != "" and key not in ['$nargs','mode','config_file']:
+                if sextractor_pars[key] != "" and key not in ['$nargs',
+                        'mode','config_file','fluxmin','fluxmax']:
                     if key != 'phot_autoparams':
                         s.config[key.upper()] = sextractor_pars[key]
                     else:

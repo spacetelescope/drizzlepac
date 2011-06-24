@@ -108,7 +108,7 @@ expkeyword = string_kw(default="")
 #mode,s,h,"al",,,
 
 [ _RULES_ ]
-_rule1_ = string_kw(default='', when='defaults,entry', code='from pytools import check_files; OUT = (check_files.countInput(VAL) < 2)')
+_rule1_ = string_kw(default='', when='defaults,entry', code='from stsci.tools import check_files; OUT = (check_files.countInput(VAL) < 2)')
 _rule1a_ = string_kw(default='', when='defaults,entry', code='from betadrizzle import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule7a_ = string_kw(default='', code='OUT = VAL')

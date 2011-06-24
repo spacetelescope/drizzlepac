@@ -190,7 +190,8 @@ class Image(object):
         all_radec = None
         if clip_catalog:
             # Start by clipping by any specified flux range
-            if self.pars[clip_prefix+'fluxmax'] is not None or self.pars[clip_prefix+'fluxmin'] is not None:
+            if self.pars[clip_prefix+'fluxmax'] is not None or \
+                    self.pars[clip_prefix+'fluxmin'] is not None:
                 clip_catalog = True
                 if self.pars[clip_prefix+'fluxmin'] is not None:
                     fluxmin = self.pars[clip_prefix+'fluxmin']
@@ -212,7 +213,8 @@ class Image(object):
                 all_radec.append(self.all_radec_orig[2][flux_indx])
                 all_radec.append(self.all_radec_orig[3][flux_indx])
 
-            if self.pars.has_key(clip_prefix+'nbright') and self.pars[clip_prefix+'nbright'] is not None:
+            if self.pars.has_key(clip_prefix+'nbright') and \
+                    self.pars[clip_prefix+'nbright'] is not None:
                 clip_catalog = True
                 # pick out only the brightest 'nbright' sources
                 if self.pars[clip_prefix+'fluxunits'] == 'mag':
@@ -221,8 +223,10 @@ class Image(object):
                     nbslice = slice(nbright,None)
                 
                 if all_radec is None:
-                    all_radec = copy.deepcopy(self.all_radec_orig) # work on copy of all original data                
-                nbright_indx = np.argsort(all_radec[2])[nbslice] # find indices of brightest
+                    # work on copy of all original data
+                    all_radec = copy.deepcopy(self.all_radec_orig)
+                # find indices of brightest
+                nbright_indx = np.argsort(all_radec[2])[nbslice] 
                 self.all_radec[0] = all_radec[0][nbright_indx]
                 self.all_radec[1] = all_radec[1][nbright_indx]
                 self.all_radec[2] = all_radec[2][nbright_indx]
@@ -247,27 +251,47 @@ class Image(object):
         del matchpars['minobj'] # not needed in xyxymatch
 
         # Check to see whether or not it is being matched to itself
-        if (refname.strip() == self.name.strip()) or (ref_outxy.shape == self.outxy.shape) and (ref_outxy == self.outxy).all():
+        if (refname.strip() == self.name.strip()) or (
+                ref_outxy.shape == self.outxy.shape) and (
+                ref_outxy == self.outxy).all():
             self.identityfit = True
             print 'NO fit performed for reference image: ',self.name,'\n'
         else:
-            xoff = 0.
-            yoff = 0.
-            if matchpars['xoffset'] is not None:
-                xoff = matchpars['xoffset']
-            if matchpars['yoffset'] is not None:
-                yoff = matchpars['yoffset']
-            
             # convert tolerance from units of arcseconds to pixels, as needed
             radius = matchpars['searchrad']
             if matchpars['searchunits'] == 'arcseconds':
                 radius /= refWCS.pscale
 
-            xyoff = (xoff,yoff)
-            matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,tolerance=radius,separation=matchpars['separation'])
+            # Determine xyoff (X,Y offset) and tolerance to be used with xyxymatch
+            use2d = True
+            if matchpars['use2dhist']:
+                zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
+                                    ref_outxy,searchrad=radius,histplot=matchpars['see2dplot'])
+                if zpqual > 2.0:
+                    xyoff = (zpxoff,zpyoff)
+                    # set tolerance as well
+                    xyxytolerance = 3.0
+                    xyxysep = 0.0
+                else:
+                    use2d = False
+            if not use2d:
+                xoff = 0.
+                yoff = 0.
+                if matchpars['xoffset'] is not None:
+                    xoff = matchpars['xoffset']
+                if matchpars['yoffset'] is not None:
+                    yoff = matchpars['yoffset']
+                xyoff = (xoff,yoff)
+                # set tolerance 
+                xyxytolerance = matchpars['tolerance']
+                xyxysep = matchpars['separation']
+            matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,
+                                tolerance=xyxytolerance,separation=xyxysep)
             if len(matches) > minobj:
-                self.matches['image'] = np.column_stack([matches['input_x'][:,np.newaxis],matches['input_y'][:,np.newaxis]])
-                self.matches['ref'] = np.column_stack([matches['ref_x'][:,np.newaxis],matches['ref_y'][:,np.newaxis]])
+                self.matches['image'] = np.column_stack([matches['input_x'][:,
+                                np.newaxis],matches['input_y'][:,np.newaxis]])
+                self.matches['ref'] = np.column_stack([matches['ref_x'][:,
+                                np.newaxis],matches['ref_y'][:,np.newaxis]])
                 self.matches['ref_indx'] = matches['ref_idx']
                 self.matches['img_indx'] = self.all_radec[3][matches['input_idx']]
                 print 'Found %d matches for %s...'%(len(matches),self.name)

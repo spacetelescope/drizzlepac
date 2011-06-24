@@ -14,8 +14,8 @@ import imagefindpars
 
 import sextractor
     
-__version__ = '0.5'
-__vdate__ = '16-Jun-2011'
+__version__ = '0.6'
+__vdate__ = '24-Jun-2011'
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 

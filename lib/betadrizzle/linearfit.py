@@ -70,10 +70,7 @@ def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,ce
         # cast input list as numpy ndarray for fitting
         uv = np.array(uv)
 
-    if center is not None:
-        xcen = center[0]
-        ycen = center[1]
-    else:
+    if center is None:
         xcen = uv[:,0].mean()
         ycen = uv[:,1].mean()
         center = [xcen,ycen]
