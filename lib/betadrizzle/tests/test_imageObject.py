@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import nose
-import assert
 import imageObject
 
 #from http://blog.moertel.com/articles/2008/03/19/property-checking-with-pythons-nose-testing-framework
