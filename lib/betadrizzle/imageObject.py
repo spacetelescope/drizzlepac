@@ -232,7 +232,8 @@ class baseImageObject:
         extensions = self._findExtnames(extname=extname,exclude=exclude)
                    
         for i in range(1,self._nextend+1,1):
-            if self._image[i].__dict__.has_key('_xtn') and "IMAGE" in self._image[i]._xtn:
+            if hasattr(self._image[i],'_extension') and \
+                "IMAGE" in self._image[i]._extension:
                 extver = self._image[i].header['extver']
                 if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
                     self._image[i].data=self.getData(self._image[i].extname + ','+str(self._image[i].extver))
@@ -248,7 +249,8 @@ class baseImageObject:
                 extver = self._image[i].header['extver']
             else:
                 extver = 1
-            if self._image[i].__dict__.has_key('_xtn') and "IMAGE" in self._image[i]._xtn:
+            if hasattr(self._image[i],'_extension') and \
+                "IMAGE" in self._image[i]._extension:
                 if (self._image[i].extname in extensions) and self._image[self.scienceExt,extver].group_member:
                     chiplist.append(self._image[i])
         return chiplist
@@ -268,7 +270,8 @@ class baseImageObject:
         #restore all the extensions data from the original file, be careful here
         #if you've altered data in memory you want to keep!
             for i in range(1,self._nextend+1,1):
-                if self._image[i].__dict__.has_key('_xtn') and "IMAGE" in self._image[i]._xtn:
+                if hasattr(self._image[i],'_extension') and \
+                    "IMAGE" in self._image[i]._extension:
                     if self._image[i].extname.upper() not in extensions:
                         extensions.append(self._image[i].extname)
         #remove this extension from the list

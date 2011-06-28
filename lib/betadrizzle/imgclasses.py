@@ -285,6 +285,7 @@ class Image(object):
                 # set tolerance 
                 xyxytolerance = matchpars['tolerance']
                 xyxysep = matchpars['separation']
+
             matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,
                                 tolerance=xyxytolerance,separation=xyxysep)
             if len(matches) > minobj:
