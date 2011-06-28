@@ -79,6 +79,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
 
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image)
+
     archive_wcsname = ""
     if numextn > 0:
         # Create initial WCSCORR extension
@@ -106,6 +107,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
             extnum = fileutil.findExtname(fimg,ext[0],ext[1])
         else:
             extnum = ext
+        
         update_wcs(fimg,extnum,chip_wcs,wcsname=wcsname,verbose=verbose)
         
     if numextn > 0:
@@ -332,7 +334,6 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     # Step 8
     # apply final fit to CD matrix
     chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd,rmat)
-    
 
 ###
 ### Header keyword prefix related archive functions
@@ -357,12 +358,13 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     if new_wcs.idcscale is None:
         idchdr = False
     # Open the file for updating the WCS
-    try:
+    try:        
         print 'Updating header for ',fimg.filename(),'[',extnum,']'
         hdr = fimg[extnum].header
 
         if verbose:
-            print 'Updating header with new values...'
+            print 'Updating header for ',fimg.filename(),'[',extnum,'] with WCS of'
+            new_wcs.printwcs()
         # Insure that if a copy of the WCS has not been created yet, it will be now
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
 
