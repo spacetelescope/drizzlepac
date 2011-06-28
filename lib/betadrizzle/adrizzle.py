@@ -371,7 +371,7 @@ def mergeDQarray(maskname,dqarr):
     """
     if maskname is not None and os.path.exists(maskname):
         mask = fileutil.openImage(maskname)
-        maskarr = mask[0].data
+        maskarr = mask[0].data.astype(np.bool)
         np.bitwise_and(dqarr,maskarr,dqarr)
         mask.close()
 

@@ -135,6 +135,7 @@ class baseImageObject:
             extn = exten.split(',')
             sci_chip = self._image[self.scienceExt,int(extn[1])]
             fname = sci_chip.dqfile
+
         extnum = self._interpretExten(exten)
         if self._image[extnum].data is None:
             if os.path.exists(fname):
@@ -288,12 +289,12 @@ class baseImageObject:
         _extname=extname.upper()
          
         if not self._isSimpleFits:
-            for ext in range(1,self._nextend+1,1):
-                if self._image[ext].__dict__.has_key('_xtn') and \
-                "IMAGE" in self._image[ext]._xtn and \
-                (self._image[ext].extname == _extname):
-                    if (self._image[ext].extver == extver):
-                        extnum=self._image[ext].extnum
+            for ext in self._image:
+                if hasattr(ext,'_extension') and \
+                "IMAGE" in ext._extension and \
+                (ext.extname == _extname):
+                    if (ext.extver == extver):
+                        extnum=ext.extnum
         else:
             print "Image is simple fits"
             
