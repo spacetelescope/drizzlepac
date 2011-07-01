@@ -156,7 +156,7 @@ def createImageObjectList(files,instrpars,group=None):
         if image._image['PRIMARY'].header.has_key('MTFLAG'):
             # check to see whether we are dealing with moving target observations...
             _keyval = image._image['PRIMARY'].header['MTFLAG']
-            if _keyval not in [""," ", None, "INDEF"] and "T" in _keyval: mtflag = True
+            if _keyval not in [""," ", None, "INDEF"] and _keyval is True: mtflag = True
         else:
             mtflag = False
         if mtflag is True:

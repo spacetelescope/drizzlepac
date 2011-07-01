@@ -226,7 +226,7 @@ class WFPC2InputImage (imageObject):
             darkrate = darkrate / self.getGain(exten) #count/s
         
         try:
-            chip = self._image[exten]
+            chip = self._image[0]
             darkcurrent = chip.header['DARKTIME'] * darkrate
             
         except:
