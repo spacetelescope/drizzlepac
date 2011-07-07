@@ -72,16 +72,24 @@ from stsci.tools import teal
 teal.print_tasknames(__name__, os.path.dirname(__file__))
 
 # Begin Version Information -------------------------------------------
-# Revision based version info
-try:
-    import svn_version
-    __svn_version__ = svn_version.__svn_version__
-except:
-    __svn_version__ = 'Unable to determine SVN revision'
+__version__ = ''
+__svn_version__ = 'Unable to determine SVN revision'
+__full_svn_info__ = ''
+__setup_datetime__ = None
 
-__version__ = '4.0.15dev12812'
-__vdate__ = "9-June-2011"
+try:
+    __version__ = __import__('pkg_resources').\
+                        get_distribution('betadrizzle').version
+except:
+    pass
+__vdate__ = '9-June-2011'
+# Revision based version info
 # End Version Information ---------------------------------------------
+try:
+    from betadrizzle.svninfo import (__svn_version__, __full_svn_info__,
+                                     __setup_datetime__)
+except ImportError:
+    pass
 
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
