@@ -560,7 +560,7 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     wcsprm_c2python(input->wcs);
 
     if (istat) {
-      free(m->table);
+      /* We don't need to free m->table here, because the destructor will do it for us */
       driz_error_set_message(error, wcslib_get_error_message(istat));
       goto exit;
     }
@@ -570,7 +570,7 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     wcsprm_c2python(output->wcs);
 
     if (istat) {
-      free(m->table);
+      /* We don't need to free m->table here, because the destructor will do it for us */
       driz_error_set_message(error, wcslib_get_error_message(istat));
       goto exit;
     }
