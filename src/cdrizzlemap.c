@@ -502,7 +502,7 @@ default_wcsmap_init(struct wcsmap_param_t* m,
     snx = (int)((double)nx / factor) + 2;
     sny = (int)((double)ny / factor) + 2;
 
-    n = (snx + 1) * (sny + 1);
+    n = (snx) * (sny);
     table_size = n << 1;
 
     pixcrd = malloc(table_size * sizeof(double));
