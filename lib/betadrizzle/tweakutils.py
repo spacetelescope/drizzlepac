@@ -141,6 +141,50 @@ def radec_hmstodd(ra,dec):
     pos = coords.Position(rastr+' '+decstr,units='hours')
     return pos.dd()
 
+def parse_colname(colname):
+    """ Common function to interpret input column names provided by the user.
+    This function will understand the following inputs:
+        '1,2,3' or   'c1,c2,c3' or ['c1','c2','c3']
+        '1-3'   or   'c1-c3'
+        '1:3'   or   'c1:c3'
+        '1 2 3' or   'c1 c2 c3'
+        '1'     or   'c1'
+        1
+    The return value will be a list of strings.
+
+    """
+    if isinstance(colname,list):
+        cname = ''
+        for c in colname:
+            cname += str(c)+','
+        cname = cname.rstrip(',')
+    elif isinstance(colname,int) or colname.isdigit():
+        cname = str(colname)
+    else:   
+        cname = colname
+         
+    if 'c' in cname[0]: cname = cname.replace('c','')
+    
+    ctok = None
+    cols = None
+    if '-' in cname:
+        ctok = '-'
+    if ':' in cname:
+        ctok = ':'
+    if ctok is not None:
+        cnums = cname.split(ctok)
+        c = range(int(cnums[0]),int(cnums[1])+1)
+        cols = []
+        for i in c:
+            cols.append(str(i))
+            
+    if cols is None:
+        ctok = ' '
+        if ',' in cname:
+            ctok = ','
+        cols = cname.split(ctok)
+
+    return cols
 
 def readcols(infile, cols=None):
     """ Function which reads specified columns from either FITS tables or
@@ -179,7 +223,103 @@ def read_FITS_cols(infile,cols=None):
     ftab.close()
     return outarr
 
-def read_ASCII_cols(infile,cols=[1,2]):
+def read_ASCII_cols(infile,cols=[1,2,3]):
+    """ Interpret input ASCII file to return arrays for specified columns.
+    The specification of the columns should be expected to have lists for
+    each 'column', with all columns in each list combined into a single entry.
+    For example: 
+        cols = ['1,2,3','4,5,6',7]
+    where '1,2,3' represent the X/RA values, '4,5,6' represent the Y/Dec values
+    and 7 represents the flux value for a total of 3 requested columns of data
+    to be returned.
+    
+    The return value will be a list of numpy arrays, one for each 'column'.
+    """
+    # build dictionary representing format of each row
+    # Format of dictionary: {'colname':col_number,...}
+    # This provides the mapping between column name and column number
+    coldict = {}
+    fin = open(infile,'r')
+    for l in fin.readlines(): # interpret each line from catalog file
+        if l[0] == '#':
+            # Parse colnames directly from column headers
+            colnames = l.split()
+            for name,i in zip(colnames,range(len(colnames))):
+                name = name.replace('#','')
+                coldict[name] = i
+        else:
+            # convert first row of data into column definitions using indices
+            numcols = len(l.split())
+            colnames = range(1,numcols+1)
+            for name in colnames:
+                coldict[str(name)] = name-1
+            break
+    fin.close()
+    numcols = len(cols)
+    outarr = []
+    for col in range(numcols):
+        outarr.append([])
+    convert_radec = False
+    print 'COLDICT defined as: \n',coldict
+
+    # Now, map specified columns to columns in file and populate output arrays
+    # Open catalog file
+    fin = open(infile,'r')
+    for l in fin.readlines(): # interpret each line from catalog file
+        if l[0] == '#':
+            continue
+        l = l.strip()
+        # skip blank lines, comment lines, or lines with 
+        # fewer columns than requested by user
+        if len(l) == 0 or len(l.split()) < numcols or (
+            len(l) > 0 and (l[0] == '#' or "INDEF" in l)
+            ): continue
+        lspl = l.split()
+        nsplit = len(lspl)
+        
+        # For each 'column' requested by user, pull data from row
+        for c,i in zip(cols,range(numcols)):
+            cnames = parse_colname(c)
+            if len(cnames) > 1:
+                # interpret multi-column specification as one value
+                outval = ''
+                for cn in cnames:
+                    cnum = coldict[cn]
+                    cval = lspl[cnum]
+                    outval += cval+' '
+                outarr[i].append(outval)
+                convert_radec = True
+            else:                
+                #pull single value from row for this column
+                cnum = coldict[cnames[0]]
+                if isfloat(lspl[cnum]):
+                    cval = float(lspl[cnum])
+                else:
+                    cval = lspl[cnum]
+                    # Check for multi-column values given as "nn:nn:nn.s"
+                    if ':' in cval:
+                        cval = cval.replace(':',' ')
+                        convert_radec = True
+                outarr[i].append(cval)
+                
+    fin.close()
+    # convert multi-column RA/Dec specifications
+    if convert_radec:
+        outra = []
+        outdec = []
+        for ra,dec in zip(outarr[0],outarr[1]):
+            radd,decdd = radec_hmstodd(ra,dec)
+            outra.append(radd)
+            outdec.append(decdd)
+        outarr[0] = outra
+        outarr[1] = outdec
+        
+    # convert all lists to numpy arrays
+    for col in outarr:
+        col = np.array(col)
+    return outarr
+    
+def read_ASCII_cols_old(infile,cols=[1,2]):
     """ Copied from 'reftools.wtraxyutils'.
         Input column numbers must be 1-based, or 'c'+1-based ('c1','c2',...')
     """
@@ -203,11 +343,11 @@ def read_ASCII_cols(infile,cols=[1,2]):
         for colname in cols:
             cnum = None
             if colname not in [None,""," ","INDEF"]:
-                if isinstance(colname, str) and colname[0] == 'c':
-                    cname = colname[1:]
-                else:
-                    cname = colname
-                colnums.append(int(cname)-1)
+                subcols = parse_colname(colname)
+                scols = []
+                for s in subcols:
+                    scols.append(int(s)-1)
+                colnums.append(scols)
         c = []
         if (colnums[1] - colnums[0]) > 1:
             cnum = range(colnums[0],colnums[1])
@@ -562,7 +702,12 @@ def find_xy_peak(img,center=None):
 
     # compute S/N criteria for this peak: flux/sqrt(mean of rest of array)
     flux = imgc[xp_slice].sum()
-    zpqual = flux/np.sqrt((imgsum - flux)/(img.size - imgc[xp_slice].size))
+    delta_size = img.size - imgc[xp_slice].size
+    delta_flux = imgsum - flux
+    if delta_size != 0.0 and delta_flux != 0.0:
+        zpqual = flux/np.sqrt((imgsum - flux)/(delta_size))
+    else:    
+        zpqual = -1.0
 
     if center is not None:
         xp -= center[0]

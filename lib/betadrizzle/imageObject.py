@@ -965,12 +965,20 @@ class imageObject(baseImageObject):
                 sci_chip._rdnoise = 1.0  # calibrated readnoise
                 sci_chip._exptime = 1.0
                 sci_chip._effGain = 1.0
+                sci_chip._conversionFactor = 1.0
                 sci_chip._wtscl = 1.0
                 
                 # Keep track of the computed sky value for this chip
                 sci_chip.computedSky = 0.0
-                # Keep track of the sky value that was subtracted from this chip
-                sci_chip.subtractedSky = 0.0
+                
+                # Keep track of the sky value that should be subtracted from this chip
+                # Read in value from image header, in case user has already
+                # determined the sky level
+                if "MDRIZSKY" in sci_chip.header:
+                    subsky = sci_chip.header['MDRIZSKY']
+                else:
+                    subsky = 0.0
+                sci_chip.subtractedSky = subsky
                 sci_chip.darkcurrent = 0.0
                 
                 # The following attributes are used when working with sub-arrays

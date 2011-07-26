@@ -214,7 +214,7 @@ def run(configObj=None,wcsmap=None):
             ablot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
 
             #look for cosmic rays
-            drizCR.rundrizCR(imgObjList,configObj,saveFile=stateObj["clean"],procSteps=procSteps)
+            drizCR.rundrizCR(imgObjList,configObj,saveFile=not(stateObj["clean"]),procSteps=procSteps)
 
             #Make your final drizzled image
             adrizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)

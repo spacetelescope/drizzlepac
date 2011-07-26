@@ -168,19 +168,20 @@ class WFPC2InputImage (imageObject):
             gets done, even if only 1 chip was specified to be processed.
         """
          # Image information 
-        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        _handle = fileutil.openImage(self._filename,mode='readonly') 
 
         # Now convert the SCI array(s) units
         for det in range(1,self._numchips+1):
 
             chip=self._image[self.scienceExt,det]
-            
+            conversionFactor = 1.0
             # add D2IMFILE to outputNames for removal by 'clean()' method later
             if _handle[0].header.has_key('D2IMFILE') and _handle[0].header['D2IMFILE'] not in ["","N/A"]:
                 chip.outputNames['d2imfile'] = _handle[0].header['D2IMFILE']
 
             if chip._gain != None:
-    
+                """
                 # Multiply the values of the sci extension pixels by the gain. 
                 print "Converting %s[%d] from COUNTS to ELECTRONS"%(self._filename,det) 
 
@@ -196,8 +197,10 @@ class WFPC2InputImage (imageObject):
                 # Update the PHOTFLAM value
                 photflam = _handle[self.scienceExt,det].header['PHOTFLAM']
                 _handle[self.scienceExt,det].header.update('PHOTFLAM',(photflam/chip._gain))
-                
-                chip._effGain = 1.
+                """
+                conversionFactor = chip._gain
+                chip._effGain = chip._gain #1.
+                chip._conversionFactor = conversionFactor #1.
             
             else:
                 print "Invalid gain value for data, no conversion done"
@@ -206,7 +209,7 @@ class WFPC2InputImage (imageObject):
         # Close the files and clean-up
         _handle.close() 
 
-        self._effGain = 1.
+        self._effGain = conversionFactor # 1.
                       
     def getdarkcurrent(self,exten):
         """

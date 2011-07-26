@@ -32,6 +32,7 @@ class ACSInputImage(imageObject):
         # the effective gain is 1.
         for chip in self.returnAllChips(extname=self.scienceExt): 
             chip._effGain = 1.0 #chip._effGain is was drizCr uses
+            chip._conversionFactor = 1.0
 
         self._effGain=1.0
         

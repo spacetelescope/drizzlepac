@@ -77,16 +77,16 @@ class STISInputImage (imageObject):
         the data inside the chips already in memory is altered as well
         
         """
-        
-
          # Image information 
-        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        _handle = fileutil.openImage(self._filename,mode='readonly') 
 
         for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
             if chip._gain != None:
 
+                """
                 # Multiply the values of the sci extension pixels by the gain. 
                 print "Converting %s[%s,%d] from COUNTS to ELECTRONS"%(self._filename,self.scienceExt,det) 
 
@@ -100,8 +100,10 @@ class STISInputImage (imageObject):
                 # Update the PHOTFLAM value
                 photflam = _handle[self.scienceExt,det].header['PHOTFLAM']
                 _handle[self.scienceExt,det].header.update('PHOTFLAM',(photflam/chip._gain))
-                
-                chip._effGain = 1.
+                """
+                conversionFactor = chip._gain
+                chip._effGain = chip._gain #1.
+                chip._conversionFactor = conversionFactor #1.
             
             else:
                 print "Invalid gain value for data, no conversion done"
@@ -110,7 +112,7 @@ class STISInputImage (imageObject):
         # Close the files and clean-up
         _handle.close() 
 
-        self._effGain = 1.
+        self._effGain = conversionFactor # 1.0
 
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 

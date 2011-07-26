@@ -263,11 +263,11 @@ class Image(object):
                 radius /= refWCS.pscale
 
             # Determine xyoff (X,Y offset) and tolerance to be used with xyxymatch
-            use2d = True
-            if matchpars['use2dhist']:
+            use2d = matchpars['use2dhist']
+            if use2d:
                 zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
                                     ref_outxy,searchrad=radius,histplot=matchpars['see2dplot'])
-                if zpqual > 2.0:
+                if zpqual > 2.0 or zpqual < 0:
                     xyoff = (zpxoff,zpyoff)
                     # set tolerance as well
                     xyxytolerance = 3.0
@@ -277,9 +277,9 @@ class Image(object):
             if not use2d:
                 xoff = 0.
                 yoff = 0.
-                if matchpars['xoffset'] is not None:
+                if not util.is_blank(matchpars['xoffset']):
                     xoff = matchpars['xoffset']
-                if matchpars['yoffset'] is not None:
+                if not util.is_blank(matchpars['yoffset']):
                     yoff = matchpars['yoffset']
                 xyoff = (xoff,yoff)
                 # set tolerance 

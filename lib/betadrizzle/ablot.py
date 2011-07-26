@@ -19,8 +19,8 @@ except ImportError:
 __taskname__ = 'betadrizzle.ablot'
 _blot_step_num_ = 5
 
-__version__ = '4.0.14dev12793'
-__vdate__ = "11-May-2011"
+__version__ = '4.1.0dev13255'
+__vdate__ = "27-June-2011"
 #
 #### User level interface run from TEAL
 #
@@ -119,6 +119,14 @@ def run(configObj,wcsmap=None):
             _outscale = float(scale_pars['expout'])
         np.multiply(_outsci, _outscale, _outsci)
 
+    # Add sky back in to the blotted image, as specified by the user
+    if configObj['addsky']:
+        skyval = _scihdu.header['MDRIZSKY']
+    else:
+        skyval = configObj['skyval']
+    _outsci += skyval
+        
+
     # Write output Numpy objects to a PyFITS file
     # Blotting only occurs from a drizzled SCI extension
     # to a blotted SCI extension...
@@ -171,6 +179,8 @@ def buildBlotParamDict(configObj):
 
     paramDict = {'blot_interp':configObj[blot_name]['blot_interp'],
                 'blot_sinscl':configObj[blot_name]['blot_sinscl'],
+                'blot_addsky':configObj[blot_name]['blot_addsky'],
+                'blot_skyval':configObj[blot_name]['blot_skyval'],
                 'coeffs':configObj['coeffs']}
     return paramDict
 
@@ -253,6 +263,14 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                    chip.wcs, chip._exptime, coeffs=paramDict['coeffs'],  
                    interp=paramDict['blot_interp'], sinscl=paramDict['blot_sinscl'],
                    wcsmap=wcsmap)
+            # Apply sky subtraction and unit conversion to blotted array to
+            # match un-modified input array
+            if paramDict['blot_addsky']:
+                skyval = chip.header['mdrizsky']
+            else:
+                skyval = paramDict['blot_skyval']
+            _outsci += skyval
+            _outsci /= chip._conversionFactor
             
             # Write output Numpy objects to a PyFITS file
             # Blotting only occurs from a drizzled SCI extension

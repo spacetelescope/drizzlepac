@@ -46,7 +46,7 @@ def drizCR(input=None,configObj=None, editpars=False, **inputDict):
 def run(configObj):
  
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
-    rundrizCR(imgObjList,configObj,saveFile=configObj["clean"])
+    rundrizCR(imgObjList,configObj,saveFile=not(configObj["clean"]))
     
     
 #the final function that calls the workhorse  
@@ -141,6 +141,10 @@ def _drizCr(sciImage,paramDict,saveFile=True):
 
             #grab the actual image from disk
             __inputImage=sciImage.getData(exten)
+
+            # Apply any unit conversions to input image here for comparison
+            # with blotted image in units of electrons
+            __inputImage *= scienceChip._conversionFactor
 
             try:
                 __blotImage=pyfits.open(blotImageName,mode="readonly")

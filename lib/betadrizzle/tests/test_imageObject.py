@@ -24,7 +24,7 @@ class test_imageObject():
     def testNoFilename(self,filename=''):
         self.assertRaises(IOError,imageObject.imageObect,filename)
         
-    def testAttributes(self,filename='./j8uq10lbq_flt.fits')
+    def testAttributes(self, filename="./j8uq10lbq_flt.fits"):
         image=imageObject.imageObject(filename)
     
         #just check to make sure the global attributes are not empty
@@ -32,9 +32,6 @@ class test_imageObject():
         self.assert(image._naxis1 > 0)
         self.assert(image._naxis2 > 0)
         self.assert(image._instrument != '')
-    
-    
-
     
 if __name__ == "__main__":
     nose.run()   

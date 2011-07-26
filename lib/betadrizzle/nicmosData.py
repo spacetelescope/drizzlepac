@@ -64,7 +64,8 @@ class NICMOSInputImage(imageObject):
         """
 
          # Image information 
-        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        _handle = fileutil.openImage(self._filename,mode='readonly') 
 
         for det in range(1,self._numchips+1,1):
 
@@ -82,7 +83,7 @@ class NICMOSInputImage(imageObject):
 
                 # Multiply the values of the sci extension pixels by the gain. 
                 print "Converting %s[%s,%d] from %s to ELECTRONS"%(self._filename,self.scienceExt,det,counts_str) 
-
+                """
                 # If the exptime is 0 the science image will be zeroed out. 
                 np.multiply(_handle[self.scienceExt,det].data,conversionFactor,_handle[self.scienceExt,det].data)
                 #chip.data=_handle[self.scienceExt,det].data.copy()
@@ -96,6 +97,9 @@ class NICMOSInputImage(imageObject):
                 _handle[0].header.update('PHOTFLAM',(photflam/chip._gain))
                 
                 chip._effGain = 1.0
+                """
+                chip._effGain = chip._gain
+                chip._conversionFactor = conversionFactor
             else:
                 print "Invalid gain value for data, no conversion done"
                 return ValueError
@@ -103,7 +107,7 @@ class NICMOSInputImage(imageObject):
         # Close the files and clean-up
         _handle.close() 
 
-        self._effGain = 1.
+        self._effGain = conversionFactor #1.0
 
 
     def _setchippars(self):

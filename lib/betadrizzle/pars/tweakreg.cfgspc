@@ -19,8 +19,8 @@ outwcs = string_kw(default='shifts_wcs.fits',comment="Filename of shiftfile refe
 
 [COORDINATE FILE DESCRIPTION]
 catfile = string_kw(default="", triggers="_section_switch_", comment="File containing coordinate filenames for input files")
-xcol = string_kw(default="1", comment= "Column name for X positions")
-ycol = string_kw(default="2", comment= "Column name for Y positions")
+xcol = string_kw(default="1", comment= "Column name(s) for X positions")
+ycol = string_kw(default="2", comment= "Column name(s) for Y positions")
 fluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
 fluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid objects")
 fluxmin = float_or_none_kw(default=None,comment="Minimum flux value for valid objects")
@@ -30,8 +30,8 @@ nbright = integer_or_none_kw(default=None,comment="Number of brightest objects t
 
 [REFERENCE CATALOG DESCRIPTION]
 refcat = string_kw(default="", triggers="_section_switch_", comment="Filename of reference coordinate catalog")
-refxcol = string_kw(default="1", comment= "Column name for RA")
-refycol = string_kw(default="2", comment= "Column name for Dec")
+refxcol = string_kw(default="1", comment= "Column name(s) for RA")
+refycol = string_kw(default="2", comment= "Column name(s) for Dec")
 refxyunits = option_kw("degrees","pixels",default="degrees",comment="Units of sky positions")
 rfluxcol = string_kw(default="", comment= "Column name for source flux/mag values")
 rfluxmax = float_or_none_kw(default=None,comment="Maximum flux value for valid reference objects")
@@ -45,10 +45,10 @@ searchrad = float_kw(default=1.0, comment="The search radius for a match")
 searchunits = option_kw("arcseconds","pixels", default="arcseconds", comment="Units for search radius")
 use2dhist = boolean_kw(default=True, triggers="_rule2_", comment="Use 2d histogram to find initial offset?")
 see2dplot = boolean_kw(default=False, active_if='_rule2_',comment="See 2d histogram for initial offset?")
-tolerance = float_or_none_kw(default=None, inactive_if='_rule2_', comment="Matching tolerance for xyxymatch(pixels)")
+tolerance = float_kw(default=1.0, inactive_if='_rule2_', comment="Matching tolerance for xyxymatch(pixels)")
 separation = float_kw(default=0.0, inactive_if='_rule2_', comment="Minimum object separation (pixels)") 
-xoffset = float_or_none_kw(default=None, inactive_if='_rule2_',comment="Initial guess for X offset(pixels)")
-yoffset = float_or_none_kw(default=None,inactive_if='_rule2_',comment="Initial guess for Y offset(pixels)")
+xoffset = float_kw(default=0.0, inactive_if='_rule2_',comment="Initial guess for X offset(pixels)")
+yoffset = float_kw(default=0.0,inactive_if='_rule2_',comment="Initial guess for Y offset(pixels)")
 
 [CATALOG FITTING PARAMETERS]
 fitgeometry = option_kw("shift","rscale","general",default="rscale",comment="Fitting geometry")

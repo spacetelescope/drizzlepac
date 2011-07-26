@@ -190,12 +190,13 @@ class WFC3IRInputImage(WFC3InputImage):
          photometry keywords will be calculated as such, so no image
          manipulation needs be done between native and electrons """
          # Image information 
-        _handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0) 
+        _handle = fileutil.openImage(self._filename,mode='readonly') 
 
         for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._effGain = 1.         
-
+            conversionFactor = 1.0 
             if '/S' in chip._bunit:
+                """
                 # Multiply the values of the sci extension pixels by the gain. 
                 print "Converting %s[%s,%d] from ELECTRONS/S to ELECTRONS"%(self._filename,self.scienceExt,chip._chip) 
                 # Set the BUNIT keyword to 'electrons'
@@ -206,13 +207,17 @@ class WFC3IRInputImage(WFC3InputImage):
                 # If the exptime is 0 the science image will be zeroed out. 
                 np.multiply(_handle[self.scienceExt,chip._chip].data,chip._exptime,_handle[self.scienceExt,chip._chip].data)
                 chip.data=_handle[self.scienceExt,chip._chip].data
+                """
+                conversionFactor = chip._exptime
             else:
                 print "Input %s[%s,%d] already in units of ELECTRONS"%(self._filename,self.scienceExt,chip._chip) 
                 
+            chip._effGain = chip._gain #1.
+            chip._conversionFactor = conversionFactor #1.
 
         _handle.close()
             
-        self._effGain=1.0
+        self._effGain=conversionFactor #1.0
 
     def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into

@@ -251,20 +251,23 @@ def _skySub(imageSet,paramDict,saveFile=False):
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
             print "\nsubtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
-            _subtractSky(image,(_scaledSky))
-            _updateKW(image,imageSet._filename,(sciExt,chip),skyKW,_scaledSky) #I updated this so that the keyword in the image is 
-                                            #the sky value actually subtracted from the image
+            ###_subtractSky(image,(_scaledSky))
+            # Update the header so that the keyword in the image is 
+            #the sky value which should be subtracted from the image
+            _updateKW(image,imageSet._filename,(sciExt,chip),skyKW,_scaledSky) 
 
+            """            
             if not saveFile:
                 print "**Updating input image with sky subtracted image"
                 # Write out the sky-subtracted array back to the input image
                 imageSet.updateData(sciExt+","+str(chip),image.data)
-            
+            """
         #update the value of MDRIZSKY in the global header
         # This does not make sense for STIS ASN files that
         #haven't been chunked up into separate fits files already
         _updateKW(imageSet["PRIMARY"],imageSet._filename,'PRIMARY',skyKW,_skyValue)
    
+    """
     if(saveFile):
         print "Saving output sky subtracted image: ",imageSet.outputNames["outSky"]
         #get the rest of the data extensions
@@ -277,7 +280,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         except IOError:
             print "Image already exists on disk!"
             return IOError
-                    
+    """
     imageSet.close() #remove the data from memory
 
 

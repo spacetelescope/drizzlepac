@@ -35,8 +35,8 @@ __taskname__ = "betadrizzle.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
-__version__ = '4.0.14dev12793'
-__vdate__ = "11-May-2011"
+__version__ = '4.1.0dev13255'
+__vdate__ = "27-June-2011"
 #
 #### Interactive interface for running drizzle tasks separately
 #
@@ -658,6 +658,10 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
+    # Apply sky subtraction and unit conversion to input array
+    _insci = _sciext.data - chip.header['mdrizsky']
+    _insci *= chip._conversionFactor
+
     # Set additional parameters needed by 'drizzle'
     _in_units = chip.in_units.lower()
     if _in_units == 'cps':
@@ -746,7 +750,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _inwht = dqarr.astype(np.float32)
 
     # New interface to performing the drizzle operation on a single chip/image
-    _vers = do_driz(_sciext.data, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
+    _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
                 _expin, _in_units, chip._wtscl,
                 undistort=undistort, uniqid=_uniqid,
                 pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
