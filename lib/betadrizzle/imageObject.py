@@ -968,7 +968,7 @@ class imageObject(baseImageObject):
                 sci_chip._conversionFactor = 1.0
                 sci_chip._wtscl = 1.0
                 
-                # Keep track of the computed sky value for this chip
+                # Keep track of the computed sky value/arcsec2 for this chip
                 sci_chip.computedSky = 0.0
                 
                 # Keep track of the sky value that should be subtracted from this chip

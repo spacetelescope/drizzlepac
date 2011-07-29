@@ -140,39 +140,12 @@ def _median(imageObjectList,paramDict):
     backgroundValueList = [] #list of  MDRIZSKY *platescale values
     singleDrizList=[] #these are the input images
     singleWeightList=[] #pointers to the data arrays
-    skylist=[] #the list of platescale values for the images
+    #skylist=[] #the list of platescale values for the images
     _wht_mean = [] # Compute the mean value of each wht image
     
     #for each image object
     for image in imageObjectList:
-        """
-        # Convert the units of the threshold values if necessary
-        native_units = self.assoc.parlist[1]['image'].native_units
-        proc_units = self.assoc.parlist[1]['image'].proc_unit
-        det_gain = self.assoc.parlist[1]['image'].getGain()
-        img_exptime = self.assoc.parlist[1]['image'].getExpTime()
 
-        if (medianpars['lthresh'] == None):
-            lthresh = None
-        else:
-            lthresh = float(medianpars['lthresh'])
-            if proc_units.lower() == 'native':
-                if native_units.lower() == "counts":
-                    lthresh = lthresh * det_gain
-                    if native_units.lower() == "counts/s":
-                        lthresh = lthresh * img_exptime
-
-        if (medianpars['hthresh'] == None):
-            hthresh = None
-        else:
-            hthresh = float(medianpars['hthresh'])
-            if proc_units.lower() == 'native':
-                if native_units.lower() == "counts":
-                    htrhest = hthresh * det_gain
-                    if native_units.lower() == "counts/s":
-                        hthresh = hthresh * img_exptime
-
-        """
         det_gain = image.getGain(1)
         img_exptime = image._image['sci',1]._exptime
         native_units = image.native_units
@@ -221,27 +194,10 @@ def _median(imageObjectList,paramDict):
             # image._exptime was just giving 1.
             # 
             exposureTimeList.append(img_exptime)
-            # account for the case where no IDCSCALE has been set, due to a 
-            # lack of IDCTAB or to 'coeffs=None'.
-            idcscale = image[1].wcs.idcscale
-            if idcscale is None:
-                idcscale = image[1].wcs.pscale
-            skylist.append(idcscale)
-            #skylist.append(image[1].wcs.pscale)
 
-            # Extract the sky value to be used in the model
-            # this sky value is in scaled units on the sky,
-            # should I multiply by the platescale of the output drizzled image
-            # since all the chips have been combined into 1 image in driz_single?
-            # I think this is saved in the header of the single driz (or can be calculated
-            # by pulling the wcs information from the object
-            #backgroundValueList.append(image._image["PRIMARY"].header["MDRIZSKY"] * outPlatescale)
-            if image._image["PRIMARY"].header.has_key("MDRIZSKY"): 
-                mdrizsky = image._image["PRIMARY"].header["MDRIZSKY"]
-            else: 
-                mdrizsky = 0.0
-                image._image["PRIMARY"].header.update('MDRIZSKY',0.0)
-            backgroundValueList.append(mdrizsky * skylist[-1] *skylist[-1])
+           # compute sky value as sky/pixel using the single_drz pixel scale
+            bsky = image._image[image.scienceExt,1].computedSky * (image.outputValues['scale']**2)          
+            backgroundValueList.append(bsky)
             
             # Extract the readnoise value for the chip
             sci_chip = image._image[image.scienceExt,1]

@@ -250,6 +250,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             if idcscale is None: idcscale = image.wcs.pscale
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
+            image.computedSky = _skyValue
             print "\nsubtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             ###_subtractSky(image,(_scaledSky))
             # Update the header so that the keyword in the image is 
@@ -265,7 +266,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         #update the value of MDRIZSKY in the global header
         # This does not make sense for STIS ASN files that
         #haven't been chunked up into separate fits files already
-        _updateKW(imageSet["PRIMARY"],imageSet._filename,'PRIMARY',skyKW,_skyValue)
+        #_updateKW(imageSet["PRIMARY"],imageSet._filename,'PRIMARY',skyKW,_skyValue)
    
     """
     if(saveFile):
