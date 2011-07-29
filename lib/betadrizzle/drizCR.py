@@ -282,7 +282,7 @@ def _drizCr(sciImage,paramDict,saveFile=True):
             __corrFile = np.zeros(__inputImage.shape,dtype=__inputImage.dtype)
             __corrFile = np.where(np.equal(__dqMask,0),__blotData,__inputImage)
 
-            if(saveFile):
+            if(saveFile and paramDict['driz_cr_corr']):
                 # Remove the existing cor file if it exists
                 if(os.access(crCorImage, os.F_OK)):
                     os.remove(crCorImage)
