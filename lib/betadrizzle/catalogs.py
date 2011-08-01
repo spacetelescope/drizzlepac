@@ -246,6 +246,14 @@ class ExtractorCatalog(Catalog):
         s.config['CATALOG_NAME'] = catname
         # Add a parameter to the parameter list
         s.config['PARAMETERS_LIST'] = self.SEXTRACTOR_OUTPUT
+        
+        # Now, build user-specified filter_mask (if requested)
+        if sextractor_pars['filter'] and sextractor_pars['filter_type'] != 'point':
+            # apply user-specified values
+            new_kernel = tweakutils.gauss_array(sextractor_pars['gauss_nx'],
+                        fwhm=sextractor_pars['gauss_fwhm'])
+            s.config['FILTER_MASK'] = new_kernel.tolist()
+            s.config['FILTER_MASK_DESCR'] = "convolution mask of a gaussian PSF with FWHM = %0.1f pixels.\n"%sextractor_pars['gauss_fwhm']
 
         if util.is_blank(sextractor_pars['config_file']):
             # Update in-memory parameters as set by user
@@ -256,7 +264,8 @@ class ExtractorCatalog(Catalog):
                     sextractor_pars[key] = self.SEXTRACTOR_BOOL[sextractor_pars[key]]
                 # Populate the SExtractor object with values provided by user
                 if sextractor_pars[key] != "" and key not in ['$nargs',
-                        'mode','config_file','fluxmin','fluxmax']:
+                        'mode','config_file','fluxmin','fluxmax',
+                        'gauss_nx','gauss_fwhm','filter_type']:
                     if key != 'phot_autoparams':
                         s.config[key.upper()] = sextractor_pars[key]
                     else:
@@ -277,7 +286,7 @@ class ExtractorCatalog(Catalog):
 
             # Removing the configuration files, the catalog and
             # the check image
-            s.clean(config=True, catalog=False, check=True)
+            s.clean(config=False, catalog=False, check=True)
             # also clean up the intermediate file that was generated
             os.remove(imgname)
 

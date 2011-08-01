@@ -512,13 +512,21 @@ def idlgauss_convolve(image,fwhm):
 
     return h,c1
 
-def gauss_array(nx,ny=None,sigma_x=1.0,sigma_y=None,zero_norm=False):
+def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
     """ Computes the 2D Gaussian with size n1*n2.
         Sigma_x and sigma_y are the stddev of the Gaussian functions.
         The kernel will be normalized to a sum of 1.
     """
 
     if ny == None: ny = nx
+
+    if sigma_x is None:
+        if fwhm is None:
+            print 'A value for either "fwhm" or "sigma_x" needs to be specified!'
+            raise ValueError 
+        else:
+            # Convert input FWHM into sigma
+            sigma_x = fwhm/(2*np.sqrt(2*np.log(2)))
     if sigma_y == None: sigma_y = sigma_x
 
     xradius = nx//2

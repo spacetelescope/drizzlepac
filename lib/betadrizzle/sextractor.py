@@ -428,13 +428,18 @@ class SExtractor:
         {"comment": 'Array to put in the FILTER_MASK file',
          "value": [[1, 2, 1],
                    [2, 4, 2],
-                   [1, 2, 1]]}
+                   [1, 2, 1]]},
+
+        "FILTER_MASK_DESCR":
+        {"comment": 'Comment for the FILTER_MASK file',
+         "value": "Generated from sextractor.py module.\n"}
         }
 
     
     # -- Special config. keys that should not go into the config. file.
 
-    _SE_config_special_keys = ["PARAMETERS_LIST", "CONFIG_FILE", "FILTER_MASK"]
+    _SE_config_special_keys = ["PARAMETERS_LIST", "CONFIG_FILE", 
+                                "FILTER_MASK", "FILTER_MASK_DESCR"]
 
 
     # -- Dictionary of all possible parameters (from sexcatalog.py module)
@@ -478,8 +483,7 @@ class SExtractor:
 
         filter_f = __builtin__.open(self.config['FILTER_NAME'], 'w')
         filter_f.write("CONV NORM\n")
-        filter_f.write("# %dx%d Generated from sextractor.py module.\n" %
-                       (rows, cols))
+        filter_f.write("# %dx%d "%(rows, cols)+self.config['FILTER_MASK_DESCR'])
         for row in filter:
             filter_f.write(" ".join(map(repr, row)))
             filter_f.write("\n")
