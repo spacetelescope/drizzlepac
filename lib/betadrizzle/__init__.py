@@ -72,16 +72,21 @@ from stsci.tools import teal
 teal.print_tasknames(__name__, os.path.dirname(__file__))
 
 # Begin Version Information -------------------------------------------
-__version__ = ''
-__svn_version__ = 'Unable to determine SVN revision'
-__full_svn_info__ = ''
-__setup_datetime__ = None
+if False :
+    __version__ = ''
+    __svn_version__ = 'Unable to determine SVN revision'
+    __full_svn_info__ = ''
+    __setup_datetime__ = None
 
-try:
-    __version__ = __import__('pkg_resources').\
-                        get_distribution('betadrizzle').version
-except:
-    pass
+    try:
+        __version__ = __import__('pkg_resources').\
+                            get_distribution('betadrizzle').version
+    except:
+        pass
+
+else :
+    __version__ = '4.1.0dev'
+
 __vdate__ = '9-June-2011'
 # Revision based version info
 # End Version Information ---------------------------------------------
