@@ -7,9 +7,9 @@ Classes to manage Catalogs and WCS's
 This module provides the classes used to generate and manage source catalogs for each input chip. Those positions can be transformed to undistorted sky positions, written out to files, or plotted using various methods defined for these classes. 
 
 
-.. currentmodule:: betadrizzle.catalogs
+.. currentmodule:: astrodrizzle.catalogs
 
-.. inheritance-diagram:: betadrizzle.catalogs
+.. inheritance-diagram:: astrodrizzle.catalogs
    :parts: 2
 
 .. autofunction:: generateCatalog

@@ -365,11 +365,11 @@ expkeyword : str
 
 See Also
 --------
-betadrizzle.drizzle: Apply the 'drizzle' algorithm to the images
-betadrizzle.blot: Apply the 'blot' algorithm to drizzled images
-betadrizzle.sky: Perform sky subtraction
-betadrizzle.median: Create a median combined image from a set of drizzled images
-betadrizzle.drizCR: Identify cosmic-rays by comparing blotted, median images to the original input images
+astrodrizzle.drizzle: Apply the 'drizzle' algorithm to the images
+astrodrizzle.blot: Apply the 'blot' algorithm to drizzled images
+astrodrizzle.sky: Perform sky subtraction
+astrodrizzle.median: Create a median combined image from a set of drizzled images
+astrodrizzle.drizCR: Identify cosmic-rays by comparing blotted, median images to the original input images
 
 Notes
 ------
@@ -385,5 +385,5 @@ The primary Python interface to Multidrizzle has been developed as::
 
 A basic example of how to call this from within a Python task would be::
 
->>> import betadrizzle
->>> betadrizzle.MultiDrizzle('*flt.fits', editpars=False)
+>>> import astrodrizzle
+>>> astrodrizzle.MultiDrizzle('*flt.fits', editpars=False)

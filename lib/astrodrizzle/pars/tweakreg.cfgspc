@@ -57,5 +57,5 @@ nclip = integer_kw(default=0,comment="Number of clipping iterations in fit")
 sigma = float_or_none_kw(default=3.0,comment="Clipping limit in sigma units")
 
 [ _RULES_ ]
-_rule1_ = string_kw(default=True, code='from betadrizzle import sextractor; OUT = sextractor.is_installed()')
+_rule1_ = string_kw(default=True, code='from astrodrizzle import sextractor; OUT = sextractor.is_installed()')
 _rule2_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')

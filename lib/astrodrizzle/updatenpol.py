@@ -5,7 +5,7 @@
 """
 **updatenpol--** Update the header of ACS file(s) with the names of new 
 NPOLFILE and D2IMFILE reference files for use with the 
-C version of MultiDrizzle (betadrizzle).
+C version of MultiDrizzle (astrodrizzle).
 
 :License: http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
 
@@ -45,10 +45,10 @@ C version of MultiDrizzle (betadrizzle).
 
 
 :Compatability with MultiDrizzle:  
-    The new version of MultiDrizzle (`betadrizzle`) and `updatewcs` 
+    The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs` 
     only work with the new NPOLFILE reference file for the DGEO correction 
     (to replace the use of DGEOFILE).  
-    In fact, betadrizzle has been extensively modified to
+    In fact, astrodrizzle has been extensively modified to
     prompt the user with a very lengthy explanation on whether it should
     stop and allow the user to update the header or continue without
     applying the DGEO correction under circumstances when the NPOLFILE

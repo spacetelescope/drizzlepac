@@ -4,7 +4,7 @@
 WFPC2 ImageObjects
 ******************
 
-.. currentmodule:: betadrizzle.wfpc2Data
+.. currentmodule:: astrodrizzle.wfpc2Data
 
 .. autoclass:: WFPC2InputImage
    :members:

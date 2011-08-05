@@ -150,4 +150,4 @@ else:
 Basic example of how to call static yourself from a python command line,
 using the default parameters for the task. 
 
->from betadrizzle import drizzle
+>from astrodrizzle import drizzle

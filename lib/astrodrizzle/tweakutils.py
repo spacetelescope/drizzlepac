@@ -552,7 +552,7 @@ def gauss(x,sigma):
     return np.exp(-np.power(x,2)/(2*np.power(sigma,2))) / (sigma*np.sqrt(2*np.pi))
 
 
-#### Plotting Utilities for betadrizzle
+#### Plotting Utilities for astrodrizzle
 def make_vector_plot(coordfile,columns=[0,1,2,3],data=None,title=None, axes=None, every=1,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,append=False,linfit=False,rms=True):

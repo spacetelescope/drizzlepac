@@ -11,7 +11,7 @@ import stwcs
 from stwcs import distortion,wcsutil
 from stwcs.wcsutil import headerlet
 
-__taskname__ = 'betadrizzle.buildwcs'
+__taskname__ = 'astrodrizzle.buildwcs'
 
 # These default parameter values have the same keys as the parameters from
 # the configObj interface

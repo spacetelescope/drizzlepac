@@ -4,7 +4,7 @@
 STIS ImageObjects
 *****************
 
-.. currentmodule:: betadrizzle.stisData
+.. currentmodule:: astrodrizzle.stisData
 
 .. autoclass:: STISInputImage
    :members:

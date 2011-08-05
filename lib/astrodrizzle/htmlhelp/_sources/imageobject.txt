@@ -6,7 +6,7 @@ imageObject Classes
 *******************
 This class and related sub-classes manage all the instrument-specific images for processing by MultiDrizzle. 
 
-.. inheritance-diagram:: betadrizzle.imageObject betadrizzle.acsData betadrizzle.wfc3Data betadrizzle.wfpc2Data betadrizzle.nicmosData betadrizzle.stisData
+.. inheritance-diagram:: astrodrizzle.imageObject astrodrizzle.acsData astrodrizzle.wfc3Data astrodrizzle.wfpc2Data astrodrizzle.nicmosData astrodrizzle.stisData
    :parts: 2
 
 .. toctree::

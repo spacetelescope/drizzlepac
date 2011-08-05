@@ -8,7 +8,7 @@ This task can be run from either the TEAL GUI or from the Python command-line. T
 
 1. Run the task using the TEAL GUI under PyRAF:
 
-    >>> import betadrizzle 
+    >>> import astrodrizzle 
     >>> epar skytopix
 
 2. Convert a single sky position (0:22:07.0088,-72:03:05.429) 
@@ -16,7 +16,7 @@ This task can be run from either the TEAL GUI or from the Python command-line. T
     (j94f05bgq\_flt.fits) into an pixel position (X,Y) 
     without using the TEAL GUI:
 
-  >>> from betadrizzle import skytopix
+  >>> from astrodrizzle import skytopix
   >>> x,y = skytopix.rd2xy("j8bt06nyq_flt.fits[sci,1]", 0:22:07.0088, -72:03:05.429)
 
 3. Convert a list of (undistorted) sky positions from the file 'radec.dat' for a
@@ -70,7 +70,7 @@ This task performs a full distortion-correction coordinate transformation
 based on all WCS keywords and any recognized distortion keywords from the 
 input image header.  The transformation recognizes the conventions for 
 describing distortion implemented as part of the SIP and Paper IV conventions
-used with the new version of MultiDrizzle (betadrizzle).  Input images can 
+used with the new version of MultiDrizzle (astrodrizzle).  Input images can 
 be updated to use these conventions through the use of the 'updatewcs' module
 the STWCS package. 
 

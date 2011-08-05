@@ -1,4 +1,4 @@
 #! python
 
-import betadrizzle.updatenpol
-betadrizzle.updatenpol.main()
+import astrodrizzle.updatenpol
+astrodrizzle.updatenpol.main()

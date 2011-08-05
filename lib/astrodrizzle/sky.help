@@ -126,7 +126,7 @@ a sky value from each *flt.fits image in the current directory, saving
 the output file with the extension of "mysky":
 
 
->from betadrizzle import sky
+>from astrodrizzle import sky
 >sky.sky('*flt.fits',outExt='mysky')
 
 

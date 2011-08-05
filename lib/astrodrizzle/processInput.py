@@ -615,9 +615,9 @@ def checkDGEOFile(filenames):
     It handles the case of science files downloaded from the archive before the new
     software was installed there.
     If 'DGEOFILE' is present and 'NPOLFILE' is missing, print a message and let the user
-    choose whether to (q)uit and update the headers or (c)ontinue and run betadrizzle
+    choose whether to (q)uit and update the headers or (c)ontinue and run astrodrizzle
     without the non-polynomial correction.
-    'NPOLFILE' will be populated in the pipeline before betadrizzle is run.
+    'NPOLFILE' will be populated in the pipeline before astrodrizzle is run.
 
     In the case of WFPC2 the old style dgeo files are used to create detector to image
     correction at runtime.
@@ -647,10 +647,10 @@ def checkDGEOFile(filenames):
             from stwcs import updatewcs
             updatewcs.updatewcs(%s)
 
-            Alternatively you may choose to run betadrizzle without DGEO and detector to image correction.
+            Alternatively you may choose to run astrodrizzle without DGEO and detector to image correction.
 
-            To stop betadrizzle and update the dgeo files, type 'q'.
-            To continue running betadrizzle without the non-polynomial distortion correction, type 'c':
+            To stop astrodrizzle and update the dgeo files, type 'q'.
+            To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
             """
     for inputfile in filenames:
         if (pyfits.getval(inputfile,'INSTRUME') == 'WFPC2'):

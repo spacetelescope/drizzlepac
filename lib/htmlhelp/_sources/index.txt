@@ -1,9 +1,9 @@
-.. betadrizzle documentation master file, created by
+.. astrodrizzle documentation master file, created by
    sphinx-quickstart on Wed Sep 15 14:22:04 2010.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to betadrizzle's documentation!
+Welcome to astrodrizzle's documentation!
 =======================================
 This package supports the use of MultiDrizzle as an integrated set of modules that can be run in an automated manner to combine images.  The version of MultiDrizzle described here implements a single task to run the entire MultiDrizzle processing pipeline, while also providing the framework for users to create their own custom pipeline based on the modules in this package merged with their own custom code if desired. 
 
@@ -15,7 +15,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   betadrizzle
+   astrodrizzle
    imageobject
    process 
    static
@@ -45,7 +45,7 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
 
 ACS Header Update Task
 ----------------------
-A task, 'updatenpol', has been written to automate the updating of ACS image headers with the filename of the appropriate NPOLFILE based on the DGEOFILE specified in the image header.  This task should be used to update all ACS images prior to processing them with 'betadrizzle'. 
+A task, 'updatenpol', has been written to automate the updating of ACS image headers with the filename of the appropriate NPOLFILE based on the DGEOFILE specified in the image header.  This task should be used to update all ACS images prior to processing them with 'astrodrizzle'. 
 
 .. toctree::
    :maxdepth: 2

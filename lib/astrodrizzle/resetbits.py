@@ -67,7 +67,7 @@ import numpy as np
 import pyfits
 from stsci.tools import parseinput
 
-__taskname__ = "betadrizzle.resetbits"
+__taskname__ = "astrodrizzle.resetbits"
 __version__ = '1.0.0'
 __vdate__ = '3-Aug-2010'
 

@@ -1,6 +1,6 @@
 <map id="inheritance373ae02e02" name="inheritance373ae02e02">
-<area shape="rect" id="node2" href="#betadrizzle.catalogs.Catalog" title="catalogs.Catalog" alt="" coords="7,56,140,83"/>
-<area shape="rect" id="node4" href="#betadrizzle.catalogs.UserCatalog" title="catalogs.UserCatalog" alt="" coords="205,56,371,83"/>
-<area shape="rect" id="node6" href="#betadrizzle.catalogs.ImageCatalog" title="catalogs.ImageCatalog" alt="" coords="200,107,376,133"/>
-<area shape="rect" id="node8" href="#betadrizzle.catalogs.RefCatalog" title="catalogs.RefCatalog" alt="" coords="435,56,592,83"/>
+<area shape="rect" id="node2" href="#astrodrizzle.catalogs.Catalog" title="catalogs.Catalog" alt="" coords="7,56,140,83"/>
+<area shape="rect" id="node4" href="#astrodrizzle.catalogs.UserCatalog" title="catalogs.UserCatalog" alt="" coords="205,56,371,83"/>
+<area shape="rect" id="node6" href="#astrodrizzle.catalogs.ImageCatalog" title="catalogs.ImageCatalog" alt="" coords="200,107,376,133"/>
+<area shape="rect" id="node8" href="#astrodrizzle.catalogs.RefCatalog" title="catalogs.RefCatalog" alt="" coords="435,56,592,83"/>
 </map>

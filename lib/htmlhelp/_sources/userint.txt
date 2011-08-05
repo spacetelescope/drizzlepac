@@ -4,9 +4,9 @@ TweakReg User Interface
 -----------------------
 This is the primary user interface to `tweakreg`, a Python replacement for `tweakshifts` which can update input image headers with offsets found in fit.
 
-.. currentmodule:: betadrizzle.tweakreg
+.. currentmodule:: astrodrizzle.tweakreg
 
-.. automodule:: betadrizzle.tweakreg
+.. automodule:: astrodrizzle.tweakreg
 
 .. autofunction:: TweakReg
 
@@ -15,7 +15,7 @@ This is the primary user interface to `tweakreg`, a Python replacement for `twea
 Imagefind Parameters
 --------------------
 
-.. automodule:: betadrizzle.imagefindpars
+.. automodule:: astrodrizzle.imagefindpars
 
 .. autofunction:: run
 
@@ -25,6 +25,6 @@ Imagefind Parameters
 Sextractor Parameters
 ---------------------
 
-.. automodule:: betadrizzle.sextractorpars
+.. automodule:: astrodrizzle.sextractorpars
 
 .. autofunction:: run

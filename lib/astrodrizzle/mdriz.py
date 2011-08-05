@@ -2,8 +2,8 @@
 from __future__ import division # confidence high
 
 import sys, getopt
-from betadrizzle import MultiDrizzle,util,wcs_functions
-from betadrizzle import __version__
+from astrodrizzle import MultiDrizzle,util,wcs_functions
+from astrodrizzle import __version__
     
 
 #-------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ def main() :
             long_help = True
 
     if long_help:
-        print betadrizzle.getHelpAsString()
+        print astrodrizzle.getHelpAsString()
 
     if help:
         print 'Syntax: mdriz.py -[h|g|?] [name=value,...]'

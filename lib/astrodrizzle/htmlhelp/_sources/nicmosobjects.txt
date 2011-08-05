@@ -4,7 +4,7 @@
 NICMOS ImageObjects
 *******************
 
-.. currentmodule:: betadrizzle.nicmosData
+.. currentmodule:: astrodrizzle.nicmosData
 
 .. autoclass:: NICMOSInputImage
    :members:

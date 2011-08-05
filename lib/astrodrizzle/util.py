@@ -19,7 +19,7 @@ __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
 
-DEFAULT_LOGNAME = 'betadrizzle.log'
+DEFAULT_LOGNAME = 'astrodrizzle.log'
 blank_list = [None, '', ' ',"None","INDEF"]
 
 def is_blank(val):
@@ -58,11 +58,11 @@ class StreamLogger(object):
             # clear out any previous exceptions, so that only those generated
             # by this code will be picked up in the trailer file
             sys.exc_clear()
-            print '[betadrizzle] Trailer file will be written out to: ',self.filename
+            print '[astrodrizzle] Trailer file will be written out to: ',self.filename
         else:
             self.log = None
             self.filename = None
-            print '[betadrizzle] No trailer file will be created...'
+            print '[astrodrizzle] No trailer file will be created...'
 
     def write(self, data):
         self.stream.write(data)
@@ -98,14 +98,14 @@ def init_logging(logfile=DEFAULT_LOGNAME,default=None):
         # redirect logging of stdout to logfile
         sys.stdout = StreamLogger(sys.stdout, logname)
     else:
-        print '[betadrizzle] No trailer file created...'
+        print '[astrodrizzle] No trailer file created...'
 
 def end_logging():
     """ Close log file and restore stdout/stderr to system defaults.
     """
     if hasattr(sys.stdout,'log'): # only need to close the log if one was created
         if sys.stdout.log is not None:
-            print '[betadrizzle] Trailer file written to: ',sys.stdout.filename
+            print '[astrodrizzle] Trailer file written to: ',sys.stdout.filename
             sys.stdout.log.flush()
             sys.stdout.log.close()
 
@@ -116,7 +116,7 @@ def end_logging():
                 traceback.print_exc(None,errfile)
                 errfile.close()
         else:
-            print '[betadrizzle] No trailer file saved...'
+            print '[astrodrizzle] No trailer file saved...'
         
         sys.stdout = sys.__stdout__
     

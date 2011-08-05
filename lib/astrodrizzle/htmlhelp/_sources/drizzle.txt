@@ -7,6 +7,6 @@ The operation of drizzling each input image needs to be performed twice during p
     * single drizzle step: this initial step drizzles each image onto the final output WCS as separate images
     * final drizzle step: this step produces the final combined image based on the cosmic-ray masks determined by MultiDrizzle
     
-.. automodule:: betadrizzle.adrizzle
+.. automodule:: astrodrizzle.adrizzle
    :members:
    :undoc-members:

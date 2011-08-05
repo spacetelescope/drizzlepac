@@ -16,7 +16,7 @@ except ImportError:
     print '\n Please check the installation of this package to insure C code was built successfully.'
     raise ImportError
     
-__taskname__ = 'betadrizzle.ablot'
+__taskname__ = 'astrodrizzle.ablot'
 _blot_step_num_ = 5
 
 __version__ = '4.1.0dev13255'

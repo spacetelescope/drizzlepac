@@ -1,4 +1,4 @@
 #! python
 
-import betadrizzle.resetbits
-betadrizzle.resetbits.main()
+import astrodrizzle.resetbits
+astrodrizzle.resetbits.main()

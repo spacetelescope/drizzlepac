@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: MultiDrizzle() &mdash; betadrizzle v4.0.6 documentation</title>
+    <title>Primary User Interface: MultiDrizzle() &mdash; astrodrizzle v4.0.6 documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -22,9 +22,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
+    <link rel="top" title="astrodrizzle v4.0.6 documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
-    <link rel="prev" title="Welcome to betadrizzle’s documentation!" href="index.html" /> 
+    <link rel="prev" title="Welcome to astrodrizzle’s documentation!" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,9 +43,9 @@
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to betadrizzle’s documentation!"
+          <a href="index.html" title="Welcome to astrodrizzle’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">astrodrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -55,13 +55,13 @@
             </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to betadrizzle&#8217;s documentation!</a></p>
+                        title="previous chapter">Welcome to astrodrizzle&#8217;s documentation!</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="imageobject.html"
                         title="next chapter">imageObject Classes</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="_sources/betadrizzle.txt"
+    <li><a href="_sources/astrodrizzle.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -85,8 +85,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-betadrizzle">
-<span id="primary-user-interface-multidrizzle"></span><span id="betadrizzle"></span><h1>Primary User Interface: MultiDrizzle()<a class="headerlink" href="#module-betadrizzle" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-astrodrizzle">
+<span id="primary-user-interface-multidrizzle"></span><span id="astrodrizzle"></span><h1>Primary User Interface: MultiDrizzle()<a class="headerlink" href="#module-astrodrizzle" title="Permalink to this headline">¶</a></h1>
 <p>astrodrizzle - test implementation of MultiDrizzle: The Next Generation</p>
 <p>astrodrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.</p>
 <dl class="docutils">
@@ -108,9 +108,9 @@
 <p><strong>Output</strong>: The primary output from this task is the distortion-corrected, cosmic-ray cleaned combined image as a FITS file.</p>
 <p>This task requires numerous user-settable parameters to control the primary aspects of each of the processing steps.</p>
 <dl class="function">
-<dt id="betadrizzle.MultiDrizzle">
-<tt class="descclassname">betadrizzle.</tt><tt class="descname">MultiDrizzle</tt><big>(</big><em>input</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#betadrizzle.MultiDrizzle" title="Permalink to this definition">¶</a></dt>
-<dd><p>betadrizzle Version 4.0.14dev12812 updated on 12-May-2011</p>
+<dt id="astrodrizzle.MultiDrizzle">
+<tt class="descclassname">astrodrizzle.</tt><tt class="descname">MultiDrizzle</tt><big>(</big><em>input</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodrizzle.MultiDrizzle" title="Permalink to this definition">¶</a></dt>
+<dd><p>astrodrizzle Version 4.0.14dev12812 updated on 12-May-2011</p>
 <p>MultiDrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.</p>
 <p>This task requires numerous user-settable parameters to control the primary aspects of each of the processing steps.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -540,15 +540,15 @@ of generating the median image. More information about the different kernels can
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <dl class="last docutils">
-<dt><tt class="xref py py-obj docutils literal"><span class="pre">betadrizzle.drizzle</span></tt></dt>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.drizzle</span></tt></dt>
 <dd>Apply the &#8216;drizzle&#8217; algorithm to the images</dd>
-<dt><tt class="xref py py-obj docutils literal"><span class="pre">betadrizzle.blot</span></tt></dt>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.blot</span></tt></dt>
 <dd>Apply the &#8216;blot&#8217; algorithm to drizzled images</dd>
-<dt><a class="reference internal" href="sky.html#module-betadrizzle.sky" title="betadrizzle.sky"><tt class="xref py py-obj docutils literal"><span class="pre">betadrizzle.sky</span></tt></a></dt>
+<dt><a class="reference internal" href="sky.html#module-astrodrizzle.sky" title="astrodrizzle.sky"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.sky</span></tt></a></dt>
 <dd>Perform sky subtraction</dd>
-<dt><tt class="xref py py-obj docutils literal"><span class="pre">betadrizzle.median</span></tt></dt>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.median</span></tt></dt>
 <dd>Create a median combined image from a set of drizzled images</dd>
-<dt><a class="reference internal" href="drizcr.html#module-betadrizzle.drizCR" title="betadrizzle.drizCR"><tt class="xref py py-obj docutils literal"><span class="pre">betadrizzle.drizCR</span></tt></a></dt>
+<dt><a class="reference internal" href="drizcr.html#module-astrodrizzle.drizCR" title="astrodrizzle.drizCR"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.drizCR</span></tt></a></dt>
 <dd>Identify cosmic-rays by comparing blotted, median images to the original input images</dd>
 </dl>
 </div>
@@ -560,8 +560,8 @@ of generating the median image. More information about the different kernels can
 <div class="highlight-python"><pre>def MultiDrizzle('*flt.fits', editpars=False, configObj=None, wcsmap=None, **input_dict)</pre>
 </div>
 <p>A basic example of how to call this from within a Python task would be:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">betadrizzle</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">betadrizzle</span><span class="o">.</span><span class="n">MultiDrizzle</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">astrodrizzle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">MultiDrizzle</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -590,9 +590,9 @@ of generating the median image. More information about the different kernels can
           <a href="imageobject.html" title="imageObject Classes"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to betadrizzle’s documentation!"
+          <a href="index.html" title="Welcome to astrodrizzle’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">astrodrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

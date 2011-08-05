@@ -64,7 +64,7 @@ import updatenpol
 # Add TEAL interface to 'updatewcs' here
 import wcsupdate
 
-__taskname__ = "betadrizzle"
+__taskname__ = "astrodrizzle"
 
 # These lines allow TEAL to print out the names of TEAL-enabled tasks
 # upon importing this package.
@@ -80,7 +80,7 @@ if False :
 
     try:
         __version__ = __import__('pkg_resources').\
-                            get_distribution('betadrizzle').version
+                            get_distribution('astrodrizzle').version
     except:
         pass
 
@@ -91,7 +91,7 @@ __vdate__ = '9-June-2011'
 # Revision based version info
 # End Version Information ---------------------------------------------
 try:
-    from betadrizzle.svninfo import (__svn_version__, __full_svn_info__,
+    from astrodrizzle.svninfo import (__svn_version__, __full_svn_info__,
                                      __setup_datetime__)
 except ImportError:
     pass
@@ -185,7 +185,7 @@ def run(configObj=None,wcsmap=None):
         
     util.init_logging(logfile=configObj['runfile'],default=def_logname)
     procSteps = util.ProcSteps()
-    print '[betadrizzle] MultiDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
+    print '[astrodrizzle] MultiDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
 
     try:
         try:
@@ -224,7 +224,7 @@ def run(configObj=None,wcsmap=None):
             #Make your final drizzled image
             adrizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
 
-            print '\n[betadrizzle]MultiDrizzle Version '+__version__+' is all finished at ',util._ptime()[0],' !\n'
+            print '\n[astrodrizzle]MultiDrizzle Version '+__version__+' is all finished at ',util._ptime()[0],' !\n'
 
         except:
             raise

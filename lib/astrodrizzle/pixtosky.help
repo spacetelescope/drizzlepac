@@ -8,14 +8,14 @@ This task can be run from either the TEAL GUI or from the Python command-line. T
 
 1. Run the task using the TEAL GUI under PyRAF:
 
-    >>> import betadrizzle 
+    >>> import astrodrizzle 
     >>> epar pixtosky
 
 2. Convert a single X,Y position (100,100) from an calibrated ACS image
     (j8bt06nyq\_flt.fits) into an undistorted sky position (RA,Dec) 
     without using the TEAL GUI:
 
-  >>> from betadrizzle import pixtosky
+  >>> from astrodrizzle import pixtosky
   >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", 100, 100)
 
 3. Convert a list of X,Y positions from the file 'xyfile.dat' for a
@@ -74,7 +74,7 @@ This task performs a full distortion-correction coordinate transformation
 based on all WCS keywords and any recognized distortion keywords from the 
 input image header.  The transformation recognizes the conventions for 
 describing distortion implemented as part of the SIP and Paper IV conventions
-used with the new version of MultiDrizzle (betadrizzle).  Input images can 
+used with the new version of MultiDrizzle (astrodrizzle).  Input images can 
 be updated to use these conventions through the use of the 'updatewcs' module
 the STWCS package. 
 
