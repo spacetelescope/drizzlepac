@@ -24,7 +24,7 @@ def setup_hook(config):
     else:
         # If pywcs is otherwise already installed...
         # TODO: Maybe we can eventually make pywcs a setup requirement for
-        # betadrizzle, so long as pywcs itself installs easily enough...
+        # astrodrizzle, so long as pywcs itself installs easily enough...
         try:
             import pywcs
             # TODO: It would be nice if pywcs had a get_includes() function a
@@ -36,7 +36,7 @@ def setup_hook(config):
         except ImportError:
             raise ImportError('PyWCS was not found.  It may not be installed '
                               'or it may not be on your PYTHONPATH.\n'
-                              'betadrizzle requires pywcs 1.4 or later.')
+                              'astrodrizzle requires pywcs 1.4 or later.')
 
     # Add/remove macros and compile args based on the build type
     define_macros = []
@@ -71,7 +71,7 @@ def setup_hook(config):
                 ('undef_macros', undef_macros),
                 ('extra_compile_args', extra_compile_args)]
 
-    ext = config['extension=betadrizzle.cdriz']
+    ext = config['extension=astrodrizzle.cdriz']
     for opt, value in ext_opts:
         if opt in ext:
             ext[opt] += '\n' + '\n'.join(value)

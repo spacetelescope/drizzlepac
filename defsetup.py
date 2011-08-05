@@ -73,7 +73,7 @@ def getNumpyExtensions():
         raise ValueError("BUILD should be one of 'debug', 'profile', or 'release'")
 
 
-    ext = [Extension("betadrizzle.cdriz",['src/arrdrizmodule.c',
+    ext = [Extension("astrodrizzle.cdriz",['src/arrdrizmodule.c',
                                           'src/cdrizzleblot.c',
                                           'src/cdrizzlebox.c',
                                           'src/cdrizzleio.c',
@@ -92,7 +92,7 @@ def getNumpyExtensions():
     return ext
 
 
-pkg = "betadrizzle"
+pkg = "astrodrizzle"
 
 setupargs = {
 
@@ -102,15 +102,15 @@ setupargs = {
     'author_email' :    "help@stsci.edu",
     'license' :         "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :       ["Linux","Solaris","Mac OS X","Win"],
-    'data_files' :        [( pkg+"/pars", ['lib/betadrizzle/pars/*']),
-                            ( pkg+"/htmlhelp/_images", ['lib/betadrizzle/htmlhelp/_images/*']),
-                            ( pkg+"/htmlhelp/_sources", ['lib/betadrizzle/htmlhelp/_sources/*']),
-                            ( pkg+"/htmlhelp/_static", ['lib/betadrizzle/htmlhelp/_static/*']),
-                            ( pkg+"/htmlhelp", ['lib/betadrizzle/htmlhelp/*.html']),
-                            ( pkg, ['lib/betadrizzle/*.help'])],
-    'scripts' :         ["lib/betadrizzle/mdriz.py","lib/betadrizzle/resetbits","lib/betadrizzle/updatenpol"] ,
+    'data_files' :        [( pkg+"/pars", ['lib/astrodrizzle/pars/*']),
+                            ( pkg+"/htmlhelp/_images", ['lib/astrodrizzle/htmlhelp/_images/*']),
+                            ( pkg+"/htmlhelp/_sources", ['lib/astrodrizzle/htmlhelp/_sources/*']),
+                            ( pkg+"/htmlhelp/_static", ['lib/astrodrizzle/htmlhelp/_static/*']),
+                            ( pkg+"/htmlhelp", ['lib/astrodrizzle/htmlhelp/*.html']),
+                            ( pkg, ['lib/astrodrizzle/*.help'])],
+    'scripts' :         ["lib/astrodrizzle/mdriz.py","lib/astrodrizzle/resetbits","lib/astrodrizzle/updatenpol"] ,
     'ext_modules' :     getNumpyExtensions(),
-    'package_dir' :     { 'betadrizzle' : 'lib/betadrizzle', },
+    'package_dir' :     { 'astrodrizzle' : 'lib/astrodrizzle', },
 
     }
 

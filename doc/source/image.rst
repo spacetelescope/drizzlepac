@@ -4,10 +4,10 @@
 Image Class
 ***********
 
-.. inheritance-diagram:: betadrizzle.imgclasses
+.. inheritance-diagram:: astrodrizzle.imgclasses
    :parts: 2
    
-.. currentmodule:: betadrizzle.imgclasses
+.. currentmodule:: astrodrizzle.imgclasses
 
 .. autoclass:: Image
    :members:

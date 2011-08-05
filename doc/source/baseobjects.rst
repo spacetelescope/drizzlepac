@@ -4,7 +4,7 @@
 Base ImageObject Classes
 ************************
 
-.. currentmodule:: betadrizzle.imageObject 
+.. currentmodule:: astrodrizzle.imageObject 
 
 .. autoclass:: baseImageObject
    :members:

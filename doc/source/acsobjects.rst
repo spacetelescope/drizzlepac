@@ -4,7 +4,7 @@
 ACS ImageObjects
 ****************
 
-.. currentmodule:: betadrizzle.acsData
+.. currentmodule:: astrodrizzle.acsData
 
 .. autoclass:: ACSInputImage
    :members:
