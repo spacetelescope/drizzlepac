@@ -347,7 +347,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
             extlist = []
             for extn in xrange(1,numext+1):
                 extlist.append(('SCI',extn))
-            altwcs.restoreWCS(fname,extlist,wcskey=wcskey,clobber=True)
+            altwcs.restoreWCS(fname,extlist,wcskey=wcskey)
         pydr_input = newfilelist
 
     # AsnTable will handle the case when output==None
