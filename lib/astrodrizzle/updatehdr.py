@@ -235,7 +235,9 @@ def updatewcs_with_fit(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,ys
     # and archive the new primary WCS as a new keyed WCS
         
     if numextn > 0:
-        updatewcs.updatewcs(image,checkfiles=False,wcsname=wcsname)
+        updatewcs.updatewcs(image,checkfiles=False)
+        for i in range(1,fileutil.countExtn(image)+1):
+            altwcs.archiveWCS(image,ext=i,wcsname=wcsname)
 
         # Restore the 'O' WCS (OPUS generated values) from the WCSCORR table
         wcscorr.restore_file_from_wcscorr(image,id='OPUS',wcskey='O')
