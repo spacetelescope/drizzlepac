@@ -159,7 +159,6 @@ def updatewcs_with_fit(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,ys
     # Now that we are sure we have a good reference WCS to use, continue with the update
     print '\n....Updating header for ',image,'...\n'
 
-
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image)
     archive_wcsname = ""
@@ -170,7 +169,11 @@ def updatewcs_with_fit(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,ys
         extlist = []
         for extn in xrange(1,numextn+1):
             extlist.append(('SCI',extn))
-        wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O')
+        # insure that input PRIMARY WCS has been archived before overwriting
+        # with new solution
+        next_key = wcsutil.altwcs.next_wcskey(pyfits.getheader(image))
+        wcsutil.altwcs.archiveWCS(image,extlist,wcskey=next_key)
+        wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
 
     else:
         next_key = wcsutil.altwcs.next_wcskey(pyfits.getheader(image))
