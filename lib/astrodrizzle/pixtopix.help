@@ -1,6 +1,6 @@
 **pixtosky** transforms pixel positions given as X,Y values into 
-positions on the sky based on the WCS information and any recognized 
-distortion keywords from the input image header. 
+positions in another WCS frame based on the WCS information and any 
+recognized distortion keywords from the input image header. 
 
 Examples
 --------
@@ -9,64 +9,72 @@ This task can be run from either the TEAL GUI or from the Python command-line. T
 1. Run the task using the TEAL GUI under PyRAF:
 
     >>> import astrodrizzle 
-    >>> epar pixtosky
+    >>> epar pixtopix
 
-2. Convert a single X,Y position (100,100) from an calibrated ACS image
-    (j8bt06nyq\_flt.fits) into an undistorted sky position (RA,Dec) 
-    without using the TEAL GUI:
+2. Convert the position 256,256 from 'input_flt.fits[sci,1]' 
+     into a position on the output image 'output_drz.fits[sci,1]' using:
 
-  >>> from astrodrizzle import pixtosky
-  >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", 100, 100)
+            >>> from astrodrizzle import pixtopix
+            >>> outx,outy = pixtopix.tran("input_file_flt.fits[sci,1]",
+                        "output_drz.fits[sci,1],"forward", 256,256)
+                        
+3. The set of X,Y positions from 'output_drz.fits[sci,1]' stored as 
+      the 3rd and 4th columns from the ASCII file 'xy_sci1.dat' 
+      will be transformed into pixel positions from 'input_flt.fits[sci,1]'
+      and written out to 'xy_flt1.dat' using::
 
-3. Convert a list of X,Y positions from the file 'xyfile.dat' for a
-    calibrated ACS image (j8bt06nyq_flt.fits) into undistorted sky 
-    positions and write out the result to the file 'radec.dat' 
-    without using the TEAL GUI:
-
-  >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", coords="xyfile.dat",
-            output="radec.dat")
+            >>> from astrodrizzle import pixtopix
+            >>> x,y = pixtopix.tran("input_flt.fits[sci,1]",
+                     "output_drz.fits[sci,1]", "backward", 
+                     coords='xy_sci1.dat', colnames=['c3','c4'], 
+                     output="xy_flt1.dat")
 
 
 Parameters
 ----------
-    input : str
-        full filename with path of input image, an extension name
-        ['sci',1] should be provided if input is a multi-extension
-        FITS file.
+  inimage : str
+    full filename with path of input image, an extension name ['sci',1]
+    should be provided if input is a multi-extension FITS file 
+  outimage : str
+    full filename with path of output image, an extension name ['sci',1]
+    should be provided if output is a multi-extension FITS file 
+  direction : str
+    Direction of transform (forward or backward). The 'forward' transform 
+    takes the pixel positions (assumed to be from the 'input' image) and
+    determines their position in the 'output' image. The 'backward'
+    transform converts the pixel positions (assumed to be from the 
+    'output' image) into pixel positions in the 'input' image.
 
 Optional Parameters
 -------------------
-    x : float, optional
-        X position from input image
-    y : float, optional
-        Y position from input image
-    coords : str, optional
-        full filename with path of file with x,y coordinates
-    colnames : str, optional
-        comma separated list of column names from 'coords' files 
-        containing x,y coordinates, respectively. Will default to 
-        first two columns if None are specified. Column names for ASCII
-        files will use 'c1','c2',... convention.
-    separator : str, optional
-        non-blank separator used as the column delimiter in the coords file
-    hms : bool, optional
-        Produce output in HH:MM:SS.S format instead of decimal
-        degrees? (default: False)
-    precision : int, optional
-        Number of floating-point digits in output values 
-    output : str, optional
-        Name of output file with results, if desired
-    verbose : bool
-        Print out full list of transformation results (default: False)
-Returns
---------
-    ra : float
-        Right Ascension of pixel. If more than 1 input value, then it will be a 
-        numpy array. 
-    dec : float
-        Declination of pixel. If more than 1 input value, then it will be a 
-        numpy array.
+  x : float, optional
+    X position from image
+  y : float, optional
+    Y position from image
+  coords : str, optional
+    full filename with path of file with starting x,y coordinates
+  colnames : str, optional
+    comma separated list of column names from 'coords' files 
+    containing x,y coordinates, respectively. Will default to 
+    first two columns if None are specified. Column names for ASCII
+    files will use 'c1','c2',... convention.
+  separator : str, optional
+    non-blank separator used as the column delimiter in the coords file
+  precision : int, optional
+    Number of floating-point digits in output values 
+  output : str, optional
+    Name of output file with results, if desired
+  verbose : bool
+    Print out full list of transformation results (default: False)
 
+RETURNS
+-------
+  outx : float
+    X position of transformed pixel. If more than 1 input value, then it 
+    will be a numpy array. 
+  outy : float
+    Y position of transformed pixel. If more than 1 input value, then it 
+    will be a numpy array.
 
 Notes
 -----
