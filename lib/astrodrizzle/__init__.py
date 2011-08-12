@@ -60,6 +60,7 @@ except:
 
 # Add updatenpol to the list of tasks imported automatically here
 import updatenpol
+import buildwcs
 
 # Add TEAL interface to 'updatewcs' here
 import wcsupdate
