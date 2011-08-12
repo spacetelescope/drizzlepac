@@ -11,7 +11,9 @@ import stwcs
 from stwcs import distortion,wcsutil
 from stwcs.wcsutil import headerlet
 
-__taskname__ = 'astrodrizzle.buildwcs'
+__taskname__ = 'buildwcs'
+__version__ = '0.1.0'
+__vdate__ = '22-June-2011'
 
 # These default parameter values have the same keys as the parameters from
 # the configObj interface
@@ -65,7 +67,8 @@ def getHelpAsString():
     """ 
     return useful help from a file in the script directory called module.help
     """
-    helpString = teal.getHelpFileAsString(__taskname__,__file__)
+    helpString = 'buildwcs Version '+__version__+__vdate__+'\n'
+    helpString += build.__doc__
 
     return helpString
 
@@ -83,10 +86,19 @@ def build(outname, wcsname, refimage, undistort=False,
             
         Parameters
         ----------
-        source    - input numpy array of undistorted source image in units of 'cps'
-        source_wcs - HSTWCS object representing source image WCS
-        blot_wcs  - HSTWCS object representing the blotted image WCS
-        exptime   - 
+        outname   : string 
+            filename of output WCS
+        wcsname   : string
+            WCSNAME ID for generated WCS
+        refimage  : string
+            filename of image with source WCS used as basis for output WCS
+        undistort : bool
+            Create an undistorted WCS?
+        applycoeffs : bool
+            Apply coefficients from refimage to generate undistorted WCS?
+        coeffsfile  : string
+            If specified, read distortion coeffs from separate file
+        
         
     """
    
