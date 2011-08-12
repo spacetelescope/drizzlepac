@@ -452,11 +452,13 @@ def manageInputCopies(filelist, **workinplace):
     
     # Find out what directory is being used for processing
     workingdir = os.getcwd()
+    # Only create sub-directory for copies of inputs, if copies are requested
     # Create name of sub-directory for copies
     origdir = os.path.join(workingdir,'OrIg_files')
-    # if sub-directory does not exist yet, create it
-    if not os.path.exists(origdir):
-        os.mkdir(origdir)
+    if workinplace['overwrite'] or workinplace['preserve']:
+        # if sub-directory does not exist yet, create it
+        if not os.path.exists(origdir):
+            os.mkdir(origdir)
 
     printMsg = True
     # check to see if copies already exist for each file
