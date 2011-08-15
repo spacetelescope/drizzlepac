@@ -60,8 +60,8 @@ from __future__ import division
 __docformat__ = 'restructuredtext'
 
 __taskname__ = "updatenpol"
-__version__ = '1.0.4'
-__vdate__ = '16-Aug-2010'
+__version__ = '1.1.0'
+__vdate__ = '16-Aug-2011'
 import os,sys,shutil
 
 import pyfits
@@ -171,30 +171,34 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         phdr = fimg['PRIMARY'].header
         fdet = phdr['detector']
         # get header of DGEOFILE 
-        dhdr = pyfits.getheader(fu.osfn(phdr['DGEOFILE']))
-        if not interactive:
-            # search all new NPOLFILEs for one that matches current DGEOFILE config
-            npol = find_npolfile(ngeofiles,fdet,[phdr['filter1'],phdr['filter2']])
+        dfile = phdr.get('DGEOFILE','')
+        if dfile in ['N/A','',' ',None]:
+            npolname = ''
         else:
-            npol = raw_input("Enter name of NPOLFILE for %s:"%f)
-            if npol == "": npol = None
-            
-        if npol is None:
-            errstr =  "No valid NPOLFILE found in "+rdir+" for detector="+fdet+"\n"
-            errstr += " filters = "+phdr['filter1']+","+phdr['filter2']
-            raise ValueError,errstr
-            
-        npolname = os.path.split(npol)[1]
-        if local:
-            npolname = os.path.join(fdir,npolname)
-            # clobber any previous copies of this reference file
-            if os.path.exists(npolname): os.remove(npolname)
-            shutil.copy(npol,npolname)
-        else:
-            if '$' in refdir:
-                npolname = refdir+npolname
+            dhdr = pyfits.getheader(fu.osfn(dfile))
+            if not interactive:
+                # search all new NPOLFILEs for one that matches current DGEOFILE config
+                npol = find_npolfile(ngeofiles,fdet,[phdr['filter1'],phdr['filter2']])
             else:
-                npolname = os.path.join(refdir,npolname)
+                npol = raw_input("Enter name of NPOLFILE for %s:"%f)
+                if npol == "": npol = None
+                
+            if npol is None:
+                errstr =  "No valid NPOLFILE found in "+rdir+" for detector="+fdet+"\n"
+                errstr += " filters = "+phdr['filter1']+","+phdr['filter2']
+                raise ValueError,errstr
+                
+            npolname = os.path.split(npol)[1]
+            if local:
+                npolname = os.path.join(fdir,npolname)
+                # clobber any previous copies of this reference file
+                if os.path.exists(npolname): os.remove(npolname)
+                shutil.copy(npol,npolname)
+            else:
+                if '$' in refdir:
+                    npolname = refdir+npolname
+                else:
+                    npolname = os.path.join(refdir,npolname)
         phdr.update('NPOLFILE',npolname,comment="Non-polynomial corrections in Paper IV LUT",after='DGEOFILE')
 
         # Now find correct D2IFILE
