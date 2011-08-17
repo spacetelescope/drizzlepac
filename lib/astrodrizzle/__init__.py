@@ -1,10 +1,10 @@
-""" astrodrizzle - test implementation of MultiDrizzle: The Next Generation
+""" AstroDrizzle - test implementation of MultiDrizzle: The Next Generation
 
-astrodrizzle automates the process of aligning images in an output frame,
+AstroDrizzle automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
-while removing the identified cosmic-rays.  
+after removing the identified cosmic-rays.  
 
-This process involves a number of steps; namely:
+This process involves a number of steps, namely:
   1.  Processing the input images and input parameters
   2.  Creating a static mask
   3.  Performing sky subtraction
@@ -14,13 +14,13 @@ This process involves a number of steps; namely:
   7.  Identifying and flagging cosmic-rays
   8.  Final combination
 
-A full description of this process can be found in the MultiDrizzle Handbook
+A full description of this process can be found in the AstroDrizzle Handbook
 available online at:
 
-http://stsdas.stsci.edu/multidrizzle
+http://mediawiki.stsci.edu/mediawiki/index.php/Telescopedia:Astrodrizzle:AstroDrizzle
 
 **Output**: The primary output from this task is the distortion-corrected,
-cosmic-ray cleaned combined image as a FITS file.
+cosmic-ray cleaned, and combined image as a FITS file.
 
 This task requires numerous user-settable parameters to control the primary
 aspects of each of the processing steps.
