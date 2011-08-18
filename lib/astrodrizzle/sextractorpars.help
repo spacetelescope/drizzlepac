@@ -15,86 +15,100 @@ Only a subset of the full set of parameters available are actually controlled th
 Parameters
 ----------
 config_file : str
-   Name of the user supplied configuration file [Default = ""]
+   Name of the user supplied configuration file. [Default value = '']
 
-verbose_type : {'QUIET','NORMAL','FULL'}
-    Verbose mode for operation [Default = "QUIET"]
+verbose_type : str {'QUIET','NORMAL','FULL'}
+    Verbose mode for operation. [Default value = 'QUIET']
 
-detect_type : {'ccd','photo'}
-    Detection type [Default  = "ccd"]
+detect_type : str {'ccd','photo'}
+    Detection type. [Default value  = 'ccd']
 
 detect_minarea : int
-    minimum number of pixels above threshold [Default = 5]
+    Minimum number of pixels above threshold. [Default value = 5]
 
 detect_thresh : float
-    detection threshold in mag.arcsec-2 [Default = 1.5]
+    Detection threshold in mag.arcsec-2. [Default value = 1.5]
 
 analysis_thresh : float
-    analysis threshold in mag.arcsec-2 [Default = 1.5]
+    Analysis threshold in mag.arcsec-2. [Default value = 1.5]
 
 filter : bool 
-    apply filter for detection? [Default = True]
+    Apply filter for detection? [Default value = Yes]
+
+filter_type : str {'gaussian','point'}
+    Filter type? [Default value = 'gaussian']
+
+gauss_nx : int
+    Width of gaussian filter (pixels). [Default value = 5]
+
+gauss_fwhm : float
+    FWHM of gaussian filter (pixels). [Default value = 2.0]
 
 deblend_nthresh : int
-    Number of deblending sub-thresholds [Default = 16]
+    Number of deblending sub-thresholds. [Default value = 16]
 
 deblend_mincont : float
-    Minimum contrast parameter for deblending [Default = 0.025]
+    Minimum contrast parameter for deblending. [Default value = 0.025]
 
 clean : bool
-    Clean spurious detections? [Default = True]
+    Clean spurious detections? [Default value = Yes]
 
 clean_param : float
-    Cleaning efficiency [Default = 1.0]
+    Cleaning efficiency. [Default value = 1.0]
 
-mask_type : {'NONE','BLANK','CORRECT'}
-    type of detection MASKing [Default = "CORRECT"]
+mask_type : str {'NONE','BLANK','CORRECT'}
+    Type of detection MASKing. [Default value = 'CORRECT']
 
 phot_apertures : float
-    MAG_APER aperture diameter(s) in pixels [Default = 5]
+    MAG_APER aperture diameter(s) in pixels. [Default value = 5]
 
 phot_autoparams : str
-    MAG_AUTO parameters: <Kron_fact>,<min_radius> [Default = "2.5,3.5"]
+    MAG_AUTO parameters: <Kron_fact>,<min_radius>. [Default value = '2.5,3.5']
 
 satur_level : float
-    saturation level (in ADUs) [Default = 50000.0]
+    Saturation level. (in ADUs) [Default value = 50000.0]
 
 mag_zeropoint : float
-    magnitude zero-point [Default = 0.0]
+    Magnitude zero-point. [Default value = 0.0]
 
 mag_gamma : float
-    gamma of emulsion (for photographic scans) [Default = 4.0]
+    Gamma of emulsion. (for photographic scans) [Default value = 4.0]
 
 seeing_fwhm : float
-    stellar FWHM in arcsec [Default = 0.1]
+    Stellar FWHM in arcsec. [Default value = 0.1]
 
 back_size : int
-    Background mesh in pixels [Default = 64] 
+    Background mesh in pixels. [Default value = 64] 
 
-back_type : {'MANUAL','AUTO'}
-    Subtract MANUAL or AUTO generated background [Default = "MANUAL"]
+back_type : str {'MANUAL','AUTO'}
+    Subtract MANUAL or AUTO generated background. [Default value = 'MANUAL']
 
 back_value : str
-    Constant value to MANUALLY subtract [Default = "0.0,0.0"]
+    Constant value to MANUALLY subtract. [Default value = '0.0,0.0']
 
 back_filtersize : int
-    Background filter in pixels [Default = 3]
+    Background filter in pixels. [Default value = 3]
 
-backphoto_type : {'GLOBAL','LOCAL'}
-    Background type [Default = "GLOBAL"]
+backphoto_type : str {'GLOBAL','LOCAL'}
+    Background type. [Default value = 'GLOBAL']
 
 backphoto_thick : int
-    Thickness in pixels of the background local annulus [Default = 24]
+    Thickness in pixels of the background local annulus. [Default value = 24]
 
-checkimage_type : {'NONE', 'BACKGROUND', 'MINIBACKGROUND', '-BACKGROUND', 'OBJECTS', '-OBJECTS', 'SEGMENTATION', 'APERTURES', 'FILTERED '} 
-    Check image type [Default = "NONE"]
+checkimage_type : str {'NONE', 'BACKGROUND', 'MINIBACKGROUND', '-BACKGROUND', 'OBJECTS', '-OBJECTS', 'SEGMENTATION', 'APERTURES', 'FILTERED '} 
+    Check image type. [Default value = None]
 
 memory_objstack : int
-    number of objects in stack [Default = 3000]
+    Number of objects in stack. [Default value = 3000]
 
 memory_pixstack : int
-    number of pixels in stack [Default = 300000]
+    Number of pixels in stack. [Default value = 300000]
 
 memory_bufsize : int
-    number of lines in buffer [Default = 1024]
+    Number of lines in buffer. [Default value = 1024]
 
+fluxmin : float
+    Minimum good flux value. [Default value = None]
+
+fluxmax : float
+    Maximum good flux value. [Default value = None]

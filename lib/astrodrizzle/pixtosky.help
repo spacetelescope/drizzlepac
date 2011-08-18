@@ -4,7 +4,9 @@ distortion keywords from the input image header.
 
 Examples
 --------
-This task can be run from either the TEAL GUI or from the Python command-line. These examples illustrate the syntax that can be used to run the task in a couple of common modes.
+This task can be run from either the TEAL GUI or from the Python 
+command-line. These examples illustrate the syntax that can be used 
+to run the task in a couple of common modes.
 
 1. Run the task using the TEAL GUI under PyRAF:
 
@@ -72,11 +74,10 @@ Notes
 -----
 This task performs a full distortion-correction coordinate transformation 
 based on all WCS keywords and any recognized distortion keywords from the 
-input image header.  The transformation recognizes the conventions for 
+input image header. The transformation recognizes the conventions for 
 describing distortion implemented as part of the SIP and Paper IV conventions
-used with the new version of MultiDrizzle (astrodrizzle).  Input images can 
-be updated to use these conventions through the use of the 'updatewcs' module
-the STWCS package. 
+used with AstroDrizzle.  Input images can be updated to use these conventions 
+through the use of the 'updatewcs' module the STWCS package. 
 
 
 See Also

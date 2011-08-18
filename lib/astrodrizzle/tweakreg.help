@@ -1,5 +1,5 @@
 **Tweakreg** provides an automated interface for computing residual shifts
-between input exposures being combined using MultiDrizzle. The offsets
+between input exposures being combined using AstroDrizzle. The offsets
 computed by Tweakreg correspond to pointing differences after applying the WCS
 information from the input image's headers.  Such errors would, for example,
 be due to errors in guide-star positions when combining observations from
@@ -8,36 +8,44 @@ the guide stars in a slightly different position.
 
 Examples
 --------
-This task can be run from either the TEAL GUI or from the Python command-line. These examples illustrate the syntax that can be used to run the task in a couple of common modes.
+This task can be run from either the TEAL GUI or from the Python command-line. 
+These examples illustrate the syntax that can be used to run the task in a 
+couple of common modes.
 
 1. Run the task using the TEAL GUI under PyRAF:
 
     >>> import astrodrizzle 
     >>> epar tweakreg
 
-2. Find only the shifts(no rotation or scale) for a set of calibrated ACS (\_flt.fits) images using the built-in DAOFIND-like source finding algorithm with sources >10 sigma above the background without using the TEAL GUI:
+2. Find only the shifts(no rotation or scale) for a set of calibrated ACS 
+   (\_flt.fits) images using the built-in DAOFIND-like source finding 
+   algorithm with sources >10 sigma above the background without using the 
+   TEAL GUI:
 
   >>> from astrodrizzle import tweakreg
-  >>> tweakreg.TweakReg("*flt.fits", editpars=False, findmode="imagefind", \
-      editipars=False, computesig=True, threshold=10.0, fitgeometry="shift")
+  >>> tweakreg.TweakReg('*flt.fits', editpars=False, findmode='imagefind', \
+      editipars=False, computesig=True, threshold=10.0, fitgeometry='shift')
 
 
 
 Parameters
 ----------
 files : str or list of str
-    Input files which are being registered. For more details, see description
+    Input files that are being registered. For more details, see description
     of `input` parameter.
 editpars : bool
-    Specify whether or not to edit the parameters using the TEAL GUI
+    Specify whether or not to edit the parameters using the TEAL GUI.
 configObj : obj or None
     ConfigObj object containing user-specified parameters for running
-    this task
+    this task.
 input_dict : dict
-    User-specified parameter values for only those parameters which they
-    want to change
+    User-specified parameter values for only those parameters that they
+    want to change.
 
 :Other Parameters from input_dict:
+
+Parameters - Basic Initialization
+---------------------------------
 input : str or list of str
     Input files (passed in from *files* parameter) 
     This paramater can be provided in any of several forms:
@@ -50,82 +58,100 @@ input : str or list of str
        (and optional inverse variance map filenames)
 
     The '\@file' filelist needs to be provided as an ASCII text file
-    containing a list of filenames for all input images, with one
+    containing a list of filenames for all input images with one
     filename on each line of the file. If inverse variance maps have
     also been created by the user and are to be used (by specifying
     'IVM' to the parameter 'final_wht_type' described further below),
     then these are simply provided as a second column in the filelist,
     with each IVM filename listed on the same line as a second entry,
-    after its corresponding exposure filename.
-
-output : str
-    The name for the output shift file created by tweakshifts.  This
-    shiftfile will be formatted for use as direct input to MultiDrizzle.
-    [Default value: "shifts.txt"]
-
-outwcs : str
-    Filename to be given to the OUTPUT reference WCS file created
-    by tweakshifts.  This reference WCS defines the WCS in which the
-    shifts get measured, and will be used by MultiDrizzle to interpret
-    the shifts.  This reference WCS file will be a FITS file that
-    only contains the WCS keywords in a Primary header with no image
-    data itself.  The values will be derived from the FIRST input image
-    specified.  [Default value: "tweak_wcs.fits"]
+    after its corresponding exposure filename. [Default value: '*flt.fits']
 
 refimage : str
     Filename of reference image. Sources derived from this image will be 
     used as the reference for matching with sources from all input images.
+    [Default value: '']
 
-findmode :  {'imagefind', 'sextractor'}
+findmode : str {'imagefind', 'sextractor'}
     This parameter specifies what method should be used to extract source
     catalogs from each input image. 
     
     Selection of 'sextractor' only specifies that should the 'sextractor'
-    executable be found on the user's system, it will be used., otherwise,
-    'tweakshifts' will default to using the built-in function similar
-    in operation to DAOFIND.
+    executable be found on the user's system, it will be used. Otherwise,
+    'tweakreg' will use the built-in imagefind function by default. This 
+    function is similar in operation to DAOFIND. [Default value: 'imagefind']
 
 editspars : bool
     This parameter allows the user to specify whether or not they want to
     edit the parameters associated with the Sextractor PSET if 'findmode'
-    was set to 'sextractor' and if Sextractor has been installed. This
+    is set to 'sextractor', and if Sextractor has been installed. This
     pset provides access to a majority of the most commonly used
     parameters for 'sextractor' for use when 'findmode = sextractor'.
     Each parameter has the same name as the 'sextractor' parameter and
     is a direct pass-through to the corresponding 'sextractor' parameter
     in the executable. These parameters are described in the help for
-    `sextractorpars`_.
+    `sextractorpars`_. [Default value: Yes]
 
 editipars : bool
     This parameter allows the user to specify whether or not they want to 
     edit the parameters for the built-in source finding algorithm if 'findmode'
     has been set to 'imagefind'. These parameters are described in the help for 
-    `imagefind`_.
+    `imagefind`_. [Default value: Yes]
 
 writecat : bool
     Specify whether or not to write out the source catalogs generated for
     each input image by the built-in source extraction algorithm.
-    
+    [Default value = Yes]
+
 clean : bool
     Specify whether or not to remove the temporary files created by
-    'tweakshifts', including any catalog files generated for the shift
-    determination. [Default value = False]
-
-updatehdr : bool
-    Specify whether or not to update the headers of each input image
-    directly with the shifts that were determined. This will allow the
-    input images to be combined by MultiDrizzle without having to provide
-    the shiftfile as well. [Default value = False]
+    'tweakreg', including any catalog files generated for the shift
+    determination. [Default value = Yes]
 
 verbose : bool
     Specify whether or not to print extra messages during
-    processing. [Default value = False]
+    processing. [Default value = No]
 
+
+Parameters - Update Header
+--------------------------
+updatehdr : bool
+    Specify whether or not to update the headers of each input image
+    directly with the shifts that were determined. This will allow the
+    input images to be combined by AstroDrizzle without having to provide
+    the shiftfile as well. [Default value = False]
+
+wcsname : str
+    Name of updated WCS. [Default value = 'TWEAK']
+
+
+Parameters - Optional Shiftfile Output
+--------------------------------------
+shiftfile : bool
+    Create output shiftfile? [Default value: No]
+
+outshifts : str
+    The name for the output shift file created by 'tweakreg'.  This
+    shiftfile will be formatted for use as direct input to AstroDrizzle.
+    [Default value: 'shifts.txt']
+
+outwcs : str
+    Filename to be given to the OUTPUT reference WCS file created
+    by 'tweakreg'. This reference WCS defines the WCS from which the
+    shifts get measured, and will be used by AstroDrizzle to interpret
+    those shifts. This reference WCS file will be a FITS file that
+    only contains the WCS keywords in a Primary header with no image
+    data itself. The values will be derived from the FIRST input image
+    specified. [Default value: 'tweak_wcs.fits']
+
+
+Parameters - Coordinate File Description
+----------------------------------------
 catfile:str
-    Name of file which contains list of input images and associated
-    catalog files generated by the user.  Each line of this file will
-    contain the name of an input image in the first column and the name
-    of the catalog file for that image in the second column.
+    Name of file that contains a list of input images and associated
+    catalog files generated by the user. Each line of this file will
+    contain the name of an input image in the first column, and the 
+    name of the catalog file for that image in the second column.
+    [Default value: '']
 
 xcol : int
     Column number of X position from the user-generated catalog files
@@ -133,47 +159,53 @@ xcol : int
 
 ycol : int
     Column number of Y position from the user-generated catalog files
-    specified in the catfile.[Default value = 2]
+    specified in the catfile. [Default value = 2]
 
 fluxcol : int
     Column number for the flux values from the user-generated catalog
-    files specified in the catfile.  These values will only be used if
+    files specified in the catfile. These values will only be used if
     a flux limit has been specified by the user using the 'fluxmax' or
-    'fluxmin' parameters.  [Default value = 3]
+    'fluxmin' parameters. [Default value = None]
 
 fluxmax : float
     Limiting flux value for selecting valid objects in the input image's
     catalog.  If specified, this flux will serve as the upper limit of a
-    range for selecting objects to use in matching with objects identified
-    in the reference image.  If INDEF, all objects with fluxes brighter
-    than the minimum specified in 'fluxmin' will be used.  If both are
-    set to INDEF, all objects will be used.
+    range for selecting objects to be used in matching with objects 
+    identified in the reference image. If the value is set to INDEF, all 
+    objects with fluxes brighter than the minimum specified in 'fluxmin' 
+    will be used. If both values are set to INDEF, all objects will be used. 
+    [Default value = None]
 
 fluxmin : float
     Limiting flux value for selecting valid objects in the input image's
-    catalog.  If specified, this flux will serve as the lower limit
-    of a range for selecting objects to use in matching with objects
-    identified in the reference image.  If INDEF, all objects fainter
-    than the limit specified by 'fluxmax' will be used. If both are set
-    to INDEF, all objects will be used.
+    catalog. If specified, this flux value will serve as the lower limit
+    of a range for selecting objects to be used in matching with objects
+    identified in the reference image. If the value is set to INDEF, all 
+    objects fainter than the limit specified by 'fluxmax' will be used. 
+    If both values are set to INDEF, all objects will be used. 
+    [Default value = None]
 
-fluxunits : {'counts', 'cps', 'mag'}
+fluxunits : str {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
     by 'fluxmax' and 'fluxmin' when sorting the object list for trimming
-    of the fainter objects.
+    of fainter objects. [Default value = 'counts']
 
-xyunits : {'pixels', 'degrees'}
-    Specifies whether the positions in this catalog are pixel positions which
-    still need to be transformed to the sky or whether the positions are 
-    sky positions already. 
+xyunits : str {'pixels', 'degrees'}
+    Specifies whether the positions in this catalog are already sky pixel
+    positions, or whether they need to be transformed to the sky. 
+    [Default value = 'pixels']
     
 nbright : int
-    Number of brightest objects to keep after sorting the full object list.
-    If set to None, all objects will be used. [Default value = None]
+    The number of brightest objects to keep after sorting the full object 
+    list. If nbright is set equal to None, all objects will be used. 
+    [Default value = None]
 
+
+Parameters - Reference Catalog Description
+------------------------------------------
 refcat : str
-    Name of external reference catalog file to use instead of the catalog
-    extracted from one of the input images.
+    Name of the external reference catalog file to be used in place of the 
+    catalog extracted from one of the input images. [Default value = '']
 
 refxcol : int
     Column number of RA in the external catalog file specified by the
@@ -183,52 +215,60 @@ refycol : int
     Column number of Dec in the external catalog file specified by the
     refcat. [Default value = 2]
 
+refxyunits : str {'pixels','degrees'}
+    Units of sky positions. [Default value = 'degrees']
+
 rfluxcol : int
     Column number of flux/magnitude values in the external catalog file
-    specified by the refcat. [Default value = 3]
+    specified by the refcat. [Default value = None]
 
 rfluxmax : float
-    Limiting flux value for selecting valid objects in the external
-    catalog.  If specified, this flux will serve as the upper limit of a
-    range for selecting objects to use in matching with objects identified
-    in the reference image.  If INDEF, all objects with fluxes brighter
-    than the minimum specified in 'rfluxmin' will be used.  If both are
-    set to INDEF, all objects will be used.
+    Limiting flux value used to select valid objects in the external
+    catalog. If specified, the flux value will serve as the upper limit 
+    of a range for selecting objects to be used in matching with objects 
+    identified in the reference image. If the value is set to INDEF, 
+    all objects with fluxes brighter than the minimum specified in 
+    'rfluxmin' will be used. If both values are set to INDEF, all 
+    objects will be used. [Default value = None]
 
 rfluxmin : float
-    Limiting flux value for selecting valid objects in the external
-    catalog.  If specified, this flux will serve as the lower limit
-    of a range for selecting objects to use in matching with objects
-    identified in the reference image.  If INDEF, all objects fainter
-    than the limit specified by 'rfluxmax' will be used. If both are
-    set to INDEF, all objects will be used.
+    Limiting flux value used to select valid objects in the external
+    catalog. If specified, the flux will serve as the lower limit
+    of a range for selecting objects to be used in matching with objects
+    identified in the reference image. If the value is set to INDEF, 
+    all objects fainter than the limit specified by 'rfluxmax' will be 
+    used. If both values are set to INDEF, all objects will be used. 
+    [Default value = None]
 
 rfluxunits : {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
     by 'rfluxmax' and 'rfluxmin' when sorting the object list for trimming
-    of the fainter objects.
+    of fainter objects. [Default value = 'mag']
 
 refnbright : int
     Number of brightest objects to keep after sorting the full object
-    list.  If set to None, all objects will be used. Used in conjunction
-    with refcat. [Default value = None]
+    list. If refnbright is set to None, all objects will be used. Used in 
+    conjunction with refcat. [Default value = None]
 
+
+Parameters - Object Matching
+----------------------------
 minobj : int
     Minimum number of identified objects from each input image to use
-    in matching objects from other images.  [Default value = 15]
+    in matching objects from other images. [Default value = 15]
 
-nmatch : int
-    The maximum number of reference and input coordinates used by the
-    'triangles' pattern matching algorithm in `xyxymatch`.  This parameter
-    is passed directly to the IRAF task `xyxymatch`.  If either list
-    contains more coordinates than nmatch, the lists are subsampled.
-    The value of this parameter should be kept small as the computation
-    and memory requirements for the 'triangles' algorithm depend on a high
-    power of the lengths of the respective lists. [Default value = 30]
- 
-algorithm : {'tolerance', 'triangles'}
-    The matching algorithm used in `xyxymatch`. [Default value = 'tolerance']
-    
+searchrad : float
+    The search radius for a match. [Default value = 1.0]
+
+searchunits : str
+    Units for search radius. [Default value = 'arcseconds']
+
+use2dhist : bool
+    Use 2d histogram to find initial offset? [Default value = Yes]
+
+see2dplot : bool
+    See 2d histogram for initial offset? [Default value = No]
+
 tolerance : float 
     The matching tolerance in pixels after applying an initial solution
     derived from the 'triangles' algorithm.  This parameter gets passed
@@ -247,19 +287,30 @@ xoffset : float
     Initial estimate for the offset in X between the images and the
     reference frame.  If None, no offset will be assumed in matching
     sources in 'xyxymatch'.  This offset will be used for all input
-    images provided.
+    images provided. [Default value = 0.0]
 
 yoffset : float
     Initial estimate for the offset in Y between the images and the
     reference frame.  If None, no offset will be assumed in matching
     sources in 'xyxymatch'.  This offset will be used for all input
-    images provided.
+    images provided. [Default value = 0.0]
     
 
-fitgeometry : {'shift', 'rscale', 'general'}
+Parameters - Catalog Fitting
+----------------------------
+fitgeometry : str {'shift', 'rscale', 'general'}
     The fitting geometry to be used for fitting the matched object lists.
     This parameter gets used in fitting the offsets, rotations and/or
-    scale changes from the matched object lists.
+    scale changes from the matched object lists. [Default value = 'rscale']
+
+residplot : str {'No plot', 'vector', 'residuals'}
+    Plot residuals from fit?  [Default value = 'No plot']
+
+nclip : int
+    Number of clipping iterations in fit. [Default value = 0]
+
+sigma : float
+    Clipping limit in sigma units. [Default value = 3.0]
 
 
 Notes
