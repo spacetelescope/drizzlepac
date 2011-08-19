@@ -276,32 +276,32 @@ tolerance : float
     image with the reference image's object list. [Default value = 1.0]
 
 separation : float 
-    The  minimum  separation  for objects in the input and reference
-    coordinate lists. Objects closer together than separation pixels
-    are  removed from the input and reference coordinate lists prior
-    to matching.  This parameter gets passed directly to `xyxymatch` for
+    The  minimum  separation for objects in the input and reference
+    coordinate lists. Objects closer together than 'separation' pixels
+    are removed from the input and reference coordinate lists prior
+    to matching. This parameter gets passed directly to `xyxymatch` for
     use in matching the object lists from each image with the reference
     image's object list. [Default value = 0.0]
 
 xoffset : float
     Initial estimate for the offset in X between the images and the
-    reference frame.  If None, no offset will be assumed in matching
-    sources in 'xyxymatch'.  This offset will be used for all input
-    images provided. [Default value = 0.0]
+    reference frame. This offset will be used for all input images 
+    provided. If the parameter value is set to None, no offset will 
+    be assumed in matching sources in 'xyxymatch'. [Default value = 0.0]
 
 yoffset : float
     Initial estimate for the offset in Y between the images and the
-    reference frame.  If None, no offset will be assumed in matching
-    sources in 'xyxymatch'.  This offset will be used for all input
-    images provided. [Default value = 0.0]
-    
+    reference frame. This offset will be used for all input images 
+    provided.If the parameter value is set to None, no offset will 
+    be assumed in matching sources in 'xyxymatch'. [Default value = 0.0]
+
 
 Parameters - Catalog Fitting
 ----------------------------
 fitgeometry : str {'shift', 'rscale', 'general'}
-    The fitting geometry to be used for fitting the matched object lists.
-    This parameter gets used in fitting the offsets, rotations and/or
-    scale changes from the matched object lists. [Default value = 'rscale']
+    The fitting geometry to be used in fitting the matched object lists.
+    This parameter is used in fitting the offsets, rotations and/or scale
+    changes from the matched object lists. [Default value = 'rscale']
 
 residplot : str {'No plot', 'vector', 'residuals'}
     Plot residuals from fit?  [Default value = 'No plot']
@@ -315,58 +315,59 @@ sigma : float
 
 Notes
 -----
-
-Tweakreg supports the use of calibrated, distorted images (such as
-FLT images for ACS and WFC3, or _c0m.fits images for WFPC2) as input images.
+Tweakreg supports the use of calibrated, distorted images (such as FLT
+images for ACS and WFC3, or _c0m.fits images for WFPC2) as input images.
 All coordinates for sources derived from these images (either by this task
 or as provided by the user directly) will be corrected for distortion using
 the distortion model information specified in each image's header. This 
 eliminates the need to run 'astrodrizzle' on the input images prior to 
 running `tweakreg`_.
 
-.. note:: All calibrated input images must have been updated using 'updatewcs' from the STWCS package, or as run by 'astrodrizzle', to include the full distortion model in the header. 
+.. note:: All calibrated input images must have been updated using 
+          'updatewcs' from the STWCS package, or as run by 'astrodrizzle', 
+          to include the full distortion model in the header. 
 
-This task will use catalogs and catalog-matching based on the 'xyxymatch' 
-algorithm to determine the offset between the input images.  The primary
+This task will use catalogs, and catalog-matching, based on the 'xyxymatch' 
+algorithm to determine the offset between the input images. The primary
 mode of operation will be to extract a catalog of source positions from 
-each input image using either a DAOFIND-like algorithm or SExtractor (if
-the user has it installed).  Alternatively, the user can provide their
-catalogs of source positions derived from **each input chip**.  
+each input image using either a 'DAOFIND-like' algorithm or SExtractor (if
+the user has SExtractor installed). Alternatively, the user can provide 
+their catalogs of source positions derived from **each input chip**.  
 
 The reference frame will be defined either by:
 
     * the first input image (and associated catalog), 
     * a catalog derived from a reference image specified by the user, or 
     * a catalog of undistorted sky positions (RA/Dec) and fluxes 
-        provided by the user 
+        provided by the user.
 
-The sources from each chip will be combined into a single catalog of 
-undistorted positions for that observation when the distortion model
-gets applied to the distorted input positions. 
+For a given observation, the distortion model is applied to all distorted
+input positions, and the sources from each chip are then combined into a
+single catalog of undistorted positions.
 
 The undistorted positions for each observation then get passed to 
 'xyxymatch' for matching to objects from the reference catalog.
 
-The source lists from each image generally will include cosmic-rays as
-detected sources, sometimes significantly confusing object identification
-between images. Long-exposure observations often have more cosmic-ray events
-that source objects, so weeding them out in those cases would improve the
-efficiency of identifying common sources between images.  One such method for
-trimming potentially bad or confusing sources from each source list would be
-to set a flux limit and only use sources above that limit.  The fluxes
-reported in the default source object lists are given as 
-magnitude values.  Thus, setting a limit based on the magnitudes
-for the reference image as the *fluxmax* or *fluxmin* parameters and setting the
-*ascend* parameter to *True* would allow the source lists to be trimmed
-of all sources fainter than the provided limit.  This new trimmed source list
-would then be used in matching sources between images and for the final
-fitting for the shifts. 
+The source lists from each image will generally include cosmic-rays as
+detected sources, which can at times significantly confuse object 
+identification between images. Observations that include long exposures
+often have more cosmic-ray events than source objects. As such, isolating
+the cosmic-ray events in those cases would significantly improve the
+efficiency of common source identification between images. One such method 
+for trimming potential false detections from each source list would be
+to set a flux limit to exclude detections below that limit. As the fluxes
+reported in the default source object lists are provided as magnitude
+values, setting the *fluxmax* or *fluxmin* parameter value to a magnitude-
+based limit, and then setting the *ascend* parameter to *True*, will allow
+for the creations of catalogs trimmed of all sources fainter than the 
+provided limit. The trimmed source list can then be used in matching 
+sources between images and in establishing the final fitting for the shifts.
 
-A fit then gets performed on the matched set of positions between the
-input and the reference to produce the 'shiftfile'.  If the user is
-confident the solution will be correct, the header of each input image
-can be updated directly with the fit derived for that image.  Otherwise,
-the 'shiftfile' can be passed to the astrodrizzle for aligning the images.
+A fit can then be performed on the matched set of positions between the
+input and the reference to produce the 'shiftfile'. If the user is
+confident that the solution will be correct, the header of each input image
+can be updated directly with the fit derived for that image. Otherwise,
+the 'shiftfile' can be passed to AstroDrizzle for aligning the images.
 
 See Also
 --------
