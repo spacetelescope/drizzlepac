@@ -56,20 +56,6 @@ class ACSInputImage(imageObject):
         filename=constructFilename(sig)
         sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
         
-        
-    def _isSubArray(self):
-        # Never used??
-        _subarray = False
-        _ltv1 = float(fileutil.getKeyword(parlist['data'],'LTV1'))
-        _ltv2 = float(fileutil.getKeyword(parlist['data'],'LTV2'))
-        if (_ltv1 != 0.) or (_ltv2 != 0.):
-            _subarray = True
-        _naxis1 = float(fileutil.getKeyword(parlist['data'],'NAXIS1'))
-        _naxis2 = float(fileutil.getKeyword(parlist['data'],'NAXIS2'))
-        if (_naxis1 < self.full_shape[0]) or (_naxis2 < self.full_shape[0]):
-            _subarray = True
-        return _subarray
-
  
     def getdarkcurrent(self,extver):
         """

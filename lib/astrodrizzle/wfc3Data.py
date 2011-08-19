@@ -24,21 +24,6 @@ class WFC3InputImage(imageObject):
 
         self.flatkey = 'PFLTFILE'
             
-                
-    def _isSubArray(self):
-        _subarray = False
-        _ltv1 = float(self._image["PRIMARY"].header["LTV1"])
-        _ltv2 = float(self._image["PRIMARY"].header["LTV2"])
-
-        if (_ltv1 != 0.) or (_ltv2 != 0.):
-            _subarray = True
- 
-        _naxis1 = float(self._image["PRIMARY"].header["NAXIS1"])
-        _naxis2 = float(self._image["PRIMARY"].header["NAXIS2"])       
-        if (_naxis1 < self.full_shape[0]) or (_naxis2 < self.full_shape[0]):
-            _subarray = True
-        return _subarray
-
     def _assignSignature(self, chip):
         """assign a unique signature for the image based 
            on the  instrument, detector, chip, and size

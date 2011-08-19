@@ -14,8 +14,8 @@ import imagefindpars
 
 import sextractor
     
-__version__ = '0.6'
-__vdate__ = '24-Jun-2011'
+__version__ = '0.6.1'
+__vdate__ = '19-Aug-2011'
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
@@ -122,20 +122,21 @@ def run(configobj):
     # convert input images and any provided catalog file names into Image objects
     input_images = []
     # copy out only those parameters needed for Image class
-    kwargs = tweakutils.get_configobj_root(configobj)
+    catfile_kwargs = tweakutils.get_configobj_root(configobj)
     # define default value for 'xyunits' assuming sources to be derived from image directly
-    kwargs['xyunits'] = 'pixels' # initialized here, required by Image class
+    catfile_kwargs['xyunits'] = 'pixels' # initialized here, required by Image class
     if use_catfile:
         # reset parameters based on parameter settings in this section
-        kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
+        catfile_kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
     # Update parameter set with 'SOURCE FINDING PARS' now
-    kwargs.update(configobj['SOURCE FINDING PARS'])
+    catfile_kwargs.update(configobj['SOURCE FINDING PARS'])
 
     print '\n'+__taskname__+': Finding shifts for ',filenames,'\n'
-    
+
     for imgnum in xrange(len(filenames)):
         # Create Image instances for all input images
-        input_images.append(imgclasses.Image(filenames[imgnum],input_catalogs=catnames[imgnum],**kwargs))
+        input_images.append(imgclasses.Image(filenames[imgnum],
+                            input_catalogs=catnames[imgnum],**catfile_kwargs))
     
     # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)
@@ -147,15 +148,16 @@ def run(configobj):
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
     else: # otherwise, extract the catalog from the first input image source list
-        ref_source = input_images[0].all_radec
-        
-    # Determine what WCS needs to be used for reference tangent plane
-    if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
-        refwcs = configobj['refimage']
-    else:
-        refwcs = []
-        for i in input_images:
-            refwcs.extend(i.get_wcs())
+        # Determine what WCS needs to be used for reference tangent plane
+        if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
+            refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
+            refwcs = refimg.get_wcs()
+            ref_source = refimg.all_radec
+        else:
+            refwcs = []
+            for i in input_images:
+                refwcs.extend(i.get_wcs())
+            ref_source = input_images[0].all_radec
 
     # Create Reference Catalog object
     refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)

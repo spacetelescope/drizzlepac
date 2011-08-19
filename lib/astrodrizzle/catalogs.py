@@ -338,8 +338,7 @@ class ImageCatalog(Catalog):
         #                    roundlim=self.pars['roundlim'], sharplim=self.pars['sharplim'])
         if self.pars['computesig']:
             # compute sigma for this image
-            istats = imagestats.ImageStats(self.source,nclip=3,fields='stddev')
-            sigma = 1.5 * istats.stddev
+            sigma = self._compute_sigma()
         else:
             sigma = self.pars['sigma']
         hmin = sigma * self.pars['threshold']
@@ -352,6 +351,12 @@ class ImageCatalog(Catalog):
             source = np.where(source >= self.pars['datamax'],0.,source)
 
         x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'])
+        if len(x) == 0:
+            sigma = self._compute_sigma()
+            hmin = sigma * self.pars['threshold']
+            print 'No sources found with original thresholds. Trying automatic settings.'
+            x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'])
+
         """
         if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
             fminindx = flux >= self.pars['fluxmin']
@@ -369,7 +374,11 @@ class ImageCatalog(Catalog):
         self.round = None # round
         self.numcols = 3  # 5
         self.num_objects = len(x)
-                
+
+    def _compute_sigma(self):
+        istats = imagestats.ImageStats(self.source,nclip=3,fields='stddev')
+        sigma = 1.5 * istats.stddev
+        return sigma
         
 class UserCatalog(Catalog):
     """ Class to manage user-supplied catalogs as inputs.

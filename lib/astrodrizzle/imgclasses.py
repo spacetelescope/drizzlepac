@@ -500,7 +500,7 @@ class RefImage(object):
                 self.wcs = stwcs.wcsutil.HSTWCS(wcs_list)
             else: # User provided full HSTWCS object
                 self.wcs = wcs_list
-
+        
         self.name = self.wcs.filename
         self.refWCS = None
         # Interpret the provided catalog
