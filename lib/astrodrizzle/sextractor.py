@@ -150,7 +150,8 @@ import __builtin__
 
 import sys
 import os
-import popen2
+import subprocess
+import tempfile
 import exceptions
 import re
 import copy
@@ -176,7 +177,6 @@ def setup(path=None):
 
     # -- Finding sextractor program and its version
     # first look for 'sextractor', then 'sex'
-
     candidates = ['sextractor', 'sex']
 
     if (path):
@@ -185,14 +185,19 @@ def setup(path=None):
     selected=None
     for candidate in candidates:
         try:
-            (_out_err, _in) = popen2.popen4(candidate)
+            _out_err = tempfile.TemporaryFile()
+            retcode = subprocess.check_call([candidate,'-v'],
+                stdout=_out_err,stderr=_out_err)
+            _out_err.seek(0)
             versionline = _out_err.read()
-            if (versionline.find("SExtractor") != -1):
-                selected=candidate
-                break
-        except IOError:
-            continue
+            _out_err.close()
             
+            selected=candidate
+            break
+        except OSError:
+            _out_err.close()
+            continue
+        
     if not(selected):
         raise SExtractorException, \
               """
@@ -213,16 +218,16 @@ def setup(path=None):
         raise SExtractorException, \
               "Cannot determine SExtractor version."
 
-    # print "Use " + self.program + " [" + self.version + "]"
+    print "Using " + _program + " Version " + _version
 
     return _program, _version
 
 # Check to see whether the SExtractor program has been installed
 
-def is_installed(verbose=False):
+def is_installed(verbose=False,path=None):
     installed = True
     try:
-        program, version = setup()
+        program, version = setup(path=path)
     except:
         installed = False
     return installed
@@ -542,7 +547,6 @@ class SExtractor:
 
         # Try to find SExtractor program
         # This will raise an exception if it failed
-
         self.program, self.version = self.setup(path)
 
         commandline = (

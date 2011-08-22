@@ -14,8 +14,8 @@ import imagefindpars
 
 import sextractor
     
-__version__ = '0.6.1'
-__vdate__ = '19-Aug-2011'
+__version__ = '0.6.2'
+__vdate__ = '22-Aug-2011'
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
@@ -46,9 +46,14 @@ def _managePsets(configobj):
     """
     # Merge all configobj instances into a single object
     configobj['SOURCE FINDING PARS'] = {}
+    sextractor_name = configobj['execname']
+    if util.is_blank(sextractor_name): sextractor_name = None 
+    configobj['SOURCE FINDING PARS']['execname'] = sextractor_name
+    is_installed = sextractor.is_installed(path=sextractor_name)
+    
     if configobj['findmode'] == 'imagefind' or \
-        (configobj['findmode'] == 'sextractor' and not sextractor.is_installed()):
-        if configobj['findmode'] == 'sextractor' and not sextractor.is_installed():
+        (configobj['findmode'] == 'sextractor' and not is_installed):
+        if configobj['findmode'] == 'sextractor' and not is_installed:
             print '**********\nWARNING\n**********'
             print 'No version of SExtractor found!'
             print ' Defaulting to basic source finding algorithm...'

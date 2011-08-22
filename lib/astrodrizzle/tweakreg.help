@@ -80,6 +80,12 @@ findmode : str {'imagefind', 'sextractor'}
     'tweakreg' will use the built-in imagefind function by default. This 
     function is similar in operation to DAOFIND. [Default value: 'imagefind']
 
+editipars : bool
+    This parameter allows the user to specify whether or not they want to 
+    edit the parameters for the built-in source finding algorithm if 'findmode'
+    has been set to 'imagefind'. These parameters are described in the help for 
+    `imagefind`_. [Default value: Yes]
+
 editspars : bool
     This parameter allows the user to specify whether or not they want to
     edit the parameters associated with the Sextractor PSET if 'findmode'
@@ -91,16 +97,18 @@ editspars : bool
     in the executable. These parameters are described in the help for
     `sextractorpars`_. [Default value: Yes]
 
-editipars : bool
-    This parameter allows the user to specify whether or not they want to 
-    edit the parameters for the built-in source finding algorithm if 'findmode'
-    has been set to 'imagefind'. These parameters are described in the help for 
-    `imagefind`_. [Default value: Yes]
+execname : string
+    This parameter allows the user to specify the full path and filename 
+    of the SExtractor executable they want to use.  This would generally
+    only need to be set should the task not automatically find the 
+    SExtractor executable or if more than 1 instance of SExtractor has been
+    installed on the system.  
+    [Default value: '']
 
 writecat : bool
     Specify whether or not to write out the source catalogs generated for
     each input image by the built-in source extraction algorithm.
-    [Default value = Yes]
+    [Default value: Yes]
 
 clean : bool
     Specify whether or not to remove the temporary files created by

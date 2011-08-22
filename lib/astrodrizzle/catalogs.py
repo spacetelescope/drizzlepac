@@ -236,6 +236,8 @@ class ExtractorCatalog(Catalog):
         sextractor_pars = self.pars['USER SUPPLIED PARAMETERS']
         fluxmin = sextractor_pars['fluxmin']
         fluxmax = sextractor_pars['fluxmax']
+        execname = sextractor_pars['execname']
+        if util.is_blank(execname): execname = None
 
         # Create a SExtractor instance
         s = sextractor.SExtractor()
@@ -281,7 +283,7 @@ class ExtractorCatalog(Catalog):
         try:
             print 'Running SExtractor on ',self.source
             # Lauch SExtractor on a FITS file
-            s.run(imgname)
+            s.run(imgname,path=execname)
             seobjects.append(s)
 
             # Removing the configuration files, the catalog and
