@@ -210,4 +210,4 @@ def help():
     print getHelpAsString(docstring=True)
     
 # Append help file as docstring for use in Sphinx-generated documentation/web pages
-TweakReg.__doc__ = getHelpAsString()
+TweakReg.__doc__ = getHelpAsString(docstring=True)
