@@ -9,7 +9,7 @@ Each static mask array has type Int16, and resides in memory.
     Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
 :Program:
     staticMask.py
-:Purpose:    
+:Notes:    
     Class that manages the creation of a global static
     mask which is used to mask pixels that are some
     sigma BELOW the mode computed for the image.
