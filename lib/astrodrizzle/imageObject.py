@@ -488,8 +488,8 @@ class baseImageObject:
     def getReadNoiseImage(self,chip):
         """
         
-        Purpose
-        =======
+        Notes
+        =====
         Method for returning the readnoise image of a detector 
         (in electrons).  
         
@@ -505,8 +505,8 @@ class baseImageObject:
     def getdarkimg(self,chip):
         """
         
-        Purpose
-        =======
+        Notes
+        =====
         Return an array representing the dark image for the detector.
         
         :units: electrons
@@ -518,8 +518,8 @@ class baseImageObject:
     def getskyimg(self,chip):
         """
         
-        Purpose
-        =======
+        Notes
+        =====
         Return an array representing the sky image for the detector.  The value
         of the sky is what would actually be subtracted from the exposure by
         the skysub step.
@@ -533,8 +533,8 @@ class baseImageObject:
     def getdarkcurrent(self):
         """
         
-        Purpose
-        =======
+        Notes
+        =====
         Return the dark current for the detector.  This value
         will be contained within an instrument specific keyword.
         The value in the image header will be converted to units
@@ -670,7 +670,7 @@ class baseImageObject:
         sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
 
         return ivmarr.astype(np.float32)
-        
+
     def buildERRmask(self,chip,dqarr,scale):
         """ Builds a weight mask from an input DQ array and an ERR array
         associated with the input image.
