@@ -337,8 +337,8 @@ def calcNewEdges(wcs,shape):
     shape : tuple
         numpy shape tuple for size of image
 
-    Output
-    ------
+    Returns
+    -------
     border : arr 
         array which contains the new positions for
         all pixels around the border of the edges in alpha,dec 
