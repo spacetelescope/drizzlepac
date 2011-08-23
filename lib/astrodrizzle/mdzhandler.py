@@ -95,8 +95,8 @@ def _interpretMdriztabPars(rec):
         # Translate names from MDRIZTAB columns names to 
         # input parameter names found in IRAF par file.
         #
-        if _name.find('final') > -1: _name = 'driz_'+_name
-        elif _name == 'subsky': _name = 'skysub'
+        #if _name.find('final') > -1: _name = 'driz_'+_name
+        if _name == 'subsky': _name = 'skysub'
         elif _name == 'crbitval': _name = 'crbit'
         elif _name == 'readnoise': _name = 'rdnoise'
                     
