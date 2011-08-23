@@ -1,9 +1,9 @@
 
-These parameters control the operation of the algorithm that extracts sources from the image as called by `tweakreg`_. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code). 
+These parameters control the operation of the algorithm that extracts sources from the image as called by :ref:`tweakreg`. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code). 
 
 :Input: The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.
 
-:Output: The primary output, as used by tweakreg, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source. 
+:Output: The primary output, as used by :ref:`tweakreg`, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source. 
 
 
 Parameters
