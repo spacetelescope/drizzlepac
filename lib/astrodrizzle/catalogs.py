@@ -236,7 +236,7 @@ class ExtractorCatalog(Catalog):
         sextractor_pars = self.pars['USER SUPPLIED PARAMETERS']
         fluxmin = sextractor_pars['fluxmin']
         fluxmax = sextractor_pars['fluxmax']
-        execname = sextractor_pars['execname']
+        execname = self.pars['execname']
         if util.is_blank(execname): execname = None
 
         # Create a SExtractor instance

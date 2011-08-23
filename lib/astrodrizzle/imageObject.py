@@ -622,7 +622,7 @@ class baseImageObject:
             self._image[self.scienceExt,chip].dqmaskname = dqmask_name
             # record the name of this mask file that was created for later 
             # removal by the 'clean()' method
-            self._image[self.scienceExt,chip].outputnames['dqmask'] = dqmask_name
+            self._image[self.scienceExt,chip].outputNames['dqmask'] = dqmask_name
             
         del dqarr            
         return dqmask
