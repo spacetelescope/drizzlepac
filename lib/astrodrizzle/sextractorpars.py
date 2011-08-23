@@ -13,7 +13,7 @@ def getHelpAsString():
     return helpString
 
 def run(configobj=None):
-    """ Sextractor parameters which can be set by `tweakreg`_.
+    """ Sextractor parameters which can be set by :ref:`tweakreg`.
     """
     pass
 
