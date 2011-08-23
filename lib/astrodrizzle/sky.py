@@ -184,7 +184,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
     skyuser=paramDict["skyuser"]
     
     if skyuser != '':
-        print "User has done their own sky subtraction, updating MDRIZSKY with supplied value..."
+        print "User has computed their own sky values, updating MDRIZSKY with supplied value..."
        
         for chip in range(1,numchips+1,1):
             try:
@@ -213,6 +213,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
 
         print "Computing minimum sky ..."
         minSky=[] #store the sky for each chip
+        minpscale = []
         
         for chip in range(1,numchips+1,1):
             myext=sciExt+","+str(chip)
@@ -232,12 +233,15 @@ def _skySub(imageSet,paramDict,saveFile=False):
             _scaledSky=_skyValue / (pscale**2)
             #_skyValue=_scaledSky
             minSky.append(_scaledSky)
+            minpscale.append(pscale)
             
             #update the keyword in the actual header here as well
             image.computedSky=_scaledSky #this is the scaled sky value
 
         _skyValue = min(minSky)
-        print "Minimum sky value for all chips ",_skyValue
+        
+        _reportedSky = _skyValue*(minpscale[minSky.index(_skyValue)]**2)
+        print "Minimum sky value for all chips ",_reportedSky
 
         #now subtract that value from all the chips in the exposure
         #and update the chips header keyword with the sub
@@ -251,7 +255,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
             image.computedSky = _skyValue
-            print "\nsubtracting scaled sky from chip %d: %f\n"%(chip,_scaledSky)
+            print "\nUsing scaled sky from chip %d: %f\n"%(chip,_scaledSky)
             ###_subtractSky(image,(_scaledSky))
             # Update the header so that the keyword in the image is 
             #the sky value which should be subtracted from the image
