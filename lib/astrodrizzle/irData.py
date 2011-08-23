@@ -42,8 +42,8 @@ class IRInputImage(imageObject):
     def getsampimg(self):
         """
         
-        Purpose
-        =======
+        Notes
+        =====
         Return the samp image array.  This method will return
         a ones for all detectors by default.  
                 
