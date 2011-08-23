@@ -1,9 +1,9 @@
 
-These parameters control the operation of Sextractor in finding sources in the input images, as called by `tweakreg`_.
+These parameters control the operation of Sextractor in finding sources in the input images, as called by :ref:`tweakreg`.
 
 :Input: The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.
 
-:Output: The primary output, as used by `tweakreg`_, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source. 
+:Output: The primary output, as used by :ref:`tweakreg`, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source. 
 
 A full description of the parameters and how Sextractor works can be found on the Sextractor web page at:
 
