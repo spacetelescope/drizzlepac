@@ -1,4 +1,4 @@
-.. _baseimageobjects::
+.. _baseimageobjects:
 
 ************************
 Base ImageObject Classes
