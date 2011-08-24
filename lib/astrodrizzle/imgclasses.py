@@ -26,13 +26,13 @@ class Image(object):
         Parameters
         ----------
         filename : str
-            filename for image
+            Filename for image.
 
         input_catalogs : list of str or None
-            filename of catalog files for each chip, if specified by user
+            Filename of catalog files for each chip, if specified by user.
 
         kwargs : dict
-            parameters necessary for processing derived from input configObj object
+            Parameters necessary for processing derived from input configObj object.
 
         """
         self.name = filename
@@ -111,7 +111,7 @@ class Image(object):
         self.perform_update = True
     def get_wcs(self):
         """ Helper method to return a list of all the input WCS objects associated
-            with this image
+            with this image.
         """
         wcslist = []
         for chip in self.chip_catalogs:
@@ -120,7 +120,7 @@ class Image(object):
 
     def buildSkyCatalog(self):
         """ Convert sky catalog for all chips into a single catalog for
-            the entire field-of-view of this image
+            the entire field-of-view of this image.
         """
         ralist = []
         declist = []
@@ -145,7 +145,7 @@ class Image(object):
         
 
     def buildDefaultRefWCS(self):
-        """ Generate a default reference WCS for this image
+        """ Generate a default reference WCS for this image.
         """
         self.default_refWCS = None
         if self.use_wcs:
@@ -172,8 +172,8 @@ class Image(object):
 
     def sortSkyCatalog(self):
         """ Sort and clip the source catalog based on the flux range specified
-            by the user
-            It keeps a copy of the original full list in order to support iteration
+            by the user.
+            It keeps a copy of the original full list in order to support iteration.
         """
         _sortKeys = ['fluxmax','fluxmin','nbright']
         clip_catalog = False
@@ -315,17 +315,17 @@ class Image(object):
 
 
     def performFit(self,**kwargs):
-        """ Perform a fit between the matched sources
+        """ Perform a fit between the matched sources.
 
             Parameters
             ----------
             kwargs : dict
-                Parameter necessary to perform the fit; namely, *fitgeometry*
+                Parameter necessary to perform the fit; namely, *fitgeometry*.
 
             Notes
             -----
             This task still needs to implement (eventually) interactive iteration of
-                   the fit to remove outliers
+                   the fit to remove outliers.
         """
         pars = kwargs.copy()
         self.fit_pars = pars
@@ -370,7 +370,7 @@ class Image(object):
             self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}
 
     def updateHeader(self,wcsname=None):
-        """ Update header of image with shifts computed by *perform_fit()*
+        """ Update header of image with shifts computed by *perform_fit()*.
         """
         if not self.perform_update:
             return
@@ -399,7 +399,7 @@ class Image(object):
                 fimg.close()
 
     def write_skycatalog(self,filename):
-        """ Write out the all_radec catalog for this image to a file
+        """ Write out the all_radec catalog for this image to a file.
         """
         ralist = self.all_radec[0].tolist()
         declist = self.all_radec[1].tolist()
@@ -447,7 +447,7 @@ class Image(object):
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,append=True,format=["%20.6f","%8d"])
         
     def write_outxy(self,filename):
-        """ Write out the output(transformed) XY catalog for this image to a file
+        """ Write out the output(transformed) XY catalog for this image to a file.
         """
         f = open(filename,'w')
         f.write("#Pixel positions for: "+self.name+'\n')
@@ -459,7 +459,7 @@ class Image(object):
 
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
-            compatability with the IRAF-based MultiDrizzle
+            compatability with the IRAF-based MultiDrizzle.
         """
         if self.fit is not None:
             rowstr = '%s    %0.6g  %0.6g    %0.6g     %0.6g\n'%(self.name,self.fit['offset'][0],self.fit['offset'][1],self.fit['rot'],self.fit['scale'][0])
@@ -469,7 +469,7 @@ class Image(object):
 
 
     def clean(self):
-        """ Remove intermediate files created
+        """ Remove intermediate files created.
         """            
         for f in self.catalog_names:
             if 'match' in f:
@@ -514,7 +514,7 @@ class RefImage(object):
         self.transformToRef()
 
     def write_skycatalog(self,filename):
-        """ Write out the all_radec catalog for this image to a file
+        """ Write out the all_radec catalog for this image to a file.
         """
         f = open(filename,'w')
         f.write("#Sky positions for: "+self.name+'\n')
@@ -526,7 +526,7 @@ class RefImage(object):
 
     def transformToRef(self):
         """ Transform reference catalog sky positions (self.all_radec)
-        to reference tangent plane (self.wcs) to create output X,Y positions
+        to reference tangent plane (self.wcs) to create output X,Y positions.
         """
         if self.pars.has_key('refxyunits') and self.pars['refxyunits'] == 'pixels':
             print 'Creating RA/Dec positions for reference sources...'
@@ -543,7 +543,7 @@ class RefImage(object):
 
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
-            compatability with the IRAF-based MultiDrizzle
+            compatability with the IRAF-based MultiDrizzle.
         """
         rowstr = '%s    0.0  0.0    0.0     1.0\n'%(self.name)
         return rowstr
@@ -555,7 +555,7 @@ class RefImage(object):
             os.remove(self.catalog.catname)
 
 def build_referenceWCS(catalog_list):
-    """ Compute default reference WCS from list of Catalog objects
+    """ Compute default reference WCS from list of Catalog objects.
     """
     wcslist = []
     for catalog in catalog_list:
@@ -564,7 +564,7 @@ def build_referenceWCS(catalog_list):
     return utils.output_wcs(wcslist)
 
 def count_sci_extensions(filename):
-    """ Return the number of SCI extensions and the EXTNAME from a input MEF file
+    """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
     """
     num_sci = 0
     extname = 'SCI'

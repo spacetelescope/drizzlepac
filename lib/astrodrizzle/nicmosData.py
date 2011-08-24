@@ -55,11 +55,11 @@ class NICMOSInputImage(imageObject):
      
 
     def doUnitConversions(self):
-        """convert the data to electrons
+        """Convert the data to electrons
         
         This converts all science data extensions and saves
         the results back to disk. We need to make sure
-        the data inside the chips already in memory is altered as well
+        the data inside the chips already in memory is altered as well.
         
         """
 
@@ -119,7 +119,7 @@ class NICMOSInputImage(imageObject):
     
         Returns
         -------
-        flat: array
+        flat : array
             The flat field array in the same shape as the input image with **units of cps**.
         """
 
@@ -133,7 +133,7 @@ class NICMOSInputImage(imageObject):
 
         Returns
         -------
-        darkcurrent: float
+        darkcurrent : float
             Dark current value with **units of cps**.
         
         """
@@ -164,7 +164,7 @@ class NICMOSInputImage(imageObject):
         
         Returns
         -------
-        dark: array
+        dark : array
             The dark array in the same shape as the image with **units of cps**.
         
         """
@@ -217,7 +217,7 @@ class NIC1InputImage(NICMOSInputImage):
         return _darkrate
         
     def _getDefaultReadnoise(self):
-        """ this could be updated to calculate the readnoise from the NOISFILE            
+        """ This could be updated to calculate the readnoise from the NOISFILE.
         """
         _rdnoise = 26.0 # electrons
         if self.proc_unit == 'native':
@@ -336,7 +336,8 @@ class NIC2InputImage(NICMOSInputImage):
 
 
     def createHoleMask(self):
-        """add in a mask for the coronographic hole to the general static pixel mask"""
+        """Add in a mask for the coronographic hole to the general static pixel mask.
+        """
         pass
         
 

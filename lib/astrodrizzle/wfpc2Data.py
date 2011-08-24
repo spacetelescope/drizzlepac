@@ -78,8 +78,8 @@ class WFPC2InputImage (imageObject):
         
         Returns
         -------
-        gain: float
-            The effective gain
+        gain : float
+            The effective gain.
         """
 
         return self._effGain
@@ -153,8 +153,8 @@ class WFPC2InputImage (imageObject):
         
         Returns
         -------
-        flat: array
-            The flat-field array in the same shape as the input image
+        flat : array
+            The flat-field array in the same shape as the input image.
 
         """
         # For the WFPC2 flat we need to invert
@@ -220,8 +220,8 @@ class WFPC2InputImage (imageObject):
         
         Returns
         -------
-        darkcurrent: float
-            Dark current for the WFPC3 detector in **units of counts/electrons**
+        darkcurrent : float
+            Dark current for the WFPC3 detector in **units of counts/electrons**.
         
         """        
         darkrate = 0.005 # electrons / s
@@ -255,8 +255,8 @@ class WFPC2InputImage (imageObject):
 
         Returns
         -------
-        readnoise: float
-            The readnoise of the detector in **units of counts/electrons**
+        readnoise : float
+            The readnoise of the detector in **units of counts/electrons**.
         
         """
         

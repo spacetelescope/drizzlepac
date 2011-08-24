@@ -26,11 +26,8 @@ class STISInputImage (imageObject):
                 
     def getflat(self,chip):
         """
-        Method for retrieving a detector's flat field.  For STIS there are three 
-        
-        
-        This method will return an array the same shape as the
-        image.
+        Method for retrieving a detector's flat field. For STIS there are three.
+        This method will return an array the same shape as the image.
         
         """
         sci_chip = self._image[self.scienceExt,chip]
@@ -70,11 +67,11 @@ class STISInputImage (imageObject):
         return flat
 
     def doUnitConversions(self):
-        """convert the data to electrons
+        """Convert the data to electrons.
         
         This converts all science data extensions and saves
         the results back to disk. We need to make sure
-        the data inside the chips already in memory is altered as well
+        the data inside the chips already in memory is altered as well.
         
         """
          # Image information 
@@ -115,12 +112,12 @@ class STISInputImage (imageObject):
         self._effGain = conversionFactor # 1.0
 
     def _assignSignature(self, chip):
-        """assign a unique signature for the image based 
+        """Assign a unique signature for the image based 
            on the  instrument, detector, chip, and size
            this will be used to uniquely identify the appropriate
-           static mask for the image
+           static mask for the image.
            
-           this also records the filename for the static mask to the outputNames dictionary
+           This also records the filename for the static mask to the outputNames dictionary.
            
         """
         sci_chip = self._image[self.scienceExt,chip]
@@ -156,12 +153,12 @@ class CCDInputImage(STISInputImage):
 
     def getdarkcurrent(self):
         """
-        Returns the dark current for the STIS CCD chip
+        Returns the dark current for the STIS CCD chip.
         
         Returns
         -------
-        darkcurrent: float
-            Dark current value in **units of electrons** (or counts, if proc_unit=='native')
+        darkcurrent : float
+            Dark current value in **units of electrons** (or counts, if proc_unit=='native').
         """
         darkcurrent = 0.009 #electrons/sec
         if self.proc_unit == 'native':
@@ -174,8 +171,8 @@ class CCDInputImage(STISInputImage):
         
         :units: DN
         
-        this should work on a chip, since different chips to be consistant with other 
-        detector classes where different chips have different gains
+        This should work on a chip, since different chips to be consistant with other 
+        detector classes where different chips have different gains.
         
         """
         if self.proc_unit == 'native':
@@ -307,12 +304,12 @@ class NUVInputImage(STISInputImage):
  
     def getdarkcurrent(self):
         """
-        Returns the dark current for the STIS NUV detector
+        Returns the dark current for the STIS NUV detector.
         
         Returns
         -------
-        darkcurrent: float
-            Dark current value in **units of electrons** (or counts, if proc_unit=='native')
+        darkcurrent : float
+            Dark current value in **units of electrons** (or counts, if proc_unit=='native').
         """
         
         darkcurrent = 0.0013 #electrons/sec
@@ -396,12 +393,12 @@ class FUVInputImage(STISInputImage):
               
     def getdarkcurrent(self):
         """
-        Returns the dark current for the STIS FUV detector
+        Returns the dark current for the STIS FUV detector.
         
         Returns
         -------
-        darkcurrent: float
-            Dark current value in **units of electrons** (or counts, if proc_unit=='native')
+        darkcurrent : float
+            Dark current value in **units of electrons** (or counts, if proc_unit=='native').
         """
         
         darkcurrent = 0.07 #electrons/sec

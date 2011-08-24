@@ -112,8 +112,7 @@ class WFCInputImage(ACSInputImage):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
             
-            this gets called from processInput
-            
+            This method gets called from processInput.
         """
         pri_header = self._image[0].header
         
@@ -173,8 +172,7 @@ class HRCInputImage (ACSInputImage):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
             
-            this gets called from processInput
-            
+            This method gets called from processInput.
         """
         pri_header = self._image[0].header
         

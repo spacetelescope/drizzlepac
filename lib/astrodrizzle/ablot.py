@@ -44,7 +44,7 @@ def blot(data, outdata, configObj=None,wcsmap=wcs_functions.WCSMap,editpars=Fals
         run(configObj,wcsmap=wcsmap)
 
 def run(configObj,wcsmap=None):
-    """ Run the blot task based on parameters provided interactively by the user
+    """ Run the blot task based on parameters provided interactively by the user.
     """ 
 
     # Insure all output filenames specified have .fits extensions
@@ -137,7 +137,7 @@ def help():
     
 def getHelpAsString():
     """ 
-    return useful help from a file in the script directory called module.help
+    Return useful help from a file in the script directory called module.help
     """
     helpString = 'ABLOT Version '+__version__+' Revision date: '+__vdate__
     try:
@@ -185,7 +185,7 @@ def buildBlotParamDict(configObj):
     return paramDict
 
 def _setDefaults(configObj={}):
-    """set up the default parameters to run drizzle
+    """ set up the default parameters to run drizzle
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """
@@ -296,10 +296,13 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
             
         Parameters
         ----------
-        source    - input numpy array of undistorted source image in units of 'cps'
-        source_wcs - HSTWCS object representing source image WCS
-        blot_wcs  - HSTWCS object representing the blotted image WCS
-        exptime   - 
+        source
+            Input numpy array of undistorted source image in units of 'cps'.
+        source_wcs
+            HSTWCS object representing source image WCS.
+        blot_wcs
+            HSTWCS object representing the blotted image WCS.
+        exptime
         
     """
     _outsci = np.zeros((blot_wcs.naxis2,blot_wcs.naxis1),dtype=np.float32)
@@ -326,7 +329,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         
     if wcsmap is None and cdriz is not None:
         """
-        Use default C mapping function
+        Use default C mapping function.
         """
         print 'Using default C-based coordinate transformation...'
         mapping = cdriz.DefaultWCSMapping(blot_wcs,source_wcs,int(blot_wcs.naxis1),int(blot_wcs.naxis2),stepsize)

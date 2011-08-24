@@ -284,7 +284,7 @@ def help():
 
 def getHelpAsString():
     """
-    return useful help from a file in the script directory called module.help
+    Return useful help from a file in the script directory called module.help
     """
     helpString = 'ADRIZZLE Version '+__version__+' Revision date: '+__vdate__
     try:

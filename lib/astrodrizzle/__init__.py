@@ -108,7 +108,7 @@ def MultiDrizzle(input, editpars=False, configObj=None, wcsmap=None, **input_dic
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if input not in ['',' ','INDEF', None]:
+    if input not in ['','','INDEF', None]:
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = input

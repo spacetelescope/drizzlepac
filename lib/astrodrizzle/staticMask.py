@@ -36,7 +36,7 @@ def help():
 #help information that TEAL will look for
 def getHelpAsString():
     """ 
-    return useful help from a file in the script directory called module.help
+    Return useful help from a file in the script directory called module.help
     """
     helpString = teal.getHelpFileAsString(__taskname__,__file__)
 
@@ -45,11 +45,11 @@ def getHelpAsString():
 
 #this is called by the user
 def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj=None, **inputDict):
-    """the user can input a list of images if they like to create static masks
-       as well as optional values for static_sig and inputDict
-       
-       the configObj.cfg file will set the defaults and then override them
-       with the user options
+    """ The user can input a list of images if they like to create static masks
+        as well as optional values for static_sig and inputDict.
+
+        The configObj.cfg file will set the defaults and then override them
+        with the user options.
     """
         
     if input is not None:
@@ -112,7 +112,7 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
         procSteps.endStep('Static Mask')
 
 def constructFilename(signature):
-    """construct an output filename for the given signature::
+    """Construct an output filename for the given signature::
     
          signature=[instr+detector,(nx,ny),detnum]
          
@@ -127,7 +127,7 @@ class staticMask:
     masks pixels that are unwanted in the SCI array.
     A static mask  object gets created for each global
     mask needed, one for each chip from each instrument/detector.
-    Each static mask array has type Int16, and resides in memory
+    Each static mask array has type Int16, and resides in memory.
 
     """
     
@@ -202,8 +202,8 @@ class staticMask:
         return mask
 
     def getFilename(self,signature):
-        """returns the name of the output mask file that
-        should reside on disk for the given signature """
+        """Returns the name of the output mask file that
+        should reside on disk for the given signature. """
              
         filename=constructFilename(signature)
 
@@ -214,12 +214,12 @@ class staticMask:
             return None
             
     def getMaskname(self,chipid):
-        """construct an output filename for the given signature::
+        """Construct an output filename for the given signature::
         
              signature=[instr+detector,(nx,ny),detnum]
              
         The signature is in the image object and the
-        name of the static mask file is saved as sci_chip.outputNames["staticMask"]
+        name of the static mask file is saved as sci_chip.outputNames["staticMask"].
         """
         
         return self._image[chipid].outputNames["staticMask"]    
@@ -233,16 +233,16 @@ class staticMask:
         self.masklist = {}
         
     def deleteMask(self,signature):
-        """delete just the mask that matches the signature given"""
+        """ Delete just the mask that matches the signature given."""
         if self.masklist.has_key(signature):
             self.masklist[signature] = None
         else:
             print "No matching mask"
         
     def saveToFile(self):
-        """ saves the static mask to a file
+        """ Saves the static mask to a file
             it uses the signatures associated with each
-            mask to contruct the filename for the output mask image
+            mask to contruct the filename for the output mask image.
         """
         
         for key in self.masklist.keys():

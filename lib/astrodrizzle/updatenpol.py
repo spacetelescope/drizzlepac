@@ -3,56 +3,61 @@
 # $Id: updatenpol.py 8609 2010-01-19 16:22:48Z hack $
 
 """
-**updatenpol--** Update the header of ACS file(s) with the names of new 
-NPOLFILE and D2IMFILE reference files for use with the 
-C version of MultiDrizzle (astrodrizzle).
+    **updatenpol --** Update the header of ACS file(s) with the names of new 
+    NPOLFILE and D2IMFILE reference files for use with the 
+    C version of MultiDrizzle (astrodrizzle).
 
-:License: http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
+    :License: 
+        http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
 
-:Usage: This task can be run from the 
-    operating system command line with::
+    :Usage: This task can be run from the operating system command line with::
 
-        updatenpol [options] input [refdir]
+                updatenpol [options] input [refdir]
 
-:Command-line Options:
-    `input`   
-        the specification of the files to be updated, either as a single filename, 
-        an ASN table name, or wild-card specification
-        of a list of files
-    `refdir`  
-        the name of the directory containing all the new reference files 
-        (`\*_npl.fits` and `\*_d2i.fits` files). 
-        If no directory is given, it will look in `jref$` by default. 
-        
-    -h        print the help (this text)
-    -l        if specified, copy NPOLFILEs and D2IMFILEs to
-              local directory for use with the input files
-    -i        if specified, the program will interactively request
-              the exact names of the NPOLFILE and D2IMFILE reference files
-              to be used for updating the header of each file. The value of
-              'refdir' will be ignored in interactive mode.
+    :Command-line Options:
+        `input`   
+            The specification of the files to be updated, either as a single filename, 
+            an ASN table name, or wild-card specification
+            of a list of files.
+        `refdir`  
+            The name of the directory containing all the new reference files 
+            (`\*_npl.fits` and `\*_d2i.fits` files). 
+            If no directory is given, it will look in `jref$` by default. 
 
+        ``-h``        
+            Print the help (this text).
 
-.. warning:: It will ask for the names of the NPOLFILE and D2IMFILE 
-            for EACH separate INPUT file when the option `-i` has been specified. 
+        ``-l``
+            If specified, copy NPOLFILEs and D2IMFILEs to local directory 
+            for use with the input files.
 
-:Example:
-    1. This command will update all the FLT files in the current directory
-    with the new NPOLFILE and D2IMFILE reference files found in the 'myjref' 
-    directory as defined in the environment::
-
-        updatenpol *flt.fits myjref$
+        ``-i``
+            If specified, the program will interactively request the exact 
+            names of the NPOLFILE and D2IMFILE reference files to be used 
+            for updating the header of each file. The value of 'refdir' 
+            will be ignored in interactive mode.
 
 
-:Compatability with MultiDrizzle:  
-    The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs` 
-    only work with the new NPOLFILE reference file for the DGEO correction 
-    (to replace the use of DGEOFILE).  
-    In fact, astrodrizzle has been extensively modified to
-    prompt the user with a very lengthy explanation on whether it should
-    stop and allow the user to update the header or continue without
-    applying the DGEO correction under circumstances when the NPOLFILE
-    keyword can not be found for ACS.
+    .. warning:: It will ask for the names of the NPOLFILE and D2IMFILE for
+                 EACH separate INPUT file when the option `-i` has been specified. 
+
+    :Example:
+        1. This command will update all the FLT files in the current directory
+        with the new NPOLFILE and D2IMFILE reference files found in the 'myjref' 
+        directory as defined in the environment::
+
+            updatenpol *flt.fits myjref$
+
+
+    :Compatability with MultiDrizzle:  
+        The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs` 
+        only work with the new NPOLFILE reference file for the DGEO correction 
+        (to replace the use of DGEOFILE).  
+        In fact, astrodrizzle has been extensively modified to
+        prompt the user with a very lengthy explanation on whether it should
+        stop and allow the user to update the header or continue without
+        applying the DGEO correction under circumstances when the NPOLFILE
+        keyword can not be found for ACS.
 
 """
 
@@ -79,29 +84,28 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     
     Parameters
     -----------
-    `input` : string or list
-                Name of input file or files
-                Acceptable forms: 
+    input : string or list
+                Name of input file or files acceptable forms: 
                   - single filename with or without directory
                   - @-file
                   - association table
                   - python list of filenames
                   - wildcard specification of filenames
                 
-    `refdir` : string
-                path to directory containing new reference files, either 
-                environment variable or full path
+    refdir : string
+                Path to directory containing new reference files, either 
+                environment variable or full path.
 
-    `local` : boolean
+    local : boolean
                 Specifies whether or not to copy new reference files to local
-                directory for use with the input files
+                directory for use with the input files.
 
-    `interactive` : boolean 
+    interactive : boolean 
                 Specifies whether or not to interactively ask the user for the
                 exact names of the new reference files instead of automatically
                 searching a directory for them.
 
-    `updatewcs': boolean
+    updatewcs : boolean
                 Specifies whether or not to update the WCS information in this
                 file to use the new reference files.
 
@@ -125,7 +129,6 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
 
     Notes
     -----
-
     .. warning:: 
         This program requires access to the `jref$` directory in order 
         to evaluate the DGEOFILE specified in the input image header.  
@@ -237,7 +240,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
             updatewcs.updatewcs(f)
         
 def find_d2ifile(flist,detector):
-    """ Search a list of files for one that matches the detector specified
+    """ Search a list of files for one that matches the detector specified.
     """
     d2ifile = None
     for f in flist:
@@ -266,7 +269,8 @@ def find_npolfile(flist,detector,filters):
 #### Interfaces used by TEAL
 #
 def run(configobj=None,editpars=False):
-    ''' Teal interface for running this code. '''
+    """ Teal interface for running this code.
+    """
     
     if configobj is None: 
         configobj =teal.teal(__taskname__,loadOnly=(not editpars))
@@ -319,33 +323,32 @@ def main():
 if __name__ == "__main__":
     main()
 """
+    Copyright (C) 2003 Association of Universities for Research in Astronomy (AURA)
 
-Copyright (C) 2003 Association of Universities for Research in Astronomy (AURA)
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+        1. Redistributions of source code must retain the above copyright
+          notice, this list of conditions and the following disclaimer.
 
-    1. Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+        2. Redistributions in binary form must reproduce the above
+          copyright notice, this list of conditions and the following
+          disclaimer in the documentation and/or other materials provided
+          with the distribution.
 
-    2. Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
+        3. The name of AURA and its representatives may not be used to
+          endorse or promote products derived from this software without
+          specific prior written permission.
 
-    3. The name of AURA and its representatives may not be used to
-      endorse or promote products derived from this software without
-      specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY AURA ``AS IS'' AND ANY EXPRESS OR IMPLIED
-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL AURA BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
+    THIS SOFTWARE IS PROVIDED BY AURA ``AS IS'' AND ANY EXPRESS OR IMPLIED
+    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL AURA BE LIABLE FOR ANY DIRECT, INDIRECT,
+    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+    OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+    DAMAGE.
 """

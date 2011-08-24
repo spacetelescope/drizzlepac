@@ -21,7 +21,7 @@ _step_num_ = 6  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():
     """ 
-    return useful help from a file in the script directory called module.help
+    Return useful help from a file in the script directory called module.help
     """
     helpString = teal.getHelpFileAsString(__taskname__,__file__)
 
@@ -30,7 +30,7 @@ def getHelpAsString():
 #this is the user access function
 def drizCR(input=None,configObj=None, editpars=False, **inputDict):
     """
-        look for cosmic rays
+        Look for cosmic rays.
     """
     print inputDict    
     inputDict["input"]=input    
@@ -311,8 +311,8 @@ def _drizCr(sciImage,paramDict,saveFile=True):
             
    
 def setDefaults(configObj={}):
-    """return a dictionary of the default parameters
-        which also been updated with the user overrides
+    """ Return a dictionary of the default parameters
+        which also been updated with the user overrides.
     """
     gain     = 7               # Detector gain, e-/ADU
     grow     = 1               # Radius around CR pixel to mask [default=1 for 3x3 for non-NICMOS]   

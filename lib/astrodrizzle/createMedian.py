@@ -24,7 +24,7 @@ _step_num_ = 4  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():
     """ 
-    return useful help from a file in the script directory called module.help
+    Return useful help from a file in the script directory called module.help
     """
     helpString = teal.getHelpFileAsString(__taskname__,__file__)
 
@@ -33,7 +33,7 @@ def getHelpAsString():
 #this is the user access function
 def median(input=None,configObj=None, editpars=False, **inputDict):
     """
-        create a median image from the seperately drizzled images   
+        Create a median image from the seperately drizzled images.
     """
     
     if input is not None:
@@ -62,7 +62,7 @@ def run(configObj):
 #### Top-level interface from inside MultiDrizzle
 #
 def createMedian(imgObjList,configObj,procSteps=None):
-    """ Top-level interface to createMedian step called from top-level MultiDrizzle
+    """ Top-level interface to createMedian step called from top-level MultiDrizzle.
     
     This function parses the input parameters then calls the `_median()` function
     to median-combine the input images into a single image.
@@ -95,7 +95,7 @@ def createMedian(imgObjList,configObj,procSteps=None):
 #this is the internal function, the user called function is below
 def _median(imageObjectList,paramDict):
     """Create a median image from the list of image Objects 
-       that has been given
+       that has been given.
     """
 
     newmasks = paramDict['median_newmasks']

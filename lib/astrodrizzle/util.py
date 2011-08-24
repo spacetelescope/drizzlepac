@@ -30,7 +30,7 @@ def is_blank(val):
     return blank
 
 def check_blank(cvar):
-    """ Converts blank value (from configObj?) into a value of None
+    """ Converts blank value (from configObj?) into a value of None.
     """
     if cvar in blank_list: val = None 
     else: val = cvar
@@ -147,7 +147,7 @@ class ProcSteps:
         Add information about a new step to the dict of steps
         The value 'ptime' is the output from '_ptime()' containing
         both the formatted and unformatted time for the start of the 
-        step
+        step.
         """
         ptime = _ptime()
         print '==== Processing Step ',key,' started at ',ptime[0]
@@ -171,7 +171,7 @@ class ProcSteps:
     
     def reportTimes(self):
         """ Print out a formatted summary of the elapsed times for all 
-            the performed steps
+            the performed steps.
         """
         self.end = _ptime()
         total_time = 0
@@ -212,7 +212,7 @@ def _ptime():
     
 def findrootname(filename):
     """
-    return the rootname of the given file
+    Return the rootname of the given file.
     """
 
     puncloc = [filename.find(char) for char in string.punctuation]
@@ -223,7 +223,7 @@ def findrootname(filename):
     return filename[0:val]
 
 def removeFileSafely(filename,clobber=True):
-    """ Delete the file specified, but only if it exists and clobber is True
+    """ Delete the file specified, but only if it exists and clobber is True.
     """ 
     if filename is not None and filename.strip() != '':
         if os.path.exists(filename) and clobber: os.remove(filename)
@@ -309,29 +309,29 @@ def displayMakewcsWarningBox(display=True, parent=None):
 These two functions are for reading in an 'at file' which contains
 two columns of filenames, the first column is assumed to
 be the science image and the second column is assumed
-to be the IVM file that is associated with it
+to be the IVM file that is associated with it.
 """
 
 def atfile_sci(filename):
     """
-    return the filename of the science image 
+    Return the filename of the science image 
     which is assumed to be the first word
-    in the atfile the user gave
+    in the atfile the user gave.
     """
     return filename.split()[0]
 
     
 def atfile_ivm(filename):
     """
-    return the filename of the IVM file
+    Return the filename of the IVM file
     which is assumed to be the second word
-    in the atfile the user gave
+    in the atfile the user gave.
     """
     return filename.split()[1]    
     
     
 def printParams(paramDictionary,all=False):
-    """ Print nicely the parameters from the dictionary
+    """ Print nicely the parameters from the dictionary.
     """
 
     if (len(paramDictionary) == 0):
@@ -346,20 +346,20 @@ def printParams(paramDictionary,all=False):
     sys.stdout.flush()
 
 def isASNTable(inputFilelist):
-    """return TRUE if inputFilelist is a fits ASN file"""
+    """Return TRUE if inputFilelist is a fits ASN file."""
     if ("_asn"  or "_asc") in inputFilelist:
         return True
     return False
 
 def isCommaList(inputFilelist):
-    """return True if the input is a comma separated list of names"""
+    """Return True if the input is a comma separated list of names."""
     if "," in inputFilelist:
         return True
     return False        
   
 def loadFileList(inputFilelist):
-    """open up the '@ file' and read in the science and possible
-      ivm filenames from the first two columns
+    """Open up the '@ file' and read in the science and possible
+       ivm filenames from the first two columns.
     """
     f = open(inputFilelist[1:])
     # check the first line in order to determine whether
@@ -378,7 +378,7 @@ def loadFileList(inputFilelist):
 
 
 def readCommaList(fileList):
-    """ return a list of the files with the commas removed """
+    """ Return a list of the files with the commas removed. """
     names=fileList.split(',')
     fileList=[]
     for item in names:
@@ -425,18 +425,18 @@ def getInputAsList(input, output=None, ivmlist=None, prodonly=False):
 
 def runmakewcs(input):
     """
-    Runs 'updatewcs' to recompute the WCS keywords for the input image
+    Runs 'updatewcs' to recompute the WCS keywords for the input image.
     
     Parameters
     ----------
     input : list of str
-        a list of file names
+        A list of file names.
 
     Returns
     -------
     output : list of str 
-        returns a list of names of the modified files
-        (For GEIS files returns the translated names.)
+        Returns a list of names of the modified files
+        (For GEIS files returns the translated names).
     
     """
     newNames = updatewcs.updatewcs(input, checkfiles=False)
@@ -559,21 +559,21 @@ def getRotatedSize(corners,angle):
 
 def readcols(infile,cols=[0,1,2,3],hms=False):
     """ 
-    Read the columns from an ASCII file as numpy arrays
+    Read the columns from an ASCII file as numpy arrays.
     
     Parameters
     ----------
     infile : str
-        filename of ASCII file with array data as columns
+        Filename of ASCII file with array data as columns.
         
     cols : list of int
-        list of 0-indexed column numbers for columns to be turned into numpy arrays
-        (DEFAULT- [0,1,2,3])
+        List of 0-indexed column numbers for columns to be turned into numpy arrays
+        (DEFAULT- [0,1,2,3]).
         
     Returns
     -------
     outarr : list of numpy arrays
-        simple list of numpy arrays in the order as specifed in the 'cols' parameter
+        Simple list of numpy arrays in the order as specifed in the 'cols' parameter.
         
     """
 
@@ -603,7 +603,7 @@ def readcols(infile,cols=[0,1,2,3],hms=False):
     return outarr            
 
 def parse_colnames(colnames,coords=None):
-    """ Convert colnames input into list of column numbers
+    """ Convert colnames input into list of column numbers.
     """
     cols = []
     if not isinstance(colnames,list):
@@ -645,7 +645,7 @@ def parse_colnames(colnames,coords=None):
              
 
 def createFile(dataArray=None, outfile=None, header=None):
-    """Create a simple fits file for the given data array and header"""
+    """Create a simple fits file for the given data array and header."""
 
     try:    
         assert(outfile != None), "Please supply an output filename for createFile"
