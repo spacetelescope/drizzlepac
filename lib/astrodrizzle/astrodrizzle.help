@@ -1,7 +1,7 @@
 
 Parameters
 ----------
-files : str or list of str (Default Value = '*flt.fits')
+files : str or list of str (Default Value = '\*flt.fits')
     The name or names of the input files to be processed, which can be provided in any of the following forms:
 
       * filename of a single image
@@ -32,7 +32,7 @@ input_dict : dict, optional (Default Value = None)
     This dictionary contains all of the parameters and user-set values for those parameters that should only have non-default values. All possible parameters and their definitions can be found and viewed in the description of the full set of parameters, normally accessed through the TEAL GUI, or provided as part of the 'configObj'.
 
 
-Input : str or list of str (Default Value = '*flt.fits')
+Input : str or list of str (Default Value = '\*flt.fits')
     The name or names of the input files to be processed, which can be provided in any of several forms as described by the **files** parameter. The value may be provided for the **files** parameter may be defined, or it can be set through the TEAL GUI. 
 
 Output : str (Default Value = 'final_drz.fits')

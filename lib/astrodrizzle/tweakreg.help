@@ -23,7 +23,7 @@ couple of common modes.
    TEAL GUI:
 
   >>> from astrodrizzle import tweakreg
-  >>> tweakreg.TweakReg('*flt.fits', editpars=False, findmode='imagefind', \
+  >>> tweakreg.TweakReg('\*flt.fits', editpars=False, findmode='imagefind', \
       editipars=False, computesig=True, threshold=10.0, fitgeometry='shift')
 
 
@@ -61,7 +61,7 @@ input : str or list of str
     'IVM' to the parameter 'final_wht_type' described further below),
     then these are simply provided as a second column in the filelist,
     with each IVM filename listed on the same line as a second entry,
-    after its corresponding exposure filename. [Default value: '*flt.fits']
+    after its corresponding exposure filename. [Default value: '\*flt.fits']
 
 refimage : str
     Filename of reference image. Sources derived from this image will be 
