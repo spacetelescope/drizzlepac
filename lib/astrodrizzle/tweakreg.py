@@ -13,6 +13,7 @@ import sextractorpars
 import imagefindpars
 
 import sextractor
+from sextractor import is_installed
     
 __version__ = '0.6.2'
 __vdate__ = '22-Aug-2011'
@@ -49,11 +50,11 @@ def _managePsets(configobj):
     sextractor_name = configobj['execname']
     if util.is_blank(sextractor_name): sextractor_name = None 
     configobj['SOURCE FINDING PARS']['execname'] = sextractor_name
-    is_installed = sextractor.is_installed(path=sextractor_name)
+    find_sextractor = is_installed(path=sextractor_name)
     
     if configobj['findmode'] == 'imagefind' or \
-        (configobj['findmode'] == 'sextractor' and not is_installed):
-        if configobj['findmode'] == 'sextractor' and not is_installed:
+        (configobj['findmode'] == 'sextractor' and not find_sextractor):
+        if configobj['findmode'] == 'sextractor' and not find_sextractor:
             print '**********\nWARNING\n**********'
             print 'No version of SExtractor found!'
             print ' Defaulting to basic source finding algorithm...'

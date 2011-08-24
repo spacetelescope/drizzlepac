@@ -161,13 +161,13 @@ from sexcatalog import *
 
 # ======================================================================
 
-__version__ = "1.15.0 (2005-07-06)"
+__version__ = "1.15.1 (2011-08-24)"
 
 # ======================================================================
 class SExtractorException(Exception):
     pass
 
-def setup(path=None):
+def setup(path=None,verbose=False):
     """
     Look for SExtractor program ('sextractor', or 'sex').
     If a full path is provided, only this path is checked.
@@ -186,12 +186,11 @@ def setup(path=None):
     for candidate in candidates:
         try:
             _out_err = tempfile.TemporaryFile()
-            retcode = subprocess.check_call([candidate,'-v'],
-                stdout=_out_err,stderr=_out_err)
+            versionline = subprocess.check_call([candidate],
+                            stdout=_out_err,stderr=_out_err)
             _out_err.seek(0)
-            versionline = _out_err.read()
+            versionlines = _out_err.readlines()
             _out_err.close()
-            
             selected=candidate
             break
         except OSError:
@@ -208,29 +207,31 @@ def setup(path=None):
     _program = selected
 
     # print versionline
-    _version_match = re.search("[Vv]ersion ([0-9\.])+", versionline)
-    if not _version_match:
-        raise SExtractorException, \
-              "Cannot determine SExtractor version."
-
-    _version = _version_match.group()[8:]
+    for versionline in versionlines:
+        _version_match = re.search("[Vv]ersion ([0-9\.])+", versionline)
+        if _version_match:
+            _version = _version_match.group()[8:]
+            break
+    
     if not _version:
         raise SExtractorException, \
               "Cannot determine SExtractor version."
 
-    print "Using " + _program + " Version " + _version
+    if verbose:
+        print "Using " + _program + " Version " + _version
 
     return _program, _version
 
 # Check to see whether the SExtractor program has been installed
 
-def is_installed(verbose=False,path=None):
+def is_installed(path=None):
     installed = True
     try:
         program, version = setup(path=path)
     except:
         installed = False
     return installed
+
 # ======================================================================
 
 nnw_config = \
@@ -468,8 +469,8 @@ class SExtractor:
         self.version = None
 
 
-    def setup(self, path=None):
-        return setup(path=path)
+    def setup(self, path=None, verbose=False):
+        return setup(path=path, verbose=verbose)
 
 
     def update_config(self):
@@ -530,7 +531,7 @@ class SExtractor:
         main_f.close()
 
 
-    def run(self, file, updateconfig=True, clean=False, path=None):
+    def run(self, file, updateconfig=True, clean=False, path=None, verbose=False):
         """
         Run SExtractor.
 
@@ -547,7 +548,7 @@ class SExtractor:
 
         # Try to find SExtractor program
         # This will raise an exception if it failed
-        self.program, self.version = self.setup(path)
+        self.program, self.version = self.setup(path, verbose=verbose)
 
         commandline = (
             self.program + " -c " + self.config['CONFIG_FILE'] + " " + file)

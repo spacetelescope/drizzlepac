@@ -7,6 +7,7 @@ import pyfits
 import stsci.imagestats as imagestats
 
 import sextractor
+from sextractor import is_installed
 
 #import idlphot
 import tweakutils,util
@@ -46,7 +47,7 @@ def generateCatalog(wcs,mode='automatic',catalog=None,**kwargs):
     if not isinstance(catalog,Catalog):
         if mode == 'automatic': # if an array is provided as the source
             # Create a new catalog directly from the image
-            if kwargs['findmode'] == 'sextractor' and sextractor.is_installed():
+            if kwargs['findmode'] == 'sextractor' and is_installed():
                 catalog = ExtractorCatalog(wcs,catalog,**kwargs)
                 #catalog = ImageCatalog(wcs,catalog,**kwargs)
             else:
@@ -283,7 +284,7 @@ class ExtractorCatalog(Catalog):
         try:
             print 'Running SExtractor on ',self.source
             # Lauch SExtractor on a FITS file
-            s.run(imgname,path=execname)
+            s.run(imgname,path=execname,verbose=True)
             seobjects.append(s)
 
             # Removing the configuration files, the catalog and
