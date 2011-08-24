@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to astrodrizzle's documentation!
-=======================================
+========================================
 This package supports the use of MultiDrizzle as an integrated set of modules that can be run in an automated manner to combine images.  The version of MultiDrizzle described here implements a single task to run the entire MultiDrizzle processing pipeline, while also providing the framework for users to create their own custom pipeline based on the modules in this package merged with their own custom code if desired. 
 
 This package relies on the STWCS and PyWCS packages in order to provide the support for the WCS-based distortion models and alignment of the input images.
