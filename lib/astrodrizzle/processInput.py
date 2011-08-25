@@ -99,6 +99,7 @@ def setCommonInput(configObj,createOutwcs=True):
     # input, output, or updatewcs.
     if configObj['mdriztab']:
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
+        
         # Update configObj with values from mpars
         util.mergeConfigObj(configObj,mdriztab_dict)
 
@@ -153,10 +154,10 @@ def createImageObjectList(files,instrpars,group=None):
     for img in files:
         image = _getInputImage(img,group=group)
         image.setInstrumentParameters(instrpars)
-        if image._image['PRIMARY'].header.has_key('MTFLAG'):
+        if 'MTFLAG' in image._image['PRIMARY'].header:
             # check to see whether we are dealing with moving target observations...
             _keyval = image._image['PRIMARY'].header['MTFLAG']
-            if _keyval not in [""," ", None, "INDEF"] and _keyval is True: mtflag = True
+            if not util.is_blank(_keyval) and (_keyval is True or 'T' in _keyval): mtflag = True
         else:
             mtflag = False
         if mtflag is True:

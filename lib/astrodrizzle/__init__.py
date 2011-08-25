@@ -88,7 +88,7 @@ if False :
 else :
     __version__ = '4.1.0dev'
 
-__vdate__ = '23-Aug-2011'
+__vdate__ = '25-Aug-2011'
 # Revision based version info
 # End Version Information ---------------------------------------------
 try:
@@ -108,7 +108,7 @@ def MultiDrizzle(input, editpars=False, configObj=None, wcsmap=None, **input_dic
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if input not in ['','','INDEF', None]:
+    if not util.is_blank(input):
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = input
