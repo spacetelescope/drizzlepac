@@ -1,0 +1,196 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Imagefindpars: Source finding parameters &mdash; betadrizzle v4.0.6 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
+    <link rel="next" title="SExtractorpars: Parameter setting for SExtractor" href="sextractorpars.html" />
+    <link rel="prev" title="TWEAKREG: Alignment of Images" href="tweakreg.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sextractorpars.html" title="SExtractorpars: Parameter setting for SExtractor"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tweakreg.html"
+                        title="previous chapter">TWEAKREG: Alignment of Images</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sextractorpars.html"
+                        title="next chapter">SExtractorpars: Parameter setting for SExtractor</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/imagefind.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="imagefindpars-source-finding-parameters">
+<span id="imagefind"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
+<p>This interface provides a mechanism for setting the parameters used by the built-in source finding algorithm based on the published algorithms used by DAOFIND.</p>
+<span class="target" id="module-astrodrizzle.imagefindpars"></span><dl class="function">
+<dt id="astrodrizzle.imagefindpars.getHelpAsString">
+<tt class="descclassname">astrodrizzle.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodrizzle.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Teal help function to describe the parameters being set
+Descriptions of parameters come from .help file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodrizzle.imagefindpars.run">
+<tt class="descclassname">astrodrizzle.imagefindpars.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#astrodrizzle.imagefindpars.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imagefind parameters to control operation of built-in source extraction algorithm</p>
+<p>These parameters control the operation of the algorithm that extracts sources from the image as called by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Input :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Output :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">The primary output, as used by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="computesig">computesig</strong> : bool</p>
+<blockquote>
+<p>This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter &#8216;sigma&#8217;. The automatic sigma value gets computed from the first input exposure as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="mf">1.5</span> <span class="o">*</span> <span class="n">imstatistics</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">fields</span><span class="o">=</span><span class="s">&#39;stddev&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</blockquote>
+<p><strong id="This single value will then be used for object identification for all input exposures. [Default: Yes]">This single value will then be used for object identification for all input exposures. [Default: Yes]</strong> :</p>
+<p><strong id="sigma">sigma</strong> : float</p>
+<blockquote>
+<p>The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0]</p>
+</blockquote>
+<p><strong id="fwhmpsf">fwhmpsf</strong> : float</p>
+<blockquote>
+<p>The full-width at half-maximum of the point spread function in pixels.[Default: 2.5]</p>
+</blockquote>
+<p><strong id="datamin">datamin</strong> : float</p>
+<blockquote>
+<p>The minimum good pixel value to be considered when examining the image for objects. [Default: None]</p>
+</blockquote>
+<p><strong id="datamax">datamax</strong> : float</p>
+<blockquote>
+<p>The maximum good pixel value to be considered when examining the image for objects. [Default: None]</p>
+</blockquote>
+<p><strong id="threshold">threshold</strong> : float</p>
+<blockquote>
+<p>The object detection threshold above the local background in units of sigma. [Default: 4.0]</p>
+</blockquote>
+<p><strong id="nsigma">nsigma</strong> : float</p>
+<blockquote>
+<p>The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]</p>
+</blockquote>
+<p><strong id="fluxmin">fluxmin</strong> : float</p>
+<blockquote>
+<p>Minimum good flux value. [Default: None]</p>
+</blockquote>
+<p><strong id="fluxmax">fluxmax</strong> : float</p>
+<blockquote class="last">
+<p>Maximum good flux value. [Default: None]</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sextractorpars.html" title="SExtractorpars: Parameter setting for SExtractor"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+             >previous</a> |</li>
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Warren Hack, Megan Sosey, Michael Droettboom, Nadia Dencheva.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SExtractorpars: Parameter setting for SExtractor &mdash; betadrizzle v4.0.6 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
+    <link rel="next" title="TweakReg User Interface" href="userint.html" />
+    <link rel="prev" title="Imagefindpars: Source finding parameters" href="imagefind.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="userint.html" title="TweakReg User Interface"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="imagefind.html" title="Imagefindpars: Source finding parameters"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="imagefind.html"
+                        title="previous chapter">Imagefindpars: Source finding parameters</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="userint.html"
+                        title="next chapter">TweakReg User Interface</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/sextractorpars.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="sextractorpars-parameter-setting-for-sextractor">
+<span id="sextractorpars"></span><h1>SExtractorpars: Parameter setting for SExtractor<a class="headerlink" href="#sextractorpars-parameter-setting-for-sextractor" title="Permalink to this headline">¶</a></h1>
+<p>This interface provides a mechanism for setting the parameters for using SExtractor to build the catalog of sources from the input images. This option will only be available if <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a> can find the SExtractor executable installed on the user&#8217;s system.</p>
+<span class="target" id="module-astrodrizzle.sextractorpars"></span><dl class="function">
+<dt id="astrodrizzle.sextractorpars.getHelpAsString">
+<tt class="descclassname">astrodrizzle.sextractorpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodrizzle.sextractorpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Teal help function to describe the parameters being set
+Descriptions of parameters come from .help file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodrizzle.sextractorpars.run">
+<tt class="descclassname">astrodrizzle.sextractorpars.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#astrodrizzle.sextractorpars.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sextractor parameters which can be set by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>.</p>
+<p>These parameters control the operation of Sextractor in finding sources in the input images, as called by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Input :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Output :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">The primary output, as used by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</td>
+</tr>
+</tbody>
+</table>
+<p>A full description of the parameters and how Sextractor works can be found on the Sextractor web page at:</p>
+<blockquote>
+<a class="reference external" href="http://www.astromatic.net/software/sextractor">http://www.astromatic.net/software/sextractor</a></blockquote>
+<p>Only a subset of the full set of parameters available are actually controlled through this interface.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="config_file">config_file</strong> : str</p>
+<blockquote>
+<p>Name of the user supplied configuration file. [Default value = &#8216;&#8217;]</p>
+</blockquote>
+<p><strong id="verbose_type">verbose_type</strong> : str {&#8216;QUIET&#8217;,&#8217;NORMAL&#8217;,&#8217;FULL&#8217;}</p>
+<blockquote>
+<p>Verbose mode for operation. [Default value = &#8216;QUIET&#8217;]</p>
+</blockquote>
+<p><strong id="detect_type">detect_type</strong> : str {&#8216;ccd&#8217;,&#8217;photo&#8217;}</p>
+<blockquote>
+<p>Detection type. [Default value  = &#8216;ccd&#8217;]</p>
+</blockquote>
+<p><strong id="detect_minarea">detect_minarea</strong> : int</p>
+<blockquote>
+<p>Minimum number of pixels above threshold. [Default value = 5]</p>
+</blockquote>
+<p><strong id="detect_thresh">detect_thresh</strong> : float</p>
+<blockquote>
+<p>Detection threshold in mag.arcsec-2. [Default value = 1.5]</p>
+</blockquote>
+<p><strong id="analysis_thresh">analysis_thresh</strong> : float</p>
+<blockquote>
+<p>Analysis threshold in mag.arcsec-2. [Default value = 1.5]</p>
+</blockquote>
+<p><strong id="filter">filter</strong> : bool</p>
+<blockquote>
+<p>Apply filter for detection? [Default value = Yes]</p>
+</blockquote>
+<p><strong id="filter_type">filter_type</strong> : str {&#8216;gaussian&#8217;,&#8217;point&#8217;}</p>
+<blockquote>
+<p>Filter type? [Default value = &#8216;gaussian&#8217;]</p>
+</blockquote>
+<p><strong id="gauss_nx">gauss_nx</strong> : int</p>
+<blockquote>
+<p>Width of gaussian filter (pixels). [Default value = 5]</p>
+</blockquote>
+<p><strong id="gauss_fwhm">gauss_fwhm</strong> : float</p>
+<blockquote>
+<p>FWHM of gaussian filter (pixels). [Default value = 2.0]</p>
+</blockquote>
+<p><strong id="deblend_nthresh">deblend_nthresh</strong> : int</p>
+<blockquote>
+<p>Number of deblending sub-thresholds. [Default value = 16]</p>
+</blockquote>
+<p><strong id="deblend_mincont">deblend_mincont</strong> : float</p>
+<blockquote>
+<p>Minimum contrast parameter for deblending. [Default value = 0.025]</p>
+</blockquote>
+<p><strong id="clean">clean</strong> : bool</p>
+<blockquote>
+<p>Clean spurious detections? [Default value = Yes]</p>
+</blockquote>
+<p><strong id="clean_param">clean_param</strong> : float</p>
+<blockquote>
+<p>Cleaning efficiency. [Default value = 1.0]</p>
+</blockquote>
+<p><strong id="mask_type">mask_type</strong> : str {&#8216;NONE&#8217;,&#8217;BLANK&#8217;,&#8217;CORRECT&#8217;}</p>
+<blockquote>
+<p>Type of detection MASKing. [Default value = &#8216;CORRECT&#8217;]</p>
+</blockquote>
+<p><strong id="phot_apertures">phot_apertures</strong> : float</p>
+<blockquote>
+<p>MAG_APER aperture diameter(s) in pixels. [Default value = 5]</p>
+</blockquote>
+<p><strong id="phot_autoparams">phot_autoparams</strong> : str</p>
+<blockquote>
+<p>MAG_AUTO parameters: &lt;Kron_fact&gt;,&lt;min_radius&gt;. [Default value = &#8216;2.5,3.5&#8217;]</p>
+</blockquote>
+<p><strong id="satur_level">satur_level</strong> : float</p>
+<blockquote>
+<p>Saturation level. (in ADUs) [Default value = 50000.0]</p>
+</blockquote>
+<p><strong id="mag_zeropoint">mag_zeropoint</strong> : float</p>
+<blockquote>
+<p>Magnitude zero-point. [Default value = 0.0]</p>
+</blockquote>
+<p><strong id="mag_gamma">mag_gamma</strong> : float</p>
+<blockquote>
+<p>Gamma of emulsion. (for photographic scans) [Default value = 4.0]</p>
+</blockquote>
+<p><strong id="seeing_fwhm">seeing_fwhm</strong> : float</p>
+<blockquote>
+<p>Stellar FWHM in arcsec. [Default value = 0.1]</p>
+</blockquote>
+<p><strong id="back_size">back_size</strong> : int</p>
+<blockquote>
+<p>Background mesh in pixels. [Default value = 64]</p>
+</blockquote>
+<p><strong id="back_type">back_type</strong> : str {&#8216;MANUAL&#8217;,&#8217;AUTO&#8217;}</p>
+<blockquote>
+<p>Subtract MANUAL or AUTO generated background. [Default value = &#8216;MANUAL&#8217;]</p>
+</blockquote>
+<p><strong id="back_value">back_value</strong> : str</p>
+<blockquote>
+<p>Constant value to MANUALLY subtract. [Default value = &#8216;0.0,0.0&#8217;]</p>
+</blockquote>
+<p><strong id="back_filtersize">back_filtersize</strong> : int</p>
+<blockquote>
+<p>Background filter in pixels. [Default value = 3]</p>
+</blockquote>
+<p><strong id="backphoto_type">backphoto_type</strong> : str {&#8216;GLOBAL&#8217;,&#8217;LOCAL&#8217;}</p>
+<blockquote>
+<p>Background type. [Default value = &#8216;GLOBAL&#8217;]</p>
+</blockquote>
+<p><strong id="backphoto_thick">backphoto_thick</strong> : int</p>
+<blockquote>
+<p>Thickness in pixels of the background local annulus. [Default value = 24]</p>
+</blockquote>
+<p><strong id="checkimage_type">checkimage_type</strong> : str {&#8216;NONE&#8217;, &#8216;BACKGROUND&#8217;, &#8216;MINIBACKGROUND&#8217;, &#8216;-BACKGROUND&#8217;, &#8216;OBJECTS&#8217;, &#8216;-OBJECTS&#8217;, &#8216;SEGMENTATION&#8217;, &#8216;APERTURES&#8217;, &#8216;FILTERED &#8216;}</p>
+<blockquote>
+<p>Check image type. [Default value = None]</p>
+</blockquote>
+<p><strong id="memory_objstack">memory_objstack</strong> : int</p>
+<blockquote>
+<p>Number of objects in stack. [Default value = 3000]</p>
+</blockquote>
+<p><strong id="memory_pixstack">memory_pixstack</strong> : int</p>
+<blockquote>
+<p>Number of pixels in stack. [Default value = 300000]</p>
+</blockquote>
+<p><strong id="memory_bufsize">memory_bufsize</strong> : int</p>
+<blockquote>
+<p>Number of lines in buffer. [Default value = 1024]</p>
+</blockquote>
+<p><strong id="fluxmin">fluxmin</strong> : float</p>
+<blockquote>
+<p>Minimum good flux value. [Default value = None]</p>
+</blockquote>
+<p><strong id="fluxmax">fluxmax</strong> : float</p>
+<blockquote class="last">
+<p>Maximum good flux value. [Default value = None]</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="userint.html" title="TweakReg User Interface"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="imagefind.html" title="Imagefindpars: Source finding parameters"
+             >previous</a> |</li>
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Warren Hack, Megan Sosey, Michael Droettboom, Nadia Dencheva.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Updatenpol &mdash; betadrizzle v4.0.6 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
+    <link rel="prev" title="Functions to Manage WCS Table Extension" href="wcscorr.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="wcscorr.html"
+                        title="previous chapter">Functions to Manage WCS Table Extension</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/updatenpol.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="updatenpol">
+<span id="id1"></span><h1>Updatenpol<a class="headerlink" href="#updatenpol" title="Permalink to this headline">¶</a></h1>
+<p>This task will update the header of ACS file(s) with the names of the NPOLFILE and D2IMFILE reference files for use with the new C version of MultiDrizzle (astrodrizzle).</p>
+<span class="target" id="module-astrodrizzle.updatenpol"></span><p><strong>updatenpol &#8211;</strong> Update the header of ACS file(s) with the names of new 
+NPOLFILE and D2IMFILE reference files for use with the 
+C version of MultiDrizzle (astrodrizzle).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">License:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></p>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Usage:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">This task can be run from the operating system command line with:</p>
+<p>updatenpol [options] input [refdir]</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Command-line Options:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><dl class="first last docutils">
+<dt><em class="xref py py-obj">input</em>   </dt>
+<dd><p class="first last">The specification of the files to be updated, either as a single filename, 
+an ASN table name, or wild-card specification
+of a list of files.</p>
+</dd>
+<dt><em class="xref py py-obj">refdir</em>  </dt>
+<dd><p class="first last">The name of the directory containing all the new reference files 
+(<em class="xref py py-obj">*_npl.fits</em> and <em class="xref py py-obj">*_d2i.fits</em> files). 
+If no directory is given, it will look in <em class="xref py py-obj">jref$</em> by default.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">-h</span></tt>        </dt>
+<dd><p class="first last">Print the help (this text).</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">-l</span></tt></dt>
+<dd><p class="first last">If specified, copy NPOLFILEs and D2IMFILEs to local directory 
+for use with the input files.</p>
+</dd>
+<dt><tt class="docutils literal"><span class="pre">-i</span></tt></dt>
+<dd><p class="first last">If specified, the program will interactively request the exact 
+names of the NPOLFILE and D2IMFILE reference files to be used 
+for updating the header of each file. The value of &#8216;refdir&#8217; 
+will be ignored in interactive mode.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">It will ask for the names of the NPOLFILE and D2IMFILE for
+EACH separate INPUT file when the option <em class="xref py py-obj">-i</em> has been specified.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Example:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">1. This command will update all the FLT files in the current directory
+with the new NPOLFILE and D2IMFILE reference files found in the &#8216;myjref&#8217; 
+directory as defined in the environment:</p>
+<div class="highlight-python"><pre>updatenpol *flt.fits myjref$</pre>
+</div>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Compatability with MultiDrizzle:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">The new version of MultiDrizzle (<a class="reference internal" href="astrodrizzle.html#module-astrodrizzle" title="astrodrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></tt></a>) and <em class="xref py py-obj">updatewcs</em> 
+only work with the new NPOLFILE reference file for the DGEO correction 
+(to replace the use of DGEOFILE).  
+In fact, astrodrizzle has been extensively modified to
+prompt the user with a very lengthy explanation on whether it should
+stop and allow the user to update the header or continue without
+applying the DGEO correction under circumstances when the NPOLFILE
+keyword can not be found for ACS.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="astrodrizzle.updatenpol.find_d2ifile">
+<tt class="descclassname">astrodrizzle.updatenpol.</tt><tt class="descname">find_d2ifile</tt><big>(</big><em>flist</em>, <em>detector</em><big>)</big><a class="headerlink" href="#astrodrizzle.updatenpol.find_d2ifile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search a list of files for one that matches the detector specified.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodrizzle.updatenpol.find_npolfile">
+<tt class="descclassname">astrodrizzle.updatenpol.</tt><tt class="descname">find_npolfile</tt><big>(</big><em>flist</em>, <em>detector</em>, <em>filters</em><big>)</big><a class="headerlink" href="#astrodrizzle.updatenpol.find_npolfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search a list of files for one that matches the configuration 
+of detector and filters used.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodrizzle.updatenpol.run">
+<tt class="descclassname">astrodrizzle.updatenpol.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em>, <em>editpars=False</em><big>)</big><a class="headerlink" href="#astrodrizzle.updatenpol.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Teal interface for running this code.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodrizzle.updatenpol.update">
+<tt class="descclassname">astrodrizzle.updatenpol.</tt><tt class="descname">update</tt><big>(</big><em>input</em>, <em>refdir='jref$'</em>, <em>local=None</em>, <em>interactive=False</em>, <em>wcsupdate=True</em><big>)</big><a class="headerlink" href="#astrodrizzle.updatenpol.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates headers of files given as input to point to the new reference files 
+NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : string or list</p>
+<blockquote>
+<dl class="docutils">
+<dt>Name of input file or files acceptable forms: </dt>
+<dd><ul class="first last simple">
+<li>single filename with or without directory</li>
+<li>&#64;-file</li>
+<li>association table</li>
+<li>python list of filenames</li>
+<li>wildcard specification of filenames</li>
+</ul>
+</dd>
+</dl>
+</blockquote>
+<p><strong id="refdir">refdir</strong> : string</p>
+<blockquote>
+<p>Path to directory containing new reference files, either 
+environment variable or full path.</p>
+</blockquote>
+<p><strong id="local">local</strong> : boolean</p>
+<blockquote>
+<p>Specifies whether or not to copy new reference files to local
+directory for use with the input files.</p>
+</blockquote>
+<p><strong id="interactive">interactive</strong> : boolean</p>
+<blockquote>
+<p>Specifies whether or not to interactively ask the user for the
+exact names of the new reference files instead of automatically
+searching a directory for them.</p>
+</blockquote>
+<p><strong id="updatewcs">updatewcs</strong> : boolean</p>
+<blockquote class="last">
+<p>Specifies whether or not to update the WCS information in this
+file to use the new reference files.</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This program requires access to the <em class="xref py py-obj">jref$</em> directory in order 
+to evaluate the DGEOFILE specified in the input image header.  
+This evaluation allows the program to get the information it 
+needs to identify the correct NPOLFILE.</p>
+</div>
+<p>The use of this program now requires that a directory be set up with
+all the new NPOLFILE and D2IMFILE reference files for ACS (a single
+directory for all files for all ACS detectors will be fine, much like
+jref).  Currently, all the files generated by the ACS team has initially 
+been made available at:</p>
+<div class="highlight-python"><pre>/grp/hst/acs/lucas/new-npl/</pre>
+</div>
+<p>The one known limitation to how this program works comes from
+confusion if more than 1 file could possibly be used as the new
+reference file. This would only happen when NPOLFILE reference files
+have been checked into CDBS multiple times, and there are several
+versions that apply to the same detector/filter combination.  However,
+that can be sorted out later if we get into that situation at all.</p>
+<p class="rubric">Examples</p>
+<ol class="arabic">
+<li><p class="first">A set of associated images specified by an ASN file can be updated to use
+the NPOLFILEs and D2IMFILE found in the local directory defined using 
+the <em class="xref py py-obj">myjref$</em> environment variable under PyRAF using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="go">&gt;&gt;&gt;import updatenpol</span>
+<span class="go">&gt;&gt;&gt;updatenpol.update(&#39;j8bt06010_asn.fits&#39;, &#39;myref$&#39;)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Another use under Python would be to feed it a specific list of files
+to be updated using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">updatenpol</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="s">&#39;file1_flt.fits&#39;</span><span class="p">,</span><span class="s">&#39;file2_flt.fits&#39;</span><span class="p">],</span><span class="s">&#39;myjref$&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Files in another directory can also be processed using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">updatenpol</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s">&#39;data$*flt.fits&#39;</span><span class="p">,</span><span class="s">&#39;../new/ref/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
+             >previous</a> |</li>
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Warren Hack, Megan Sosey, Michael Droettboom, Nadia Dencheva.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

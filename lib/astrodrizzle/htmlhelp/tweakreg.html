@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; astrodrizzle v4.0.6 documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; betadrizzle v4.0.6 documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="astrodrizzle v4.0.6 documentation" href="index.html" />
+    <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
     <link rel="next" title="Imagefindpars: Source finding parameters" href="imagefind.html" />
     <link rel="prev" title="MultiDrizzle Reference Table" href="mdztab.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="mdztab.html" title="MultiDrizzle Reference Table"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">astrodrizzle v4.0.6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -92,9 +92,9 @@
 <dl class="function">
 <dt id="astrodrizzle.tweakreg.TweakReg">
 <tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
-<dd><p>TweakReg Version 0.2(27-Apr-2011)
-<strong>Tweakreg</strong> provides an automated interface for computing residual shifts
-between input exposures being combined using MultiDrizzle. The offsets
+<dd><p>tweakreg Version 0.6.2 updated on 22-Aug-2011</p>
+<p><strong>Tweakreg</strong> provides an automated interface for computing residual shifts
+between input exposures being combined using AstroDrizzle. The offsets
 computed by Tweakreg correspond to pointing differences after applying the WCS
 information from the input image&#8217;s headers.  Such errors would, for example,
 be due to errors in guide-star positions when combining observations from
@@ -107,22 +107,22 @@ the guide stars in a slightly different position.</p>
 <tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="files">files</strong> : str or list of str</p>
 <blockquote>
-<p>Input files which are being registered. For more details, see description
+<p>Input files that are being registered. For more details, see description
 of <em class="xref py py-obj">input</em> parameter.</p>
 </blockquote>
 <p><strong id="editpars">editpars</strong> : bool</p>
 <blockquote>
-<p>Specify whether or not to edit the parameters using the TEAL GUI</p>
+<p>Specify whether or not to edit the parameters using the TEAL GUI.</p>
 </blockquote>
 <p><strong id="configObj">configObj</strong> : obj or None</p>
 <blockquote>
 <p>ConfigObj object containing user-specified parameters for running
-this task</p>
+this task.</p>
 </blockquote>
 <p><strong id="input_dict">input_dict</strong> : dict</p>
 <blockquote>
-<p>User-specified parameter values for only those parameters which they
-want to change</p>
+<p>User-specified parameter values for only those parameters that they
+want to change.</p>
 </blockquote>
 <p><strong id=":Other Parameters from input_dict:">:Other Parameters from input_dict:</strong> :</p>
 <p><strong id="input">input</strong> : str or list of str</p>
@@ -140,92 +140,112 @@ This paramater can be provided in any of several forms:</p>
 </ul>
 </blockquote>
 <p>The &#8216;&#64;file&#8217; filelist needs to be provided as an ASCII text file
-containing a list of filenames for all input images, with one
+containing a list of filenames for all input images with one
 filename on each line of the file. If inverse variance maps have
 also been created by the user and are to be used (by specifying
 &#8216;IVM&#8217; to the parameter &#8216;final_wht_type&#8217; described further below),
 then these are simply provided as a second column in the filelist,
 with each IVM filename listed on the same line as a second entry,
-after its corresponding exposure filename.</p>
-</blockquote>
-<p><strong id="output">output</strong> : str</p>
-<blockquote>
-<p>The name for the output shift file created by tweakshifts.  This
-shiftfile will be formatted for use as direct input to MultiDrizzle.
-[Default value: &#8220;shifts.txt&#8221;]</p>
-</blockquote>
-<p><strong id="outwcs">outwcs</strong> : str</p>
-<blockquote>
-<p>Filename to be given to the OUTPUT reference WCS file created
-by tweakshifts.  This reference WCS defines the WCS in which the
-shifts get measured, and will be used by MultiDrizzle to interpret
-the shifts.  This reference WCS file will be a FITS file that
-only contains the WCS keywords in a Primary header with no image
-data itself.  The values will be derived from the FIRST input image
-specified.  [Default value: &#8220;tweak_wcs.fits&#8221;]</p>
+after its corresponding exposure filename. [Default value: &#8216;*flt.fits&#8217;]</p>
 </blockquote>
 <p><strong id="refimage">refimage</strong> : str</p>
 <blockquote>
 <p>Filename of reference image. Sources derived from this image will be 
-used as the reference for matching with sources from all input images.</p>
+used as the reference for matching with sources from all input images.
+[Default value: &#8216;&#8217;]</p>
 </blockquote>
-<p><strong id="findmode">findmode</strong> :  {&#8216;imagefind&#8217;, &#8216;sextractor&#8217;}</p>
+<p><strong id="findmode">findmode</strong> : str {&#8216;imagefind&#8217;, &#8216;sextractor&#8217;}</p>
 <blockquote>
 <p>This parameter specifies what method should be used to extract source
 catalogs from each input image.</p>
 <p>Selection of &#8216;sextractor&#8217; only specifies that should the &#8216;sextractor&#8217;
-executable be found on the user&#8217;s system, it will be used., otherwise,
-&#8216;tweakshifts&#8217; will default to using the built-in function similar
-in operation to DAOFIND.</p>
-</blockquote>
-<p><strong id="editspars">editspars</strong> : bool</p>
-<blockquote>
-<p>This parameter allows the user to specify whether or not they want to
-edit the parameters associated with the Sextractor PSET if &#8216;findmode&#8217;
-was set to &#8216;sextractor&#8217; and if Sextractor has been installed. This
-pset provides access to a majority of the most commonly used
-parameters for &#8216;sextractor&#8217; for use when &#8216;findmode = sextractor&#8217;.
-Each parameter has the same name as the &#8216;sextractor&#8217; parameter and
-is a direct pass-through to the corresponding &#8216;sextractor&#8217; parameter
-in the executable. These parameters are described in the help for
-<a href="#id1"><span class="problematic" id="id2">`sextractorpars`_</span></a>.</p>
+executable be found on the user&#8217;s system, it will be used. Otherwise,
+&#8216;tweakreg&#8217; will use the built-in imagefind function by default. This 
+function is similar in operation to DAOFIND. [Default value: &#8216;imagefind&#8217;]</p>
 </blockquote>
 <p><strong id="editipars">editipars</strong> : bool</p>
 <blockquote>
 <p>This parameter allows the user to specify whether or not they want to 
 edit the parameters for the built-in source finding algorithm if &#8216;findmode&#8217;
 has been set to &#8216;imagefind&#8217;. These parameters are described in the help for 
-<a href="#id3"><span class="problematic" id="id4">`imagefind`_</span></a>.</p>
+<a class="reference internal" href="userint.html#imagefind"><em>Imagefind Parameters</em></a>. [Default value: Yes]</p>
+</blockquote>
+<p><strong id="editspars">editspars</strong> : bool</p>
+<blockquote>
+<p>This parameter allows the user to specify whether or not they want to
+edit the parameters associated with the Sextractor PSET if &#8216;findmode&#8217;
+is set to &#8216;sextractor&#8217;, and if Sextractor has been installed. This
+pset provides access to a majority of the most commonly used
+parameters for &#8216;sextractor&#8217; for use when &#8216;findmode = sextractor&#8217;.
+Each parameter has the same name as the &#8216;sextractor&#8217; parameter and
+is a direct pass-through to the corresponding &#8216;sextractor&#8217; parameter
+in the executable. These parameters are described in the help for
+<a class="reference internal" href="userint.html#sextractorpars"><em>Sextractor Parameters</em></a>. [Default value: Yes]</p>
+</blockquote>
+<p><strong id="execname">execname</strong> : string</p>
+<blockquote>
+<p>This parameter allows the user to specify the full path and filename 
+of the SExtractor executable they want to use.  This would generally
+only need to be set should the task not automatically find the 
+SExtractor executable or if more than 1 instance of SExtractor has been
+installed on the system.  
+[Default value: &#8216;&#8217;]</p>
 </blockquote>
 <p><strong id="writecat">writecat</strong> : bool</p>
 <blockquote>
 <p>Specify whether or not to write out the source catalogs generated for
-each input image by the built-in source extraction algorithm.</p>
+each input image by the built-in source extraction algorithm.
+[Default value: Yes]</p>
 </blockquote>
 <p><strong id="clean">clean</strong> : bool</p>
 <blockquote>
 <p>Specify whether or not to remove the temporary files created by
-&#8216;tweakshifts&#8217;, including any catalog files generated for the shift
-determination. [Default value = False]</p>
+&#8216;tweakreg&#8217;, including any catalog files generated for the shift
+determination. [Default value = Yes]</p>
+</blockquote>
+<p><strong id="verbose">verbose</strong> : bool</p>
+<blockquote>
+<p>Specify whether or not to print extra messages during
+processing. [Default value = No]</p>
 </blockquote>
 <p><strong id="updatehdr">updatehdr</strong> : bool</p>
 <blockquote>
 <p>Specify whether or not to update the headers of each input image
 directly with the shifts that were determined. This will allow the
-input images to be combined by MultiDrizzle without having to provide
+input images to be combined by AstroDrizzle without having to provide
 the shiftfile as well. [Default value = False]</p>
 </blockquote>
-<p><strong id="verbose">verbose</strong> : bool</p>
+<p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
-<p>Specify whether or not to print extra messages during
-processing. [Default value = False]</p>
+<p>Name of updated WCS. [Default value = &#8216;TWEAK&#8217;]</p>
+</blockquote>
+<p><strong id="shiftfile">shiftfile</strong> : bool</p>
+<blockquote>
+<p>Create output shiftfile? [Default value: No]</p>
+</blockquote>
+<p><strong id="outshifts">outshifts</strong> : str</p>
+<blockquote>
+<p>The name for the output shift file created by &#8216;tweakreg&#8217;.  This
+shiftfile will be formatted for use as direct input to AstroDrizzle.
+[Default value: &#8216;shifts.txt&#8217;]</p>
+</blockquote>
+<p><strong id="outwcs">outwcs</strong> : str</p>
+<blockquote>
+<p>Filename to be given to the OUTPUT reference WCS file created
+by &#8216;tweakreg&#8217;. This reference WCS defines the WCS from which the
+shifts get measured, and will be used by AstroDrizzle to interpret
+those shifts. This reference WCS file will be a FITS file that
+only contains the WCS keywords in a Primary header with no image
+data itself. The values will be derived from the FIRST input image
+specified. [Default value: &#8216;tweak_wcs.fits&#8217;]</p>
 </blockquote>
 <p><strong id="catfile:str">catfile:str</strong> :</p>
 <blockquote>
-<p>Name of file which contains list of input images and associated
-catalog files generated by the user.  Each line of this file will
-contain the name of an input image in the first column and the name
-of the catalog file for that image in the second column.</p>
+<p>Name of file that contains a list of input images and associated
+catalog files generated by the user. Each line of this file will
+contain the name of an input image in the first column, and the 
+name of the catalog file for that image in the second column.
+[Default value: &#8216;&#8217;]</p>
 </blockquote>
 <p><strong id="xcol">xcol</strong> : int</p>
 <blockquote>
@@ -235,54 +255,57 @@ specified in the catfile. [Default value = 1]</p>
 <p><strong id="ycol">ycol</strong> : int</p>
 <blockquote>
 <p>Column number of Y position from the user-generated catalog files
-specified in the catfile.[Default value = 2]</p>
+specified in the catfile. [Default value = 2]</p>
 </blockquote>
 <p><strong id="fluxcol">fluxcol</strong> : int</p>
 <blockquote>
 <p>Column number for the flux values from the user-generated catalog
-files specified in the catfile.  These values will only be used if
+files specified in the catfile. These values will only be used if
 a flux limit has been specified by the user using the &#8216;fluxmax&#8217; or
-&#8216;fluxmin&#8217; parameters.  [Default value = 3]</p>
+&#8216;fluxmin&#8217; parameters. [Default value = None]</p>
 </blockquote>
 <p><strong id="fluxmax">fluxmax</strong> : float</p>
 <blockquote>
 <p>Limiting flux value for selecting valid objects in the input image&#8217;s
 catalog.  If specified, this flux will serve as the upper limit of a
-range for selecting objects to use in matching with objects identified
-in the reference image.  If INDEF, all objects with fluxes brighter
-than the minimum specified in &#8216;fluxmin&#8217; will be used.  If both are
-set to INDEF, all objects will be used.</p>
+range for selecting objects to be used in matching with objects 
+identified in the reference image. If the value is set to INDEF, all 
+objects with fluxes brighter than the minimum specified in &#8216;fluxmin&#8217; 
+will be used. If both values are set to INDEF, all objects will be used. 
+[Default value = None]</p>
 </blockquote>
 <p><strong id="fluxmin">fluxmin</strong> : float</p>
 <blockquote>
 <p>Limiting flux value for selecting valid objects in the input image&#8217;s
-catalog.  If specified, this flux will serve as the lower limit
-of a range for selecting objects to use in matching with objects
-identified in the reference image.  If INDEF, all objects fainter
-than the limit specified by &#8216;fluxmax&#8217; will be used. If both are set
-to INDEF, all objects will be used.</p>
+catalog. If specified, this flux value will serve as the lower limit
+of a range for selecting objects to be used in matching with objects
+identified in the reference image. If the value is set to INDEF, all 
+objects fainter than the limit specified by &#8216;fluxmax&#8217; will be used. 
+If both values are set to INDEF, all objects will be used. 
+[Default value = None]</p>
 </blockquote>
-<p><strong id="fluxunits">fluxunits</strong> : {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;}</p>
+<p><strong id="fluxunits">fluxunits</strong> : str {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;}</p>
 <blockquote>
 <p>This allows the task to correctly interpret the flux limits specified
 by &#8216;fluxmax&#8217; and &#8216;fluxmin&#8217; when sorting the object list for trimming
-of the fainter objects.</p>
+of fainter objects. [Default value = &#8216;counts&#8217;]</p>
 </blockquote>
-<p><strong id="xyunits">xyunits</strong> : {&#8216;pixels&#8217;, &#8216;degrees&#8217;}</p>
+<p><strong id="xyunits">xyunits</strong> : str {&#8216;pixels&#8217;, &#8216;degrees&#8217;}</p>
 <blockquote>
-<p>Specifies whether the positions in this catalog are pixel positions which
-still need to be transformed to the sky or whether the positions are 
-sky positions already.</p>
+<p>Specifies whether the positions in this catalog are already sky pixel
+positions, or whether they need to be transformed to the sky. 
+[Default value = &#8216;pixels&#8217;]</p>
 </blockquote>
 <p><strong id="nbright">nbright</strong> : int</p>
 <blockquote>
-<p>Number of brightest objects to keep after sorting the full object list.
-If set to None, all objects will be used. [Default value = None]</p>
+<p>The number of brightest objects to keep after sorting the full object 
+list. If nbright is set equal to None, all objects will be used. 
+[Default value = None]</p>
 </blockquote>
 <p><strong id="refcat">refcat</strong> : str</p>
 <blockquote>
-<p>Name of external reference catalog file to use instead of the catalog
-extracted from one of the input images.</p>
+<p>Name of the external reference catalog file to be used in place of the 
+catalog extracted from one of the input images. [Default value = &#8216;&#8217;]</p>
 </blockquote>
 <p><strong id="refxcol">refxcol</strong> : int</p>
 <blockquote>
@@ -294,59 +317,67 @@ refcat. [Default value = 1]</p>
 <p>Column number of Dec in the external catalog file specified by the
 refcat. [Default value = 2]</p>
 </blockquote>
+<p><strong id="refxyunits">refxyunits</strong> : str {&#8216;pixels&#8217;,&#8217;degrees&#8217;}</p>
+<blockquote>
+<p>Units of sky positions. [Default value = &#8216;degrees&#8217;]</p>
+</blockquote>
 <p><strong id="rfluxcol">rfluxcol</strong> : int</p>
 <blockquote>
 <p>Column number of flux/magnitude values in the external catalog file
-specified by the refcat. [Default value = 3]</p>
+specified by the refcat. [Default value = None]</p>
 </blockquote>
 <p><strong id="rfluxmax">rfluxmax</strong> : float</p>
 <blockquote>
-<p>Limiting flux value for selecting valid objects in the external
-catalog.  If specified, this flux will serve as the upper limit of a
-range for selecting objects to use in matching with objects identified
-in the reference image.  If INDEF, all objects with fluxes brighter
-than the minimum specified in &#8216;rfluxmin&#8217; will be used.  If both are
-set to INDEF, all objects will be used.</p>
+<p>Limiting flux value used to select valid objects in the external
+catalog. If specified, the flux value will serve as the upper limit 
+of a range for selecting objects to be used in matching with objects 
+identified in the reference image. If the value is set to INDEF, 
+all objects with fluxes brighter than the minimum specified in 
+&#8216;rfluxmin&#8217; will be used. If both values are set to INDEF, all 
+objects will be used. [Default value = None]</p>
 </blockquote>
 <p><strong id="rfluxmin">rfluxmin</strong> : float</p>
 <blockquote>
-<p>Limiting flux value for selecting valid objects in the external
-catalog.  If specified, this flux will serve as the lower limit
-of a range for selecting objects to use in matching with objects
-identified in the reference image.  If INDEF, all objects fainter
-than the limit specified by &#8216;rfluxmax&#8217; will be used. If both are
-set to INDEF, all objects will be used.</p>
+<p>Limiting flux value used to select valid objects in the external
+catalog. If specified, the flux will serve as the lower limit
+of a range for selecting objects to be used in matching with objects
+identified in the reference image. If the value is set to INDEF, 
+all objects fainter than the limit specified by &#8216;rfluxmax&#8217; will be 
+used. If both values are set to INDEF, all objects will be used. 
+[Default value = None]</p>
 </blockquote>
 <p><strong id="rfluxunits">rfluxunits</strong> : {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;}</p>
 <blockquote>
 <p>This allows the task to correctly interpret the flux limits specified
 by &#8216;rfluxmax&#8217; and &#8216;rfluxmin&#8217; when sorting the object list for trimming
-of the fainter objects.</p>
+of fainter objects. [Default value = &#8216;mag&#8217;]</p>
 </blockquote>
 <p><strong id="refnbright">refnbright</strong> : int</p>
 <blockquote>
 <p>Number of brightest objects to keep after sorting the full object
-list.  If set to None, all objects will be used. Used in conjunction
-with refcat. [Default value = None]</p>
+list. If refnbright is set to None, all objects will be used. Used in 
+conjunction with refcat. [Default value = None]</p>
 </blockquote>
 <p><strong id="minobj">minobj</strong> : int</p>
 <blockquote>
 <p>Minimum number of identified objects from each input image to use
-in matching objects from other images.  [Default value = 15]</p>
+in matching objects from other images. [Default value = 15]</p>
 </blockquote>
-<p><strong id="nmatch">nmatch</strong> : int</p>
+<p><strong id="searchrad">searchrad</strong> : float</p>
 <blockquote>
-<p>The maximum number of reference and input coordinates used by the
-&#8216;triangles&#8217; pattern matching algorithm in <em class="xref py py-obj">xyxymatch</em>.  This parameter
-is passed directly to the IRAF task <em class="xref py py-obj">xyxymatch</em>.  If either list
-contains more coordinates than nmatch, the lists are subsampled.
-The value of this parameter should be kept small as the computation
-and memory requirements for the &#8216;triangles&#8217; algorithm depend on a high
-power of the lengths of the respective lists. [Default value = 30]</p>
+<p>The search radius for a match. [Default value = 1.0]</p>
 </blockquote>
-<p><strong id="algorithm">algorithm</strong> : {&#8216;tolerance&#8217;, &#8216;triangles&#8217;}</p>
+<p><strong id="searchunits">searchunits</strong> : str</p>
 <blockquote>
-<p>The matching algorithm used in <em class="xref py py-obj">xyxymatch</em>. [Default value = &#8216;tolerance&#8217;]</p>
+<p>Units for search radius. [Default value = &#8216;arcseconds&#8217;]</p>
+</blockquote>
+<p><strong id="use2dhist">use2dhist</strong> : bool</p>
+<blockquote>
+<p>Use 2d histogram to find initial offset? [Default value = Yes]</p>
+</blockquote>
+<p><strong id="see2dplot">see2dplot</strong> : bool</p>
+<blockquote>
+<p>See 2d histogram for initial offset? [Default value = No]</p>
 </blockquote>
 <p><strong id="tolerance">tolerance</strong> : float</p>
 <blockquote>
@@ -357,32 +388,44 @@ image with the reference image&#8217;s object list. [Default value = 1.0]</p>
 </blockquote>
 <p><strong id="separation">separation</strong> : float</p>
 <blockquote>
-<p>The  minimum  separation  for objects in the input and reference
-coordinate lists. Objects closer together than separation pixels
-are  removed from the input and reference coordinate lists prior
-to matching.  This parameter gets passed directly to <em class="xref py py-obj">xyxymatch</em> for
+<p>The  minimum  separation for objects in the input and reference
+coordinate lists. Objects closer together than &#8216;separation&#8217; pixels
+are removed from the input and reference coordinate lists prior
+to matching. This parameter gets passed directly to <em class="xref py py-obj">xyxymatch</em> for
 use in matching the object lists from each image with the reference
 image&#8217;s object list. [Default value = 0.0]</p>
 </blockquote>
 <p><strong id="xoffset">xoffset</strong> : float</p>
 <blockquote>
 <p>Initial estimate for the offset in X between the images and the
-reference frame.  If None, no offset will be assumed in matching
-sources in &#8216;xyxymatch&#8217;.  This offset will be used for all input
-images provided.</p>
+reference frame. This offset will be used for all input images 
+provided. If the parameter value is set to None, no offset will 
+be assumed in matching sources in &#8216;xyxymatch&#8217;. [Default value = 0.0]</p>
 </blockquote>
 <p><strong id="yoffset">yoffset</strong> : float</p>
 <blockquote>
 <p>Initial estimate for the offset in Y between the images and the
-reference frame.  If None, no offset will be assumed in matching
-sources in &#8216;xyxymatch&#8217;.  This offset will be used for all input
-images provided.</p>
+reference frame. This offset will be used for all input images 
+provided.If the parameter value is set to None, no offset will 
+be assumed in matching sources in &#8216;xyxymatch&#8217;. [Default value = 0.0]</p>
 </blockquote>
-<p><strong id="fitgeometry">fitgeometry</strong> : {&#8216;shift&#8217;, &#8216;rscale&#8217;, &#8216;general&#8217;}</p>
+<p><strong id="fitgeometry">fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;, &#8216;general&#8217;}</p>
+<blockquote>
+<p>The fitting geometry to be used in fitting the matched object lists.
+This parameter is used in fitting the offsets, rotations and/or scale
+changes from the matched object lists. [Default value = &#8216;rscale&#8217;]</p>
+</blockquote>
+<p><strong id="residplot">residplot</strong> : str {&#8216;No plot&#8217;, &#8216;vector&#8217;, &#8216;residuals&#8217;}</p>
+<blockquote>
+<p>Plot residuals from fit?  [Default value = &#8216;No plot&#8217;]</p>
+</blockquote>
+<p><strong id="nclip">nclip</strong> : int</p>
+<blockquote>
+<p>Number of clipping iterations in fit. [Default value = 0]</p>
+</blockquote>
+<p><strong id="sigma">sigma</strong> : float</p>
 <blockquote class="last">
-<p>The fitting geometry to be used for fitting the matched object lists.
-This parameter gets used in fitting the offsets, rotations and/or
-scale changes from the matched object lists.</p>
+<p>Clipping limit in sigma units. [Default value = 3.0]</p>
 </blockquote>
 </td>
 </tr>
@@ -393,8 +436,8 @@ scale changes from the matched object lists.</p>
 <p class="last"><a class="reference internal" href="astrodrizzle.html#module-astrodrizzle" title="astrodrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></tt></a></p>
 </div>
 <p class="rubric">Notes</p>
-<p>Tweakreg supports the use of calibrated, distorted images (such as
-FLT images for ACS and WFC3, or _c0m.fits images for WFPC2) as input images.
+<p>Tweakreg supports the use of calibrated, distorted images (such as FLT
+images for ACS and WFC3, or _c0m.fits images for WFPC2) as input images.
 All coordinates for sources derived from these images (either by this task
 or as provided by the user directly) will be corrected for distortion using
 the distortion model information specified in each image&#8217;s header. This 
@@ -402,14 +445,16 @@ eliminates the need to run &#8216;astrodrizzle&#8217; on the input images prior 
 running <a class="reference internal" href="#tweakreg">tweakreg</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">All calibrated input images must have been updated using &#8216;updatewcs&#8217; from the STWCS package, or as run by &#8216;astrodrizzle&#8217;, to include the full distortion model in the header.</p>
+<p class="last">All calibrated input images must have been updated using 
+&#8216;updatewcs&#8217; from the STWCS package, or as run by &#8216;astrodrizzle&#8217;, 
+to include the full distortion model in the header.</p>
 </div>
-<p>This task will use catalogs and catalog-matching based on the &#8216;xyxymatch&#8217; 
-algorithm to determine the offset between the input images.  The primary
+<p>This task will use catalogs, and catalog-matching, based on the &#8216;xyxymatch&#8217; 
+algorithm to determine the offset between the input images. The primary
 mode of operation will be to extract a catalog of source positions from 
-each input image using either a DAOFIND-like algorithm or SExtractor (if
-the user has it installed).  Alternatively, the user can provide their
-catalogs of source positions derived from <strong>each input chip</strong>.</p>
+each input image using either a &#8216;DAOFIND-like&#8217; algorithm or SExtractor (if
+the user has SExtractor installed). Alternatively, the user can provide 
+their catalogs of source positions derived from <strong>each input chip</strong>.</p>
 <p>The reference frame will be defined either by:</p>
 <blockquote>
 <ul>
@@ -419,38 +464,40 @@ catalogs of source positions derived from <strong>each input chip</strong>.</p>
 </li>
 <li><dl class="first docutils">
 <dt>a catalog of undistorted sky positions (RA/Dec) and fluxes </dt>
-<dd><p class="first last">provided by the user</p>
+<dd><p class="first last">provided by the user.</p>
 </dd>
 </dl>
 </li>
 </ul>
 </blockquote>
-<p>The sources from each chip will be combined into a single catalog of 
-undistorted positions for that observation when the distortion model
-gets applied to the distorted input positions.</p>
+<p>For a given observation, the distortion model is applied to all distorted
+input positions, and the sources from each chip are then combined into a
+single catalog of undistorted positions.</p>
 <p>The undistorted positions for each observation then get passed to 
 &#8216;xyxymatch&#8217; for matching to objects from the reference catalog.</p>
-<p>The source lists from each image generally will include cosmic-rays as
-detected sources, sometimes significantly confusing object identification
-between images. Long-exposure observations often have more cosmic-ray events
-that source objects, so weeding them out in those cases would improve the
-efficiency of identifying common sources between images.  One such method for
-trimming potentially bad or confusing sources from each source list would be
-to set a flux limit and only use sources above that limit.  The fluxes
-reported in the default source object lists are given as 
-magnitude values.  Thus, setting a limit based on the magnitudes
-for the reference image as the <em>fluxmax</em> or <em>fluxmin</em> parameters and setting the
-<em>ascend</em> parameter to <em>True</em> would allow the source lists to be trimmed
-of all sources fainter than the provided limit.  This new trimmed source list
-would then be used in matching sources between images and for the final
-fitting for the shifts.</p>
-<p>A fit then gets performed on the matched set of positions between the
-input and the reference to produce the &#8216;shiftfile&#8217;.  If the user is
-confident the solution will be correct, the header of each input image
-can be updated directly with the fit derived for that image.  Otherwise,
-the &#8216;shiftfile&#8217; can be passed to the astrodrizzle for aligning the images.</p>
+<p>The source lists from each image will generally include cosmic-rays as
+detected sources, which can at times significantly confuse object 
+identification between images. Observations that include long exposures
+often have more cosmic-ray events than source objects. As such, isolating
+the cosmic-ray events in those cases would significantly improve the
+efficiency of common source identification between images. One such method 
+for trimming potential false detections from each source list would be
+to set a flux limit to exclude detections below that limit. As the fluxes
+reported in the default source object lists are provided as magnitude
+values, setting the <em>fluxmax</em> or <em>fluxmin</em> parameter value to a magnitude-
+based limit, and then setting the <em>ascend</em> parameter to <em>True</em>, will allow
+for the creations of catalogs trimmed of all sources fainter than the 
+provided limit. The trimmed source list can then be used in matching 
+sources between images and in establishing the final fitting for the shifts.</p>
+<p>A fit can then be performed on the matched set of positions between the
+input and the reference to produce the &#8216;shiftfile&#8217;. If the user is
+confident that the solution will be correct, the header of each input image
+can be updated directly with the fit derived for that image. Otherwise,
+the &#8216;shiftfile&#8217; can be passed to AstroDrizzle for aligning the images.</p>
 <p class="rubric">Examples</p>
-<p>This task can be run from either the TEAL GUI or from the Python command-line. These examples illustrate the syntax that can be used to run the task in a couple of common modes.</p>
+<p>This task can be run from either the TEAL GUI or from the Python command-line. 
+These examples illustrate the syntax that can be used to run the task in a 
+couple of common modes.</p>
 <ol class="arabic">
 <li><p class="first">Run the task using the TEAL GUI under PyRAF:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">astrodrizzle</span> 
@@ -458,19 +505,28 @@ the &#8216;shiftfile&#8217; can be passed to the astrodrizzle for aligning the i
 </pre></div>
 </div>
 </li>
-<li><p class="first">Find only the shifts(no rotation or scale) for a set of calibrated ACS (_flt.fits) images using the built-in DAOFIND-like source finding algorithm with sources &gt;10 sigma above the background without using the TEAL GUI:</p>
+<li><p class="first">Find only the shifts(no rotation or scale) for a set of calibrated ACS 
+(_flt.fits) images using the built-in DAOFIND-like source finding 
+algorithm with sources &gt;10 sigma above the background without using the 
+TEAL GUI:</p>
 </li>
 </ol>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">astrodrizzle</span> <span class="kn">import</span> <span class="n">tweakreg</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&quot;*flt.fits&quot;</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">findmode</span><span class="o">=</span><span class="s">&quot;imagefind&quot;</span><span class="p">,</span> \
-<span class="go">    editipars=False, computesig=True, threshold=10.0, fitgeometry=&quot;shift&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&#39;\*flt.fits&#39;</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">findmode</span><span class="o">=</span><span class="s">&#39;imagefind&#39;</span><span class="p">,</span> \
+<span class="go">    editipars=False, computesig=True, threshold=10.0, fitgeometry=&#39;shift&#39;)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="astrodrizzle.tweakreg.getHelpAsString">
-<tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called __taskname__.help</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodrizzle.tweakreg.help">
+<tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.help" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -506,7 +562,7 @@ This task replaces &#8216;tweakshifts&#8217;</p>
         <li class="right" >
           <a href="mdztab.html" title="MultiDrizzle Reference Table"
              >previous</a> |</li>
-        <li><a href="index.html">astrodrizzle v4.0.6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
