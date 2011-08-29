@@ -197,12 +197,12 @@ class WFC3IRInputImage(WFC3InputImage):
             else:
                 print "Input %s[%s,%d] already in units of ELECTRONS"%(self._filename,self.scienceExt,chip._chip) 
                 
-            chip._effGain = chip._gain #1.
+            chip._effGain = 1.0# chip._gain #1.
             chip._conversionFactor = conversionFactor #1.
 
         _handle.close()
             
-        self._effGain=conversionFactor #1.0
+        self._effGain= 1.0 #conversionFactor #1.0
 
     def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into

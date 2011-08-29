@@ -153,7 +153,7 @@ def _drizCr(sciImage,paramDict,saveFile=True):
                 return IOError
 
             #make the derivative blot image
-            __blotData=__blotImage[0].data #simple fits
+            __blotData=__blotImage[0].data*scienceChip._conversionFactor #simple fits
             __blotDeriv = quickDeriv.qderiv(__blotData)
             __blotImage.close()
 
@@ -177,7 +177,7 @@ def _drizCr(sciImage,paramDict,saveFile=True):
 
             __gain=scienceChip._effGain
             __rn=scienceChip._rdnoise
-            __backg = scienceChip.subtractedSky
+            __backg = scienceChip.subtractedSky*scienceChip._conversionFactor
 
             # Define output cosmic ray mask to populate
             __crMask = np.zeros(__inputImage.shape,dtype=np.uint8)

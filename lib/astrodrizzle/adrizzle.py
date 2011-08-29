@@ -661,7 +661,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Apply sky subtraction and unit conversion to input array
     _insci = _sciext.data - chip.subtractedSky
     _insci *= chip._conversionFactor
-
+    
     # Set additional parameters needed by 'drizzle'
     _in_units = chip.in_units.lower()
     if _in_units == 'cps':

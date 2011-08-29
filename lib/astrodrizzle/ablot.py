@@ -269,8 +269,8 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 skyval = chip.subtractedSky
             else:
                 skyval = paramDict['blot_skyval']
-            _outsci += skyval
             _outsci /= chip._conversionFactor
+            _outsci += skyval
             
             # Write output Numpy objects to a PyFITS file
             # Blotting only occurs from a drizzled SCI extension
