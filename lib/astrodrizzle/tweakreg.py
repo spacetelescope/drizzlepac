@@ -6,6 +6,13 @@ from stsci.tools import parseinput, teal
 
 import util
 
+# __version__ and __vdate__ are defined here, prior to the importing
+# of the modules below, so that those modules can use the values 
+# from these variable definitions, allowing the values to be designated 
+# in one location only.
+__version__ = '0.6.2'
+__vdate__ = '22-Aug-2011'
+
 import tweakutils
 import imgclasses
 import catalogs
@@ -15,11 +22,7 @@ import imagefindpars
 import sextractor
 from sextractor import is_installed
     
-__version__ = '0.6.2'
-__vdate__ = '22-Aug-2011'
-
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
-
 
 # 
 # Interfaces used by TEAL
