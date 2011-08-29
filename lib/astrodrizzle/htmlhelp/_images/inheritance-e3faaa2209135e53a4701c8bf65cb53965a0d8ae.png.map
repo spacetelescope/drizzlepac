@@ -1,0 +1,6 @@
+<map id="inheritanceeb13e9de90" name="inheritanceeb13e9de90">
+<area shape="rect" id="node1" href="#astrodrizzle.catalogs.Catalog" title="catalogs.Catalog" alt="" coords="7,56,140,83"/>
+<area shape="rect" id="node2" href="#astrodrizzle.catalogs.UserCatalog" title="catalogs.UserCatalog" alt="" coords="205,5,371,32"/>
+<area shape="rect" id="node8" href="#astrodrizzle.catalogs.ImageCatalog" title="catalogs.ImageCatalog" alt="" coords="200,107,376,133"/>
+<area shape="rect" id="node4" href="#astrodrizzle.catalogs.RefCatalog" title="catalogs.RefCatalog" alt="" coords="435,5,592,32"/>
+</map>

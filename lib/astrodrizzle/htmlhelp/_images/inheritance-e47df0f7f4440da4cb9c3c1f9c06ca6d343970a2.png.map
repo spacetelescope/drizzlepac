@@ -1,0 +1,21 @@
+<map id="inheritance9969600b17" name="inheritance9969600b17">
+<area shape="rect" id="node1" href="nicmosobjects.html#astrodrizzle.nicmosData.NIC2InputImage" title="nicmosData.NIC2InputImage" alt="" coords="600,4,756,23"/>
+<area shape="rect" id="node2" href="nicmosobjects.html#astrodrizzle.nicmosData.NICMOSInputImage" title="nicmosData.NICMOSInputImage" alt="" coords="386,59,558,78"/>
+<area shape="rect" id="node7" href="nicmosobjects.html#astrodrizzle.nicmosData.NIC1InputImage" title="nicmosData.NIC1InputImage" alt="" coords="600,41,756,60"/>
+<area shape="rect" id="node23" href="nicmosobjects.html#astrodrizzle.nicmosData.NIC3InputImage" title="nicmosData.NIC3InputImage" alt="" coords="600,77,756,96"/>
+<area shape="rect" id="node4" href="baseobjects.html#astrodrizzle.imageObject.imageObject" title="imageObject.imageObject" alt="" coords="207,242,350,261"/>
+<area shape="rect" id="node9" href="acsobjects.html#astrodrizzle.acsData.ACSInputImage" title="acsData.ACSInputImage" alt="" coords="405,169,538,188"/>
+<area shape="rect" id="node12" href="wfc3objects.html#astrodrizzle.wfc3Data.WFC3InputImage" title="wfc3Data.WFC3InputImage" alt="" coords="398,242,546,261"/>
+<area shape="rect" id="node21" href="stisobjects.html#astrodrizzle.stisData.STISInputImage" title="stisData.STISInputImage" alt="" coords="404,297,539,316"/>
+<area shape="rect" id="node34" href="wfpc2objects.html#astrodrizzle.wfpc2Data.WFPC2InputImage" title="wfpc2Data.WFPC2InputImage" alt="" coords="392,334,552,353"/>
+<area shape="rect" id="node5" href="baseobjects.html#astrodrizzle.imageObject.baseImageObject" title="imageObject.baseImageObject" alt="" coords="5,261,171,280"/>
+<area shape="rect" id="node14" href="baseobjects.html#astrodrizzle.imageObject.WCSObject" title="imageObject.WCSObject" alt="" coords="211,279,346,298"/>
+<area shape="rect" id="node18" href="acsobjects.html#astrodrizzle.acsData.WFCInputImage" title="acsData.WFCInputImage" alt="" coords="611,114,746,133"/>
+<area shape="rect" id="node25" href="acsobjects.html#astrodrizzle.acsData.HRCInputImage" title="acsData.HRCInputImage" alt="" coords="611,151,746,170"/>
+<area shape="rect" id="node32" href="acsobjects.html#astrodrizzle.acsData.SBCInputImage" title="acsData.SBCInputImage" alt="" coords="612,187,745,206"/>
+<area shape="rect" id="node11" href="wfc3objects.html#astrodrizzle.wfc3Data.WFC3UVISInputImage" title="wfc3Data.WFC3UVISInputImage" alt="" coords="592,224,764,243"/>
+<area shape="rect" id="node16" href="wfc3objects.html#astrodrizzle.wfc3Data.WFC3IRInputImage" title="wfc3Data.WFC3IRInputImage" alt="" coords="599,261,757,280"/>
+<area shape="rect" id="node20" href="stisobjects.html#astrodrizzle.stisData.CCDInputImage" title="stisData.CCDInputImage" alt="" coords="611,297,746,316"/>
+<area shape="rect" id="node28" href="stisobjects.html#astrodrizzle.stisData.FUVInputImage" title="stisData.FUVInputImage" alt="" coords="612,334,745,353"/>
+<area shape="rect" id="node30" href="stisobjects.html#astrodrizzle.stisData.NUVInputImage" title="stisData.NUVInputImage" alt="" coords="611,370,746,390"/>
+</map>
