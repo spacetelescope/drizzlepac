@@ -279,14 +279,24 @@ def run(configobj=None,editpars=False):
         local=configobj['local'],interactive=configobj['interactive'],
         wcsupdate=configobj['wcsupdate'])
 
-def getHelpAsString():
-    helpString = 'updatenpol Version '+__version__+__vdate__+'\n'
-    helpString += update.__doc__+'\n'
+def getHelpAsString(docstring=False):
+#    helpString = 'updatenpol Version '+__version__+__vdate__+'\n'
+#    helpString += update.__doc__+'\n'
+
+    install_dir = os.path.dirname(__file__)
+    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
+    helpfile = os.path.join(install_dir,__taskname__+'.help')
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(__taskname__,__file__)
+    else:
+        helpString = 'file://'+htmlfile
 
     return helpString
 
 def help():
-    print getHelpAsString()
+    print getHelpAsString(docstring=True)
     
 def main():
 
