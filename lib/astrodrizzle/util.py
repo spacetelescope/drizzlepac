@@ -232,8 +232,6 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated 
         with user-specified values from input_dict.
         
-        If configObj already defined, it will simply 
-        return configObj unchanged. 
     """    
     if configObj is None:
         # Start by grabbing the default values without using the GUI
@@ -241,19 +239,19 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # all parameters and their last saved values
         configObj = teal.teal(taskname,loadOnly=True)
         
-        # merge in the user values for this run
-        # this, though, does not save the results for use later
-        if input_dict not in [None,{}] and configObj not in [None, {}]:
-            mergeConfigObj(configObj,input_dict)
-            # Update the input .cfg file with the updated parameter values 
-            configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
-            configObj.write()
-            
-        if not loadOnly: 
-        # We want to run the GUI AFTER merging in any parameters 
-        # specified by the user on the command-line and provided in 
-        # input_dict
-            configObj = teal.teal(configObj,loadOnly=False)
+    # merge in the user values for this run
+    # this, though, does not save the results for use later
+    if input_dict not in [None,{}]:# and configObj not in [None, {}]:
+        mergeConfigObj(configObj,input_dict)
+        # Update the input .cfg file with the updated parameter values 
+        configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
+        configObj.write()
+        
+    if not loadOnly: 
+    # We want to run the GUI AFTER merging in any parameters 
+    # specified by the user on the command-line and provided in 
+    # input_dict
+        configObj = teal.teal(configObj,loadOnly=False)
     
     return configObj
                     
