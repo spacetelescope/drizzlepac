@@ -317,7 +317,9 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         # Force 'build' to always be False, so that this step always generates
         # simple FITS files as output for compatibility with 'createMedian'
         paramDict['build'] = False
-
+        # Record whether or not intermediate files should be deleted when finished
+        paramDict['clean'] = configObj['STATE OF INPUT FILES']['clean']
+    
         print "\nUSER INPUT PARAMETERS for Separate Drizzle Step:"
         util.printParams(paramDict)
 
@@ -351,6 +353,8 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
         # for single-drizzle step when called from the top-level.
         if build is None:
             build = paramDict['build']
+        # Record whether or not intermediate files should be deleted when finished
+        paramDict['clean'] = configObj['STATE OF INPUT FILES']['clean']
 
         print "\nUSER INPUT PARAMETERS for Final Drizzle Step:"
         util.printParams(paramDict)
@@ -562,7 +566,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             p = multiprocessing.Process(target=run_driz_img,
                 args=(img,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
-                      _chipIdx,None,None,None,None,wcsmap))
+                      _chipIdx,None,None,None,_hdrlist,wcsmap))
 
             subprocs.append(p)
             p.start()
@@ -748,7 +752,17 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _inwht = img.buildIVMmask(chip._chip,dqarr,pix_ratio)
     else: # wht_type == 'EXP'
         _inwht = dqarr.astype(np.float32)
-
+    if not(paramDict['clean']):
+        # Write out mask file if 'clean' has been turned off
+        if single:
+            _outmaskname = chip.outputNames['singleDrizMask']
+        else:
+            _outmaskname = chip.outputNames['finalMask']
+        if os.path.exists(_outmaskname): os.remove(_outmaskname)
+        pimg = pyfits.PrimaryHDU(data=_inwht).writeto(_outmaskname)
+        del pimg
+        print 'Writing out mask file: ',_outmaskname
+        
     # New interface to performing the drizzle operation on a single chip/image
     _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
                 _expin, _in_units, chip._wtscl,
@@ -762,9 +776,12 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     chip.outputNames['driz_version'] = _vers
     chip.outputNames['driz_wcskey'] = paramDict['wcskey']
     outputvals = chip.outputNames.copy()
+    
     # Update entries for names/values based on final output
     outputvals.update(img.outputValues)
-    outputvals.update(img.outputNames)
+    for kw in img.outputNames:
+        if kw[:3] == 'out':
+            outputvals[kw] = img.outputNames[kw]
     _hdrlist.append(outputvals)
 
     if doWrite:
