@@ -251,6 +251,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         loadOnly : bool
             Setting 'loadOnly' to False causes the TEAL GUI to start allowing the
             user to edit the values further and then run the task if desired.
+            
     """    
     if configObj is None:
         # Start by grabbing the default values without using the GUI
