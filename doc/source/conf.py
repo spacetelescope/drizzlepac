@@ -13,7 +13,7 @@
 
 import sys, os
 
-from stsci_sphinxext.conf import *
+from stsci.sphinxext.conf import *
 
 # Check Sphinx version
 import sphinx
