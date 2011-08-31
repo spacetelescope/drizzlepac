@@ -31,4 +31,4 @@ def run(configobj=None):
 def help():
     print getHelpAsString(docstring=True)
 
-run.__doc__ += getHelpAsString()
+run.__doc__ += getHelpAsString(docstring=True)

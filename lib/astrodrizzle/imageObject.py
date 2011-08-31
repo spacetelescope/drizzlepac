@@ -499,7 +499,8 @@ class baseImageObject:
         """
         Notes
         =====
-        Return an array representing the dark image for the detector.
+        Return an array representing the dark image for the 
+        detector.
         
         :units: electrons
         

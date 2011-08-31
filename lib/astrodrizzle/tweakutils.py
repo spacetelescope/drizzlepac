@@ -72,6 +72,34 @@ def get_configobj_root(configobj):
 # Object finding algorithm based on NDIMAGE routines
 def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5):
     """ Source finding algorithm based on NDIMAGE routines
+    
+        This function provides a simple replacement for the DAOFIND task.
+        
+        Parameters
+        ----------
+        array : arr
+            Input image as numpy array
+        hmin  : float
+            Limit for source detection in pixel values
+        fwhm  : float
+            Full-width half-maximum of the PSF in the image
+        minpix : int
+            Minimum number of pixels for any valid source
+        sharplim : tuple
+            [Not used at this time]
+        roundlim : tuple
+            [Not used at this time]
+        
+        Returns
+        -------
+        x  : arr
+            Array of detected source X positions (in array coordinates, 0-based)
+        y  : arr
+            Array of detected source Y positions (in array coordinates, 0-based)
+        flux : arr
+            Array of detected source fluxes in pixel values
+        id  : arr
+            Array of detected source ID numbers
     """
     #cimg,c1 = idlgauss_convolve(array,sigma)
     #cimg = np.abs(ndimage.gaussian_laplace(array,fwhm))
@@ -110,11 +138,35 @@ def isfloat(value):
 
 def radec_hmstodd(ra,dec):
     """ Function to convert HMS values into decimal degrees.
-        Formats supported:
+        
+        This function relies on the astrolib.coords package to perform the
+        conversion to decimal degrees.  
+        
+        Parameters
+        ----------
+        ra  : list or array
+            List or array of input RA positions 
+        dec : list or array
+            List or array of input Dec positions
+            
+        Returns
+        -------
+        pos : arr
+            Array of RA,Dec positions in decimal degrees
+            
+        Notes
+        -----
+        Formats of ra and dec inputs supported::
+        
             ["nn","nn","nn.nn"]
             "nn nn nn.nnn"
             "nn:nn:nn.nn"
             "nnH nnM nn.nnS" or "nnD nnM nn.nnS"
+        
+        See Also
+        --------
+        astrolib.coords
+        
     """
     hmstrans = string.maketrans(string.letters,' '*len(string.letters))
 
@@ -143,14 +195,30 @@ def radec_hmstodd(ra,dec):
 
 def parse_colname(colname):
     """ Common function to interpret input column names provided by the user.
-    This function will understand the following inputs:
-        '1,2,3' or   'c1,c2,c3' or ['c1','c2','c3']
-        '1-3'   or   'c1-c3'
-        '1:3'   or   'c1:c3'
-        '1 2 3' or   'c1 c2 c3'
-        '1'     or   'c1'
-        1
-    The return value will be a list of strings.
+    
+        This function translates column specification provided by the user 
+        into a column number.
+
+        Notes
+        -----
+        This function will understand the following inputs::
+        
+            '1,2,3' or   'c1,c2,c3' or ['c1','c2','c3']
+            '1-3'   or   'c1-c3'
+            '1:3'   or   'c1:c3'
+            '1 2 3' or   'c1 c2 c3'
+            '1'     or   'c1'
+            1
+
+        Parameters
+        ----------
+        colname :
+            Column name or names to be interpreted
+        
+        Returns
+        -------
+        cols : list
+            The return value will be a list of strings.
 
     """
     if isinstance(colname,list):
@@ -189,6 +257,22 @@ def parse_colname(colname):
 def readcols(infile, cols=None):
     """ Function which reads specified columns from either FITS tables or
         ASCII files
+
+        This function reads in the columns specified by the user into numpy arrays
+        regardless of the format of the input table (ASCII or FITS table).
+        
+        Parameters
+        ----------
+        infile : string
+            Filename of the input file 
+        cols   : string or list of strings
+            Columns to be read into arrays
+        
+        Returns
+        -------
+        outarr : array
+            Numpy array or arrays of columns from the table
+    
     """
     if infile.find('.fits') > 0:
         outarr = read_FITS_cols(infile,cols=cols)
@@ -225,15 +309,23 @@ def read_FITS_cols(infile,cols=None):
 
 def read_ASCII_cols(infile,cols=[1,2,3]):
     """ Interpret input ASCII file to return arrays for specified columns.
-    The specification of the columns should be expected to have lists for
-    each 'column', with all columns in each list combined into a single entry.
-    For example: 
-        cols = ['1,2,3','4,5,6',7]
-    where '1,2,3' represent the X/RA values, '4,5,6' represent the Y/Dec values
-    and 7 represents the flux value for a total of 3 requested columns of data
-    to be returned.
     
-    The return value will be a list of numpy arrays, one for each 'column'.
+        Notes
+        -----
+        The specification of the columns should be expected to have lists for
+        each 'column', with all columns in each list combined into a single entry.
+        For example::
+        
+            cols = ['1,2,3','4,5,6',7]
+
+        where '1,2,3' represent the X/RA values, '4,5,6' represent the Y/Dec values
+        and 7 represents the flux value for a total of 3 requested columns of data
+        to be returned.
+        
+        Returns
+        -------
+        outarr : list of arrays
+            The return value will be a list of numpy arrays, one for each 'column'.
     """
     # build dictionary representing format of each row
     # Format of dictionary: {'colname':col_number,...}
@@ -319,93 +411,6 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
         col = np.array(col)
     return outarr
     
-def read_ASCII_cols_old(infile,cols=[1,2]):
-    """ Copied from 'reftools.wtraxyutils'.
-        Input column numbers must be 1-based, or 'c'+1-based ('c1','c2',...')
-    """
-    colnums = []
-    if isinstance(cols[0],str) and cols[0][0] != 'c':
-        fin = open(infile,'r')
-        for l in fin.readlines(): # interpret each line from catalog file
-            if l[0] == '#':
-                if cols[0] in l:
-                    print 'Parsing line for column numbers'
-                    print l
-                # Parse colnames directly from column headers
-                    lspl = l.split()
-                    for c in cols:
-                        colnums.append(lspl.index(c)-1)
-            else:
-                break
-        fin.close()
-    if len(colnums) == 0:
-        # Convert input column names into column numbers 
-        for colname in cols:
-            cnum = None
-            if colname not in [None,""," ","INDEF"]:
-                subcols = parse_colname(colname)
-                scols = []
-                for s in subcols:
-                    scols.append(int(s)-1)
-                colnums.append(scols)
-        c = []
-        if (colnums[1] - colnums[0]) > 1:
-            cnum = range(colnums[0],colnums[1])
-            c.extend(cnum)
-            cnum = range(colnums[1],colnums[1]+(colnums[1]-colnums[0]))
-            c.extend(cnum)
-            colnums = c
-
-    numcols = len(colnums)
-    outarr = [[],[]] # initialize output result
-
-    # Open catalog file
-    fin = open(infile,'r')
-    for l in fin.readlines(): # interpret each line from catalog file
-        if l[0] == '#':
-            continue
-        l = l.strip()
-        if len(l) == 0 or len(l.split()) < len(colnums) or (len(l) > 0 and l[0] == '#' or (l.find("INDEF") > -1)): continue
-        lspl = l.split()
-        nsplit = len(lspl)
-
-        ra=None
-        dec=None
-
-        if lspl[colnums[0]].find(':') > 0:
-            radd,decdd = radec_hmstodd(lspl[colnums[0]],lspl[colnums[1]])
-            outarr[0].append(radd)
-            outarr[1].append(decdd)
-        else:
-
-            for c,n in zip(colnums,range(numcols)):
-                if numcols == 2:
-                    if isfloat(lspl[c]):
-                        cval = float(lspl[c])
-                    else:
-                        cval = lspl[c]
-                    outarr[n].append(cval)
-
-                elif ra is None:
-                    ra = ''
-                    for i in range(3):
-                        ra += lspl[c+i]+' '
-
-                elif dec is None:
-                    dec = ''
-                    for j in range(3): dec += lspl[c+i+j]+' '
-                    radd,decdd = radec_hmstodd(ra,dec)
-                    outarr[1].append(decdd)
-                    outarr[0].append(radd)
-                    break
-
-    fin.close()
-
-    for n in range(2):
-        outarr[n] = np.array(outarr[n])
-
-    return outarr
-
 def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     """ Write out a shiftfile for a given list of input Image class objects
     """
@@ -440,11 +445,10 @@ def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     print 'Writing out shiftfile :',filename
 
 def createWcsHDU(wcs):
-    """ Generate a WCS header object that can be used to
-        populate a reference WCS HDU.
+    """ Generate a WCS header object that can be used to populate a reference WCS HDU.
 
-        For most applications,
-        stwcs.wcsutil.HSTWCS.wcs2header() will work just as well.
+        For most applications, stwcs.wcsutil.HSTWCS.wcs2header() 
+        will work just as well.
     """
 
     hdu = pyfits.ImageHDU()
@@ -513,9 +517,30 @@ def idlgauss_convolve(image,fwhm):
     return h,c1
 
 def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
-    """ Computes the 2D Gaussian with size n1*n2.
-        Sigma_x and sigma_y are the stddev of the Gaussian functions.
-        The kernel will be normalized to a sum of 1.
+    """ Computes the 2D Gaussian with size nx*ny.
+    
+        Parameters
+        ----------
+        nx : int
+        ny : int [Default: None]
+            Size of output array for the generated Gaussian. If ny == None,
+            output will be an array nx X nx pixels. 
+
+        fwhm : float [Default: 1.0]
+            Full-width, half-maximum of the Gaussian to be generated 
+
+        sigma_x : float [Default:  None]
+        sigma_y : float [Default:  None]
+            Sigma_x and sigma_y are the stddev of the Gaussian functions.
+
+        zero_norm : bool [Default:  False]
+            The kernel will be normalized to a sum of 1 when True.
+        
+        Returns
+        -------
+        gauss_arr : array
+            A numpy array with the generated gaussian function
+
     """
 
     if ny == None: ny = nx
@@ -556,7 +581,64 @@ def gauss(x,sigma):
 def make_vector_plot(coordfile,columns=[0,1,2,3],data=None,title=None, axes=None, every=1,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,append=False,linfit=False,rms=True):
-    """ Convert a XYXYMATCH file into a vector plot. """
+    """ Convert a XYXYMATCH file into a vector plot or set of residuals plots.
+    
+        This function provides a single interface for generating either a vector
+        plot of residuals or a set of 4 plots showing residuals.  The data being
+        plotted can also be adjusted for a linear fit on-the-fly.  
+        
+        Parameters
+        ----------
+        coordfile : string
+            Name of file with matched sets of coordinates. This input file can
+            be a file compatible for use with IRAF's geomap. 
+        columns : list [Default: [0,1,2,3]]
+            Column numbers for the X,Y positions from each image
+        data : list of arrays
+            If specified, this can be used to input matched data directly
+        title : string
+            Title to be used for the generated plot
+        axes : list
+            List of X and Y min/max values to customize the plot axes
+        every : int [Default: 1]
+            Slice value for the data to be plotted
+        limit : float
+            Radial offset limit for selecting which sources are included in the plot
+        xlower : float
+        ylower : float
+            Limit in X and/or Y offset for selecting which sources are included in the plot
+        output : string
+            Filename of output file for generated plot
+        headl : int [Default: 4]
+            Length of arrow head to be used in vector plot
+        headw : int [Default: 3]
+            Width of arrow head to be used in vector plot
+        xsh : float
+        ysh : float
+            Shift in X and Y from linear fit to be applied to source positions 
+            from the first image
+        scale : float
+            Scale from linear fit to be applied to source positions from the 
+            first image
+        fit : array
+            Array of linear coefficients for rotation (and scale?) in X and Y from 
+            a linear fit to be applied to source positions from the first image
+        vector : bool [Default: True]
+            Specifies whether or not to generate a vector plot. If False, task
+            will generate a set of 4 residuals plots instead
+        textscale : int [Default: 5]
+            Scale factor for text used for labelling the generated plot
+        append : bool [Default: False]
+            If True, will overplot new plot on any pre-existing plot
+        linfit : bool [Default: False]
+            If True, a linear fit to the residuals will be generated and 
+            added to the generated residuals plots
+        rms : bool [Default: True]
+            Specifies whether or not to report the RMS of the residuals as a
+            label on the generated plot(s).
+        
+    
+    """
     if data is None:
         data = readcols(coordfile,cols=columns)
 

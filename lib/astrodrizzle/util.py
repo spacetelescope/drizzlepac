@@ -231,14 +231,42 @@ def removeFileSafely(filename,clobber=True):
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated 
         with user-specified values from input_dict.
-        
+
+        Parameters
+        ----------
+        taskname : string
+            Name of task to load into TEAL 
+            
+        configObj : string
+            The valid values for 'configObj' would be::
+
+                None                      - loads last saved user .cfg file
+                'defaults'                - loads task default .cfg file
+                name of .cfg file (string)- loads user-specified .cfg file
+
+        input_dict : dict
+            Set of parameters and values specified by user to be different from
+            what gets loaded in from the .cfg file for the task
+
+        loadOnly : bool
+            Setting 'loadOnly' to False causes the TEAL GUI to start allowing the
+            user to edit the values further and then run the task if desired.
     """    
     if configObj is None:
         # Start by grabbing the default values without using the GUI
         # This insures that all subsequent use of the configObj includes
         # all parameters and their last saved values
-        configObj = teal.teal(taskname,loadOnly=True)
-        
+        configObj = teal.load(taskname)
+    elif configObj.lower().strip() == 'defaults':
+        # Load task default .cfg file with all default values
+        configObj = teal.load(taskname,defaults=True)
+    elif isinstance(configObj,str):
+        # Load user-specified .cfg file with its special default values
+        # we need to call 'fileutil.osfn()' to insure all environment 
+        # variables specified by the user in the configObj filename are
+        # expanded to the full path
+        configObj = teal.load(fileutil.osfn(configObj)) 
+    
     # merge in the user values for this run
     # this, though, does not save the results for use later
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:

@@ -678,10 +678,7 @@ def addWCSKeywords(wcs,hdr,blot=False):
                 del hdr[k[0]]
         del hdr['DGEOEXT']
         del hdr['NPOLEXT']
-        
-        #del hdr['CENTERA1']
-        #del hdr['CENTERA2']
-    
+            
     
 def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
