@@ -37,10 +37,10 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
    tweakreg
    imagefind
    sextractorpars
-   userint 
    image
    catalogs
    wcscorr
+   tweakutils
    
 
 ACS Header Update Task
