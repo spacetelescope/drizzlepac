@@ -96,7 +96,7 @@ pkg = "astrodrizzle"
 
 setupargs = {
 
-    'version' :         '0.1',
+    'version' :         '4.1.1',
     'description' :     "C-based MultiDrizzle",
     'author' :          "Megan Sosey, Warren Hack, Christopher Hanley",
     'author_email' :    "help@stsci.edu",
