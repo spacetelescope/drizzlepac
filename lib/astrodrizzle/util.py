@@ -261,6 +261,8 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     elif configObj.lower().strip() == 'defaults':
         # Load task default .cfg file with all default values
         configObj = teal.load(taskname,defaults=True)
+        # define default filename for configObj
+        configObj.filename = taskname.lower()+'.cfg' 
     elif isinstance(configObj,str):
         # Load user-specified .cfg file with its special default values
         # we need to call 'fileutil.osfn()' to insure all environment 
