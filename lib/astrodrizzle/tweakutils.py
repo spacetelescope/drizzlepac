@@ -332,13 +332,21 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
     # This provides the mapping between column name and column number
     coldict = {}
     fin = open(infile,'r')
-    for l in fin.readlines(): # interpret each line from catalog file
-        if l[0] == '#':
+    flines = fin.readlines()
+    fin.close()
+    hcount = 0
+    for l in flines: 
+        if l[0] == '#': hcount += 1
+    
+    for l in flines: # interpret each line from catalog file
+        if hcount == 1:
             # Parse colnames directly from column headers
             colnames = l.split()
             for name,i in zip(colnames,range(len(colnames))):
                 name = name.replace('#','')
                 coldict[name] = i
+        elif l[0] == '#':
+            continue
         else:
             # convert first row of data into column definitions using indices
             numcols = len(l.split())
@@ -346,13 +354,11 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
             for name in colnames:
                 coldict[str(name)] = name-1
             break
-    fin.close()
     numcols = len(cols)
     outarr = []
     for col in range(numcols):
         outarr.append([])
     convert_radec = False
-    print 'COLDICT defined as: \n',coldict
 
     # Now, map specified columns to columns in file and populate output arrays
     # Open catalog file
@@ -407,8 +413,8 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
         outarr[1] = outdec
         
     # convert all lists to numpy arrays
-    for col in outarr:
-        col = np.array(col)
+    for c in range(len(outarr)):
+        outarr[c] = np.array(outarr[c])
     return outarr
     
 def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
@@ -578,7 +584,7 @@ def gauss(x,sigma):
 
 
 #### Plotting Utilities for astrodrizzle
-def make_vector_plot(coordfile,columns=[0,1,2,3],data=None,title=None, axes=None, every=1,
+def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,title=None, axes=None, every=1,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,append=False,linfit=False,rms=True):
     """ Convert a XYXYMATCH file into a vector plot or set of residuals plots.
@@ -646,6 +652,7 @@ def make_vector_plot(coordfile,columns=[0,1,2,3],data=None,title=None, axes=None
     xy1y = data[1]
     xy2x = data[2]
     xy2y = data[3]
+
     numpts = xy1x.shape[0]
     if fit is not None:
         xy1x,xy1y = apply_db_fit(data,fit,xsh=xsh,ysh=ysh)
