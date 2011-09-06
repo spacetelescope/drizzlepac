@@ -93,7 +93,7 @@ final_units = option_kw("counts", "cps", default="cps", comment="Units for final
 [STEP 7a: CUSTOM WCS FOR FINAL OUTPUT]
 final_wcs = boolean_kw(default=False, triggers='_section_switch_', is_disabled_by='_rule7a_', comment= "Define custom WCS for final output image?")
 final_refimage = string_kw(default="", comment="Reference image from which to obtain a WCS")
-final_rot = float_or_none_kw(default=0., comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
+final_rot = float_or_none_kw(default=None, comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
 final_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
 final_outnx = integer_or_none_kw(default=None, comment= "Size of FINAL output frame X-axis (pixels)")
 final_outny = integer_or_none_kw(default=None, comment="Size of FINAL output frame Y-axis (pixels)")
