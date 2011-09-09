@@ -271,7 +271,8 @@ def processFilenames(input=None,output=None,infilesOnly=False):
             if output in ["",None,"None"]:
                 output = oldasndict['output']
 
-        filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
+        #filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
+        filelist = buildASNList(oldasndict['order'],input)
 
     elif (not isinstance(input, list)) and \
        (input[0] == '@') :
@@ -354,11 +355,21 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
     asndict = update_member_names(oldasndict, pydr_input)
 
     # Build output filename
+    drz_extn = '_drz.fits'
+    for img in newfilelist:
+        # special case logic to automatically recognize when _flc.fits files
+        # are provided as input and produce a _drc.fits file instead
+        if '_flc.fits' in img:
+            drz_extn = '_drc.fits'
+            break
+ 
     if output in [None,'']:
-        output = fileutil.buildNewRootname(asndict['output'],extn='_drz.fits')
+        output = fileutil.buildNewRootname(asndict['output'],extn=drz_extn)
     else:
-        if 'drz' not in output:
-            output = fileutil.buildNewRootname(output,extn='_drz.fits')
+        if '.fits' in output.lower():
+            pass
+        elif drz_extn[:4] not in output.lower():
+            output = fileutil.buildNewRootname(output,extn=drz_extn)
 
     print 'Setting up output name: ',output
 
@@ -376,6 +387,79 @@ def buildFileList(input, output=None, ivmlist=None,**workinplace):
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
 
     return newfilelist,ivmlist,output,oldasndict
+
+def buildASNList(rootnames,asnname):
+    """ Return the list of filenames for a given set of rootnames
+    """
+    # Recognize when multiple valid inputs with the same rootname are present
+    # this would happen when both CTE-corrected (_flc) and non-CTE-corrected (_flt) 
+    # products are in the same directory as an ASN table
+    filelist,duplicates = checkForDuplicateInputs(rootnames)
+    
+    if len(duplicates) > 0:
+        # Build new ASN tables for each set of input files
+        origasn = changeSuffixinASN(asnname,'flt')
+        dupasn = changeSuffixinASN(asnname,'flc')
+        
+        errstr =  "###############################################################################\n"
+        errstr += "#                                                                             #\n"
+        errstr += "# ERROR:                                                                      #\n"
+        errstr += "# Multiple valid input files found:                                           #\n"
+        for fname,dname in zip(filelist,duplicates):
+            errstr += "#    "+fname+"    "+dname+"\n"
+        errstr += "#                                                                             #\n"
+        errstr += "# New association files have been generated for each version of these files.  #\n"
+        errstr += "#    "+dupasn+"\n"
+        errstr += "#    "+origasn+"\n"
+        errstr += "#                                                                             #\n"
+        errstr += "# Please re-start astrodrizzle using one of these new ASN files or            #\n"
+        errstr += "#   use wildcards for the input to only select one type of input file.        #\n"
+        errstr += "#                                                                             #\n"
+        errstr += "###############################################################################\n\n"
+        print errstr
+        
+        # generate new ASN files for each case,
+        # report this case of duplicate inputs to the user then quit 
+        raise ValueError
+
+    return filelist
+
+def changeSuffixinASN(asnfile,suffix):
+    """ Create a copy of the original asn file and change
+        the name of all members to include the suffix.
+    """
+    # Start by creating a new name for the ASN table
+    _new_asn = asnfile.replace('_asn.fits','_'+suffix+'_asn.fits')
+    if os.path.exists(_new_asn) == True:
+        os.remove(_new_asn)
+    # copy original ASN table to new table 
+    shutil.copy(asnfile,_new_asn)
+    
+    # Open up the new copy and convert all MEMNAME's to lower-case
+    fasn = pyfits.open(_new_asn,'update')
+    for i in xrange(len(fasn[1].data)):
+        fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME')+'_'+suffix)
+    fasn.close()
+    
+    return _new_asn  
+
+def checkForDuplicateInputs(rootnames):
+    """ Check input files specified in ASN table for duplicate versions
+        with multiple valid suffixes (_flt and _flc, for example).
+    """      
+    flist = []
+    duplist = []
+
+    for fname in rootnames:
+        # Look for any recognized CTE-corrected products
+        f1 = fileutil.buildRootname(fname,ext=['_flc.fits'])
+        f2 = fileutil.buildRootname(fname)
+        flist.append(f2)
+        if f1 != f2:
+            # More than 1 valid input found for this rootname
+            duplist.append(f1)
+    
+    return flist,duplist
 
 def runmakewcs(input):
     """

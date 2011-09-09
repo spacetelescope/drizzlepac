@@ -316,7 +316,7 @@ class baseImageObject:
         self._image[self.scienceExt,chip]._chip =chip
         
 
-    def _setOutputNames(self,rootname):
+    def _setOutputNames(self,rootname,suffix='_drz'):
         """ Define the default output filenames for drizzle products,
             these are based on the original rootname of the image 
             filename should be just 1 filename, so call this in a loop
@@ -328,11 +328,10 @@ class baseImageObject:
         # where 'output' normally would have been created 
         #   by 'process_input()'
         #
-
-        outFinal = rootname+'_drz.fits'
-        outSci = rootname+'_drz_sci.fits'
-        outWeight = rootname+'_drz_weight.fits'
-        outContext = rootname+'_drz_context.fits'
+        outFinal = rootname+suffix+'.fits'
+        outSci = rootname+suffix+'_sci.fits'
+        outWeight = rootname+suffix+'_weight.fits'
+        outContext = rootname+suffix+'_context.fits'
         outMedian = rootname+'_med.fits'
                 
         # Build names based on input name
@@ -1016,7 +1015,7 @@ class imageObject(baseImageObject):
                             
 
 class WCSObject(baseImageObject):
-    def __init__(self,filename,suffix='_drz.fits'):
+    def __init__(self,filename,suffix='_drz'):
         baseImageObject.__init__(self,filename)
                 
         self._image = pyfits.HDUList()
@@ -1024,19 +1023,23 @@ class WCSObject(baseImageObject):
         
         # Build rootname, but guard against the rootname being given without
         # the '_drz.fits' suffix
-        patt = re.compile(r"_drz\w*.fits$")
+        #patt = re.compile(r"_dr[zc]\w*.fits$")
+        drz_extn = suffix
+        patt = re.compile(r"_dr[zc]")
         m = patt.search(filename)
         if m:
             self._rootname = filename[:m.start()]
+            drz_extn = m.group()
         else:
             # Guard against having .fits in the rootname
-            indx = filename.find('.fits')
-            if indx>0:
-                self._rootname = filename[:indx]
+            if '.fits' in filename:
+                
+                self._rootname = filename[:filename.find('.fits')]
+                drz_extn = ''
             else:
                 self._rootname = filename
             
-        self.outputNames = self._setOutputNames(self._rootname)
+        self.outputNames = self._setOutputNames(self._rootname,suffix=drz_extn)
         self.nimages = 1
     
         self._bunit = 'ELECTRONS/S'

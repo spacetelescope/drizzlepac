@@ -18,7 +18,7 @@ except ImportError:
     raise ImportError
 
 can_parallel = False
-if 'BETADRIZ_NO_PARALLEL' not in os.environ:
+if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
     try:
         import multiprocessing
         can_parallel = True
@@ -336,6 +336,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
 
 
 def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,procSteps=None):
+    
     if procSteps is not None:
         procSteps.addStep('Final Drizzle')
     # ConfigObj needs to be parsed specifically for driz_final set of parameters

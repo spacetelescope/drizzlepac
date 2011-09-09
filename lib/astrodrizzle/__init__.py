@@ -86,9 +86,9 @@ if False :
         pass
 
 else :
-    __version__ = '4.1.1dev'
+    __version__ = '4.1.2dev'
 
-__vdate__ = '31-Aug-2011'
+__vdate__ = '9-Sept-2011'
 # Revision based version info
 # End Version Information ---------------------------------------------
 try:
