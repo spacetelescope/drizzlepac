@@ -175,19 +175,24 @@ def run(configobj):
     # reference catalog sky positions,
     # then perform the fit between the reference catalog positions and 
     #    each image's positions    
+    quit_immediately = False
     for img in input_images:
         img.match(refimage.outxy, refimage.wcs,refimage.name,**configobj['OBJECT MATCHING PARAMETERS'])
         configobj['CATALOG FITTING PARAMETERS']['minobj'] = configobj['OBJECT MATCHING PARAMETERS']['minobj']
         img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
+        if img.quit_immediately:
+            quit_immediately = True
+            break
         if configobj['UPDATE HEADER']['updatehdr']:
             img.updateHeader(wcsname=configobj['UPDATE HEADER']['wcsname'])
         if configobj['clean']:
             img.clean()
 
-    # write out shiftfile (if specified)
-    shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']
-    if shiftpars['shiftfile']:
-        tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
+    if not quit_immediately:
+        # write out shiftfile (if specified)
+        shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']
+        if shiftpars['shiftfile']:
+            tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
 
 # 
 # Primary interface for running this task from Python

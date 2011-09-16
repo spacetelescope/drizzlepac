@@ -89,10 +89,10 @@ def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,ce
             resids = compute_resids(xy,uv,fit)
 
         # redefine what pixels will be included in next iteration
-        whtfrac = npts/(npts-npts0-1)
-        cutx = sigma*np.sqrt(fit['rms'][0]/whtfrac)
-        cuty = sigma*np.sqrt(fit['rms'][1]/whtfrac)        
-        
+        whtfrac = npts/(npts-npts0-1.0)
+        cutx = sigma*(fit['rms'][0]*whtfrac)
+        cuty = sigma*(fit['rms'][1]*whtfrac)        
+
         goodx = (np.abs(resids[:,0]) < cutx)
         goody = (np.abs(resids[:,1]) < cuty)
         goodpix = np.bitwise_and(goodx,goody)

@@ -70,7 +70,7 @@ def get_configobj_root(configobj):
     return kwargs
 
 # Object finding algorithm based on NDIMAGE routines
-def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5):
+def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
     """ Source finding algorithm based on NDIMAGE routines
     
         This function provides a simple replacement for the DAOFIND task.
@@ -89,6 +89,8 @@ def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5):
             [Not used at this time]
         roundlim : tuple
             [Not used at this time]
+        datamax  : float
+            Maximum good pixel value found in any detected source
         
         Returns
         -------
@@ -117,6 +119,9 @@ def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5):
     for s in cobjs:
         nmask = cmask[s].sum()
         if nmask >= minpix: # eliminate spurious detections
+            imgsect = array[s]*cmask[s]
+            if datamax is not None and (imgsect.max() > datamax):
+                continue # skip any source with pixel value > datamax
             yx = ndimage.center_of_mass(cimg[s]*cmask[s])
             # convert position to chip position in (0-based) X,Y
             xpos.append(yx[1]+s[1].start)

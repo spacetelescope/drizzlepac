@@ -350,17 +350,14 @@ class ImageCatalog(Catalog):
             source = np.where(self.source <= self.pars['datamin'], 0.,self.source)
         else:
             source = self.source
-        if self.pars.has_key('datamin') and self.pars['datamax'] is not None:
-            source = np.where(source >= self.pars['datamax'],0.,source)
-
-        x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'])
+        
+        x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],datamax=self.pars['datamax'])
         if len(x) == 0:
             sigma = self._compute_sigma()
             hmin = sigma * self.pars['threshold']
             print 'No sources found with original thresholds. Trying automatic settings.'
-            x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'])
-
-        """
+            x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],datamax=self.pars['datamax'])
+        
         if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
             fminindx = flux >= self.pars['fluxmin']
         else:
@@ -370,8 +367,8 @@ class ImageCatalog(Catalog):
         else:
             fmaxindx = flux == flux
         findx = np.bitwise_and(fminindx,fmaxindx)
-        """
-        self.xypos = [x+1,y+1,flux,id+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
+                
+        self.xypos = [x[findx]+1,y[findx]+1,flux[findx],id[findx]+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = None # sharp
         self.round = None # round

@@ -109,6 +109,8 @@ class Image(object):
         self.goodmatch = True # keep track of whether enough matches were found for a fit
         
         self.perform_update = True
+        self.quit_immediately = False
+
     def get_wcs(self):
         """ Helper method to return a list of all the input WCS objects associated
             with this image.
@@ -362,10 +364,11 @@ class Image(object):
                         ptype = False
                     tweakutils.make_vector_plot(None,data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
                             vector=ptype,title=title_str)
-                    a = raw_input("Press ENTER to continue to the next image's fit or 'q' to quit immediately...")
-                    if 'q' in a.lower():
+                    a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...")
+                    if 'n' in a.lower():
                         self.perform_update = False
-                        
+                    if 'q' in a.lower():
+                        self.quit_immediately = True
         else:
             self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}
 
