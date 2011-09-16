@@ -5,7 +5,7 @@ import shutil
 
 import pyfits
 
-from stsci.tools import parseinput, fileutil, asnutil, irafglob, check_files
+from stsci.tools import cfgpars, parseinput, fileutil, asnutil, irafglob, check_files
 from stwcs import updatewcs
 from stwcs.wcsutil import altwcs, wcscorr
 
@@ -101,7 +101,7 @@ def setCommonInput(configObj,createOutwcs=True):
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
         
         # Update configObj with values from mpars
-        util.mergeConfigObj(configObj,mdriztab_dict)
+        cfgpars.mergeConfigObj(configObj, mdriztab_dict)
 
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.

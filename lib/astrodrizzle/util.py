@@ -274,7 +274,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     # merge in the user values for this run
     # this, though, does not save the results for use later
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:
-        mergeConfigObj(configObj,input_dict)
+        cfgpars.mergeConfigObj(configObj, input_dict)
         # Update the input .cfg file with the updated parameter values 
         configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
         configObj.write()
@@ -286,10 +286,6 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         configObj = teal.teal(configObj,loadOnly=False)
     
     return configObj
-                    
-def mergeConfigObj(configObj,input_dict):
-    for key in input_dict:
-        setConfigObjPar(configObj,key,input_dict[key])
 
 def getSectionName(configObj,stepnum):
     """ Return section label based on step number.
@@ -298,31 +294,11 @@ def getSectionName(configObj,stepnum):
         if key.find('STEP '+str(stepnum)) >= 0:
             return key
 
-def getConfigObjPar(configObj,parname):
+def getConfigObjPar(configObj, parname):
     """ Return parameter value without having to specify which section
         holds the parameter.
     """
-    for key in configObj:
-        if isinstance(configObj[key], dict):
-            for par in configObj[key]:
-                if par == parname:
-                    return configObj[key][par]
-        else:
-            if key == parname:
-                return configObj[key]
-            
-def setConfigObjPar(configObj,parname,parvalue):
-    """ Sets a parameter's value without having to specify which section
-        holds the parameter.
-    """
-    for key in configObj:
-        if isinstance(configObj[key], dict):
-            for par in configObj[key]:
-                if par == parname:
-                    configObj[key][par] = parvalue
-        else:
-            if key == parname:
-                configObj[key] = parvalue
+    return cfgpars.findFirstPar(configObj, parname)[1]
 
 def displayMakewcsWarningBox(display=True, parent=None):
     """ Displays a warning box for the 'makewcs' parameter.
