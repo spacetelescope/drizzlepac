@@ -54,8 +54,8 @@ yoffset = float_kw(default=0.0,inactive_if='_rule2_',comment="Initial guess for 
 [CATALOG FITTING PARAMETERS]
 fitgeometry = option_kw("shift","rscale","general",default="rscale",comment="Fitting geometry")
 residplot= option_kw("No plot","vector","residuals",default="No plot",comment="Plot residuals from fit?")
-nclip = integer_kw(default=0,comment="Number of clipping iterations in fit")
+nclip = integer_kw(default=3,comment="Number of clipping iterations in fit")
 sigma = float_or_none_kw(default=3.0,comment="Clipping limit in sigma units")
 
 [ _RULES_ ]
-_rule2_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')
+_rule2_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')

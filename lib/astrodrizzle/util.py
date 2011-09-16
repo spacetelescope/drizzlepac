@@ -258,17 +258,18 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # This insures that all subsequent use of the configObj includes
         # all parameters and their last saved values
         configObj = teal.load(taskname)
-    elif configObj.lower().strip() == 'defaults':
-        # Load task default .cfg file with all default values
-        configObj = teal.load(taskname,defaults=True)
-        # define default filename for configObj
-        configObj.filename = taskname.lower()+'.cfg' 
     elif isinstance(configObj,str):
-        # Load user-specified .cfg file with its special default values
-        # we need to call 'fileutil.osfn()' to insure all environment 
-        # variables specified by the user in the configObj filename are
-        # expanded to the full path
-        configObj = teal.load(fileutil.osfn(configObj)) 
+        if configObj.lower().strip() == 'defaults':
+            # Load task default .cfg file with all default values
+            configObj = teal.load(taskname,defaults=True)
+            # define default filename for configObj
+            configObj.filename = taskname.lower()+'.cfg' 
+        else:
+            # Load user-specified .cfg file with its special default values
+            # we need to call 'fileutil.osfn()' to insure all environment 
+            # variables specified by the user in the configObj filename are
+            # expanded to the full path
+            configObj = teal.load(fileutil.osfn(configObj)) 
     
     # merge in the user values for this run
     # this, though, does not save the results for use later

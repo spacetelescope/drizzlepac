@@ -379,7 +379,7 @@ class ImageCatalog(Catalog):
         self.num_objects = len(x)
 
     def _compute_sigma(self):
-        istats = imagestats.ImageStats(self.source,nclip=3,fields='stddev')
+        istats = imagestats.ImageStats(self.source,nclip=3,fields='mode,stddev')
         sigma = 1.5 * istats.stddev
         return sigma
         
