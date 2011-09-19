@@ -63,27 +63,15 @@ def _managePsets(configobj):
             print ' Defaulting to basic source finding algorithm...'
             print '**********'
             # set the edit parameter to be the same as used for SExtractor 
-            configobj['editipars'] = configobj['editspars']
+            editipars = True
             
-        # Load parameters for this source finding mode
-        iloadonly = not(configobj['editipars'])
-        
-        iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=iloadonly,canExecute=False)
-        # Catch the case when the user hit 'CANCEL' for the PSET, we still the parameter values
-        if iparsobj is None:
-            iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=True)
+        iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=True)
 
         # merge these parameters into full set
         configobj['SOURCE FINDING PARS'].merge(iparsobj)
 
     elif configobj['findmode'] == 'sextractor':
-        # Load parameters for this source finding mode
-        sloadonly = not(configobj['editspars'])
-
-        sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=sloadonly,canExecute=False)
-        # Catch the case when the user hit 'CANCEL' for the PSET, we still the parameter values
-        if sparsobj is None:
-            sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=True)
+        sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=True)
 
         # merge these parameters into full set
         configobj['SOURCE FINDING PARS']['USER SUPPLIED PARAMETERS'] = sparsobj['USER SUPPLIED PARAMETERS']
@@ -91,6 +79,16 @@ def _managePsets(configobj):
     # clean up configobj a little to make it easier for later...
     if '_RULES_' in configobj:
         del configobj['_RULES_']
+    
+def edit_imagefindpars():
+    """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
+    """
+    iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=False, canExecute=False)
+    
+def edit_sextractorpars():
+    """ Allows the user to edit the sextractorpars configObj in a TEAL GUI
+    """
+    sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=False, canExecute=False)
     
 def run(configobj):
     """ Primary Python interface for image registration code

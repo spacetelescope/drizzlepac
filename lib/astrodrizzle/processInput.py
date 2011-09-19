@@ -97,7 +97,7 @@ def setCommonInput(configObj,createOutwcs=True):
     # interpret MDRIZTAB, if specified, and update configObj accordingly
     # This can be done here because MDRIZTAB does not include values for
     # input, output, or updatewcs.
-    if configObj['mdriztab']:
+    if 'mdriztab' in configObj and configObj['mdriztab']:
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
         
         # Update configObj with values from mpars
@@ -129,6 +129,17 @@ def setCommonInput(configObj,createOutwcs=True):
         return imageObjectList,outwcs
     else:
         return imageObjectList,None
+
+def getMdriztabPars(input):
+    """ High-level function for getting the parameters from MDRIZTAB
+    
+    Used primarily for TEAL interface.
+    """
+    filelist,output,ivmlist,oldasndict=processFilenames(input,None)
+    
+    mdrizdict = mdzhandler.getMdriztabParameters(filelist)
+    
+    return mdrizdict
 
 def addIVMInputs(imageObjectList,ivmlist):
     """ Add IVM filenames provided by user to outputNames dictionary for each input imageObject.

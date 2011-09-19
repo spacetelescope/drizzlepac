@@ -96,16 +96,29 @@ def _interpretMdriztabPars(rec):
         # input parameter names found in IRAF par file.
         #
         #if _name.find('final') > -1: _name = 'driz_'+_name
-        if _name == 'subsky': _name = 'skysub'
-        elif _name == 'crbitval': _name = 'crbit'
-        elif _name == 'readnoise': _name = 'rdnoise'
-                    
+        if _name in ['shiftfile','mdriztab']:
+            continue
+        drizstep_names = ['driz_sep_','final_']
+        if _name == 'refimage':
+            for dnames in drizstep_names:
+                tabdict[dnames+_name] = _value
+            continue
+        if _name == 'coeffs':
+            _val = True
+            if _value in ['INDEF',None,"None",'',' ']: _val = False
+            tabdict[_name] = _val
+            continue
+        
+        par_table = {'subsky':'skysub','crbitval':'crbit','readnoise':'rdnoise'}
+        if _name in par_table:
+            _name = par_table[_name]
+
         # We do not care about the first two columns at this point
         # as they are only used for selecting the rows
         if _name != 'filter' and _name != 'numimages':
             # start by determining the format type of the parameter
             _fmt = findFormat(_format)
-            
+
             # Based on format type, apply proper conversion/cleaning
             if (_fmt == 'a') or (_fmt == 'A'):
                 _val = cleanBlank(_value)
@@ -114,14 +127,18 @@ def _interpretMdriztabPars(rec):
                 _val = toBoolean(_value)
             elif (_format == 'i4') or (_format == '1J'):
                 _val = cleanInt(_value)
-            elif (_format == 'f4') or (_format == '1E'):
+            elif (_format == 'f4') or ('E' in _format):
                 _val = cleanNaN(_value)
             else:
                 print 'MDRIZTAB column ',_name,' has unrecognized format',_format 
                 raise ValueError
             if _name.find('fillval') > -1 and _val == None:
                 _val = 'INDEF'
-            tabdict[_name] = _val
+            if _name in ['ra','dec']:
+                for dnames in drizstep_names:
+                    tabdict[dnames+_name] = _val
+            else:
+                tabdict[_name] = _val
     
     return tabdict
 
@@ -134,7 +151,7 @@ def cleanNaN(value):
     a = np.array(value)
 #    b = np.where(np.isnan(a))
     if np.any(np.isnan(a)): return None
-    return value
+    return float(value)
 
 def cleanInt(value):
     # THIS MAY BE MACHINE-DEPENDENT !!!
@@ -142,7 +159,7 @@ def cleanInt(value):
     # Try to use 'sys.maxint' as value (WJH)
     #if value == -sys.maxint:
         return None
-    return value
+    return int(value)
 
 def cleanBlank(value):
     if value.strip() == '':

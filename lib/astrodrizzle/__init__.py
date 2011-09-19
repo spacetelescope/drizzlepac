@@ -86,7 +86,7 @@ if False :
         pass
 
 else :
-    __version__ = '4.1.3dev'
+    __version__ = '4.1.4dev'
 
 __vdate__ = '16-Sept-2011'
 # Revision based version info
@@ -103,7 +103,7 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 #
 #### Interactive user interface (functional form)
 #
-def MultiDrizzle(input, editpars=False, configObj=None, wcsmap=None, **input_dict):
+def MultiDrizzle(input, mdriztab=False, editpars=False, configObj=None, wcsmap=None, **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
@@ -112,6 +112,9 @@ def MultiDrizzle(input, editpars=False, configObj=None, wcsmap=None, **input_dic
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = input
+
+    if 'mdriztab' not in input_dict:
+        input_dict['mdriztab'] = mdriztab
 
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
