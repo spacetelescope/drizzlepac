@@ -80,7 +80,6 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image)
 
-    archive_wcsname = ""
     if numextn > 0:
         # Create initial WCSCORR extension
         wcscorr.init_wcscorr(image,force=force)
@@ -90,7 +89,10 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
             extlist.append(('SCI',extn))
     else:
         extlist = [0]
-        archive_wcsname = "DRZ_"+fileutil.getDate()
+
+    # insure that input PRIMARY WCS has been archived before overwriting
+    # with new solution
+    wcsutil.altwcs.archiveWCS(image,extlist)
 
     fimg = pyfits.open(image,mode='update')
     # Process MEF images...
@@ -275,20 +277,6 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     ypix = [chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1]+1]
 
     # This full transformation includes all parts of model, excluding DGEO/NPOL
-    """
-    #Rc_i,Dc_i = chip_wcs.all_pix2sky(xpix,ypix,1)
-    dpx,dpy = chip_wcs.det2im(xpix,ypix,1)  #Apply the detector to image correction
-    dpx = xpix + (dpx[0] - xpix[0])
-    dpy = ypix + (dpy[0] - ypix[0])
-    spx,spy = chip_wcs.sip_pix2foc(dpx,dpy,1)
-    fx = dpx + (spx - dpx)
-    fy = dpy + (spy - dpy)
-    Rc_i,Dc_i = chip_wcs.wcs_pix2sky(fx,fy,1)
-    """
-    """
-    spx,spy = chip_wcs.sip_pix2foc(xpix,ypix,1)
-    Rc_i,Dc_i = chip_wcs.wcs_pix2sky(spx,spy,1)
-    """
     Rc_i,Dc_i = chip_wcs.wcs_pix2sky(xpix,ypix,1)
     
     # step 2
@@ -311,21 +299,6 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     chip_wcs.wcs.set()
     # step 6
     # compute new sky positions (with full model) based on new CRVAL
-    """
-    Rc_iu,Dc_iu = chip_wcs.all_pix2sky(xpix,ypix,1) # may need to remove 'dgeo' from this step
-
-    dpx,dpy = chip_wcs.det2im(xpix,ypix,1)  #Apply the detector to image correction
-    dpx = xpix + (dpx[0] - xpix[0])
-    dpy = ypix + (dpy[0] - ypix[0])
-    spx,spy = chip_wcs.sip_pix2foc(dpx,dpy,1)
-    fx = dpx + (spx - dpx)
-    fy = dpy + (spy - dpy)
-    Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(fx,fy,1)
-    """
-    """
-    spx,spy = chip_wcs.sip_pix2foc(xpix,ypix,1)
-    Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(spx,spy,1)
-    """
     Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(xpix,ypix,1)
     Xc_iu,Yc_iu = wcslin.wcs_sky2pix([Rc_iu],[Dc_iu],1)
     # step 7
@@ -352,6 +325,9 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     # Start by insuring that the correct value of 'orientat' has been computed
     new_wcs.setOrient()
 
+    if wcsname in ['',' ',None,'INDEF','N/A']:
+        wcsname = 'TWEAK'
+    
     fimg_open=False
     if not isinstance(image,pyfits.HDUList):
         fimg = pyfits.open(image,mode='update')
@@ -376,11 +352,14 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         for key in wcs_hdr:
             hdr.update(key,wcs_hdr[key])
         hdr.update('ORIENTAT',new_wcs.orientat)
+        hdr.update('WCSNAME',wcsname)
         
-        if wcsname not in ['',' ',None,'INDEF','N/A']:
-            # Save the newly updated WCS as an alternate WCS as well
-            next_key = wcsutil.altwcs.next_wcskey(hdr)
-            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcskey=next_key,wcsname=wcsname)
+        # Save the newly updated WCS as an alternate WCS as well
+        wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
+        # wcskey needs to be specified so that archiveWCS will create a 
+        # duplicate WCS with the same WCSNAME as the Primary WCS
+        wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,wcskey=wkey)
+
     finally:
         if fimg_open:
             # finish up by closing the file now

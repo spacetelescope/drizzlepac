@@ -108,7 +108,9 @@ def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=N
     cimg = -1*ndimage.gaussian_laplace(array,fwhm)
     cimg = np.clip(cimg,0,cimg.max())
 
-    cmask = cimg >= hmin
+    climit = hmin / fwhm
+    cmask = cimg >= climit
+    #cmask = cimg >= hmin
     # find and label sources
     ckern = ndimage.generate_binary_structure(2,1)
     clabeled,cnum = ndimage.label(cmask,structure=ckern)
