@@ -108,13 +108,13 @@ def MultiDrizzle(input, mdriztab=False, editpars=False, configObj=None, wcsmap=N
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
+    if input_dict is None:
+        input_dict = {}
+
     if not util.is_blank(input):
-        if input_dict is None:
-            input_dict = {}
         input_dict['input'] = input
 
-    if 'mdriztab' not in input_dict:
-        input_dict['mdriztab'] = mdriztab
+    #input_dict['mdriztab'] = mdriztab
 
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
@@ -122,8 +122,11 @@ def MultiDrizzle(input, mdriztab=False, editpars=False, configObj=None, wcsmap=N
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    
     if configObj is None:
         return
+
+    configObj['mdriztab'] = mdriztab
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
     # called 'run()'.
     if editpars == False:
