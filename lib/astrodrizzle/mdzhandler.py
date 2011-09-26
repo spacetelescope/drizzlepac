@@ -99,7 +99,7 @@ def _interpretMdriztabPars(rec):
         if _name in ['shiftfile','mdriztab']:
             continue
         drizstep_names = ['driz_sep_','final_']
-        if _name == 'refimage':
+        if _name in ['refimage','bits']:
             for dnames in drizstep_names:
                 tabdict[dnames+_name] = _value
             continue
@@ -132,8 +132,6 @@ def _interpretMdriztabPars(rec):
             else:
                 print 'MDRIZTAB column ',_name,' has unrecognized format',_format 
                 raise ValueError
-            if _name.find('fillval') > -1 and _val == None:
-                _val = 'INDEF'
             if _name in ['ra','dec']:
                 for dnames in drizstep_names:
                     tabdict[dnames+_name] = _val
