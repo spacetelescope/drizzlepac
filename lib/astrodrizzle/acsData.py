@@ -250,10 +250,10 @@ class SBCInputImage (ACSInputImage):
         # We need to treat Read Noise and Gain as a special case since it is 
         # not populated in the SBC primary header for the MAMA
         for chip in self.returnAllChips(extname=self.scienceExt): 
-            chip._gain      = self.getInstrParameter("", pri_header,
-                                                     instrpars['gnkeyword'])
-            chip._rdnoise   = self.getInstrParameter("", pri_header,
-                                                     instrpars['rnkeyword'])
+            chip._gain      = 1.0 #self.getInstrParameter("", pri_header,
+                                  #                  instrpars['gnkeyword'])
+            chip._rdnoise   = 0.0 #self.getInstrParameter("", pri_header,
+                                  #                   instrpars['rnkeyword'])
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
             if chip._exptime == None:
