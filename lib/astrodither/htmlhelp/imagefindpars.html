@@ -88,18 +88,26 @@
   <div class="section" id="imagefindpars-source-finding-parameters">
 <span id="imagefind"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
 <p>This interface provides a mechanism for setting the parameters used by the built-in source finding algorithm based on the published algorithms used by DAOFIND.</p>
-<span class="target" id="module-astrodrizzle.imagefindpars"></span><dl class="function">
-<dt id="astrodrizzle.imagefindpars.getHelpAsString">
-<tt class="descclassname">astrodrizzle.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodrizzle.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<span class="target" id="module-astrodither.imagefindpars"></span><dl class="function">
+<dt id="astrodither.imagefindpars.getHelpAsString">
+<tt class="descclassname">astrodither.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#astrodither.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>Teal help function to describe the parameters being set
 Descriptions of parameters come from .help file</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodrizzle.imagefindpars.run">
-<tt class="descclassname">astrodrizzle.imagefindpars.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#astrodrizzle.imagefindpars.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imagefind parameters to control operation of built-in source extraction algorithm</p>
-<p>These parameters control the operation of the algorithm that extracts sources from the image as called by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code).</p>
+<dt id="astrodither.imagefindpars.help">
+<tt class="descclassname">astrodither.imagefindpars.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.imagefindpars.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="astrodither.imagefindpars.run">
+<tt class="descclassname">astrodither.imagefindpars.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#astrodither.imagefindpars.run" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Imagefind parameters to control operation of built-in source extraction algorithm</dt>
+<dd>imagefindpars Version 0.6.2 updated on 22-Aug-2011</dd>
+</dl>
+<p>These parameters control the operation of the algorithm that extracts sources from the image as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -109,7 +117,7 @@ Descriptions of parameters come from .help file</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Output :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first">The primary output, as used by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</p>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">The primary output, as used by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>

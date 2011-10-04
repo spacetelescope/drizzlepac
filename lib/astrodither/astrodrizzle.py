@@ -30,6 +30,8 @@ from __future__ import division # confidence high
 
 import os,string,glob
 
+from stsci.tools import teal
+
 import adrizzle
 import ablot
 import processInput
@@ -42,8 +44,8 @@ import wcs_functions
 
 __taskname__ = "astrodrizzle"
 
-__version__ = '4.1.5dev'
-__vdate__ = '3-Oct-2011'
+__version__ = '4.2.0dev'
+__vdate__ = '4-Oct-2011'
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations

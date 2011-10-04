@@ -4,10 +4,10 @@
 Image Class
 ***********
 
-.. inheritance-diagram:: astrodrizzle.imgclasses
+.. inheritance-diagram:: astrodither.imgclasses
    :parts: 2
    
-.. currentmodule:: astrodrizzle.imgclasses
+.. currentmodule:: astrodither.imgclasses
 
 .. autoclass:: Image
    :members:

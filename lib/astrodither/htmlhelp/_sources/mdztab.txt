@@ -6,6 +6,6 @@ MultiDrizzle Reference Table
 
 This module supports the interpretation of the MDRIZTAB for processing as used in the pipeline. 
 
-.. automodule:: astrodrizzle.mdzhandler
+.. automodule:: astrodither.mdzhandler
    :members:
    :undoc-members:

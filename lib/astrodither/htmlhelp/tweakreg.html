@@ -88,10 +88,10 @@
   <div class="section" id="tweakreg-alignment-of-images">
 <span id="tweakreg"></span><h1>TWEAKREG: Alignment of Images<a class="headerlink" href="#tweakreg-alignment-of-images" title="Permalink to this headline">¶</a></h1>
 <p>Combining images using astrodrizzle requires that the WCS information in the headers of each input image align to within sub-pixel accuracy.  The &#8216;tweakreg&#8217; task allows the user to align sets of images to each other and/or to and external astrometric reference frame or image.</p>
-<span class="target" id="module-astrodrizzle.tweakreg"></span><p>ImageReg - A replacement for IRAF-based &#8216;tweakshifts&#8217;</p>
+<span class="target" id="module-astrodither.tweakreg"></span><p>ImageReg - A replacement for IRAF-based &#8216;tweakshifts&#8217;</p>
 <dl class="function">
-<dt id="astrodrizzle.tweakreg.TweakReg">
-<tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
+<dt id="astrodither.tweakreg.TweakReg">
+<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodither.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
 <dd><p>tweakreg Version 0.6.2 updated on 22-Aug-2011</p>
 <p><strong>Tweakreg</strong> provides an automated interface for computing residual shifts
 between input exposures being combined using AstroDrizzle. The offsets
@@ -168,7 +168,7 @@ function is similar in operation to DAOFIND. [Default value: &#8216;imagefind&#8
 <p>This parameter allows the user to specify whether or not they want to 
 edit the parameters for the built-in source finding algorithm if &#8216;findmode&#8217;
 has been set to &#8216;imagefind&#8217;. These parameters are described in the help for 
-<a class="reference internal" href="userint.html#imagefind"><em>Imagefind Parameters</em></a>. [Default value: Yes]</p>
+<a class="reference internal" href="imagefind.html#imagefind"><em>Imagefindpars: Source finding parameters</em></a>. [Default value: Yes]</p>
 </blockquote>
 <p><strong id="editspars">editspars</strong> : bool</p>
 <blockquote>
@@ -180,7 +180,7 @@ parameters for &#8216;sextractor&#8217; for use when &#8216;findmode = sextracto
 Each parameter has the same name as the &#8216;sextractor&#8217; parameter and
 is a direct pass-through to the corresponding &#8216;sextractor&#8217; parameter
 in the executable. These parameters are described in the help for
-<a class="reference internal" href="userint.html#sextractorpars"><em>Sextractor Parameters</em></a>. [Default value: Yes]</p>
+<a class="reference internal" href="sextractorpars.html#sextractorpars"><em>SExtractorpars: Parameter setting for SExtractor</em></a>. [Default value: Yes]</p>
 </blockquote>
 <p><strong id="execname">execname</strong> : string</p>
 <blockquote>
@@ -433,7 +433,7 @@ changes from the matched object lists. [Default value = &#8216;rscale&#8217;]</p
 </table>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="astrodrizzle.html#module-astrodrizzle" title="astrodrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></tt></a></p>
+<p class="last"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></tt></p>
 </div>
 <p class="rubric">Notes</p>
 <p>Tweakreg supports the use of calibrated, distorted images (such as FLT
@@ -519,19 +519,31 @@ TEAL GUI:</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodrizzle.tweakreg.getHelpAsString">
-<tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dt id="astrodither.tweakreg.edit_imagefindpars">
+<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">edit_imagefindpars</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.tweakreg.edit_imagefindpars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to edit the imagefindpars configObj in a TEAL GUI</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodither.tweakreg.edit_sextractorpars">
+<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">edit_sextractorpars</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.tweakreg.edit_sextractorpars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to edit the sextractorpars configObj in a TEAL GUI</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astrodither.tweakreg.getHelpAsString">
+<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#astrodither.tweakreg.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>return useful help from a file in the script directory called __taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodrizzle.tweakreg.help">
-<tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.help" title="Permalink to this definition">¶</a></dt>
+<dt id="astrodither.tweakreg.help">
+<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.tweakreg.help" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="astrodrizzle.tweakreg.run">
-<tt class="descclassname">astrodrizzle.tweakreg.</tt><tt class="descname">run</tt><big>(</big><em>configobj</em><big>)</big><a class="headerlink" href="#astrodrizzle.tweakreg.run" title="Permalink to this definition">¶</a></dt>
+<dt id="astrodither.tweakreg.run">
+<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">run</tt><big>(</big><em>configobj</em><big>)</big><a class="headerlink" href="#astrodither.tweakreg.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary Python interface for image registration code
 This task replaces &#8216;tweakshifts&#8217;</p>
 </dd></dl>

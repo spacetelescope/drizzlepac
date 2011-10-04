@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
-    <link rel="next" title="TweakReg User Interface" href="userint.html" />
+    <link rel="next" title="Image Class" href="image.html" />
     <link rel="prev" title="Imagefindpars: Source finding parameters" href="imagefind.html" /> 
   </head>
   <body>
@@ -40,7 +40,7 @@
           <a href="np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="userint.html" title="TweakReg User Interface"
+          <a href="image.html" title="Image Class"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="imagefind.html" title="Imagefindpars: Source finding parameters"
@@ -57,8 +57,8 @@
   <p class="topless"><a href="imagefind.html"
                         title="previous chapter">Imagefindpars: Source finding parameters</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="userint.html"
-                        title="next chapter">TweakReg User Interface</a></p>
+  <p class="topless"><a href="image.html"
+                        title="next chapter">Image Class</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/sextractorpars.txt"
@@ -87,19 +87,27 @@
             
   <div class="section" id="sextractorpars-parameter-setting-for-sextractor">
 <span id="sextractorpars"></span><h1>SExtractorpars: Parameter setting for SExtractor<a class="headerlink" href="#sextractorpars-parameter-setting-for-sextractor" title="Permalink to this headline">¶</a></h1>
-<p>This interface provides a mechanism for setting the parameters for using SExtractor to build the catalog of sources from the input images. This option will only be available if <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a> can find the SExtractor executable installed on the user&#8217;s system.</p>
-<span class="target" id="module-astrodrizzle.sextractorpars"></span><dl class="function">
-<dt id="astrodrizzle.sextractorpars.getHelpAsString">
-<tt class="descclassname">astrodrizzle.sextractorpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodrizzle.sextractorpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<p>This interface provides a mechanism for setting the parameters for using SExtractor to build the catalog of sources from the input images. This option will only be available if <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a> can find the SExtractor executable installed on the user&#8217;s system.</p>
+<span class="target" id="module-astrodither.sextractorpars"></span><dl class="function">
+<dt id="astrodither.sextractorpars.getHelpAsString">
+<tt class="descclassname">astrodither.sextractorpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#astrodither.sextractorpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>Teal help function to describe the parameters being set
 Descriptions of parameters come from .help file</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodrizzle.sextractorpars.run">
-<tt class="descclassname">astrodrizzle.sextractorpars.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#astrodrizzle.sextractorpars.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sextractor parameters which can be set by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>.</p>
-<p>These parameters control the operation of Sextractor in finding sources in the input images, as called by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>.</p>
+<dt id="astrodither.sextractorpars.help">
+<tt class="descclassname">astrodither.sextractorpars.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.sextractorpars.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="astrodither.sextractorpars.run">
+<tt class="descclassname">astrodither.sextractorpars.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#astrodither.sextractorpars.run" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Sextractor parameters which can be set by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>.</dt>
+<dd>sextractorpars Version 0.6.2 updated on 22-Aug-2011</dd>
+</dl>
+<p>These parameters control the operation of Sextractor in finding sources in the input images, as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -108,7 +116,7 @@ Descriptions of parameters come from .help file</p>
 <tr><td>&nbsp;</td><td class="field-body">The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.</td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Output :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">The primary output, as used by <a class="reference internal" href="userint.html#tweakreg"><em>TweakReg User Interface</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</td>
+<tr><td>&nbsp;</td><td class="field-body">The primary output, as used by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</td>
 </tr>
 </tbody>
 </table>
@@ -280,7 +288,7 @@ Descriptions of parameters come from .help file</p>
           <a href="np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="userint.html" title="TweakReg User Interface"
+          <a href="image.html" title="Image Class"
              >next</a> |</li>
         <li class="right" >
           <a href="imagefind.html" title="Imagefindpars: Source finding parameters"

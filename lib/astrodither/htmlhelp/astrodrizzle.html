@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: MultiDrizzle() &mdash; betadrizzle v4.0.6 documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; betadrizzle v4.0.6 documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
-    <link rel="prev" title="Welcome to astrodrizzle’s documentation!" href="index.html" /> 
+    <link rel="prev" title="Welcome to astrodither’s documentation!" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to astrodrizzle’s documentation!"
+          <a href="index.html" title="Welcome to astrodither’s documentation!"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
@@ -55,7 +55,7 @@
             </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to astrodrizzle&#8217;s documentation!</a></p>
+                        title="previous chapter">Welcome to astrodither&#8217;s documentation!</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="imageobject.html"
                         title="next chapter">imageObject Classes</a></p>
@@ -85,8 +85,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-astrodrizzle">
-<span id="primary-user-interface-multidrizzle"></span><span id="astrodrizzle"></span><h1>Primary User Interface: MultiDrizzle()<a class="headerlink" href="#module-astrodrizzle" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-astrodither.astrodrizzle">
+<span id="primary-user-interface-astrodrizzle"></span><span id="astrodrizzle"></span><h1>Primary User Interface: AstroDrizzle()<a class="headerlink" href="#module-astrodither.astrodrizzle" title="Permalink to this headline">¶</a></h1>
 <p>AstroDrizzle - test implementation of MultiDrizzle: The Next Generation</p>
 <p>AstroDrizzle automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
@@ -113,9 +113,9 @@ cosmic-ray cleaned, and combined image as a FITS file.</p>
 <p>This task requires numerous user-settable parameters to control the primary
 aspects of each of the processing steps.</p>
 <dl class="function">
-<dt id="astrodrizzle.MultiDrizzle">
-<tt class="descclassname">astrodrizzle.</tt><tt class="descname">MultiDrizzle</tt><big>(</big><em>input</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodrizzle.MultiDrizzle" title="Permalink to this definition">¶</a></dt>
-<dd><p>astrodrizzle Version 4.1.0dev updated on 25-Aug-2011</p>
+<dt id="astrodither.astrodrizzle.AstroDrizzle">
+<tt class="descclassname">astrodither.astrodrizzle.</tt><tt class="descname">AstroDrizzle</tt><big>(</big><em>input</em>, <em>mdriztab=False</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodither.astrodrizzle.AstroDrizzle" title="Permalink to this definition">¶</a></dt>
+<dd><p>astrodrizzle Version 4.2.0dev updated on 4-Oct-2011</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -575,11 +575,11 @@ aspects of each of the processing steps.</p>
 <dd>Apply the &#8216;drizzle&#8217; algorithm to the images</dd>
 <dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.blot</span></tt></dt>
 <dd>Apply the &#8216;blot&#8217; algorithm to drizzled images</dd>
-<dt><a class="reference internal" href="sky.html#module-astrodrizzle.sky" title="astrodrizzle.sky"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.sky</span></tt></a></dt>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.sky</span></tt></dt>
 <dd>Perform sky subtraction</dd>
 <dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.median</span></tt></dt>
 <dd>Create a median combined image from a set of drizzled images</dd>
-<dt><a class="reference internal" href="drizcr.html#module-astrodrizzle.drizCR" title="astrodrizzle.drizCR"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.drizCR</span></tt></a></dt>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle.drizCR</span></tt></dt>
 <dd>Identify cosmic-rays by comparing blotted, median images to the original input images</dd>
 </dl>
 </div>
@@ -621,7 +621,7 @@ aspects of each of the processing steps.</p>
           <a href="imageobject.html" title="imageObject Classes"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to astrodrizzle’s documentation!"
+          <a href="index.html" title="Welcome to astrodither’s documentation!"
              >previous</a> |</li>
         <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
