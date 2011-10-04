@@ -40,7 +40,7 @@ import numpy as np
 
 import processInput,util
 
-__taskname__ = 'astrodrizzle.buildmask'
+__taskname__ = 'astrodither.buildmask'
 #
 #### Interactive interface 
 #

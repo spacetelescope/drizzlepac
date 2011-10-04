@@ -4,7 +4,7 @@
 Base ImageObject Classes
 ************************
 
-.. currentmodule:: astrodrizzle.imageObject 
+.. currentmodule:: astrodither.imageObject 
 
 .. autoclass:: baseImageObject
    :members:

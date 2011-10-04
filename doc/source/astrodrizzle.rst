@@ -1,12 +1,12 @@
 .. _astrodrizzle:
 
 **************************************
-Primary User Interface: MultiDrizzle() 
+Primary User Interface: AstroDrizzle() 
 **************************************
  
 .. currentmodule:: astrodrizzle
 
 .. automodule:: astrodrizzle
    
-.. autofunction:: MultiDrizzle 
+.. autofunction:: AstroDrizzle 
   

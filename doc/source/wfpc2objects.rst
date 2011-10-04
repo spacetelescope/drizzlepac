@@ -4,7 +4,7 @@
 WFPC2 ImageObjects
 ******************
 
-.. currentmodule:: astrodrizzle.wfpc2Data
+.. currentmodule:: astrodither.wfpc2Data
 
 .. autoclass:: WFPC2InputImage
    :members:

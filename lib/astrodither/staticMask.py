@@ -26,7 +26,7 @@ import processInput
 
 
 
-__taskname__ = "astrodrizzle.staticMask"
+__taskname__ = "astrodither.staticMask"
 _step_num_ = 1
 
 

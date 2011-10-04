@@ -6,7 +6,7 @@ Output Image Generation
 
 This module manages the creation of the output image FITS file.
 
-.. currentmodule:: astrodrizzle.outputimage
+.. currentmodule:: astrodither.outputimage
 
 .. autoclass:: OutputImage
    :members:

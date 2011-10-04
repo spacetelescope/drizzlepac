@@ -22,7 +22,7 @@ import stsci.imagestats as imagestats
 import os
 import numpy as np
 
-__taskname__= "astrodrizzle.sky" #looks in astrodrizzle for sky.cfg
+__taskname__= "astrodither.sky" #looks in astrodither for sky.cfg
 _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
 

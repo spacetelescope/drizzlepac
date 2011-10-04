@@ -73,7 +73,7 @@ def getNumpyExtensions():
         raise ValueError("BUILD should be one of 'debug', 'profile', or 'release'")
 
 
-    ext = [Extension("astrodrizzle.cdriz",['src/arrdrizmodule.c',
+    ext = [Extension("astrodither.cdriz",['src/arrdrizmodule.c',
                                           'src/cdrizzleblot.c',
                                           'src/cdrizzlebox.c',
                                           'src/cdrizzleio.c',
@@ -92,7 +92,7 @@ def getNumpyExtensions():
     return ext
 
 
-pkg = "astrodrizzle"
+pkg = "astrodither"
 
 setupargs = {
 
@@ -102,15 +102,15 @@ setupargs = {
     'author_email' :    "help@stsci.edu",
     'license' :         "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :       ["Linux","Solaris","Mac OS X","Win"],
-    'data_files' :        [( pkg+"/pars", ['lib/astrodrizzle/pars/*']),
-                            ( pkg+"/htmlhelp/_images", ['lib/astrodrizzle/htmlhelp/_images/*']),
-                            ( pkg+"/htmlhelp/_sources", ['lib/astrodrizzle/htmlhelp/_sources/*']),
-                            ( pkg+"/htmlhelp/_static", ['lib/astrodrizzle/htmlhelp/_static/*']),
-                            ( pkg+"/htmlhelp", ['lib/astrodrizzle/htmlhelp/*.html']),
-                            ( pkg, ['lib/astrodrizzle/*.help'])],
-    'scripts' :         ["lib/astrodrizzle/mdriz.py","lib/astrodrizzle/resetbits","lib/astrodrizzle/updatenpol"] ,
+    'data_files' :        [( pkg+"/pars", ['lib/astrodither/pars/*']),
+                            ( pkg+"/htmlhelp/_images", ['lib/astrodither/htmlhelp/_images/*']),
+                            ( pkg+"/htmlhelp/_sources", ['lib/astrodither/htmlhelp/_sources/*']),
+                            ( pkg+"/htmlhelp/_static", ['lib/astrodither/htmlhelp/_static/*']),
+                            ( pkg+"/htmlhelp", ['lib/astrodither/htmlhelp/*.html']),
+                            ( pkg, ['lib/astrodither/*.help'])],
+    'scripts' :         ["lib/astrodither/mdriz.py","lib/astrodither/resetbits","lib/astrodither/updatenpol"] ,
     'ext_modules' :     getNumpyExtensions(),
-    'package_dir' :     { 'astrodrizzle' : 'lib/astrodrizzle', },
+    'package_dir' :     { 'astrodither' : 'lib/astrodither', },
 
     }
 

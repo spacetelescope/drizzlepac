@@ -31,7 +31,7 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
         multiprocessing = None
         print '\nCould not import multiprocessing, will only be able to take advantage of a single CPU core'
 
-__taskname__ = "astrodrizzle.adrizzle"
+__taskname__ = "astrodither.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
@@ -296,7 +296,7 @@ def getHelpAsString():
 
 
 #
-# astrodrizzle based interfaces: relying on imageObject instances and astrodrizzle internals
+# astrodither based interfaces: relying on imageObject instances and astrodither internals
 #
 #
 #### Top-level interface from inside MultiDrizzle

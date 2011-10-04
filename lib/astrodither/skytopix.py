@@ -50,7 +50,7 @@
     -----
     It can be called from within Python using the syntax::
 
-        >>> from astrodrizzle import skytopix
+        >>> from astrodither import skytopix
         >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]","00:22:36.79","-72:4:9.0")
 
     EXAMPLES
@@ -59,7 +59,7 @@
     1. The following command will transform the position 00:22:36.79 -72:4:9.0 into a
         position on the image 'input_flt.fits[sci,1]' using::
 
-            >>> from astrodrizzle import skytopix
+            >>> from astrodither import skytopix
             >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79","-72:4:9.0")
 
 
@@ -67,7 +67,7 @@
         the 3rd and 4th columns from the ASCII file 'radec_sci1.dat'
         will be transformed and written out to 'xy_sci1.dat' using::
 
-            >>> from astrodrizzle import skytopix
+            >>> from astrodither import skytopix
             >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
                 colnames=['c3','c4'], output="xy_sci1.dat")
 

@@ -61,7 +61,7 @@
     -----
     It can be called from within Python using the syntax::
     
-        >>> from astrodrizzle import pixtopix
+        >>> from astrodither import pixtopix
         >>> outx,outy = pixtopix.tran("input_flt.fits[sci,1]",
                         "output_drz.fits[sci,1],"forward",100,100)
 
@@ -72,7 +72,7 @@
         'input_flt.fits[sci,1]' into a position on the output image 
         'output_drz.fits[sci,1]' using::
 
-            >>> from astrodrizzle import pixtopix
+            >>> from astrodither import pixtopix
             >>> outx,outy = pixtopix.tran("input_file_flt.fits[sci,1]",
                         "output_drz.fits[sci,1],"forward", 256,256)
 
@@ -82,7 +82,7 @@
         will be transformed into pixel positions from 'input_flt.fits[sci,1]'
         and written out to 'xy_flt1.dat' using::
 
-            >>> from astrodrizzle import pixtopix
+            >>> from astrodither import pixtopix
             >>> x,y = pixtopix.tran("input_flt.fits[sci,1]", "output_drz.fits[sci,1]",
                     "backward", coords='xy_sci1.dat', colnames=['c3','c4'], 
                     output="xy_flt1.dat")

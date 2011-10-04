@@ -58,6 +58,6 @@ nclip = integer_kw(default=3,comment="Number of clipping iterations in fit")
 sigma = float_or_none_kw(default=3.0,comment="Clipping limit in sigma units")
 
 [ _RULES_ ]
-_rule1_ = string_kw(default='', code='from astrodrizzle import tweakreg; tweakreg.edit_imagefindpars()')
-_rule2_ = string_kw(default='', code='from astrodrizzle import tweakreg; tweakreg.edit_sextractorpars()')
+_rule1_ = string_kw(default='', code='from astrodither import tweakreg; tweakreg.edit_imagefindpars()')
+_rule2_ = string_kw(default='', code='from astrodither import tweakreg; tweakreg.edit_sextractorpars()')
 _rule3_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')

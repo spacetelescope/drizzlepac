@@ -3,7 +3,7 @@ Utility Functions
 *****************
 These functions perform various small operations within Multidrizzle.
 
-.. automodule:: astrodrizzle.util
+.. automodule:: astrodither.util
    :members:
    :undoc-members:
       
