@@ -1,4 +1,4 @@
-""" AstroDrizzle - test implementation of MultiDrizzle: The Next Generation
+""" AstroDrizzle - Python implementation of MultiDrizzle
 
 AstroDrizzle automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
@@ -42,7 +42,7 @@ import staticMask
 import util
 import wcs_functions
 
-__taskname__ = "astrodrizzle"
+__taskname__ = "astrodither.astrodrizzle"
 
 __version__ = '4.2.0dev'
 __vdate__ = '4-Oct-2011'

@@ -52,7 +52,7 @@
     -----
     It can be called from within Python using the syntax::
     
-        >>> from astrodrizzle import pixtosky
+        >>> from astrodither import pixtosky
         >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]",100,100)
 
     EXAMPLES
@@ -61,7 +61,7 @@
     1. The following command will transform the position 256,256 into a
         position on the sky for the image 'input_flt.fits[sci,1]' using::
 
-            >>> from astrodrizzle import pixtosky
+            >>> from astrodither import pixtosky
             >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
 
 
@@ -69,7 +69,7 @@
         the 3rd and 4th columns from the ASCII file 'xy_sci1.dat' 
         will be transformed and written out to 'radec_sci1.dat' using::
 
-            >>> from astrodrizzle import pixtosky
+            >>> from astrodither import pixtosky
             >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coords='xy_sci1.dat',
                 colnames=['c3','c4'], output="radec_sci1.dat")
 

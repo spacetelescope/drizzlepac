@@ -10,13 +10,13 @@ to run the task in a couple of common modes.
 
 1. Run the task using the TEAL GUI under PyRAF:
 
-    >>> import astrodrizzle 
+    >>> import astrodither 
     >>> epar pixtopix
 
 2. Convert the position 256,256 from 'input_flt.fits[sci,1]' 
      into a position on the output image 'output_drz.fits[sci,1]' using:
 
-            >>> from astrodrizzle import pixtopix
+            >>> from astrodither import pixtopix
             >>> outx,outy = pixtopix.tran("input_file_flt.fits[sci,1]",
                         "output_drz.fits[sci,1],"forward", 256,256)
                         
@@ -25,7 +25,7 @@ to run the task in a couple of common modes.
       will be transformed into pixel positions from 'input_flt.fits[sci,1]'
       and written out to 'xy_flt1.dat' using::
 
-            >>> from astrodrizzle import pixtopix
+            >>> from astrodither import pixtopix
             >>> x,y = pixtopix.tran("input_flt.fits[sci,1]",
                      "output_drz.fits[sci,1]", "backward", 
                      coords='xy_sci1.dat', colnames=['c3','c4'], 

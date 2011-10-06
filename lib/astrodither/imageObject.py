@@ -498,11 +498,11 @@ class baseImageObject:
         """
         Notes
         =====
-        Return an array representing the dark image for the 
-        detector.
+        Return an array representing the dark image for the detector.
+
+        The method will return an array of the same shape as the image.
         
         :units: electrons
-        
         """
         sci_chip = self._image[self.scienceExt,chip]
         return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*sci_chip.darkcurrent

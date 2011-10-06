@@ -3,61 +3,61 @@
 # $Id: updatenpol.py 8609 2010-01-19 16:22:48Z hack $
 
 """
-    **updatenpol --** Update the header of ACS file(s) with the names of new 
-    NPOLFILE and D2IMFILE reference files for use with the 
-    C version of MultiDrizzle (astrodrizzle).
+**updatenpol**: Update the header of ACS file(s) with the names of new 
+NPOLFILE and D2IMFILE reference files for use with the 
+C version of MultiDrizzle (astrodrizzle).
 
-    :License: 
-        http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
+:License: 
+    http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
 
-    :Usage: This task can be run from the operating system command line with::
+:Usage: This task can be run from the operating system command line with::
 
-                updatenpol [options] input [refdir]
+        updatenpol [options] input [refdir]
 
-    :Command-line Options:
-        `input`   
-            The specification of the files to be updated, either as a single filename, 
-            an ASN table name, or wild-card specification
-            of a list of files.
-        `refdir`  
-            The name of the directory containing all the new reference files 
-            (`\*_npl.fits` and `\*_d2i.fits` files). 
-            If no directory is given, it will look in `jref$` by default. 
+:Command-line Options:
+    `input`   
+        The specification of the files to be updated, either as a single filename, 
+        an ASN table name, or wild-card specification
+        of a list of files.
+    `refdir`  
+        The name of the directory containing all the new reference files 
+        (`\*_npl.fits` and `\*_d2i.fits` files). 
+        If no directory is given, it will look in `jref$` by default. 
 
-        ``-h``        
-            Print the help (this text).
+    ``-h``        
+        Print the help (this text).
 
-        ``-l``
-            If specified, copy NPOLFILEs and D2IMFILEs to local directory 
-            for use with the input files.
+    ``-l``
+        If specified, copy NPOLFILEs and D2IMFILEs to local directory 
+        for use with the input files.
 
-        ``-i``
-            If specified, the program will interactively request the exact 
-            names of the NPOLFILE and D2IMFILE reference files to be used 
-            for updating the header of each file. The value of 'refdir' 
-            will be ignored in interactive mode.
-
-
-    .. warning:: It will ask for the names of the NPOLFILE and D2IMFILE for
-                 EACH separate INPUT file when the option `-i` has been specified. 
-
-    :Example:
-        1. This command will update all the FLT files in the current directory
-        with the new NPOLFILE and D2IMFILE reference files found in the 'myjref' 
-        directory as defined in the environment::
-
-            updatenpol *flt.fits myjref$
+    ``-i``
+        If specified, the program will interactively request the exact 
+        names of the NPOLFILE and D2IMFILE reference files to be used 
+        for updating the header of each file. The value of 'refdir' 
+        will be ignored in interactive mode.
 
 
-    :Compatability with MultiDrizzle:  
-        The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs` 
-        only work with the new NPOLFILE reference file for the DGEO correction 
-        (to replace the use of DGEOFILE).  
-        In fact, astrodrizzle has been extensively modified to
-        prompt the user with a very lengthy explanation on whether it should
-        stop and allow the user to update the header or continue without
-        applying the DGEO correction under circumstances when the NPOLFILE
-        keyword can not be found for ACS.
+.. warning:: It will ask for the names of the NPOLFILE and D2IMFILE for
+             EACH separate INPUT file when the option `-i` has been specified. 
+
+:Example:
+    1. This command will update all the FLT files in the current directory
+    with the new NPOLFILE and D2IMFILE reference files found in the 'myjref' 
+    directory as defined in the environment::
+
+        updatenpol *flt.fits myjref$
+
+
+:Compatability with MultiDrizzle:  
+    The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs` 
+    only work with the new NPOLFILE reference file for the DGEO correction 
+    (to replace the use of DGEOFILE).  
+    In fact, astrodrizzle has been extensively modified to
+    prompt the user with a very lengthy explanation on whether it should
+    stop and allow the user to update the header or continue without
+    applying the DGEO correction under circumstances when the NPOLFILE
+    keyword can not be found for ACS.
 
 """
 

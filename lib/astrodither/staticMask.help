@@ -63,5 +63,5 @@ def create(input=None, static_sig=None, group=None, editpars=False, configObj=No
 
 Basic example of how to call static yourself from a python command line, using the default parameters for the task. 
 
->from astrodrizzle import staticMask
+>from astrodither import staticMask
 >staticMask.create('*flt.fits')

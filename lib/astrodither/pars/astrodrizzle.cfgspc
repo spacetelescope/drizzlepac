@@ -111,8 +111,8 @@ expkeyword = string_kw(default="")
 
 [ _RULES_ ]
 _rule1_ = string_kw(default='', when='entry', code='from stsci.tools import check_files; ans={ True:"yes",False:"no"};OUT = ans[(check_files.countInput(VAL) > 1)]')
-_rule1a_ = string_kw(default='', when='defaults,entry', code='from astrodrizzle import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
-_rule2_ = string_kw(default='', code='from astrodrizzle import processInput; newdict = processInput.getMdriztabPars("*flt.fits"); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
+_rule1a_ = string_kw(default='', when='defaults,entry', code='from astrodither import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
+_rule2_ = string_kw(default='', code='from astrodither import processInput; newdict = processInput.getMdriztabPars("*flt.fits"); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule5_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":False, "no":True}; OUT = tyfn[VAL]')
 _rule7a_ = string_kw(default='', code='OUT = VAL')

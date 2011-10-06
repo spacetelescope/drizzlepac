@@ -114,7 +114,6 @@ These tasks are designed to work together seemlessly when run in the full AstroD
 
 There are two user interface function for this task, one to allow you to create seperately drizzled images of each image in your list and the other to create one single output drizzled image, which is the combination of all of them
 
-**********************Warren - flush this out? How do you want people to call this?
 
 def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap):
 
@@ -130,4 +129,4 @@ else:
 Basic example of how to call static yourself from a python command line,
 using the default parameters for the task. 
 
->from astrodrizzle import drizzle
+>from astrodither import adrizzle

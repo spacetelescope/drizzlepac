@@ -417,11 +417,11 @@ expkeyword : str (Default Value = '')
 
 See Also
 --------
-astrodrizzle.drizzle: Apply the 'drizzle' algorithm to the images
-astrodrizzle.blot: Apply the 'blot' algorithm to drizzled images
-astrodrizzle.sky: Perform sky subtraction
-astrodrizzle.median: Create a median combined image from a set of drizzled images
-astrodrizzle.drizCR: Identify cosmic-rays by comparing blotted, median images to the original input images
+astrodither.adrizzle: Apply the 'drizzle' algorithm to the images
+astrodither.ablot: Apply the 'blot' algorithm to drizzled images
+astrodither.sky: Perform sky subtraction
+astrodither.median: Create a median combined image from a set of drizzled images
+astrodither.drizCR: Identify cosmic-rays by comparing blotted, median images to the original input images
 
 Notes
 ------
@@ -437,5 +437,5 @@ The primary Python interface to AstroDrizzle has been developed as::
 
 A basic example of how to call this from within a Python task would be::
 
->>> import astrodrizzle
->>> astrodrizzle.MultiDrizzle('*flt.fits', editpars=False)
+>>> from astrodither import astrodrizzle
+>>> astrodrizzle.AstroDrizzle('*flt.fits', editpars=False)
