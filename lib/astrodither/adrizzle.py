@@ -733,12 +733,21 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Merge appropriate additional mask(s) with DQ mask
     if single:
         mergeDQarray(chip.outputNames['staticMask'],dqarr)
+        if dqarr.sum() == 0:
+            print 'WARNING: All pixels masked out when applying static mask!'
     else:
         mergeDQarray(chip.outputNames['staticMask'],dqarr)
-        mergeDQarray(chip.outputNames['crmaskImage'],dqarr)
+        if dqarr.sum() == 0:
+            print 'WARNING: All pixels masked out when applying static mask!'
+        else:
+            # Only apply cosmic-ray mask when some good pixels remain after
+            # applying the static mask
+            mergeDQarray(chip.outputNames['crmaskImage'],dqarr)
+            if dqarr.sum() == 0:
+                print 'WARNING: All pixels masked out when applying cosmic ray mask to ',_expname
         updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,
                            chip.outputNames['crmaskImage'],paramDict['crbit'])
-
+        
     img.set_wtscl(chip._chip,paramDict['wt_scl'])
 
     wcslin = distortion.utils.output_wcs([chip.wcs],undistort=undistort)
@@ -753,6 +762,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _inwht = img.buildIVMmask(chip._chip,dqarr,pix_ratio)
     else: # wht_type == 'EXP'
         _inwht = dqarr.astype(np.float32)
+    
     if not(paramDict['clean']):
         # Write out mask file if 'clean' has been turned off
         if single:

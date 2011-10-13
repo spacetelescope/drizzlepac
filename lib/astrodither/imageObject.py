@@ -11,6 +11,7 @@ import util,wcs_functions
 import buildmask
 import numpy as np
 
+
 IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
 
 __version__ = '0.1dev1'
@@ -305,7 +306,7 @@ class baseImageObject:
         
         extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
         extver=self._image[self.scienceExt,chip].header["EXTVER"]
-        expname=self._image[self.scienceExt,chip].header["EXPNAME"].lower()
+        expname = self._rootname.lower()            
     
         # record extension-based name to reflect what extension a mask file corresponds to
         self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
@@ -601,7 +602,7 @@ class baseImageObject:
         """
         dqarr = self.getData(exten=self.maskExt+','+str(chip))
         dqmask = buildmask.buildMask(dqarr,bits)
-            
+
         if write:
             phdu = pyfits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
@@ -613,7 +614,6 @@ class baseImageObject:
             # record the name of this mask file that was created for later 
             # removal by the 'clean()' method
             self._image[self.scienceExt,chip].outputNames['dqmask'] = dqmask_name
-            
         del dqarr            
         return dqmask
 
@@ -861,7 +861,8 @@ class imageObject(baseImageObject):
             raise IOError
 
         #populate the global attributes which are good for all the chips in the file
-        self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
+        #self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
+        self._rootname=fileutil.buildNewRootname(filename)
         self.outputNames=self._setOutputNames(self._rootname)
         
         #self._exptime=self._image["PRIMARY"].header["EXPTIME"]
