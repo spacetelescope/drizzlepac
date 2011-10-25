@@ -336,11 +336,11 @@ class baseImageObject:
         outMedian = rootname+'_med.fits'
                 
         # Build names based on input name
-        indx = self._filename.find('.fits')
-        origFilename = self._filename[:indx]+'_OrIg.fits'
+        origFilename = self._filename.replace('.fits','_OrIg.fits')
         outSky = rootname + '_sky.fits'
         outSingle = rootname+'_single_sci.fits'
         outSWeight = rootname+'_single_wht.fits'
+        crCorImage = rootname+'_cor.fits'
         
         # Build outputNames dictionary
         fnames={
@@ -354,6 +354,7 @@ class baseImageObject:
             'outSWeight':outSWeight,
             'outSContext':None,
             'outSky':outSky,
+            'crcorImage':crCorImage,
             'ivmFile':None}
         
 
@@ -362,15 +363,12 @@ class baseImageObject:
     def _setChipOutputNames(self,rootname,chip):
         blotImage = rootname + '_blt.fits'
         crmaskImage = rootname + '_crmask.fits'
-        crcorImage = rootname + '_cor.fits'
-
 
         # Start with global names
         fnames = self.outputNames
 
         # Now add chip-specific entries
         fnames['blotImage'] = blotImage
-        fnames['crcorImage'] = crcorImage
         fnames['crmaskImage'] = crmaskImage
         sci_chip = self._image[self.scienceExt,chip]
         # Define mask names as additional entries into outputNames dictionary

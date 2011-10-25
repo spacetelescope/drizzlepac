@@ -134,9 +134,14 @@ def run(configObj=None,wcsmap=None):
     if len(input_list) > 0:
         def_logname = input_list[0]
     else:
-        print 'No input files found...'
+        print '='*60
+        print 'ERROR:'
+        print '    No valid input files found!'
+        print '    Please restart the task and check the value for the "input" parameter.'
+        print '='*60
         def_logname = None
-
+        return
+    
     stateObj = configObj['STATE OF INPUT FILES']
         
     util.init_logging(logfile=configObj['runfile'],default=def_logname)

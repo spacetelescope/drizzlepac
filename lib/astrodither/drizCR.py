@@ -120,14 +120,13 @@ def _drizCr(sciImage,paramDict,saveFile=True):
 #        print "Problem with value of chip or sciImage to drizCR"
 #        print sciImage
 #        raise AssertionError
- 
+    crcorr_list =[]
     for chip in range(1,sciImage._numchips+1,1):  
         exten=sciImage.scienceExt + ',' +str(chip)    
         scienceChip=sciImage[exten]
 
         if scienceChip.group_member:
             blotImageName=scienceChip.outputNames["blotImage"]
-            crCorImage=scienceChip.outputNames["crcorImage"]
             crMaskImage=scienceChip.outputNames["crmaskImage"]
             ctedir=scienceChip.cte_dir
 
@@ -283,12 +282,11 @@ def _drizCr(sciImage,paramDict,saveFile=True):
             __corrFile = np.where(np.equal(__dqMask,0),__blotData,__inputImage)
 
             if(saveFile and paramDict['driz_cr_corr']):
-                # Remove the existing cor file if it exists
-                if(os.access(crCorImage, os.F_OK)):
-                    os.remove(crCorImage)
-                    print "Removing old corr file:",crCorImage 
-
-                util.createFile(__corrFile,outfile=crCorImage,header=None)
+                crcorr_list.append({'sciext':fileutil.parseExtn(exten),
+                                'corrFile':__corrFile.copy(),
+                                'dqext':fileutil.parseExtn(scienceChip.dq_extn),
+                                'dqMask':__dqMask.copy()})
+                
 
             ######## Save the cosmic ray mask file to disk
             _cr_file = np.zeros(__inputImage.shape,np.uint8)
@@ -307,9 +305,32 @@ def _drizCr(sciImage,paramDict,saveFile=True):
         
             util.createFile(_cr_file, outfile=crMaskImage, header = None)
 
+    if(saveFile and paramDict['driz_cr_corr']):   
+        #util.createFile(__corrFile,outfile=crCorImage,header=None)
+        createCorrFile(sciImage.outputNames["crcorImage"], 
+                        crcorr_list, sciImage._filename)
+    del crcorr_list
   
-            
-   
+#### Create _cor file based on format of original input image
+def createCorrFile(outfile, arrlist, template):
+    """
+    Create a _cor file with the same format as the original input image
+    
+    The DQ array will be replaced with the mask array used to create the _cor
+    file.
+    """
+    # Remove the existing cor file if it exists
+    if(os.access(outfile, os.F_OK)):
+        os.remove(outfile)
+        print "Removing old corr file:",outfile 
+
+    ftemplate = pyfits.open(template)
+    for arr in arrlist:
+        ftemplate[arr['sciext']].data = arr['corrFile']
+        ftemplate[arr['dqext']].data = arr['dqMask']
+    ftemplate.writeto(outfile)
+    print 'Created CR corrected file: ',outfile
+    
 def setDefaults(configObj={}):
     """ Return a dictionary of the default parameters
         which also been updated with the user overrides.

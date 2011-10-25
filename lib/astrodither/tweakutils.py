@@ -341,18 +341,9 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
     fin = open(infile,'r')
     flines = fin.readlines()
     fin.close()
-    hcount = 0
-    for l in flines: 
-        if l[0] == '#': hcount += 1
     
     for l in flines: # interpret each line from catalog file
-        if hcount == 1:
-            # Parse colnames directly from column headers
-            colnames = l.split()
-            for name,i in zip(colnames,range(len(colnames))):
-                name = name.replace('#','')
-                coldict[name] = i
-        elif l[0] == '#':
+        if l[0] == '#':
             continue
         else:
             # convert first row of data into column definitions using indices
@@ -841,9 +832,12 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False):
     xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
     print 'Found initial X and Y shifts of ',xp,yp,'\n     with significance of ',zpqual
     if histplot:
-        zpstd = (((zpsum-flux)/zpmat.size)+zpmat.std())
+        zpstd = (((zpsum-flux)/zpmat.size)+2*zpmat.std())
+        if zpstd <= 0: 
+            print 'WARNING: No significant XY peak recognized!' 
+            zpstd = 1
         pl.clf()
-        a=pl.imshow(zpmat,vmin=1,vmax=zpstd,interpolation='nearest')
+        a=pl.imshow(zpmat,vmin=0,vmax=zpstd,interpolation='nearest')
         pl.gray()
         pl.colorbar()
         pl.title("Histogram of offsets: Peak S/N=%0.2f at (%0.4g, %0.4g)"%(zpqual,xp,yp))

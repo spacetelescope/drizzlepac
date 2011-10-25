@@ -50,9 +50,6 @@ except:
 import updatenpol
 import buildwcs
 
-# Add TEAL interface to 'updatewcs' here
-import wcsupdate
-
 # These lines allow TEAL to print out the names of TEAL-enabled tasks
 # upon importing this package.
 from stsci.tools import teal
@@ -72,9 +69,9 @@ if False :
         pass
 
 else :
-    __version__ = '4.2.1dev'
+    __version__ = '4.2.2dev'
 
-__vdate__ = '13-Oct-2011'
+__vdate__ = '25-Oct-2011'
 # Revision based version info
 # End Version Information ---------------------------------------------
 try:
