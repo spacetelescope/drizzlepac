@@ -299,6 +299,11 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         if len(line.split()) == 2:
             # ...parse out the names of the IVM files as well
             ivmlist = irafglob.irafglob(input, atfile=util.atfile_ivm)
+        if output in ['',None,"None"]:
+            if len(filelist) == 1:
+                output = fileutil.buildNewRootname(filelist[0])
+            else:
+                output = 'final'
     else:
         #input is a string or a python list
         try:

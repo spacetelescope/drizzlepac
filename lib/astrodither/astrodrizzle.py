@@ -130,8 +130,10 @@ def run(configObj=None,wcsmap=None):
     # also, initialize timing of processing steps
     #
     # We need to define a default logfile name from the user's parameters
-    input_list = glob.glob(configObj['input'])
-    if len(input_list) > 0:
+    input_list,output,ivmlist,odict = processInput.processFilenames(configObj['input'])
+    if output is not None:
+        def_logname = output
+    elif len(input_list) > 0:
         def_logname = input_list[0]
     else:
         print '='*60
