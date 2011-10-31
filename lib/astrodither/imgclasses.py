@@ -8,6 +8,7 @@ import pyfits
 from stwcs import distortion
 from stwcs.distortion import utils
 from stwcs.wcsutil import wcscorr
+from stwcs.wcsutil import headerlet
 from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
 
@@ -341,13 +342,18 @@ class Image(object):
                     sigma=pars['sigma'],minobj=pars['minobj'],
                     center=self.refWCS.wcs.crpix)
 
+                self.fit['rms_keys'] = self.compute_fit_rms()
+
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
                     self.fit['offset'][0],self.fit['offset'][1], 
                     self.fit['rot'],self.fit['scale'][0])
                 print 'XRMS: %0.6g    YRMS: %0.6g\n'%(
                         self.fit['rms'][0],self.fit['rms'][1])
-                print 'Final solution based on ',self.fit['img_coords'].shape[0],' objects.'
+                print 'RMS_RA: %g (deg)   RMS_DEC: %g (deg)\n'%(
+                        self.fit['rms_keys']['RMS_RA'],
+                        self.fit['rms_keys']['RMS_DEC'])
+                print 'Final solution based on ',self.fit['rms_keys']['NMATCH'],' objects.'
                 
                 self.write_fit_catalog()
 
@@ -370,7 +376,21 @@ class Image(object):
                     if 'q' in a.lower():
                         self.quit_immediately = True
         else:
-            self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0]}
+            self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0],'rms':[0.0,0.0],
+                        'rms_keys':{'RMS_RA':0.0,'RMS_DEC':0.0,'NMATCH':0}}
+
+    def compute_fit_rms(self):
+        # start by interpreting the fit to get the RMS values
+        if not self.identityfit and self.goodmatch:
+            crpix = self.refWCS.wcs.crpix + self.fit['rms']
+            crval_rms = self.refWCS.wcs_pix2sky([crpix],1)[0]
+            rms_ra,rms_dec = crval_rms - self.refWCS.wcs.crval
+            nmatch = self.fit['resids'].shape[0]
+        else:
+            rms_ra = 0.0
+            rms_dec = 0.0
+            nmatch = 0.0
+        return {'RMS_RA':rms_ra,'RMS_DEC':rms_dec,'NMATCH':nmatch}
 
     def updateHeader(self,wcsname=None):
         """ Update header of image with shifts computed by *perform_fit()*.
@@ -379,20 +399,36 @@ class Image(object):
             return
         # Create WCSCORR table to keep track of WCS revisions anyway
         wcscorr.init_wcscorr(self.name)
+        extlist = []
+        if self.num_sci == 1 and self.ext_name == "PRIMARY":
+            extlist = [0]
+        else:
+            for ext in range(1,self.num_sci+1):
+                extlist.append((self.ext_name,ext))
+
+        next_key = stwcs.wcsutil.altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
 
         if not self.identityfit and self.goodmatch:
             updatehdr.updatewcs_with_shift(self.name,self.refWCS,wcsname=wcsname,
-                xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],rot=self.fit['rot'],scale=self.fit['scale'][0])
-        if self.identityfit:
-            # archive current WCS as alternate WCS with specified WCSNAME
-            extlist = []
-            if self.num_sci == 1 and self.ext_name == "PRIMARY":
-                extlist = [0]
-            else:
-                for ext in range(1,self.num_sci+1):
-                    extlist.append((self.ext_name,ext))
+                xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
+                rot=self.fit['rot'],scale=self.fit['scale'][0])
+            
+            print '    Writing out new WCS to alternate WCS: "',next_key,'"'
+                
+            # add FIT values to image's PRIMARY header
+            fimg = pyfits.open(self.name,mode='update')
+            if wcsname in ['',' ',None,"INDEF"]:
+                wcsname = 'TWEAK'
+            # Record values for the fit with both the PRIMARY WCS being updated
+            # and the alternate WCS which will be created.
+            for ext in range(1,self.num_sci+1):
+                fimg[ext].header.update('FITNAME'+next_key,wcsname)
+                for kw in self.fit['rms_keys']:
+                    fimg[ext].header.update(kw+next_key,self.fit['rms_keys'][kw],after='FITNAME'+next_key)
+            fimg.close()
 
-            next_key = stwcs.wcsutil.altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
+        if self.identityfit or not self.goodmatch:
+            # archive current WCS as alternate WCS with specified WCSNAME
             stwcs.wcsutil.altwcs.archiveWCS(self.name,extlist,wcskey=next_key,wcsname=wcsname)
 
             # copy updated WCS info to WCSCORR table
@@ -401,6 +437,40 @@ class Image(object):
                 stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
                 fimg.close()
 
+    def writeHeaderlet(self,**kwargs):
+        """ Write and/or attach a headerlet based on update to PRIMARY WCS
+        """
+        pars = kwargs.copy()
+        rms_pars = self.fit['rms_keys']
+        
+        # interpret input strings
+        str_kw = ['descrip','history','author','hdrfile','wcsname']
+        if pars['hdrname'].strip() == '':
+            print '='*60
+            print 'ERROR:'
+            print '    No valid "hdrname" parameter value provided!'
+            print '    No headerlets can be generated!'
+            print '='*60
+            return
+        for kw in str_kw:
+            if pars[kw] == '': pars[kw] = None
+        
+        # Call function with properly interpreted input parameters
+        # Syntax: write_headerlet(filename, hdrname, output, sciext='SCI', 
+        #                    wcsname=None, wcskey=None, destim=None,
+        #                    sipname=None, npolfile=None, d2imfile=None, 
+        #                    author=None, descrip=None, history=None,
+        #                    rms_ra=None, rms_dec=None, nmatch=None, catalog=None,
+        #                    attach=True, clobber=False):
+        headerlet.write_headerlet(self.name, pars['hdrname'], 
+                output=pars['hdrfile'], 
+                wcsname=None, wcskey=" ", destim=None,
+                sipname=None, npolfile=None, d2imfile=None, 
+                author=pars['author'], descrip=pars['descrip'], 
+                history=pars['history'],
+                attach=pars['attach'], clobber=pars['clobber']
+            ) 
+        
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """

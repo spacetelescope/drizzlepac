@@ -391,44 +391,6 @@ def readCommaList(fileList):
         fileList.append(item)
     return fileList
     
-
-
-def getInputAsList(input, output=None, ivmlist=None, prodonly=False):
-    if (isinstance(input, list) == False) and \
-       ('_asn' in input or '_asc' in input) :
-       
-        # Input is an association table
-        # Get the input files, and run makewcs on them
-        oldasndict = asnutil.readASNTable(input, prodonly=prodonly)
-
-        if not output:
-            output = oldasndict['output']
-
-        filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
-        
-    elif (isinstance(input, list) == False) and \
-       (input[0] == '@') :
-        # input is an @ file
-        f = open(input[1:])
-        # Read the first line in order to determine whether
-        # IVM files have been specified in a second column...
-        line = f.readline()
-        f.close()
-        # Parse the @-file with irafglob to extract the input filename
-        filelist = irafglob.irafglob(input, atfile=atfile_sci)
-        # If there is a second column...
-        if len(line.split()) == 2:
-            # ...parse out the names of the IVM files as well 
-            ivmlist = irafglob.irafglob(input, atfile=atfile_ivm)        
-    else:
-        #input is a string or a python list
-        try:
-            filelist, output = parseinput.parseinput(input, outputname=output)
-            #filelist.sort()
-        except IOError: raise
-        
-    return filelist, output
-
 def runmakewcs(input):
     """
     Runs 'updatewcs' to recompute the WCS keywords for the input image.

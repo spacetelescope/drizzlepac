@@ -162,7 +162,10 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         Q = np.dot(npla.inv(M),V)
         
         # Return the shift, rotation, and scale changes
-        result = build_fit(P,Q)        
+        result = build_fit(P,Q) 
+        resids = uv - np.dot((xy),result['fit_matrix']) - result['offset']
+        rms = [resids[:,0].std(),resids[:,1].std()]
+        result['rms'] = rms
     else:
         if verbose:
             print 'Performing "rscale" fit'

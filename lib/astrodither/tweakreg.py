@@ -125,7 +125,7 @@ def run(configobj):
         # setup array of None values as input to catalog parameter for Image class
         catnames = [None]*len(filenames)
         use_catfile = False
-
+    
     # convert input images and any provided catalog file names into Image objects
     input_images = []
     # copy out only those parameters needed for Image class
@@ -169,6 +169,8 @@ def run(configobj):
     # Create Reference Catalog object
     refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
 
+    uphdr_par = configobj['UPDATE HEADER']
+
     # Now, apply reference WCS to each image's sky positions as well as the
     # reference catalog sky positions,
     # then perform the fit between the reference catalog positions and 
@@ -181,8 +183,10 @@ def run(configobj):
         if img.quit_immediately:
             quit_immediately = True
             break
-        if configobj['UPDATE HEADER']['updatehdr']:
-            img.updateHeader(wcsname=configobj['UPDATE HEADER']['wcsname'])
+        if uphdr_par['updatehdr']:
+            img.updateHeader(wcsname=uphdr_par['wcsname'])
+            if uphdr_par['headerlet']:
+                img.writeHeaderlet(**uphdr_par)
         if configobj['clean']:
             img.clean()
 
