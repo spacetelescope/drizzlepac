@@ -582,7 +582,8 @@ def gauss(x,sigma):
 
 
 #### Plotting Utilities for astrodither
-def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,title=None, axes=None, every=1,
+def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure=None,
+                    title=None, axes=None, every=1,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,append=False,linfit=False,rms=True):
     """ Convert a XYXYMATCH file into a vector plot or set of residuals plots.
@@ -682,6 +683,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,title=None, axes=None
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
         
+    pl.figure(num=figure)
     if not append:
         pl.clf()
     if vector: 

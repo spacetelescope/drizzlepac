@@ -364,12 +364,21 @@ class Image(object):
                     resids = self.fit['resids']
                     xy_fit = xy + resids
                     title_str = 'Residuals\ for\ %s'%(self.name.replace('_','\_'))
-                    if pars['residplot'] == 'vector':
+                    figure_id = 1
+                    if pars['residplot'] == 'both':
+                        tweakutils.make_vector_plot(None,
+                            data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
+                            figure=figure_id, vector=True,title=title_str)    
+                        ptype=False # Setup 
+                        figure_id = 2
+                    elif pars['residplot'] == 'vector':
                         ptype = True
                     else:
                         ptype = False
-                    tweakutils.make_vector_plot(None,data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                            vector=ptype,title=title_str)
+                    # Generate new plot 
+                    tweakutils.make_vector_plot(None,
+                        data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
+                        figure=figure_id, vector=ptype,title=title_str)    
                     a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...")
                     if 'n' in a.lower():
                         self.perform_update = False
