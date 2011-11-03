@@ -276,8 +276,8 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:
         cfgpars.mergeConfigObj(configObj, input_dict)
         # Update the input .cfg file with the updated parameter values 
-        configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
-        configObj.write()
+        #configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
+        #configObj.write()
         
     if not loadOnly: 
     # We want to run the GUI AFTER merging in any parameters 
