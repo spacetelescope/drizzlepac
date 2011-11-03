@@ -22,7 +22,7 @@ class Image(object):
     """ Primary class to keep track of all WCS and catalog information for
         a single input image. This class also performs all matching and fitting.
     """
-    def __init__(self,filename,input_catalogs=None,**kwargs):
+    def __init__(self,filename,input_catalogs=None,exclusions=None,**kwargs):
         """
         Parameters
         ----------
@@ -40,6 +40,8 @@ class Image(object):
         self.rootname = filename[:filename.find('.')]
         self.origin = 1
         self.pars = kwargs
+        self.exclusions = exclusions
+
         if input_catalogs is not None and kwargs['xyunits'] == 'degrees':
             # Input was a catalog of sky positions, so no WCS or image needed
             use_wcs = False
@@ -76,9 +78,18 @@ class Image(object):
             else:
                 source = input_catalogs[sci_extn-1]
                 catalog_mode='user'
+                
+            if exclusions is not None and len(exclusions) >= sci_extn:
+                if exclusions[sci_extn-1] not in ['None',' ','INDEF']: 
+                    excludefile=exclusions[sci_extn-1]
+                else:
+                    excludefile = None
+            else:
+                excludefile = None
             kwargs['start_id'] = num_sources
             catalog = catalogs.generateCatalog(wcs,mode=catalog_mode,catalog=source,**kwargs)
-            catalog.buildCatalogs() # read in and convert all catalog positions to RA/Dec
+            # read in and convert all catalog positions to RA/Dec
+            catalog.buildCatalogs(exclusions=excludefile) 
             num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
 

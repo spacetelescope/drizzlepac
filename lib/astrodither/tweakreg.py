@@ -110,7 +110,13 @@ def run(configobj):
             catnames = tweakutils.parse_atfile_cat('@'+catfile_par)
         else:
             use_catfile = False
-    
+
+    if 'exclusions' in configobj and \
+        configobj['exclusions'] not in [None,'',' ','INDEF']:
+        exclusion_files = tweakutils.parse_atfile_cat('@'+configobj['exclusions'])
+    else:
+        exclusion_files = [None]*len(filenames)
+        
     # Verify that we have the same number of catalog files as input images
     if catnames is not None and (len(catnames) > 0):
         rcat = configobj['REFERENCE CATALOG DESCRIPTION']['refcat']
@@ -132,6 +138,8 @@ def run(configobj):
     catfile_kwargs = tweakutils.get_configobj_root(configobj)
     # define default value for 'xyunits' assuming sources to be derived from image directly
     catfile_kwargs['xyunits'] = 'pixels' # initialized here, required by Image class
+    del catfile_kwargs['exclusions']
+    
     if use_catfile:
         # reset parameters based on parameter settings in this section
         catfile_kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
@@ -143,7 +151,9 @@ def run(configobj):
     for imgnum in xrange(len(filenames)):
         # Create Image instances for all input images
         input_images.append(imgclasses.Image(filenames[imgnum],
-                            input_catalogs=catnames[imgnum],**catfile_kwargs))
+                            input_catalogs=catnames[imgnum],
+                            exclusions=exclusion_files[imgnum],
+                            **catfile_kwargs))
     
     # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)

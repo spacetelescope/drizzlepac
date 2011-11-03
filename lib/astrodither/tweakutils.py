@@ -54,7 +54,11 @@ def parse_atfile_cat(input):
     f = open(input[1:])
     catlist = []
     for line in f.readlines():
-        catlist.append(line.split()[1:])
+        lspl = line.split()
+        if len(lspl) > 1:
+            catlist.append(lspl[1:])
+        else:
+            catlist.append(None)
     f.close()
     return catlist
 
@@ -199,6 +203,43 @@ def radec_hmstodd(ra,dec):
 
     pos = coords.Position(rastr+' '+decstr,units='hours')
     return pos.dd()
+
+def parse_exclusions(exclusions):
+    """ Read in exclusion definitions from file named by 'exclusions'
+        and return a list of positions and distances
+    """ 
+    fname = fileutil.osfn(exclusions)
+    if os.path.exists(fname):
+        fobj = open(fname)
+        flines = fobj.readlines()
+        fobj.close()
+    else:
+        print 'No valid exclusions file "',fname,'" could be found!'
+        print 'Skipping application of exclusions files to source catalogs.'
+        return None
+    
+    # Parse out lines which can be interpreted as positions and distances
+    exclusion_list = []
+    for line in flines:
+        if line[0] == '#' or 'global' in line[:6]:
+            continue
+        if 'fk' in line[:2]:
+            units = 'sky'
+        if 'image' in line[:5]:
+            units = 'pixels'
+            
+        if 'circle(' in line:
+            nline = line.replace('circle(','')
+            nline = nline.replace(')','')
+            nline = nline.replace('"','')
+            vals = nline.split(',')
+            if ':' in vals[0]:
+                posval = vals[0]+' '+vals[1]
+            else:
+                posval = (float(vals[0]),float(vals[1]))
+            exclusion_list.append({'pos':posval,'distance':float(vals[2]),
+                                    'units':units})
+    return exclusion_list
 
 def parse_colname(colname):
     """ Common function to interpret input column names provided by the user.

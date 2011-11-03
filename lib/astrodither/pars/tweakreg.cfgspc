@@ -5,6 +5,7 @@ findmode = option_kw('imagefind','sextractor', default='imagefind',  comment="Ge
 _editipars_btn_ = action_kw(default='imagefind Parameters', executes='_rule1_', comment='Edit imagefind parameters')
 _editspars_btn_ = action_kw(default='SExtractor Parameters', executes='_rule2_', comment='Edit Sextractor parameters')
 execname = string_kw(default="",comment="Filename with path for custom SExtractor task")
+exclusions = string_kw(default="",comment="Filename for source exclusions catalogs")
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=True, comment="Remove intermediate files?")
 verbose = boolean_kw(default=False, comment="Print extra messages during processing?")

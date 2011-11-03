@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import pywcs
+import astrolib.coords as coords
+
 import stwcs
 from stwcs import wcsutil
 import pyfits
@@ -137,11 +139,45 @@ class Catalog(object):
                 # under the assumption they were already sky positions.
                 self.radec = self.xypos
 
-    def buildCatalogs(self):
+    def apply_exclusions(self,exclusions):
+        """ Trim sky catalog to remove any sources within regions specified by
+            exclusions file
+        """
+        # parse exclusion file into list of positions and distances
+        exclusion_coords = tweakutils.parse_exclusions(exclusions)
+        if exclusion_coords is None:
+            return
+        excluded_list = []
+        radec_indx = range(len(self.radec[0]))
+        for ra,dec,indx in zip(self.radec[0],self.radec[1],radec_indx):
+            src_pos = coords.Position((ra,dec))
+            # check to see whether this source is within an exclusion region
+            for reg in exclusion_coords:
+                if reg['units'] == 'sky':
+                    regpos = reg['pos']
+                    regdist = reg['distance']
+                else:
+                    regpos = self.wcs.all_pix2sky([reg['pos']],1)
+                    regdist = reg['distance']*self.wcs.pscale
+                epos = coords.Position(regpos)
+                if src_pos.within(epos,regdist):
+                    excluded_list.append(indx)
+                    break
+        # create a list of all 'good' sources outside all exclusion regions
+        for e in excluded_list: radec_indx.remove(e)
+        radec_indx = np.array(radec_indx,dtype=np.int64)
+        num_excluded = len(excluded_list)
+        if num_excluded > 0:
+            self.radec = [self.radec[0][radec_indx],self.radec[1][radec_indx]]
+            print 'Excluded ',num_excluded,' sources from catalog.'
+            
+    def buildCatalogs(self,exclusions=None):
         """ Primary interface to build catalogs based on user inputs.
         """
         self.generateXY()
         self.generateRaDec()
+        if exclusions:
+            self.apply_exclusions(exclusions)
 
     def plotXYCatalog(self,**kwargs):
         """
