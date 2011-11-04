@@ -223,9 +223,11 @@ def parse_exclusions(exclusions):
     for line in flines:
         if line[0] == '#' or 'global' in line[:6]:
             continue
+
+        units='pixels'
         if 'fk' in line[:2]:
             units = 'sky'
-        if 'image' in line[:5]:
+        if line[:5] in ['image','physi']:
             units = 'pixels'
             
         if 'circle(' in line:
