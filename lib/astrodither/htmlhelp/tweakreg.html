@@ -533,6 +533,65 @@ input and the reference to produce the &#8216;shiftfile&#8217;. If the user is
 confident that the solution will be correct, the header of each input image
 can be updated directly with the fit derived for that image. Otherwise,
 the &#8216;shiftfile&#8217; can be passed to AstroDrizzle for aligning the images.</p>
+<p><strong>Format of Exclusion Catalog</strong></p>
+<p>The format for the exclusions catalog requires 1 line in the file for 
+every input image, regardless of whether or not that image has 
+any defined exclusion regions.  A sample file would look like:</p>
+<div class="highlight-python"><pre>j99da1emq_flt.fits  
+j99da1f2q_flt.fits test_exclusion.reg</pre>
+</div>
+<p>This file specifies no exclusion files for the first image, and only 
+an regions file for SCI,1 of the second image.  Should an exclusion
+regions file only be needed for the second chip in the second image, 
+the file would need to look like:</p>
+<div class="highlight-python"><pre>j99da1emq_flt.fits  
+j99da1f2q_flt.fits None test_sci2_exclusion.reg</pre>
+</div>
+<p>The value &#8216;None&#8217; could also be replaced by &#8216;INDEF&#8217; if desired, but either
+string needs to be present to signify no regions file for that chip while 
+the code continues parsing the line to find a file for the second chip.</p>
+<p><strong>Format of Region Files</strong></p>
+<p>The format of the exclusions catalogs referenced in the &#8216;exclusions&#8217;
+file defaults to the format written out by DS9 using the &#8216;DS9/Funtools&#8217;
+region file format.  A sample file with circle() regions will look like:</p>
+<div class="highlight-python"><pre># Region file format: DS9 version 4.1
+# Filename: j99da1f2q_flt.fits[SCI]
+global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+image
+circle(3170,198,20)
+circle(3269,428,20)
+circle(3241.1146,219.78132,20.000014)</pre>
+</div>
+<p>This task can also work with regions files which have a much simpler
+format for each region with 2 values for the source center and a third
+value for the radius of the region.  The units of all the values can
+either pixels or sky coordinates (either sexagesimal RA/Dec or decimal
+degrees RA/Dec plus radius in arcseconds).  The values on each line can be
+separated either by spaces or commas.</p>
+<p>A sample file with free formatted regions would look like:</p>
+<div class="highlight-python"><pre>image
+3170,198,20
+3269 428 20
+3241.1146,219.78132,20.000014</pre>
+</div>
+<p>The first (non-comment) line in the file will specify what units were used
+for specifying the regions. Supported options are:</p>
+<ul class="simple">
+<li>&#8216;image&#8217;</li>
+<li>&#8216;physical&#8217;</li>
+<li>&#8216;pixel&#8217;</li>
+<li>&#8216;fk5&#8217;</li>
+<li>&#8216;fk4&#8217;</li>
+<li>&#8216;sky&#8217;</li>
+</ul>
+<p>The terms &#8216;image&#8217;, &#8216;physical&#8217;, and &#8216;pixel&#8217; all refer to values in
+<em>pixels</em>, while the remaining naturally refer to values specified in <em>sky
+coordinates</em>. A <strong>default units of &#8216;pixels&#8217;</strong> will be assumed should the
+units line not be found at the beginning of the regions file.</p>
+<p>The format of the regions can
+actually be different from one line to the next, in case multiple regions
+files written out in different formats need to be merged. So, regions from
+the second example could be included in the first examples file if needed.</p>
 <p class="rubric">Examples</p>
 <p>This task can be run from either the TEAL GUI or from the Python command-line. 
 These examples illustrate the syntax that can be used to run the task in a 

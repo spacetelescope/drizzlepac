@@ -220,16 +220,19 @@ def parse_exclusions(exclusions):
     
     # Parse out lines which can be interpreted as positions and distances
     exclusion_list = []
+    units = None
     for line in flines:
         if line[0] == '#' or 'global' in line[:6]:
             continue
+        
+        if units is None:
+            units='pixels'
+            if line[:3] in ['fk4','fk5','sky']:
+                units = 'sky'
+            if line[:5] in ['image','physi','pixel']:
+                units = 'pixels'
+            continue
 
-        units='pixels'
-        if 'fk' in line[:2]:
-            units = 'sky'
-        if line[:5] in ['image','physi']:
-            units = 'pixels'
-            
         if 'circle(' in line:
             nline = line.replace('circle(','')
             nline = nline.replace(')','')
@@ -239,7 +242,21 @@ def parse_exclusions(exclusions):
                 posval = vals[0]+' '+vals[1]
             else:
                 posval = (float(vals[0]),float(vals[1]))
-            exclusion_list.append({'pos':posval,'distance':float(vals[2]),
+        else:
+            # Try to interpret unformatted line
+            if ',' in line: 
+                split_tok = ','
+            else:
+                split_tok=' '
+            vals = line.split(split_tok)
+            if len(vals) == 3:
+                if ':' in vals[0]:
+                    posval = vals[0]+' '+vals[1]
+                else:
+                    posval = (float(vals[0]),float(vals[1]))
+            else:
+                continue
+        exclusion_list.append({'pos':posval,'distance':float(vals[2]),
                                     'units':units})
     return exclusion_list
 

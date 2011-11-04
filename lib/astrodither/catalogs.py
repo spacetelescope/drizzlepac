@@ -147,6 +147,7 @@ class Catalog(object):
         exclusion_coords = tweakutils.parse_exclusions(exclusions)
         if exclusion_coords is None:
             return
+
         excluded_list = []
         radec_indx = range(len(self.radec[0]))
         for ra,dec,indx in zip(self.radec[0],self.radec[1],radec_indx):
@@ -157,8 +158,10 @@ class Catalog(object):
                     regpos = reg['pos']
                     regdist = reg['distance']
                 else:
-                    regpos = self.wcs.all_pix2sky([reg['pos']],1)
+                    regradec = self.wcs.all_pix2sky([reg['pos']],1)[0]
+                    regpos = (regradec[0],regradec[1])
                     regdist = reg['distance']*self.wcs.pscale
+
                 epos = coords.Position(regpos)
                 if src_pos.within(epos,regdist):
                     excluded_list.append(indx)

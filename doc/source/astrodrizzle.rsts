@@ -1,8 +1,8 @@
 =================================
-MultiDrizzle Processing Overview:
+AstroDrizzle Processing Overview:
 =================================
 
-MultiDrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.  This process involves a number of steps; namely:
+AstroDrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.  This process involves a number of steps; namely:
   1.  Processing the input images and input parameters
   2.  Creating a static mask
   3.  Performing sky subtraction
@@ -24,7 +24,7 @@ http://stsdas.stsci.edu/multidrizzle
 ===================================
 Current User Accessable Parameters:
 ===================================
-.. function:: MultiDrizzle(editpars=False, configObj=None, wcsmap=None, **input_dict)
+.. function:: AstroDrizzle(editpars=False, configObj=None, wcsmap=None, **input_dict)
 
    This task controls all MultiDrizzle processing using numerous user-settable parameters to control the primary aspects of each of the processing steps.  
 
@@ -376,13 +376,13 @@ How to use the tasks stand alone interface in your own scripts:
 ---------------------------------------------------------------
 This task also has the ability to be called directly from Python for use in larger tasks. 
 
-:note: Something to keep in mind is that the full MultiDrizzle interface will make backup copies of your original files and place them in the *OrIg\/* directory of you current working directory.
+:note: Something to keep in mind is that the full AstroDrizzle interface will make backup copies of your original files and place them in the *OrIg_files\/* directory of you current working directory.
 
-The primary Python interface to Multidrizzle has been developed as:
+The primary Python interface to AstroDrizzle has been developed as:
 
-def MultiDrizzle(editpars=False, configObj=None, wcsmap=None, \*\*input_dict)
+def AstroDrizzle(editpars=False, configObj=None, wcsmap=None, \*\*input_dict)
 
 A basic example of how to call this from within a Python task would be:
 
->>> import multidrizzle
->>> multidrizzle.MultiDrizzle(editpars=False, input='*flt.fits')
+>>> from astrodither import astrodrizzle
+>>> astrodrizzle.AstroDrizzle('*flt.fits', editpars=False)

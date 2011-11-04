@@ -41,6 +41,7 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
    catalogs
    wcscorr
    tweakutils
+   updatehdr
    
 
 ACS Header Update Task

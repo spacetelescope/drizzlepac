@@ -11,10 +11,27 @@ import linearfit
 
 wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2','CRPIX1','CRPIX2','ORIENTAT']
 
-def update_from_shiftfile(shiftfile,force=False):
-    """ Update headers of images specified in shiftfile with shifts from shiftfile.
+def update_from_shiftfile(shiftfile,wcsname=None,force=False):
+    """ 
+    Update headers of all images specified in shiftfile with shifts 
+    from shiftfile.
+    
+    Parameters
+    ----------
+    shiftfile : str
+        Filename of shiftfile.
+        
+    wcsname : str 
+        Label to give to new WCS solution being created by this fit. If
+        a value of None is given, it will automatically use 'TWEAK' as the 
+        label. [Default =None]
+
+    force : bool
+        Update header even though WCS already exists with this solution or
+        wcsname? [Default=False] 
+        
     """
-    f = open(shiftfile)
+    f = open(fileutil.osfn(shiftfile))
     shift_lines = f.readlines()
     f.close()
 
@@ -31,32 +48,88 @@ def update_from_shiftfile(shiftfile,force=False):
     sdict = np.loadtxt(shiftfile,dtype=type_list,unpack=True)
     # loadtxt now returns a list of ndarray columns... need to fix this!
     for img in sdict:
-        updatewcs_with_shift(img['fnames'],refimage,
+        updatewcs_with_shift(img['fnames'],refimage,wcsname=wcsname,
                 rot=img['rot'],scale=img['scale'],
                 xsh=img['xsh'],ysh=img['ysh'],force=force)
 
 def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
-                            verbose=False,force=False):
+                            verbose=False,force=False,sciext='SCI'):
 
-    """ Update the SCI headers in 'image' based on the fit provided as determined
-        in the WCS specified by 'reference'.  The fit should be a 2-D matrix as
-        generated for use with 'make_vector_plot()'.
+    """ 
+    Update the SCI headers in 'image' based on the fit provided as determined
+    in the WCS specified by 'reference'.  The fit should be a 2-D matrix as
+    generated for use with 'make_vector_plot()'.
 
-        Algorithm
-        ----------
-        Apply the following steps to the WCS of each of the input image's chips:
-            1- compute RA/Dec with full distortion correction for
-                reference point as (Rc_i,Dc_i)
-            2- find the Xc,Yc for each Rc_i,Dc_i and get the difference from the
-                CRPIX position for the reference WCS as (dXc_i,dYc_i)
-            3- apply fit (rot&scale) to (dXc_i,dYc_i) then apply shift, then add
-                CRPIX back to get new (Xcs_i,Ycs_i) position
-            4- compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)
-            5- compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)
-            6- apply the fit to the chip's undistorted CD matrix, the apply linear
-                distortion terms back in to create a new CD matrix
-            7- add (dRcs_i,dDcs_i) to CRVAL of the reference chip's WCS
-            8- update header with new WCS values
+    Notes
+    -----
+    The algorithm used to apply the provided fit solution to the image
+    involves applying the following steps to the WCS of each of the 
+    input image's chips:
+
+    1. compute RA/Dec with full distortion correction for
+            reference point as (Rc_i,Dc_i)
+
+    2. find the Xc,Yc for each Rc_i,Dc_i and get the difference from the
+            CRPIX position for the reference WCS as (dXc_i,dYc_i)
+
+    3. apply fit (rot&scale) to (dXc_i,dYc_i) then apply shift, then add
+            CRPIX back to get new (Xcs_i,Ycs_i) position
+
+    4. compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)
+        
+    5. compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)
+
+    6. apply the fit to the chip's undistorted CD matrix, the apply linear
+            distortion terms back in to create a new CD matrix
+
+    7. add (dRcs_i,dDcs_i) to CRVAL of the reference chip's WCS
+
+    8. update header with new WCS values
+
+    Parameters
+    ----------
+    image : str
+        Filename of image with WCS to be updated. All extensions with 
+        EXTNAME matches the value of the 'sciext' parameter value (by
+        default, all 'SCI' extensions) will be updated.
+        
+    reference : str
+        Filename of image/headerlet (FITS file) which contains the WCS
+        used to define the tangent plane in which all the fit parameters
+        (shift, rot, scale) were measured.
+        
+    wcsname : str 
+        Label to give to new WCS solution being created by this fit. If
+        a value of None is given, it will automatically use 'TWEAK' as the 
+        label. [Default =None]
+    
+    rot : float
+        Amount of rotation measured in fit to be applied.
+        [Default=0.0]
+
+    scale : float
+        Amount of scale change measured in fit to be applied.
+        [Default=1.0]
+    
+    xsh : float 
+        Offset in X pixels from defined tangent plane to be applied to image.
+        [Default=0.0]
+
+    ysh : float 
+        Offset in Y pixels from defined tangent plane to be applied to image.
+        [Default=0.0]
+
+    verbose : bool 
+        Print extra messages during processing? [Default=False]
+    
+    force : bool 
+        Update header even though WCS already exists with this solution or
+        wcsname? [Default=False] 
+        
+    sciext : string
+        Value of FITS EXTNAME keyword for extensions with WCS headers to 
+        be updated with the fit values. [Default='SCI']
+
     """
     # if input reference is a ref_wcs file from tweakshifts, use it
     if isinstance(reference, wcsutil.HSTWCS) or isinstance(reference, pywcs.pywcs.WCS):
@@ -78,7 +151,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
     print '\n....Updating header for ',image,'...\n'
 
     # reset header WCS keywords to original (OPUS generated) values
-    numextn = fileutil.countExtn(image)
+    numextn = fileutil.countExtn(image,extname=sciext)
 
     if numextn > 0:
         # Create initial WCSCORR extension
@@ -86,7 +159,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
 
         extlist = []
         for extn in xrange(1,numextn+1):
-            extlist.append(('SCI',extn))
+            extlist.append((sciext,extn))
     else:
         extlist = [0]
 
@@ -116,140 +189,6 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
         # Update WCSCORR table with new WCS information
         wcscorr.update_wcscorr(fimg,wcs_id=wcsname)    
     fimg.close()
-
-def updatewcs_with_fit(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
-                            verbose=False,force=False):
-    """ Update the SCI headers in 'image' based on the fit provided as determined
-        in the WCS specified by 'reference'.  The fit should be a 2-D matrix as
-        generated for use with 'make_vector_plot()'.
-
-        Algorithm
-        ----------
-        Apply the following steps to the input image's reference chip WCS:
-            1- compute RA/Dec with full distortion correction for
-                reference point as (Rc_i,Dc_i)
-            2- find the Xc,Yc for each Rc_i,Dc_i and get the difference from the
-                CRPIX position for the reference WCS as (dXc_i,dYc_i)
-            3- apply fit (rot&scale) to (dXc_i,dYc_i) then apply shift, then add
-                CRPIX back to get new (Xcs_i,Ycs_i) position
-            4- compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)
-            5- compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)
-            6- apply the fit to the chip's undistorted CD matrix, the apply linear
-                distortion terms back in to create a new CD matrix
-            7- add (dRcs_i,dDcs_i) to CRVAL of the reference chip's WCS
-            8- update header with new WCS values
-            9- run updatewcs to update all chips to be consistent with
-                input images's updated reference chip's WCS
-
-    """
-    # if input reference is a ref_wcs file from tweakshifts, use it
-    if isinstance(reference, wcsutil.HSTWCS) or isinstance(reference, pywcs.pywcs.WCS):
-        wref = reference
-    else:
-        refimg = pyfits.open(reference)
-        wref = None
-        for extn in refimg:
-            if extn.header.has_key('extname') and extn.header['extname'] == 'WCS':
-                wref = pywcs.WCS(refimg['wcs'].header)
-                break
-        refimg.close()
-        # else, we have presumably been provided a full undistorted image
-        # as a reference, so use it with HSTWCS instead
-        if wref is None:
-            wref = wcsutil.HSTWCS(reference)
-
-    # Now that we are sure we have a good reference WCS to use, continue with the update
-    print '\n....Updating header for ',image,'...\n'
-
-    # reset header WCS keywords to original (OPUS generated) values
-    numextn = fileutil.countExtn(image)
-    archive_wcsname = ""
-    if numextn > 0:
-        # Create initial WCSCORR extension
-        wcscorr.init_wcscorr(image,force=force)
-
-        extlist = []
-        for extn in xrange(1,numextn+1):
-            extlist.append(('SCI',extn))
-        # insure that input PRIMARY WCS has been archived before overwriting
-        # with new solution
-        next_key = wcsutil.altwcs.next_wcskey(pyfits.getheader(image))
-        wcsutil.altwcs.archiveWCS(image,extlist,wcskey=next_key)
-        wcsutil.altwcs.restoreWCS(image,extlist,wcskey='O',clobber=True)
-
-    else:
-        next_key = wcsutil.altwcs.next_wcskey(pyfits.getheader(image))
-        archive_wcsname = "DRZ_"+fileutil.getDate()
-        
-    # archive and update PA_V3
-    fimg= pyfits.open(image,mode='update')
-
-    #fimg[0].header.update('HPA_V3',fimg[0].header['PA_V3'])
-    # Archive OPUS generated value of PA_V3, if it has not already been done
-    if not fimg[0].header.has_key('PA_V3O'): 
-        fimg[0].header['PA_V3O'] = fimg[0].header['PA_V3']
-    # Update value of PA_V3 based on rotation from fit/shiftfile
-    pav3 = (fimg[0].header['PA_V3'] + rot)%360
-    fimg[0].header.update('PA_V3', pav3)
-    fimg.flush()
-
-    # for each chip in image, apply algorithm
-    if numextn > 0:
-        nchip,extn = updatewcs.getNrefchip(fimg)
-        extver = ('sci',fimg[extn].header['extver'])
-        update_key = 'O'
-    else:
-        extn = 0
-        extver = (0)
-
-    if verbose:
-        print 'Processing ',extver
-    chip_wcs = wcsutil.HSTWCS(image,extver)
-    
-    if numextn == 0:
-        chipwcs_hdr = chip_wcs.wcs2header(idc2hdr=False)
-        for key in chipwcs_hdr:
-            fimg[extn].header.update(key[:7]+next_key,chipwcs_hdr[key])
-        fimg[extn].header.update('WCSNAME'+next_key,archive_wcsname)
-
-        update_key = wcsutil.altwcs.next_wcskey(fimg[0].header)
-    fimg.close()
-
-    update_refchip_with_shift(chip_wcs,wref,rot=rot,scale=scale,xsh=xsh,ysh=ysh)
-    if wcsname in [None,' ','','INDEF']:
-        wcsname = 'TWEAK'
-    
-    # step 8
-    # Update the 'O' WCS (OPUS generated values) in the header
-    idchdr = True
-    if chip_wcs.idcscale is None:
-        idchdr = False
-
-    chipwcs_hdr = chip_wcs.wcs2header(idc2hdr=idchdr)
-        
-    fimg = pyfits.open(image,mode='update')
-    for key in chipwcs_hdr:
-        fimg[extn].header.update(key[:7]+update_key,chipwcs_hdr[key])
-        fimg[extn].header.update(key,chipwcs_hdr[key])
-    if update_key != 'O':
-        fimg[extn].header.update('WCSNAME'+update_key,wcsname)
-    fimg.close()
-
-    # step 9
-    # Apply shifted reference WCS to remainder of chips (if any)
-    # and archive the new primary WCS as a new keyed WCS
-        
-    if numextn > 0:
-        updatewcs.updatewcs(image,checkfiles=False)
-        for i in range(1,fileutil.countExtn(image)+1):
-            altwcs.archiveWCS(image,ext=i,wcsname=wcsname)
-
-        # Restore the 'O' WCS (OPUS generated values) from the WCSCORR table
-        wcscorr.restore_file_from_wcscorr(image,id='OPUS',wcskey='O')
-
-        # Record updated values in WCSCORR extension now
-        wcscorr.archive_wcs_file(image)
-
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
@@ -317,10 +256,30 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
 ### Header keyword prefix related archive functions
 ###
 def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
-    """ Updates the WCS of the specified extension number with the new WCS
-        after archiving the original WCS.
+    """ 
+    Updates the WCS of the specified extension number with the new WCS
+    after archiving the original WCS.
 
-        The value of 'new_wcs' needs to be the full HSTWCS object.
+    The value of 'new_wcs' needs to be the full 
+    HSTWCS object.
+    
+    Parameters
+    ----------
+    image : str
+        Filename of image with WCS that needs to be updated 
+    
+    extnum : int
+        Extension number for extension with WCS to be updated/replaced
+    
+    new_wcs : object
+        Full HSTWCS object which will replace/update the existing WCS
+        
+    wcsname : str
+        Label to give newly updated WCS
+        
+    verbose : bool
+        Print extra messages during processing? [Default: False]
+        
     """
     # Start by insuring that the correct value of 'orientat' has been computed
     new_wcs.setOrient()
@@ -364,59 +323,3 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         if fimg_open:
             # finish up by closing the file now
             fimg.close()
-
-def archive_wcs(hdr,suffix='O',wcsver="",force=False):
-    """ Stores a copy of relevant WCS keywords as keywords with a different
-    suffix (for example, CRVAL1 -> CRVAL1O)
-    It will also make the copy from 'CRVAL1'+wcsver instead if 'wcsver' is specified.
-    """
-    # Check to see whether 'O' WCS already exists
-    if suffix == 'O' and hdr.has_key(wcs_keys[0]+suffix):
-        # This set of keywords already exists, so do not over-write
-        return
-
-    # Look to see whether this header was updated using prefix or (FITS compliant)
-    # suffix WCS keywords
-    if hdr.has_key(suffix+wcs_keys[0]):
-        wcsmode='prefix'
-        check_key = suffix+wcs_keys[0]
-    else:
-        wcsmode='suffix'
-        check_key = wcs_keys[0]+suffix
-
-    if not hdr.has_key(check_key) or (hdr.has_key(check_key) and force):
-        for key in wcs_keys:
-            if mode == 'prefix': check_key = (suffix+key)[:8]
-            else: check_key = (key+suffix)[:8]
-            # Always write out WCS keywords using FITS Paper I suffix mode
-            hdr.update((key+suffix)[:8],hdr[check_key])
-
-def archive_prefix_wcs(hdr,prefix='H',wcsprefix="",force=False):
-    """ Stores a copy of relevant WCS keywords as keywords with a different
-    prefix (for example, CRVAL1 -> HCRVAL1)
-    It will also make the copy from OCRVAL1 instead if 'wcsprefix' is specified.
-    """
-    if not hdr.has_key(prefix+wcs_keys[0]) or (hdr.has_key(prefix+wcs_keys[0]) and force):
-        for key in wcs_keys:
-            hdr.update((prefix+key)[:8],hdr[(wcsprefix+key)[:8]])
-
-def restore_prefix_wcs(hdr,prefix='H',wcsprefix=""):
-    """ Restores the WCS archived with 'prefix' to the WCS keywords
-    starting with 'wcsprefix'.  By default, it will restore the "H" keywords
-    as the standard WCS keywords (no prefix).
-    """
-    if hdr.has_key(prefix+wcs_keys[0]):
-        for key in wcs_keys:
-            hdr.update((wcsprefix+key)[:8],hdr[(prefix+key)[:8]])
-
-def restore_wcs_file(filename,prefix='H',wcsprefix=""):
-    fimg = pyfits.open(filename,mode='update')
-    if fimg[0].header.has_key(prefix+'PA_V3'):
-        fimg[0].header['PA_V3'] = fimg[0].header[prefix+'PA_V3']
-    nextns = count_chips(filename)
-    for extn in range(1,nextns+1):
-        hdr = fimg['sci',extn].header
-        restore_wcs(hdr,prefix=prefix,wcsprefix=wcsprefix)
-        restore_wcs(hdr,prefix='O',wcsprefix='')
-    fimg.close()
-
