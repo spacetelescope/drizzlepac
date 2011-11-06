@@ -130,7 +130,12 @@ attach: bool
     headerlet to the input image as a new extension.
     
 hdrfile: string
-    Filename to use for writing out headerlet to a separate file.
+    Filename to use for writing out headerlet to a separate file. If the name
+    does not contain '.fits', it will create a filename from the 
+    rootname of the input image, the value of this string, and it will end
+    in '_hlet.fits'. For example, if only 'hdrlet1' is given, the full filename
+    created will be 'j99da1f2q_hdrlet1_hlet.fits' when creating a headerlet
+    for image 'j99da1f2q_flt.fits'. 
     
 clobber: bool
     If a headerlet with 'hdrfile' already exists on disk, specify

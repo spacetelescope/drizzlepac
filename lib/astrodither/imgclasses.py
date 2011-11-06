@@ -255,6 +255,7 @@ class Image(object):
         """ Uses xyxymatch to cross-match sources between this catalog and
             a reference catalog (refCatalog).
         """
+        print 'Matching sources from ',self.name,' with sources from reference image.'
         self.sortSkyCatalog() # apply any catalog sorting specified by the user
         self.transformToRef(refWCS)
         self.refWCS = refWCS

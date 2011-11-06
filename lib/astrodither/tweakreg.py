@@ -113,7 +113,12 @@ def run(configobj):
 
     if 'exclusions' in configobj and \
         configobj['exclusions'] not in [None,'',' ','INDEF']:
-        exclusion_files = tweakutils.parse_atfile_cat('@'+configobj['exclusions'])
+        if os.path.exists(configobj['exclusions']):
+            exclusion_files = tweakutils.parse_atfile_cat(
+                '@'+configobj['exclusions'])
+        else:
+            print 'Could not find specified exclusions file "%s"'%(configobj['exclusions'])
+            raise IOError
     else:
         exclusion_files = [None]*len(filenames)
         

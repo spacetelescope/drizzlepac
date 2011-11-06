@@ -171,7 +171,14 @@ class Catalog(object):
         radec_indx = np.array(radec_indx,dtype=np.int64)
         num_excluded = len(excluded_list)
         if num_excluded > 0:
-            self.radec = [self.radec[0][radec_indx],self.radec[1][radec_indx]]
+            radec_trimmed = []
+            xypos_trimmed = []
+            for arr in self.radec:
+                radec_trimmed.append(arr[radec_indx])
+            for arr in self.xypos:
+                xypos_trimmed.append(arr[radec_indx])
+            self.radec = radec_trimmed        
+            self.xypos = xypos_trimmed
             print 'Excluded ',num_excluded,' sources from catalog.'
             
     def buildCatalogs(self,exclusions=None):

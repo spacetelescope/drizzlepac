@@ -226,7 +226,12 @@ headerlet to the input image as a new extension.</p>
 </blockquote>
 <p><strong id="hdrfile: string">hdrfile: string</strong> :</p>
 <blockquote>
-<p>Filename to use for writing out headerlet to a separate file.</p>
+<p>Filename to use for writing out headerlet to a separate file. If the name
+does not contain &#8216;.fits&#8217;, it will create a filename from the 
+rootname of the input image, the value of this string, and it will end
+in &#8216;_hlet.fits&#8217;. For example, if only &#8216;hdrlet1&#8217; is given, the full filename
+created will be &#8216;j99da1f2q_hdrlet1_hlet.fits&#8217; when creating a headerlet
+for image &#8216;j99da1f2q_flt.fits&#8217;.</p>
 </blockquote>
 <p><strong id="clobber: bool">clobber: bool</strong> :</p>
 <blockquote>
