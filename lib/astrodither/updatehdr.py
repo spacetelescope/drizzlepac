@@ -185,9 +185,9 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
         
         update_wcs(fimg,extnum,chip_wcs,wcsname=wcsname,verbose=verbose)
         
-    if numextn > 0:
-        # Update WCSCORR table with new WCS information
-        wcscorr.update_wcscorr(fimg,wcs_id=wcsname)    
+#    if numextn > 0:
+#        # Update WCSCORR table with new WCS information
+#        wcscorr.update_wcscorr(fimg,wcs_id=wcsname)    
     fimg.close()
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):

@@ -120,6 +120,8 @@ class Image(object):
         self.identityfit = False # set to True when matching/fitting to itself
         self.goodmatch = True # keep track of whether enough matches were found for a fit
         
+        self.next_key = ' '
+        
         self.perform_update = True
         self.quit_immediately = False
 
@@ -345,6 +347,9 @@ class Image(object):
         pars = kwargs.copy()
         self.fit_pars = pars
 
+        self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0],'rms':[0.0,0.0],
+                    'rms_keys':{'RMS_RA':0.0,'RMS_DEC':0.0,'NMATCH':0}}
+
         if not self.identityfit:
             if self.matches is not None and self.goodmatch:
                 self.fit = linearfit.iter_fit_all(
@@ -396,9 +401,6 @@ class Image(object):
                         self.perform_update = False
                     if 'q' in a.lower():
                         self.quit_immediately = True
-        else:
-            self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0],'rms':[0.0,0.0],
-                        'rms_keys':{'RMS_RA':0.0,'RMS_DEC':0.0,'NMATCH':0}}
 
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
@@ -410,7 +412,7 @@ class Image(object):
         else:
             rms_ra = 0.0
             rms_dec = 0.0
-            nmatch = 0.0
+            nmatch = 0
         return {'RMS_RA':rms_ra,'RMS_DEC':rms_dec,'NMATCH':nmatch}
 
     def updateHeader(self,wcsname=None):
@@ -434,29 +436,43 @@ class Image(object):
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0])
             
+            wnames = stwcs.wcsutil.altwcs.wcsnames(self.name,ext=extlist[0])
+            altkeys = []
+            for k in wnames:
+                if wnames[k] == wcsname:
+                    altkeys.append(k)
+            if len(altkeys) > 1 and ' ' in altkeys:
+                altkeys.remove(' ')
+            next_key = altkeys[-1]
             print '    Writing out new WCS to alternate WCS: "',next_key,'"'
                 
-            # add FIT values to image's PRIMARY header
-            fimg = pyfits.open(self.name,mode='update')
-            if wcsname in ['',' ',None,"INDEF"]:
-                wcsname = 'TWEAK'
-            # Record values for the fit with both the PRIMARY WCS being updated
-            # and the alternate WCS which will be created.
-            for ext in range(1,self.num_sci+1):
-                fimg[ext].header.update('FITNAME'+next_key,wcsname)
-                for kw in self.fit['rms_keys']:
-                    fimg[ext].header.update(kw+next_key,self.fit['rms_keys'][kw],after='FITNAME'+next_key)
-            fimg.close()
-
-        if self.identityfit or not self.goodmatch:
+        else: #if self.identityfit or not self.goodmatch:
             # archive current WCS as alternate WCS with specified WCSNAME
             stwcs.wcsutil.altwcs.archiveWCS(self.name,extlist,wcskey=next_key,wcsname=wcsname)
 
-            # copy updated WCS info to WCSCORR table
-            if self.num_sci > 0 and self.ext_name != "PRIMARY":
-                fimg = pyfits.open(self.name,mode='update')
-                stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
-                fimg.close()
+        self.next_key = next_key
+        # copy updated WCS info to WCSCORR table
+        if self.num_sci > 0 and self.ext_name != "PRIMARY":
+            extlist = []
+            for nsci in range(1,self.num_sci+1):
+                extlist.append(('SCI',nsci))
+        else:
+            extlist = ['PRIMARY']
+        # add FIT values to image's PRIMARY header
+        fimg = pyfits.open(self.name,mode='update')
+        if wcsname in ['',' ',None,"INDEF"]:
+            wcsname = 'TWEAK'
+        # Record values for the fit with both the PRIMARY WCS being updated
+        # and the alternate WCS which will be created.
+        for ext in extlist:
+            fimg[ext].header.update('FITNAME'+next_key,wcsname)
+            for kw in self.fit['rms_keys']:
+                fimg[ext].header.update(kw+next_key,
+                        self.fit['rms_keys'][kw],after='FITNAME'+next_key)
+
+        print 'Updating WCSCORR table with new WCS solution "',wcsname,'"'
+        stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
+        fimg.close()
 
     def writeHeaderlet(self,**kwargs):
         """ Write and/or attach a headerlet based on update to PRIMARY WCS
@@ -485,10 +501,12 @@ class Image(object):
         #                    attach=True, clobber=False):
         headerlet.write_headerlet(self.name, pars['hdrname'], 
                 output=pars['hdrfile'], 
-                wcsname=None, wcskey=" ", destim=None,
+                wcsname=None, wcskey=self.next_key, destim=None,
                 sipname=None, npolfile=None, d2imfile=None, 
                 author=pars['author'], descrip=pars['descrip'], 
                 history=pars['history'],
+                rms_ra=rms_pars['RMS_RA'],rms_dec=rms_pars['RMS_DEC'],
+                nmatch=rms_pars['NMATCH'],catalog=pars['catalog'],
                 attach=pars['attach'], clobber=pars['clobber']
             ) 
         

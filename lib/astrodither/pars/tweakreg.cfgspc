@@ -20,6 +20,7 @@ clobber = boolean_kw(default=False, active_if='_rule4_', comment= "Overwrite exi
 hdrname = string_kw(default="", active_if='_rule4_', comment="Unique name(HDRNAME) for headerlet")
 author = string_kw(default="", active_if='_rule4_', comment="Author name for creator of headerlet")
 descrip = string_kw(default="", active_if='_rule4_', comment="Short description of headerlet solution")
+catalog = string_kw(default="", active_if='_rule4_', comment="Name of catalog used for headerlet solution")
 history = string_kw(default="", active_if='_rule4_', comment="Name of ASCII file containing history for headerlet")
 
 [OPTIONAL SHIFTFILE OUTPUT]

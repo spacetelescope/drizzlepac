@@ -145,15 +145,18 @@ hdrname: string
     Unique name to give to headerlet solution. This name will be used to 
     identify this specific WCS alignment solution contained in the headerlet.
     
-author: string [optional]
+author: string, optional
     Name of the creator of the headerlet.
 
-descrip: string [optional]
+descrip: string, optional
     Short (1-line) description to be included in headerlet as 'DESCRIP' keyword.
     This can be used to provide a quick look description of the WCS alignment
     contained in the headerlet.
+
+catalog: string, optional
+    Name of reference catalog used as the basis for the image alignment.
     
-history: string [optional]
+history: string, optional
     Filename of a file containing detailed information regarding the history
     of the WCS solution contained in the headerlet. This can include information
     on the catalog used for the alignment, or notes on processing that went
