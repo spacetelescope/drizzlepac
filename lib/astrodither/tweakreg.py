@@ -192,6 +192,8 @@ def run(configobj):
     #    each image's positions    
     quit_immediately = False
     for img in input_images:
+        print '\n'+'='*20
+        print 'Performing fit for: ',img.name,'\n'
         img.match(refimage.outxy, refimage.wcs,refimage.name,**configobj['OBJECT MATCHING PARAMETERS'])
         configobj['CATALOG FITTING PARAMETERS']['minobj'] = configobj['OBJECT MATCHING PARAMETERS']['minobj']
         img.performFit(**configobj['CATALOG FITTING PARAMETERS'])

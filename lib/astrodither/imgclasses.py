@@ -42,6 +42,8 @@ class Image(object):
         self.pars = kwargs
         self.exclusions = exclusions
 
+        print 'Defining source catalogs for: ',filename
+        
         if input_catalogs is not None and kwargs['xyunits'] == 'degrees':
             # Input was a catalog of sky positions, so no WCS or image needed
             use_wcs = False
@@ -110,6 +112,7 @@ class Image(object):
                 self.catalog_names['input_xy'].append(catname)
             self.catalog_names['fitmatch'] = self.rootname+"_catalog_fit.match"
 
+        print '\n'
         # Set up products which need to be computed by methods of this class
         self.outxy = None
         self.refWCS = None # reference WCS assigned for the final fit
