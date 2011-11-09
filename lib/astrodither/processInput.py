@@ -2,6 +2,7 @@ from __future__ import division # confidence high
 import datetime
 import os
 import shutil
+import string
 
 import pyfits
 
@@ -360,7 +361,13 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
             extlist = []
             for extn in xrange(1,numext+1):
                 extlist.append(('SCI',extn))
-            altwcs.restoreWCS(fname,extlist,wcskey=wcskey)
+            if wcskey in string.uppercase:
+                wkey = wcskey
+                wname = ' '
+            else:
+                wname = wcskey
+                wkey = ' '
+            altwcs.restoreWCS(fname,extlist,wcskey=wkey,wcsname=wname)
         pydr_input = newfilelist
 
     # AsnTable will handle the case when output==None
