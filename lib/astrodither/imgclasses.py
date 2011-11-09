@@ -516,14 +516,14 @@ class Image(object):
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """
-        ralist = self.all_radec[0].tolist()
-        declist = self.all_radec[1].tolist()
+        ralist = self.all_radec[0]#.tolist()
+        declist = self.all_radec[1]#.tolist()
         f = open(filename,'w')
         f.write("#Sky positions for: "+self.name+'\n')
         f.write("#RA        Dec\n")
         f.write("#(deg)     (deg)\n")
         for i in xrange(len(ralist)):
-            f.write('%0.8g  %0.8g\n'%(ralist[i],declist[i]))
+            f.write('%0.8f  %0.8f\n'%(ralist[i],declist[i]))
         f.close()
 
     def write_fit_catalog(self):
