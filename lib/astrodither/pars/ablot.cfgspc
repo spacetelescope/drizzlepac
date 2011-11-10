@@ -24,7 +24,6 @@ xrefpix = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Reference
 yrefpix = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Reference pixel Y position on output (CRPIX2)") 
 outnx = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Size of output image's X-axis (pixels)") 
 outny = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Size of output image's Y-axis (pixels)") 
-mode = string_kw(default="all")
 
 [ _RULES_ ]
 

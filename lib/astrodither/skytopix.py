@@ -101,34 +101,16 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
             colnames = ['c1','c2']
         else:
             colnames = colnames.split(',')
-        """
-        # Determine columns which contain pixel positions
-        #cols = util.parse_colnames(colnames,coordfile)
-        # read in columns from input coordinates file
-        #rlist,dlist = util.readcols(coordfile,cols=cols,hms=True)
-        xlist = np.zeros(rlist.shape,dtype=np.float64)
-        ylist = np.zeros(rlist.shape,dtype=np.float64)
-        try:
-            # check to see whether the values need to be converted to
-            # decimal degrees at all
-            x0 = float(rlist[0])
-            # Parse the RA and Dec strings and convert (as necessary) into decimal degrees
-            xlist = rlist.astype(np.float64)
-            ylist = dlist.astype(np.float64)
-        except ValueError:
-            # Parse the RA and Dec strings and convert (as necessary) into decimal degrees
-            for i in range(len(rlist)):
-                c = coords.Position(rlist[i]+' '+dlist[i])
-                xlist[i],ylist[i] = c.dd()
-        """
-        xlist,ylist = tweakutils.readcols(coordfile,cols=colnames)
+        # convert input file coordinates to lists of decimal degrees values
+        xlist,ylist = tweakutils.readcols(coordfile,cols=colnames)            
     else:
-        xlist = [ra]
-        ylist = [dec]
+        # convert input value into decimal degrees value
+        xval,yval = tweakutils.parse_skypos(ra,dec)
+        xlist = [xval]
+        ylist = [yval]
 
     # start by reading in WCS+distortion info for input image
     inwcs = wcsutil.HSTWCS(input)
-
     # Now, convert pixel coordinates into sky coordinates
     try:
         outx,outy = inwcs.all_sky2pix(xlist,ylist,1)

@@ -1,7 +1,6 @@
 _task_name_ = string_kw(default="sky")
 input = string_kw(default="", comment="Input files (name, suffix, or @list)")
 group = float_or_none_kw(default=None,comment="Image group to use, None uses all groups")
-mode = string_kw(default="all")
 
 [STEP 2: SKY SUBTRACTION ]
 skysub = boolean_kw(default=True, comment= "Perform sky subtraction?")
@@ -13,6 +12,4 @@ skyclip = integer_kw(default=5, comment= "Number of clipping iterations")
 skylsigma = float_kw(default=4., comment="Lower side clipping factor (in sigma)")
 skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)")
 skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user.")
-
-
 [ _RULES_ ]

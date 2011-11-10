@@ -147,6 +147,35 @@ def isfloat(value):
     else:
         return False
 
+def parse_skypos(ra,dec):
+    """
+    Function to parse RA and Dec input values and turn them into decimal degrees
+    
+    Input formats could be: 
+        ["nn","nn","nn.nn"]
+        "nn nn nn.nnn"
+        "nn:nn:nn.nn"
+        "nnH nnM nn.nnS" or "nnD nnM nn.nnS"
+        nn.nnnnnnnn
+        "nn.nnnnnnn"
+
+    """
+    rval = make_val_float(ra)
+    dval = make_val_float(dec)
+    if rval is None:
+        rval,dval = radec_hmstodd(ra,dec)
+    return rval,dval
+
+def make_val_float(val):
+    if isinstance(val,float):
+        rval = val
+    else:
+        try:
+            rval = float(val)
+        except ValueError:
+            rval = None
+    return rval
+
 def radec_hmstodd(ra,dec):
     """ Function to convert HMS values into decimal degrees.
         
@@ -826,7 +855,8 @@ def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
     if not isinstance(xydata,list):
         xydata = list(xydata)
     if not append:
-        if os.path.exists(outname): os.remove(outname)
+        if os.path.exists(outname):
+            os.remove(outname)
     fout1 = open(outname,'a+')
     for row in range(len(xydata[0][0])):
         outstr = ""

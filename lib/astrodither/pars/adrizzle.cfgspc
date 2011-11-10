@@ -16,7 +16,6 @@ in_units = option_kw("counts", "cps", default="counts",comment="Units for input 
 out_units = option_kw("counts", "cps", default="cps",comment="Units for output image (counts or cps)")
 expkey = string_kw(default="exptime",comment="Exposure time keyword in input data image header") 
 fillval = float_or_none_kw(default=None,comment="Value to be assigned to undefined output points") 
-mode = string_kw(default="all")
 
 [User WCS Parameters]
 refimage = string_kw(default="",triggers='_rule1_',comment="Reference image for defining the output WCS") 

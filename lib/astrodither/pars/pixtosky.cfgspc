@@ -9,5 +9,4 @@ hms = boolean_kw(default=False, comment="Output in HH:MM:SS.S format?")
 precision = integer_kw(default=6,comment="Number of floating-point digits in output values")
 output = string_kw(default="",comment="Name of output file to save results")
 verbose = boolean_kw(default=False, comment="Print out full list of results?")
-mode = string_kw(default="all")
 [ _RULES_ ]

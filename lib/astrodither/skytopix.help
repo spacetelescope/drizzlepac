@@ -18,7 +18,8 @@ couple of common modes.
     pixel position (X,Y) without using the TEAL GUI:
 
   >>> from astrodither import skytopix
-  >>> x,y = skytopix.rd2xy("j8bt06nyq_flt.fits[sci,1]", 0:22:07.0088, -72:03:05.429)
+  >>> x,y = skytopix.rd2xy("j8bt06nyq_flt.fits[sci,1]", 
+                        '0:22:07.0088', '-72:03:05.429')
 
 3. Convert a list of (undistorted) sky positions from the file, 
     'radec.dat' for a calibrated ACS image (j8bt06nyq_flt.fits)
@@ -39,9 +40,11 @@ Parameters
 Optional Parameters
 -------------------
     ra : string, optional
-        RA position
+        RA position in either decimal degrees or HMS format 
+        (with or without ':') like '19:10:50.337406303' or '19 10 50.337406303' 
     dec : string, optional
-        Dec position 
+        Dec position in either decimal degrees or HMS format 
+        (with or without ':') like '-60:2:22.186557409' or '-60 2 22.186557409'
     coordfile : str, optional
         full filename with path of file with sky coordinates
     colnames : str, optional

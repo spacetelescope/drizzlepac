@@ -19,6 +19,4 @@ yrefpix = float_or_none_kw(default=None, comment="Reference pixel Y position on 
 outnx = float_or_none_kw(default=None, comment="Size of output image's X-axis (pixels)") 
 outny = float_or_none_kw(default=None, comment="Size of output image's Y-axis (pixels)") 
 
-mode = string_kw(default="all")
-
 [ _RULES_ ]
