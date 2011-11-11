@@ -14,11 +14,6 @@ from sextractor import is_installed
 #import idlphot
 import tweakutils,util
 
-try:
-    from matplotlib import pyplot as pl
-except:
-    pl = None
-
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','fluxmax','fluxmin','fluxunits','nbright']+COLNAME_PARS
 
@@ -201,6 +196,11 @@ class Catalog(object):
         Default colormap is `summer`.
 
         """
+        try:
+            from matplotlib import pyplot as pl
+        except:
+            pl = None
+
         if pl is not None: # If the pyplot package could be loaded...
             pl.clf()
             pars = kwargs.copy()
@@ -501,6 +501,11 @@ class UserCatalog(Catalog):
 
 
         """
+        try:
+            from matplotlib import pyplot as pl
+        except:
+            pl = None
+
         if pl is not None:
             pl.clf()
             pl.plot(self.xypos[0],self.xypos[1],**kwargs)

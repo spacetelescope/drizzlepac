@@ -42,7 +42,7 @@ import staticMask
 import util
 import wcs_functions
 
-__taskname__ = "astrodither.astrodrizzle"
+__taskname__ = "astrodrizzle"
 
 __version__ = '4.2.0dev'
 __vdate__ = '4-Oct-2011'

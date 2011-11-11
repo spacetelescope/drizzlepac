@@ -105,27 +105,7 @@ the guide stars in a slightly different position.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="files">files</strong> : str or list of str</p>
-<blockquote>
-<p>Input files that are being registered. For more details, see description
-of <em class="xref py py-obj">input</em> parameter.</p>
-</blockquote>
-<p><strong id="editpars">editpars</strong> : bool</p>
-<blockquote>
-<p>Specify whether or not to edit the parameters using the TEAL GUI.</p>
-</blockquote>
-<p><strong id="configObj">configObj</strong> : obj or None</p>
-<blockquote>
-<p>ConfigObj object containing user-specified parameters for running
-this task.</p>
-</blockquote>
-<p><strong id="input_dict">input_dict</strong> : dict</p>
-<blockquote>
-<p>User-specified parameter values for only those parameters that they
-want to change.</p>
-</blockquote>
-<p><strong id=":Other Parameters from input_dict:">:Other Parameters from input_dict:</strong> :</p>
-<p><strong id="input">input</strong> : str or list of str</p>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
 <blockquote>
 <p>Input files (passed in from <em>files</em> parameter) 
 This paramater can be provided in any of several forms:</p>
@@ -203,6 +183,7 @@ determination. [Default value = Yes]</p>
 <p>Specify whether or not to print extra messages during
 processing. [Default value = No]</p>
 </blockquote>
+<p><strong id="UPDATE HEADER">UPDATE HEADER</strong> :</p>
 <p><strong id="updatehdr">updatehdr</strong> : bool</p>
 <blockquote>
 <p>Specify whether or not to update the headers of each input image
@@ -265,6 +246,7 @@ on the catalog used for the alignment, or notes on processing that went
 into finalizing the WCS alignment stored in this headerlet. This information
 will be reformatted as 70-character wide FITS HISTORY keyword section.</p>
 </blockquote>
+<p><strong id="OPTIONAL SHIFTFILE OUTPUT">OPTIONAL SHIFTFILE OUTPUT</strong> :</p>
 <p><strong id="shiftfile">shiftfile</strong> : bool</p>
 <blockquote>
 <p>Create output shiftfile? [Default value: No]</p>
@@ -285,6 +267,7 @@ only contains the WCS keywords in a Primary header with no image
 data itself. The values will be derived from the FIRST input image
 specified. [Default value: &#8216;tweak_wcs.fits&#8217;]</p>
 </blockquote>
+<p><strong id="COORDINATE FILE DESCRIPTION">COORDINATE FILE DESCRIPTION</strong> :</p>
 <p><strong id="catfile:str">catfile:str</strong> :</p>
 <blockquote>
 <p>Name of file that contains a list of input images and associated
@@ -348,6 +331,7 @@ positions, or whether they need to be transformed to the sky.
 list. If nbright is set equal to None, all objects will be used. 
 [Default value = None]</p>
 </blockquote>
+<p><strong id="REFERENCE CATALOG DESCRIPTION">REFERENCE CATALOG DESCRIPTION</strong> :</p>
 <p><strong id="refcat">refcat</strong> : str</p>
 <blockquote>
 <p>Name of the external reference catalog file to be used in place of the 
@@ -404,6 +388,7 @@ of fainter objects. [Default value = &#8216;mag&#8217;]</p>
 list. If refnbright is set to None, all objects will be used. Used in 
 conjunction with refcat. [Default value = None]</p>
 </blockquote>
+<p><strong id="OBJECT MATCHING PARAMETERS">OBJECT MATCHING PARAMETERS</strong> :</p>
 <p><strong id="minobj">minobj</strong> : int</p>
 <blockquote>
 <p>Minimum number of identified objects from each input image to use
@@ -455,6 +440,7 @@ reference frame. This offset will be used for all input images
 provided.If the parameter value is set to None, no offset will 
 be assumed in matching sources in &#8216;xyxymatch&#8217;. [Default value = 0.0]</p>
 </blockquote>
+<p><strong id="CATALOG FITTING PARAMETERS">CATALOG FITTING PARAMETERS</strong> :</p>
 <p><strong id="fitgeometry">fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;, &#8216;general&#8217;}</p>
 <blockquote>
 <p>The fitting geometry to be used in fitting the matched object lists.
