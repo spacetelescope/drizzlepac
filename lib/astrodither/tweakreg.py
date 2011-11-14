@@ -162,29 +162,32 @@ def run(configobj):
     
     # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)
+
     # Determine a reference image or catalog and 
     #    return the full list of RA/Dec positions
+    # extract the catalog from the first input image source list
+    # Determine what WCS needs to be used for reference tangent plane
+    if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
+        refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
+        refwcs = refimg.get_wcs()
+        ref_source = refimg.all_radec
+    else:
+        refwcs = []
+        for i in input_images:
+            refwcs.extend(i.get_wcs())
+        ref_source = input_images[0].all_radec
+
     refcat_par = configobj['REFERENCE CATALOG DESCRIPTION']
     if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
         ref_source = refcat_par['refcat']
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
-    else: # otherwise, extract the catalog from the first input image source list
-        # Determine what WCS needs to be used for reference tangent plane
-        if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
-            refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
-            refwcs = refimg.get_wcs()
-            ref_source = refimg.all_radec
-        else:
-            refwcs = []
-            for i in input_images:
-                refwcs.extend(i.get_wcs())
-            ref_source = input_images[0].all_radec
 
     # Create Reference Catalog object
     refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
 
     uphdr_par = configobj['UPDATE HEADER']
+    hdrlet_par = configobj['HEADERLET CREATION']
 
     # Now, apply reference WCS to each image's sky positions as well as the
     # reference catalog sky positions,
@@ -202,8 +205,8 @@ def run(configobj):
             break
         if uphdr_par['updatehdr']:
             img.updateHeader(wcsname=uphdr_par['wcsname'])
-            if uphdr_par['headerlet']:
-                img.writeHeaderlet(**uphdr_par)
+        if hdrlet_par['headerlet']:
+            img.writeHeaderlet(**hdrlet_par)
         if configobj['clean']:
             img.clean()
 

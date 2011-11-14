@@ -363,6 +363,8 @@ class Image(object):
                     center=self.refWCS.wcs.crpix)
 
                 self.fit['rms_keys'] = self.compute_fit_rms()
+                if pars['fitgeometry'] != 'general':
+                    self.fit['fit_matrix'] = None
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
@@ -404,7 +406,7 @@ class Image(object):
                         self.perform_update = False
                     if 'q' in a.lower():
                         self.quit_immediately = True
-
+        
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
         if not self.identityfit and self.goodmatch:
@@ -437,8 +439,9 @@ class Image(object):
         if not self.identityfit and self.goodmatch:
             updatehdr.updatewcs_with_shift(self.name,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
-                rot=self.fit['rot'],scale=self.fit['scale'][0])
-            
+                rot=self.fit['rot'],scale=self.fit['scale'][0],
+                fit=self.fit['fit_matrix'])
+
             wnames = stwcs.wcsutil.altwcs.wcsnames(self.name,ext=extlist[0])
             altkeys = []
             for k in wnames:
@@ -536,7 +539,7 @@ class Image(object):
             f.write('# Coordinate mapping parameters: \n')
             f.write('#    X and Y rms: %20.6g  %20.6g\n'%(self.fit['rms'][0],self.fit['rms'][1]))
             f.write('#    X and Y shift: %20.6g  %20.6g\n '%(self.fit['offset'][0],self.fit['offset'][1]))
-            f.write('#    X and Y scale: %20.6g  %20.6g\n'%(self.fit['scale'][0],self.fit['scale'][1]))
+            f.write('#    X and Y scale: %20.6g  %20.6g\n'%(self.fit['scale'][1],self.fit['scale'][2]))
             f.write('#    X and Y rotation: %20.6g \n'%(self.fit['rot']))
             f.write('# \n# Input Coordinate Listing\n')
             f.write('#     Column 1: X (reference)\n') 

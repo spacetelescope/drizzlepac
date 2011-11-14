@@ -13,15 +13,17 @@ verbose = boolean_kw(default=False, comment="Print extra messages during process
 [UPDATE HEADER]
 updatehdr = boolean_kw(default=False, triggers='_section_switch_', comment="Update headers of input files with shifts?")
 wcsname = string_kw(default='TWEAK', comment="Name of updated WCS")
-headerlet = boolean_kw(default=True, triggers='_rule4_', comment="Create headerlet for solution?")
-attach = boolean_kw(default=True, active_if='_rule4_', comment="Create headerlet FITS extension?")
-hdrfile = string_kw(default="", active_if='_rule4_', comment="Filename for headerlet FITS file")
-clobber = boolean_kw(default=False, active_if='_rule4_', comment= "Overwrite existing headerlet FITS file?")
-hdrname = string_kw(default="", active_if='_rule4_', comment="Unique name(HDRNAME) for headerlet")
-author = string_kw(default="", active_if='_rule4_', comment="Author name for creator of headerlet")
-descrip = string_kw(default="", active_if='_rule4_', comment="Short description of headerlet solution")
-catalog = string_kw(default="", active_if='_rule4_', comment="Name of catalog used for headerlet solution")
-history = string_kw(default="", active_if='_rule4_', comment="Name of ASCII file containing history for headerlet")
+
+[HEADERLET CREATION]
+headerlet = boolean_kw(default=True, triggers='_section_switch_', comment="Create headerlet for solution?")
+attach = boolean_kw(default=True, comment="Create headerlet FITS extension?")
+hdrfile = string_kw(default="", comment="Filename for headerlet FITS file")
+clobber = boolean_kw(default=False, comment= "Overwrite existing headerlet FITS file?")
+hdrname = string_kw(default="", comment="Unique name(HDRNAME) for headerlet")
+author = string_kw(default="", comment="Author name for creator of headerlet")
+descrip = string_kw(default="", comment="Short description of headerlet solution")
+catalog = string_kw(default="", comment="Name of catalog used for headerlet solution")
+history = string_kw(default="", comment="Name of ASCII file containing history for headerlet")
 
 [OPTIONAL SHIFTFILE OUTPUT]
 shiftfile = boolean_kw(default=False,triggers='_section_switch_',comment="Create output shiftfile?")

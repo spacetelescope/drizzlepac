@@ -69,7 +69,7 @@ resetbits : int (Default Value = 4096)
     This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the 'updatewcs' parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).
 
 
-STATE OF INPUT FILES
+*STATE OF INPUT FILES*
 preserve : bool (Default Value = Yes)
     Copy input files to archive directory, if not already archived. This parameter determines whether or not astrodrizzle creates a copy of the input file in a sub-directory called 'OrIg_files'. If a copy already exists in this directory, then the previously existing version will NOT be overwritten.
 
@@ -82,7 +82,7 @@ clean : bool (Default Value = No)
     The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to 'True'. The affected files include the coefficient and static mask files created by PyDrizzle, in addition to other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. However, when running AstroDrizzle routinely, or on a small disk drive, these files can be removed to conserve space.
 
 
-STEP 1: STATIC MASK
+*STEP 1: STATIC MASK*
 static : bool (Default Value = Yes)
     Create a static bad-pixel mask from the data?  This mask flags all pixels that deviate by more than a value of 'static_sig' sigma below the image median, since these pixels are typically the result of bad pixel oversubtraction in the dark image during calibration.
 
@@ -91,7 +91,7 @@ static_sig : float (Default Value = 4.0)
     The number of sigma below the RMS to use as the clipping limit for creating the static mask.
 
 
-STEP 2: SKY SUBTRACTION
+*STEP 2: SKY SUBTRACTION*
 skysub : bool (Default Value = Yes)
     Turn on or off sky subtraction on the input data.
 
@@ -128,7 +128,7 @@ skyuser : str (Default Value = '')
     Name of header keyword which records the sky value already subtracted from the image by the user.
 
 
-STEP 3: DRIZZLE SEPARATE IMAGES
+*STEP 3: DRIZZLE SEPARATE IMAGES*
 driz_separate : bool (Default Value = No)
     This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
 
@@ -164,7 +164,7 @@ driz_sep_bits : int (Default Value = 0)
     Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.
 
 
-STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS
+*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*
 driz_sep_wcs : bool (Default Value = No)
     Define custom WCS for seperate output images?
 
@@ -197,7 +197,7 @@ driz_sep_dec : float (Default Value = INDEF)
     Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
-STEP 4: CREATE MEDIAN IMAGE
+*STEP 4: CREATE MEDIAN IMAGE*
 median : bool (Default Value = No)
     This parameter specifies whether or not to create a median image. This median image will be used as the comparison 'truth' image :in the cosmic ray rejection step.
 
@@ -240,7 +240,7 @@ combine_grow : int (Default Value = 1)
     Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the 'grow' parameter in 'imcombine' for use in creating the median image. 
 
 
-STEP 5: BLOT BACK THE MEDIAN IMAGE
+*STEP 5: BLOT BACK THE MEDIAN IMAGE*
 blot : bool (Default Value = No)
     Perform the blot operation on the median image? If set to "Yes", the output will be median smoothed images that match each input chips location, and will be used in the cosmic ray rejection step.
 
@@ -263,7 +263,7 @@ blot_sinscl : float (Default Value = 1.0)
     Size of the sinc interpolation kernel in pixels. 
 
 
-STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR
+*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*
 driz_cr : bool (Default Value = No)
     Perform cosmic-ray detection? If set to "Yes", cosmic-rays will be detected and used to create cosmic-ray masks based on the algorithms from 'deriv' and 'driz_cr'.
 
@@ -288,7 +288,7 @@ driz_cr_scale : str (Default Value = '1.2 0.7')
     Scaling factor applied to the derivative in 'driz_cr' when detecting cosmic-rays. See the help file for 'driz_cr' for further discussion of this parameter.
 
 
-STEP 7: DRIZZLE FINAL COMBINED IMAGE
+*STEP 7: DRIZZLE FINAL COMBINED IMAGE*
 driz_combine : bool (Default Value = Yes)
     This parameter specifies whether or not to drizzle each input image onto the final output image. This applies the generated cosmic-ray masks to the input images and creates a final, cleaned, distortion-corrected image.
 
@@ -345,7 +345,7 @@ final_units : str (Default Value = 'cps')
     This parameter determines the units of the final drizzle-combined image, and can either be 'counts' or 'cps'. It is passed through to 'drizzle' in the final drizzle step.
 
 
-STEP 7a: CUSTOM WCS FOR FINAL OUTPUT
+*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*
 final_wcs : bool (Default Value = No)
     Obtain the WCS solution from a user-designated reference image?
 
@@ -378,7 +378,7 @@ final_dec : float (Default Valut = INDEF)
     Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
-INSTRUMENT PARAMETERS
+*INSTRUMENT PARAMETERS*
 gain : float (Default Value = INDEF)
     Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count.  This parameter should not be populated if the ''gainkeyword'' parameter is in use.
 

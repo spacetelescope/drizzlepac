@@ -52,7 +52,8 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
                 rot=img['rot'],scale=img['scale'],
                 xsh=img['xsh'],ysh=img['ysh'],force=force)
 
-def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,
+def updatewcs_with_shift(image,reference,wcsname=None,
+                        rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None,
                             verbose=False,force=False,sciext='SCI'):
 
     """ 
@@ -174,7 +175,8 @@ def updatewcs_with_shift(image,reference,wcsname=None,rot=0.0,scale=1.0,xsh=0.0,
             print 'Processing %s[',ext,']'
         chip_wcs = wcsutil.HSTWCS(image,ext=ext)
 
-        update_refchip_with_shift(chip_wcs,wref,rot=rot,scale=scale,xsh=xsh,ysh=ysh)
+        update_refchip_with_shift(chip_wcs,wref,
+                    rot=rot,scale=scale,xsh=xsh,ysh=ysh,fit=fit)
         if wcsname in [None,' ','','INDEF']:
             wcsname = 'TWEAK'
         # Update FITS file with newly updated WCS for this chip
@@ -207,9 +209,16 @@ def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
         xy1y = xy1[:,1]
     return xy1x,xy1y
 
-def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.0):
+def update_refchip_with_shift(chip_wcs, wcslin, 
+                            rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None):
     # compute the matrix for the scale and rotation correction
-    fit = np.linalg.inv(fileutil.buildRotMatrix(-1*rot)*scale)
+    if fit is None:
+        fitmat = fileutil.buildRotMatrix(-1*rot)*scale
+    else:
+        fitmat = fit
+
+    rmode='rscale'
+    fit = np.linalg.inv(fitmat)
 
     # step 1
     xpix = [chip_wcs.wcs.crpix[0],chip_wcs.wcs.crpix[0]+1,chip_wcs.wcs.crpix[0]]
@@ -245,6 +254,8 @@ def update_refchip_with_shift(chip_wcs, wcslin, rot=0.0,scale=1.0,xsh=0.0,ysh=0.
     # and newly updated positions
     XYc_iu = np.transpose([Xc_iu,Yc_iu])
     XYcs_i = np.transpose([Xcs_i,Ycs_i])
+    #rfit = linearfit.fit_all(XYcs_i,XYc_iu,mode=rmode,center=[new_crval1,new_crval2],verbose=False)
+    #rmat = rfit['fit_matrix']
     rfit = linearfit.fit_all(XYcs_i,XYc_iu,mode='rscale',center=[new_crval1,new_crval2],verbose=False)
     rmat = fileutil.buildRotMatrix(rfit['rot'])*rfit['scale'][0]
     

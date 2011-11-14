@@ -133,7 +133,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         if verbose:
             print 'Performing "general" fit'
         # Set up products used for computing the fit
-        gxy = uv
+        gxy = uv    
         guv = xy
         Sx = gxy[:,0].sum()
         Sy = gxy[:,1].sum()
@@ -147,9 +147,10 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         Sxx = np.dot(gxy[:,0],gxy[:,0])
         Syy = np.dot(gxy[:,1],gxy[:,1])
         Sxy = np.dot(gxy[:,0],gxy[:,1])
+        Syx = np.dot(gxy[:,1],gxy[:,0])
         
         n = len(xy[:,0])
-        M = np.array([[Sx, Sy, n], [Sxx, Sxy, Sx], [Sxy, Syy, Sy]])
+        M = np.array([[Sx, Sy, n], [Sxx, Sxy, Sx], [Syx, Syy, Sy]])
         U = np.array([Su,Sux,Suy])
         V = np.array([Sv,Svx,Svy])
         
@@ -163,9 +164,11 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         
         # Return the shift, rotation, and scale changes
         result = build_fit(P,Q) 
-        resids = uv - np.dot((xy),result['fit_matrix']) - result['offset']
+        result['fit_matrix'] = np.array([[P[0],Q[0]],[P[1],Q[1]]])
+        resids = guv - np.dot((gxy),result['fit_matrix']) - result['offset']
         rms = [resids[:,0].std(),resids[:,1].std()]
         result['rms'] = rms
+        result['resids'] = resids
     else:
         if verbose:
             print 'Performing "rscale" fit'
@@ -279,7 +282,7 @@ def build_fit(P,Q):
     scale_x = avg_scale + d
     scale_y = avg_scale - d
 
-    return {'offset':(P[2],Q[2]),'fit_matrix':np.array([[P[0],P[1]],[Q[0],Q[1]]]),'rot':theta_deg,'scale':(avg_scale,scale_x,scale_y),'coeffs':(P,Q)}
+    return {'offset':(P[2],Q[2]),'fit_matrix':np.array([[P[0],Q[0]],[P[1],Q[1]]]),'rot':theta_deg,'scale':(avg_scale,scale_x,scale_y),'coeffs':(P,Q)}
 
 def apply_old_coeffs(xy,coeffs):
     """ Apply the offset/shift/rot values from a linear fit 

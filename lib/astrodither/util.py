@@ -10,7 +10,6 @@ import traceback
 import sys
 import string
 
-import tkMessageBox
 import numpy as np
 import pyfits
 from stsci.tools import asnutil, fileutil, teal, cfgpars
@@ -303,6 +302,8 @@ def getConfigObjPar(configObj, parname):
 def displayMakewcsWarningBox(display=True, parent=None):
     """ Displays a warning box for the 'makewcs' parameter.
     """
+    import tkMessageBox
+
     ans = {'yes':True,'no':False}
     if ans[display]:
         msg = 'Setting "updatewcs=yes" will result '+ \

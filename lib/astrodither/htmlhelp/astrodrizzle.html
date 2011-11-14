@@ -203,7 +203,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the &#8216;updatewcs&#8217; parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).</p>
 </blockquote>
-<p><strong id="STATE OF INPUT FILES">STATE OF INPUT FILES</strong> :</p>
+<p><strong id="*STATE OF INPUT FILES*">*STATE OF INPUT FILES*</strong> :</p>
 <p><strong id="preserve">preserve</strong> : bool (Default Value = Yes)</p>
 <blockquote>
 <p>Copy input files to archive directory, if not already archived. This parameter determines whether or not astrodrizzle creates a copy of the input file in a sub-directory called &#8216;OrIg_files&#8217;. If a copy already exists in this directory, then the previously existing version will NOT be overwritten.</p>
@@ -216,7 +216,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to &#8216;True&#8217;. The affected files include the coefficient and static mask files created by PyDrizzle, in addition to other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. However, when running AstroDrizzle routinely, or on a small disk drive, these files can be removed to conserve space.</p>
 </blockquote>
-<p><strong id="STEP 1: STATIC MASK">STEP 1: STATIC MASK</strong> :</p>
+<p><strong id="*STEP 1: STATIC MASK*">*STEP 1: STATIC MASK*</strong> :</p>
 <p><strong id="static">static</strong> : bool (Default Value = Yes)</p>
 <blockquote>
 <p>Create a static bad-pixel mask from the data?  This mask flags all pixels that deviate by more than a value of &#8216;static_sig&#8217; sigma below the image median, since these pixels are typically the result of bad pixel oversubtraction in the dark image during calibration.</p>
@@ -225,7 +225,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>The number of sigma below the RMS to use as the clipping limit for creating the static mask.</p>
 </blockquote>
-<p><strong id="STEP 2: SKY SUBTRACTION">STEP 2: SKY SUBTRACTION</strong> :</p>
+<p><strong id="*STEP 2: SKY SUBTRACTION*">*STEP 2: SKY SUBTRACTION*</strong> :</p>
 <p><strong id="skysub">skysub</strong> : bool (Default Value = Yes)</p>
 <blockquote>
 <p>Turn on or off sky subtraction on the input data.</p>
@@ -262,7 +262,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>Name of header keyword which records the sky value already subtracted from the image by the user.</p>
 </blockquote>
-<p><strong id="STEP 3: DRIZZLE SEPARATE IMAGES">STEP 3: DRIZZLE SEPARATE IMAGES</strong> :</p>
+<p><strong id="*STEP 3: DRIZZLE SEPARATE IMAGES*">*STEP 3: DRIZZLE SEPARATE IMAGES*</strong> :</p>
 <p><strong id="driz_separate">driz_separate</strong> : bool (Default Value = No)</p>
 <blockquote>
 <p>This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.</p>
@@ -308,7 +308,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8216;good&#8217; when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.</p>
 </blockquote>
-<p><strong id="STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS">STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS</strong> :</p>
+<p><strong id="*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*">*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*</strong> :</p>
 <p><strong id="driz_sep_wcs">driz_sep_wcs</strong> : bool (Default Value = No)</p>
 <blockquote>
 <p>Define custom WCS for seperate output images?</p>
@@ -341,7 +341,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.</p>
 </blockquote>
-<p><strong id="STEP 4: CREATE MEDIAN IMAGE">STEP 4: CREATE MEDIAN IMAGE</strong> :</p>
+<p><strong id="*STEP 4: CREATE MEDIAN IMAGE*">*STEP 4: CREATE MEDIAN IMAGE*</strong> :</p>
 <p><strong id="median">median</strong> : bool (Default Value = No)</p>
 <blockquote>
 <p>This parameter specifies whether or not to create a median image. This median image will be used as the comparison &#8216;truth&#8217; image :in the cosmic ray rejection step.</p>
@@ -383,7 +383,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the &#8216;grow&#8217; parameter in &#8216;imcombine&#8217; for use in creating the median image.</p>
 </blockquote>
-<p><strong id="STEP 5: BLOT BACK THE MEDIAN IMAGE">STEP 5: BLOT BACK THE MEDIAN IMAGE</strong> :</p>
+<p><strong id="*STEP 5: BLOT BACK THE MEDIAN IMAGE*">*STEP 5: BLOT BACK THE MEDIAN IMAGE*</strong> :</p>
 <p><strong id="blot">blot</strong> : bool (Default Value = No)</p>
 <blockquote>
 <p>Perform the blot operation on the median image? If set to &#8220;Yes&#8221;, the output will be median smoothed images that match each input chips location, and will be used in the cosmic ray rejection step.</p>
@@ -407,7 +407,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>Size of the sinc interpolation kernel in pixels.</p>
 </blockquote>
-<p><strong id="STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR">STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR</strong> :</p>
+<p><strong id="*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*">*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*</strong> :</p>
 <p><strong id="driz_cr">driz_cr</strong> : bool (Default Value = No)</p>
 <blockquote>
 <p>Perform cosmic-ray detection? If set to &#8220;Yes&#8221;, cosmic-rays will be detected and used to create cosmic-ray masks based on the algorithms from &#8216;deriv&#8217; and &#8216;driz_cr&#8217;.</p>
@@ -432,7 +432,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>Scaling factor applied to the derivative in &#8216;driz_cr&#8217; when detecting cosmic-rays. See the help file for &#8216;driz_cr&#8217; for further discussion of this parameter.</p>
 </blockquote>
-<p><strong id="STEP 7: DRIZZLE FINAL COMBINED IMAGE">STEP 7: DRIZZLE FINAL COMBINED IMAGE</strong> :</p>
+<p><strong id="*STEP 7: DRIZZLE FINAL COMBINED IMAGE*">*STEP 7: DRIZZLE FINAL COMBINED IMAGE*</strong> :</p>
 <p><strong id="driz_combine">driz_combine</strong> : bool (Default Value = Yes)</p>
 <blockquote>
 <p>This parameter specifies whether or not to drizzle each input image onto the final output image. This applies the generated cosmic-ray masks to the input images and creates a final, cleaned, distortion-corrected image.</p>
@@ -493,7 +493,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>This parameter determines the units of the final drizzle-combined image, and can either be &#8216;counts&#8217; or &#8216;cps&#8217;. It is passed through to &#8216;drizzle&#8217; in the final drizzle step.</p>
 </blockquote>
-<p><strong id="STEP 7a: CUSTOM WCS FOR FINAL OUTPUT">STEP 7a: CUSTOM WCS FOR FINAL OUTPUT</strong> :</p>
+<p><strong id="*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*">*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*</strong> :</p>
 <p><strong id="final_wcs">final_wcs</strong> : bool (Default Value = No)</p>
 <blockquote>
 <p>Obtain the WCS solution from a user-designated reference image?</p>
@@ -526,7 +526,7 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.</p>
 </blockquote>
-<p><strong id="INSTRUMENT PARAMETERS">INSTRUMENT PARAMETERS</strong> :</p>
+<p><strong id="*INSTRUMENT PARAMETERS*">*INSTRUMENT PARAMETERS*</strong> :</p>
 <p><strong id="gain">gain</strong> : float (Default Value = INDEF)</p>
 <blockquote>
 <p>Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count.  This parameter should not be populated if the &#8216;&#8217;gainkeyword&#8217;&#8217; parameter is in use.</p>
