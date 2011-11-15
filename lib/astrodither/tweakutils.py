@@ -884,21 +884,29 @@ def find_xy_peak(img,center=None):
     xp_slice = (slice(int(yp0[0])-13,int(yp0[0])+15),
                 slice(int(xp0[0])-13,int(xp0[0])+15))
     yp,xp = ndimage.center_of_mass(img[xp_slice])
-    xp += xp_slice[1].start
-    yp += xp_slice[0].start
+    if np.isnan(xp) or np.isnan(yp):
+        xp=0.0
+        yp=0.0
+        flux = 0.0
+        zpqual = None
+    else:
+        xp += xp_slice[1].start
+        yp += xp_slice[0].start
 
-    # compute S/N criteria for this peak: flux/sqrt(mean of rest of array)
-    flux = imgc[xp_slice].sum()
-    delta_size = img.size - imgc[xp_slice].size
-    delta_flux = imgsum - flux
-    if delta_size != 0.0 and delta_flux != 0.0:
-        zpqual = flux/np.sqrt((imgsum - flux)/(delta_size))
-    else:    
-        zpqual = -1.0
+        # compute S/N criteria for this peak: flux/sqrt(mean of rest of array)
+        flux = imgc[xp_slice].sum()
+        delta_size = img.size - imgc[xp_slice].size
+        delta_flux = imgsum - flux
+        if delta_size != 0.0 and delta_flux != 0.0:
+            zpqual = flux/np.sqrt((imgsum - flux)/(delta_size))
+            if np.isnan(zpqual) or np.isinf(zpqual):
+                zpqual = None
+        else:    
+            zpqual = None
 
-    if center is not None:
-        xp -= center[0]
-        yp -= center[1]
+        if center is not None:
+            xp -= center[0]
+            yp -= center[1]
     
     del imgc
     return xp,yp,flux,zpqual
@@ -923,7 +931,7 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False):
     zpsum = zpmat.sum()
     xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
     print 'Found initial X and Y shifts of ',xp,yp,'\n     with significance of ',zpqual
-    if histplot:
+    if histplot and zpqual is not None:
         zpstd = (((zpsum-flux)/zpmat.size)+2*zpmat.std())
         if zpstd <= 0: 
             print 'WARNING: No significant XY peak recognized!' 

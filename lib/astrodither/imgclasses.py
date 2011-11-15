@@ -287,10 +287,10 @@ class Image(object):
             if use2d:
                 zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
                                     ref_outxy,searchrad=radius,histplot=matchpars['see2dplot'])
-                if zpqual > 2.0 or zpqual < 0:
+                if zpqual is not None:
                     xyoff = (zpxoff,zpyoff)
                     # set tolerance as well
-                    xyxytolerance = 3.0
+                    xyxytolerance = radius*0.1
                     xyxysep = 0.0
                 else:
                     use2d = False
