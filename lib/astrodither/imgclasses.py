@@ -487,7 +487,7 @@ class Image(object):
         rms_pars = self.fit['rms_keys']
         
         # interpret input strings
-        str_kw = ['descrip','history','author','hdrfile','wcsname']
+        str_kw = ['descrip','history','author','hdrfile']
         if pars['hdrname'].strip() == '':
             print '='*60
             print 'ERROR:'
