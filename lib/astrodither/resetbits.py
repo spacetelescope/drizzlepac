@@ -64,7 +64,7 @@
 """
 from __future__ import division
 import numpy as np
-import pyfits
+from stsci.tools import stpyfits as pyfits
 from stsci.tools import parseinput
 
 __taskname__ = "astrodither.resetbits"
