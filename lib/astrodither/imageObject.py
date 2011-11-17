@@ -106,8 +106,10 @@ class baseImageObject:
     def clean(self):
         """ Deletes intermediate products generated for this imageObject.
         """
-        clean_files = ['blotImage','crcorImage','crmaskImage','finalMask','staticMask','singleDrizMask',
-                        'outSky','outSContext','outSWeight','outSingle','outMedian','d2imfile','dqmask']
+        clean_files = ['blotImage','crcorImage','crmaskImage','finalMask',
+                        'staticMask','singleDrizMask','outSky',
+                        'outSContext','outSWeight','outSingle',
+                        'outMedian','d2imfile','dqmask','tmpmask']
         print 'Removing intermediate files for ',self._filename
         # We need to remove the combined products first; namely, median image
         util.removeFileSafely(self.outputNames['outMedian'])
@@ -116,7 +118,7 @@ class baseImageObject:
             for fname in clean_files:
                 if chip.outputNames.has_key(fname):
                     util.removeFileSafely(chip.outputNames[fname])
-            
+        
     def getData(self,exten=None):
         """ Return just the data array from the specified extension 
             fileutil is used instead of pyfits to account for non-

@@ -276,6 +276,7 @@ class WFPC2InputImage (imageObject):
         dqmask_name = buildmask.buildShadowMaskImage(sci_chip.dqfile,sci_chip.detnum,sci_chip.extnum,maskname,bitvalue=bits,binned=sci_chip.binned)
         sci_chip.dqmaskname = dqmask_name
         sci_chip.outputNames['dqmask'] = dqmask_name
+        sci_chip.outputNames['tmpmask'] = 'wfpc2_inmask%d.fits'%(sci_chip.detnum)
         dqmask = pyfits.getdata(dqmask_name,0)
         return dqmask
 
