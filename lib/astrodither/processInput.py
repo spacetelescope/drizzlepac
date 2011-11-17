@@ -138,7 +138,11 @@ def getMdriztabPars(input):
     """
     filelist,output,ivmlist,oldasndict=processFilenames(input,None)
     
-    mdrizdict = mdzhandler.getMdriztabParameters(filelist)
+    try:
+        mdrizdict = mdzhandler.getMdriztabParameters(filelist)
+    except KeyError:
+        print 'No MDRIZTAB found for "%s". Parameters remain unchanged.'%(filelist[0])
+        mdrizdict = {}
     
     return mdrizdict
 
