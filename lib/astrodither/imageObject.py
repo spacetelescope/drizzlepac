@@ -470,7 +470,9 @@ class baseImageObject:
         try:
             handle = fileutil.openImage(filename,mode='readonly',memmap=0)
             hdu = fileutil.getExtn(handle,extn=exten)
-            data = hdu.data[sci_chip.ltv2:sci_chip.size2,sci_chip.ltv1:sci_chip.size1]
+            _ltv1 = np.round(sci_chip.ltv1)
+            _ltv2 = np.round(sci_chip.ltv2)
+            data = hdu.data[_ltv2:sci_chip.size2,_ltv1:sci_chip.size1]
             handle.close()
         except:
             data = np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)
@@ -650,10 +652,10 @@ class baseImageObject:
             RN = self.getReadNoiseImage(chip)
             darkimg = self.getdarkimg(chip)
             skyimg = self.getskyimg(chip)
-            
+
             ivm = (flat)**2/(darkimg+(skyimg*flat)+RN**2)
             
-            # Multiply the IVM file by the input mask in place.        
+           # Multiply the IVM file by the input mask in place.        
             ivmarr = ivm * dqarr
             
         # Update 'wt_scl' parameter to match use of IVM file
@@ -983,8 +985,12 @@ class imageObject(baseImageObject):
                 except KeyError:
                     sci_chip.ltv1 = 0
                     sci_chip.ltv2 = 0
-                sci_chip.size1 = sci_chip.header['NAXIS1'] + sci_chip.ltv1
-                sci_chip.size2 = sci_chip.header['NAXIS2'] + sci_chip.ltv2
+                if sci_chip.ltv1 < 0:
+                    sci_chip.ltv1 = 0
+                if sci_chip.ltv2 < 0:
+                    sci_chip.ltv2 = 0
+                sci_chip.size1 = sci_chip.header['NAXIS1'] + np.round(sci_chip.ltv1)
+                sci_chip.size2 = sci_chip.header['NAXIS2'] + np.round(sci_chip.ltv2)
                 sci_chip.image_shape = (sci_chip.size2,sci_chip.size1)
                 # Interpret the array dtype by translating the IRAF BITPIX value 
                 for dtype in IRAF_DTYPES.keys():
