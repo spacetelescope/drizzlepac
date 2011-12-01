@@ -14,6 +14,7 @@ staticfile = string_kw(default="", comment="Name of (optional) input static bad-
 crbit = integer_kw(default=4096, comment="Bit value for CR ident. in DQ array")
 stepsize = integer_kw(default=10, comment="Step size for drizzle coordinate computation")
 resetbits = integer_or_none_kw(default=4096, comment="Bit values to reset in all input DQ arrays")
+num_cores = integer_or_none_kw(default=None, comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
 
 [STATE OF INPUT FILES]
 preserve = boolean_kw(default=True, comment="Copy input files to archive directory, if not already archived?")

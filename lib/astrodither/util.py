@@ -18,6 +18,33 @@ __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
 
+
+multiprocessing = None
+can_parallel = False
+_cpu_count = -1
+if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
+    try:
+        import multiprocessing
+        try:
+            # sanity check - do we even have the hardware?
+            _cpu_count = multiprocessing.cpu_count()
+            can_parallel = _cpu_count > 1
+        except:
+            can_parallel = False
+    except ImportError:
+        print '\nCould not import multiprocessing, will only take advantage of a single CPU core'
+
+def get_pool_size(usr_config_value = None):
+    """ Use the suggested pool size (from cpu_count) and the config
+    object value, to get the right pool size to use. Consolidate all
+    such logic here, not in the caller. """
+    if not can_parallel:
+        return 0
+    if usr_config_value != None:
+        return usr_config_value
+    return _cpu_count
+
+
 DEFAULT_LOGNAME = 'astrodrizzle.log'
 blank_list = [None, '', ' ',"None","INDEF"]
 
@@ -31,7 +58,7 @@ def is_blank(val):
 def check_blank(cvar):
     """ Converts blank value (from configObj?) into a value of None.
     """
-    if cvar in blank_list: val = None 
+    if cvar in blank_list: val = None
     else: val = cvar
     return val
 
@@ -49,7 +76,7 @@ class StreamLogger(object):
         else:
             self.prefix = '['+prefix+'] '
         self.data = ''
-        
+
         # set up logfile
         if not is_blank(logfile):
             self.log = open(logfile,mode)
@@ -76,8 +103,8 @@ class StreamLogger(object):
                 self.data = ''
     def flush(self):
         self.stream.flush()
-            
-def init_logging(logfile=DEFAULT_LOGNAME,default=None):    
+
+def init_logging(logfile=DEFAULT_LOGNAME,default=None):
     """ Set up logfile for capturing stdout/stderr messages.
         Must be called prior to writing any messages that you want to log.
     """
@@ -116,20 +143,20 @@ def end_logging():
                 errfile.close()
         else:
             print '[astrodrizzle] No trailer file saved...'
-        
+
         sys.stdout = sys.__stdout__
-    
+
 class ProcSteps:
-    """ This class allows MultiDrizzle to keep track of the 
+    """ This class allows MultiDrizzle to keep track of the
         start and end times of each processing step that gets run
         as well as computing/reporting the elapsed time for each step.
-        
-        The code for each processing step must call the 'addStep()' 
+
+        The code for each processing step must call the 'addStep()'
         method to initialize the information for that step, then
         the 'endStep()' method to record the end and elapsed times.
-        
+
         The 'reportTimes()' method can then be used to provide a summary
-        of all the elapsed times and total run time. 
+        of all the elapsed times and total run time.
     """
     __report_header = '\n   %20s          %s\n'%('-'*20,'-'*20)
     __report_header += '   %20s          %s\n'%('Step','Elapsed time')
@@ -142,10 +169,10 @@ class ProcSteps:
         self.end = None
 
     def addStep(self,key):
-        """ 
+        """
         Add information about a new step to the dict of steps
         The value 'ptime' is the output from '_ptime()' containing
-        both the formatted and unformatted time for the start of the 
+        both the formatted and unformatted time for the start of the
         step.
         """
         ptime = _ptime()
@@ -154,9 +181,9 @@ class ProcSteps:
         self.order.append(key)
 
     def endStep(self,key):
-        """ 
+        """
         Record the end time for the step.
-        
+
         If key==None, simply record ptime as end time for class to represent
         the overall runtime since the initialization of the class.
         """
@@ -165,27 +192,27 @@ class ProcSteps:
             self.steps[key]['end'] = ptime
             self.steps[key]['elapsed'] = ptime[1] - self.steps[key]['start'][1]
         self.end = ptime
-        
+
         print'==== Processing Step ',key,' finished at ',ptime[0]
-    
+
     def reportTimes(self):
-        """ Print out a formatted summary of the elapsed times for all 
+        """ Print out a formatted summary of the elapsed times for all
             the performed steps.
         """
         self.end = _ptime()
         total_time = 0
-        print ProcSteps.__report_header 
+        print ProcSteps.__report_header
         for step in self.order:
             if self.steps[step].has_key('elapsed'):
                 _time = self.steps[step]['elapsed']
-            else: 
+            else:
                 _time = 0.0
             total_time += _time
             print '   %20s          %0.4f sec.'%(step,_time)
 
         print '   %20s          %s'%('='*20,'='*20)
         print '   %20s          %0.4f sec.'%('Total',total_time)
-        
+
         # Compute overall runtime of entire program, including overhead
         #total = self.end[1] - self.start[1]
         #print '   %20s          %0.4f sec.'%('Total Runtime',total)
@@ -208,7 +235,7 @@ def _ptime():
         tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)',_ltime)
         #date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
     return tlm_str,ftime
-    
+
 def findrootname(filename):
     """
     Return the rootname of the given file.
@@ -223,19 +250,19 @@ def findrootname(filename):
 
 def removeFileSafely(filename,clobber=True):
     """ Delete the file specified, but only if it exists and clobber is True.
-    """ 
+    """
     if filename is not None and filename.strip() != '':
         if os.path.exists(filename) and clobber: os.remove(filename)
-    
+
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
-    """ Return default configObj instance for task updated 
+    """ Return default configObj instance for task updated
         with user-specified values from input_dict.
 
         Parameters
         ----------
         taskname : string
-            Name of task to load into TEAL 
-            
+            Name of task to load into TEAL
+
         configObj : string
             The valid values for 'configObj' would be::
 
@@ -250,8 +277,8 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         loadOnly : bool
             Setting 'loadOnly' to False causes the TEAL GUI to start allowing the
             user to edit the values further and then run the task if desired.
-            
-    """    
+
+    """
     if configObj is None:
         # Start by grabbing the default values without using the GUI
         # This insures that all subsequent use of the configObj includes
@@ -262,28 +289,28 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
             # Load task default .cfg file with all default values
             configObj = teal.load(taskname,defaults=True)
             # define default filename for configObj
-            configObj.filename = taskname.lower()+'.cfg' 
+            configObj.filename = taskname.lower()+'.cfg'
         else:
             # Load user-specified .cfg file with its special default values
-            # we need to call 'fileutil.osfn()' to insure all environment 
+            # we need to call 'fileutil.osfn()' to insure all environment
             # variables specified by the user in the configObj filename are
             # expanded to the full path
-            configObj = teal.load(fileutil.osfn(configObj)) 
-    
+            configObj = teal.load(fileutil.osfn(configObj))
+
     # merge in the user values for this run
     # this, though, does not save the results for use later
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:
         cfgpars.mergeConfigObj(configObj, input_dict)
-        # Update the input .cfg file with the updated parameter values 
+        # Update the input .cfg file with the updated parameter values
         #configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
         #configObj.write()
-        
-    if not loadOnly: 
-    # We want to run the GUI AFTER merging in any parameters 
-    # specified by the user on the command-line and provided in 
+
+    if not loadOnly:
+    # We want to run the GUI AFTER merging in any parameters
+    # specified by the user on the command-line and provided in
     # input_dict
         configObj = teal.teal(configObj,loadOnly=False)
-    
+
     return configObj
 
 def getSectionName(configObj,stepnum):
@@ -321,22 +348,22 @@ to be the IVM file that is associated with it.
 
 def atfile_sci(filename):
     """
-    Return the filename of the science image 
+    Return the filename of the science image
     which is assumed to be the first word
     in the atfile the user gave.
     """
     return filename.split()[0]
 
-    
+
 def atfile_ivm(filename):
     """
     Return the filename of the IVM file
     which is assumed to be the second word
     in the atfile the user gave.
     """
-    return filename.split()[1]    
-    
-    
+    return filename.split()[1]
+
+
 def printParams(paramDictionary,all=False):
     """ Print nicely the parameters from the dictionary.
     """
@@ -362,8 +389,8 @@ def isCommaList(inputFilelist):
     """Return True if the input is a comma separated list of names."""
     if "," in inputFilelist:
         return True
-    return False        
-  
+    return False
+
 def loadFileList(inputFilelist):
     """Open up the '@ file' and read in the science and possible
        ivm filenames from the first two columns.
@@ -373,12 +400,12 @@ def loadFileList(inputFilelist):
     # IVM files have been specified in a second column...
     lines = f.readline()
     f.close()
-    
+
     # If there is a second column...
     if len(line.split()) == 2:
-        # ...parse out the names of the IVM files as well 
-        ivmlist = irafglob.irafglob(input, atfile=atfile_ivm) 
-    
+        # ...parse out the names of the IVM files as well
+        ivmlist = irafglob.irafglob(input, atfile=atfile_ivm)
+
     # Parse the @-file with irafglob to extract the input filename
     filelist = irafglob.irafglob(input, atfile=atfile_sci)
     return filelist
@@ -391,11 +418,11 @@ def readCommaList(fileList):
     for item in names:
         fileList.append(item)
     return fileList
-    
+
 def runmakewcs(input):
     """
     Runs 'updatewcs' to recompute the WCS keywords for the input image.
-    
+
     Parameters
     ----------
     input : list of str
@@ -403,13 +430,13 @@ def runmakewcs(input):
 
     Returns
     -------
-    output : list of str 
+    output : list of str
         Returns a list of names of the modified files
         (For GEIS files returns the translated names).
-    
+
     """
     newNames = updatewcs.updatewcs(input, checkfiles=False)
-    
+
     return newNames
 
 
@@ -426,9 +453,9 @@ def update_input(filelist, ivmlist=None, removed_files=None):
         sci_ivm = zip(filelist, ivmlist)
         for f in removed_files:
             result=[sci_ivm.remove(t) for t in sci_ivm if t[0] == f ]
-        ivmlist = [el[1] for el in sci_ivm] 
-        newfilelist = [el[0] for el in sci_ivm] 
-        return newfilelist, ivmlist 
+        ivmlist = [el[1] for el in sci_ivm]
+        newfilelist = [el[0] for el in sci_ivm]
+        return newfilelist, ivmlist
 
 
 ####
@@ -467,7 +494,7 @@ def get_expstart(header,primary_hdr):
         exphdr = primary_hdr
     else:
         exphdr = header
-            
+
     if exphdr.has_key('EXPSTART'):
         expstart = float(exphdr['EXPSTART'])
         expend = float(exphdr['EXPEND'])
@@ -492,7 +519,7 @@ def compute_texptime(imageObjectList):
         exptimes += img.getKeywordList('_exptime')
         start += img.getKeywordList('_expstart')
         end += img.getKeywordList('_expend')
-    
+
     exptime = 0.
     expstart = min(start)
     expend = max(end)
@@ -527,23 +554,23 @@ def getRotatedSize(corners,angle):
     return computeRange(_corners)
 
 def readcols(infile,cols=[0,1,2,3],hms=False):
-    """ 
+    """
     Read the columns from an ASCII file as numpy arrays.
-    
+
     Parameters
     ----------
     infile : str
         Filename of ASCII file with array data as columns.
-        
+
     cols : list of int
         List of 0-indexed column numbers for columns to be turned into numpy arrays
         (DEFAULT- [0,1,2,3]).
-        
+
     Returns
     -------
     outarr : list of numpy arrays
         Simple list of numpy arrays in the order as specifed in the 'cols' parameter.
-        
+
     """
 
     fin = open(infile,'r')
@@ -569,7 +596,7 @@ def readcols(infile,cols=[0,1,2,3],hms=False):
     fin.close()
     for n in range(len(cols)):
         outarr[n] = np.array(outarr[n])
-    return outarr            
+    return outarr
 
 def parse_colnames(colnames,coords=None):
     """ Convert colnames input into list of column numbers.
@@ -598,7 +625,7 @@ def parse_colnames(colnames,coords=None):
                     cols = cnames[:2]
                 break
         ftab.close()
-    else:        
+    else:
         for c in colnames:
             if isinstance(c, str):
                 if c[0].lower() == 'c': cols.append(int(c[1:])-1)
@@ -611,17 +638,17 @@ def parse_colnames(colnames,coords=None):
                     errmsg = "Unsupported column names..."
                     raise ValueError, errmsg
     return cols
-             
+
 
 def createFile(dataArray=None, outfile=None, header=None):
     """Create a simple fits file for the given data array and header."""
 
-    try:    
+    try:
         assert(outfile != None), "Please supply an output filename for createFile"
         assert(dataArray != None), "Please supply a data array for createFiles"
     except AssertionError:
         raise AssertionError
-    
+
     print 'Creating output : ',outfile
 
     try:
@@ -653,4 +680,4 @@ def createFile(dataArray=None, outfile=None, header=None):
     finally:
         # CLOSE THE IMAGE FILES
         fitsobj.close()
-        del fitsobj  
+        del fitsobj
