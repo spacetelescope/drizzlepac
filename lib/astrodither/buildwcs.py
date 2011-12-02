@@ -377,7 +377,7 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         fname,extn = fileutil.parseFilename(template)
         extnum = fileutil.parseExtn(extn)
         extname = ('sipwcs',extnum[1])
-        hdrlet = headerlet.createHeaderlet(fname,wcsname)
+        hdrlet = headerlet.create_headerlet(fname,wcsname)
         # update hdrlet with header values from outwcs
         for kw in outwcs_hdr.items():
             hdrlet[extname].header.update(kw[0],kw[1])
