@@ -1,10 +1,7 @@
 _task_name_ = string_kw(default="tweakreg")
 input = string_kw(default="*flt.fits", comment="Input files (name, suffix, or @list)")
 refimage = string_kw(default="",comment="Filename of reference image")
-findmode = option_kw('imagefind','sextractor', default='imagefind',  comment="Generate source catalog with this task")
 _editipars_btn_ = action_kw(default='imagefind Parameters', executes='_rule1_', comment='Edit imagefind parameters')
-_editspars_btn_ = action_kw(default='SExtractor Parameters', executes='_rule2_', comment='Edit Sextractor parameters')
-execname = string_kw(default="",comment="Filename with path for custom SExtractor task")
 exclusions = string_kw(default="",comment="Filename for source exclusions catalogs")
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=True, comment="Remove intermediate files?")
@@ -15,7 +12,7 @@ updatehdr = boolean_kw(default=False, triggers='_section_switch_', comment="Upda
 wcsname = string_kw(default='TWEAK', comment="Name of updated WCS")
 
 [HEADERLET CREATION]
-headerlet = boolean_kw(default=True, triggers='_section_switch_', comment="Create headerlet for solution?")
+headerlet = boolean_kw(default=False, triggers='_section_switch_', comment="Create headerlet for solution?")
 attach = boolean_kw(default=True, comment="Create headerlet FITS extension?")
 hdrfile = string_kw(default="", comment="Filename for headerlet FITS file")
 clobber = boolean_kw(default=False, comment= "Overwrite existing headerlet FITS file?")
@@ -71,6 +68,5 @@ sigma = float_or_none_kw(default=3.0,comment="Clipping limit in sigma units")
 
 [ _RULES_ ]
 _rule1_ = string_kw(default='', code='from astrodither import tweakreg; tweakreg.edit_imagefindpars()')
-_rule2_ = string_kw(default='', code='from astrodither import tweakreg; tweakreg.edit_sextractorpars()')
 _rule3_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')
 _rule4_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')

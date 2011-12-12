@@ -9,6 +9,8 @@ import astrolib.coords as coords
 import pylab as pl
 import stsci.imagestats as imagestats 
 
+import findobj
+
 def parse_input(input, prodonly=False):    
     catlist = None
 
@@ -73,8 +75,16 @@ def get_configobj_root(configobj):
         if key[0].islower(): kwargs[key] = configobj[key]
     return kwargs
 
+
+def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
+    star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode, datamax=datamax, 
+                                            ratio=1, nsigma=1.5, theta=0.)
+    star_arr = np.array(star_list)
+    fluxes = np.array(fluxes,np.float32)
+    return star_arr[:,0],star_arr[:,1],fluxes,np.arange(star_arr.shape[0])
+    
 # Object finding algorithm based on NDIMAGE routines
-def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
+def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
     """ Source finding algorithm based on NDIMAGE routines
     
         This function provides a simple replacement for the DAOFIND task.
@@ -111,9 +121,13 @@ def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=N
     #cimg = np.abs(ndimage.gaussian_laplace(array,fwhm))
     cimg = -1*ndimage.gaussian_laplace(array,fwhm)
     cimg = np.clip(cimg,0,cimg.max())
+    #cimg = ndimage.gaussian_filter(array,fwhm)
 
     climit = hmin / fwhm
     cmask = cimg >= climit
+    gwidth = int(2*fwhm+0.5)
+    gradius = gwidth//2
+    
     #cmask = cimg >= hmin
     # find and label sources
     ckern = ndimage.generate_binary_structure(2,1)
@@ -128,10 +142,23 @@ def ndfind(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=N
             imgsect = array[s]*cmask[s]
             if datamax is not None and (imgsect.max() > datamax):
                 continue # skip any source with pixel value > datamax
-            yx = ndimage.center_of_mass(cimg[s]*cmask[s])
+            cimgsect = cimg[s]*cmask[s]
+            
+            maxposind = np.where(cimgsect==cimgsect.max())
+            maxpos = (maxposind[0][0],maxposind[1][0])
+            yr0 = maxpos[0]-gradius
+            yr1 = maxpos[0]+gradius
+            if yr0 < 0: yr0 = 0
+            if yr1 > cimgsect.shape[0]: yr1 = cimgsect.shape[0]
+            xr0 = maxpos[1] - gradius
+            xr1 = maxpos[1] + gradius
+            if xr0 < 0: xr0 = 0
+            if xr1 > cimgsect.shape[1]: xr1 = cimgsect.shape[1]
+
+            yx = ndimage.center_of_mass(cimgsect[yr0:yr1,xr0:xr1])
             # convert position to chip position in (0-based) X,Y
-            xpos.append(yx[1]+s[1].start)
-            ypos.append(yx[0]+s[0].start)
+            xpos.append(yx[1]+s[1].start+yr0)
+            ypos.append(yx[0]+s[0].start+xr0)
             flux.append((array[s]*cmask[s]).sum())
     # Still need to implement sharpness and roundness limits
     return np.array(xpos),np.array(ypos),np.array(flux),np.arange(len(xpos))
@@ -253,6 +280,10 @@ def parse_exclusions(exclusions):
     for line in flines:
         if line[0] == '#' or 'global' in line[:6]:
             continue
+        # Only interpret the part of the line prior to the comment
+        # if a comment has been attached to the line
+        if '#' in line: 
+            line = line.split('#')[0].rstrip()
         
         if units is None:
             units='pixels'

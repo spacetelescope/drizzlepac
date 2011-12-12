@@ -406,6 +406,10 @@ class Image(object):
                         self.perform_update = False
                     if 'q' in a.lower():
                         self.quit_immediately = True
+            else:
+                self.fit['offset'] = [np.nan,np.nan]
+                self.fit['rot'] = np.nan
+                self.fit['scale'] = [np.nan]
         
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
@@ -436,7 +440,8 @@ class Image(object):
 
         next_key = stwcs.wcsutil.altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
 
-        if not self.identityfit and self.goodmatch:
+        if not self.identityfit and self.goodmatch and \
+                self.fit['offset'][0] != np.nan:
             updatehdr.updatewcs_with_shift(self.name,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
@@ -572,7 +577,7 @@ class Image(object):
         f.write("#X           Y\n")
         f.write("#(pix)       (pix)\n")
         for i in xrange(self.all_radec[0].shape[0]):
-            f.write('%g  %g\n'%(self.outxy[i,0],self.outxy[i,1]))
+            f.write('%f  %f\n'%(self.outxy[i,0],self.outxy[i,1]))
         f.close()
 
     def get_shiftfile_row(self):
@@ -580,7 +585,7 @@ class Image(object):
             compatability with the IRAF-based MultiDrizzle.
         """
         if self.fit is not None:
-            rowstr = '%s    %0.6g  %0.6g    %0.6g     %0.6g\n'%(self.name,self.fit['offset'][0],self.fit['offset'][1],self.fit['rot'],self.fit['scale'][0])
+            rowstr = '%s    %0.6f  %0.6f    %0.6f     %0.6f\n'%(self.name,self.fit['offset'][0],self.fit['offset'][1],self.fit['rot'],self.fit['scale'][0])
         else:
             rowstr = None
         return rowstr

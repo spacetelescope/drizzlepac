@@ -106,7 +106,7 @@ class baseImageObject:
     def clean(self):
         """ Deletes intermediate products generated for this imageObject.
         """
-        clean_files = ['blotImage','crcorImage','crmaskImage','finalMask',
+        clean_files = ['blotImage','crmaskImage','finalMask',
                         'staticMask','singleDrizMask','outSky',
                         'outSContext','outSWeight','outSingle',
                         'outMedian','d2imfile','dqmask','tmpmask']

@@ -89,10 +89,10 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 
     Parameters
     ----------
-    image : str
-        Filename of image with WCS to be updated. All extensions with 
-        EXTNAME matches the value of the 'sciext' parameter value (by
-        default, all 'SCI' extensions) will be updated.
+    image : str or PyFITS.HDUList object
+        Filename, or PyFITS object, of image with WCS to be updated. 
+        All extensions with EXTNAME matches the value of the 'sciext' 
+        parameter value (by default, all 'SCI' extensions) will be updated.
         
     reference : str
         Filename of image/headerlet (FITS file) which contains the WCS
@@ -148,6 +148,9 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         if wref is None:
             wref = wcsutil.HSTWCS(reference)
 
+    if isinstance(image,pyfits.HDUList):
+        open_image = False
+
     # Now that we are sure we have a good reference WCS to use, continue with the update
     print '\n....Updating header for ',image,'...\n'
 
@@ -166,9 +169,14 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 
     # insure that input PRIMARY WCS has been archived before overwriting
     # with new solution
-    wcsutil.altwcs.archiveWCS(image,extlist)
+    if open_image:
+        wcsutil.altwcs.archiveWCS(image,extlist)
 
-    fimg = pyfits.open(image,mode='update')
+    
+        fimg = pyfits.open(image,mode='update')
+    else:
+        fimg = image
+
     # Process MEF images...
     for ext in extlist:
         if verbose:
@@ -190,7 +198,8 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 #    if numextn > 0:
 #        # Update WCSCORR table with new WCS information
 #        wcscorr.update_wcscorr(fimg,wcs_id=wcsname)    
-    fimg.close()
+    if open_image:  
+        fimg.close()
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]

@@ -7,28 +7,25 @@ from stsci.tools import parseinput, teal
 import util
 
 # __version__ and __vdate__ are defined here, prior to the importing
-# of the modules below, so that those modules can use the values
-# from these variable definitions, allowing the values to be designated
+# of the modules below, so that those modules can use the values 
+# from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.2'
-__vdate__ = '22-Aug-2011'
+__version__ = '0.6.3'
+__vdate__ = '12-Dec-2011'
 
 import tweakutils
 import imgclasses
 import catalogs
 import sextractorpars
 import imagefindpars
-
-import sextractor
-from sextractor import is_installed
-
+    
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
-#
+# 
 # Interfaces used by TEAL
 #
 def getHelpAsString(docstring=False):
-    """
+    """ 
     return useful help from a file in the script directory called __taskname__.help
     """
     install_dir = os.path.dirname(__file__)
@@ -50,50 +47,33 @@ def _managePsets(configobj):
     """
     # Merge all configobj instances into a single object
     configobj['SOURCE FINDING PARS'] = {}
-    sextractor_name = configobj['execname']
-    if util.is_blank(sextractor_name): sextractor_name = None
-    configobj['SOURCE FINDING PARS']['execname'] = sextractor_name
-    find_sextractor = is_installed(path=sextractor_name)
+        
+    iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=True)
 
-    if configobj['findmode'] == 'imagefind' or \
-        (configobj['findmode'] == 'sextractor' and not find_sextractor):
-        if configobj['findmode'] == 'sextractor' and not find_sextractor:
-            print '**********\nWARNING\n**********'
-            print 'No version of SExtractor found!'
-            print ' Defaulting to basic source finding algorithm...'
-            print '**********'
-            # set the edit parameter to be the same as used for SExtractor
-            editipars = True
-
-        iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=True)
-
-        # merge these parameters into full set
-        configobj['SOURCE FINDING PARS'].merge(iparsobj)
-
-    elif configobj['findmode'] == 'sextractor':
-        sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=True)
-
-        # merge these parameters into full set
-        configobj['SOURCE FINDING PARS']['USER SUPPLIED PARAMETERS'] = sparsobj['USER SUPPLIED PARAMETERS']
-
+    # merge these parameters into full set
+    configobj['SOURCE FINDING PARS'].merge(iparsobj)
+        
     # clean up configobj a little to make it easier for later...
     if '_RULES_' in configobj:
         del configobj['_RULES_']
-
+    
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
     """
     iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=False, canExecute=False)
-
+    
 def edit_sextractorpars():
     """ Allows the user to edit the sextractorpars configObj in a TEAL GUI
     """
     sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=False, canExecute=False)
-
+    
 def run(configobj):
     """ Primary Python interface for image registration code
         This task replaces 'tweakshifts'
     """
+    print 'TweakReg Version '+__version__+' started at: ',util._ptime()[0],'\n'
+    util.print_pkg_versions()
+    
     # Manage PSETs for source finding algorithms
     _managePsets(configobj)
 
@@ -126,11 +106,11 @@ def run(configobj):
             raise IOError
     else:
         exclusion_files = [None]*len(filenames)
-
+        
     # Verify that we have the same number of catalog files as input images
     if catnames is not None and (len(catnames) > 0):
         rcat = configobj['REFERENCE CATALOG DESCRIPTION']['refcat']
-        if (len(catnames) != len(filenames)):
+        if (len(catnames) != len(filenames)): 
             print 'The number of input catalogs does not match the number of input images'
             print 'Catalog files specified were:'
             print catnames
@@ -141,7 +121,7 @@ def run(configobj):
         # setup array of None values as input to catalog parameter for Image class
         catnames = [None]*len(filenames)
         use_catfile = False
-
+    
     # convert input images and any provided catalog file names into Image objects
     input_images = []
     # copy out only those parameters needed for Image class
@@ -149,7 +129,7 @@ def run(configobj):
     # define default value for 'xyunits' assuming sources to be derived from image directly
     catfile_kwargs['xyunits'] = 'pixels' # initialized here, required by Image class
     del catfile_kwargs['exclusions']
-
+    
     if use_catfile:
         # reset parameters based on parameter settings in this section
         catfile_kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
@@ -164,40 +144,39 @@ def run(configobj):
                             input_catalogs=catnames[imgnum],
                             exclusions=exclusion_files[imgnum],
                             **catfile_kwargs))
-
+    
     # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)
-
-    # Determine a reference image or catalog and
+    # Determine a reference image or catalog and 
     #    return the full list of RA/Dec positions
-    # extract the catalog from the first input image source list
-    # Determine what WCS needs to be used for reference tangent plane
-    if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
-        refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
-        refwcs = refimg.get_wcs()
-        ref_source = refimg.all_radec
-    else:
-        refwcs = []
-        for i in input_images:
-            refwcs.extend(i.get_wcs())
-        ref_source = input_images[0].all_radec
-
     refcat_par = configobj['REFERENCE CATALOG DESCRIPTION']
     if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
         ref_source = refcat_par['refcat']
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
+    else: # otherwise, extract the catalog from the first input image source list
+        # Determine what WCS needs to be used for reference tangent plane
+        if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
+            refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
+            refwcs = refimg.get_wcs()
+            ref_source = refimg.all_radec
+        else:
+            refwcs = []
+            for i in input_images:
+                refwcs.extend(i.get_wcs())
+            ref_source = input_images[0].all_radec
 
     # Create Reference Catalog object
     refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
 
     uphdr_par = configobj['UPDATE HEADER']
     hdrlet_par = configobj['HEADERLET CREATION']
-
+    hdrlet_par.update(uphdr_par) # default hdrlet name
+    
     # Now, apply reference WCS to each image's sky positions as well as the
     # reference catalog sky positions,
-    # then perform the fit between the reference catalog positions and
-    #    each image's positions
+    # then perform the fit between the reference catalog positions and 
+    #    each image's positions    
     quit_immediately = False
     for img in input_images:
         print '\n'+'='*20
@@ -210,8 +189,8 @@ def run(configobj):
             break
         if uphdr_par['updatehdr']:
             img.updateHeader(wcsname=uphdr_par['wcsname'])
-        if hdrlet_par['headerlet']:
-            img.writeHeaderlet(**hdrlet_par)
+            if hdrlet_par['headerlet']:
+                img.writeHeaderlet(**hdrlet_par)
         if configobj['clean']:
             img.clean()
 
@@ -221,7 +200,7 @@ def run(configobj):
         if shiftpars['shiftfile']:
             tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
 
-#
+# 
 # Primary interface for running this task from Python
 #
 def TweakReg(files, editpars=False, configObj=None, **input_dict):
@@ -233,7 +212,7 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = files
-    # If called from interactive user-interface, configObj will not be
+    # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
@@ -249,6 +228,6 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
 
 def help():
     print getHelpAsString(docstring=True)
-
+    
 # Append help file as docstring for use in Sphinx-generated documentation/web pages
 TweakReg.__doc__ = getHelpAsString(docstring=True)

@@ -70,6 +70,12 @@ def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,ce
         # cast input list as numpy ndarray for fitting
         uv = np.array(uv)
 
+    if xy.shape[0] < nclip:
+        print 'WARNING:'
+        print '    The number of sources for the fit < number of clipping iterations.'
+        print '    Resetting number of clipping iterations to 0.'
+        nclip=0
+        
     if center is None:
         xcen = uv[:,0].mean()
         ycen = uv[:,1].mean()

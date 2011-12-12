@@ -146,6 +146,33 @@ def end_logging():
 
         sys.stdout = sys.__stdout__
 
+def print_pkg_versions(packages=None,svn=False):
+    pkgs = ['numpy','pyfits','stwcs','pywcs']
+    if packages is not None:
+        if not isinstance(packages,list):
+            packages = [packages]
+        pkgs.extend(packages)
+        
+    print 'Version Information'
+    print '-'*20
+    print 'Python Version '+sys.version
+    for software in pkgs:
+        try:
+            package = __import__(software)
+            vstr = "%s "%(software)
+            try:
+                vstr+= "Version -> "+package.__version__+" "
+            except:
+                vstr += "No version defined.  "
+            if svn:
+                try:
+                    vstr += "\n    SVN version -> "+package.__svn_version__.rstrip()
+                except:
+                    vstr += " "
+        except:
+            vstr = software+" not found in path..."
+        print vstr
+
 class ProcSteps:
     """ This class allows MultiDrizzle to keep track of the
         start and end times of each processing step that gets run

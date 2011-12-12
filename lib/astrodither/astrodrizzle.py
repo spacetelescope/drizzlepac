@@ -44,8 +44,8 @@ import wcs_functions
 
 __taskname__ = "astrodrizzle"
 
-__version__ = '4.2.0dev'
-__vdate__ = '4-Oct-2011'
+__version__ = '4.2.4dev'
+__vdate__ = '12-Dec-2011'
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -148,8 +148,9 @@ def run(configObj=None,wcsmap=None):
         
     util.init_logging(logfile=configObj['runfile'],default=def_logname)
     procSteps = util.ProcSteps()
-    print '[astrodrizzle] AstroDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
-
+    print 'AstroDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
+    util.print_pkg_versions()
+    
     try:
         try:
             # Define list of imageObject instances and output WCSObject instance

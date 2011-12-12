@@ -8,9 +8,6 @@ from stwcs import wcsutil
 import pyfits
 import stsci.imagestats as imagestats
 
-import sextractor
-from sextractor import is_installed
-
 #import idlphot
 import tweakutils,util
 
@@ -44,11 +41,7 @@ def generateCatalog(wcs,mode='automatic',catalog=None,**kwargs):
     if not isinstance(catalog,Catalog):
         if mode == 'automatic': # if an array is provided as the source
             # Create a new catalog directly from the image
-            if kwargs['findmode'] == 'sextractor' and is_installed():
-                catalog = ExtractorCatalog(wcs,catalog,**kwargs)
-                #catalog = ImageCatalog(wcs,catalog,**kwargs)
-            else:
-                catalog = ImageCatalog(wcs,catalog,**kwargs)
+            catalog = ImageCatalog(wcs,catalog,**kwargs)
         else: # a catalog file was provided as the catalog source
             catalog = UserCatalog(wcs,catalog,**kwargs)
     return catalog
@@ -251,6 +244,9 @@ class ExtractorCatalog(Catalog):
         Sextractor as installed by the user on their system.
 
     """
+    import sextractor
+    from sextractor import is_installed
+
     SEXTRACTOR_OUTPUT = ["X_IMAGE", "Y_IMAGE", "FLUX_BEST", "FLUXERR_BEST","FLAGS", "FWHM_IMAGE","NUMBER"]
     SEXTRACTOR_BOOL = {True:'Y', False:'N'}
 
@@ -390,19 +386,27 @@ class ImageCatalog(Catalog):
             sigma = self._compute_sigma()
         else:
             sigma = self.pars['sigma']
-        hmin = sigma * self.pars['threshold']
-        print 'hmin=',hmin,' based on sigma=',sigma,' and threshold = ',self.pars['threshold']
+        skymode = sigma**2
+
+        if self.pars['threshold'] in [None,"INDEF",""," "]:
+            hmin = skymode
+        else:
+            hmin = sigma*self.pars['threshold']
+
         if self.pars.has_key('datamin') and self.pars['datamin'] is not None:
             source = np.where(self.source <= self.pars['datamin'], 0.,self.source)
         else:
             source = self.source
-        
-        x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],datamax=self.pars['datamax'])
-        if len(x) == 0:
+        print '###Source finding started at: ',util._ptime()[0]
+        x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
+                            datamax=self.pars['datamax'])
+        print '###Source finding finished at: ',util._ptime()[0]
+        if len(x) == 0 and not self.pars['computesig']:
             sigma = self._compute_sigma()
             hmin = sigma * self.pars['threshold']
             print 'No sources found with original thresholds. Trying automatic settings.'
-            x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],datamax=self.pars['datamax'])
+            x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
+                                    datamax=self.pars['datamax'])
         
         if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
             fminindx = flux >= self.pars['fluxmin']
@@ -422,8 +426,9 @@ class ImageCatalog(Catalog):
         self.num_objects = len(x)
 
     def _compute_sigma(self):
-        istats = imagestats.ImageStats(self.source,nclip=3,fields='mode,stddev')
-        sigma = 1.5 * istats.stddev
+        istats = imagestats.ImageStats(self.source,nclip=3,
+                                        fields='mode,stddev',binwidth=0.01)
+        sigma = np.sqrt(2.0 * istats.mode)
         return sigma
         
 class UserCatalog(Catalog):
