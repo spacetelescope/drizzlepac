@@ -8,7 +8,7 @@ import scipy as sp
 from stsci import convolve
 from stsci import ndimage as ndim
 
-import imagestats
+import stsci.imagestats as imagestats
 
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):
 #from numpy import *
