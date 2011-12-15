@@ -1,4 +1,0 @@
-#! python
-
-import astrodrizzle.updatenpol
-astrodrizzle.updatenpol.main()

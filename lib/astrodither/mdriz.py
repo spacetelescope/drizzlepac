@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-from __future__ import division # confidence high
+from __future__ import division  # confidence high
 
-import sys, getopt
-from astrodither import AstroDrizzle,util,wcs_functions
+import sys
+from astrodither import AstroDrizzle
 from astrodither import __version__
-    
+
 
 #-------------------------------------------------------------------------------
 # a main program for running MultiDrizzle from the command line
@@ -18,7 +18,7 @@ def main() :
         print str(e)
         print __doc__
         print "\t", __version__
-        
+
     # read options
     help = False
     editpars = False
@@ -42,7 +42,7 @@ def main() :
         print '  Parameters should be given as "name=value" pairs for all parameters'
         print '      understood by MultiDrizzle. These values will ALWAYS override'
         print '      any parameter value set in the TEAL if TEAL is used at all.'
-        
+
     if len(args) < 1 and not editpars:
         print 'No input specified... Use -h for help.'
     else:
@@ -51,7 +51,6 @@ def main() :
             avar,aval = a.split('=')
             input_dict[avar] = aval
         AstroDrizzle(editpars=editpars,**input_dict)
-    
-if __name__=='__main__':
+
+if __name__ == '__main__':
     main()
-    

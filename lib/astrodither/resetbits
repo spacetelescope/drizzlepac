@@ -1,4 +1,0 @@
-#! python
-
-import astrodrizzle.resetbits
-astrodrizzle.resetbits.main()

@@ -108,7 +108,7 @@ setupargs = {
                             ( pkg+"/htmlhelp/_static", ['lib/astrodither/htmlhelp/_static/*']),
                             ( pkg+"/htmlhelp", ['lib/astrodither/htmlhelp/*.html']),
                             ( pkg, ['lib/astrodither/*.help'])],
-    'scripts' :         ["lib/astrodither/mdriz.py","lib/astrodither/resetbits","lib/astrodither/updatenpol"] ,
+    'scripts' :         ["scripts/mdriz","scripts/resetbits","scripts/updatenpol"] ,
     'ext_modules' :     getNumpyExtensions(),
     'package_dir' :     { 'astrodither' : 'lib/astrodither', },
 
