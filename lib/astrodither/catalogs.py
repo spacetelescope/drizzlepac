@@ -381,13 +381,14 @@ class ImageCatalog(Catalog):
         """
         #x,y,flux,sharp,round = idlphot.find(array,self.pars['hmin'],self.pars['fwhm'],
         #                    roundlim=self.pars['roundlim'], sharplim=self.pars['sharplim'])
+        print '###Source finding started at: ',util._ptime()[0]
         if self.pars['computesig']:
             # compute sigma for this image
             sigma = self._compute_sigma()
         else:
             sigma = self.pars['sigma']
         skymode = sigma**2
-
+        print '   Finding sources using sigma = ',sigma
         if self.pars['threshold'] in [None,"INDEF",""," "]:
             hmin = skymode
         else:
@@ -397,7 +398,7 @@ class ImageCatalog(Catalog):
             source = np.where(self.source <= self.pars['datamin'], 0.,self.source)
         else:
             source = self.source
-        print '###Source finding started at: ',util._ptime()[0]
+
         x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
                             datamax=self.pars['datamax'])
         print '###Source finding finished at: ',util._ptime()[0]

@@ -196,7 +196,7 @@ def _median(imageObjectList,paramDict):
             exposureTimeList.append(img_exptime)
 
            # compute sky value as sky/pixel using the single_drz pixel scale
-            bsky = image._image[image.scienceExt,1].computedSky * (image.outputValues['scale']**2)          
+            bsky = image._image[image.scienceExt,1].subtractedSky# * (image.outputValues['scale']**2)          
             backgroundValueList.append(bsky)
             
             # Extract the readnoise value for the chip

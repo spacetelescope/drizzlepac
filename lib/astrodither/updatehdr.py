@@ -150,9 +150,18 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 
     if isinstance(image,pyfits.HDUList):
         open_image = False
+        filename = image.filename()
+        if image.fileinfo(0)['filemode'] is 'update':
+            image_update = True
+        else:
+            image_update = False
+    else:
+        open_image = True
+        filename = image
+        image_update = None
 
     # Now that we are sure we have a good reference WCS to use, continue with the update
-    print '\n....Updating header for ',image,'...\n'
+    print '\n....Updating header for ',filename,'...\n'
 
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image,extname=sciext)
@@ -170,18 +179,19 @@ def updatewcs_with_shift(image,reference,wcsname=None,
     # insure that input PRIMARY WCS has been archived before overwriting
     # with new solution
     if open_image:
-        wcsutil.altwcs.archiveWCS(image,extlist)
-
-    
         fimg = pyfits.open(image,mode='update')
+        image_update = True
     else:
         fimg = image
+    
+    if image_update is True:
+        wcsutil.altwcs.archiveWCS(fimg,extlist)
 
     # Process MEF images...
     for ext in extlist:
         if verbose:
             print 'Processing %s[',ext,']'
-        chip_wcs = wcsutil.HSTWCS(image,ext=ext)
+        chip_wcs = wcsutil.HSTWCS(fimg,ext=ext)
 
         update_refchip_with_shift(chip_wcs,wref,
                     rot=rot,scale=scale,xsh=xsh,ysh=ysh,fit=fit)
@@ -311,9 +321,14 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     if not isinstance(image,pyfits.HDUList):
         fimg = pyfits.open(image,mode='update')
         fimg_open = True
+        fimg_update = True
     else:
         fimg = image
-        
+        if fimg.fileinfo(0)['filemode'] is 'update':
+            fimg_update = True
+        else:
+            fimg_update = False
+            
     idchdr = True
     if new_wcs.idcscale is None:
         idchdr = False
@@ -323,7 +338,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         hdr = fimg[extnum].header
 
         if verbose:
-            print 'Updating header for ',fimg.filename(),'[',extnum,'] with WCS of'
+            print '    with WCS of'
             new_wcs.printwcs()
         # Insure that if a copy of the WCS has not been created yet, it will be now
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
@@ -333,11 +348,15 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         hdr.update('ORIENTAT',new_wcs.orientat)
         hdr.update('WCSNAME',wcsname)
         
-        # Save the newly updated WCS as an alternate WCS as well
-        wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
-        # wcskey needs to be specified so that archiveWCS will create a 
-        # duplicate WCS with the same WCSNAME as the Primary WCS
-        wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,wcskey=wkey)
+        # Only if this image was opened in update mode should this
+        # newly updated WCS be archived, as it will never be written out
+        # to a file otherwise.
+        if fimg_update:
+            # Save the newly updated WCS as an alternate WCS as well
+            wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
+            # wcskey needs to be specified so that archiveWCS will create a 
+            # duplicate WCS with the same WCSNAME as the Primary WCS
+            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,wcskey=wkey)
 
     finally:
         if fimg_open:

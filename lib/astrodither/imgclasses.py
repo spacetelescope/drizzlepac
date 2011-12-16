@@ -36,6 +36,13 @@ class Image(object):
             Parameters necessary for processing derived from input configObj object.
 
         """
+        self.perform_update = kwargs['updatehdr']
+        if self.perform_update:
+            open_mode = 'update'
+        else:
+            open_mode = 'readonly'
+        self.hdulist = fu.openImage(filename,mode=open_mode)
+
         self.name = filename
         self.rootname = filename[:filename.find('.')]
         self.origin = 1
@@ -125,8 +132,12 @@ class Image(object):
         
         self.next_key = ' '
         
-        self.perform_update = True
         self.quit_immediately = False
+
+    def close(self):
+        """ Close any open file handles and flush updates to disk
+        """
+        self.hdulist.close()
 
     def get_wcs(self):
         """ Helper method to return a list of all the input WCS objects associated
@@ -351,7 +362,8 @@ class Image(object):
         self.fit_pars = pars
 
         self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0],'rms':[0.0,0.0],
-                    'rms_keys':{'RMS_RA':0.0,'RMS_DEC':0.0,'NMATCH':0}}
+                    'rms_keys':{'RMS_RA':0.0,'RMS_DEC':0.0,'NMATCH':0},
+                    'fit_matrix':[[1.0,0.0],[0.0,1.0]]}
 
         if not self.identityfit:
             if self.matches is not None and self.goodmatch:
@@ -385,7 +397,8 @@ class Image(object):
                     #resids = linearfit.compute_resids(xy,self.fit['ref_coords'],self.fit)
                     resids = self.fit['resids']
                     xy_fit = xy + resids
-                    title_str = 'Residuals\ for\ %s'%(self.name.replace('_','\_'))
+                    title_str = 'Residuals\ for\ %s using %d sources'%(
+                        self.name.replace('_','\_'),self.fit['rms_keys']['NMATCH'])
                     figure_id = 1
                     if pars['residplot'] == 'both':
                         tweakutils.make_vector_plot(None,
@@ -427,10 +440,9 @@ class Image(object):
     def updateHeader(self,wcsname=None):
         """ Update header of image with shifts computed by *perform_fit()*.
         """
-        if not self.perform_update:
-            return
+
         # Create WCSCORR table to keep track of WCS revisions anyway
-        wcscorr.init_wcscorr(self.name)
+        wcscorr.init_wcscorr(self.hdulist)
         extlist = []
         if self.num_sci == 1 and self.ext_name == "PRIMARY":
             extlist = [0]
@@ -442,12 +454,12 @@ class Image(object):
 
         if not self.identityfit and self.goodmatch and \
                 self.fit['offset'][0] != np.nan:
-            updatehdr.updatewcs_with_shift(self.name,self.refWCS,wcsname=wcsname,
+            updatehdr.updatewcs_with_shift(self.hdulist,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
                 fit=self.fit['fit_matrix'])
 
-            wnames = stwcs.wcsutil.altwcs.wcsnames(self.name,ext=extlist[0])
+            wnames = stwcs.wcsutil.altwcs.wcsnames(self.hdulist,ext=extlist[0])
             altkeys = []
             for k in wnames:
                 if wnames[k] == wcsname:
@@ -457,11 +469,20 @@ class Image(object):
             next_key = altkeys[-1]
             print '    Writing out new WCS to alternate WCS: "',next_key,'"'
                 
+            self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
-            # archive current WCS as alternate WCS with specified WCSNAME
-            stwcs.wcsutil.altwcs.archiveWCS(self.name,extlist,wcskey=next_key,wcsname=wcsname)
+            if self.perform_update:
+                print '    Saving Primary WCS to alternate WCS: "',next_key,'"'
+                # archive current WCS as alternate WCS with specified WCSNAME
+                # Start by archiving original PRIMARY WCS 
+                wnames = stwcs.wcsutil.altwcs.wcsnames(self.hdulist,ext=extlist[0])
+                stwcs.wcsutil.altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wnames[' '])
+                # Find key for next WCS and save again to replicate an updated solution
+                next_key = stwcs.wcsutil.altwcs.next_wcskey(self.hdulist[extlist[0]].header)
+                # save again using new WCSNAME
+                stwcs.wcsutil.altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wcsname)
+            self.next_key = ' '
 
-        self.next_key = next_key
         # copy updated WCS info to WCSCORR table
         if self.num_sci > 0 and self.ext_name != "PRIMARY":
             extlist = []
@@ -470,7 +491,9 @@ class Image(object):
         else:
             extlist = ['PRIMARY']
         # add FIT values to image's PRIMARY header
-        fimg = pyfits.open(self.name,mode='update')
+        #fimg = pyfits.open(self.name,mode='update')
+        fimg = self.hdulist
+        
         if wcsname in ['',' ',None,"INDEF"]:
             wcsname = 'TWEAK'
         # Record values for the fit with both the PRIMARY WCS being updated
@@ -483,7 +506,8 @@ class Image(object):
 
         print 'Updating WCSCORR table with new WCS solution "',wcsname,'"'
         stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
-        fimg.close()
+        #fimg.close()
+        self.hdulist = fimg
 
     def writeHeaderlet(self,**kwargs):
         """ Write and/or attach a headerlet based on update to PRIMARY WCS
@@ -510,7 +534,7 @@ class Image(object):
         #                    author=None, descrip=None, history=None,
         #                    rms_ra=None, rms_dec=None, nmatch=None, catalog=None,
         #                    attach=True, clobber=False):
-        headerlet.write_headerlet(self.name, pars['hdrname'], 
+        headerlet.write_headerlet(self.hdulist, pars['hdrname'], 
                 output=pars['hdrfile'], 
                 wcsname=None, wcskey=self.next_key, destim=None,
                 sipname=None, npolfile=None, d2imfile=None, 

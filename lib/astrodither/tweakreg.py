@@ -10,8 +10,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.3'
-__vdate__ = '12-Dec-2011'
+__version__ = '0.6.4'
+__vdate__ = '16-Dec-2011'
 
 import tweakutils
 import imgclasses
@@ -135,7 +135,11 @@ def run(configobj):
         catfile_kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
     # Update parameter set with 'SOURCE FINDING PARS' now
     catfile_kwargs.update(configobj['SOURCE FINDING PARS'])
-
+    uphdr_par = configobj['UPDATE HEADER']
+    hdrlet_par = configobj['HEADERLET CREATION']
+    hdrlet_par.update(uphdr_par) # default hdrlet name
+    catfile_kwargs['updatehdr'] = uphdr_par['updatehdr']
+    
     print '\n'+__taskname__+': Finding shifts for ',filenames,'\n'
 
     for imgnum in xrange(len(filenames)):
@@ -168,10 +172,6 @@ def run(configobj):
 
     # Create Reference Catalog object
     refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
-
-    uphdr_par = configobj['UPDATE HEADER']
-    hdrlet_par = configobj['HEADERLET CREATION']
-    hdrlet_par.update(uphdr_par) # default hdrlet name
     
     # Now, apply reference WCS to each image's sky positions as well as the
     # reference catalog sky positions,
@@ -187,13 +187,13 @@ def run(configobj):
         if img.quit_immediately:
             quit_immediately = True
             break
-        if uphdr_par['updatehdr']:
-            img.updateHeader(wcsname=uphdr_par['wcsname'])
-            if hdrlet_par['headerlet']:
-                img.writeHeaderlet(**hdrlet_par)
+        img.updateHeader(wcsname=uphdr_par['wcsname'])
+        if hdrlet_par['headerlet']:
+            img.writeHeaderlet(**hdrlet_par)
         if configobj['clean']:
             img.clean()
-
+        img.close()
+        
     if not quit_immediately:
         # write out shiftfile (if specified)
         shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']

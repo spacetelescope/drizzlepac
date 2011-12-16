@@ -184,30 +184,33 @@ def _skySub(imageSet,paramDict,saveFile=False):
     skyuser=paramDict["skyuser"]
     
     if skyuser != '':
-        print "User has computed their own sky values, updating MDRIZSKY with supplied value..."
+        print "User has computed their own sky values..."
        
-        for chip in range(1,numchips+1,1):
-            try:
-                _skyValue = imageSet._image["PRIMARY"].header[skyuser]
-
-            except:
-                print "**************************************************************"
-                print "*"
-                print "*  Cannot find keyword ",skyuser," in ",imageSet._filename
-                print "*"
-                print "**************************************************************\n\n\n"
-                raise KeyError
+        if skyuser != skyKW:
+            print "    ...updating MDRIZSKY with supplied value."
+            for chip in range(1,numchips+1,1):
+                try:
+                    chipext = '%s,%d'%(sciExt,chip)
+                    _skyValue = imageSet[chipext].header[skyuser]
                 
-            _updateKW(imageSet[sciExt+','+str(chip)],imageSet._filename,(sciExt,chip),skyKW,_skyValue)
-                        
-        # Update internal record with subtracted sky value
-        image.subtractedSky = _skyValue
-        #update the value of MDRIZSKY in the global header
-        _updateKW(imageSet["PRIMARY"],imageSet._filename,"PRIMARY",skyKW,_skyValue)
-        print skyKW,"=",_skyValue
+                except:
+                    print "**************************************************************"
+                    print "*"
+                    print "*  Cannot find keyword ",skyuser," in ",imageSet._filename
+                    print "*"
+                    print "**************************************************************\n\n\n"
+                    raise KeyError
+                
+                _updateKW(imageSet[sciExt+','+str(chip)],imageSet._filename,(sciExt,chip),skyKW,_skyValue)
+
+                # Update internal record with subtracted sky value
+                imageSet[chipext].subtractedSky = _skyValue
+                #update the value of MDRIZSKY in the global header
+                #_updateKW(imageSet["PRIMARY"],imageSet._filename,"PRIMARY",skyKW,_skyValue)
+                print "Setting ",skyKW,"=",_skyValue
 
     else:
-        # Compute our own sky values and subtract them from the image copies.
+        # Compute our own sky values and record the values for use later.
         # The minimum sky value from all the  science chips in the exposure
         # is used as the reference sky for each chip
 
@@ -235,9 +238,6 @@ def _skySub(imageSet,paramDict,saveFile=False):
             minSky.append(_scaledSky)
             minpscale.append(pscale)
             
-            #update the keyword in the actual header here as well
-            image.computedSky=_scaledSky #this is the scaled sky value
-
         _skyValue = min(minSky)
         
         _reportedSky = _skyValue*(minpscale[minSky.index(_skyValue)]**2)
@@ -246,7 +246,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         #now subtract that value from all the chips in the exposure
         #and update the chips header keyword with the sub
         for chip in range(1,numchips+1,1):
-            image=imageSet._image[sciExt,chip]
+            image=imageSet[sciExt,chip]
             myext = sciExt+","+str(chip)
             # account for the case where no IDCSCALE has been set, due to a 
             # lack of IDCTAB or to 'coeffs=False'.
@@ -254,8 +254,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             if idcscale is None: idcscale = image.wcs.pscale
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
-            image.computedSky = _skyValue
-            print "\nUsing scaled sky from chip %d: %f\n"%(chip,_scaledSky)
+            print "\nUsing sky from chip %d: %f\n"%(chip,_scaledSky)
             ###_subtractSky(image,(_scaledSky))
             # Update the header so that the keyword in the image is 
             #the sky value which should be subtracted from the image
@@ -315,7 +314,7 @@ def _computeSky(image, skypars, memmap=0):
             )
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
-    print "Computed unscaled sky value for %s: "%image.rootname, _skyValue
+    print "    Computed sky value/pixel for %s: "%image.rootname, _skyValue
     
     del _tmp
     
