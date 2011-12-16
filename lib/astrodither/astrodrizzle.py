@@ -45,7 +45,7 @@ import wcs_functions
 __taskname__ = "astrodrizzle"
 
 __version__ = '4.2.5dev'
-__vdate__ = '16-Dec-2011'
+__vdate__ = '19-Dec-2011'
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations
