@@ -11,7 +11,7 @@ from stsci.imagestats import ImageStats
 import util
 from stsci.image import numcombine
 from stsci.tools import iterfile
-from stsci.tools import nimageiter 
+from stsci.tools import nimageiter
 from stsci.tools import teal
 from minmed import minmed
 import processInput
@@ -23,7 +23,7 @@ __taskname__= "astrodither.createMedian" #looks in astrodither for createMedian.
 _step_num_ = 4  #this relates directly to the syntax in the cfg file
 
 def getHelpAsString():
-    """ 
+    """
     Return useful help from a file in the script directory called module.help
     """
     helpString = teal.getHelpFileAsString(__taskname__,__file__)
@@ -35,25 +35,25 @@ def median(input=None,configObj=None, editpars=False, **inputDict):
     """
         Create a median image from the seperately drizzled images.
     """
-    
+
     if input is not None:
-        inputDict["input"]=input        
-        
+        inputDict["input"]=input
+
     else:
         print "Please supply an input image"
         raise ValueError
-        
+
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
         return
 
     if editpars == False:
         run(configObj)
-     
+
 
 #this is the function that will be called from TEAL
 def run(configObj):
- 
+
     imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not needed here
 
     createMedian(imgObjList,configObj)
@@ -63,24 +63,25 @@ def run(configObj):
 #
 def createMedian(imgObjList,configObj,procSteps=None):
     """ Top-level interface to createMedian step called from top-level MultiDrizzle.
-    
+
     This function parses the input parameters then calls the `_median()` function
     to median-combine the input images into a single image.
-    
+
     """
     if(imgObjList == None):
-        print "Please provide a list of imageObjects to the median step"
-        return ValueError
+        msg = "Please provide a list of imageObjects to the median step"
+        print msg
+        raise ValueError(msg)
 
     if procSteps is not None:
         procSteps.addStep('Create Median')
-        
+
     step_name = util.getSectionName(configObj,_step_num_)
     if not configObj[step_name]['median']:
         print 'Median combination step not performed.'
         return
-            
-    step_name=util.getSectionName(configObj,_step_num_)    
+
+    step_name=util.getSectionName(configObj,_step_num_)
     paramDict=configObj[step_name]
     paramDict['proc_unit'] = configObj['proc_unit']
 
@@ -94,7 +95,7 @@ def createMedian(imgObjList,configObj,procSteps=None):
 
 #this is the internal function, the user called function is below
 def _median(imageObjectList,paramDict):
-    """Create a median image from the list of image Objects 
+    """Create a median image from the list of image Objects
        that has been given.
     """
 
@@ -110,7 +111,7 @@ def _median(imageObjectList,paramDict):
     sigmaSplit=sigma.split()
     nsigma1 = float(sigmaSplit[0])
     nsigma2 = float(sigmaSplit[1])
-    
+
     #print "Checking parameters:"
     #print comb_type,nlow,nhigh,grow,maskpt,nsigma1,nsigma2
     if (paramDict['combine_lthresh'] == None):
@@ -125,14 +126,14 @@ def _median(imageObjectList,paramDict):
     #the name of the output median file isdefined in the output wcs object
     #and stuck in the image.outputValues["outMedian"] dict of every imageObject
     medianfile=imageObjectList[0].outputNames["outMedian"]
-    
-    
+
+
     """ Builds combined array from single drizzled images."""
     # Start by removing any previous products...
     if(os.access(medianfile,os.F_OK)):
         os.remove(medianfile)
-        
-    
+
+
     # Define lists for instrument specific parameters, these should be in the image objects
     # need to be passed to the minmed routine
     readnoiseList = []
@@ -142,7 +143,7 @@ def _median(imageObjectList,paramDict):
     singleWeightList=[] #pointers to the data arrays
     #skylist=[] #the list of platescale values for the images
     _wht_mean = [] # Compute the mean value of each wht image
-    
+
     #for each image object
     for image in imageObjectList:
 
@@ -161,25 +162,25 @@ def _median(imageObjectList,paramDict):
                     hthresh = hthresh * det_gain
                     if native_units.lower() == "counts/s":
                         hthresh = hthresh * img_exptime
-                    
+
         singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         singleWeight=image.outputNames["outSWeight"]
-        
+
         _singleImage=iterfile.IterFitsFile(singleDriz)#this returns the handles for the image
         singleDrizList.append(_singleImage) #add to an array for bookkeeping
-        
+
         # If it exists, extract the corresponding weight images
         if (os.access(singleWeight,os.F_OK)):
             _weight_file=iterfile.IterFitsFile(singleWeight)
             singleWeightList.append(_weight_file)
             tmp_mean_value = ImageStats(_weight_file.data,lower=1e-8,lsig=None,usig=None,fields="mean",nclip=0)
             _wht_mean.append(tmp_mean_value.mean * maskpt)
-             
+
             # Extract instrument specific parameters and place in lists
 
             # If an image has zero exposure time we will
             # redefine that value as '1'.  Although this will cause inaccurate scaling
-            # of the data to occur in the 'minmed' combination algorith, this is a 
+            # of the data to occur in the 'minmed' combination algorith, this is a
             # necessary evil since it avoids divide by zero exceptions.  It is more
             # important that the divide by zero exceptions not cause Multidrizzle to
             # crash in the pipeline than it is to raise an exception for this obviously
@@ -187,31 +188,31 @@ def _median(imageObjectList,paramDict):
             # with Multidrizzle.
             #
             # Get the exposure time from the InputImage object
-            # 
+            #
             # MRD 19-May-2011
             # Changed exposureTimeList to take exposure time from img_exptime
             # variable instead of hte image._exptime attribute, since
             # image._exptime was just giving 1.
-            # 
+            #
             exposureTimeList.append(img_exptime)
 
            # compute sky value as sky/pixel using the single_drz pixel scale
-            bsky = image._image[image.scienceExt,1].subtractedSky# * (image.outputValues['scale']**2)          
+            bsky = image._image[image.scienceExt,1].subtractedSky# * (image.outputValues['scale']**2)
             backgroundValueList.append(bsky)
-            
+
             # Extract the readnoise value for the chip
             sci_chip = image._image[image.scienceExt,1]
             readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
-            
+
             #_refsky=(image.wcs.idcscale**2) * image._image["PRIMARY"].header["MDRIZSKY"]
             print "reference sky value for image ",image._filename," is ", backgroundValueList[-1]
         #
         # END Loop over input image list
         #
-    
+
     # create an array for the median output image, use the size of the first image in the list
     medianImageArray = np.zeros(singleDrizList[0].shape,dtype=singleDrizList[0].type())
-    
+
     # create the master list to be used by the image iterator
     masterList = []
     masterList.extend(singleDrizList)
@@ -230,11 +231,11 @@ def _median(imageObjectList,paramDict):
 
     # Fire up the image iterator
     #
-    # The overlap value needs to be set to 2*grow in order to 
+    # The overlap value needs to be set to 2*grow in order to
     # avoid edge effects when scrolling down the image, and to
     # insure that the last section returned from the iterator
     # has enough row to span the kernel used in the boxcar method
-    # within minmed.  
+    # within minmed.
     _overlap = 2*int(grow)
 
     #Start by computing the buffer size for the iterator
@@ -248,7 +249,7 @@ def _median(imageObjectList,paramDict):
     _niter = nimageiter.computeNumberBuff(_imgrows,_nrows,_overlap)
     #computeNumberBuff actually returns (niter,buffrows)
     _niter=_niter[0]
-    _lastrows = _imgrows - (_niter*_nrows) 
+    _lastrows = _imgrows - (_niter*_nrows)
 
     # check to see if this buffer size will leave enough rows for
     # the section returned on the last iteration
@@ -297,7 +298,7 @@ def _median(imageObjectList,paramDict):
         if ( comb_type.lower() == "minmed"):
             if (_weight_mask_list in [None,[]]):
                 _weight_mask_list = None
-            
+
             # Create the combined array object using the minmed algorithm
             result = minmed(imageSectionsList[startDrz:endDrz],  # list of input data to be combined.
                                 imageSectionsList[startWht:endWht],# list of input data weight images to be combined.
@@ -368,7 +369,7 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
         The header of the first 'outsingle' file in the
         association parlist is used as the header of the
         new image.
-        
+
         inputFilename is the fits file you want to steal the header from
         outputFilename is the name of the output median image file
     """
@@ -380,7 +381,7 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
     if (inputHeader == None):
         #use a general primary HDU
         _prihdu=pyfits.PrimaryHDU(data=dataArray)
-           
+
     else:
         _prihdu = inputHeader
         _prihdu.data=dataArray
@@ -391,8 +392,9 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
         print "Saving output median image to: ",outputFilename
         _pf.writeto(outputFilename)
     except IOError:
-        print "Problem writing file:",outputFilename
-        return IOError
-        
-    del _pf    
-    
+        msg = "Problem writing file: "+outputFilename
+        print msg
+        raise IOError(msg)
+
+    del _pf
+

@@ -2,15 +2,15 @@
 """
 
 Function for computing and subtracting the backgroud of
-an image.  The algorithm employed here uses a sigma 
-clipped median of  each *sci* image in a data file.   
-Then the sky value for each detector is compared 
+an image.  The algorithm employed here uses a sigma
+clipped median of  each *sci* image in a data file.
+Then the sky value for each detector is compared
 and the lowest value is  subtracted from all chips
-in the detector.  Finally, the MDRIZSKY keyword 
+in the detector.  Finally, the MDRIZSKY keyword
 is updated in the header of the input files.
 
-:Authors: 
-    Christopher Hanley, Megan Sosey    
+:Authors:
+    Christopher Hanley, Megan Sosey
 """
 from __future__ import division # confidence medium
 
@@ -28,9 +28,9 @@ _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
 def help():
     print getHelpAsString()
-        
+
 def getHelpAsString():
-    """ 
+    """
     return useful help from a file in the script directory called module.help
     """
     helpString = teal.getHelpFileAsString(__taskname__,__file__)
@@ -41,7 +41,7 @@ def getHelpAsString():
 def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
     """
     Perform sky subtraction on input list of images
-    
+
     Parameters
     ----------
     input : str or list of str
@@ -51,16 +51,16 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     inputDict : dict, optional
         an optional list of parameters specified by the user
     outExt : str
-        The extension of the output image. If the output already exists 
+        The extension of the output image. If the output already exists
         then the input image is overwritten
-    
+
     Notes
     -----
     These are parameters that the configObj should contain by default,
     they can be altered on the fly using the inputDict
 
     Parameters that should be in configobj:
-    
+
     ==========  ===================================================================
     Name        Definition
     ==========  ===================================================================
@@ -77,15 +77,15 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
 
     The output from sky subtraction is a copy of the original input file
     where all the science data extensions have been sky subtracted.
-    
+
     """
-    
-    
+
+
     if input is not None:
-        inputDict['input']=input  
+        inputDict['input']=input
         inputDict['output']=None
         inputDict['updatewcs']=False
-        inputDict['group']=group   
+        inputDict['group']=group
     else:
         print "Please supply an input image"
         raise ValueError
@@ -93,23 +93,23 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
         return
-    
+
     if not editpars:
         run(configObj,outExt=outExt)
-         
+
 
 #this is the function that will be called from TEAL
 def run(configObj,outExt=None):
- 
+
     #now we really just need the imageObject list created for the dataset
     filelist,output,ivmlist,oldasndict=processInput.processFilenames(configObj['input'],None)
 
     imageObjList=processInput.createImageObjectList(filelist,instrpars={},group=configObj['group'])
-    
+
     #set up the output names, if no extension given the default will be used
     #otherwise, the user extension is used and if the file already exists it's overwritten
     saveFile = False
-    if(outExt not in [None,'','None']):    
+    if(outExt not in [None,'','None']):
         saveFile = True
         for image in imageObjList:
             outsky=image.outputNames['outSky']
@@ -130,13 +130,13 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
         print 'Sky Subtraction step not performed.'
         procSteps.endStep('Subtract Sky')
         return
-    
-    #General values to use    
-    step_name=util.getSectionName(configObj,_step_num_)  
+
+    #General values to use
+    step_name=util.getSectionName(configObj,_step_num_)
     paramDict = configObj[step_name]
     #get the sub-dictionary of values for this step alone and print them out
     print "\nUSER INPUT PARAMETERS for Sky Subtraction Step:"
-    util.printParams(paramDict)        
+    util.printParams(paramDict)
 
     for image in imageObjList:
         print "Working on sky for: ",image._filename
@@ -144,7 +144,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
 
     if procSteps is not None:
         procSteps.endStep('Subtract Sky')
-    
+
 
 #this is the main function that does all the real work
 def _skySub(imageSet,paramDict,saveFile=False):
@@ -152,7 +152,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
     subtract the sky from all the chips in the imagefile that imageSet represents
 
     imageSet is a single imageObject reference
-    paramDict should be the subset from an actual config object 
+    paramDict should be the subset from an actual config object
     if saveFile=True, then images that have been sky subtracted are saved to a predetermined output name
     else, overwrite the input images with the sky-subtracted results
 
@@ -160,11 +160,11 @@ def _skySub(imageSet,paramDict,saveFile=False):
     where all the science data extensions have been sky subtracted
 
     """
-   
-             
-    _skyValue=0.0    #this will be the sky value computed for the exposure                                                                  
+
+
+    _skyValue=0.0    #this will be the sky value computed for the exposure
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
-    
+
     #just making sure, tricky users and all, these are things that will be used
     #by the sky function so we want them defined at least
     try:
@@ -172,27 +172,27 @@ def _skySub(imageSet,paramDict,saveFile=False):
         assert imageSet._filename != '', "image object filename is empty!, doh!"
         assert imageSet._rootname != '', "image rootname is empty!, doh!"
         assert imageSet.scienceExt !='', "image object science extension is empty!"
-        
+
     except AssertionError:
         raise AssertionError
-        
+
     numchips=imageSet._numchips
     sciExt=imageSet.scienceExt
-     
-    # User Subtraction Case, User has done own sky subtraction,  
-    # so use the image header value for subtractedsky value    
+
+    # User Subtraction Case, User has done own sky subtraction,
+    # so use the image header value for subtractedsky value
     skyuser=paramDict["skyuser"]
-    
+
     if skyuser != '':
         print "User has computed their own sky values..."
-       
+
         if skyuser != skyKW:
             print "    ...updating MDRIZSKY with supplied value."
             for chip in range(1,numchips+1,1):
                 try:
                     chipext = '%s,%d'%(sciExt,chip)
                     _skyValue = imageSet[chipext].header[skyuser]
-                
+
                 except:
                     print "**************************************************************"
                     print "*"
@@ -200,7 +200,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
                     print "*"
                     print "**************************************************************\n\n\n"
                     raise KeyError
-                
+
                 _updateKW(imageSet[sciExt+','+str(chip)],imageSet._filename,(sciExt,chip),skyKW,_skyValue)
 
                 # Update internal record with subtracted sky value
@@ -217,17 +217,17 @@ def _skySub(imageSet,paramDict,saveFile=False):
         print "Computing minimum sky ..."
         minSky=[] #store the sky for each chip
         minpscale = []
-        
+
         for chip in range(1,numchips+1,1):
             myext=sciExt+","+str(chip)
-            
+
             #add the data back into the chip, leave it there til the end of this function
             imageSet[myext].data=imageSet.getData(myext)
-            
+
             image=imageSet[myext]
             _skyValue= _computeSky(image, paramDict, memmap=0)
             #scale the sky value by the area on sky
-            # account for the case where no IDCSCALE has been set, due to a 
+            # account for the case where no IDCSCALE has been set, due to a
             # lack of IDCTAB or to 'coeffs=False'.
             pscale=imageSet[myext].wcs.idcscale
             if pscale is None:
@@ -237,9 +237,9 @@ def _skySub(imageSet,paramDict,saveFile=False):
             #_skyValue=_scaledSky
             minSky.append(_scaledSky)
             minpscale.append(pscale)
-            
+
         _skyValue = min(minSky)
-        
+
         _reportedSky = _skyValue*(minpscale[minSky.index(_skyValue)]**2)
         print "Minimum sky value for all chips ",_reportedSky
 
@@ -248,7 +248,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         for chip in range(1,numchips+1,1):
             image=imageSet[sciExt,chip]
             myext = sciExt+","+str(chip)
-            # account for the case where no IDCSCALE has been set, due to a 
+            # account for the case where no IDCSCALE has been set, due to a
             # lack of IDCTAB or to 'coeffs=False'.
             idcscale = image.wcs.idcscale
             if idcscale is None: idcscale = image.wcs.pscale
@@ -256,11 +256,11 @@ def _skySub(imageSet,paramDict,saveFile=False):
             image.subtractedSky = _scaledSky
             print "\nUsing sky from chip %d: %f\n"%(chip,_scaledSky)
             ###_subtractSky(image,(_scaledSky))
-            # Update the header so that the keyword in the image is 
+            # Update the header so that the keyword in the image is
             #the sky value which should be subtracted from the image
-            _updateKW(image,imageSet._filename,(sciExt,chip),skyKW,_scaledSky) 
+            _updateKW(image,imageSet._filename,(sciExt,chip),skyKW,_scaledSky)
 
-            """            
+            """
             if not saveFile:
                 print "**Updating input image with sky subtracted image"
                 # Write out the sky-subtracted array back to the input image
@@ -270,7 +270,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         # This does not make sense for STIS ASN files that
         #haven't been chunked up into separate fits files already
         #_updateKW(imageSet["PRIMARY"],imageSet._filename,'PRIMARY',skyKW,_skyValue)
-   
+
     """
     if(saveFile):
         print "Saving output sky subtracted image: ",imageSet.outputNames["outSky"]
@@ -278,28 +278,29 @@ def _skySub(imageSet,paramDict,saveFile=False):
         imageSet.getAllData(exclude="SCI")
         if os.access(imageSet.outputNames['outSky'],os.F_OK):
             os.remove(imageSet.outputNames['outSky'])
-            
+
         try:
             imageSet._image.writeto(imageSet.outputNames['outSky'])
         except IOError:
-            print "Image already exists on disk!"
-            return IOError
+            msg = "Image already exists on disk!"
+            print msg
+            raise IOError(msg)
     """
     imageSet.close() #remove the data from memory
 
 
 
 ###############################
-##  Helper functions follow  ## 
+##  Helper functions follow  ##
 ###############################
 
 def _computeSky(image, skypars, memmap=0):
 
-    """ 
-    Compute the sky value for the data array passed to the function 
+    """
+    Compute the sky value for the data array passed to the function
     image is a pyfits object which contains the data and the header
     for one image extension
-    
+
     skypars is passed in as paramDict
     """
     #this object contains the returned values from the image stats routine
@@ -315,27 +316,27 @@ def _computeSky(image, skypars, memmap=0):
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
     print "    Computed sky value/pixel for %s: "%image.rootname, _skyValue
-    
+
     del _tmp
-    
-    return _skyValue 
+
+    return _skyValue
 
 
 
 def _extractSkyValue(imstatObject,skystat):
     if (skystat =="mode"):
-        return imstatObject.mode 
+        return imstatObject.mode
     elif (skystat == "mean"):
         return imstatObject.mean
     else:
-        return imstatObject.median 
+        return imstatObject.median
 
 
 
 def _subtractSky(image,skyValue,memmap=0):
     """
     subtract the given sky value from each the data array
-    that has been passed. image is a pyfits object that 
+    that has been passed. image is a pyfits object that
     contains the data and header for one image extension
     """
     try:
@@ -343,7 +344,7 @@ def _subtractSky(image,skyValue,memmap=0):
 
     except IOError:
         print "Unable to perform sky subtraction on data array"
-        raise IOError 
+        raise IOError
 
 
 def _updateKW(image, filename, exten, skyKW, Value):
@@ -360,7 +361,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
     fobj = fileutil.openImage(filename,mode='update')
     fobj[exten].header.update(skyKW,Value)
     fobj.close()
-    
+
 #this is really related to each individual chip
 #so pass in the image for that chip, image contains header and data
 def getreferencesky(image,keyval):
@@ -368,18 +369,5 @@ def getreferencesky(image,keyval):
     _subtractedSky=image.header[keyval]
     _refplatescale=image.header["REFPLTSCL"]
     _platescale=image.header["PLATESCL"]
-    
-    return (_subtractedsky * (_refplatescale / _platescale)**2 )                
 
-
-
-
-
-
-
-
-
-
-
-
-
+    return (_subtractedsky * (_refplatescale / _platescale)**2 )
