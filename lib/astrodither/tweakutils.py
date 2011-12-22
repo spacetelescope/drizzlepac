@@ -800,6 +800,9 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure=None,
         xy1y = xy1y[xindx].copy()
     print '# of points after clipping: ',len(dx)
     
+    dr = np.sqrt(dx**2 + dy**2)
+    max_vector = dr.max()
+    
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
         
@@ -816,11 +819,19 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure=None,
         xrange = maxx - minx
         yrange = maxy - miny
 
-        pl.quiver(xy1x[::every],xy1y[::every],dx[::every],dy[::every],\
+        qplot = pl.quiver(xy1x[::every],xy1y[::every],dx[::every],dy[::every],\
                   units='y',headwidth=headw,headlength=headl)
-        pl.text(minx+xrange*0.01, miny-yrange*(0.005*textscale),'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
-        pl.text(minx+xrange*0.01, miny-yrange*(0.01*textscale),'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
-        pl.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(xy1x.shape[0],numpts,title))
+        key_dx = xrange*0.01
+        key_dy = yrange*(0.005*textscale)
+        maxvec = max_vector/2.
+        key_len = round((maxvec+0.005),2)
+        
+        pl.text(minx+key_dx, miny-key_dy,'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
+        pl.text(minx+key_dx, miny-key_dy*2,'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
+        pl.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(
+                xy1x.shape[0],numpts,title))
+        pl.quiverkey(qplot,minx+key_dx,miny+key_dy,key_len,"%0.2f pixels"%(key_len),
+                    coordinates='data',labelpos='E',labelcolor='Maroon',color='Maroon')
     else:
         plot_defs = [[xy1x,dx,"X (pixels)","DX (pixels)"],\
                     [xy1y,dx,"Y (pixels)","DX (pixels)"],\

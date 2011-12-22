@@ -3,6 +3,7 @@ import datetime
 import os
 import shutil
 import string
+import errno
 
 import pyfits
 
@@ -336,13 +337,13 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 
 
     return filelist,output,ivmlist,oldasndict
-
+    
 def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False,  wcskey=None, **workinplace):
     """ Create the full input list of filenames after verifying and converting
         files as needed.
     """
     newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,**workinplace)
-
+    
     if not newfilelist or len(newfilelist) == 0:
         buildEmptyDRZ(input,output)
         return None, None, output
@@ -416,6 +417,11 @@ def buildFileList(input, output=None, ivmlist=None,**workinplace):
     """
     filelist,output,ivmlist,oldasndict=processFilenames(input,output)
 
+    # verify that all input images specified can be updated as needed
+    filelist = util.verifyFilePermissions(filelist)
+    if filelist is None or len(filelist) == 0:
+        return None, None, None, None
+    
     manageInputCopies(filelist,**workinplace)
 
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
@@ -650,10 +656,10 @@ def buildEmptyDRZ(input, output):
     # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.
     try :
+        print 'Building empty DRZ file from ',inputfile[0]
         img = pyfits.open(inputfile[0])
     except:
         raise IOError, 'Unable to open file %s \n' %inputfile
-
 
     # Create the fitsobject
     fitsobj = pyfits.HDUList()
@@ -701,6 +707,15 @@ def buildEmptyDRZ(input, output):
     except:
         fitsobj[1].header['ASN_MTYP'] = 'PROD-DTH'
 
+    # If the file is already on disk delete it and replace it with the
+    # new file
+    dirfiles = os.listdir(os.curdir)
+    if (dirfiles.count(output) > 0):
+        os.remove(output)
+        print "       Replacing "+output+"..."
+
+    # Write out the empty DRZ file
+    fitsobj.writeto(output)
 
     errstr =  "###############################################################################\n"
     errstr += "#                                                                             #\n"
@@ -711,15 +726,6 @@ def buildEmptyDRZ(input, output):
     errstr += "###############################################################################\n\n"
     print errstr
 
-    # If the file is already on disk delete it and replace it with the
-    # new file
-    dirfiles = os.listdir(os.curdir)
-    if (dirfiles.count(output) > 0):
-        os.remove(output)
-        print "       Replacing "+output+"..."
-
-    # Write out the empty DRZ file
-    fitsobj.writeto(output)
     return
 
 def checkDGEOFile(filenames):

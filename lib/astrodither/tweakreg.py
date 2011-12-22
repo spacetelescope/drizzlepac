@@ -3,6 +3,7 @@
 import os
 
 from stsci.tools import parseinput, teal
+from stwcs import updatewcs
 
 import util
 
@@ -10,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.4'
-__vdate__ = '16-Dec-2011'
+__version__ = '0.6.5'
+__vdate__ = '22-Dec-2011'
 
 import tweakutils
 import imgclasses
@@ -86,6 +87,17 @@ def run(configobj):
     if not filenames:
         print 'No filenames matching input %r were found.' % input
         raise IOError
+
+    # Verify that files are writable (based on file permissions) so that 
+    #    they can be updated if either 'updatewcs' or 'updatehdr' have
+    #    been turned on (2 cases which require updating the input files)  
+    if configobj['updatewcs'] or configobj['UPDATE HEADER']['updatehdr']:
+        filenames = util.verifyFilePermissions(filenames)
+        if filenames is None or len(filenames) == 0:
+            raise IOError
+
+    if configobj['updatewcs']:
+        updatewcs.updatewcs(filenames)
 
     if catnames in [None,'',' ','INDEF'] or len(catnames) == 0:
         catfile_par = configobj['COORDINATE FILE DESCRIPTION']['catfile']
@@ -217,7 +229,12 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    try:
+        configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    except ValueError:
+        print "Problem with input parameters. Quitting..."
+        return
+
     if configObj is None:
         return
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have already

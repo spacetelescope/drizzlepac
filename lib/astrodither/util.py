@@ -281,6 +281,63 @@ def removeFileSafely(filename,clobber=True):
     if filename is not None and filename.strip() != '':
         if os.path.exists(filename) and clobber: os.remove(filename)
 
+def verifyFilePermissions(filelist):
+    """ Verify that images specified in 'filelist' can be updated.
+    
+    A message will be printed reporting the names of any images which
+    do not have write-permission, then quit.
+    """
+    badfiles = []
+    for img in filelist:
+        try:
+            fp = open(fileutil.osfn(img),mode='a')
+            fp.close()
+        except IOError as e:
+            if e.errno == errno.EACCES:
+                badfiles.append(img)
+            # Not a permission error.
+            pass
+
+    num_bad = len(badfiles)
+    if num_bad > 0:
+        print '\n'
+        print '#'*40
+        print 'Found %d files which can not be updated!'%(num_bad)
+        for img in badfiles:
+            print '    %s'%(img)
+        print '\nPlease reset permissions for these files and restart...'
+        print '#'*40
+        print '\n'
+        newfilelist = None
+
+    return filelist
+def validateUserPars(configObj,input_dict):
+    """ Compares input parameter names specified by user with those already
+        recognized by the task.
+        
+        Any parameters provided by the user that does not match a known 
+        task parameter will be reported and a ValueError exception will be
+        raised.
+    """
+    # check to see whether any input parameters are unexpected. 
+    # Any unexpected parameters provided on input should be reported and
+    # the code should stop
+    plist = []
+    extra_pars = []
+    for par in configObj.getParList():
+        plist.append(par.name)
+    for kw in input_dict:
+        if kw not in plist:
+            extra_pars.append(kw)
+    if len(extra_pars) > 0:
+        print '='*40
+        print 'The following input parameters were not recognized as valid inputs:'
+        for p in extra_pars:
+            print "    %s"%(p)
+        print '\nPlease check the spelling of the parameter(s) and try again...'
+        print '='*40
+        raise ValueError
+    
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated
         with user-specified values from input_dict.
@@ -327,6 +384,12 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     # merge in the user values for this run
     # this, though, does not save the results for use later
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:
+        # check to see whether any input parameters are unexpected. 
+        # Any unexpected parameters provided on input should be reported and
+        # the code should stop
+        validateUserPars(configObj,input_dict)
+
+        # If everything looks good, merge user inputs with configObj and continue 
         cfgpars.mergeConfigObj(configObj, input_dict)
         # Update the input .cfg file with the updated parameter values
         #configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))

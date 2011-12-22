@@ -397,7 +397,7 @@ class Image(object):
                     #resids = linearfit.compute_resids(xy,self.fit['ref_coords'],self.fit)
                     resids = self.fit['resids']
                     xy_fit = xy + resids
-                    title_str = 'Residuals\ for\ %s using %d sources'%(
+                    title_str = 'Residuals\ for\ %s\ using\ %d\ sources'%(
                         self.name.replace('_','\_'),self.fit['rms_keys']['NMATCH'])
                     figure_id = 1
                     if pars['residplot'] == 'both':

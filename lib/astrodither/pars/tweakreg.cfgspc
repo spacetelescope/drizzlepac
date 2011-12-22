@@ -3,6 +3,7 @@ input = string_kw(default="*flt.fits", comment="Input files (name, suffix, or @l
 refimage = string_kw(default="",comment="Filename of reference image")
 _editipars_btn_ = action_kw(default='imagefind Parameters', executes='_rule1_', comment='Edit imagefind parameters')
 exclusions = string_kw(default="",comment="Filename for source exclusions catalogs")
+updatewcs = boolean_kw(default=False, comment="Update WCS keywords of input images?")
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=True, comment="Remove intermediate files?")
 verbose = boolean_kw(default=False, comment="Print extra messages during processing?")

@@ -44,8 +44,8 @@ import wcs_functions
 
 __taskname__ = "astrodrizzle"
 
-__version__ = '4.2.5dev'
-__vdate__ = '19-Dec-2011'
+__version__ = '4.2.6dev'
+__vdate__ = '22-Dec-2011'
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -54,7 +54,7 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 #
 #### Interactive user interface (functional form)
 #
-def AstroDrizzle(input, mdriztab=False, editpars=False, configObj=None, wcsmap=None, **input_dict):
+def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None, wcsmap=None, **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
@@ -72,7 +72,11 @@ def AstroDrizzle(input, mdriztab=False, editpars=False, configObj=None, wcsmap=N
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    try:
+        configObj = util.getDefaultConfigObj(__taskname__,configobj,input_dict,loadOnly=(not editpars))
+    except ValueError:
+        print "Problem with input parameters. Quitting..."
+        return
     
     if configObj is None:
         return
@@ -161,7 +165,7 @@ def run(configObj=None,wcsmap=None):
             procSteps.endStep('Initialization')
 
             if not imgObjList:
-                return
+                raise ValueError
 
             print "\nUSER INPUT PARAMETERS common to all Processing Steps:"
             util.printParams(configObj)
@@ -188,9 +192,14 @@ def run(configObj=None,wcsmap=None):
             #Make your final drizzled image
             adrizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
 
-            print '\n[astrodrizzle]MultiDrizzle Version '+__version__+' is all finished at ',util._ptime()[0],' !\n'
+            print '\nAstroDrizzle Version '+__version__+' is finished processing at ',util._ptime()[0],' !\n'
 
         except:
+            print '#'*40
+            print '\nERROR: '
+            print '    AstroDrizzle Version %s encountered a problem!'%(__version__)
+            print '    Processing terminated at %s.'%(util._ptime()[0])
+            print '#'*40
             raise
     finally:
         procSteps.reportTimes()
