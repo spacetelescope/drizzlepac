@@ -61,7 +61,7 @@ def _managePsets(configobj):
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
     """
-    iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=False, canExecute=False)
+    iparsobj = teal.teal(imagefindpars.__taskname__, returnDict=False, loadOnly=False, canExecute=False)
     
 def edit_sextractorpars():
     """ Allows the user to edit the sextractorpars configObj in a TEAL GUI
