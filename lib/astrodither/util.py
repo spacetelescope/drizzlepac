@@ -34,15 +34,27 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
     except ImportError:
         print '\nCould not import multiprocessing, will only take advantage of a single CPU core'
 
-def get_pool_size(usr_config_value = None):
-    """ Use the suggested pool size (from cpu_count) and the config
-    object value, to get the right pool size to use. Consolidate all
-    such logic here, not in the caller. """
+def get_pool_size(usr_config_value = None, num_tasks = None):
+    """ Examine the cpu_count to decide and return the right pool
+    size to use.  Also take into account the user's wishes via the config
+    object value, if specified.  On top of that, don't allow the pool size
+    returned to be any higher than the number of parallel tasks, if specified.
+    Only use what we need (mp.Pool starts pool_size processes, needed or not).
+    If number of tasks is unknown, call this with "num_tasks" set to None.
+    Consolidate all such logic here, not in the caller. """
     if not can_parallel:
         return 0
+    # Give priority to their specified cfg value, over the actual cpu count
     if usr_config_value != None:
-        return usr_config_value
-    return _cpu_count
+        if num_tasks == None:
+            return usr_config_value
+        else:
+            return min(usr_config_value, num_tasks)
+    # They haven't specified a cfg value, so go with the cpu_count
+    if num_tasks == None:
+        return _cpu_count
+    else:
+        return min(_cpu_count, num_tasks)
 
 
 DEFAULT_LOGNAME = 'astrodrizzle.log'
