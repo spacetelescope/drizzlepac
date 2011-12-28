@@ -71,6 +71,7 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
     pool_size = 1
     if util.can_parallel:
         pool_size = util.get_pool_size(configObj.get('num_cores'))
+        pool_size = 1 # !!! temporarily force serial exec while checking bug
 
     if pool_size > 1:
         print 'Executing up to %d parallel threads/processes' % pool_size
