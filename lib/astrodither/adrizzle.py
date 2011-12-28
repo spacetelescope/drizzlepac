@@ -17,19 +17,8 @@ except ImportError:
     print '\n Please check the installation of this package to insure C code was built successfully.'
     raise ImportError
 
-can_parallel = False
-if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
-    try:
-        import multiprocessing
-        can_parallel = True
-        # sanity check - do we even have the hardware?
-        try:
-            can_parallel = multiprocessing.cpu_count() > 1
-        except:
-            can_parallel = False
-    except ImportError:
-        multiprocessing = None
-        print '\nCould not import multiprocessing, will only be able to take advantage of a single CPU core'
+if util.can_parallel:
+    import multiprocessing
 
 __taskname__ = "astrodither.adrizzle"
 _single_step_num_ = 3
@@ -319,7 +308,8 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         paramDict['build'] = False
         # Record whether or not intermediate files should be deleted when finished
         paramDict['clean'] = configObj['STATE OF INPUT FILES']['clean']
-    
+        paramDict['num_cores'] = configObj.get('num_cores')
+
         print "\nUSER INPUT PARAMETERS for Separate Drizzle Step:"
         util.printParams(paramDict)
 
@@ -327,7 +317,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         # this is necessary in order for MultiDrizzle to always have build=False
         # for single-drizzle step when called from the top-level.
         run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True,
-                build=False, wcsmap=wcsmap)
+                 build=False, wcsmap=wcsmap)
     else:
         print 'Single drizzle step not performed.'
 
@@ -336,7 +326,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
 
 
 def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,procSteps=None):
-    
+
     if procSteps is not None:
         procSteps.addStep('Final Drizzle')
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
@@ -361,7 +351,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
         util.printParams(paramDict)
 
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False,
-                build=build, wcsmap=wcsmap)
+                 build=build, wcsmap=wcsmap)
     else:
         print 'Final drizzle step not performed.'
 
@@ -496,6 +486,17 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     output_wcs.printwcs()
     print '\n'
 
+    # Will we be running in parallel?
+    pool_size = 1
+    if util.can_parallel:
+        pool_size = util.get_pool_size(paramDict.get('num_cores'),
+                                       num_tasks = len(imageObjectList))
+    will_parallel = single and pool_size > 1
+    if will_parallel:
+        print 'Executing %d parallel threads/processes' % len(imageObjectList) # !!! change to pool_size
+    else:
+        print 'Executing serially'
+
     # Set parameters for each input and run drizzle on it here.
     #
     # Perform drizzling...
@@ -519,7 +520,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # This buffer should be reused for each input.
     #
     _outsci = _outwht = _outctx = None
-    if not single or not can_parallel:
+    if not will_parallel:
         _outsci=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
         _outwht=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
 
@@ -532,7 +533,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     # Always initialize context images to a 3-D array
     # and only pass the appropriate plane to drizzle as needed
-    if not single or not can_parallel:
+    if not will_parallel:
         _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
 
     # Keep track of how many chips have been processed
@@ -562,8 +563,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         if _chipIdx == 0:
             template = chiplist[0].outputNames['data']
 
-        # Work each image, posibly in parallel
-        if single and can_parallel:
+        # Work each image, possibly in parallel
+        if will_parallel:
             p = multiprocessing.Process(target=run_driz_img,
                 args=(img,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
@@ -619,6 +620,10 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
         # See if we will be writing out data
         doWrite = chipIdxCopy == num_in_prod-1
 
+#       debuglog('#chips='+str(chipIdxCopy)+', num_in_prod='+\
+#                 str(num_in_prod)+', single='+str(single)+', write='+\
+#                 str(doWrite)+', here='+str(here))
+
         # run_driz_chip
         run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
                       single,doWrite,build,_versions,_numctx,_nplanes,
@@ -645,7 +650,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                   doWrite,build,_versions,_numctx,_nplanes,_numchips,
                   _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single chip.
-    This is separated out from run_driz() so as to keep together
+    This is separated out from run_driz_img() so as to keep together
     the entirety of the code which is inside the loop over
     chips.  See the run_driz() code for more documentation.
     """
@@ -666,7 +671,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Apply sky subtraction and unit conversion to input array
     _insci = _sciext.data - chip.subtractedSky
     _insci *= chip._conversionFactor
-    
+
     # Set additional parameters needed by 'drizzle'
     _in_units = chip.in_units.lower()
     if _in_units == 'cps':
@@ -747,7 +752,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                 print 'WARNING: All pixels masked out when applying cosmic ray mask to ',_expname
         updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,
                            chip.outputNames['crmaskImage'],paramDict['crbit'])
-        
+
     img.set_wtscl(chip._chip,paramDict['wt_scl'])
 
     wcslin = distortion.utils.output_wcs([chip.wcs],undistort=undistort)
@@ -762,7 +767,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _inwht = img.buildIVMmask(chip._chip,dqarr,pix_ratio)
     else: # wht_type == 'EXP'
         _inwht = dqarr.astype(np.float32)
-    
+
     if not(paramDict['clean']):
         # Write out mask file if 'clean' has been turned off
         if single:
@@ -773,7 +778,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         pimg = pyfits.PrimaryHDU(data=_inwht).writeto(_outmaskname)
         del pimg
         print 'Writing out mask file: ',_outmaskname
-        
+
     # New interface to performing the drizzle operation on a single chip/image
     _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
                 _expin, _in_units, chip._wtscl,
@@ -787,7 +792,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     chip.outputNames['driz_version'] = _vers
     chip.outputNames['driz_wcskey'] = paramDict['wcskey']
     outputvals = chip.outputNames.copy()
-    
+
     # Update entries for names/values based on final output
     outputvals.update(img.outputValues)
     for kw in img.outputNames:
