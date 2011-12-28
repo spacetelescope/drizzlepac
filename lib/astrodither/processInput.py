@@ -128,10 +128,60 @@ def setCommonInput(configObj,createOutwcs=True):
         print '\n-Creating output WCS.\n'
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
-        return imageObjectList,outwcs
     else:
-        return imageObjectList,None
+        outwcs = None
+        
+    try:
+        # Provide user with some information on resource usage for this run
+        reportResourceUsage(imageObjectList,outwcs,configObj.get('num_cores'),interactive)
+    except ValueError:
+        imageObjectList = None
+        
+    return imageObjectList,None
 
+def reportResourceUsage(imageObjectList,outwcs,num_cores,interactive=False):
+    """ Provide some information to the user on the estimated resource
+    usage (primarily memory) for this run.
+    """
+    if outwcs is None:
+        output_mem = 0
+    else:
+        output_mem = outwcs.naxis1*outwcs.naxis2*4*3 # bytes used for output arrays
+    img1 = imageObjectList[0]
+    numchips = 0
+    input_mem = 0
+    for img in imageObjectList:
+        numchips += img._numchips
+    
+    # if we have the cpus and s/w, ok, but still allow user to set pool size
+    pool_size = 1
+    if util.can_parallel:
+        pool_size = util.get_pool_size(num_cores)
+    inimg = 0
+    for img in imageObjectList:
+        for chip in range(img._numchips):
+            inimg += 1
+            if inimg < numchips:
+                chip_mem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
+                input_mem += chip_mem*2
+    max_mem = (input_mem + output_mem + chip_mem*2)//(1024*1024)
+    
+    print '*'*80
+    print '*'
+    print '*  Estimated memory usage:  >= %d Mb.'%(max_mem)
+    print '*  Output image size:       %d X %d pixels. '%(outwcs.naxis1,outwcs.naxis2)
+    print '*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024))
+    print '*  CPUs used by task:       %d'%(pool_size)
+    print '*'
+    print '*'*80
+    
+    if interactive:
+        print 'Continue with processing?'
+        k = raw_input("(y)es or (n)o")
+        if 'n' in k.lower():
+            raise ValueError
+    
+    
 def getMdriztabPars(input):
     """ High-level function for getting the parameters from MDRIZTAB
     

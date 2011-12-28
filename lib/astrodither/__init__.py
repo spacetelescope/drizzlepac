@@ -41,7 +41,7 @@ import pixtopix
 # it easier to get to this code interactively
 try:
     import tweakreg, catalogs, imgclasses, tweakutils
-    import imagefindpars, sextractorpars,sextractor,sexcatalog
+    import imagefindpars
 except:
     print 'The libraries needed for "tweakreg" were not available!'
     print 'None of the code related to that task can be used at this time.'

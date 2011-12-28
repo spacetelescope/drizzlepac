@@ -334,8 +334,8 @@ class baseImageObject:
         #
         outFinal = rootname+suffix+'.fits'
         outSci = rootname+suffix+'_sci.fits'
-        outWeight = rootname+suffix+'_weight.fits'
-        outContext = rootname+suffix+'_context.fits'
+        outWeight = rootname+suffix+'_wht.fits'
+        outContext = rootname+suffix+'_ctx.fits'
         outMedian = rootname+'_med.fits'
 
         # Build names based on input name
@@ -343,7 +343,7 @@ class baseImageObject:
         outSky = rootname + '_sky.fits'
         outSingle = rootname+'_single_sci.fits'
         outSWeight = rootname+'_single_wht.fits'
-        crCorImage = rootname+'_cor.fits'
+        crCorImage = rootname+'_crclean.fits'
 
         # Build outputNames dictionary
         fnames={

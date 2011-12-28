@@ -22,12 +22,8 @@ def getHelpAsString(docstring=False):
 
     return helpString
 
-def run(configobj=None):
-    """ Imagefind parameters to control operation of built-in source extraction algorithm
-    """
-    pass
 
 def help():
     print getHelpAsString(docstring=True)
 
-run.__doc__ += getHelpAsString(docstring=True)
+__doc__ = getHelpAsString(docstring=True)

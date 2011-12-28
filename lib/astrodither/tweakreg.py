@@ -11,13 +11,12 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.5'
-__vdate__ = '22-Dec-2011'
+__version__ = '0.6.6'
+__vdate__ = '28-Dec-2011'
 
 import tweakutils
 import imgclasses
 import catalogs
-import sextractorpars
 import imagefindpars
     
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
@@ -62,17 +61,13 @@ def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
     """
     iparsobj = teal.teal(imagefindpars.__taskname__, returnDict=False, loadOnly=False, canExecute=False)
-    
-def edit_sextractorpars():
-    """ Allows the user to edit the sextractorpars configObj in a TEAL GUI
-    """
-    sparsobj = teal.teal(sextractorpars.__taskname__,loadOnly=False, canExecute=False)
-    
+        
 def run(configobj):
     """ Primary Python interface for image registration code
         This task replaces 'tweakshifts'
     """
-    print 'TweakReg Version '+__version__+' started at: ',util._ptime()[0],'\n'
+    print 'TweakReg Version %s(%s) started at: %s \n'%(
+                    __version__,__vdate__,util._ptime()[0])
     util.print_pkg_versions()
     
     # Manage PSETs for source finding algorithms
@@ -154,13 +149,18 @@ def run(configobj):
     
     print '\n'+__taskname__+': Finding shifts for ',filenames,'\n'
 
-    for imgnum in xrange(len(filenames)):
-        # Create Image instances for all input images
-        input_images.append(imgclasses.Image(filenames[imgnum],
-                            input_catalogs=catnames[imgnum],
-                            exclusions=exclusion_files[imgnum],
-                            **catfile_kwargs))
-    
+    try:
+        for imgnum in xrange(len(filenames)):
+            # Create Image instances for all input images
+            input_images.append(imgclasses.Image(filenames[imgnum],
+                                input_catalogs=catnames[imgnum],
+                                exclusions=exclusion_files[imgnum],
+                                **catfile_kwargs))
+    except KeyboardInterrupt:
+        for img in input_images:
+            img.close()
+        print 'Quitting as a result of user request (Ctrl-C)...'
+        return
     # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)
     # Determine a reference image or catalog and 
@@ -182,35 +182,52 @@ def run(configobj):
                 refwcs.extend(i.get_wcs())
             ref_source = input_images[0].all_radec
 
-    # Create Reference Catalog object
-    refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
+    try:
+        # Create Reference Catalog object
+        refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
+    except KeyboardInterrupt:
+        refimage.close()
+        for img in input_images:
+            img.close()
+        print 'Quitting as a result of user request (Ctrl-C)...'
+        return
     
-    # Now, apply reference WCS to each image's sky positions as well as the
-    # reference catalog sky positions,
-    # then perform the fit between the reference catalog positions and 
-    #    each image's positions    
-    quit_immediately = False
-    for img in input_images:
-        print '\n'+'='*20
-        print 'Performing fit for: ',img.name,'\n'
-        img.match(refimage.outxy, refimage.wcs,refimage.name,**configobj['OBJECT MATCHING PARAMETERS'])
-        configobj['CATALOG FITTING PARAMETERS']['minobj'] = configobj['OBJECT MATCHING PARAMETERS']['minobj']
-        img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
-        if img.quit_immediately:
-            quit_immediately = True
-            break
-        img.updateHeader(wcsname=uphdr_par['wcsname'])
-        if hdrlet_par['headerlet']:
-            img.writeHeaderlet(**hdrlet_par)
-        if configobj['clean']:
-            img.clean()
-        img.close()
-        
-    if not quit_immediately:
-        # write out shiftfile (if specified)
-        shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']
-        if shiftpars['shiftfile']:
-            tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
+    try:
+        # Now, apply reference WCS to each image's sky positions as well as the
+        # reference catalog sky positions,
+        # then perform the fit between the reference catalog positions and 
+        #    each image's positions    
+        quit_immediately = False
+        for img in input_images:
+            print '\n'+'='*20
+            print 'Performing fit for: ',img.name,'\n'
+            img.match(refimage.outxy, refimage.wcs,refimage.name,
+                        **configobj['OBJECT MATCHING PARAMETERS'])
+            configobj['CATALOG FITTING PARAMETERS']['minobj'] = \
+                            configobj['OBJECT MATCHING PARAMETERS']['minobj']
+            img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
+            if img.quit_immediately:
+                quit_immediately = True
+                img.close()
+                break
+            img.updateHeader(wcsname=uphdr_par['wcsname'])
+            if hdrlet_par['headerlet']:
+                img.writeHeaderlet(**hdrlet_par)
+            if configobj['clean']:
+                img.clean()
+            img.close()
+            
+        if not quit_immediately:
+            # write out shiftfile (if specified)
+            shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']
+            if shiftpars['shiftfile']:
+                tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
+    except KeyboardInterrupt:
+        refimage.close()
+        for img in input_images:
+            img.close()
+        print 'Quitting as a result of user request (Ctrl-C)...'
+        return
 
 # 
 # Primary interface for running this task from Python

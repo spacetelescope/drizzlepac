@@ -281,16 +281,20 @@ def removeFileSafely(filename,clobber=True):
     if filename is not None and filename.strip() != '':
         if os.path.exists(filename) and clobber: os.remove(filename)
 
-def verifyFilePermissions(filelist):
+def verifyFilePermissions(filelist, chmod=True):
     """ Verify that images specified in 'filelist' can be updated.
     
     A message will be printed reporting the names of any images which
     do not have write-permission, then quit.
     """
     badfiles = []
+    archive_dir = False
     for img in filelist:
+        fname = fileutil.osfn(img)
+        if 'OrIg_files' in os.path.split(fname)[0]:
+            archive_dir = True
         try:
-            fp = open(fileutil.osfn(img),mode='a')
+            fp = open(fname,mode='a')
             fp.close()
         except IOError as e:
             if e.errno == errno.EACCES:
@@ -300,6 +304,16 @@ def verifyFilePermissions(filelist):
 
     num_bad = len(badfiles)
     if num_bad > 0:
+        if archive_dir:
+            print '\n'
+            print '#'*40
+            print '    Working in "OrIg_files" (archive) directory. '
+            print '    This directory has been created to serve as an archive'
+            print '    for the original input images. '
+            print '\n    These files should be copied into another directory'
+            print '     for processing. '
+            print '#'*40
+
         print '\n'
         print '#'*40
         print 'Found %d files which can not be updated!'%(num_bad)

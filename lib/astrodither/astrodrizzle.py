@@ -44,8 +44,8 @@ import wcs_functions
 
 __taskname__ = "astrodrizzle"
 
-__version__ = '4.2.6dev'
-__vdate__ = '22-Dec-2011'
+__version__ = '4.2.7dev'
+__vdate__ = '28-Dec-2011'
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -152,7 +152,8 @@ def run(configObj=None,wcsmap=None):
         
     util.init_logging(logfile=configObj['runfile'],default=def_logname)
     procSteps = util.ProcSteps()
-    print 'AstroDrizzle Version '+__version__+' started at: ',util._ptime()[0],'\n'
+    print 'AstroDrizzle Version %s(%s) started at: %s\n'%(
+                        __version__,__vdate__,util._ptime()[0])
     util.print_pkg_versions()
     
     try:

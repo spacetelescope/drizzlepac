@@ -913,18 +913,23 @@ def find_xy_peak(img,center=None):
     """ Find the center of the peak of offsets
     """
     # find level of noise in histogram
-    istats = imagestats.ImageStats(img.astype(np.float32),nclip=3)
+    istats = imagestats.ImageStats(img.astype(np.float32),nclip=1,fields='mode')
     imgsum = img.sum()
     
     # clip out all values below mean+3*sigma from histogram
     imgc =img[:,:].copy()
-    imgc[imgc < istats.mean+istats.stddev*3] = 0.0
+    imgc[imgc < istats.mode+istats.stddev*3] = 0.0
     # identify position of peak
     yp0,xp0 = np.where(imgc == imgc.max())
 
-    # take sum of 13x13 pixel box around peak
-    xp_slice = (slice(int(yp0[0])-13,int(yp0[0])+15),
-                slice(int(xp0[0])-13,int(xp0[0])+15))
+    # Perform bounds checking on slice from img
+    ymin = max(0,int(yp0[0])-13)
+    ymax = min(img.shape[0],int(yp0[0])+14)
+    xmin = max(0,int(xp0[0])-13)
+    xmax = min(img.shape[1],int(xp0[0])+14)
+    # take sum of at most a 13x13 pixel box around peak
+    xp_slice = (slice(ymin,ymax),
+                slice(xmin,xmax))
     yp,xp = ndimage.center_of_mass(img[xp_slice])
     if np.isnan(xp) or np.isnan(yp):
         xp=0.0
@@ -937,10 +942,10 @@ def find_xy_peak(img,center=None):
 
         # compute S/N criteria for this peak: flux/sqrt(mean of rest of array)
         flux = imgc[xp_slice].sum()
-        delta_size = img.size - imgc[xp_slice].size
-        delta_flux = imgsum - flux
+        delta_size = float(img.size - imgc[xp_slice].size)
+        delta_flux = float(imgsum - flux)
         if delta_size != 0.0 and delta_flux != 0.0:
-            zpqual = flux/np.sqrt((imgsum - flux)/(delta_size))
+            zpqual = flux/np.sqrt(delta_flux/delta_size)
             if np.isnan(zpqual) or np.isinf(zpqual):
                 zpqual = None
         else:    
@@ -972,17 +977,28 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False):
     
     zpsum = zpmat.sum()
     xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
-    print 'Found initial X and Y shifts of ',xp,yp,'\n     with significance of ',zpqual
-    if histplot and zpqual is not None:
-        zpstd = (((zpsum-flux)/zpmat.size)+2*zpmat.std())
-        if zpstd <= 0: 
-            print 'WARNING: No significant XY peak recognized!' 
-            zpstd = 1
+    if zpqual is not None:
+        print 'Found initial X and Y shifts of ',xp,yp,'\n     with significance of ',zpqual
+    else:
+        print '!'*80
+        print '!'
+        print '! WARNING: No valid shift found within a search radius of ',searchrad,' pixels.'
+        print '!'
+        print '!'*80
+        
+    if histplot: 
+        zpstd = flux/10.0
+        if zpstd > 20: zpstd = 20
+        if zpqual is None:
+            zpstd = 20
+            zqual = 0.0
+        else:
+            zqual = zpqual
         pl.clf()
         a=pl.imshow(zpmat,vmin=0,vmax=zpstd,interpolation='nearest')
         pl.gray()
         pl.colorbar()
-        pl.title("Histogram of offsets: Peak S/N=%0.2f at (%0.4g, %0.4g)"%(zpqual,xp,yp))
+        pl.title("Histogram of offsets: Peak S/N=%0.2f at (%0.4g, %0.4g)"%(zqual,xp,yp))
         pl.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
         pl.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
         pl.text(searchrad,searchrad,"Offset=0,0",
