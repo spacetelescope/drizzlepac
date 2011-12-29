@@ -84,8 +84,8 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
         p.join()
     else:
         print 'Executing serially'
-    for image in imgObjList:
-        _drizCr(image,paramDict,saveFile)
+        for image in imgObjList:
+            _drizCr(image,paramDict,saveFile)
 
     if procSteps is not None:
         procSteps.endStep('Driz_CR')
