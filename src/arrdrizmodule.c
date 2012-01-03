@@ -756,19 +756,21 @@ void cdriz_log_func(const char *format, ...) {
   /* XXX: Provide a way to specify the log level to use */
   string = Py_BuildValue("s", msg);
   if (string == NULL) {
-    return;
+    goto cleanup;
   }
 
   logger = PyObject_CallMethod(logging, "getLogger", "s",
                                "astrodither.cdriz");
   if (logger == NULL) {
-      return;
+      goto cleanup;
   }
 
   PyObject_CallMethod(logger, "info", "O", string);
 
-  Py_DECREF(logger);
-  Py_DECREF(string);
+cleanup:
+  Py_XDECREF(logger);
+  Py_XDECREF(string);
+  return;
 }
 
 
