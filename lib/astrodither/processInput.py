@@ -15,6 +15,7 @@ import wcs_functions
 import util
 import resetbits
 import mdzhandler
+import imageObject
 
 """
 Process input to MultiDrizzle/PyDrizzle.
@@ -125,28 +126,35 @@ def setCommonInput(configObj,createOutwcs=True):
     addIVMInputs(imageObjectList,ivmlist)
 
     if(createOutwcs):
-        print '\n-Creating output WCS.\n'
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
+        print '\n-Creating output WCS:\n'
+        outwcs.final_wcs.printwcs()
+        print '\n'
     else:
         outwcs = None
         
     try:
         # Provide user with some information on resource usage for this run
-        reportResourceUsage(imageObjectList,outwcs,configObj.get('num_cores'),interactive)
+        reportResourceUsage(imageObjectList,outwcs,configObj.get('num_cores'))
     except ValueError:
         imageObjectList = None
         
-    return imageObjectList,None
+    return imageObjectList,outwcs
 
 def reportResourceUsage(imageObjectList,outwcs,num_cores,interactive=False):
     """ Provide some information to the user on the estimated resource
     usage (primarily memory) for this run.
     """
+    
     if outwcs is None:
         output_mem = 0
     else:
-        output_mem = outwcs.naxis1*outwcs.naxis2*4*3 # bytes used for output arrays
+        if isinstance(outwcs,imageObject.WCSObject):
+            owcs = outwcs.final_wcs
+        else:
+            owcs = outwcs
+        output_mem = owcs.naxis1*owcs.naxis2*4*3 # bytes used for output arrays
     img1 = imageObjectList[0]
     numchips = 0
     input_mem = 0
@@ -169,7 +177,7 @@ def reportResourceUsage(imageObjectList,outwcs,num_cores,interactive=False):
     print '*'*80
     print '*'
     print '*  Estimated memory usage:  >= %d Mb.'%(max_mem)
-    print '*  Output image size:       %d X %d pixels. '%(outwcs.naxis1,outwcs.naxis2)
+    print '*  Output image size:       %d X %d pixels. '%(owcs.naxis1,owcs.naxis2)
     print '*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024))
     print '*  CPUs used by task:       %d'%(pool_size)
     print '*'
