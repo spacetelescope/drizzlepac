@@ -14,24 +14,30 @@ Each static mask array has type Int16, and resides in memory.
     mask which is used to mask pixels that are some
     sigma BELOW the mode computed for the image.
 """
-from __future__ import division # confidence high
+
+from __future__ import division  # confidence high
+
+import os
+import sys
 
 import numpy as np
-from stsci.tools import fileutil, teal
+from stsci.tools import fileutil, teal, logutil
 import pyfits
 from stsci.imagestats import ImageStats
 import util
-import os
 import processInput
-
 
 
 __taskname__ = "astrodither.staticMask"
 _step_num_ = 1
 
 
+log = logutil.create_logger(__name__)
+
+
 def help():
     print getHelpAsString()
+
 
 #help information that TEAL will look for
 def getHelpAsString():
@@ -58,7 +64,7 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
         inputDict["updatewcs"]=False
         inputDict["input"]=input
     else:
-        print "Please supply an input image\n"
+        print >> sys.stderr, "Please supply an input image\n"
         raise ValueError
 
     #this accounts for a user-called init where config is not defined yet
@@ -87,20 +93,20 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     step_name = util.getSectionName(configObj,_step_num_)
 
     if not configObj[step_name]['static']:
-        print 'Static Mask step not performed.'
+        log.info('Static Mask step not performed.')
         procSteps.endStep('Static Mask')
         return
 
     if (not isinstance(imageObjectList,list) or (len(imageObjectList) ==0)):
         msg = "Invalid image object list given to static mask"
-        print msg
+        print >> sys.stderr, msg
         raise ValueError(msg)
 
-    print "\nUSER INPUT PARAMETERS for Static Mask Step:"
-    util.printParams(configObj[step_name])
+    log.info('USER INPUT PARAMETERS for Static Mask Step:')
+    util.printParams(configObj[step_name], log=log)
 
     #create a static mask object
-    myMask=staticMask(configObj)
+    myMask = staticMask(configObj)
 
     for image in imageObjectList:
         myMask.addMember(image)
@@ -112,6 +118,7 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     if procSteps is not None:
         procSteps.endStep('Static Mask')
 
+
 def constructFilename(signature):
     """Construct an output filename for the given signature::
 
@@ -122,7 +129,8 @@ def constructFilename(signature):
     filename=signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
     return filename
 
-class staticMask:
+
+class staticMask(object):
     """
     This class manages the creation of the global static mask which
     masks pixels that are unwanted in the SCI array.
@@ -132,7 +140,7 @@ class staticMask:
 
     """
 
-    def __init__ (self, configObj=None):
+    def __init__(self, configObj=None):
 
         # the signature is created in the imageObject class
 
@@ -142,7 +150,7 @@ class staticMask:
             self.static_sig = configObj[self.step_name]['static_sig']
         else:
             self.static_sig = 4. # define a reasonable number
-            print 'WARNING:  Using default of 4. for static mask sigma.'
+            log.warning('Using default of 4. for static mask sigma.')
 
 
     def addMember(self, imagePtr=None):
@@ -167,7 +175,7 @@ class staticMask:
 
         numchips=imagePtr._numchips
 
-        print "Computing static mask:\n"
+        log.info("Computing static mask:\n")
         for chip in range(1,numchips+1,1):
             chipid=imagePtr.scienceExt + ','+ str(chip)
             chipimage=imagePtr.getData(chipid)
@@ -183,10 +191,13 @@ class staticMask:
             rms  = stats.stddev
             del stats
 
-            print('  mode = %9f;   rms = %7f;   static_sig = %0.2f')  %  (mode,rms,self.static_sig)
+            log.info('  mode = %9f;   rms = %7f;   static_sig = %0.2f' %
+                     (mode, rms, self.static_sig))
 
             sky_rms_diff = mode - (self.static_sig*rms)
-            np.bitwise_and(self.masklist[signature],np.logical_not(np.less( chipimage, sky_rms_diff)),self.masklist[signature])
+            np.bitwise_and(self.masklist[signature],
+                           np.logical_not(np.less(chipimage, sky_rms_diff)),
+                           self.masklist[signature])
             del chipimage
 
 
@@ -211,7 +222,7 @@ class staticMask:
         if(fileutil.checkFileExists(filename)):
             return filename
         else:
-            print "\nmMask file for ",str(signature)," does not exist on disk"
+            print >> sys.stderr, "\nmMask file for ", str(signature), " does not exist on disk"
             return None
 
     def getMaskname(self,chipid):
@@ -238,7 +249,7 @@ class staticMask:
         if self.masklist.has_key(signature):
             self.masklist[signature] = None
         else:
-            print "No matching mask"
+            log.warning("No matching mask")
 
     def saveToFile(self):
         """ Saves the static mask to a file
@@ -258,9 +269,10 @@ class staticMask:
 
                 try:
                     newHDU.writeto(filename)
-                    print "Saving static mask to disk:",filename
+                    log.info("Saving static mask to disk:", filename)
 
                 except IOError:
-                    print "Problem saving static mask file: ",filename," to disk!\n"
+                    log.error("Problem saving static mask file: %s to "
+                              "disk!\n" % filename)
                     raise IOError
 

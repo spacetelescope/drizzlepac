@@ -64,6 +64,21 @@ driz_error_unset(struct driz_error_t* error) {
 }
 
 /*****************************************************************
+ LOGGING
+*/
+
+/* Just wraps printf */
+void
+driz_default_log_func(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+}
+
+driz_log_func_t driz_log_func = &driz_default_log_func;
+
+/*****************************************************************
  DATA TYPES
 */
 void

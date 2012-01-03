@@ -4,7 +4,7 @@ import sys,os,copy
 import util
 import numpy as np
 import pyfits
-from stsci.tools import fileutil, teal
+from stsci.tools import fileutil, teal, logutil
 import outputimage,wcs_functions,processInput,util
 import stwcs
 from stwcs import distortion
@@ -26,6 +26,11 @@ _final_step_num_ = 7
 
 __version__ = '4.1.0dev13255'
 __vdate__ = "27-June-2011"
+
+
+log = logutil.create_logger(__name__)
+
+
 #
 #### Interactive interface for running drizzle tasks separately
 #
@@ -49,6 +54,8 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
 
     if not editpars:
         run(configObj,wcsmap=wcsmap)
+
+
 #
 ####  User level interface to run drizzle tasks from TEAL
 #
@@ -111,7 +118,7 @@ def run(configObj, wcsmap=None):
         else:
             uniqid = 1
 
-    else: # otherwise, define the output WCS either from user pars or refimage
+    else:  # otherwise, define the output WCS either from user pars or refimage
         if util.is_blank(configObj['User WCS Parameters']['refimage']):
             # Define a WCS based on user provided WCS values
             # NOTE:
@@ -310,8 +317,8 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         paramDict['clean'] = configObj['STATE OF INPUT FILES']['clean']
         paramDict['num_cores'] = configObj.get('num_cores')
 
-        print "\nUSER INPUT PARAMETERS for Separate Drizzle Step:"
-        util.printParams(paramDict)
+        log.info('USER INPUT PARAMETERS for Separate Drizzle Step:')
+        util.printParams(paramDict, log=log)
 
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
@@ -319,7 +326,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True,
                  build=False, wcsmap=wcsmap)
     else:
-        print 'Single drizzle step not performed.'
+        log.info('Single drizzle step not performed.')
 
     if procSteps is not None:
         procSteps.endStep('Separate Drizzle')
@@ -347,13 +354,13 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
         # Record whether or not intermediate files should be deleted when finished
         paramDict['clean'] = configObj['STATE OF INPUT FILES']['clean']
 
-        print "\nUSER INPUT PARAMETERS for Final Drizzle Step:"
-        util.printParams(paramDict)
+        log.info('USER INPUT PARAMETERS for Final Drizzle Step:')
+        util.printParams(paramDict, log=log)
 
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False,
                  build=build, wcsmap=wcsmap)
     else:
-        print 'Final drizzle step not performed.'
+        log.info('Final drizzle step not performed.')
 
     if procSteps is not None:
         procSteps.endStep('Final Drizzle')
@@ -372,10 +379,10 @@ def mergeDQarray(maskname,dqarr):
 
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
     if not os.path.exists(crmaskname):
-        print 'WARNING: No CR mask file found! Input DQ array not updated.'
+        log.warning('No CR mask file found! Input DQ array not updated.')
         return
     if cr_bits_value == None:
-        print 'WARNING: Input DQ array not updated!'
+        log.warning('Input DQ array not updated!')
         return
     crmask = fileutil.openImage(crmaskname)
 
@@ -472,17 +479,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     # Set sub-sampling rate for drizzling
     #stepsize = 2.0
-    print '  **Using sub-sampling value of ',paramDict['stepsize'],' for kernel ',paramDict['kernel']
+    log.info('  **Using sub-sampling value of %s for kernel %s' %
+             (paramDict['stepsize'], paramDict['kernel']))
 
     outwcs = copy.deepcopy(output_wcs)
 
     # Check for existance of output file.
     if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
-        print 'Removing previous output product...'
+        log.info('Removing previous output product...')
         os.remove(imageObjectList[0].outputNames['outFinal'])
 
     # print out parameters being used for drizzling
-    print "Running Drizzle to create output frame with WCS of: "
+    log.info("Running Drizzle to create output frame with WCS of: ")
     output_wcs.printwcs()
     print '\n'
 
@@ -662,7 +670,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     else:
         # If sky-subtracted product does not exist, use regular input
         _expname = chip.outputNames['data']
-    print '-Drizzle input: ',_expname
+    log.info('-Drizzle input: %s' % _expname)
 
     # Open the SCI image
     _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
@@ -739,17 +747,18 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     if single:
         mergeDQarray(chip.outputNames['staticMask'],dqarr)
         if dqarr.sum() == 0:
-            print 'WARNING: All pixels masked out when applying static mask!'
+            log.warning('All pixels masked out when applying static mask!')
     else:
         mergeDQarray(chip.outputNames['staticMask'],dqarr)
         if dqarr.sum() == 0:
-            print 'WARNING: All pixels masked out when applying static mask!'
+            log.warning('All pixels masked out when applying static mask!')
         else:
             # Only apply cosmic-ray mask when some good pixels remain after
             # applying the static mask
             mergeDQarray(chip.outputNames['crmaskImage'],dqarr)
             if dqarr.sum() == 0:
-                print 'WARNING: All pixels masked out when applying cosmic ray mask to ',_expname
+                log.warning('WARNING: All pixels masked out when applying '
+                            'cosmic ray mask to %s' % _expname)
         updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,
                            chip.outputNames['crmaskImage'],paramDict['crbit'])
 
@@ -777,7 +786,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         if os.path.exists(_outmaskname): os.remove(_outmaskname)
         pimg = pyfits.PrimaryHDU(data=_inwht).writeto(_outmaskname)
         del pimg
-        print 'Writing out mask file: ',_outmaskname
+        log.info('Writing out mask file: %s' % _outmaskname)
 
     # New interface to performing the drizzle operation on a single chip/image
     _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
@@ -906,15 +915,15 @@ def do_driz(insci, input_wcs, inwht,
     pix_ratio = output_wcs.pscale/wcslin.pscale
 
     if wcsmap is None and cdriz is not None:
-        print 'Using WCSLIB-based coordinate transformation...'
-        print 'stepsize = ',stepsize
+        log.info('Using WCSLIB-based coordinate transformation...')
+        log.info('stepsize = %s' % stepsize)
         mapping = cdriz.DefaultWCSMapping(input_wcs,output_wcs,int(input_wcs.naxis1),int(input_wcs.naxis2),stepsize)
     else:
         #
         ##Using the Python class for the WCS-based transformation
         #
         # Use user provided mapping function
-        print 'Using coordinate transformation defined by user...'
+        log.info('Using coordinate transformation defined by user...')
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
         wmap = wcsmap(input_wcs,output_wcs)
@@ -941,11 +950,12 @@ def do_driz(insci, input_wcs, inwht,
         fillval, nmiss, nskip, 1, mapping)
 
     if nmiss > 0:
-        print '! Warning, ',nmiss,' points were outside the output image.'
+        log.warning('! %s points were outside the output image.' % nmiss)
     if nskip > 0:
-        print '! Note, ',nskip,' input lines were skipped completely.'
+        log.debug('! Note, %s input lines were skipped completely.' % nskip)
 
     return _vers
+
 
 def get_data(filename):
     fileroot,extn = fileutil.parseFilename(filename)
@@ -976,11 +986,11 @@ def create_output(filename):
             ehdu.header.update('EXTNAME',extname[0])
             ehdu.header.update('EXTVER',extname[1])
             pimg.append(ehdu)
-        print 'Creating new output file: ',fileroot
+        log.info('Creating new output file: %s' % fileroot)
         pimg.writeto(fileroot)
         del pimg
     else:
-        print 'Updating existing output file: ',fileroot
+        log.info('Updating existing output file: %s' % fileroot)
 
     handle = pyfits.open(fileroot,mode='update')
 

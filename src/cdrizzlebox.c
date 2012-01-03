@@ -3,6 +3,7 @@
 #include "cdrizzlemap.h"
 #include "cdrizzlebox.h"
 #include "cdrizzlewcs.h"
+#include "cdrizzleutil.h"
 
 #include <assert.h>
 #include <math.h>
@@ -1237,7 +1238,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
     }
   }
 
-  printf("-Drizzling using kernel = %s\n",kernel_enum2str(p->kernel));
+  DRIZLOG("-Drizzling using kernel = %s\n",kernel_enum2str(p->kernel));
 
   /* This is the outer loop over all the lines in the input image */
   last_x1 = p->dnx;

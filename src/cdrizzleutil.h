@@ -30,6 +30,16 @@ int driz_error_is_set(struct driz_error_t* error);
 void driz_error_unset(struct driz_error_t* error);
 
 /*****************************************************************
+ LOGGING
+*/
+
+typedef void (*driz_log_func_t)(const char *, ...);
+extern driz_log_func_t driz_log_func;
+void driz_default_log_func(const char *, ...);
+
+#define DRIZLOG(format, ...) ((*driz_log_func)(format, __VA_ARGS__))
+
+/*****************************************************************
  CONVENIENCE MACROS
 */
 #if !defined(MIN)

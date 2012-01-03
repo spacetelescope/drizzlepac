@@ -21,6 +21,7 @@
 
 static PyObject *gl_Error;
 
+
 /*
  A mapping callback that delegates to a Python-based drizzle
  callback.
@@ -321,6 +322,7 @@ static PyTypeObject WCSMapType = {
   0,                            /* tp_alloc */
   PyWCSMap_new,                /* tp_new */
 };
+
 
 static PyObject *
 tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
@@ -723,6 +725,53 @@ tblot(PyObject *obj, PyObject *args)
   }
 }
 
+
+/* To replace the default prinf log; instead log to a pythonic log */
+void cdriz_log_func(const char *format, ...) {
+  static PyObject *logging = NULL;
+  va_list args;
+  PyObject *logger;
+  PyObject *string;
+  char msg[256];
+  int n;
+
+  va_start(args, format);
+
+  if (logging == NULL) {
+    logging = PyImport_ImportModuleNoBlock("logging");
+    if (logging == NULL) {
+      return;
+    }
+  }
+
+  n = PyOS_vsnprintf(msg, sizeof(msg), format, args);
+
+  va_end(args);
+
+  if (n < 0) {
+    /* XXX: An error occurred in string formatting; just ignore for now */
+    return;
+  }
+
+  /* XXX: Provide a way to specify the log level to use */
+  string = Py_BuildValue("s", msg);
+  if (string == NULL) {
+    return;
+  }
+
+  logger = PyObject_CallMethod(logging, "getLogger", "s",
+                               "astrodither.cdriz");
+  if (logger == NULL) {
+      return;
+  }
+
+  PyObject_CallMethod(logger, "info", "O", string);
+
+  Py_DECREF(logger);
+  Py_DECREF(string);
+}
+
+
 static PyMethodDef cdriz_methods[] =
   {
     {"tdriz",  tdriz, METH_VARARGS, "tdriz(image, weight, output, outweight, context, uniqid, ystart, xmin, ymin, dny, scale, xscale, yscale, align, pfrace, kernel, inun, expin, wtscl, fill, nmiss, nskip, vflag, callback)"},
@@ -734,6 +783,8 @@ static PyMethodDef cdriz_methods[] =
 void initcdriz(void)
 {
   PyObject* m;
+
+  driz_log_func = &cdriz_log_func;
 
   if (PyType_Ready(&WCSMapType) < 0)
     return;

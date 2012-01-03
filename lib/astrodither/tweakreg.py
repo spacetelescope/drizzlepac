@@ -8,8 +8,8 @@ from stwcs import updatewcs
 import util
 
 # __version__ and __vdate__ are defined here, prior to the importing
-# of the modules below, so that those modules can use the values 
-# from these variable definitions, allowing the values to be designated 
+# of the modules below, so that those modules can use the values
+# from these variable definitions, allowing the values to be designated
 # in one location only.
 __version__ = '0.6.6'
 __vdate__ = '28-Dec-2011'
@@ -18,14 +18,14 @@ import tweakutils
 import imgclasses
 import catalogs
 import imagefindpars
-    
+
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
-# 
+#
 # Interfaces used by TEAL
 #
 def getHelpAsString(docstring=False):
-    """ 
+    """
     return useful help from a file in the script directory called __taskname__.help
     """
     install_dir = os.path.dirname(__file__)
@@ -40,6 +40,7 @@ def getHelpAsString(docstring=False):
 
     return helpString
 
+
 def _managePsets(configobj):
     """ Read in parameter values from PSET-like configobj tasks defined for
         source-finding algorithms, and any other PSET-like tasks under this task,
@@ -47,21 +48,24 @@ def _managePsets(configobj):
     """
     # Merge all configobj instances into a single object
     configobj['SOURCE FINDING PARS'] = {}
-        
+
     iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=True)
 
     # merge these parameters into full set
     configobj['SOURCE FINDING PARS'].merge(iparsobj)
-        
+
     # clean up configobj a little to make it easier for later...
     if '_RULES_' in configobj:
         del configobj['_RULES_']
-    
+
+
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
     """
     iparsobj = teal.teal(imagefindpars.__taskname__, returnDict=False, loadOnly=False, canExecute=False)
         
+
+@util.with_logging
 def run(configobj):
     """ Primary Python interface for image registration code
         This task replaces 'tweakshifts'
@@ -69,7 +73,7 @@ def run(configobj):
     print 'TweakReg Version %s(%s) started at: %s \n'%(
                     __version__,__vdate__,util._ptime()[0])
     util.print_pkg_versions()
-    
+
     # Manage PSETs for source finding algorithms
     _managePsets(configobj)
 
@@ -83,9 +87,9 @@ def run(configobj):
         print 'No filenames matching input %r were found.' % input
         raise IOError
 
-    # Verify that files are writable (based on file permissions) so that 
+    # Verify that files are writable (based on file permissions) so that
     #    they can be updated if either 'updatewcs' or 'updatehdr' have
-    #    been turned on (2 cases which require updating the input files)  
+    #    been turned on (2 cases which require updating the input files)
     if configobj['updatewcs'] or configobj['UPDATE HEADER']['updatehdr']:
         filenames = util.verifyFilePermissions(filenames)
         if filenames is None or len(filenames) == 0:
@@ -113,11 +117,11 @@ def run(configobj):
             raise IOError
     else:
         exclusion_files = [None]*len(filenames)
-        
+
     # Verify that we have the same number of catalog files as input images
     if catnames is not None and (len(catnames) > 0):
         rcat = configobj['REFERENCE CATALOG DESCRIPTION']['refcat']
-        if (len(catnames) != len(filenames)): 
+        if (len(catnames) != len(filenames)):
             print 'The number of input catalogs does not match the number of input images'
             print 'Catalog files specified were:'
             print catnames
@@ -128,7 +132,7 @@ def run(configobj):
         # setup array of None values as input to catalog parameter for Image class
         catnames = [None]*len(filenames)
         use_catfile = False
-    
+
     # convert input images and any provided catalog file names into Image objects
     input_images = []
     # copy out only those parameters needed for Image class
@@ -136,7 +140,7 @@ def run(configobj):
     # define default value for 'xyunits' assuming sources to be derived from image directly
     catfile_kwargs['xyunits'] = 'pixels' # initialized here, required by Image class
     del catfile_kwargs['exclusions']
-    
+
     if use_catfile:
         # reset parameters based on parameter settings in this section
         catfile_kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
@@ -146,7 +150,7 @@ def run(configobj):
     hdrlet_par = configobj['HEADERLET CREATION']
     hdrlet_par.update(uphdr_par) # default hdrlet name
     catfile_kwargs['updatehdr'] = uphdr_par['updatehdr']
-    
+
     print '\n'+__taskname__+': Finding shifts for ',filenames,'\n'
 
     try:
@@ -161,9 +165,10 @@ def run(configobj):
             img.close()
         print 'Quitting as a result of user request (Ctrl-C)...'
         return
+
     # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)
-    # Determine a reference image or catalog and 
+    # Determine a reference image or catalog and
     #    return the full list of RA/Dec positions
     refcat_par = configobj['REFERENCE CATALOG DESCRIPTION']
     if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
@@ -191,7 +196,7 @@ def run(configobj):
             img.close()
         print 'Quitting as a result of user request (Ctrl-C)...'
         return
-    
+
     try:
         # Now, apply reference WCS to each image's sky positions as well as the
         # reference catalog sky positions,
@@ -229,7 +234,7 @@ def run(configobj):
         print 'Quitting as a result of user request (Ctrl-C)...'
         return
 
-# 
+#
 # Primary interface for running this task from Python
 #
 def TweakReg(files, editpars=False, configObj=None, **input_dict):
@@ -237,17 +242,19 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if files not in ['',' ','INDEF', None]:
+    if files not in ['', ' ' , 'INDEF', None]:
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = files
-    # If called from interactive user-interface, configObj will not be 
+    # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     try:
-        configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+        configObj = util.getDefaultConfigObj(__taskname__, configObj,
+                                              input_dict,
+                                              loadOnly=(not editpars))
     except ValueError:
         print "Problem with input parameters. Quitting..."
         return
@@ -262,6 +269,6 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
 
 def help():
     print getHelpAsString(docstring=True)
-    
+
 # Append help file as docstring for use in Sphinx-generated documentation/web pages
 TweakReg.__doc__ = getHelpAsString(docstring=True)

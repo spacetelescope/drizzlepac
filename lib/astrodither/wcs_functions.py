@@ -4,19 +4,24 @@ import os,copy
 import numpy as np
 from numpy import linalg
 
-from stsci.tools import fileutil,asnutil
+from stsci.tools import fileutil, asnutil, logutil
 import util
 import imageObject
 import stwcs
 import pywcs
-from stwcs import distortion,wcsutil
-from stwcs.distortion import coeff_converter,utils
+from stwcs import distortion, wcsutil
+from stwcs.distortion import coeff_converter, utils
+
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'scale':None,'rot':None,
                      'outnx':None,'outny':None,
                     'crpix1':None,'crpix2':None}
-         
-# Default mapping function based on PyWCS 
+
+
+log = logutil.create_logger(__name__)
+
+
+# Default mapping function based on PyWCS
 class WCSMap:
     """ Sample class to demonstrate how to define a coordinate transformation
     """
@@ -28,7 +33,7 @@ class WCSMap:
         self.input = input
         self.output = copy.deepcopy(output)
         #self.output = output
-        
+
         self.origin = origin
         self.shift = None
         self.rot = None
@@ -44,14 +49,14 @@ class WCSMap:
     def forward(self,pixx,pixy):
         """ Transform the input pixx,pixy positions in the input frame
             to pixel positions in the output frame.
-            
+
             This method gets passed to the drizzle algorithm.
         """
         # This matches WTRAXY results to better than 1e-4 pixels.
         skyx,skyy = self.input.all_pix2sky(pixx,pixy,self.origin)
         result= self.output.wcs_sky2pix(skyx,skyy,self.origin)
         return result
-    
+
     def backward(self,pixx,pixy):
         """ Transform pixx,pixy positions from the output frame back onto their
             original positions in the input frame.
@@ -59,13 +64,13 @@ class WCSMap:
         skyx,skyy = self.output.wcs_pix2sky(pixx,pixy,self.origin)
         result = self.input.all_sky2pix(skyx,skyy,self.origin)
         return result
-    
+
     def get_pix_ratio(self):
         """ Return the ratio of plate scales between the input and output WCS.
             This is used to properly distribute the flux in each pixel in 'tdriz'.
         """
         return self.output.pscale / self.input.pscale
-    
+
     def xy2rd(self,wcs,pixx,pixy):
         """ Transform input pixel positions into sky positions in the WCS provided.
         """
@@ -75,7 +80,7 @@ class WCSMap:
         """
         return wcs.wcs_sky2pix(ra,dec,1)
 
-        
+
 def get_pix_ratio_from_WCS(input,output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""
     return output.pscale/input.pscale
@@ -89,7 +94,7 @@ class IdentityMap:
         print 'Applying identity transformation...'
         self.input = input
         self.output = output
-        
+
     def forward(self,pixx,pixy):
         return pixx,pixy
 ##
@@ -99,13 +104,13 @@ class IdentityMap:
 ##
 def get_hstwcs(filename,hdulist,extnum):
     ''' Return the HSTWCS object for a given chip.
-    
+
     '''
     hdrwcs = wcsutil.HSTWCS(hdulist,ext=extnum)
     hdrwcs.filename = filename
     hdrwcs.expname = hdulist[extnum].header['expname']
     hdrwcs.extver = hdulist[extnum].header['extver']
-    
+
     return hdrwcs
 
 def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orientat):
@@ -123,44 +128,44 @@ def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orienta
     wcsout.setPscale()
     wcsout.setOrient()
     wcsout.wcs.ctype = ['RA---TAN','DEC--TAN']
-    
+
     return wcsout
 
 def update_linCD(cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0,1.0], cy=[1.0,0.0]):
     """ Modify an existing linear CD matrix with rotation and/or scale changes
         and return a new CD matrix.  If 'cx' and 'cy' are specified, it will
         return a distorted CD matrix.
-    
+
         Only those terms which are varying need to be specified on input.
     """
     rotmat = fileutil.buildRotMatrix(delta_rot)*delta_scale
     new_lincd = np.dot(cdmat,rotmat)
-    
+
     cxymat = np.array([[cx[1],cx[0]],[cy[1],cy[0]]])
     new_cd = np.dot(new_lincd,cxymat)
-    
+
     return new_cd
-    
+
 def create_CD(orient, scale, cx=None, cy=None):
     """ Create a (un?)distorted CD matrix from the basic inputs
-    
+
     The 'cx' and 'cy' parameters, if given, provide the X and Y coefficients of
     the distortion as returned by reading the IDCTAB.  Only the first 2 elements
     are used and should correspond to the 'OC[X/Y]10' and 'OC[X/Y]11' terms in that
     order as read from the expanded SIP headers.
-    
+
     The units of 'scale' should be 'arcseconds/pixel' of the reference pixel.
-    The value of 'orient' should be the absolute orientation on the sky of the 
+    The value of 'orient' should be the absolute orientation on the sky of the
     reference pixel.
     """
-    
+
     cxymat = np.array([[cx[1],cx[0]],[cy[1],cy[0]]])
     rotmat = fileutil.buildRotMatrix(orient)*scale/3600.
-    
+
     new_cd = np.dot(rotmat,cxymat)
-    
+
     return new_cd
-    
+
 def ddtohms(xsky,ysky,verbose=False,precision=6):
 
     """ Convert sky position(s) from decimal degrees to HMS format."""
@@ -208,14 +213,14 @@ def build_pixel_transform(chip,output_wcs):
     # Need to compute and write out coeffs files for each chip as well.
     #
     xcoeffs,ycoeffs = coeff_converter.sip2idc(chip.wcs)
-    # account for the case where no IDCSCALE has been set, due to a 
+    # account for the case where no IDCSCALE has been set, due to a
     # lack of IDCTAB or to 'coeffs=False'.
     idcscale = chip.wcs.idcscale
     if idcscale is None: idcscale = chip.wcs.pscale
     xcoeffs /= idcscale
     ycoeffs /= idcscale
     driz_pars['coeffs'] = [xcoeffs,ycoeffs]
-    
+
     abxt,cdyt = wcsfit(chip.wcs,output_wcs)
     #abxt[2] -= xzero
     #cdyt[2] -= yzero
@@ -226,28 +231,29 @@ def build_pixel_transform(chip,output_wcs):
     # Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly
     driz_pars['scale'] = 1./np.sqrt(abxt[0]**2 + abxt[1]**2)
     driz_pars['tddalpha'] = chip.header['tddalpha']
-    driz_pars['tddbeta'] = chip.header['tddbeta']    
+    driz_pars['tddbeta'] = chip.header['tddbeta']
 
     return driz_pars
 
-    
+
 #
 # Possibly need to generate a stand-alone interface for this function.
 #
 #### Primary interface for creating the output WCS from a list of HSTWCS objects
-def make_outputwcs(imageObjectList,output,configObj=None):
+def make_outputwcs(imageObjectList, output, configObj=None):
     """ Computes the full output WCS based on the set of input imageObjects
         provided as input, along with the pre-determined output name from
         process_input.  The user specified output parameters are then used to
         modify the default WCS to produce the final desired output frame.
         The input imageObjectList has the outputValues dictionary
-        updated with the information from the computed output WCS. 
-        It then returns this WCS as a WCSObject(imageObject) 
+        updated with the information from the computed output WCS.
+        It then returns this WCS as a WCSObject(imageObject)
         instance.
     """
-    if not isinstance(imageObjectList,list): 
+
+    if not isinstance(imageObjectList,list):
         imageObjectList = [imageObjectList]
-        
+
     # Compute default output WCS, replace later if user specifies a refimage
     hstwcs_list = []
     undistort=True
@@ -266,21 +272,21 @@ def make_outputwcs(imageObjectList,output,configObj=None):
     if not undistort and len(hstwcs_list) == 1:
         default_wcs = hstwcs_list[0].deepcopy()
     else:
-        default_wcs = utils.output_wcs(hstwcs_list,undistort=undistort)
-    
+        default_wcs = utils.output_wcs(hstwcs_list, undistort=undistort)
+
     # Turn WCS instances into WCSObject instances
-    outwcs = createWCSObject(output,default_wcs,imageObjectList)
-    
+    outwcs = createWCSObject(output, default_wcs, imageObjectList)
+
     # Merge in user-specified attributes for the output WCS
     # as recorded in the input configObj object.
     final_pars = DEFAULT_WCS_PARS.copy()
-         
+
     # More interpretation of the configObj needs to be done here to translate
     # the input parameter names to those understood by 'mergeWCS' as defined
     # by the DEFAULT_WCS_PARS dictionary.
-    single_step = configObj[util.getSectionName(configObj,3)]
-    singleParDict = configObj[util.getSectionName(configObj,'3a')].copy()
-    if single_step['driz_separate'] and singleParDict['driz_sep_wcs']: 
+    single_step = configObj[util.getSectionName(configObj, 3)]
+    singleParDict = configObj[util.getSectionName(configObj, '3a')].copy()
+    if single_step['driz_separate'] and singleParDict['driz_sep_wcs']:
         single_pars = DEFAULT_WCS_PARS.copy()
         del singleParDict['driz_sep_wcs']
         keyname = 'driz_sep_'
@@ -288,21 +294,21 @@ def make_outputwcs(imageObjectList,output,configObj=None):
             k = key[len(keyname):]
             if k != 'refimage':
                 single_pars[k] = singleParDict[key]
-        
+
         # Now, account for any user-specified reference image
         def_wcs = default_wcs.deepcopy()
-        if singleParDict[keyname+'refimage']:
-            default_wcs = wcsutil.HSTWCS(singleParDict[keyname+'refimage'])
+        if singleParDict[keyname + 'refimage']:
+            default_wcs = wcsutil.HSTWCS(singleParDict[keyname + 'refimage'])
 
         ### Create single_wcs instance based on user parameters
-        outwcs.single_wcs = mergeWCS(default_wcs,single_pars)
+        outwcs.single_wcs = mergeWCS(default_wcs, single_pars)
         # restore global default WCS to original value so single_drizzle WCS does not
         # influence final_drizzle WCS
         default_wcs = def_wcs.deepcopy()
-        
+
     final_step = configObj[util.getSectionName(configObj,7)]
     finalParDict = configObj[util.getSectionName(configObj,'7a')].copy()
-    if final_step['driz_combine'] and finalParDict['final_wcs']:         
+    if final_step['driz_combine'] and finalParDict['final_wcs']:
         del finalParDict['final_wcs']
         keyname = 'final_'
         for key in finalParDict:
@@ -311,39 +317,41 @@ def make_outputwcs(imageObjectList,output,configObj=None):
                 final_pars[k] = finalParDict[key]
 
         # Now, account for any user-specified reference image
-        if finalParDict[keyname+'refimage']:
-            default_wcs = wcsutil.HSTWCS(finalParDict[keyname+'refimage'])
-        
+        if finalParDict[keyname + 'refimage']:
+            default_wcs = wcsutil.HSTWCS(finalParDict[keyname + 'refimage'])
+
         ### Create single_wcs instance based on user parameters
-        outwcs.final_wcs = mergeWCS(default_wcs,final_pars)
+        outwcs.final_wcs = mergeWCS(default_wcs, final_pars)
         outwcs.wcs = outwcs.final_wcs.copy()
 
-    # Apply user settings to create custom output_wcs instances 
+    # Apply user settings to create custom output_wcs instances
     # for each drizzle step
-    updateImageWCS(imageObjectList,outwcs)
-    
+    updateImageWCS(imageObjectList, outwcs)
+
     return outwcs
 
-def calcNewEdges(wcs,shape):
+
+def calcNewEdges(wcs, shape):
     """
     This method will compute sky coordinates for all the pixels around
     the edge of an image AFTER applying the geometry model.
 
     Parameters
     ----------
-    wcs : obj  
+    wcs : obj
         HSTWCS object for image
-        
+
     shape : tuple
         numpy shape tuple for size of image
 
     Returns
     -------
-    border : arr 
+    border : arr
         array which contains the new positions for
-        all pixels around the border of the edges in alpha,dec 
-                    
+        all pixels around the border of the edges in alpha,dec
+
     """
+
     naxis1 = shape[1]
     naxis2 = shape[0]
     # build up arrays for pixel positions for the edges
@@ -389,19 +397,21 @@ def calcNewEdges(wcs,shape):
 
     edges = wcs.all_pix2sky(border[:,0],border[:,1],1)
     return edges
-    
+
+
 def computeEdgesCenter(edges):
     alpha = fileutil.DEGTORAD(edges[0])
     dec = fileutil.DEGTORAD(edges[1])
-    
+
     xmean = np.mean(np.cos(dec)*np.cos(alpha))
     ymean = np.mean(np.cos(dec)*np.sin(alpha))
     zmean = np.mean(np.sin(dec))
-    
+
     crval1 = fileutil.RADTODEG(np.arctan2(ymean,xmean))%360.0
     crval2 = fileutil.RADTODEG(np.arctan2(zmean,np.sqrt(xmean*xmean+ymean*ymean)))
-    
+
     return crval1,crval2
+
 
 #### Utility functions for working with WCSObjects
 def createWCSObject(output,default_wcs,imageObjectList):
@@ -418,50 +428,53 @@ def createWCSObject(output,default_wcs,imageObjectList):
     # Add exptime information for use with drizzle
     #
     outwcs._exptime,outwcs._expstart,outwcs._expend = util.compute_texptime(imageObjectList)
-        
+
     outwcs.nimages = util.countImages(imageObjectList)
-     
+
     return outwcs
 
-def updateImageWCS(imageObjectList,output_wcs):
-    
+
+def updateImageWCS(imageObjectList, output_wcs):
+
      # Update input imageObjects with output WCS information
     for img in imageObjectList:
         img.updateOutputValues(output_wcs)
-   
-def restoreDefaultWCS(imageObjectList,output_wcs):
+
+
+def restoreDefaultWCS(imageObjectList, output_wcs):
     """ Restore WCS information to default values, and update imageObject
         accordingly.
     """
-    if not isinstance(imageObjectList,list): 
+    if not isinstance(imageObjectList,list):
         imageObjectList = [imageObjectList]
 
     output_wcs.restoreWCS()
-    
-    updateImageWCS(imageObjectList,output_wcs)
+
+    updateImageWCS(imageObjectList, output_wcs)
+
 
 def mergeWCS(default_wcs,user_pars):
-    """ Merges the user specified WCS values given as dictionary derived from 
-        the input configObj object with the output PyWCS object computed 
+    """ Merges the user specified WCS values given as dictionary derived from
+        the input configObj object with the output PyWCS object computed
         using distortion.output_wcs().
-        
+
         The user_pars dictionary needs to have the following set of keys::
-        
+
             user_pars = {'ra':None,'dec':None,'scale':None,'rot':None,
                          'outnx':None,'outny':None,'crpix1':None,'crpix2':None}
     """
     #
     # Start by making a copy of the input WCS...
-    #    
-    outwcs = default_wcs.deepcopy()    
-    
+    #
+    outwcs = default_wcs.deepcopy()
+
     # If there are no user set parameters, just return a copy of the original WCS
-    merge = False    
+    merge = False
     for upar in user_pars.values():
         if upar is not None:
             merge = True
             break
-    
+
     if not merge:
         return outwcs
 
@@ -477,7 +490,7 @@ def mergeWCS(default_wcs,user_pars):
     else:
         _ratio = outwcs.pscale / user_pars['scale']
         _psize = user_pars['scale']
-    
+
     if (not user_pars.has_key('rot')) or user_pars['rot'] == None:
         _orient = None
         _delta_rot = 0.
@@ -517,7 +530,7 @@ def mergeWCS(default_wcs,user_pars):
     outwcs.wcs.crpix = np.array(_crpix,dtype=np.float64)
     if _crval is not None:
         outwcs.wcs.crval = np.array(_crval,dtype=np.float64)
-        
+
     return outwcs
 
 def convertWCS(inwcs,drizwcs):
@@ -556,9 +569,9 @@ def wcsfit(img_wcs, ref_wcs):
     ----------
         img  : obj
             ObsGeometry instance for input image
-        ref_wcs : obj 
+        ref_wcs : obj
             Undistorted WCSObject instance for output frame
-            
+
     """
     # Define objects that we need to use for the fit...
     #in_refpix = img_geom.model.refpix
@@ -580,7 +593,7 @@ def wcsfit(img_wcs, ref_wcs):
     _cpix_xyref = np.zeros((4,2),dtype=np.float64)
     _cpix_xyref[:,0] = _cpix_xref
     _cpix_xyref[:,1] = _cpix_yref
-    
+
     """
     # needed to handle correctly subarrays and wfpc2 data
     if img_wcs.delta_refx == 0.0 and img_wcs.delta_refy == 0.0:
@@ -589,10 +602,10 @@ def wcsfit(img_wcs, ref_wcs):
         offx, offy = (1.0, 1.0)
     """
     offx, offy = (0.0,0.0)
-    
+
     # Now, apply distortion model to input image XY positions
     #_cpix_xyc = np.zeros((4,2),dtype=np.float64)
-    _cpix_xyc = utils.apply_idc(_cpix_arr, cx, cy, img_wcs.wcs.crpix, img_wcs.pscale, order=1)    
+    _cpix_xyc = utils.apply_idc(_cpix_arr, cx, cy, img_wcs.wcs.crpix, img_wcs.pscale, order=1)
 
     # Need to get the XDELTA,YDELTA values included here in order to get this
     # to work with MDTng.
@@ -608,7 +621,7 @@ def wcsfit(img_wcs, ref_wcs):
     # a WCS to itself (no distortion coeffs), so it needs to be
     # taken out in the coeffs file by modifying the zero-point value.
     #  WJH 17-Mar-2005
-    abxt[2] -= ref_wcs.wcs.crpix[0] + offx 
+    abxt[2] -= ref_wcs.wcs.crpix[0] + offx
     cdyt[2] -= ref_wcs.wcs.crpix[1] + offy
 
     return abxt,cdyt
@@ -665,14 +678,14 @@ def fitlin(imgarr,refarr):
 
     _xt = _xoorg - _a*_xorg+_b*_yorg
     _yt = _yoorg - _d*_xorg-_c*_yorg
-    
+
     return [_a,_b,_xt],[_c,_d,_yt]
 
 
 def fitlin_rscale(xy,uv,verbose=False):
     """ Performs a linear, orthogonal fit between matched
         lists of positions 'xy' (input) and 'uv' (output).
-        
+
         Output: (same as for fit_arrays_general)
     """
     mu = uv[:,0].mean()
@@ -684,23 +697,23 @@ def fitlin_rscale(xy,uv,verbose=False):
     v = uv[:,1] - mv
     x = xy[:,0] - mx
     y = xy[:,1] - my
-    
+
     Sxx = np.dot(x,x)
     Syy = np.dot(y,y)
     Sux = np.dot(u,x)
     Suy = np.dot(u,y)
     Svx = np.dot(v,x)
     Svy = np.dot(v,y)
-    
+
     # implement parity check
-    if (np.dot(Sux,Svy) > 0): 
+    if (np.dot(Sux,Svy) > 0):
         p = 1
     else:
         p = -1
-    
+
     XX = p*Sux + Svy
     YY = Suy - p*Svx
-    
+
     # derive output values
     theta_deg = fileutil.RADTODEG(np.arctan2(YY,XX))% 360.0
     scale = np.sqrt(XX**2 + YY**2) / (Sxx+Syy)
@@ -724,7 +737,7 @@ def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
     # Perform the initial fit
     P,Q = fit_func(xy,uv)
     xyc = apply_fitlin(xy,P,Q)
-    
+
     # compute residuals from fit for input positions
     dx = uv[:,0] - xyc[0]
     dy = uv[:,1] - xyc[1]
@@ -738,11 +751,11 @@ def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
     for i in range(nclip):
         iterclipped = 0
         xyc = apply_fitlin(data,P,Q)
-        
+
         # compute residuals from fit for input positions
         dx = outdata[:,0] - xyc[0]
         dy = outdata[:,1] - xyc[1]
-        
+
         # find indices of outliers in x and y
         xout = np.where(np.abs(dx - dx.mean()) > reject*dx.std())
         yout = np.where(np.abs(dy - dy.mean()) > reject*dy.std())
@@ -765,7 +778,7 @@ def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
         numclipped += iterclipped
         if verbose:
             print 'Removed a total of ',numclipped,' points through iteration ',i+1
-        # create clipped data 
+        # create clipped data
         data_iter = np.zeros([len(full_indx),2],dtype=data.dtype)
         if verbose:
             print 'Iter #',i+1,' data:',data.shape,data_iter.shape,len(full_indx)
@@ -775,7 +788,7 @@ def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
         outdata_iter = np.zeros([len(full_indx),2],dtype=data.dtype)
         outdata_iter[:,0] = outdata[:,0][full_indx]
         outdata_iter[:,1] = outdata[:,1][full_indx]
-        
+
         # perform the fit again with the clipped data and go to the next iteration
         data = data_iter
         outdata = outdata_iter

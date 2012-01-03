@@ -1,8 +1,7 @@
 from __future__ import division # confidence medium
 
-import types
 import pyfits
-from stsci.tools import fileutil, readgeis
+from stsci.tools import fileutil, readgeis, logutil
 
 yes = True
 no = False
@@ -34,6 +33,10 @@ DRIZ_KEYWORDS = {
                 'WKEY':{'value':"",'comment':'Input image WCS Version used'}
                 }
 
+
+log = logutil.create_logger(__name__)
+
+
 class OutputImage:
     """
     This class manages the creation of the array objects
@@ -45,7 +48,7 @@ class OutputImage:
     def __init__(self, plist, input_pars, build=yes, wcs=None, single=no, blot=no):
         """
         The object 'plist' must contain at least the following members::
-        
+
             plist['output']   - name of output FITS image (for SCI)
             plist['outnx']    - size of X axis for output array
             plist['outny']    - size of Y axis for output array
@@ -55,7 +58,7 @@ class OutputImage:
             plist['outsingle']
             plist['outsweight']
             plist['outscontext']
-            
+
         If 'blot=yes', then 'plist' also needs::
 
             plist['data']
@@ -85,11 +88,11 @@ class OutputImage:
         self.bunit = None
         self.units = 'cps'
         self.blot = blot
-        
+
         # Merge input_pars with each chip's outputNames object
         for p in self.parlist:
             p.update(input_pars)
-            
+
         if not blot:
             self.output = plist[0]['output']
             self.shape = (plist[0]['outny'],plist[0]['outnx'])
@@ -134,37 +137,39 @@ class OutputImage:
         self.outdata = _outdata
         self.outweight = _outweight
         self.outcontext = _outcontext
-        
+
 
     def set_bunit(self,bunit):
-        """ 
+        """
         Method used to update the value of the bunit attribute.
         """
         self.bunit = bunit
-        
+
     def set_units(self,units):
-        """ 
+        """
         Method used to record what units were specified by the user for the output product.
         """
         self.units = units
-        
+
 
     def writeFITS(self, template, sciarr, whtarr, ctxarr=None, versions=None, extlist=EXTLIST, overwrite=yes):
-        """ 
+        """
         Generate PyFITS objects for each output extension
         using the file given by 'template' for populating
         headers.
 
         The arrays will have the size specified by 'shape'.
-        """        
+        """
         if fileutil.findFile(self.output):
             if overwrite:
-                print 'Deleting previous output product: ',self.output
+                log.info('Deleting previous output product: %s' % self.output)
                 fileutil.removeFile(self.output)
 
             else:
-                print 'WARNING:  Output file ',self.output,' already exists and overwrite not specified!'
-                print 'Quitting... Please remove before resuming operations.'
+                log.warning('Output file %s already exists and overwrite not '
+                            'specified!' % self.output)
+                log.error('Quitting... Please remove before resuming '
+                          'operations.')
                 raise IOError
 
         # Default value for NEXTEND when 'build'== True
@@ -174,22 +179,28 @@ class OutputImage:
             if self.outweight:
                 if overwrite:
                     if fileutil.findFile(self.outweight):
-                        print 'Deleting previous output WHT product: ',self.outweight
+                        log.info('Deleting previous output WHT product: %s' %
+                                 self.outweight)
                     fileutil.removeFile(self.outweight)
                 else:
-                    print 'WARNING:  Output file ',self.outweight,' already exists and overwrite not specified!'
-                    print 'Quitting... Please remove before resuming operations.'
+                    log.warning('Output file %s already exists and overwrite '
+                                'not specified!' % self.outweight)
+                    log.error('Quitting... Please remove before resuming '
+                              'operations.')
                     raise IOError
 
 
             if self.outcontext:
                 if overwrite:
                     if fileutil.findFile(self.outcontext):
-                        print 'Deleting previous output CTX product: ',self.outcontext
+                        log.info('Deleting previous output CTX product: %s' %
+                                 self.outcontext)
                     fileutil.removeFile(self.outcontext)
                 else:
-                    print 'WARNING:  Output file ',self.outcontext,' already exists and overwrite not specified!'
-                    print 'Quitting... Please remove before resuming operations.'
+                    log.warning('Output file %s already exists and overwrite '
+                                'not specified!' % self.outcontext)
+                    log.error('Quitting... Please remove before resuming '
+                              'operations.')
                     raise IOError
 
         # Get default headers from multi-extension FITS file
@@ -206,7 +217,7 @@ class OutputImage:
         prihdu.header.update('EXTEND',pyfits.TRUE,after='NAXIS')
         prihdu.header.update('NEXTEND',nextend)
         prihdu.header.update('FILENAME', self.output)
-        
+
         # Update the ROOTNAME with the new value as well
         _indx = self.output.find('_drz')
         if _indx < 0:
@@ -251,8 +262,8 @@ class OutputImage:
             if scihdr.has_key('NCOMBINE') > 0:
                 scihdr.update('NCOMBINE', self.parlist[0]['nimages'])
 
-            # If BUNIT keyword was found and reset, then 
-        
+            # If BUNIT keyword was found and reset, then
+
             if self.bunit is not None:
                 comment_str = "Units of science product"
                 if self.bunit.lower()[:5] == 'count':
@@ -263,11 +274,11 @@ class OutputImage:
                 if scihdr.has_key('bunit') and scihdr['bunit'].lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
                     scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str)
-                                
+
             # Add WCS keywords to SCI header
             if self.wcs:
                 addWCSKeywords(self.wcs,scihdr,blot=self.blot)
-                    
+
         ##########
         # Now, build the output file
         ##########
@@ -284,7 +295,7 @@ class OutputImage:
             # Build WHT extension here, if requested...
             if errhdr:
                 errhdr.update('CCDCHIP','-999')
-            
+
 
             hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=extlist[1])
             hdu.header.update('EXTVER',1)
@@ -292,7 +303,7 @@ class OutputImage:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
-                
+
             fo.append(hdu)
 
             # Build CTX extension here
@@ -310,7 +321,7 @@ class OutputImage:
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
-                addWCSKeywords(self.wcs,hdu.header,blot=self.blot)                
+                addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
 
             fo.append(hdu)
 
@@ -319,14 +330,14 @@ class OutputImage:
             del fo, hdu
 
         else:
-            print '-Generating simple FITS output: ',self.outdata
+            log.info('-Generating simple FITS output: %s' % self.outdata)
             fo = pyfits.HDUList()
 
             hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
             hdu.header.update('extend',pyfits.FALSE,after='NAXIS%s'%dim)
-            
+
             # Append remaining unique header keywords from template DQ
             # header to Primary header...
             if scihdr:
@@ -336,7 +347,7 @@ class OutputImage:
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
             hdu.header.update('filename',self.outdata)
-            
+
             if self.wcs:
                 # Add WCS keywords to header
                 addWCSKeywords(self.wcs, hdu.header, blot=self.blot)
@@ -402,7 +413,6 @@ class OutputImage:
                 fctx.writeto(self.outcontext)
                 del fctx,hdu
 
-
     def addDrizKeywords(self,hdr,versions):
         """ Add drizzle parameter keywords to header. """
 
@@ -416,7 +426,7 @@ class OutputImage:
             # on the image number for the chip
             #_keyprefix = 'D%03d'%_imgnum
             _imgnum += 1
-            
+
             drizdict = DRIZ_KEYWORDS.copy()
             # Update drizdict with current values
             drizdict['VER']['value'] = pl['driz_version'][:44]
@@ -449,14 +459,14 @@ class OutputImage:
                 _fillval = pl['fillval']
             drizdict['FVAL']['value'] = _fillval
             drizdict['WKEY']['value'] = pl['driz_wcskey']
-            
+
             drizdict['SCAL'] = {'value':pl['scale'],'comment':'Drizzle, pixel size (arcsec) of output image'}
             drizdict['ISCL'] = {'value':pl['idcscale'],'comment':'Drizzle, default IDCTAB pixel size(arcsec)'}
 
             # Now update header with values
             writeDrizKeywords(hdr,_imgnum,drizdict)
             del drizdict
-            
+
             """
             hdr.update(_keyprefix+'XGIM',"SIP",
                 comment= 'Drizzle, X distortion image name ')
@@ -472,7 +482,7 @@ class OutputImage:
                 rot = float("%0.8f"%pl['rot'])
             hdr.update(_keyprefix+'ROT',rot,
              comment= 'Drizzle, rotation angle, degrees anticlockwise')
-            
+
 
             #hdr.update(_keyprefix+'LAM',pl['plam'],
             #    comment='Drizzle, wavelength applied for transformation (nm)')
@@ -525,16 +535,15 @@ class OutputImage:
 
 
 
-def getTemplates(fname,extlist):
+def getTemplates(fname, extlist):
     # Obtain default headers for output file
     # If the output file already exists, use it
     # If not, use an input file for this information.
     #
     # NOTE: Returns 'pyfits.Header' objects, not HDU objects!
     #
-    if fname == None:
-        print 'No data files for creating FITS output.'
-        raise Exception
+    if fname is None:
+        raise ValueError('No data files for creating FITS output.')
 
     froot,fextn = fileutil.parseFilename(fname)
     if fextn is not None:
@@ -578,7 +587,7 @@ def getTemplates(fname,extlist):
         errhdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
         errhdr.update('extver',1)
         errhdr.update('bunit','UNITLESS')
-        
+
 
         if fextn is None:
             extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[2])
@@ -648,9 +657,9 @@ def addWCSKeywords(wcs,hdr,blot=False):
     if not hdr.has_key('ctype1'):
         hdr.update('CTYPE1',wcs.wcs.ctype[0])
         hdr.update('CTYPE2',wcs.wcs.ctype[1])
-        
+
     if not blot:
-        # Remove any reference to TDD correction from 
+        # Remove any reference to TDD correction from
         #    distortion-corrected products
         if hdr.has_key('TDDALPHA'):
             del hdr['TDDALPHA']
@@ -662,24 +671,24 @@ def addWCSKeywords(wcs,hdr,blot=False):
         # Remove SIP coefficients from DRZ product
         for k in hdr.items():
             if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
-            (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']): 
+            (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']):
                 del hdr[k[0]]
         # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
         # does not try to look for non-existent extensions
         del hdr['D2IMEXT']
         del hdr['D2IMERR']
-        # Remove paper IV related keywords related to the 
+        # Remove paper IV related keywords related to the
         #   DGEO correction here
         for k in hdr.items():
-            if (k[0][:2] == 'DP'): 
+            if (k[0][:2] == 'DP'):
                 del hdr[k[0]+'.*']
                 del hdr[k[0]+'.*.*']
             if (k[0][:2] == 'CP'):
                 del hdr[k[0]]
         del hdr['DGEOEXT']
         del hdr['NPOLEXT']
-            
-    
+
+
 def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.
@@ -689,12 +698,13 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
 
     if fileutil.findFile(outname):
         if clobber:
-            print 'Deleting previous output product: ',outname
+            log.info('Deleting previous output product: %s' % outname)
             fileutil.removeFile(outname)
 
         else:
-            print 'WARNING:  Output file ',outname,' already exists and overwrite not specified!'
-            print 'Quitting... Please remove before resuming operations.'
+            log.warning('Output file %s already exists and overwrite not '
+                        'specified!' % outname)
+            log.error('Quitting... Please remove before resuming operations.')
             raise IOError
 
     # Now update WCS keywords with values from provided WCS
@@ -703,7 +713,7 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
     else:
         siphdr = False
     wcshdr = wcs.wcs2header(sip2hdr=siphdr)
-    
+
     if template is not None:
         # Get default headers from multi-extension FITS file
         # If input data is not in MEF FITS format, it will return 'None'
@@ -738,23 +748,24 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
 
     for card in wcshdr.ascard:
         scihdr.update(card.key,card.value,comment=card.comment)
-    
+
     # Create PyFITS HDUList for all extensions
     outhdu = pyfits.HDUList()
     # Setup primary header as an HDU ready for appending to output FITS file
     prihdu = pyfits.PrimaryHDU(header=prihdr)
     scihdu = pyfits.ImageHDU(header=scihdr,data=data)
-    
+
     outhdu.append(prihdu)
     outhdu.append(scihdu)
     outhdu.writeto(outname)
     if verbose:
-        print 'Created output image: ',outname
-        
+        log.info('Created output image: %s' % outname)
+
+
 def writeDrizKeywords(hdr,imgnum,drizdict):
     """ Write basic drizzle-related keywords out to image header as a record
         of the processing performed to create the image
-        
+
         The dictionary 'drizdict' will contain the keywords and values to be
         written out to the header.
     """
@@ -767,4 +778,4 @@ def writeDrizKeywords(hdr,imgnum,drizdict):
         if comment is None: comment = ""
         hdr.update(_keyprefix+key,val,comment=drizdict[key]['comment'])
 
-    
+

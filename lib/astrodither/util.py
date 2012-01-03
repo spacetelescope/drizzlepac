@@ -1,18 +1,21 @@
 #!/usr/bin/env python
+
 """
 A library of utility functions
 
 """
-from __future__ import division # confidence medium
-import os
+
+from __future__ import division  # confidence medium
 import logging
-import traceback
+import functools
+import os
 import sys
 import string
 
 import numpy as np
 import pyfits
-from stsci.tools import asnutil, fileutil, teal, cfgpars
+from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
+
 
 __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
@@ -34,7 +37,8 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
     except ImportError:
         print '\nCould not import multiprocessing, will only take advantage of a single CPU core'
 
-def get_pool_size(usr_config_value = None, num_tasks = None):
+
+def get_pool_size(usr_config_value=None, num_tasks=None):
     """ Examine the cpu_count to decide and return the right pool
     size to use.  Also take into account the user's wishes via the config
     object value, if specified.  On top of that, don't allow the pool size
@@ -42,6 +46,7 @@ def get_pool_size(usr_config_value = None, num_tasks = None):
     Only use what we need (mp.Pool starts pool_size processes, needed or not).
     If number of tasks is unknown, call this with "num_tasks" set to None.
     Consolidate all such logic here, not in the caller. """
+
     if not can_parallel:
         return 0
     # Give priority to their specified cfg value, over the actual cpu count
@@ -74,100 +79,128 @@ def check_blank(cvar):
     else: val = cvar
     return val
 
-"""
-Logging routines
-"""
-class StreamLogger(object):
-    """ Class to manage trapping of STDOUT and STDERR messages to a trailer file
+#
+# Logging routines
+#
+
+
+def init_logging(logfile=DEFAULT_LOGNAME, default=None):
+    """
+    Set up logger for capturing stdout/stderr messages.
+
+    Must be called prior to writing any messages that you want to log.
     """
 
-    def __init__(self, stream, logfile, mode='w', prefix=''):
-        self.stream = stream
-        if is_blank(prefix):
-            self.prefix = ''
-        else:
-            self.prefix = '['+prefix+'] '
-        self.data = ''
-
-        # set up logfile
-        if not is_blank(logfile):
-            self.log = open(logfile,mode)
-            self.filename = logfile
-            # clear out any previous exceptions, so that only those generated
-            # by this code will be picked up in the trailer file
-            sys.exc_clear()
-            print '[astrodrizzle] Trailer file will be written out to: ',self.filename
-        else:
-            self.log = None
-            self.filename = None
-            print '[astrodrizzle] No trailer file will be created...'
-
-    def write(self, data):
-        self.stream.write(data)
-        self.stream.flush()
-
-        if self.log is not None:
-            self.data += data
-            tmp = str(self.data)
-            if '\x0a' in tmp or '\x0d' in tmp:
-                tmp = tmp.rstrip('\x0a\x0d')
-                self.log.write('%s%s\n' % (self.prefix,tmp))
-                self.data = ''
-    def flush(self):
-        self.stream.flush()
-
-def init_logging(logfile=DEFAULT_LOGNAME,default=None):
-    """ Set up logfile for capturing stdout/stderr messages.
-        Must be called prior to writing any messages that you want to log.
-    """
     if logfile == "INDEF":
         if not is_blank(default):
-            logname = fileutil.buildNewRootname(default) +'.log'
+            logname = fileutil.buildNewRootname(default, '.log')
         else:
             logname = DEFAULT_LOGNAME
-    elif logfile not in [None,""," "]:
-        if '.log' in logfile:
+    elif logfile not in [None, "" , " "]:
+        if logfile.endswith('.log'):
             logname = logfile
         else:
-            logname = logfile+'.log'
+            logname = logfile + '.log'
     else:
         logname = None
+
     if logname is not None:
-        # redirect logging of stdout to logfile
-        sys.stdout = StreamLogger(sys.stdout, logname)
+        logutil.setup_global_logging()
+        logging.basicConfig(filename=logname, filemode='w',
+                            format='[%(levelname)-8s] %(message)s',
+                            level=logging.INFO)
+
+        stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
+        stdout_logger.addFilter(logutil.EchoFilter(include=['astrodither']))
     else:
-        print '[astrodrizzle] No trailer file created...'
+        print 'No trailer file created...'
 
-def end_logging():
-    """ Close log file and restore stdout/stderr to system defaults.
+
+def end_logging(filename=None):
     """
-    if hasattr(sys.stdout,'log'): # only need to close the log if one was created
-        if sys.stdout.log is not None:
-            print '[astrodrizzle] Trailer file written to: ',sys.stdout.filename
-            sys.stdout.log.flush()
-            sys.stdout.log.close()
+    Close log file and restore system defaults.
+    """
 
-            # Add any traceback information to the trailer file to document
-            # the error that caused the code to stop processing
-            if sys.exc_info()[0] is not None:
-                errfile = open(sys.stdout.filename,mode="a")
-                traceback.print_exc(None,errfile)
-                errfile.close()
+    if logutil.global_logging_started:
+        if filename:
+            print 'Trailer file written to: ', filename
         else:
-            print '[astrodrizzle] No trailer file saved...'
+            # This generally shouldn't happen if logging was started with
+            # init_logging and a filename was given...
+            print 'No trailer file saved...'
 
-        sys.stdout = sys.__stdout__
+        logutil.teardown_global_logging()
+    else:
+        print 'No trailer file saved...'
 
-def print_pkg_versions(packages=None,svn=False):
-    pkgs = ['numpy','pyfits','stwcs','pywcs']
+
+class WithLogging(object):
+    def __init__(self):
+        self.depth = 0
+
+    def __call__(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            from .processInput import processFilenames
+
+            filename = None
+            if self.depth == 0:
+                # Setup logging for this task; otherwise we're being called as
+                # a subtask and will use the existing log
+                # The first arg must be the configobj
+                try:
+                    configobj = args[0]
+                    input = processFilenames(configobj['input'])
+                    inputs, output, _, _ = input
+                    if output is not None:
+                        default = output
+                    elif inputs:
+                        default = inputs[0]
+                    else:
+                        default = None
+
+                    if default is not None:
+                        # Only astrodrizzle seems to have this parameter.
+                        # Could other tasks as well?  Or could we do away with
+                        # it altogether?
+                        if 'runfile' in configobj:
+                            filename = configobj['runfile']
+                        else:
+                            filename = default
+                        init_logging(filename)
+                except (KeyError, IndexError, TypeError):
+                    pass
+            self.depth += 1
+            try:
+                func(*args, **kwargs)
+            finally:
+                self.depth -= 1
+                if self.depth == 0:
+                    end_logging(filename)
+
+        return wrapper
+
+
+with_logging = WithLogging()
+
+
+def print_pkg_versions(packages=None, svn=False, log=None):
+    if log is not None:
+        def output(msg):
+            log.info(msg)
+    else:
+        def output(msg):
+            print msg
+
+    pkgs = ['numpy', 'pyfits', 'stwcs', 'pywcs']
     if packages is not None:
-        if not isinstance(packages,list):
+        if not isinstance(packages, list):
             packages = [packages]
         pkgs.extend(packages)
-        
-    print 'Version Information'
-    print '-'*20
-    print 'Python Version '+sys.version
+
+    output('Version Information')
+    output('-' * 20)
+    output('Python Version %s' % sys.version)
     for software in pkgs:
         try:
             package = __import__(software)
@@ -183,9 +216,10 @@ def print_pkg_versions(packages=None,svn=False):
                     vstr += " "
         except:
             vstr = software+" not found in path..."
-        print vstr
+        output(vstr)
 
-class ProcSteps:
+
+class ProcSteps(object):
     """ This class allows MultiDrizzle to keep track of the
         start and end times of each processing step that gets run
         as well as computing/reporting the elapsed time for each step.
@@ -235,9 +269,11 @@ class ProcSteps:
         print'==== Processing Step ',key,' finished at ',ptime[0]
 
     def reportTimes(self):
-        """ Print out a formatted summary of the elapsed times for all
-            the performed steps.
         """
+        Print out a formatted summary of the elapsed times for all the
+        performed steps.
+        """
+
         self.end = _ptime()
         total_time = 0
         print ProcSteps.__report_header
@@ -247,14 +283,15 @@ class ProcSteps:
             else:
                 _time = 0.0
             total_time += _time
-            print '   %20s          %0.4f sec.'%(step,_time)
+            print '   %20s          %0.4f sec.' % (step, _time)
 
-        print '   %20s          %s'%('='*20,'='*20)
-        print '   %20s          %0.4f sec.'%('Total',total_time)
+        print '   %20s          %s' % ('=' * 20, '=' * 20)
+        print '   %20s          %0.4f sec.' % ('Total', total_time)
 
         # Compute overall runtime of entire program, including overhead
         #total = self.end[1] - self.start[1]
         #print '   %20s          %0.4f sec.'%('Total Runtime',total)
+
 
 def _ptime():
     import time
@@ -275,6 +312,7 @@ def _ptime():
         #date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
     return tlm_str,ftime
 
+
 def findrootname(filename):
     """
     Return the rootname of the given file.
@@ -287,15 +325,17 @@ def findrootname(filename):
             val = num
     return filename[0:val]
 
+
 def removeFileSafely(filename,clobber=True):
     """ Delete the file specified, but only if it exists and clobber is True.
     """
     if filename is not None and filename.strip() != '':
         if os.path.exists(filename) and clobber: os.remove(filename)
 
+
 def verifyFilePermissions(filelist, chmod=True):
     """ Verify that images specified in 'filelist' can be updated.
-    
+
     A message will be printed reporting the names of any images which
     do not have write-permission, then quit.
     """
@@ -337,15 +377,17 @@ def verifyFilePermissions(filelist, chmod=True):
         newfilelist = None
 
     return filelist
+
+
 def validateUserPars(configObj,input_dict):
     """ Compares input parameter names specified by user with those already
         recognized by the task.
-        
-        Any parameters provided by the user that does not match a known 
+
+        Any parameters provided by the user that does not match a known
         task parameter will be reported and a ValueError exception will be
         raised.
     """
-    # check to see whether any input parameters are unexpected. 
+    # check to see whether any input parameters are unexpected.
     # Any unexpected parameters provided on input should be reported and
     # the code should stop
     plist = []
@@ -363,7 +405,7 @@ def validateUserPars(configObj,input_dict):
         print '\nPlease check the spelling of the parameter(s) and try again...'
         print '='*40
         raise ValueError
-    
+
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated
         with user-specified values from input_dict.
@@ -410,12 +452,12 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     # merge in the user values for this run
     # this, though, does not save the results for use later
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:
-        # check to see whether any input parameters are unexpected. 
+        # check to see whether any input parameters are unexpected.
         # Any unexpected parameters provided on input should be reported and
         # the code should stop
         validateUserPars(configObj,input_dict)
 
-        # If everything looks good, merge user inputs with configObj and continue 
+        # If everything looks good, merge user inputs with configObj and continue
         cfgpars.mergeConfigObj(configObj, input_dict)
         # Update the input .cfg file with the updated parameter values
         #configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
@@ -480,20 +522,28 @@ def atfile_ivm(filename):
     return filename.split()[1]
 
 
-def printParams(paramDictionary,all=False):
-    """ Print nicely the parameters from the dictionary.
+def printParams(paramDictionary, all=False, log=None):
+    """
+    Print nicely the parameters from the dictionary.
     """
 
-    if (len(paramDictionary) == 0):
-        print "\nNo parameters were supplied\n"
+    if log is not None:
+        def output(msg):
+            log.info(msg)
     else:
-        keys=paramDictionary.keys()
-        keys.sort()
-        for key in keys:
-            if all or (not isinstance(paramDictionary[key],dict)):
-                print "\t",key,":\t",paramDictionary[key]
-        print '\n'
-    sys.stdout.flush()
+        def output(msg):
+            print msg
+
+    if not paramDictionary:
+        output('No parameters were supplied')
+    else:
+        for key in sorted(paramDictionary):
+            if all or (not isinstance(paramDictionary[key], dict)):
+                output('\t' + '\t'.join([str(key) + ' :',
+                                         str(paramDictionary[key])]))
+        if log is None:
+            output('\n')
+
 
 def isASNTable(inputFilelist):
     """Return TRUE if inputFilelist is a fits ASN file."""

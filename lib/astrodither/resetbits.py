@@ -18,7 +18,7 @@
     Optional Parameters
     -------------------
     extver : int, optional
-        List of version numbers of the arrays to be corrected 
+        List of version numbers of the arrays to be corrected
         (default: None, will reset all matching arrays)
     extname : str, optional
         EXTNAME of the arrays in the FITS files to be reset
@@ -27,20 +27,20 @@
     NOTES
     -----
     This module performs a simple bitwise-and on all the pixels in the specified
-    array and the integer value provided as input using the operation (array & ~bits).  
+    array and the integer value provided as input using the operation (array & ~bits).
 
     Usage
     -----
     It can be called not only from within Python, but also from the host-level
     operating system command line using the syntax::
-    
+
         resetbits filename bits [extver [extname]]
 
 
     EXAMPLES
     --------
 
-    1. The following command will reset the 4096 bits in all 
+    1. The following command will reset the 4096 bits in all
        the DQ arrays of the file 'input_flt.fits'::
 
             resetbits input_flt.fits 4096
@@ -51,7 +51,7 @@
             >>> resetbits.reset_dq_bits("input_file_flt.fits", 4096)
 
 
-    2. To reset the 2,32,64 and 4096 (sum of 4194) bits in the 
+    2. To reset the 2,32,64 and 4096 (sum of 4194) bits in the
        second DQ array, specified as 'dq,2', in the file 'input_flt.fits'::
 
             resetbits input_flt.fits 4194 2
@@ -62,14 +62,20 @@
             >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
 """
+
 from __future__ import division
 import numpy as np
 from stsci.tools import stpyfits as pyfits
-from stsci.tools import parseinput
+from stsci.tools import parseinput, logutil
+
 
 __taskname__ = "astrodither.resetbits"
 __version__ = '1.0.0'
 __vdate__ = '3-Aug-2010'
+
+
+log = logutil.create_logger(__name__)
+
 
 def reset_dq_bits(input,bits,extver=None,extname='dq'):
     """ This function resets bits in the integer array(s) of a FITS file.
@@ -77,38 +83,38 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
     Parameters
     ----------
     filename : str
-        full filename with path 
+        full filename with path
 
     bits : int
         sum of integers corresponding to all the bits to be reset
 
     extver : int, optional
-        List of version numbers of the DQ arrays 
+        List of version numbers of the DQ arrays
         to be corrected [Default Value: None, will do all]
-            
+
     extname : str, optional
-        EXTNAME of the DQ arrays in the FITS file 
+        EXTNAME of the DQ arrays in the FITS file
         [Default Value: 'dq']
 
     Notes
     -----
     The default value of None for the 'extver' parameter specifies that all
-    extensions with EXTNAME matching 'dq' (as specified by the 'extname' 
-    parameter) will have their bits reset. 
-    
+    extensions with EXTNAME matching 'dq' (as specified by the 'extname'
+    parameter) will have their bits reset.
+
     Examples
     --------
-        1. The following command will reset the 4096 bits in all 
+        1. The following command will reset the 4096 bits in all
            the DQ arrays of the file input_file_flt.fits::
 
                 reset_dq_bits("input_file_flt.fits", 4096)
 
-        2. To reset the 2,32,64 and 4096 bits in the second DQ array, 
+        2. To reset the 2,32,64 and 4096 bits in the second DQ array,
            specified as 'dq,2', in the file input_file_flt.fits::
 
                 reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
-    """  
+    """
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
         # open input file in write mode to allow updating the DQ array in-place
@@ -133,9 +139,10 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
             dqarr = p[extname,extn].data
             # reset the desired bits
             p[extname,extn].data = (dqarr & ~bits).astype(np.int16)
-            print 'Reset bit values of ',bits,' to a value of 0 in '+filename+'['+extname+','+str(extn)+']'
+            log.info('Reset bit values of %s to a value of 0 in %s[%s,%s]' %
+                     (bits, filename, extname, extn))
         # close the file with the updated DQ array(s)
-        p.close()    
+        p.close()
 
 #
 #### Interfaces used by TEAL

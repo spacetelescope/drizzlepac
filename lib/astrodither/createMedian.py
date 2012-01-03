@@ -3,6 +3,7 @@
 # Import external packages
 from __future__ import division # confidence medium
 
+import sys
 import numpy as np
 import pyfits
 import os
@@ -10,11 +11,10 @@ import imageObject
 from stsci.imagestats import ImageStats
 import util
 from stsci.image import numcombine
-from stsci.tools import iterfile
-from stsci.tools import nimageiter
-from stsci.tools import teal
+from stsci.tools import iterfile, nimageiter, teal, logutil
 from minmed import minmed
 import processInput
+
 
 __version__ = '1.1'
 
@@ -22,28 +22,32 @@ __version__ = '1.1'
 __taskname__= "astrodither.createMedian" #looks in astrodither for createMedian.cfg
 _step_num_ = 4  #this relates directly to the syntax in the cfg file
 
+
+log = logutil.create_logger(__name__)
+
+
 def getHelpAsString():
     """
     Return useful help from a file in the script directory called module.help
     """
-    helpString = teal.getHelpFileAsString(__taskname__,__file__)
+
+    helpString = teal.getHelpFileAsString(__taskname__, __file__)
 
     return helpString
 
 #this is the user access function
-def median(input=None,configObj=None, editpars=False, **inputDict):
+def median(input=None, configObj=None, editpars=False, **inputDict):
     """
-        Create a median image from the seperately drizzled images.
+    Create a median image from the seperately drizzled images.
     """
 
     if input is not None:
-        inputDict["input"]=input
-
+        inputDict["input"] = input
     else:
-        print "Please supply an input image"
-        raise ValueError
+        raise ValueError("Please supply an input image")
 
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
+    configObj = util.getDefaultConfigObj(__taskname__, configObj, inputDict,
+                                         loadOnly=(not editpars))
     if configObj is None:
         return
 
@@ -68,9 +72,9 @@ def createMedian(imgObjList,configObj,procSteps=None):
     to median-combine the input images into a single image.
 
     """
-    if(imgObjList == None):
+    if imgObjList is None:
         msg = "Please provide a list of imageObjects to the median step"
-        print msg
+        print >> sys.stderr, msg
         raise ValueError(msg)
 
     if procSteps is not None:
@@ -78,23 +82,24 @@ def createMedian(imgObjList,configObj,procSteps=None):
 
     step_name = util.getSectionName(configObj,_step_num_)
     if not configObj[step_name]['median']:
-        print 'Median combination step not performed.'
+        log.info('Median combination step not performed.')
         return
 
     step_name=util.getSectionName(configObj,_step_num_)
     paramDict=configObj[step_name]
     paramDict['proc_unit'] = configObj['proc_unit']
 
-    print "\nUSER INPUT PARAMETERS for Create Median Step:"
-    util.printParams(paramDict)
+    log.info('USER INPUT PARAMETERS for Create Median Step:')
+    util.printParams(paramDict, log=log)
 
-    _median(imgObjList,paramDict)
+    _median(imgObjList, paramDict)
 
     if procSteps is not None:
         procSteps.endStep('Create Median')
 
-#this is the internal function, the user called function is below
-def _median(imageObjectList,paramDict):
+
+# this is the internal function, the user called function is below
+def _median(imageObjectList, paramDict):
     """Create a median image from the list of image Objects
        that has been given.
     """

@@ -1,20 +1,31 @@
-#!/usr/bin/env python
 """
 A class which makes image objects for each input filename.
 """
-from __future__ import division # confidence medium
 
-import sys,types,copy,os,re
-from stsci.tools import fileutil
-import pyfits
-import util,wcs_functions
-import buildmask
+from __future__ import division  # confidence medium
+
+import copy
+import os
+import re
+import sys
+
 import numpy as np
+
+from stsci.tools import fileutil, logutil, textutil
+import pyfits
+import util
+import wcs_functions
+import buildmask
 
 
 IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
 
+
 __version__ = '0.1dev1'
+
+
+log = logutil.create_logger(__name__)
+
 
 class baseImageObject:
     """ Base ImageObject which defines the primary set of methods.
@@ -110,7 +121,8 @@ class baseImageObject:
                         'staticMask','singleDrizMask','outSky',
                         'outSContext','outSWeight','outSingle',
                         'outMedian','d2imfile','dqmask','tmpmask']
-        print 'Removing intermediate files for ',self._filename
+
+        log.info('Removing intermediate files for %s' % self._filename)
         # We need to remove the combined products first; namely, median image
         util.removeFileSafely(self.outputNames['outMedian'])
         # Now remove chip-specific intermediate files, if any were created.
@@ -175,7 +187,7 @@ class baseImageObject:
 
         if(_extnum == None):
             msg = "no extension number found"
-            print msg
+            log.error(msg)
             raise ValueError(msg)
 
         return _extnum
@@ -203,14 +215,16 @@ class baseImageObject:
             Data should be the data array exten is where you want to stick it,
             either extension number or a string like 'sci,1'
         """
-        if (data == None):
-            print "No data supplied"
-        else:
-            _extnum=_interpretExten(exten)
 
-            #update the bitpix to the current datatype, this aint fancy and ignores bscale
-            self._image[_extnum].header["BITPIX"]=IRAF_DTYPES[data.dtype.name]
-            self._image[_extnum].data=data
+        if data is None:
+            log.warning("No data supplied")
+        else:
+            extnum = _interpretExten(exten)
+            ext = self._image[extnum]
+            # update the bitpix to the current datatype, this aint fancy and
+            # ignores bscale
+            ext.header['BITPIX'] = IRAF_DTYPES[data.dtype.name]
+            ext.data = data
 
     def getAllData(self,extname=None,exclude=None):
         """ This function is meant to make it easier to attach ALL the data
@@ -285,21 +299,19 @@ class baseImageObject:
             del newExt
         return extensions
 
-    def findExtNum(self,extname=None,extver=1):
-        """ Find the extension number of the give extname and extver.
-        """
-        extnum=None
-        _extname=extname.upper()
+    def findExtNum(self, extname=None, extver=1):
+        """Find the extension number of the give extname and extver."""
+
+        extnum = None
+        extname = extname.upper()
 
         if not self._isSimpleFits:
             for ext in self._image:
-                if hasattr(ext,'_extension') and \
-                "IMAGE" in ext._extension and \
-                (ext.extname == _extname):
-                    if (ext.extver == extver):
-                        extnum=ext.extnum
+                if (hasattr(ext,'_extension') and 'IMAGE' in ext._extension and
+                    (ext.extname == extname) and (ext.extver == extver)):
+                    extnum = ext.extnum
         else:
-            print "Image is simple fits"
+            log.info("Image is simple fits")
 
         return extnum
 
@@ -408,18 +420,23 @@ class baseImageObject:
         outnames['outWeight'] = output_wcs.outputNames['outWeight']
         outnames['outContext'] = output_wcs.outputNames['outContext']
 
-    def updateContextImage(self,contextpar):
-        """ Reset the name of the context image to None if parameter `context`== False.
+    def updateContextImage(self, contextpar):
         """
+        Reset the name of the context image to None if parameter `context`== False.
+        """
+
         self.createContext = contextpar
         if contextpar == False:
-            print 'No context image will be created for ',self._filename
+            log.info('No context image will be created for %s' %
+                     self._filename)
             self.outputNames['outContext'] = None
 
     def find_DQ_extension(self):
-        ''' Return the suffix for the data quality extension and the name of the file
-            which that DQ extension should be read from.
-        '''
+        """
+        Return the suffix for the data quality extension and the name of the
+        file which that DQ extension should be read from.
+        """
+
         dqfile = None
         dq_suffix=None
         if(self.maskExt != None):
@@ -433,10 +450,12 @@ class baseImageObject:
         return dqfile,dq_suffix
 
 
-    def getKeywordList(self,kw):
-        """ Return lists of all attribute values
-            for all active chips in the imageObject.
+    def getKeywordList(self, kw):
         """
+        Return lists of all attribute values for all active chips in the
+        imageObject.
+        """
+
         kwlist = []
         for chip in range(1,self._numchips+1,1):
             sci_chip = self._image[self.scienceExt,chip]
@@ -445,21 +464,23 @@ class baseImageObject:
 
         return kwlist
 
-    def getGain(self,exten):
+    def getGain(self, exten):
         return self._image[exten]._gain
 
-    def getflat(self,chip):
+    def getflat(self, chip):
         """
         Method for retrieving a detector's flat field.
 
         Returns
         -------
         flat: array
-            This method will return an array the same shape as the image in **units of electrons**.
+            This method will return an array the same shape as the image in
+            **units of electrons**.
 
         """
-        sci_chip = self._image[self.scienceExt,chip]
-        exten = '%s,%d'%(self.errExt,chip)
+
+        sci_chip = self._image[self.scienceExt, chip]
+        exten = '%s,%d' % (self.errExt, chip)
         # The keyword for ACS flat fields in the primary header of the flt
         # file is pfltfile.  This flat file is already in the required
         # units of electrons.
@@ -469,20 +490,20 @@ class baseImageObject:
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
 
         try:
-            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
+            handle = fileutil.openImage(filename, mode='readonly', memmap=0)
             hdu = fileutil.getExtn(handle,extn=exten)
             _ltv1 = np.round(sci_chip.ltv1)
             _ltv2 = np.round(sci_chip.ltv2)
-            data = hdu.data[_ltv2:sci_chip.size2,_ltv1:sci_chip.size1]
+            data = hdu.data[_ltv2:sci_chip.size2, _ltv1:sci_chip.size1]
             handle.close()
         except:
-            data = np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)
-            str = "Cannot find file "+filename+".\n    Treating flatfield constant value of '1'.\n"
-            print str
+            data = np.ones(sci_chip.image_shape, dtype=sci_chip.image_dtype)
+            log.warning("Cannot find file %s.\n    Treating flatfield "
+                        "constant value of '1'." % filename)
         flat = data
         return flat
 
-    def getReadNoiseImage(self,chip):
+    def getReadNoiseImage(self, chip):
         """
         Notes
         =====
@@ -494,6 +515,7 @@ class baseImageObject:
         :units: electrons
 
         """
+
         sci_chip = self._image[self.scienceExt,chip]
 
         return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype) * sci_chip._rdnoise
@@ -609,7 +631,7 @@ class baseImageObject:
         if write:
             phdu = pyfits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
-            print 'Writing out DQ/weight mask: ',dqmask_name
+            log.info('Writing out DQ/weight mask: %s' % dqmask_name)
             if os.path.exists(dqmask_name): os.remove(dqmask_name)
             phdu.writeto(dqmask_name)
             del phdu
@@ -629,7 +651,7 @@ class baseImageObject:
         ivmname = self.outputNames['ivmFile']
 
         if ivmname != None:
-            print "Applying user supplied IVM files for chip ",chip
+            log.info("Applying user supplied IVM files for chip %s" % chip)
             #Parse the input file name to get the extension we are working on
             extn = "IVM,"+chip
 
@@ -644,7 +666,7 @@ class baseImageObject:
 
         else:
 
-            print "Automatically creating IVM files for chip ",chip
+            log.info("Automatically creating IVM files for chip %s" % chip)
             # If no IVM files were provided by the user we will
             # need to automatically generate them based upon
             # instrument specific information.
@@ -679,7 +701,8 @@ class baseImageObject:
                 # Attempt to open the ERR image.
                 err = self.getData(exten=self.errExt+','+str(chip))
 
-                print "Applying ERR weighting to DQ mask for chip ",chip
+                log.info("Applying ERR weighting to DQ mask for chip %s" %
+                         chip)
 
                 # Multiply the scaled ERR file by the input mask in place.
                 errmask = 1/(err)**2 * dqarr
@@ -690,46 +713,32 @@ class baseImageObject:
                 del err
 
             except:
-            # We cannot find an 'ERR' extension and the data isn't WFPC2.  Print a generic warning message
-            # and continue on with the final drizzle step.
-                generrstr =  "*******************************************\n"
-                generrstr += "*                                         *\n"
-                generrstr += "* WARNING: No ERR weighting will be       *\n"
-                generrstr += "* applied to the mask used in the final   *\n"
-                generrstr += "* drizzle step!  Weighting will be only   *\n"
-                generrstr += "* by exposure time.                       *\n"
-                generrstr += "*                                         *\n"
-                generrstr += "* The data provided as input does not     *\n"
-                generrstr += "* contain an ERR extension.               *\n"
-                generrstr += "*                                         *\n"
-                generrstr =  "*******************************************\n"
-                print generrstr
-                print "\n Continue with final drizzle step..."
+                # We cannot find an 'ERR' extension and the data isn't WFPC2.
+                # Print a generic warning message and continue on with the
+                # final drizzle step.
+
+                print >> sys.stderr, textutil.textbox(
+                    'WARNING: No ERR weighting will be applied to the mask '
+                    'used in the final drizzle step!  Weighting will be only '
+                    'by exposure time.\n\nThe data provided as input does not '
+                    'contain an ERR extension')
+                print >> sys.stderr, '\n Continue with final drizzle step...'
         else:
-        # If we were unable to find an 'ERR' extension to apply, one possible reason was that
-        # the input was a 'standard' WFPC2 data file that does not actually contain an error array.
-        # Test for this condition and issue a Warning to the user and continue on to the final
-        # drizzle.
-            errstr =  "*******************************************\n"
-            errstr += "*                                         *\n"
-            errstr += "* WARNING: No ERR weighting will be       *\n"
-            errstr += "* applied to the mask used in the final   *\n"
-            errstr += "* drizzle step!  Weighting will be only   *\n"
-            errstr += "* by exposure time.                       *\n"
-            errstr += "*                                         *\n"
-            errstr += "* The WFPC2 data provided as input does   *\n"
-            errstr += "* not contain ERR arrays.  WFPC2 data is  *\n"
-            errstr += "* not supported by this weighting type.   *\n"
-            errstr += "*                                         *\n"
-            errstr += "* A workaround would be to create inverse *\n"
-            errstr += "* variance maps and use 'IVM' as the      *\n"
-            errstr += "* final_wht_type.  See the HELP file for  *\n"
-            errstr += "* more details on using inverse variance  *\n"
-            errstr += "* maps.                                   *\n"
-            errstr += "*                                         *\n"
-            errstr =  "*******************************************\n"
-            print errstr
-            print "\n Continue with final drizzle step..."
+            # If we were unable to find an 'ERR' extension to apply, one
+            # possible reason was that the input was a 'standard' WFPC2 data
+            # file that does not actually contain an error array.  Test for
+            # this condition and issue a Warning to the user and continue on to
+            # the final drizzle.
+
+            print >> sys.stderr, textutil.textbox(
+                "WARNING: No ERR weighting will be applied to the mask used "
+                "in the final drizzle step!  Weighting will be only by "
+                "exposure time.\n\nThe WFPC2 data provided as input does not "
+                "contain ERR arrays.  WFPC2 data is not supported by this "
+                "weighting type.\n\nA workaround would be to create inverse "
+                "variance maps and use 'IVM' as the final_wht_type.  See the "
+                "HELP file for more details on using inverse variance maps.")
+            print >> sys.stderr, "\n Continue with final drizzle step..."
 
         return errmask.astype(np.float32)
 
@@ -755,7 +764,7 @@ class baseImageObject:
 
         exptime = sci_chip._exptime
         if wtscl_par != None:
-            if isinstance(wtscl_par,types.StringType):
+            if isinstance(wtscl_par, basestring):
                 if  wtscl_par.isdigit() == False :
                     # String passed in as value, check for 'exptime' or 'expsq'
                     _wtscl_float = None
@@ -862,8 +871,7 @@ class imageObject(baseImageObject):
             self._image=fileutil.openImage(filename,clobber=False,memmap=0)
 
         except IOError:
-            print "\nUnable to open file:",filename
-            raise IOError
+            raise IOError("Unable to open file: %s" % filename)
 
         #populate the global attributes which are good for all the chips in the file
         #self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
@@ -970,7 +978,7 @@ class imageObject(baseImageObject):
                 # determined the sky level
                 if "MDRIZSKY" in sci_chip.header:
                     subsky = sci_chip.header['MDRIZSKY']
-                    print 'Reading in MDRIZSKY of ',subsky
+                    log.info('Reading in MDRIZSKY of %s' % subsky)
                 else:
                     subsky = 0.0
                 sci_chip.subtractedSky = subsky

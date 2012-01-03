@@ -1,22 +1,3 @@
-from __future__ import division # confidence high
-import datetime
-import os
-import shutil
-import string
-import errno
-
-import pyfits
-
-from stsci.tools import cfgpars, parseinput, fileutil, asnutil, irafglob, check_files
-from stwcs import updatewcs
-from stwcs.wcsutil import altwcs, wcscorr
-
-import wcs_functions
-import util
-import resetbits
-import mdzhandler
-import imageObject
-
 """
 Process input to MultiDrizzle/PyDrizzle.
 
@@ -44,7 +25,31 @@ steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
 
-def setCommonInput(configObj,createOutwcs=True):
+from __future__ import division  # confidence high
+import datetime
+import os
+import shutil
+import string
+import sys
+
+import pyfits
+
+from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
+                         check_files, logutil, textutil)
+from stwcs import updatewcs
+from stwcs.wcsutil import altwcs, wcscorr
+
+import wcs_functions
+import util
+import resetbits
+import mdzhandler
+import imageObject
+
+
+log = logutil.create_logger(__name__)
+
+
+def setCommonInput(configObj, createOutwcs=True):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to
@@ -81,14 +86,18 @@ def setCommonInput(configObj,createOutwcs=True):
 
 
     """
-    if not createOutwcs:
-        configObj['updatewcs']=False #we're probably just working on single images here
 
-    #maybe we can chunk this part up some more so that we can call just the parts we want
+    if not createOutwcs:
+        # we're probably just working on single images here
+        configObj['updatewcs']=False
+
+    # maybe we can chunk this part up some more so that we can call just the
+    # parts we want
 
     # Interpret input, read and convert and update input files, then return
     # list of input filenames and derived output filename
-    asndict,ivmlist,output = process_input(configObj['input'], configObj['output'],
+    asndict, ivmlist, output = process_input(
+            configObj['input'], configObj['output'],
             updatewcs=configObj['updatewcs'], wcskey=configObj['wcskey'],
             **configObj['STATE OF INPUT FILES'])
 
@@ -102,7 +111,7 @@ def setCommonInput(configObj,createOutwcs=True):
     # input, output, or updatewcs.
     if 'mdriztab' in configObj and configObj['mdriztab']:
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
-        
+
         # Update configObj with values from mpars
         cfgpars.mergeConfigObj(configObj, mdriztab_dict)
 
@@ -113,36 +122,40 @@ def setCommonInput(configObj,createOutwcs=True):
     instrpars['proc_unit'] = configObj['proc_unit']
 
     # Build imageObject list for all the valid, shift-updated input files
-    print '\n-Creating imageObject List as input for processing steps.\n'
-    imageObjectList = createImageObjectList(files,instrpars,group=configObj['group'])
+    log.info('-Creating imageObject List as input for processing steps.')
+    imageObjectList = createImageObjectList(files, instrpars,
+                                            group=configObj['group'])
 
     # apply context parameter
-    applyContextPar(imageObjectList,configObj['context'])
+    applyContextPar(imageObjectList, configObj['context'])
 
     # reset DQ bits if requested by user
-    resetDQBits(imageObjectList,cr_bits_value=configObj['resetbits'])
+    resetDQBits(imageObjectList, cr_bits_value=configObj['resetbits'])
 
     # Add info about input IVM files at this point to the imageObjectList
-    addIVMInputs(imageObjectList,ivmlist)
+    addIVMInputs(imageObjectList, ivmlist)
 
-    if(createOutwcs):
+    if createOutwcs:
+        log.info('-Creating output WCS.')
+
         # Build output WCS and update imageObjectList with output WCS info
-        outwcs = wcs_functions.make_outputwcs(imageObjectList,output,configObj=configObj)
-        print '\n-Creating output WCS:\n'
+        outwcs = wcs_functions.make_outputwcs(imageObjectList, output,
+                                              configObj=configObj)
         outwcs.final_wcs.printwcs()
-        print '\n'
     else:
         outwcs = None
         
     try:
         # Provide user with some information on resource usage for this run
-        reportResourceUsage(imageObjectList,outwcs,configObj.get('num_cores'))
+        reportResourceUsage(imageObjectList, outwcs,
+                            configObj.get('num_cores'))
     except ValueError:
         imageObjectList = None
         
-    return imageObjectList,outwcs
+    return imageObjectList, outwcs
 
-def reportResourceUsage(imageObjectList,outwcs,num_cores,interactive=False):
+
+def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
     """ Provide some information to the user on the estimated resource
     usage (primarily memory) for this run.
     """
@@ -192,17 +205,17 @@ def reportResourceUsage(imageObjectList,outwcs,num_cores,interactive=False):
     
 def getMdriztabPars(input):
     """ High-level function for getting the parameters from MDRIZTAB
-    
+
     Used primarily for TEAL interface.
     """
     filelist,output,ivmlist,oldasndict=processFilenames(input,None)
-    
+
     try:
         mdrizdict = mdzhandler.getMdriztabParameters(filelist)
     except KeyError:
         print 'No MDRIZTAB found for "%s". Parameters remain unchanged.'%(filelist[0])
         mdrizdict = {}
-    
+
     return mdrizdict
 
 def addIVMInputs(imageObjectList,ivmlist):
@@ -236,7 +249,7 @@ def createImageObjectList(files,instrpars,group=None):
                 if isinstance(_keyval,bool):
                     mtflag = _keyval
                 else:
-                    if 'T' in _keyval: 
+                    if 'T' in _keyval:
                         mtflag = True
                     else:
                         mtflag = False
@@ -394,50 +407,54 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     #filelist.sort()
 
 
-    return filelist,output,ivmlist,oldasndict
-    
-def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=False,  wcskey=None, **workinplace):
-    """ Create the full input list of filenames after verifying and converting
-        files as needed.
+    return filelist, output, ivmlist, oldasndict
+
+
+def process_input(input, output=None, ivmlist=None, updatewcs=True,
+                  prodonly=False,  wcskey=None, **workinplace):
     """
-    newfilelist,ivmlist,output,oldasndict = buildFileList(input,output=output,ivmlist=ivmlist,**workinplace)
-    
-    if not newfilelist or len(newfilelist) == 0:
-        buildEmptyDRZ(input,output)
+    Create the full input list of filenames after verifying and converting
+    files as needed.
+    """
+
+    newfilelist, ivmlist, output, oldasndict = buildFileList(
+            input, output=output, ivmlist=ivmlist, **workinplace)
+
+    if not newfilelist:
+        buildEmptyDRZ(input, output)
         return None, None, output
 
     # check for non-polynomial distortion correction
     newfilelist = checkDGEOFile(newfilelist)
-    if newfilelist == None:
-
+    if newfilelist is None:
         return None, None, None
 
-    #make an asn table at the end
-    if wcskey not in ['',' ','INDEF',None] or updatewcs:
+    # make an asn table at the end
+    if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
         # Make sure there is a WCSCORR table for each input image
         for img in newfilelist:
             wcscorr.init_wcscorr(img)
 
-    if wcskey in ['',' ','INDEF',None]:
+    if wcskey in ['', ' ', 'INDEF', None]:
         if updatewcs:
-            print 'Updating input WCS using "updatewcs"'
+            log.info('Updating input WCS using "updatewcs"')
             pydr_input = runmakewcs(newfilelist)
         else:
             pydr_input = newfilelist
     else:
-        print 'Resetting input WCS to be based on WCS key = ',wcskey
+        log.info('Resetting input WCS to be based on WCS key = %s' % wcskey)
         for fname in newfilelist:
             numext = fileutil.countExtn(fname)
             extlist = []
-            for extn in xrange(1,numext+1):
-                extlist.append(('SCI',extn))
+            for extn in xrange(1, numext + 1):
+                extlist.append(('SCI', extn))
             if wcskey in string.uppercase:
                 wkey = wcskey
                 wname = ' '
             else:
                 wname = wcskey
                 wkey = ' '
-            altwcs.restoreWCS(fname,extlist,wcskey=wkey,wcsname=wname)
+            altwcs.restoreWCS(fname, extlist, wcskey=wkey, wcsname=wname)
         pydr_input = newfilelist
 
     # AsnTable will handle the case when output==None
@@ -455,18 +472,20 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True, prodonly=Fal
         if '_flc.fits' in img:
             drz_extn = '_drc.fits'
             break
- 
+
     if output in [None,'']:
-        output = fileutil.buildNewRootname(asndict['output'],extn=drz_extn)
+        output = fileutil.buildNewRootname(asndict['output'],
+                                           extn=drz_extn)
     else:
         if '.fits' in output.lower():
             pass
         elif drz_extn[:4] not in output.lower():
-            output = fileutil.buildNewRootname(output,extn=drz_extn)
+            output = fileutil.buildNewRootname(output, extn=drz_extn)
 
-    print 'Setting up output name: ',output
+    log.info('Setting up output name: %s' % output)
 
     return asndict, ivmlist, output
+
 
 def buildFileList(input, output=None, ivmlist=None,**workinplace):
     """
@@ -479,72 +498,74 @@ def buildFileList(input, output=None, ivmlist=None,**workinplace):
     filelist = util.verifyFilePermissions(filelist)
     if filelist is None or len(filelist) == 0:
         return None, None, None, None
-    
+
     manageInputCopies(filelist,**workinplace)
 
     newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
 
     return newfilelist,ivmlist,output,oldasndict
 
-def buildASNList(rootnames,asnname):
-    """ Return the list of filenames for a given set of rootnames
+
+def buildASNList(rootnames, asnname):
     """
+    Return the list of filenames for a given set of rootnames
+    """
+
     # Recognize when multiple valid inputs with the same rootname are present
-    # this would happen when both CTE-corrected (_flc) and non-CTE-corrected (_flt) 
+    # this would happen when both CTE-corrected (_flc) and non-CTE-corrected (_flt)
     # products are in the same directory as an ASN table
-    filelist,duplicates = checkForDuplicateInputs(rootnames)
-    
-    if len(duplicates) > 0:
+    filelist, duplicates = checkForDuplicateInputs(rootnames)
+
+    if duplicates:
         # Build new ASN tables for each set of input files
-        origasn = changeSuffixinASN(asnname,'flt')
-        dupasn = changeSuffixinASN(asnname,'flc')
-        
-        errstr =  "###############################################################################\n"
-        errstr += "#                                                                             #\n"
-        errstr += "# ERROR:                                                                      #\n"
-        errstr += "# Multiple valid input files found:                                           #\n"
-        for fname,dname in zip(filelist,duplicates):
-            errstr += "#    "+fname+"    "+dname+"\n"
-        errstr += "#                                                                             #\n"
-        errstr += "# New association files have been generated for each version of these files.  #\n"
-        errstr += "#    "+dupasn+"\n"
-        errstr += "#    "+origasn+"\n"
-        errstr += "#                                                                             #\n"
-        errstr += "# Please re-start astrodrizzle using one of these new ASN files or            #\n"
-        errstr += "#   use wildcards for the input to only select one type of input file.        #\n"
-        errstr += "#                                                                             #\n"
-        errstr += "###############################################################################\n\n"
-        print errstr
-        
+        origasn = changeSuffixinASN(asnname, 'flt')
+        dupasn = changeSuffixinASN(asnname, 'flc')
+
+        errstr = 'ERROR:\nMultiple valid input files found:\n'
+        for fname, dname in zip(filelist, duplicates):
+            errstr += '    %s    %s\n' % (fname, dname)
+        errstr += ('\nNew association files have been generated for each '
+                   'version of these files.\n    %s\n    %s\n\nPlease '
+                   're-start astrodrizzle using of these new ASN files or '
+                   'use widlcards for the input to only select one type of '
+                   'input file.' % (dupasn, origasn))
+
+        print >> sys.stderr, textutil.textbox(errstr)
+
         # generate new ASN files for each case,
-        # report this case of duplicate inputs to the user then quit 
+        # report this case of duplicate inputs to the user then quit
         raise ValueError
 
     return filelist
 
-def changeSuffixinASN(asnfile,suffix):
-    """ Create a copy of the original asn file and change
-        the name of all members to include the suffix.
+
+def changeSuffixinASN(asnfile, suffix):
+    """
+    Create a copy of the original asn file and change the name of all members
+    to include the suffix.
     """
     # Start by creating a new name for the ASN table
     _new_asn = asnfile.replace('_asn.fits','_'+suffix+'_asn.fits')
     if os.path.exists(_new_asn) == True:
         os.remove(_new_asn)
-    # copy original ASN table to new table 
+    # copy original ASN table to new table
     shutil.copy(asnfile,_new_asn)
-    
+
     # Open up the new copy and convert all MEMNAME's to lower-case
     fasn = pyfits.open(_new_asn,'update')
     for i in xrange(len(fasn[1].data)):
         fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME')+'_'+suffix)
     fasn.close()
-    
-    return _new_asn  
+
+    return _new_asn
+
 
 def checkForDuplicateInputs(rootnames):
-    """ Check input files specified in ASN table for duplicate versions
-        with multiple valid suffixes (_flt and _flc, for example).
-    """      
+    """
+    Check input files specified in ASN table for duplicate versions with
+    multiple valid suffixes (_flt and _flc, for example).
+    """
+
     flist = []
     duplist = []
 
@@ -556,8 +577,9 @@ def checkForDuplicateInputs(rootnames):
         if f1 != f2:
             # More than 1 valid input found for this rootname
             duplist.append(f1)
-    
+
     return flist,duplist
+
 
 def runmakewcs(input):
     """
@@ -574,19 +596,22 @@ def runmakewcs(input):
         returns a list of names of the modified files
         (For GEIS files returns the translated names.)
     """
-    newNames = updatewcs.updatewcs(input,checkfiles=False)
+
+    newNames = updatewcs.updatewcs(input, checkfiles=False)
     #newNames = makewcs.run(input)
     return newNames
 
 
-def resetDQBits(imageObjectList,cr_bits_value=4096):
-    """ Reset the CR bit in each input image's DQ array
-    """
+def resetDQBits(imageObjectList, cr_bits_value=4096):
+    """Reset the CR bit in each input image's DQ array"""
+
     if cr_bits_value > 0:
         for img in imageObjectList:
             for chip in range(1,img._numchips+1,1):
                 sci_chip = img._image[img.scienceExt,chip]
-                resetbits.reset_dq_bits(sci_chip.dqfile,cr_bits_value,extver=chip,extname=sci_chip.dq_extn)
+                resetbits.reset_dq_bits(sci_chip.dqfile, cr_bits_value,
+                                        extver=chip, extname=sci_chip.dq_extn)
+
 
 def update_member_names(oldasndict, pydr_input):
     """
@@ -598,6 +623,7 @@ def update_member_names(oldasndict, pydr_input):
     be replaced by 'u9600201m_c0h' making sure that a MEf file is passed
     as an input and not the corresponding GEIS file.
     """
+
     omembers = oldasndict['members'].copy()
     nmembers = {}
     translated_names = [f.split('.fits')[0] for f in pydr_input]
@@ -608,7 +634,7 @@ def update_member_names(oldasndict, pydr_input):
     iter = omembers.iteritems()
     while True:
         try:
-            okey,oval = iter.next()
+            okey, oval = iter.next()
             if okey in newkeys:
                 nkey = pydr_input[newkeys.index(okey)]
                 nmembers[nkey.split('.fits')[0]] = oval
@@ -632,7 +658,7 @@ def manageInputCopies(filelist, **workinplace):
     they will NOT be overwritten, but instead will be used to over-write the
     current working copies.
     """
-    
+
     # Find out what directory is being used for processing
     workingdir = os.getcwd()
     # Only create sub-directory for copies of inputs, if copies are requested
@@ -656,22 +682,23 @@ def manageInputCopies(filelist, **workinplace):
             if printMsg:
                 print '\nTurning OFF "preserve" and "restore" actions...\n'
                 printMsg = False # We only need to print this one time...
-                
+
         if (workinplace['preserve'] and not os.path.exists(copyname)) \
                 and not workinplace['overwrite']:
-            # Preserving a copy of the input, but only if not already archived            
+            # Preserving a copy of the input, but only if not already archived
             print 'Preserving original of: ',fname, 'as ',copyname
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,0444) # make files read-only
-            
+
         if 'restore' in workinplace:
             if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['overwrite']:
                 print 'Restoring original input for ',fname,' from ',copyname
                 # replace current files with original version
-                os.chmod(fname,0666)
-                shutil.copy(copyname,fname)
-                os.chmod(fname,0666)
+                os.chmod(fname, 0666)
+                shutil.copy(copyname, fname)
+                os.chmod(fname, 0666)
+
 
 def buildEmptyDRZ(input, output):
     """
@@ -689,35 +716,38 @@ def buildEmptyDRZ(input, output):
         filename of the default empty _drz.fits file to be generated
 
     """
+
     # Identify the first input image
     inputfile = parseinput.parseinput(input)[0]
-    if len(inputfile) == 0:
-        print '\n******* ERROR *******'
-        print 'No input file found!  Check specification of parameter "input". '
-        print 'Quitting...'
-        print '******* ***** *******\n'
-        return #raise IOError, "No input file found!"
+    if not inputfile:
+        print >> sys.stderr, '\n******* ERROR *******'
+        print >> sys.stderr, (
+               'No input file found!  Check specification of parameter '
+               '"input". ')
+        print >> sys.stderr, 'Quitting...'
+        print >> sys.stderr, '******* ***** *******\n'
+        return # raise IOError, "No input file found!"
 
     # Set up output file here...
-    if output == None:
+    if output is None:
         if len(input) == 1:
-            oname = fu.buildNewRootname(input[0])
+            oname = fileutil.buildNewRootname(input[0])
         else:
             oname = 'final'
-        output = fileutil.buildNewRootname(oname,extn='_drz.fits')
+        output = fileutil.buildNewRootname(oname, extn='_drz.fits')
     else:
         if 'drz' not in output:
-            output = fileutil.buildNewRootname(output,extn='_drz.fits')
+            output = fileutil.buildNewRootname(output, extn='_drz.fits')
 
-    print 'Setting up output name: ',output
+    log.info('Setting up output name: %s' % output)
 
     # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.
     try :
-        print 'Building empty DRZ file from ',inputfile[0]
+        log.info('Building empty DRZ file from %s' % inputfile[0])
         img = pyfits.open(inputfile[0])
     except:
-        raise IOError, 'Unable to open file %s \n' %inputfile
+        raise IOError('Unable to open file %s \n' % inputfile)
 
     # Create the fitsobject
     fitsobj = pyfits.HDUList()
@@ -730,36 +760,38 @@ def buildEmptyDRZ(input, output):
     fitsobj[0].header['NEXTEND'] = 3
 
     # Create the 'SCI' extension
-    hdu = pyfits.ImageHDU(header=img['sci',1].header.copy(),data=None)
+    hdu = pyfits.ImageHDU(header=img['sci', 1].header.copy())
     hdu.header['EXTNAME'] = 'SCI'
     fitsobj.append(hdu)
 
     # Create the 'WHT' extension
-    hdu = pyfits.ImageHDU(header=img['sci',1].header.copy(),data=None)
+    hdu = pyfits.ImageHDU(header=img['sci', 1].header.copy())
     hdu.header['EXTNAME'] = 'WHT'
     fitsobj.append(hdu)
 
     # Create the 'CTX' extension
-    hdu = pyfits.ImageHDU(header=img['sci',1].header.copy(),data=None)
+    hdu = pyfits.ImageHDU(header=img['sci', 1].header.copy())
     hdu.header['EXTNAME'] = 'CTX'
     fitsobj.append(hdu)
 
     # Add HISTORY comments explaining the creation of this file.
-    fitsobj[0].header.add_history("** Multidrizzle has created this empty DRZ product because**")
-    fitsobj[0].header.add_history("** all input images were excluded from processing.**")
+    fitsobj[0].header.add_history("** Multidrizzle has created this empty "
+                                  "DRZ product because**")
+    fitsobj[0].header.add_history("** all input images were excluded from "
+                                  "processing.**")
 
 
     # Change the filename in the primary header to reflect the name of the output
     # filename.
-    fitsobj[0].header['FILENAME'] = str(output) #+"_drz.fits"
+    fitsobj[0].header['FILENAME'] = str(output)  # +"_drz.fits"
 
     # Change the ROOTNAME keyword to the ROOTNAME of the output PRODUCT
     fitsobj[0].header['ROOTNAME'] = str(output.split('_drz.fits')[0])
     # Modify the ASN_MTYP keyword to contain "PROD-DTH" so it can be properly
     # ingested into the archive catalog.
 
-    #stis has this keyword in the [1] header, so I am directing the code
-    #to first look in the primary, then the 1
+    # stis has this keyword in the [1] header, so I am directing the code
+    #t o first look in the primary, then the 1
     try:
         fitsobj[0].header['ASN_MTYP'] = 'PROD-DTH'
     except:
@@ -768,23 +800,20 @@ def buildEmptyDRZ(input, output):
     # If the file is already on disk delete it and replace it with the
     # new file
     dirfiles = os.listdir(os.curdir)
-    if (dirfiles.count(output) > 0):
+    if dirfiles.count(output) > 0:
         os.remove(output)
-        print "       Replacing "+output+"..."
+        log.info("       Replacing %s..." % output)
 
     # Write out the empty DRZ file
     fitsobj.writeto(output)
 
-    errstr =  "###############################################################################\n"
-    errstr += "#                                                                             #\n"
-    errstr += "# ERROR:                                                                      #\n"
-    errstr += "# Multidrizzle has created an empty DRZ product because all input images were #\n"
-    errstr += "# excluded from processing or a user requested the program to stop.           #\n"
-    errstr += "#                                                                             #\n"
-    errstr += "###############################################################################\n\n"
-    print errstr
+    print >> sys.stderr, textutil.textbox(
+        'ERROR:\nMultidrizzle has created an empty DRZ product because all '
+        'input images were excluded from processing or a user requested the '
+        'program to stop.') + '\n'
 
     return
+
 
 def checkDGEOFile(filenames):
     """
@@ -808,6 +837,7 @@ def checkDGEOFile(filenames):
         file names of all images to be checked
 
     """
+
     msg = """
             A 'DGEOFILE' keyword is present in the primary header but 'NPOLFILE' keyword was not found.
             This version of the software uses a new format for the residual distortion DGEO files.
@@ -832,8 +862,9 @@ def checkDGEOFile(filenames):
             To stop astrodrizzle and update the dgeo files, type 'q'.
             To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
             """
+
     for inputfile in filenames:
-        if (pyfits.getval(inputfile,'INSTRUME') == 'WFPC2'):
+        if pyfits.getval(inputfile, 'INSTRUME') == 'WFPC2':
             update_wfpc2_d2geofile(inputfile)
         else:
             try:
@@ -863,27 +894,30 @@ def userStop(message):
     else:
         return None
 
-def update_wfpc2_d2geofile(filename,fhdu=None):
-    """ Creates a D2IMFILE from the DGEOFILE for a WFPC2 image (input),
-        and modifies the header to reflect the new usage.
+
+def update_wfpc2_d2geofile(filename, fhdu=None):
     """
+    Creates a D2IMFILE from the DGEOFILE for a WFPC2 image (input), and
+    modifies the header to reflect the new usage.
+    """
+
     close_fhdu = False
     if fhdu is None:
-        fhdu = fileutil.openImage(filename,mode='update')
+        fhdu = fileutil.openImage(filename, mode='update')
         close_fhdu = True
 
-    dgeofile = fhdu['PRIMARY'].header.get('DGEOFILE',None)
+    dgeofile = fhdu['PRIMARY'].header.get('DGEOFILE', None)
     if dgeofile not in [None, "N/A", "", " "]:
-        print 'Converting DGEOFILE ',dgeofile,' into D2IMFILE...'
+        log.info('Converting DGEOFILE %s into D2IMFILE...' % dgeofile)
         rootname = filename[:filename.find('.fits')]
         d2imfile = convert_dgeo_to_d2im(dgeofile,rootname)
-        fhdu['PRIMARY'].header.update('ODGEOFIL',dgeofile)
-        fhdu['PRIMARY'].header.update('DGEOFILE','N/A')
-        fhdu['PRIMARY'].header.update('D2IMFILE',d2imfile)
+        fhdu['PRIMARY'].header.update('ODGEOFIL', dgeofile)
+        fhdu['PRIMARY'].header.update('DGEOFILE', 'N/A')
+        fhdu['PRIMARY'].header.update('D2IMFILE', d2imfile)
     else:
         d2imfile = None
-        fhdu['PRIMARY'].header.update('DGEOFILE','N/A')
-        fhdu['PRIMARY'].header.update('D2IMFILE','N/A')
+        fhdu['PRIMARY'].header.update('DGEOFILE', 'N/A')
+        fhdu['PRIMARY'].header.update('D2IMFILE', 'N/A')
 
     # Only close the file handle if opened in this function
     if close_fhdu:
@@ -893,6 +927,7 @@ def update_wfpc2_d2geofile(filename,fhdu=None):
     # track of the new file created and delete it later if necessary
     # (multidrizzle clean=True mode of operation)
     return d2imfile
+
 
 def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.

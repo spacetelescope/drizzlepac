@@ -1,12 +1,14 @@
-from __future__ import division # confidence medium
+from __future__ import division  # confidence medium
 
-import sys,types,os
+import os
+import sys
 import util
 import numpy as np
-from stsci.tools import fileutil,teal
-import outputimage,wcs_functions,processInput,util
+from stsci.tools import fileutil, teal, logutil
+import outputimage, wcs_functions, processInput, util
 import stwcs
 from stwcs import distortion
+
 
 try:
     import cdriz
@@ -15,37 +17,48 @@ except ImportError:
     print '\n Coordinate transformation and image resampling library NOT found!'
     print '\n Please check the installation of this package to insure C code was built successfully.'
     raise ImportError
-    
+
+
 __taskname__ = 'astrodither.ablot'
 _blot_step_num_ = 5
 
+
 __version__ = '4.1.0dev13255'
 __vdate__ = "27-June-2011"
+
+
+log = logutil.create_logger(__name__)
+
+
 #
 #### User level interface run from TEAL
 #
 
-def blot(data, outdata, configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict):
+def blot(data, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
+         editpars=False, **input_dict):
     if input_dict is None:
         input_dict = {}
     input_dict['data'] = data
     input_dict['outdata'] = outdata
-    
-    # If called from interactive user-interface, configObj will not be 
+
+    # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    configObj = util.getDefaultConfigObj(__taskname__, configObj,
+                                         input_dict, loadOnly=(not editpars))
     if configObj is None:
         return
-    
+
     if not editpars:
-        run(configObj,wcsmap=wcsmap)
+        run(configObj, wcsmap=wcsmap)
+
 
 def run(configObj,wcsmap=None):
-    """ Run the blot task based on parameters provided interactively by the user.
-    """ 
+    """
+    Run the blot task based on parameters provided interactively by the user.
+    """
 
     # Insure all output filenames specified have .fits extensions
     if configObj['outdata'][-5:] != '.fits': configObj['outdata'] += '.fits'
@@ -72,20 +85,20 @@ def run(configObj,wcsmap=None):
             # Try keyword written out by new 'drizzle' if no valid 'expkey' was given
             _inexptime = _inimg['PRIMARY'].header['DRIZEXPT']
         else:
-            errstr = 'No valid exposure time keyword could be found for input ',configObj['data']
-            raise ValueError, errstr
+            raise ValueError('No valid exposure time keyword could be found '
+                             'for input %s' % configObj['data'])
     # always convert input to 'cps' for blot() algorithm
     if _inexptime != 0.0 or _inexptime != 1.0:
         np.divide(_insci, _inexptime, _insci)
 
     _inimg.close()
     del _inimg, _scihdu
-    
+
     # read in WCS from source (drizzled) image
     source_wcs = stwcs.wcsutil.HSTWCS(configObj['data'])
-    
+
     # define blot_wcs
-    blot_wcs = None 
+    blot_wcs = None
     if os.path.exists(configObj['outdata']):
         # read in WCS from pre-existing output image
         blot_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
@@ -96,21 +109,21 @@ def run(configObj,wcsmap=None):
         else:
             if not util.is_blank(user_wcs_pars['outscale']):
                 blot_wcs = wcs_functions.build_hstwcs(
-                    user_wcs_pars['raref'], user_wcs_pars['decref'], 
-                    user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'], 
-                    user_wcs_pars['outnx'], user_wcs_pars['outny'], 
+                    user_wcs_pars['raref'], user_wcs_pars['decref'],
+                    user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'],
+                    user_wcs_pars['outnx'], user_wcs_pars['outny'],
                     user_wcs_pars['outscale'], user_wcs_pars['orient'] )
                 configObj['coeffs'] = None
-                
+
         # If blot_wcs is still not defined at this point, we have a problem...
         if blot_wcs is None:
             blot_wcs = stwcs.distortion.utils.output_wcs([source_wcs],undistort=False)
-            
+
     # perform blotting operation now
     _outsci = do_blot(_insci, source_wcs, blot_wcs, _expin, coeffs=configObj['coeffs'],
-                    interp=configObj['interpol'], sinscl=configObj['sinscl'], 
+                    interp=configObj['interpol'], sinscl=configObj['sinscl'],
             stepsize=configObj['stepsize'], wcsmap=wcsmap)
-    
+
     # create output with proper units and exptime-scaling
     if scale_pars['out_units'] == 'counts':
         if scale_pars['expout'] == 'input':
@@ -125,18 +138,20 @@ def run(configObj,wcsmap=None):
     else:
         skyval = configObj['skyval']
     _outsci += skyval
-        
+
 
     # Write output Numpy objects to a PyFITS file
     # Blotting only occurs from a drizzled SCI extension
     # to a blotted SCI extension...
     outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['data'],blot=True)
 
+
 def help():
     print getHelpAsString()
-    
+
+
 def getHelpAsString():
-    """ 
+    """
     Return useful help from a file in the script directory called module.help
     """
     helpString = 'ABLOT Version '+__version__+' Revision date: '+__vdate__
@@ -150,28 +165,30 @@ def getHelpAsString():
 #
 #### Top-level interface from inside MultiDrizzle
 #
-def runBlot(imageObjectList, output_wcs, configObj={},wcsmap=wcs_functions.WCSMap,procSteps=None):
+def runBlot(imageObjectList, output_wcs, configObj={},
+            wcsmap=wcs_functions.WCSMap, procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Blot')
 
-    blot_name = util.getSectionName(configObj,_blot_step_num_)
+    blot_name = util.getSectionName(configObj, _blot_step_num_)
 
     # This can be called directly from MultiDrizle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)
-        
-        print "\nUSER INPUT PARAMETERS for Blot Step:"
-        util.printParams(paramDict)        
 
-        run_blot(imageObjectList, output_wcs.single_wcs, paramDict, wcsmap=wcsmap)
+        log.util('USER INPUT PARAMETERS for Blot Step:')
+        util.printParams(paramDict, log=log)
+
+        run_blot(imageObjectList, output_wcs.single_wcs, paramDict,
+                 wcsmap=wcsmap)
     else:
-        print 'Blot step not performed.'
+        log.info('Blot step not performed.')
 
     if procSteps is not None:
         procSteps.endStep('Blot')
 
-        
+
 # Run 'drizzle' here...
 #
 def buildBlotParamDict(configObj):
@@ -228,13 +245,13 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
     _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
 
     _hdrlist = []
-    
+
     for img in imageObjectList:
-        
+
         for chip in img.returnAllChips(extname=img.scienceExt):
 
             print '    Blot: creating blotted image: ',chip.outputNames['data']
-            
+
             #### Check to see what names need to be included here for use in _hdrlist
             chip.outputNames['driz_version'] = _versions['PyDrizzle']
             outputvals = chip.outputNames.copy()
@@ -245,7 +262,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
             plist = outputvals.copy()
             plist.update(paramDict)
-            
+
             # PyFITS can be used here as it will always operate on
             # output from PyDrizzle (which will always be a FITS file)
             # Open the input science file
@@ -258,9 +275,9 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
             _inimg.close()
             del _inimg, _scihdu
-            
-            _outsci = do_blot(_insci, output_wcs, 
-                   chip.wcs, chip._exptime, coeffs=paramDict['coeffs'],  
+
+            _outsci = do_blot(_insci, output_wcs,
+                   chip.wcs, chip._exptime, coeffs=paramDict['coeffs'],
                    interp=paramDict['blot_interp'], sinscl=paramDict['blot_sinscl'],
                    wcsmap=wcsmap)
             # Apply sky subtraction and unit conversion to blotted array to
@@ -271,7 +288,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
                 skyval = paramDict['blot_skyval']
             _outsci /= chip._conversionFactor
             _outsci += skyval
-            
+
             # Write output Numpy objects to a PyFITS file
             # Blotting only occurs from a drizzled SCI extension
             # to a blotted SCI extension...
@@ -286,14 +303,14 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
             del _outsci
         del _outimg
-       
-def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5', sinscl=1.0, 
+
+def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5', sinscl=1.0,
             stepsize=10, wcsmap=None):
     """ Core functionality of performing the 'blot' operation to create a single
         blotted image from a single source image.
         All distortion information is assumed to be included in the WCS specification
-        of the 'output' blotted image given in 'blot_wcs'.        
-            
+        of the 'output' blotted image given in 'blot_wcs'.
+
         Parameters
         ----------
         source
@@ -303,10 +320,10 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         blot_wcs
             HSTWCS object representing the blotted image WCS.
         exptime
-        
+
     """
     _outsci = np.zeros((blot_wcs.naxis2,blot_wcs.naxis1),dtype=np.float32)
-    
+
     # Now pass numpy objects to callable version of Blot...
     build=False
     misval = 0.0
@@ -316,7 +333,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
     xmax = source_wcs.naxis1
     ymin = 1
     ymax = source_wcs.naxis2
-    
+
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
         wcslin = distortion.utils.undistortWCS(blot_wcs)
@@ -326,7 +343,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         blot_wcs.cpdis1 = None
         blot_wcs.cpdis2 = None
         blot_wcs.det2im = None
-        
+
     if wcsmap is None and cdriz is not None:
         """
         Use default C mapping function.
@@ -336,7 +353,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         pix_ratio = source_wcs.pscale/wcslin.pscale
     else:
         #
-        ##Using the Python class for the WCS-based transformation 
+        ##Using the Python class for the WCS-based transformation
         #
         # Use user provided mapping function
         print 'Using coordinate transformation defined by user...'
@@ -345,7 +362,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         wmap = wcsmap(blot_wcs,source_wcs)
         mapping = wmap.forward
         pix_ratio = source_wcs.pscale/wcslin.pscale
-        
+
     t = cdriz.tblot(
         source, _outsci,xmin,xmax,ymin,ymax,
         pix_ratio, kscale, 1.0, 1.0,
@@ -355,4 +372,4 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
 
     return _outsci
 
-    
+

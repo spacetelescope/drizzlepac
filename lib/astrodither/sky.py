@@ -12,30 +12,41 @@ is updated in the header of the input files.
 :Authors:
     Christopher Hanley, Megan Sosey
 """
-from __future__ import division # confidence medium
+
+
+from __future__ import division  # confidence medium
+
+import os
+import sys
 
 import util
 from imageObject import imageObject
-from stsci.tools import fileutil, teal
+from stsci.tools import fileutil, teal, logutil
 import processInput
 import stsci.imagestats as imagestats
-import os
 import numpy as np
+
 
 __taskname__= "astrodither.sky" #looks in astrodither for sky.cfg
 _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
 
+log = logutil.create_logger(__name__)
+
+
 def help():
     print getHelpAsString()
+
 
 def getHelpAsString():
     """
     return useful help from a file in the script directory called module.help
     """
-    helpString = teal.getHelpFileAsString(__taskname__,__file__)
+
+    helpString = teal.getHelpFileAsString(__taskname__, __file__)
 
     return helpString
+
 
 #this is the user access function
 def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
@@ -87,7 +98,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         inputDict['updatewcs']=False
         inputDict['group']=group
     else:
-        print "Please supply an input image"
+        print >> sys.stderr, "Please supply an input image"
         raise ValueError
 
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
@@ -112,11 +123,11 @@ def run(configObj,outExt=None):
     if(outExt not in [None,'','None']):
         saveFile = True
         for image in imageObjList:
-            outsky=image.outputNames['outSky']
+            outsky = image.outputNames['outSky']
             if outExt not in outsky:
-                outsky=outsky.replace("sky",outExt)
+                outsky = outsky.replace("sky",outExt)
                 image.outputNames['outSky']=outsky
-                print outsky
+                log.info(outsky)
 
     subtractSky(imageObjList,configObj,saveFile=saveFile)
 
@@ -126,8 +137,8 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Subtract Sky')
 
-    if not util.getConfigObjPar(configObj,'skysub'):
-        print 'Sky Subtraction step not performed.'
+    if not util.getConfigObjPar(configObj, 'skysub'):
+        log.info('Sky Subtraction step not performed.')
         procSteps.endStep('Subtract Sky')
         return
 
@@ -135,11 +146,11 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     step_name=util.getSectionName(configObj,_step_num_)
     paramDict = configObj[step_name]
     #get the sub-dictionary of values for this step alone and print them out
-    print "\nUSER INPUT PARAMETERS for Sky Subtraction Step:"
-    util.printParams(paramDict)
+    log.info('USER INPUT PARAMETERS for Sky Subtraction Step:')
+    util.printParams(paramDict, log=log)
 
     for image in imageObjList:
-        print "Working on sky for: ",image._filename
+        log.info('Working on sky for: %s' % image._filename)
         _skySub(image,paramDict,saveFile=saveFile)
 
     if procSteps is not None:
@@ -214,7 +225,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         # The minimum sky value from all the  science chips in the exposure
         # is used as the reference sky for each chip
 
-        print "Computing minimum sky ..."
+        log.info("Computing minimum sky ...")
         minSky=[] #store the sky for each chip
         minpscale = []
 
@@ -231,7 +242,8 @@ def _skySub(imageSet,paramDict,saveFile=False):
             # lack of IDCTAB or to 'coeffs=False'.
             pscale=imageSet[myext].wcs.idcscale
             if pscale is None:
-                print "No Distortion coefficients available...using default plate scale."
+                log.warning("No Distortion coefficients available...using "
+                            "default plate scale.")
                 pscale = imageSet[myext].wcs.pscale
             _scaledSky=_skyValue / (pscale**2)
             #_skyValue=_scaledSky
@@ -241,7 +253,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         _skyValue = min(minSky)
 
         _reportedSky = _skyValue*(minpscale[minSky.index(_skyValue)]**2)
-        print "Minimum sky value for all chips ",_reportedSky
+        log.info("Minimum sky value for all chips %s" % _reportedSky)
 
         #now subtract that value from all the chips in the exposure
         #and update the chips header keyword with the sub
@@ -254,7 +266,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             if idcscale is None: idcscale = image.wcs.pscale
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
-            print "\nUsing sky from chip %d: %f\n"%(chip,_scaledSky)
+            log.info("Using sky from chip %d: %f\n" % (chip,_scaledSky))
             ###_subtractSky(image,(_scaledSky))
             # Update the header so that the keyword in the image is
             #the sky value which should be subtracted from the image
@@ -315,7 +327,8 @@ def _computeSky(image, skypars, memmap=0):
             )
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
-    print "    Computed sky value/pixel for %s: "%image.rootname, _skyValue
+    log.info("    Computed sky value/pixel for %s: %s "%
+             (image.rootname, _skyValue))
 
     del _tmp
 
@@ -357,9 +370,9 @@ def _updateKW(image, filename, exten, skyKW, Value):
         strexten = '[%s,%s]'%(exten[0],str(exten[1]))
     else:
         strexten = '[%s]'%(exten)
-    print 'Updating keyword ',skyKW,' in ',filename+strexten
-    fobj = fileutil.openImage(filename,mode='update')
-    fobj[exten].header.update(skyKW,Value)
+    log.info('Updating keyword %s in %s' % (skyKW, filename + strexten))
+    fobj = fileutil.openImage(filename, mode='update')
+    fobj[exten].header.update(skyKW, Value)
     fobj.close()
 
 #this is really related to each individual chip

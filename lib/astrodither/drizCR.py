@@ -11,15 +11,21 @@ import pyfits
 import os
 import quickDeriv
 import util
-from stsci.tools import fileutil,teal
+from stsci.tools import fileutil, teal, logutil
+
 
 if util.can_parallel:
     import multiprocessing
 
-__version__ = '1.1' #we should go through and update all these
 
-__taskname__= "astrodither.drizCR" #looks in astrodither for sky.cfg
-_step_num_ = 6  #this relates directly to the syntax in the cfg file
+__version__ = '1.1'  # we should go through and update all these
+
+__taskname__= "astrodither.drizCR"  # looks in astrodither for sky.cfg
+_step_num_ = 6  # this relates directly to the syntax in the cfg file
+
+
+log = logutil.create_logger(__name__)
+
 
 def getHelpAsString():
     """
@@ -30,13 +36,15 @@ def getHelpAsString():
     return helpString
 
 #this is the user access function
-def drizCR(input=None,configObj=None, editpars=False, **inputDict):
+def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     """
         Look for cosmic rays.
     """
-    print inputDict
-    inputDict["input"]=input
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
+
+    log.debug(inputDict)
+    inputDict["input"] = input
+    configObj = util.getDefaultConfigObj(__taskname__, configObj, inputDict,
+                                         loadOnly=(not editpars))
     if configObj is None:
         return
 
@@ -46,9 +54,10 @@ def drizCR(input=None,configObj=None, editpars=False, **inputDict):
 
 #this is the function that will be called from TEAL
 def run(configObj):
-
-    imgObjList,outwcs = processInput.setCommonInput(configObj,createOutwcs=False) #outwcs is not neaded here
-    rundrizCR(imgObjList,configObj,saveFile=not(configObj["clean"]))
+    # outwcs is not neaded here
+    imgObjList,outwcs = processInput.setCommonInput(configObj,
+                                                    createOutwcs=False)
+    rundrizCR(imgObjList, configObj, saveFile=not(configObj["clean"]))
 
 
 #the final function that calls the workhorse
@@ -59,13 +68,13 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
 
     step_name = util.getSectionName(configObj,_step_num_)
     if not configObj[step_name]['driz_cr']:
-        print 'Cosmic-ray identification (driz_cr) step not performed.'
+        log.info('Cosmic-ray identification (driz_cr) step not performed.')
         return
     paramDict = configObj[step_name]
     paramDict['crbit'] = configObj['crbit']
 
-    print "\nUSER INPUT PARAMETERS for Driz_CR Step:"
-    util.printParams(paramDict)
+    log.info("USER INPUT PARAMETERS for Driz_CR Step:")
+    util.printParams(paramDict, log=log)
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
     pool_size = 1
@@ -74,7 +83,7 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
         pool_size = 1 # !!! temporarily force serial exec while checking bug
 
     if pool_size > 1:
-        print 'Executing up to %d parallel threads/processes' % pool_size
+        log.info('Executing up to %d parallel threads/processes' % pool_size)
         p = multiprocessing.Pool(pool_size)
         arglists = []
         for image in imgObjList:
@@ -83,7 +92,7 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
         p.close() # kill subprocs
         p.join()
     else:
-        print 'Executing serially'
+        log.info('Executing serially')
         for image in imgObjList:
             _drizCr(image,paramDict,saveFile)
 

@@ -2,7 +2,7 @@
 
 AstroDrizzle automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
-after removing the identified cosmic-rays.  
+after removing the identified cosmic-rays.
 
 This process involves a number of steps, namely:
   1.  Processing the input images and input parameters
@@ -26,21 +26,25 @@ This task requires numerous user-settable parameters to control the primary
 aspects of each of the processing steps.
 
 """
-from __future__ import division # confidence high
 
-import os,string,glob
+from __future__ import division  # confidence high
 
-from stsci.tools import teal
 
-import adrizzle
-import ablot
-import processInput
-import sky
-import createMedian
-import drizCR
-import staticMask
-import util
-import wcs_functions
+import os
+import sys
+
+from stsci.tools import teal, logutil, textutil
+
+from . import adrizzle
+from . import ablot
+from . import createMedian
+from . import drizCR
+from . import processInput
+from . import sky
+from . import staticMask
+from . import util
+from . import wcs_functions
+
 
 __taskname__ = "astrodrizzle"
 
@@ -51,10 +55,15 @@ __vdate__ = '3-Jan-2012'
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
 
+
+log = logutil.create_logger(__name__)
+
+
 #
 #### Interactive user interface (functional form)
 #
-def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None, wcsmap=None, **input_dict):
+def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None,
+                 wcsmap=None, **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
@@ -73,45 +82,54 @@ def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None, wcsmap=N
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     try:
-        configObj = util.getDefaultConfigObj(__taskname__,configobj,input_dict,loadOnly=(not editpars))
+        configObj = util.getDefaultConfigObj(__taskname__, configobj,
+                                             input_dict,
+                                             loadOnly=(not editpars))
     except ValueError:
-        print "Problem with input parameters. Quitting..."
+        print >> sys.stderr, "Problem with input parameters. Quitting..."
         return
-    
+
     if configObj is None:
         return
 
     configObj['mdriztab'] = mdriztab
-    # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
-    # called 'run()'.
+    # If 'editpars' was set to True, util.getDefaultConfigObj() will have
+    # already called 'run()'.
     if editpars == False:
-        run(configObj,wcsmap=wcsmap)
+        run(configObj, wcsmap=wcsmap)
 
 #
 #### Interfaces used by TEAL
 #
 
+
 def getHelpAsString(docstring=False):
     """
-    return useful help from a file in the script directory called __taskname__.help
+    return useful help from a file in the script directory called
+    __taskname__.help
     """
+
     install_dir = os.path.dirname(__file__)
-    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
-    helpfile = os.path.join(install_dir,__taskname__+'.help')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', __taskname__ + '.html')
+    helpfile = os.path.join(install_dir, __taskname__ + '.help')
     if docstring or (not docstring and not os.path.exists(htmlfile)):
-        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
+        helpString = ' '.join([__taskname__, 'Version', __version__,
+                               ' updated on ', __vdate__]) + '\n\n'
         if os.path.exists(helpfile):
-            helpString += teal.getHelpFileAsString(__taskname__,__file__)
+            helpString += teal.getHelpFileAsString(__taskname__, __file__)
     else:
-        helpString = 'file://'+htmlfile
+        helpString = 'file://' + htmlfile
 
     return helpString
 
+
 AstroDrizzle.__doc__ = getHelpAsString(docstring=True)
 
-def run(configObj=None,wcsmap=None):
+
+@util.with_logging
+def run(configobj, wcsmap=None):
     """
-    Initial example by Nadia ran MD with configObj EPAR using:
+    Initial example by Nadia ran MD with configobj EPAR using:
     It can be run in one of two ways:
 
         from stsci.tools import teal
@@ -134,73 +152,80 @@ def run(configObj=None,wcsmap=None):
     # also, initialize timing of processing steps
     #
     # We need to define a default logfile name from the user's parameters
-    input_list,output,ivmlist,odict = processInput.processFilenames(configObj['input'])
+    input_list, output, ivmlist, odict = \
+            processInput.processFilenames(configobj['input'])
+
     if output is not None:
         def_logname = output
     elif len(input_list) > 0:
         def_logname = input_list[0]
     else:
-        print '='*60
-        print 'ERROR:'
-        print '    No valid input files found!'
-        print '    Please restart the task and check the value for the "input" parameter.'
-        print '='*60
+        print >> sys.stderr, textutil.textbox(
+            'ERROR:\nNo valid input files found!   Please restart the task '
+            'and check the value for the "input" parameter.')
         def_logname = None
         return
-    
-    stateObj = configObj['STATE OF INPUT FILES']
-        
-    util.init_logging(logfile=configObj['runfile'],default=def_logname)
+
+    stateObj = configobj['STATE OF INPUT FILES']
     procSteps = util.ProcSteps()
-    print 'AstroDrizzle Version %s(%s) started at: %s\n'%(
-                        __version__,__vdate__,util._ptime()[0])
-    util.print_pkg_versions()
     
+    print ('AstroDrizzle Version %s(%s) started at: %s\n' %
+           (__version__, __vdate__, util._ptime()[0]))
+    util.print_pkg_versions(log=log)
+
     try:
         try:
             # Define list of imageObject instances and output WCSObject instance
             # based on input paramters
             procSteps.addStep('Initialization')
             imgObjList = None
-            imgObjList,outwcs = processInput.setCommonInput(configObj)
+            imgObjList, outwcs = processInput.setCommonInput(configobj)
             procSteps.endStep('Initialization')
 
             if not imgObjList:
                 raise ValueError
 
-            print "\nUSER INPUT PARAMETERS common to all Processing Steps:"
-            util.printParams(configObj)
+            log.info("USER INPUT PARAMETERS common to all Processing Steps:")
+            util.printParams(configobj, log=log)
 
             # Call rest of MD steps...
             #create static masks for each image
-            staticMask.createStaticMask(imgObjList,configObj,procSteps=procSteps)
+            staticMask.createStaticMask(imgObjList, configobj,
+                                        procSteps=procSteps)
 
             #subtract the sky
-            sky.subtractSky(imgObjList,configObj,procSteps=procSteps)
+            sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
             #drizzle to separate images
-            adrizzle.drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap,procSteps=procSteps)
+            adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                                  procSteps=procSteps)
 
             #create the median images from the driz sep images
-            createMedian.createMedian(imgObjList,configObj,procSteps=procSteps)
+            createMedian.createMedian(imgObjList, configobj,
+                                      procSteps=procSteps)
 
             #blot the images back to the original reference frame
-            ablot.runBlot(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
+            ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                          procSteps=procSteps)
 
             #look for cosmic rays
-            drizCR.rundrizCR(imgObjList,configObj,saveFile=not(stateObj["clean"]),procSteps=procSteps)
+            drizCR.rundrizCR(imgObjList, configobj,
+                             saveFile=not(stateObj["clean"]),
+                             procSteps=procSteps)
 
             #Make your final drizzled image
-            adrizzle.drizFinal(imgObjList, outwcs, configObj,wcsmap=wcsmap,procSteps=procSteps)
+            adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                               procSteps=procSteps)
 
-            print '\nAstroDrizzle Version '+__version__+' is finished processing at ',util._ptime()[0],' !\n'
-
+            print
+            print ' '.join(['AstroDrizzle Version', __version__,
+                            'is finished processing at ',
+                            util._ptime()[0]]) + '!\n'
         except:
-            print '#'*40
-            print '\nERROR: '
-            print '    AstroDrizzle Version %s encountered a problem!'%(__version__)
-            print '    Processing terminated at %s.'%(util._ptime()[0])
-            print '#'*40
+            print >> sys.stderr, textutil.textbox(
+                'ERROR:\nAstroDrizzle Version %s encountered a problem!  '
+                'Processing terminated at %s.' %
+                (__version__, util._ptime()[0]))
             raise
     finally:
         procSteps.reportTimes()
@@ -214,8 +239,6 @@ def run(configObj=None,wcsmap=None):
             del imgObjList
             del outwcs
 
-        # Turn off logging now
-        util.end_logging()
-        
+
 def help():
     print getHelpAsString(docstring=True)
