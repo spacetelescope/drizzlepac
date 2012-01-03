@@ -177,7 +177,7 @@ def runBlot(imageObjectList, output_wcs, configObj={},
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)
 
-        log.util('USER INPUT PARAMETERS for Blot Step:')
+        log.info('USER INPUT PARAMETERS for Blot Step:')
         util.printParams(paramDict, log=log)
 
         run_blot(imageObjectList, output_wcs.single_wcs, paramDict,
