@@ -269,7 +269,7 @@ class staticMask(object):
 
                 try:
                     newHDU.writeto(filename)
-                    log.info("Saving static mask to disk:", filename)
+                    log.info("Saving static mask to disk: %s" % filename)
 
                 except IOError:
                     log.error("Problem saving static mask file: %s to "
