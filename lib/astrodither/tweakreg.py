@@ -11,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values
 # from these variable definitions, allowing the values to be designated
 # in one location only.
-__version__ = '0.6.6'
-__vdate__ = '28-Dec-2011'
+__version__ = '0.6.7'
+__vdate__ = '04-Jan-2012'
 
 import tweakutils
 import imgclasses
@@ -170,22 +170,32 @@ def run(configobj):
     kwargs = tweakutils.get_configobj_root(configobj)
     # Determine a reference image or catalog and
     #    return the full list of RA/Dec positions
+    # Determine what WCS needs to be used for reference tangent plane
+
+    # otherwise, extract the catalog from the first input image source list
+    if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
+        refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
+        refwcs = refimg.get_wcs()
+        ref_source = refimg.all_radec
+        refwcs_fname = refwcs[0].filename
+    else:
+        refwcs = []
+        for i in input_images:
+            refwcs.extend(i.get_wcs())
+        ref_source = input_images[0].all_radec
+        refwcs_fname = input_images[0].name
+
+    print '\n'+'='*20+'\n'
+    print 'Aligning all input images to WCS defined by ',refwcs_fname
+    print '\n'+'='*20+'\n'
+    
+    # Check to see whether the user specified a separate catalog 
+    #    of reference source positions and replace default source list with it
     refcat_par = configobj['REFERENCE CATALOG DESCRIPTION']
     if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
         ref_source = refcat_par['refcat']
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
-    else: # otherwise, extract the catalog from the first input image source list
-        # Determine what WCS needs to be used for reference tangent plane
-        if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
-            refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
-            refwcs = refimg.get_wcs()
-            ref_source = refimg.all_radec
-        else:
-            refwcs = []
-            for i in input_images:
-                refwcs.extend(i.get_wcs())
-            ref_source = input_images[0].all_radec
 
     try:
         # Create Reference Catalog object
