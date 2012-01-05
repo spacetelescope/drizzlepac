@@ -503,7 +503,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if will_parallel:
         print 'Executing %d parallel threads/processes' % len(imageObjectList) # !!! change to pool_size
     else:
-        print 'Executing serially'
+        if single: # not yet an option for final drizzle, msg would confuse
+            print 'Executing serially'
 
     # Set parameters for each input and run drizzle on it here.
     #
