@@ -401,7 +401,7 @@ def readcols(infile, cols=None):
             Numpy array or arrays of columns from the table
     
     """
-    if infile.find('.fits') > 0:
+    if infile.endswith('.fits'):
         outarr = read_FITS_cols(infile,cols=cols)
     else:
         outarr = read_ASCII_cols(infile,cols=cols)
