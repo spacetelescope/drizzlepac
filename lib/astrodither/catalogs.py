@@ -115,7 +115,7 @@ class Catalog(object):
         if len(self.xypos[0]) == 0:
             self.xypos = None
         if self.xypos is None:
-            print 'No objects found for this image from catalog: ',self.source
+            print 'No objects found for this image...'
             return
 
         if self.radec is None or force:
@@ -280,25 +280,30 @@ class ImageCatalog(Catalog):
 
         x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
                             datamax=self.pars['datamax'])
+        if len(x) == 0:
+            if  not self.pars['computesig']:
+                sigma = self._compute_sigma()
+                hmin = sigma * self.pars['threshold']
+                print 'No sources found with original thresholds. Trying automatic settings.'
+                x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
+                                        datamax=self.pars['datamax'])
+            else:
+                self.xypos = [[],[],[],[]]
+                print 'No valid sources found with the current parameter values!'
         print '###Source finding finished at: ',util._ptime()[0]
-        if len(x) == 0 and not self.pars['computesig']:
-            sigma = self._compute_sigma()
-            hmin = sigma * self.pars['threshold']
-            print 'No sources found with original thresholds. Trying automatic settings.'
-            x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
-                                    datamax=self.pars['datamax'])
-        
-        if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
-            fminindx = flux >= self.pars['fluxmin']
-        else:
-            fminindx = flux == flux
-        if self.pars.has_key('fluxmax') and self.pars['fluxmax'] is not None:
-            fmaxindx = flux <= self.pars['fluxmax']
-        else:
-            fmaxindx = flux == flux
-        findx = np.bitwise_and(fminindx,fmaxindx)
-                
-        self.xypos = [x[findx]+1,y[findx]+1,flux[findx],id[findx]+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
+        if len(x) > 0:
+            if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
+                fminindx = flux >= self.pars['fluxmin']
+            else:
+                fminindx = flux == flux
+            if self.pars.has_key('fluxmax') and self.pars['fluxmax'] is not None:
+                fmaxindx = flux <= self.pars['fluxmax']
+            else:
+                fmaxindx = flux == flux
+            findx = np.bitwise_and(fminindx,fmaxindx)
+                    
+            self.xypos = [x[findx]+1,y[findx]+1,flux[findx],id[findx]+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
+
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = None # sharp
         self.round = None # round
@@ -352,7 +357,7 @@ class UserCatalog(Catalog):
         # Currently, this only supports ASCII catalog files
         # Support for FITS tables needs to be added        
         catcols = tweakutils.readcols(self.source, cols=self.colnames)
-        if len(catcols[0]) == 0:
+        if not util.is_blank(catcols) and len(catcols[0]) == 0:
             catcols = None
         return catcols
 

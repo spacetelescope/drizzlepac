@@ -152,6 +152,7 @@ class Image(object):
         """ Convert sky catalog for all chips into a single catalog for
             the entire field-of-view of this image.
         """
+        self.all_radec = None
         ralist = []
         declist = []
         fluxlist = []
@@ -169,9 +170,9 @@ class Image(object):
                     fluxlist.append([999.0]*len(skycat[0]))
                     idlist.append(np.arange(len(skycat[0])))
 
-        self.all_radec = [np.concatenate(ralist),np.concatenate(declist),
+                self.all_radec = [np.concatenate(ralist),np.concatenate(declist),
                         np.concatenate(fluxlist),np.concatenate(idlist)]
-        self.all_radec_orig = copy.deepcopy(self.all_radec)
+                self.all_radec_orig = copy.deepcopy(self.all_radec)
         
 
     def buildDefaultRefWCS(self):
@@ -548,6 +549,8 @@ class Image(object):
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """
+        if self.all_radec is None:
+            return
         ralist = self.all_radec[0]#.tolist()
         declist = self.all_radec[1]#.tolist()
         f = open(filename,'w')
@@ -654,11 +657,13 @@ class RefImage(object):
         self.catalog = catalogs.RefCatalog(None,catalog,**kwargs)
         self.catalog.buildCatalogs()
         self.all_radec = self.catalog.radec
+        self.outxy = None
         self.origin = 1
         self.pars = kwargs
-        
-        # convert sky positions to X,Y positions on reference tangent plane
-        self.transformToRef()
+        if self.all_radec is not None:
+            # convert sky positions to X,Y positions on reference tangent plane
+            self.transformToRef()
+
 
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.

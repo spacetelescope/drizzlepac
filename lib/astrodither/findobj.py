@@ -28,7 +28,7 @@ def gaussian1(height, x0, y0, fwhm, nsigma=1.5, ratio=1., theta=0.0):
     counter-clockwise from the x axis
     """
     
-    xsigma = 0.42466 * fwhm * np.sqrt(2) # computes a kernel that matches daofind
+    xsigma = 0.42466 * fwhm # computes a kernel that matches daofind
     ysigma = ratio * xsigma
     if ratio == 0: # 1D Gaussian
         if theta == 0 or theta == 180:
@@ -52,7 +52,7 @@ def gaussian1(height, x0, y0, fwhm, nsigma=1.5, ratio=1., theta=0.0):
     #nx = int(2*max(2, math.sqrt(-8*c*f/discrim)))
     #ny = int(2*max(2, math.sqrt(-8*a*f/discrim)))
     
-    return lambda x, y: height * np.exp(- (a*(x-x0)**2 + 2*b*(x-x0)*(y-y0) + c*(y-y0)**2))
+    return lambda x, y: height * np.exp(-0.5* (a*(x-x0)**2 + 2*b*(x-x0)*(y-y0) + c*(y-y0)**2))
     
 
 def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
@@ -72,13 +72,13 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
             raise ValueError
     else: #2D gaussian
         a = math.cos(theta)**2/xsigma**2 + math.sin(theta)**2/ysigma**2
-        b = 2 * math.cos(theta) * math.sin(theta) *(1/xsigma**2-1./ysigma**2)
+        b = 2 * math.cos(theta) * math.sin(theta) *((1.0/xsigma**2)-(1./ysigma**2))
         c = math.sin(theta)**2/xsigma**2 + math.cos(theta)**2/ysigma**2
         
     discrim = b**2 - 4*a*c
     f = nsigma**2/2.
-    nx = int(2*max(2, math.sqrt(-8*c*f/discrim)))
-    ny = int(2*max(2, math.sqrt(-8*a*f/discrim)))
+    nx = int(2*max(2, math.sqrt(-8*c*f/discrim)))+1
+    ny = int(2*max(2, math.sqrt(-8*a*f/discrim)))+1
 
     return nx, ny
 
@@ -133,62 +133,81 @@ def fitgaussian(data,cntr):
     p = optimize.leastsq(errfunc, params, args=(data, x,y), maxfev=10)
     return p[0]
 
+
 def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5, theta=0.):
     # Define convolution inputs
     nx, ny = gausspars(fwhm, nsigma=nsigma, ratio= ratio, theta=theta)
-    xin, yin = np.mgrid[0:nx+1, 0:ny+1]
-    gsigma = 2*np.sqrt(2*np.log(2))*fwhm
-    kernel = gaussian1(threshold, nx/2., ny/2., fwhm)(xin,yin)  #+np.random.random(xin.shape)
-    kernel /= kernel.sum() # normalize kernel to preserve fluxes for thresholds
+    xin, yin = np.mgrid[0:nx, 0:ny]
+    kernel = gaussian1(1.0, nx//2, ny//2, fwhm)(xin,yin)  #+np.random.random(xin.shape)
+    # define size of extraction box for each source based on kernel size
+    gradius = nx//2
 
+    rmat = np.sqrt((xin-nx//2)**2 + (yin-ny//2)**2)
+    xyrmask = np.where(rmat <= gradius,1,0).astype(np.int16)
+    npts = xyrmask.sum()
+
+    rmask = kernel*xyrmask
+    denom = (rmask*rmask).sum() - rmask.sum()**2/npts
+    nkern = (rmask - (rmask.sum()/npts))/denom # normalize kernel to preserve fluxes for thresholds
+    nkern *= xyrmask
+    
     # initialize values used for getting source centers
-    nkern = kernel.copy()/kernel.max() 
-    kern_f = (nsigma**2)/2.0
-    xmat = xin - (nx/2)
-    ymat = yin - (ny/2)
-    rmat = np.sqrt(xmat**2+ymat**2)
-    xyrmask = np.where(rmat <=2.001,1,0).astype(np.int16)
-    rmask = nkern*xyrmask
+
     relerr = 1./((rmask**2).sum() - (rmask.sum()**2/xyrmask.sum()))
 
     xsigsq = (fwhm/fwhm2sig)**2
     ysigsq = (fwhm/fwhm2sig)**2
 
     # convolve image with gaussian kernel
-    convdata = convolve.convolve2d(jdata, kernel) #- jdata
+    convdata = convolve.convolve2d(jdata, nkern)
 
     # clip image to create regions around each source for segmentation
-    tdata=np.where(convdata > skymode*2.0, convdata, 0)
-    #tdata=np.where(convdata > 0, jdata, 0)
+    #tdata=np.where(convdata > skymode*2.0, convdata, 0)
+    tdata=np.where(convdata > threshold, convdata, 0)
     # segment image and find sources
-    ldata,nobj=ndim.label(tdata)
+    s = ndim.generate_binary_structure(2,2)
+    ldata,nobj=ndim.label(tdata,structure=s)
     fobjects = ndim.find_objects(ldata)
-
-    # define size of extraction box for each source based on kernel size
-    gradius = kernel.shape[0]//2
-
+    print 'Number of potential sources: ',nobj
+    
     fluxes = []
     fitind = []
     if nobj < 2:
         print 'No objects found for this image. Please check value of "threshold".'
         return fitind,fluxes
-    #print 'Initially identified ',nobj,' possible sources for threshold = ',threshold
+    
     # determine center of each source, while removing spurious sources or
     # applying limits defined by the user 
     ninit = 0
     ninit2 = 0
-    for ss in fobjects:
-        region = tdata[ss]
-        # skip sources which have pixel values greater than the user set limit
-        if (region.max() < (threshold/relerr)):
+    minxy = gradius * 2 + 1
+    for ss,n in zip(fobjects,range(len(fobjects))):
+        ssx = ss[1].stop - ss[1].start
+        ssy = ss[0].stop - ss[1].start
+        if ssx >= tdata.shape[1]-1 or ssy >= tdata.shape[0]-1:
             continue
+        yr0 = ss[0].start-gradius
+        yr1 = ss[0].stop+gradius+1
+        if yr0 <= 0: yr0 = 0
+        if yr1 >= jdata.shape[0]: yr1 = jdata.shape[0]
         
+        xr0 = ss[1].start - gradius
+        xr1 = ss[1].stop + gradius+1
+        if xr0 <= 0: xr0 = 0
+        if xr1 >= jdata.shape[1]: xr1 = jdata.shape[1]
+
+        ssnew = (slice(yr0,yr1),slice(xr0,xr1))
+        region = tdata[ssnew]
+        
+        if region.shape[0] < minxy or region.shape[1] < minxy:
+            continue 
+
         cntr = centroid(region)
 
         # Define region centered on max value in object (slice)
         # This region will be bounds-checked to insure that it only accesses
         # a valid section of the image (not off the edge)
-        maxpos = (int(cntr[1]+0.5)+ss[0].start,int(cntr[0]+0.5)+ss[1].start)
+        maxpos = (int(cntr[1])+ssnew[0].start,int(cntr[0])+ssnew[1].start)
         yr0 = maxpos[0]-gradius
         yr1 = maxpos[0]+gradius+1
         if yr0 < 0 or yr1 > jdata.shape[0]: 
@@ -201,24 +220,13 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
         ninit += 1
         # Simple Centroid on the region from the convoluted image 
         jregion = jdata[yr0:yr1,xr0:xr1]
-        region = tdata[yr0:yr1,xr0:xr1]
         
-        if (datamax is not None and region.max() >= datamax):
+        if (datamax is not None and jregion.max() >= datamax):
             continue
         ninit2 += 1
-
-        """
-        # Refine position using gaussian fitting based on scipy 
-        try:
-            p = fitgaussian(jregion,cntr)
-            if np.isnan(p[1]) or np.isnan(p[2]):
-                continue
-            fitind.append((p[1]+xr0, p[2]+yr0))
-        except ValueError:
-            pass
-        """
+        
         px,py,pround = xy_round(jregion,gradius,gradius,skymode,
-                nkern,xsigsq,ysigsq,datamax=datamax)
+                rmask,xsigsq,ysigsq,datamax=datamax)
         if px is None:
             continue
         fitind.append((px+xr0,py+yr0))

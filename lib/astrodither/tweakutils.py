@@ -79,6 +79,9 @@ def get_configobj_root(configobj):
 def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
     star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode, datamax=datamax, 
                                             ratio=1, nsigma=1.5, theta=0.)
+    if len(star_list) == 0:
+        print 'No valid sources found...'
+        return [],[],[],[]
     star_arr = np.array(star_list)
     fluxes = np.array(fluxes,np.float32)
     return star_arr[:,0],star_arr[:,1],fluxes,np.arange(star_arr.shape[0])
@@ -401,6 +404,8 @@ def readcols(infile, cols=None):
             Numpy array or arrays of columns from the table
     
     """
+    if infile in [None,'',' ',"None","INDEF"]:
+        return None
     if infile.endswith('.fits'):
         outarr = read_FITS_cols(infile,cols=cols)
     else:
