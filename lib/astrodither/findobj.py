@@ -155,10 +155,11 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
     ysigsq = (fwhm/fwhm2sig)**2
 
     # convolve image with gaussian kernel
-    convdata = convolve.convolve2d(jdata, kernel)
+    convdata = convolve.convolve2d(jdata, kernel) #- jdata
 
     # clip image to create regions around each source for segmentation
     tdata=np.where(convdata > skymode*2.0, convdata, 0)
+    #tdata=np.where(convdata > 0, jdata, 0)
     # segment image and find sources
     ldata,nobj=ndim.label(tdata)
     fobjects = ndim.find_objects(ldata)
@@ -170,7 +171,7 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
     fitind = []
     if nobj < 2:
         print 'No objects found for this image. Please check value of "threshold".'
-        return fitind,lind
+        return fitind,fluxes
     #print 'Initially identified ',nobj,' possible sources for threshold = ',threshold
     # determine center of each source, while removing spurious sources or
     # applying limits defined by the user 
