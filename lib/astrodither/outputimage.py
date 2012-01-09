@@ -330,7 +330,8 @@ class OutputImage:
             del fo, hdu
 
         else:
-            log.info('-Generating simple FITS output: %s' % self.outdata)
+            print('-Generating simple FITS output: %s' % self.outdata)
+            
             fo = pyfits.HDUList()
 
             hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
@@ -758,8 +759,9 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
     outhdu.append(prihdu)
     outhdu.append(scihdu)
     outhdu.writeto(outname)
+    
     if verbose:
-        log.info('Created output image: %s' % outname)
+        print('Created output image: %s' % outname)
 
 
 def writeDrizKeywords(hdr,imgnum,drizdict):

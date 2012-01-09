@@ -10,6 +10,7 @@ import re
 import sys
 
 import numpy as np
+from stwcs import distortion
 
 from stsci.tools import fileutil, logutil, textutil
 import pyfits
@@ -949,6 +950,7 @@ class imageObject(baseImageObject):
                 # build up HSTWCS object for each chip, which will be necessary for drizzling operations
                 sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.extnum)
                 sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
+                sci_chip.wcslin_pscale = 1.0
 
                 #assuming all the chips don't have the same dimensions in the file
                 sci_chip._naxis1=sci_chip.header["NAXIS1"]
@@ -999,6 +1001,7 @@ class imageObject(baseImageObject):
                 sci_chip.size1 = sci_chip.header['NAXIS1'] + np.round(sci_chip.ltv1)
                 sci_chip.size2 = sci_chip.header['NAXIS2'] + np.round(sci_chip.ltv2)
                 sci_chip.image_shape = (sci_chip.size2,sci_chip.size1)
+                
                 # Interpret the array dtype by translating the IRAF BITPIX value
                 for dtype in IRAF_DTYPES.keys():
                     if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:
@@ -1012,6 +1015,25 @@ class imageObject(baseImageObject):
             methods defined in each instrument's sub-class.
         """
         pass
+
+    def compute_wcslin(self,undistort=True):
+        """ Compute the undistorted WCS based solely on the known distortion
+            model information associated with the WCS.
+        """
+        for chip in range(1,self._numchips+1,1):
+            sci_chip = self._image[self.scienceExt,chip]
+            chip_wcs = sci_chip.wcs.copy()
+
+            if chip_wcs.sip is None or not undistort:
+                chip_wcs.sip = None
+                chip_wcs.cpdis1 = None
+                chip_wcs.cpdis2 = None
+                chip_wcs.det2im = None
+                undistort=False
+
+            # compute the undistorted 'natural' plate scale for this chip
+            wcslin = distortion.utils.output_wcs([chip_wcs],undistort=undistort)
+            sci_chip.wcslin_pscale = wcslin.pscale
 
     def set_units(self,chip):
         """ Define units for this image.

@@ -121,10 +121,14 @@ def setCommonInput(configObj, createOutwcs=True):
     # pass in 'proc_unit' to initialize unit conversions as necessary
     instrpars['proc_unit'] = configObj['proc_unit']
 
+    undistort = True
+    if not configObj['coeffs']:
+        undistort = False 
     # Build imageObject list for all the valid, shift-updated input files
     log.info('-Creating imageObject List as input for processing steps.')
     imageObjectList = createImageObjectList(files, instrpars,
-                                            group=configObj['group'])
+                                            group=configObj['group'],
+                                            undistort=undistort)
 
     # apply context parameter
     applyContextPar(imageObjectList, configObj['context'])
@@ -233,7 +237,7 @@ def checkMultipleFiles(input):
     f,i,o,a=buildFileList(input)
     return len(f) > 1
 
-def createImageObjectList(files,instrpars,group=None):
+def createImageObjectList(files,instrpars,group=None,undistort=True):
     """ Returns a list of imageObject instances, 1 for each input image in the list of input filenames.
     """
     imageObjList = []
@@ -242,6 +246,7 @@ def createImageObjectList(files,instrpars,group=None):
     for img in files:
         image = _getInputImage(img,group=group)
         image.setInstrumentParameters(instrpars)
+        image.compute_wcslin(undistort=undistort)
         if 'MTFLAG' in image._image['PRIMARY'].header:
             # check to see whether we are dealing with moving target observations...
             _keyval = image._image['PRIMARY'].header['MTFLAG']

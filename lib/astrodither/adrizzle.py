@@ -187,12 +187,20 @@ def run(configObj, wcsmap=None):
     undistort = True
     if not configObj['coeffs'] or input_wcs.sip is None:
         undistort = False
+    # turn off use of coefficients if undistort is False (coeffs == False)
+    if not undistort:
+        input_wcs.sip = None
+        input_wcs.cpdis1 = None
+        input_wcs.cpdis2 = None
+        input_wcs.det2im = None
 
+    wcslin = distortion.utils.output_wcs([input_wcs],undistort=undistort)
+    
     # Perform actual drizzling now...
     _vers = do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
             expin, scale_pars['in_units'],
-            wt_scl, undistort=undistort ,uniqid=uniqid,
+            wt_scl, wcslin_pscale=wcslin.pscale ,uniqid=uniqid,
             pixfrac=configObj['pixfrac'], kernel=configObj['kernel'],
             fillval=scale_pars['fillval'], stepsize=configObj['stepsize'],
             wcsmap=None)
@@ -688,15 +696,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     else:
         _expin = chip._exptime
 
-    # compute the undistorted 'natural' plate scale for this chip
-    undistort = True
-    if not paramDict['coeffs']:
-        chip.wcs.sip = None
-        chip.wcs.cpdis1 = None
-        chip.wcs.cpdis2 = None
-        chip.wcs.det2im = None
-        undistort=False
-
     ####
     #
     # Put the units keyword handling in the imageObject class
@@ -765,8 +764,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     img.set_wtscl(chip._chip,paramDict['wt_scl'])
 
-    wcslin = distortion.utils.output_wcs([chip.wcs],undistort=undistort)
-    pix_ratio = outwcs.pscale/wcslin.pscale
+    pix_ratio = outwcs.pscale/chip.wcslin_pscale
 
     # Convert mask to a datatype expected by 'tdriz'
     # Also, base weight mask on ERR or IVM file as requested by user
@@ -792,7 +790,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # New interface to performing the drizzle operation on a single chip/image
     _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
                 _expin, _in_units, chip._wtscl,
-                undistort=undistort, uniqid=_uniqid,
+                wcslin_pscale=chip.wcslin_pscale, uniqid=_uniqid,
                 pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
                 fillval=paramDict['fillval'], stepsize=paramDict['stepsize'],
                 wcsmap=wcsmap)
@@ -857,7 +855,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
             expin, in_units, wt_scl,
-            undistort=True,uniqid=1, pixfrac=1.0, kernel='square',
+            wcslin_pscale=1.0,uniqid=1, pixfrac=1.0, kernel='square',
             fillval="INDEF", stepsize=10,wcsmap=None):
     """ Core routine for performing 'drizzle' operation on a single input image
         All input values will be Python objects such as ndarrays, instead of filenames
@@ -905,15 +903,7 @@ def do_driz(insci, input_wcs, inwht,
     # correct plane to drizzle code
     outctx = newcon[_planeid]
 
-    # turn off use of coefficients if undistort is False (coeffs == False)
-    if not undistort:
-        input_wcs.sip = None
-        input_wcs.cpdis1 = None
-        input_wcs.cpdis2 = None
-        input_wcs.det2im = None
-
-    wcslin = distortion.utils.output_wcs([input_wcs],undistort=undistort)
-    pix_ratio = output_wcs.pscale/wcslin.pscale
+    pix_ratio = output_wcs.pscale/wcslin_pscale
 
     if wcsmap is None and cdriz is not None:
         log.info('Using WCSLIB-based coordinate transformation...')
