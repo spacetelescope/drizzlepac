@@ -707,10 +707,11 @@ def gauss(x,sigma):
 
 
 #### Plotting Utilities for astrodither
-def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure=None,
+def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                     title=None, axes=None, every=1,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
-                    xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,append=False,linfit=False,rms=True):
+                    xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,
+                    append=False,linfit=False,rms=True):
     """ Convert a XYXYMATCH file into a vector plot or set of residuals plots.
     
         This function provides a single interface for generating either a vector
@@ -811,9 +812,10 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure=None,
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
         
-    pl.figure(num=figure)
+    pl.figure(num=figure_id)
     if not append:
         pl.clf()
+    pl.ioff()
     if vector: 
         dxs = imagestats.ImageStats(dx.astype(np.float32))
         dys = imagestats.ImageStats(dy.astype(np.float32))
@@ -884,7 +886,9 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure=None,
                 yr = [m*lx[0]+c,lx[-1]*m+c]
                 pl.plot([lx[0],lx[-1]],yr,'r')
                 pl.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
-    
+    pl.draw()
+    pl.ion()
+        
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
     xy1y = data[1]
@@ -963,7 +967,7 @@ def find_xy_peak(img,center=None):
     del imgc
     return xp,yp,flux,zpqual
 
-def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False):
+def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
     """ Create a matrix which contains the delta between each XY position and 
         each UV position. 
     """
@@ -999,7 +1003,9 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False):
             zqual = 0.0
         else:
             zqual = zpqual
+        pl.figure(num=figure_id)
         pl.clf()
+        pl.ioff()
         a=pl.imshow(zpmat,vmin=0,vmax=zpstd,interpolation='nearest')
         pl.gray()
         pl.colorbar()
@@ -1008,7 +1014,8 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False):
         pl.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
         pl.text(searchrad,searchrad,"Offset=0,0",
                 verticalalignment='bottom',color='yellow')
-        a = raw_input("Press 'Enter' to continue...")
+        pl.draw()
+        pl.ion()
 
     return xp,yp,flux,zpqual
     

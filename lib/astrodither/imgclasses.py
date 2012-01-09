@@ -129,6 +129,7 @@ class Image(object):
         self.fit_pars = None
         self.identityfit = False # set to True when matching/fitting to itself
         self.goodmatch = True # keep track of whether enough matches were found for a fit
+        self.figure_id = 1
         
         self.next_key = ' '
         
@@ -298,7 +299,11 @@ class Image(object):
             use2d = matchpars['use2dhist']
             if use2d:
                 zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
-                                    ref_outxy,searchrad=radius,histplot=matchpars['see2dplot'])
+                                    ref_outxy,searchrad=radius,
+                                    histplot=matchpars['see2dplot'],
+                                    figure_id = self.figure_id)
+                if matchpars['see2dplot']:
+                    self.figure_id += 1
                 if zpqual is not None:
                     xyoff = (zpxoff,zpyoff)
                     # set tolerance as well
@@ -317,7 +322,7 @@ class Image(object):
                 # set tolerance 
                 xyxytolerance = matchpars['tolerance']
                 xyxysep = matchpars['separation']
-
+    
             matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,
                                 tolerance=xyxytolerance,separation=xyxysep)
             if len(matches) > minobj:
@@ -400,21 +405,22 @@ class Image(object):
                     xy_fit = xy + resids
                     title_str = 'Residuals\ for\ %s\ using\ %d\ sources'%(
                         self.name.replace('_','\_'),self.fit['rms_keys']['NMATCH'])
-                    figure_id = 1
+
                     if pars['residplot'] == 'both':
                         tweakutils.make_vector_plot(None,
                             data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                            figure=figure_id, vector=True,title=title_str)    
+                            figure_id=self.figure_id, vector=True,title=title_str)    
                         ptype=False # Setup 
-                        figure_id = 2
+                        self.figure_id += 1
                     elif pars['residplot'] == 'vector':
                         ptype = True
                     else:
                         ptype = False
+
                     # Generate new plot 
                     tweakutils.make_vector_plot(None,
                         data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                        figure=figure_id, vector=ptype,title=title_str)    
+                        figure_id=self.figure_id, vector=ptype,title=title_str)    
                     a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...")
                     if 'n' in a.lower():
                         self.perform_update = False
