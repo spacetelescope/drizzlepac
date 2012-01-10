@@ -1011,7 +1011,7 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         pl.clf()
         pl.ioff()
         a=pl.imshow(zpmat,vmin=0,vmax=zpstd,interpolation='nearest')
-        pl.gray()
+        pl.jet()#gray()
         pl.colorbar()
         pl.title("Histogram of offsets: Peak has %d matches at (%0.4g, %0.4g)"%(flux,xp,yp))
         pl.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
