@@ -47,7 +47,11 @@ def parse_input(input, prodonly=False):
     return filelist,catlist
 
 def atfile_sci(line):
-    return line.split()[0]
+    if line in [None,'',' ']:
+        lspl = ''
+    else:
+        lspl = line.split()[0]
+    return lspl
 
 def parse_atfile_cat(input):
     """ Return the list of catalog filenames specified as part of the input @-file
@@ -984,7 +988,6 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         deltay = (deltay+searchrad)[xyind].astype(np.int32)
         zpmat[deltay,deltax] += 1
     
-    zpsum = zpmat.sum()
     xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
     if zpqual is not None:
         print 'Found initial X and Y shifts of ',xp,yp,'\n     with significance of ',zpqual
@@ -996,10 +999,11 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         print '!'*80
         
     if histplot: 
-        zpstd = flux/10.0
-        if zpstd > 20: zpstd = 20
+        zpstd = flux//5
+        if zpstd < 10: zpstd = 10
+        #if zpstd > 100: zpstd = 100
         if zpqual is None:
-            zpstd = 20
+            zpstd = 10
             zqual = 0.0
         else:
             zqual = zpqual
@@ -1009,7 +1013,7 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         a=pl.imshow(zpmat,vmin=0,vmax=zpstd,interpolation='nearest')
         pl.gray()
         pl.colorbar()
-        pl.title("Histogram of offsets: Peak S/N=%0.2f at (%0.4g, %0.4g)"%(zqual,xp,yp))
+        pl.title("Histogram of offsets: Peak has %d matches at (%0.4g, %0.4g)"%(flux,xp,yp))
         pl.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
         pl.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
         pl.text(searchrad,searchrad,"Offset=0,0",

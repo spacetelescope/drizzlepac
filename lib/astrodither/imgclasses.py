@@ -421,7 +421,7 @@ class Image(object):
                     tweakutils.make_vector_plot(None,
                         data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
                         figure_id=self.figure_id, vector=ptype,title=title_str)    
-                    a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...")
+                    a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
                     if 'n' in a.lower():
                         self.perform_update = False
                     if 'q' in a.lower():
