@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
-    <link rel="prev" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" /> 
+    <link rel="prev" title="UPDATEHDR: Functions for Updating WCS with New Solutions" href="updatehdr.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,7 +39,7 @@
           <a href="np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
@@ -50,8 +50,8 @@
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
             </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="tweakutils.html"
-                        title="previous chapter">TWEAKUTILS: Utility Functions for Tweakreg</a></p>
+  <p class="topless"><a href="updatehdr.html"
+                        title="previous chapter">UPDATEHDR: Functions for Updating WCS with New Solutions</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/updatenpol.txt"
@@ -81,7 +81,7 @@
   <div class="section" id="updatenpol">
 <span id="id1"></span><h1>Updatenpol<a class="headerlink" href="#updatenpol" title="Permalink to this headline">¶</a></h1>
 <p>This task will update the header of ACS file(s) with the names of the NPOLFILE and D2IMFILE reference files for use with the new C version of MultiDrizzle (astrodrizzle).</p>
-<span class="target" id="module-astrodither.updatenpol"></span><p><strong>updatenpol</strong>: Update the header of ACS file(s) with the names of new 
+<span class="target" id="module-drizzlepac.updatenpol"></span><p><strong>updatenpol</strong>: Update the header of ACS file(s) with the names of new 
 NPOLFILE and D2IMFILE reference files for use with the 
 C version of MultiDrizzle (astrodrizzle).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -145,7 +145,7 @@ directory as defined in the environment:</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Compatability with MultiDrizzle:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first last">The new version of MultiDrizzle (<tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></tt>) and <em class="xref py py-obj">updatewcs</em> 
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">The new version of MultiDrizzle (<em class="xref py py-obj">astrodrizzle</em>) and <em class="xref py py-obj">updatewcs</em> 
 only work with the new NPOLFILE reference file for the DGEO correction 
 (to replace the use of DGEOFILE).  
 In fact, astrodrizzle has been extensively modified to
@@ -158,27 +158,27 @@ keyword can not be found for ACS.</p>
 </tbody>
 </table>
 <dl class="function">
-<dt id="astrodither.updatenpol.find_d2ifile">
-<tt class="descclassname">astrodither.updatenpol.</tt><tt class="descname">find_d2ifile</tt><big>(</big><em>flist</em>, <em>detector</em><big>)</big><a class="headerlink" href="#astrodither.updatenpol.find_d2ifile" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.updatenpol.find_d2ifile">
+<tt class="descclassname">drizzlepac.updatenpol.</tt><tt class="descname">find_d2ifile</tt><big>(</big><em>flist</em>, <em>detector</em><big>)</big><a class="headerlink" href="#drizzlepac.updatenpol.find_d2ifile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Search a list of files for one that matches the detector specified.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodither.updatenpol.find_npolfile">
-<tt class="descclassname">astrodither.updatenpol.</tt><tt class="descname">find_npolfile</tt><big>(</big><em>flist</em>, <em>detector</em>, <em>filters</em><big>)</big><a class="headerlink" href="#astrodither.updatenpol.find_npolfile" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.updatenpol.find_npolfile">
+<tt class="descclassname">drizzlepac.updatenpol.</tt><tt class="descname">find_npolfile</tt><big>(</big><em>flist</em>, <em>detector</em>, <em>filters</em><big>)</big><a class="headerlink" href="#drizzlepac.updatenpol.find_npolfile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Search a list of files for one that matches the configuration 
 of detector and filters used.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodither.updatenpol.run">
-<tt class="descclassname">astrodither.updatenpol.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em>, <em>editpars=False</em><big>)</big><a class="headerlink" href="#astrodither.updatenpol.run" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.updatenpol.run">
+<tt class="descclassname">drizzlepac.updatenpol.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em>, <em>editpars=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatenpol.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Teal interface for running this code.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodither.updatenpol.update">
-<tt class="descclassname">astrodither.updatenpol.</tt><tt class="descname">update</tt><big>(</big><em>input</em>, <em>refdir='jref$'</em>, <em>local=None</em>, <em>interactive=False</em>, <em>wcsupdate=True</em><big>)</big><a class="headerlink" href="#astrodither.updatenpol.update" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.updatenpol.update">
+<tt class="descclassname">drizzlepac.updatenpol.</tt><tt class="descname">update</tt><big>(</big><em>input</em>, <em>refdir='jref$'</em>, <em>local=None</em>, <em>interactive=False</em>, <em>wcsupdate=True</em><big>)</big><a class="headerlink" href="#drizzlepac.updatenpol.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates headers of files given as input to point to the new reference files 
 NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -291,7 +291,7 @@ to be updated using:</p>
           <a href="np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
              >previous</a> |</li>
         <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>

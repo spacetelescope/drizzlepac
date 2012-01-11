@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
-    <link rel="prev" title="Welcome to astrodither’s documentation!" href="index.html" /> 
+    <link rel="prev" title="Welcome to drizzlepac’s documentation!" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to astrodither’s documentation!"
+          <a href="index.html" title="Welcome to drizzlepac’s documentation!"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>
@@ -55,7 +55,7 @@
             </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to astrodither&#8217;s documentation!</a></p>
+                        title="previous chapter">Welcome to drizzlepac&#8217;s documentation!</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="imageobject.html"
                         title="next chapter">imageObject Classes</a></p>
@@ -85,8 +85,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-astrodither.astrodrizzle">
-<span id="primary-user-interface-astrodrizzle"></span><span id="astrodrizzle"></span><h1>Primary User Interface: AstroDrizzle()<a class="headerlink" href="#module-astrodither.astrodrizzle" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-drizzlepac.astrodrizzle">
+<span id="primary-user-interface-astrodrizzle"></span><span id="astrodrizzle"></span><h1>Primary User Interface: AstroDrizzle()<a class="headerlink" href="#module-drizzlepac.astrodrizzle" title="Permalink to this headline">¶</a></h1>
 <p>AstroDrizzle - Python implementation of MultiDrizzle</p>
 <p>AstroDrizzle automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
@@ -113,9 +113,9 @@ cosmic-ray cleaned, and combined image as a FITS file.</p>
 <p>This task requires numerous user-settable parameters to control the primary
 aspects of each of the processing steps.</p>
 <dl class="function">
-<dt id="astrodither.astrodrizzle.AstroDrizzle">
-<tt class="descclassname">astrodither.astrodrizzle.</tt><tt class="descname">AstroDrizzle</tt><big>(</big><em>input</em>, <em>mdriztab=False</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodither.astrodrizzle.AstroDrizzle" title="Permalink to this definition">¶</a></dt>
-<dd><p>astrodrizzle Version 4.2.0dev updated on 4-Oct-2011</p>
+<dt id="drizzlepac.astrodrizzle.AstroDrizzle">
+<tt class="descclassname">drizzlepac.astrodrizzle.</tt><tt class="descname">AstroDrizzle</tt><big>(</big><em>input</em>, <em>mdriztab=False</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="Permalink to this definition">¶</a></dt>
+<dd><p>astrodrizzle Version 4.2.10dev  updated on  11-Jan-2012</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -151,17 +151,17 @@ aspects of each of the processing steps.</p>
 </blockquote>
 <p>If an association file has been given as input, the specified filename will be used instead of the product name specified in the ASN file. Similarly, if a single exposure is provided, the rootname of the single exposure will be used for the output product instead of relying on the input rootname. If no value is provided when a filelist or wild-card specification is given as input, then a rootname of &#8216;final&#8217; will be used for the output file name.</p>
 </blockquote>
-<p><strong id="mdriztab">mdriztab</strong> : bool (Default Value = No)</p>
+<p><strong id="mdriztab :">mdriztab :</strong> :</p>
 <blockquote>
-<p>Specifies whether or not to use an MDRIZTAB reference table to specify the remaining AstroDrizzle parameter settings. If set to &#8216;True&#8217;, the values in the MDRIZTAB table will override the settings for the remainder of the parameters.</p>
+<p>This button will immediately update the parameter values in the TEAL GUI based on those provided by the MDRIZTAB reference table referenced in the first input image. This requires that the MDRIZTAB reference file be available locally.</p>
 </blockquote>
 <p><strong id="runfile">runfile</strong> : str (Default Value = &#8216;astrodrizzle.log&#8217;)</p>
 <blockquote>
-<p>This log file will contain the IRAF CL commands necessary for performing the final combination manually using the &#8220;drizzle&#8221; task directly.</p>
+<p>This log file will contain all the output messages generated during processing, including full details of any errors/exceptions. These messages will be a super-set of those reported to the screen during processing.</p>
 </blockquote>
 <p><strong id="updatewcs">updatewcs</strong> : bool  (Default Value = No)</p>
 <blockquote>
-<p>This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should typically be set to &#8216;yes&#8217;, unless the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle &#8216;as is&#8217;.</p>
+<p>This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should be set to &#8216;no&#8217; when the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written by this update.</p>
 </blockquote>
 <p><strong id="wcskey">wcskey</strong> : str (Default Value = &#8216;&#8217;)</p>
 <blockquote>
@@ -187,10 +187,6 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>When this parameter is set to &#8216;True&#8217;, AstroDrizzle will combine the separate &#8216;drizzle&#8217; output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to &#8216;False&#8217;, a separate simple FITS file will be created for each aforementioned extension.</p>
 </blockquote>
-<p><strong id="staticfile">staticfile</strong> : str (Default Value = )</p>
-<blockquote>
-<p>This parameter defines the file name of the optional input static bad-pixel mask. The input data are multiplied by the contents of this static mask file.</p>
-</blockquote>
 <p><strong id="crbit">crbit</strong> : int (Default Value = 4096)</p>
 <blockquote>
 <p>This parameter sets the bit value for CR identification in the DQ array.</p>
@@ -203,7 +199,15 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <p>This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the &#8216;updatewcs&#8217; parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).</p>
 </blockquote>
+<p><strong id="num_cores: int (Default Value = None)">num_cores: int (Default Value = None)</strong> :</p>
+<blockquote>
+<p>This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing.</p>
+</blockquote>
 <p><strong id="*STATE OF INPUT FILES*">*STATE OF INPUT FILES*</strong> :</p>
+<p><strong id="restore: bool (Default Value = Yes)">restore: bool (Default Value = Yes)</strong> :</p>
+<blockquote>
+<p>Setting this to &#8216;yes&#8217; (True) directs AstroDrizzle to copy the input images from the &#8216;OrIg_files&#8217; sub-directory and use them for processing, if they had been archived by AstroDrizzle using the &#8216;preserve&#8217; or &#8216;overwrite&#8217; parameters already.  If set to &#8216;yes&#8217; and the input files had not been archived already, it will simply ignore this and work with the current input images.</p>
+</blockquote>
 <p><strong id="preserve">preserve</strong> : bool (Default Value = Yes)</p>
 <blockquote>
 <p>Copy input files to archive directory, if not already archived. This parameter determines whether or not astrodrizzle creates a copy of the input file in a sub-directory called &#8216;OrIg_files&#8217;. If a copy already exists in this directory, then the previously existing version will NOT be overwritten.</p>
@@ -224,6 +228,10 @@ aspects of each of the processing steps.</p>
 <p><strong id="static_sig">static_sig</strong> : float (Default Value = 4.0)</p>
 <blockquote>
 <p>The number of sigma below the RMS to use as the clipping limit for creating the static mask.</p>
+</blockquote>
+<p><strong id="staticfile">staticfile</strong> : str (Default Value = )</p>
+<blockquote>
+<p>This parameter defines the file name of the optional input static bad-pixel mask. The input data are multiplied by the contents of this static mask file.</p>
 </blockquote>
 <p><strong id="*STEP 2: SKY SUBTRACTION*">*STEP 2: SKY SUBTRACTION*</strong> :</p>
 <p><strong id="skysub">skysub</strong> : bool (Default Value = Yes)</p>
@@ -261,6 +269,10 @@ aspects of each of the processing steps.</p>
 <p><strong id="skyuser">skyuser</strong> : str (Default Value = &#8216;&#8217;)</p>
 <blockquote>
 <p>Name of header keyword which records the sky value already subtracted from the image by the user.</p>
+</blockquote>
+<p><strong id="skyfile">skyfile</strong> : str (Default Value = &#8216;&#8217;)</p>
+<blockquote>
+<p>Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.</p>
 </blockquote>
 <p><strong id="*STEP 3: DRIZZLE SEPARATE IMAGES*">*STEP 3: DRIZZLE SEPARATE IMAGES*</strong> :</p>
 <p><strong id="driz_separate">driz_separate</strong> : bool (Default Value = No)</p>
@@ -558,15 +570,15 @@ aspects of each of the processing steps.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <dl class="last docutils">
-<dt><a class="reference internal" href="drizzle.html#module-astrodither.adrizzle" title="astrodither.adrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">astrodither.adrizzle</span></tt></a></dt>
+<dt><a class="reference internal" href="drizzle.html#module-drizzlepac.adrizzle" title="drizzlepac.adrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.adrizzle</span></tt></a></dt>
 <dd>Apply the &#8216;drizzle&#8217; algorithm to the images</dd>
-<dt><a class="reference internal" href="blot.html#module-astrodither.ablot" title="astrodither.ablot"><tt class="xref py py-obj docutils literal"><span class="pre">astrodither.ablot</span></tt></a></dt>
+<dt><a class="reference internal" href="blot.html#module-drizzlepac.ablot" title="drizzlepac.ablot"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.ablot</span></tt></a></dt>
 <dd>Apply the &#8216;blot&#8217; algorithm to drizzled images</dd>
-<dt><a class="reference internal" href="sky.html#module-astrodither.sky" title="astrodither.sky"><tt class="xref py py-obj docutils literal"><span class="pre">astrodither.sky</span></tt></a></dt>
+<dt><a class="reference internal" href="sky.html#module-drizzlepac.sky" title="drizzlepac.sky"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.sky</span></tt></a></dt>
 <dd>Perform sky subtraction</dd>
-<dt><tt class="xref py py-obj docutils literal"><span class="pre">astrodither.median</span></tt></dt>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.median</span></tt></dt>
 <dd>Create a median combined image from a set of drizzled images</dd>
-<dt><a class="reference internal" href="drizcr.html#module-astrodither.drizCR" title="astrodither.drizCR"><tt class="xref py py-obj docutils literal"><span class="pre">astrodither.drizCR</span></tt></a></dt>
+<dt><a class="reference internal" href="drizcr.html#module-drizzlepac.drizCR" title="drizzlepac.drizCR"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.drizCR</span></tt></a></dt>
 <dd>Identify cosmic-rays by comparing blotted, median images to the original input images</dd>
 </dl>
 </div>
@@ -578,7 +590,7 @@ aspects of each of the processing steps.</p>
 <div class="highlight-python"><pre>def MultiDrizzle('*flt.fits', editpars=False, configObj=None, wcsmap=None, **input_dict)</pre>
 </div>
 <p>A basic example of how to call this from within a Python task would be:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">astrodither</span> <span class="kn">import</span> <span class="n">astrodrizzle</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">astrodrizzle</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">AstroDrizzle</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -608,7 +620,7 @@ aspects of each of the processing steps.</p>
           <a href="imageobject.html" title="imageObject Classes"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to astrodither’s documentation!"
+          <a href="index.html" title="Welcome to drizzlepac’s documentation!"
              >previous</a> |</li>
         <li><a href="index.html">betadrizzle v4.0.6 documentation</a> &raquo;</li> 
       </ul>

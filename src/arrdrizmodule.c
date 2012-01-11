@@ -760,7 +760,7 @@ void cdriz_log_func(const char *format, ...) {
   }
 
   logger = PyObject_CallMethod(logging, "getLogger", "s",
-                               "astrodither.cdriz");
+                               "drizzlepac.cdriz");
   if (logger == NULL) {
       goto cleanup;
   }

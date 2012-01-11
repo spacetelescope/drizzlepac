@@ -106,12 +106,13 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None):
 
     if logname is not None:
         logutil.setup_global_logging()
+        print 'Setting up logfile : ',logname
         logging.basicConfig(filename=logname, filemode='w',
                             format='[%(levelname)-8s] %(message)s',
                             level=logging.INFO)
 
         stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
-        stdout_logger.addFilter(logutil.EchoFilter(include=['astrodither']))
+        stdout_logger.addFilter(logutil.EchoFilter(include=['drizzlepac']))
     else:
         print 'No trailer file created...'
 
@@ -128,7 +129,7 @@ def end_logging(filename=None):
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
             print 'No trailer file saved...'
-
+            
         logutil.teardown_global_logging()
     else:
         print 'No trailer file saved...'

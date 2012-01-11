@@ -4,7 +4,7 @@
 ACS ImageObjects
 ****************
 
-.. currentmodule:: astrodither.acsData
+.. currentmodule:: drizzlepac.acsData
 
 .. autoclass:: ACSInputImage
    :members:

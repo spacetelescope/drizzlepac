@@ -20,17 +20,14 @@ Output : str (Default Value = 'final_drz.fits')
 
     If an association file has been given as input, the specified filename will be used instead of the product name specified in the ASN file. Similarly, if a single exposure is provided, the rootname of the single exposure will be used for the output product instead of relying on the input rootname. If no value is provided when a filelist or wild-card specification is given as input, then a rootname of 'final' will be used for the output file name. 
 
-
-mdriztab : bool (Default Value = No)
-    Specifies whether or not to use an MDRIZTAB reference table to specify the remaining AstroDrizzle parameter settings. If set to 'True', the values in the MDRIZTAB table will override the settings for the remainder of the parameters.
-
+mdriztab :
+    This button will immediately update the parameter values in the TEAL GUI based on those provided by the MDRIZTAB reference table referenced in the first input image. This requires that the MDRIZTAB reference file be available locally.
 
 runfile : str (Default Value = 'astrodrizzle.log')
-    This log file will contain the IRAF CL commands necessary for performing the final combination manually using the "drizzle" task directly.
-
+   This log file will contain all the output messages generated during processing, including full details of any errors/exceptions. These messages will be a super-set of those reported to the screen during processing.
 
 updatewcs : bool  (Default Value = No)
-    This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should typically be set to 'yes', unless the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is'.
+    This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should be set to 'no' when the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is', otherwise those updates will be over-written by this update. 
 
 wcskey : str (Default Value = '')
     This parameter corresponds to the *key* for the WCS being selected by the user. It allows the user to select which WCS solution should be used for processing the images when multiple WCS's have been updated in each input image header using the Paper I Multiple WCS FITS standard.      
@@ -53,10 +50,6 @@ build : bool (Default Value = )
     When this parameter is set to 'True', AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'False', a separate simple FITS file will be created for each aforementioned extension.
 
 
-staticfile : str (Default Value = )
-    This parameter defines the file name of the optional input static bad-pixel mask. The input data are multiplied by the contents of this static mask file. 
-
-
 crbit : int (Default Value = 4096)
     This parameter sets the bit value for CR identification in the DQ array.
 
@@ -68,8 +61,14 @@ stepsize : int (Default Value = 10)
 resetbits : int (Default Value = 4096)
     This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the 'updatewcs' parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).
 
-
+num_cores: int (Default Value = None) 
+    This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing. 
+   
 *STATE OF INPUT FILES*
+
+restore: bool (Default Value = Yes) 
+    Setting this to 'yes' (True) directs AstroDrizzle to copy the input images from the 'OrIg_files' sub-directory and use them for processing, if they had been archived by AstroDrizzle using the 'preserve' or 'overwrite' parameters already.  If set to 'yes' and the input files had not been archived already, it will simply ignore this and work with the current input images.
+
 preserve : bool (Default Value = Yes)
     Copy input files to archive directory, if not already archived. This parameter determines whether or not astrodrizzle creates a copy of the input file in a sub-directory called 'OrIg_files'. If a copy already exists in this directory, then the previously existing version will NOT be overwritten.
 
@@ -89,6 +88,10 @@ static : bool (Default Value = Yes)
 
 static_sig : float (Default Value = 4.0)
     The number of sigma below the RMS to use as the clipping limit for creating the static mask.
+
+
+staticfile : str (Default Value = )
+    This parameter defines the file name of the optional input static bad-pixel mask. The input data are multiplied by the contents of this static mask file. 
 
 
 *STEP 2: SKY SUBTRACTION*
@@ -127,7 +130,10 @@ skyusigma : float (Default Value = 4.0)
 skyuser : str (Default Value = '')
     Name of header keyword which records the sky value already subtracted from the image by the user.
 
-
+skyfile : str (Default Value = '')
+    Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips. 
+    
+    
 *STEP 3: DRIZZLE SEPARATE IMAGES*
 driz_separate : bool (Default Value = No)
     This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
@@ -405,11 +411,11 @@ expkeyword : str (Default Value = '')
 
 See Also
 --------
-astrodither.adrizzle: Apply the 'drizzle' algorithm to the images
-astrodither.ablot: Apply the 'blot' algorithm to drizzled images
-astrodither.sky: Perform sky subtraction
-astrodither.median: Create a median combined image from a set of drizzled images
-astrodither.drizCR: Identify cosmic-rays by comparing blotted, median images to the original input images
+drizzlepac.adrizzle: Apply the 'drizzle' algorithm to the images
+drizzlepac.ablot: Apply the 'blot' algorithm to drizzled images
+drizzlepac.sky: Perform sky subtraction
+drizzlepac.median: Create a median combined image from a set of drizzled images
+drizzlepac.drizCR: Identify cosmic-rays by comparing blotted, median images to the original input images
 
 Notes
 ------
@@ -425,5 +431,5 @@ The primary Python interface to AstroDrizzle has been developed as::
 
 A basic example of how to call this from within a Python task would be::
 
->>> from astrodither import astrodrizzle
+>>> from drizzlepac import astrodrizzle
 >>> astrodrizzle.AstroDrizzle('*flt.fits', editpars=False)

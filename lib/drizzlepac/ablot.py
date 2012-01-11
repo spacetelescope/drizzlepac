@@ -19,7 +19,7 @@ except ImportError:
     raise ImportError
 
 
-__taskname__ = 'astrodither.ablot'
+__taskname__ = 'drizzlepac.ablot'
 _blot_step_num_ = 5
 
 

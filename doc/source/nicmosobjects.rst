@@ -4,7 +4,7 @@
 NICMOS ImageObjects
 *******************
 
-.. currentmodule:: astrodither.nicmosData
+.. currentmodule:: drizzlepac.nicmosData
 
 .. autoclass:: NICMOSInputImage
    :members:

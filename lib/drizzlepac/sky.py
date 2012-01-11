@@ -27,7 +27,7 @@ import stsci.imagestats as imagestats
 import numpy as np
 
 
-__taskname__= "astrodither.sky" #looks in astrodither for sky.cfg
+__taskname__= "drizzlepac.sky" #looks in drizzlepac for sky.cfg
 _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
 
@@ -148,16 +148,57 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     #get the sub-dictionary of values for this step alone and print them out
     log.info('USER INPUT PARAMETERS for Sky Subtraction Step:')
     util.printParams(paramDict, log=log)
-
-    for image in imageObjList:
-        log.info('Working on sky for: %s' % image._filename)
-        _skySub(image,paramDict,saveFile=saveFile)
+    if 'skyfile' in paramDict and not util.is_blank(paramDict['skyfile']):
+        _skyUserFromFile(imageObjList,paramDict['skyfile'])
+    else:
+        for image in imageObjList:
+            log.info('Working on sky for: %s' % image._filename)
+            _skySub(image,paramDict,saveFile=saveFile)
 
     if procSteps is not None:
         procSteps.endStep('Subtract Sky')
 
+# this function applies user supplied sky values from an input file
+def _skyUserFromFile(imageObjList,skyFile):
+    """ 
+    Apply sky value as read in from a user-supplied input file
+    """
+    skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
 
-#this is the main function that does all the real work
+    # create dict of fname=sky pairs
+    skyvals = {}
+    for line in open(skyFile):
+        if not util.is_blank(line) and line[0] != '#':
+            lspl = line.split()
+        skyvals[lspl[0]] = float(lspl[1])
+        
+    # Apply user values to appropriate input images
+    for imageSet in imageObjList:
+        fname = imageSet._filename
+        numchips=imageSet._numchips
+        sciExt=imageSet.scienceExt
+        if fname in skyvals:
+            _skyValue = skyvals[fname]
+
+            print "    ...updating MDRIZSKY with user-supplied value."
+            for chip in range(1,numchips+1,1):
+                chipext = '%s,%d'%(sciExt,chip)
+                _updateKW(imageSet[chipext],fname,(sciExt,chip),skyKW,_skyValue)
+
+                # Update internal record with subtracted sky value
+                imageSet[chipext].subtractedSky = _skyValue
+                print "Setting ",skyKW,"=",_skyValue
+        else:
+            print "*"*40
+            print "*"
+            print "WARNING:"
+            print "    .... NO user-supplied sky value found for ",fname
+            print "    .... Setting sky to a value of 0.0! "
+            print "*"
+            print "*"*40
+            
+#this is the main function that does all the real work in computing the
+# statistical sky value for each image (set of chips)
 def _skySub(imageSet,paramDict,saveFile=False):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
@@ -216,8 +257,6 @@ def _skySub(imageSet,paramDict,saveFile=False):
 
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
-                #update the value of MDRIZSKY in the global header
-                #_updateKW(imageSet["PRIMARY"],imageSet._filename,"PRIMARY",skyKW,_skyValue)
                 print "Setting ",skyKW,"=",_skyValue
 
     else:

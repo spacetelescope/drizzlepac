@@ -4,7 +4,7 @@
 WFC3 ImageObjects
 *****************
 
-.. currentmodule:: astrodither.wfc3Data
+.. currentmodule:: drizzlepac.wfc3Data
 
 .. autoclass:: WFC3InputImage
    :members:

@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="betadrizzle v4.0.6 documentation" href="index.html" />
-    <link rel="next" title="SExtractorpars: Parameter setting for SExtractor" href="sextractorpars.html" />
+    <link rel="next" title="Image Class" href="image.html" />
     <link rel="prev" title="TWEAKREG: Alignment of Images" href="tweakreg.html" /> 
   </head>
   <body>
@@ -40,7 +40,7 @@
           <a href="np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="sextractorpars.html" title="SExtractorpars: Parameter setting for SExtractor"
+          <a href="image.html" title="Image Class"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
@@ -53,12 +53,20 @@
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
             </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Imagefindpars: Source finding parameters</a><ul>
+<li><a class="reference internal" href="#parameters">Parameters</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="tweakreg.html"
                         title="previous chapter">TWEAKREG: Alignment of Images</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="sextractorpars.html"
-                        title="next chapter">SExtractorpars: Parameter setting for SExtractor</a></p>
+  <p class="topless"><a href="image.html"
+                        title="next chapter">Image Class</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/imagefind.txt"
@@ -88,85 +96,62 @@
   <div class="section" id="imagefindpars-source-finding-parameters">
 <span id="imagefind"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
 <p>This interface provides a mechanism for setting the parameters used by the built-in source finding algorithm based on the published algorithms used by DAOFIND.</p>
-<span class="target" id="module-astrodither.imagefindpars"></span><dl class="function">
-<dt id="astrodither.imagefindpars.getHelpAsString">
-<tt class="descclassname">astrodither.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#astrodither.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
-<dd><p>Teal help function to describe the parameters being set
-Descriptions of parameters come from .help file</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="astrodither.imagefindpars.help">
-<tt class="descclassname">astrodither.imagefindpars.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.imagefindpars.help" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="astrodither.imagefindpars.run">
-<tt class="descclassname">astrodither.imagefindpars.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#astrodither.imagefindpars.run" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Imagefind parameters to control operation of built-in source extraction algorithm</dt>
-<dd>imagefindpars Version 0.6.2 updated on 22-Aug-2011</dd>
-</dl>
+<span class="target" id="module-drizzlepac.imagefindpars"></span><p>imagefindpars Version 0.6.10 updated on 10-Jan-2012</p>
 <p>These parameters control the operation of the algorithm that extracts sources from the image as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Input :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first">The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.</p>
-</td>
+<tr class="field"><th class="field-name" colspan="2">Input:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Output :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first">The primary output, as used by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</p>
-</td>
-</tr>
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="computesig">computesig</strong> : bool</p>
-<blockquote>
-<p>This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter &#8216;sigma&#8217;. The automatic sigma value gets computed from the first input exposure as:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="mf">1.5</span> <span class="o">*</span> <span class="n">imstatistics</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">fields</span><span class="o">=</span><span class="s">&#39;stddev&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</blockquote>
-<p><strong id="This single value will then be used for object identification for all input exposures. [Default: Yes]">This single value will then be used for object identification for all input exposures. [Default: Yes]</strong> :</p>
-<p><strong id="sigma">sigma</strong> : float</p>
-<blockquote>
-<p>The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0]</p>
-</blockquote>
-<p><strong id="fwhmpsf">fwhmpsf</strong> : float</p>
-<blockquote>
-<p>The full-width at half-maximum of the point spread function in pixels.[Default: 2.5]</p>
-</blockquote>
-<p><strong id="datamin">datamin</strong> : float</p>
-<blockquote>
-<p>The minimum good pixel value to be considered when examining the image for objects. [Default: None]</p>
-</blockquote>
-<p><strong id="datamax">datamax</strong> : float</p>
-<blockquote>
-<p>The maximum good pixel value to be considered when examining the image for objects. [Default: None]</p>
-</blockquote>
-<p><strong id="threshold">threshold</strong> : float</p>
-<blockquote>
-<p>The object detection threshold above the local background in units of sigma. [Default: 4.0]</p>
-</blockquote>
-<p><strong id="nsigma">nsigma</strong> : float</p>
-<blockquote>
-<p>The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]</p>
-</blockquote>
-<p><strong id="fluxmin">fluxmin</strong> : float</p>
-<blockquote>
-<p>Minimum good flux value. [Default: None]</p>
-</blockquote>
-<p><strong id="fluxmax">fluxmax</strong> : float</p>
-<blockquote class="last">
-<p>Maximum good flux value. [Default: None]</p>
-</blockquote>
-</td>
+<tr class="field"><th class="field-name" colspan="2">Output:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">The primary output, as used by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</td>
 </tr>
 </tbody>
 </table>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>computesig <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first">This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter &#8216;sigma&#8217;. The automatic sigma value gets computed from the first input exposure as:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="mf">1.5</span> <span class="o">*</span> <span class="n">imstatistics</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">fields</span><span class="o">=</span><span class="s">&#39;stddev&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>This single value will then be used for object identification for all input exposures. [Default: Yes]</p>
+<dl class="docutils">
+<dt>sigma <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0]</dd>
+<dt>fwhmpsf <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>The full-width at half-maximum of the point spread function in pixels.[Default: 2.5]</dd>
+<dt>datamin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>The minimum good pixel value to be considered when examining the image for objects. [Default: None]</dd>
+<dt>datamax <span class="classifier-delimiter">:</span> <span class="classifier">float </span></dt>
+<dd>The maximum good pixel value to be considered when examining the image for objects. [Default: None]</dd>
+<dt>threshold <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>The object detection threshold above the local background in units of sigma. [Default: 4.0]</dd>
+<dt>nsigma <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]</dd>
+<dt>fluxmin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Minimum good flux value. [Default: None]</dd>
+<dt>fluxmax <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Maximum good flux value. [Default: None]</dd>
+</dl>
+<dl class="function">
+<dt id="drizzlepac.imagefindpars.getHelpAsString">
+<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Teal help function to describe the parameters being set
+Descriptions of parameters come from .help file</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="drizzlepac.imagefindpars.help">
+<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
 </div>
 
 
@@ -188,7 +173,7 @@ Descriptions of parameters come from .help file</p>
           <a href="np-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="sextractorpars.html" title="SExtractorpars: Parameter setting for SExtractor"
+          <a href="image.html" title="Image Class"
              >next</a> |</li>
         <li class="right" >
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"

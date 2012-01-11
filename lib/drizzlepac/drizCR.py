@@ -20,7 +20,7 @@ if util.can_parallel:
 
 __version__ = '1.1'  # we should go through and update all these
 
-__taskname__= "astrodither.drizCR"  # looks in astrodither for sky.cfg
+__taskname__= "drizzlepac.drizCR"  # looks in drizzlepac for sky.cfg
 _step_num_ = 6  # this relates directly to the syntax in the cfg file
 
 

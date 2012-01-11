@@ -4,7 +4,7 @@
 Base ImageObject Classes
 ************************
 
-.. currentmodule:: astrodither.imageObject 
+.. currentmodule:: drizzlepac.imageObject 
 
 .. autoclass:: baseImageObject
    :members:

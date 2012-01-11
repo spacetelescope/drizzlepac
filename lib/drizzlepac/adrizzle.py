@@ -20,7 +20,7 @@ except ImportError:
 if util.can_parallel:
     import multiprocessing
 
-__taskname__ = "astrodither.adrizzle"
+__taskname__ = "drizzlepac.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
@@ -300,7 +300,7 @@ def getHelpAsString():
 
 
 #
-# astrodither based interfaces: relying on imageObject instances and astrodither internals
+# drizzlepac based interfaces: relying on imageObject instances and drizzlepac internals
 #
 #
 #### Top-level interface from inside MultiDrizzle
@@ -500,6 +500,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # print out parameters being used for drizzling
     log.info("Running Drizzle to create output frame with WCS of: ")
     output_wcs.printwcs()
+    print '\n'
 
     # Will we be running in parallel?
     pool_size = 1
@@ -508,10 +509,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                                        num_tasks = len(imageObjectList))
     will_parallel = single and pool_size > 1
     if will_parallel:
-        log.info('Executing %d parallel threads/processes' % len(imageObjectList)) # !!! change to pool_size
+        print 'Executing %d parallel threads/processes' % len(imageObjectList) # !!! change to pool_size
     else:
         if single: # not yet an option for final drizzle, msg would confuse
-            log.info('Executing serially')
+            print 'Executing serially'
 
     # Set parameters for each input and run drizzle on it here.
     #
@@ -525,7 +526,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     #            if single:
     # Determine how many chips make up each single image
     for img in imageObjectList:
-        for chip in img.returnAllChips(extname=img.scienceExt):
+        for chip in img.returnAllChips(extname=img.scienceExt):            
             plsingle = chip.outputNames['outSingle']
             if _numctx.has_key(plsingle): _numctx[plsingle] += 1
             else: _numctx[plsingle] = 1

@@ -14,7 +14,7 @@ couple of common modes.
 
 1. Run the task using the TEAL GUI under PyRAF:
 
-    >>> import astrodither 
+    >>> import drizzlepac 
     >>> epar tweakreg
 
 2. Find only the shifts(no rotation or scale) for a set of calibrated ACS 
@@ -22,7 +22,7 @@ couple of common modes.
    algorithm with sources >10 sigma above the background without using the 
    TEAL GUI:
 
-  >>> from astrodither import tweakreg
+  >>> from drizzlepac import tweakreg
   >>> tweakreg.TweakReg('\*flt.fits', editpars=False, findmode='imagefind', \
       editipars=False, computesig=True, threshold=10.0, fitgeometry='shift')
 

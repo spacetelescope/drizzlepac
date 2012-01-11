@@ -19,7 +19,7 @@ import processInput
 __version__ = '1.1'
 
 
-__taskname__= "astrodither.createMedian" #looks in astrodither for createMedian.cfg
+__taskname__= "drizzlepac.createMedian" #looks in drizzlepac for createMedian.cfg
 _step_num_ = 4  #this relates directly to the syntax in the cfg file
 
 

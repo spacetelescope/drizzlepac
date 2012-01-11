@@ -55,6 +55,6 @@ def blot(configObj=None,wcsmap=wcs_functions.WCSMap,editpars=False,**input_dict)
 
 Basic example of how to call sky yourself from a python command line, using the default parameter settings:
 
->from astrodither import ablot
+>from drizzlepac import ablot
 >ablot.blot()
 

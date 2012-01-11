@@ -1,4 +1,4 @@
-""" AstroDither - Python tasks to 'dither' combine images
+""" DrizzlePac - Python tasks to 'dither' combine images
 
 This package provides the tools to align, manage and combine images using
 algorithms originally developed as part of IRAF's 'dither' package. Tasks
@@ -67,7 +67,7 @@ if False :
 
     try:
         __version__ = __import__('pkg_resources').\
-                            get_distribution('astrodither').version
+                            get_distribution('drizzlepac').version
     except:
         pass
 
@@ -80,7 +80,7 @@ __vdate__ = '25-Oct-2011'
 # Revision based version info
 # End Version Information ---------------------------------------------
 try:
-    from astrodither.svninfo import (__svn_version__, __full_svn_info__,
+    from drizzlepac.svninfo import (__svn_version__, __full_svn_info__,
                                      __setup_datetime__)
 except ImportError:
     pass

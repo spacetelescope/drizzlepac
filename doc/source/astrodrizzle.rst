@@ -4,9 +4,10 @@
 Primary User Interface: AstroDrizzle() 
 **************************************
  
-.. currentmodule:: astrodither.astrodrizzle
+.. currentmodule:: drizzlepac.astrodrizzle
 
-.. automodule:: astrodither.astrodrizzle
+.. automodule:: drizzlepac.astrodrizzle
    
 .. autofunction:: AstroDrizzle 
-  
+ 
+ 

@@ -110,5 +110,5 @@ def sky(imageList=None,configObj=None, editpars=False, **inputDict):
 Basic example of how to call sky yourself from a python command line, this example will use the default parameter settings and subtract a sky value from each *flt.fits image in the current directory, saving the output file with the extension of "mysky":
 
 
->from astrodither import sky
+>from drizzlepac import sky
 >sky.sky('*flt.fits',outExt='mysky')

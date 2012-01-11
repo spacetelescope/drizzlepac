@@ -195,7 +195,7 @@ def run(configobj):
         ref_source = refcat_par['refcat']
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
-
+            
     try:
         # Create Reference Catalog object
         refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
@@ -218,6 +218,7 @@ def run(configobj):
                 print 'Performing fit for: ',img.name,'\n'
                 img.match(refimage.outxy, refimage.wcs,refimage.name,
                             **configobj['OBJECT MATCHING PARAMETERS'])
+
                 configobj['CATALOG FITTING PARAMETERS']['minobj'] = \
                                 configobj['OBJECT MATCHING PARAMETERS']['minobj']
                 img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
@@ -246,6 +247,7 @@ def run(configobj):
     else:
         print 'No valid sources in reference frame. Quitting...'
         return
+    
 # 
 # Primary interface for running this task from Python
 #

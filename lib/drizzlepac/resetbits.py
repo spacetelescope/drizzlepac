@@ -69,7 +69,7 @@ from stsci.tools import stpyfits as pyfits
 from stsci.tools import parseinput, logutil
 
 
-__taskname__ = "astrodither.resetbits"
+__taskname__ = "drizzlepac.resetbits"
 __version__ = '1.0.0'
 __vdate__ = '3-Aug-2010'
 

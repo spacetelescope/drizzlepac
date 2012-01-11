@@ -17,9 +17,11 @@ resetbits = integer_or_none_kw(default=4096, comment="Bit values to reset in all
 num_cores = integer_or_none_kw(default=None, comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
 
 [STATE OF INPUT FILES]
+restore = boolean_kw(default=True, comment="Copy input files FROM archive directory for processing?")
 preserve = boolean_kw(default=True, comment="Copy input files to archive directory, if not already archived?")
 overwrite = boolean_kw(default=False, comment="Copy input files into archive, overwriting if required?")
 clean = boolean_kw(default=False, comment="Delete temporary files after completion?")
+
 
 [STEP 1: STATIC MASK ]
 static = boolean_kw(default=True, triggers='_section_switch_', comment="Create static bad-pixel mask from the data?")
@@ -35,6 +37,7 @@ skyclip = integer_kw(default=5, comment= "Number of clipping iterations")
 skylsigma = float_kw(default=4., comment="Lower side clipping factor (in sigma)")
 skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)")
 skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user.")
+skyfile = string_kw(default="", comment="Name of file with user-computed sky values.")
 
 [STEP 3: DRIZZLE SEPARATE IMAGES]
 driz_separate = boolean_kw(default=True, triggers='_section_switch_', triggers='_rule3a_', is_set_by='_rule1_', comment= "Drizzle onto separate output images?")
@@ -112,8 +115,8 @@ expkeyword = string_kw(default="")
 
 [ _RULES_ ]
 _rule1_ = string_kw(default='', when='entry', code='from stsci.tools import check_files; ans={ True:"yes",False:"no"};OUT = ans[(check_files.countInput(VAL) > 1)]')
-_rule1a_ = string_kw(default='', when='defaults,entry', code='from astrodither import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
-_rule2_ = string_kw(default='', code='from astrodither import processInput; odict=TEAL.getDict(); newdict = processInput.getMdriztabPars(odict["input"]); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
+_rule1a_ = string_kw(default='', when='defaults,entry', code='from drizzlepac import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
+_rule2_ = string_kw(default='', code='from drizzlepac import processInput; odict=TEAL.getDict(); newdict = processInput.getMdriztabPars(odict["input"]); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule5_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":False, "no":True}; OUT = tyfn[VAL]')
 _rule7a_ = string_kw(default='', code='OUT = VAL')

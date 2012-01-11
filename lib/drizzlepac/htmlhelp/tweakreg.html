@@ -88,11 +88,11 @@
   <div class="section" id="tweakreg-alignment-of-images">
 <span id="tweakreg"></span><h1>TWEAKREG: Alignment of Images<a class="headerlink" href="#tweakreg-alignment-of-images" title="Permalink to this headline">¶</a></h1>
 <p>Combining images using astrodrizzle requires that the WCS information in the headers of each input image align to within sub-pixel accuracy.  The &#8216;tweakreg&#8217; task allows the user to align sets of images to each other and/or to and external astrometric reference frame or image.</p>
-<span class="target" id="module-astrodither.tweakreg"></span><p>ImageReg - A replacement for IRAF-based &#8216;tweakshifts&#8217;</p>
+<span class="target" id="module-drizzlepac.tweakreg"></span><p>ImageReg - A replacement for IRAF-based &#8216;tweakshifts&#8217;</p>
 <dl class="function">
-<dt id="astrodither.tweakreg.TweakReg">
-<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#astrodither.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
-<dd><p>tweakreg Version 0.6.2 updated on 22-Aug-2011</p>
+<dt id="drizzlepac.tweakreg.TweakReg">
+<tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
+<dd><p>tweakreg Version 0.6.10 updated on 10-Jan-2012</p>
 <p><strong>Tweakreg</strong> provides an automated interface for computing residual shifts
 between input exposures being combined using AstroDrizzle. The offsets
 computed by Tweakreg correspond to pointing differences after applying the WCS
@@ -596,7 +596,7 @@ These examples illustrate the syntax that can be used to run the task in a
 couple of common modes.</p>
 <ol class="arabic">
 <li><p class="first">Run the task using the TEAL GUI under PyRAF:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">astrodither</span> 
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span> 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">epar</span> <span class="n">tweakreg</span>
 </pre></div>
 </div>
@@ -607,7 +607,7 @@ algorithm with sources &gt;10 sigma above the background without using the
 TEAL GUI:</p>
 </li>
 </ol>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">astrodither</span> <span class="kn">import</span> <span class="n">tweakreg</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakreg</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&#39;\*flt.fits&#39;</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">findmode</span><span class="o">=</span><span class="s">&#39;imagefind&#39;</span><span class="p">,</span> \
 <span class="go">    editipars=False, computesig=True, threshold=10.0, fitgeometry=&#39;shift&#39;)</span>
 </pre></div>
@@ -615,31 +615,25 @@ TEAL GUI:</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodither.tweakreg.edit_imagefindpars">
-<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">edit_imagefindpars</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.tweakreg.edit_imagefindpars" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.tweakreg.edit_imagefindpars">
+<tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">edit_imagefindpars</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.edit_imagefindpars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allows the user to edit the imagefindpars configObj in a TEAL GUI</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodither.tweakreg.edit_sextractorpars">
-<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">edit_sextractorpars</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.tweakreg.edit_sextractorpars" title="Permalink to this definition">¶</a></dt>
-<dd><p>Allows the user to edit the sextractorpars configObj in a TEAL GUI</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="astrodither.tweakreg.getHelpAsString">
-<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#astrodither.tweakreg.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.tweakreg.getHelpAsString">
+<tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>return useful help from a file in the script directory called __taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="astrodither.tweakreg.help">
-<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#astrodither.tweakreg.help" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.tweakreg.help">
+<tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.help" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="astrodither.tweakreg.run">
-<tt class="descclassname">astrodither.tweakreg.</tt><tt class="descname">run</tt><big>(</big><em>configobj</em><big>)</big><a class="headerlink" href="#astrodither.tweakreg.run" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.tweakreg.run">
+<tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary Python interface for image registration code
 This task replaces &#8216;tweakshifts&#8217;</p>
 </dd></dl>

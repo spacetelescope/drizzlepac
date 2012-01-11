@@ -48,8 +48,8 @@ from . import wcs_functions
 
 __taskname__ = "astrodrizzle"
 
-__version__ = '4.2.9dev'
-__vdate__ = '9-Jan-2012'
+__version__ = '4.2.10dev'
+__vdate__ = '11-Jan-2012'
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -136,14 +136,14 @@ def run(configobj, wcsmap=None):
 
         1. Passing a config object to teal
 
-        teal.teal('astrodither/pars/astrodrizzle.cfg')
+        teal.teal('drizzlepac/pars/astrodrizzle.cfg')
 
 
         2. Passing a task  name:
 
         teal.teal('astrodrizzle')
 
-        The example config files are in astrodither/pars
+        The example config files are in drizzlepac/pars
 
     """
     #

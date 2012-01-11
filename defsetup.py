@@ -73,7 +73,7 @@ def getNumpyExtensions():
         raise ValueError("BUILD should be one of 'debug', 'profile', or 'release'")
 
 
-    ext = [Extension("astrodither.cdriz",['src/arrdrizmodule.c',
+    ext = [Extension("drizzlepac.cdriz",['src/arrdrizmodule.c',
                                           'src/cdrizzleblot.c',
                                           'src/cdrizzlebox.c',
                                           'src/cdrizzleio.c',
@@ -92,25 +92,25 @@ def getNumpyExtensions():
     return ext
 
 
-pkg = "astrodither"
+pkg = "drizzlepac"
 
 setupargs = {
 
-    'version' :         '4.1.3dev',
+    'version' :         '4.2.10dev',
     'description' :     "C-based MultiDrizzle",
-    'author' :          "Megan Sosey, Warren Hack, Christopher Hanley",
+    'author' :          "Megan Sosey, Warren Hack, Christopher Hanley, Chris Sontag",
     'author_email' :    "help@stsci.edu",
     'license' :         "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :       ["Linux","Solaris","Mac OS X","Win"],
-    'data_files' :        [( pkg+"/pars", ['lib/astrodither/pars/*']),
-                            ( pkg+"/htmlhelp/_images", ['lib/astrodither/htmlhelp/_images/*']),
-                            ( pkg+"/htmlhelp/_sources", ['lib/astrodither/htmlhelp/_sources/*']),
-                            ( pkg+"/htmlhelp/_static", ['lib/astrodither/htmlhelp/_static/*']),
-                            ( pkg+"/htmlhelp", ['lib/astrodither/htmlhelp/*.html']),
-                            ( pkg, ['lib/astrodither/*.help'])],
+    'data_files' :        [( pkg+"/pars", ['lib/drizzlepac/pars/*']),
+                            ( pkg+"/htmlhelp/_images", ['lib/drizzlepac/htmlhelp/_images/*']),
+                            ( pkg+"/htmlhelp/_sources", ['lib/drizzlepac/htmlhelp/_sources/*']),
+                            ( pkg+"/htmlhelp/_static", ['lib/drizzlepac/htmlhelp/_static/*']),
+                            ( pkg+"/htmlhelp", ['lib/drizzlepac/htmlhelp/*.html']),
+                            ( pkg, ['lib/drizzlepac/*.help'])],
     'scripts' :         ["scripts/mdriz","scripts/resetbits","scripts/updatenpol"] ,
     'ext_modules' :     getNumpyExtensions(),
-    'package_dir' :     { 'astrodither' : 'lib/astrodither', },
+    'package_dir' :     { 'drizzlepac' : 'lib/drizzlepac', },
 
     }
 

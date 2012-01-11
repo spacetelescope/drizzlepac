@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
 if __name__ == '__main__':
-    import astrodither.updatenpol
-    astrodither.updatenpol.main()
+    import drizzlepac.updatenpol
+    drizzlepac.updatenpol.main()

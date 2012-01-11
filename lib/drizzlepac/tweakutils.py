@@ -1,4 +1,5 @@
 import string,os
+
 import numpy as np
 import stsci.ndimage as ndimage
 
@@ -710,7 +711,7 @@ def gauss(x,sigma):
     return np.exp(-np.power(x,2)/(2*np.power(sigma,2))) / (sigma*np.sqrt(2*np.pi))
 
 
-#### Plotting Utilities for astrodither
+#### Plotting Utilities for drizzlepac
 def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                     title=None, axes=None, every=1,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
@@ -956,8 +957,9 @@ def find_xy_peak(img,center=None):
         # compute S/N criteria for this peak: flux/sqrt(mean of rest of array)
         flux = imgc[xp_slice].sum()
         delta_size = float(img.size - imgc[xp_slice].size)
+        if delta_size == 0: delta_size = 1
         delta_flux = float(imgsum - flux)
-        if delta_size != 0.0 and delta_flux != 0.0:
+        if delta_flux != 0.0:
             zpqual = flux/np.sqrt(delta_flux/delta_size)
             if np.isnan(zpqual) or np.isinf(zpqual):
                 zpqual = None
@@ -971,6 +973,32 @@ def find_xy_peak(img,center=None):
     del imgc
     return xp,yp,flux,zpqual
 
+def plot_zeropoint(pars):
+    """ Plot 2d histogram.
+    
+    Pars will be a dictionary containing: 
+        data, figure_id, vmax, title_str, xp,yp, searchrad
+    """
+    xp = pars['xp']
+    yp = pars['yp']
+    searchrad = pars['searchrad']
+    
+    pl.figure(num=pars['figure_id'])
+    pl.clf()
+    pl.ioff()
+    a=pl.imshow(pars['data'],vmin=0,vmax=pars['vmax'],interpolation='nearest')
+    pl.jet()#gray()
+    pl.colorbar()
+    pl.title(pars['title_str'])
+    pl.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
+    pl.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
+    pl.text(searchrad,searchrad,"Offset=0,0",
+            verticalalignment='bottom',color='yellow')
+    pl.xlabel("Offset in X (pixels)")
+    pl.ylabel("Offset in Y (pixels)")
+    pl.draw()
+    pl.ion()
+    
 def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
     """ Create a matrix which contains the delta between each XY position and 
         each UV position. 
@@ -1007,19 +1035,13 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
             zqual = 0.0
         else:
             zqual = zpqual
-        pl.figure(num=figure_id)
-        pl.clf()
-        pl.ioff()
-        a=pl.imshow(zpmat,vmin=0,vmax=zpstd,interpolation='nearest')
-        pl.jet()#gray()
-        pl.colorbar()
-        pl.title("Histogram of offsets: Peak has %d matches at (%0.4g, %0.4g)"%(flux,xp,yp))
-        pl.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
-        pl.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
-        pl.text(searchrad,searchrad,"Offset=0,0",
-                verticalalignment='bottom',color='yellow')
-        pl.draw()
-        pl.ion()
 
+        title_str = "Histogram of offsets: Peak has %d matches at (%0.4g, %0.4g)"%(flux,xp,yp)
+        plot_pars = {'data':zpmat,'figure_id':figure_id,'vmax':zpstd,
+                    'xp':xp,'yp':yp,'searchrad':searchrad,'title_str':title_str
+                    }
+        
+        plot_zeropoint(plot_pars)
+        
     return xp,yp,flux,zpqual
     
