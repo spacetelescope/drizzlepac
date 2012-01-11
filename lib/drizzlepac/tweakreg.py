@@ -251,7 +251,7 @@ def run(configobj):
 # 
 # Primary interface for running this task from Python
 #
-def TweakReg(files, editpars=False, configObj=None, **input_dict):
+def TweakReg(files, editpars=False, configobj=None, **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
@@ -266,7 +266,7 @@ def TweakReg(files, editpars=False, configObj=None, **input_dict):
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     try:
-        configObj = util.getDefaultConfigObj(__taskname__, configObj,
+        configObj = util.getDefaultConfigObj(__taskname__, configobj,
                                             input_dict,
                                             loadOnly=(not editpars))
     except ValueError:
