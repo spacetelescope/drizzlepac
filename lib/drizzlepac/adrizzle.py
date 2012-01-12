@@ -500,7 +500,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # print out parameters being used for drizzling
     log.info("Running Drizzle to create output frame with WCS of: ")
     output_wcs.printwcs()
-    print '\n'
 
     # Will we be running in parallel?
     pool_size = 1
@@ -509,10 +508,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                                        num_tasks = len(imageObjectList))
     will_parallel = single and pool_size > 1
     if will_parallel:
-        print 'Executing %d parallel threads/processes' % len(imageObjectList) # !!! change to pool_size
+        log.info('Executing %d parallel threads/processes' % len(imageObjectList)) # !!! change to pool_size
     else:
         if single: # not yet an option for final drizzle, msg would confuse
-            print 'Executing serially'
+            log.info('Executing serially')
 
     # Set parameters for each input and run drizzle on it here.
     #
