@@ -1,3 +1,4 @@
+
 import os
 import numpy as np
 import pywcs
@@ -260,7 +261,7 @@ class ImageCatalog(Catalog):
         """
         #x,y,flux,sharp,round = idlphot.find(array,self.pars['hmin'],self.pars['fwhm'],
         #                    roundlim=self.pars['roundlim'], sharplim=self.pars['sharplim'])
-        print '###Source finding started at: ',util._ptime()[0]
+        print '###Source finding for EXT=',self.wcs.extname,' started at: ',util._ptime()[0]
         if self.pars['computesig']:
             # compute sigma for this image
             sigma = self._compute_sigma()

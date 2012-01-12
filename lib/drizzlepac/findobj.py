@@ -168,7 +168,7 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
     s = ndim.generate_binary_structure(2,2)
     ldata,nobj=ndim.label(tdata,structure=s)
     fobjects = ndim.find_objects(ldata)
-    print 'Number of potential sources: ',nobj
+    #print 'Number of potential sources: ',nobj
     
     fluxes = []
     fitind = []
@@ -326,7 +326,7 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
         if (abs (dx) > xhalf):
             dx = 0.0
             
-    x = int(x0)+1 + dx 
+    x = int(x0) + dx 
 
     # Initialize y fit.
     sumgd = 0.0
@@ -402,7 +402,7 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
         if (abs (dy) > yhalf):
             dy = 0.0
     
-    y = int(y0)+1 + dy
+    y = int(y0) + dy
     round = 2.0 * (hx - hy) / (hx + hy)
     return x,y,round
 

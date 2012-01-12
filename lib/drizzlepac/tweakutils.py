@@ -7,7 +7,7 @@ from stsci.tools import asnutil, irafglob, parseinput, fileutil
 import pyfits
 import astrolib.coords as coords
 
-import pylab as pl
+
 import stsci.imagestats as imagestats 
 
 import findobj
@@ -775,6 +775,8 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         
     
     """
+    from matplotlib import pyplot as plt
+    
     if data is None:
         data = readcols(coordfile,cols=columns)
 
@@ -817,10 +819,10 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
         
-    pl.figure(num=figure_id)
+    plt.figure(num=figure_id)
     if not append:
-        pl.clf()
-    pl.ioff()
+        plt.clf()
+    plt.ioff()
     if vector: 
         dxs = imagestats.ImageStats(dx.astype(np.float32))
         dys = imagestats.ImageStats(dy.astype(np.float32))
@@ -831,18 +833,18 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         xrange = maxx - minx
         yrange = maxy - miny
 
-        qplot = pl.quiver(xy1x[::every],xy1y[::every],dx[::every],dy[::every],\
+        qplot = plt.quiver(xy1x[::every],xy1y[::every],dx[::every],dy[::every],\
                   units='y',headwidth=headw,headlength=headl)
         key_dx = xrange*0.01
         key_dy = yrange*(0.005*textscale)
         maxvec = max_vector/2.
         key_len = round((maxvec+0.005),2)
         
-        pl.text(minx+key_dx, miny-key_dy,'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
-        pl.text(minx+key_dx, miny-key_dy*2,'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
-        pl.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(
+        plt.text(minx+key_dx, miny-key_dy,'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
+        plt.text(minx+key_dx, miny-key_dy*2,'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
+        plt.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(
                 xy1x.shape[0],numpts,title))
-        pl.quiverkey(qplot,minx+key_dx,miny+key_dy,key_len,"%0.2f pixels"%(key_len),
+        plt.quiverkey(qplot,minx+key_dx,miny+key_dy,key_len,"%0.2f pixels"%(key_len),
                     coordinates='data',labelpos='E',labelcolor='Maroon',color='Maroon')
     else:
         plot_defs = [[xy1x,dx,"X (pixels)","DX (pixels)"],\
@@ -869,30 +871,30 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         yrange = maxy - miny 
         
         for pnum,plot in zip(range(1,5),plot_defs):
-            ax = pl.subplot(2,2,pnum)
+            ax = plt.subplot(2,2,pnum)
             ax.plot(plot[0],plot[1],'.')
             if title is None:
                 ax.set_title("Residuals [%d/%d]: No FIT applied"%(xy1x.shape[0],numpts))
             else:
                 # This definition of the title supports math symbols in the title
                 ax.set_title(r"$"+title+"$")
-            pl.xlabel(plot[2])
-            pl.ylabel(plot[3])
+            plt.xlabel(plot[2])
+            plt.ylabel(plot[3])
             lx=[ int((plot[0].min()-500)/500) * 500,int((plot[0].max()+500)/500) * 500]
-            pl.plot([lx[0],lx[1]],[0.0,0.0],'k')
-            pl.axis([minx,maxx,miny,maxy])
+            plt.plot([lx[0],lx[1]],[0.0,0.0],'k')
+            plt.axis([minx,maxx,miny,maxy])
             if rms:
-                pl.text(minx+xrange*0.01, maxy-yrange*(0.01*textscale),'RMS(X) = %f, RMS(Y) = %f'%(dx.std(),dy.std()))
+                plt.text(minx+xrange*0.01, maxy-yrange*(0.01*textscale),'RMS(X) = %f, RMS(Y) = %f'%(dx.std(),dy.std()))
             if linfit:
                 lxr = int((lx[-1] - lx[0])/100)
                 lyr = int((plot[1].max() - plot[1].min())/100)
                 A = np.vstack([plot[0],np.ones(len(plot[0]))]).T
                 m,c = np.linalg.lstsq(A,plot[1])[0]
                 yr = [m*lx[0]+c,lx[-1]*m+c]
-                pl.plot([lx[0],lx[-1]],yr,'r')
-                pl.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
-    pl.draw()
-    pl.ion()
+                plt.plot([lx[0],lx[-1]],yr,'r')
+                plt.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
+    plt.draw()
+    plt.ion()
         
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
@@ -979,25 +981,27 @@ def plot_zeropoint(pars):
     Pars will be a dictionary containing: 
         data, figure_id, vmax, title_str, xp,yp, searchrad
     """
+    from matplotlib import pyplot as plt
+    
     xp = pars['xp']
     yp = pars['yp']
     searchrad = pars['searchrad']
     
-    pl.figure(num=pars['figure_id'])
-    pl.clf()
-    pl.ioff()
-    a=pl.imshow(pars['data'],vmin=0,vmax=pars['vmax'],interpolation='nearest')
-    pl.jet()#gray()
-    pl.colorbar()
-    pl.title(pars['title_str'])
-    pl.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
-    pl.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
-    pl.text(searchrad,searchrad,"Offset=0,0",
+    plt.figure(num=pars['figure_id'])
+    plt.clf()
+    plt.ioff()
+    a=plt.imshow(pars['data'],vmin=0,vmax=pars['vmax'],interpolation='nearest')
+    plt.jet()#gray()
+    plt.colorbar()
+    plt.title(pars['title_str'])
+    plt.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
+    plt.plot(searchrad,searchrad,color='yellow',marker='+',markersize=120)
+    plt.text(searchrad,searchrad,"Offset=0,0",
             verticalalignment='bottom',color='yellow')
-    pl.xlabel("Offset in X (pixels)")
-    pl.ylabel("Offset in Y (pixels)")
-    pl.draw()
-    pl.ion()
+    plt.xlabel("Offset in X (pixels)")
+    plt.ylabel("Offset in Y (pixels)")
+    plt.draw()
+    plt.ion()
     
 def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
     """ Create a matrix which contains the delta between each XY position and 
