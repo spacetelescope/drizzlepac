@@ -302,6 +302,13 @@ class Image(object):
                                     ref_outxy,searchrad=radius,
                                     histplot=matchpars['see2dplot'],
                                     figure_id = self.figure_id)
+                if 'residplot' in matchpars and 'No' in matchpars['residplot']: 
+                    a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
+                    if 'n' in a.lower():
+                        self.perform_update = False
+                    if 'q' in a.lower():
+                        self.quit_immediately = True
+
                 if matchpars['see2dplot']:
                     self.figure_id += 1
                 if zpqual is not None:

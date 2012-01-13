@@ -11,7 +11,7 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.11'
+__version__ = '0.6.12'
 __vdate__ = '13-Jan-2012'
 
 import tweakutils
@@ -65,7 +65,7 @@ def edit_imagefindpars():
     iparsobj = teal.teal(imagefindpars.__taskname__, returnDict=False, loadOnly=False, canExecute=False)
         
         
-@util.with_logging
+#@util.with_logging
 def run(configobj):
     """ Primary Python interface for image registration code
         This task replaces 'tweakshifts'
@@ -148,6 +148,9 @@ def run(configobj):
     catfile_kwargs.update(configobj['SOURCE FINDING PARS'])
     uphdr_par = configobj['UPDATE HEADER']
     hdrlet_par = configobj['HEADERLET CREATION']
+    objmatch_par = configobj['OBJECT MATCHING PARAMETERS']
+    objmatch_par['residplot'] = configobj['CATALOG FITTING PARAMETERS']['residplot']
+    
     hdrlet_par.update(uphdr_par) # default hdrlet name
     catfile_kwargs['updatehdr'] = uphdr_par['updatehdr']
     
