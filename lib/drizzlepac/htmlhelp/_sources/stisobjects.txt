@@ -4,7 +4,7 @@
 STIS ImageObjects
 *****************
 
-.. currentmodule:: astrodither.stisData
+.. currentmodule:: drizzlepac.stisData
 
 .. autoclass:: STISInputImage
    :members:
