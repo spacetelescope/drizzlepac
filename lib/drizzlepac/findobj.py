@@ -134,7 +134,7 @@ def fitgaussian(data,cntr):
     return p[0]
 
 
-def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5, theta=0.):
+def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5, theta=0.):    
     # Define convolution inputs
     nx, ny = gausspars(fwhm, nsigma=nsigma, ratio= ratio, theta=theta)
     xin, yin = np.mgrid[0:nx, 0:ny]
@@ -207,7 +207,7 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
         # Define region centered on max value in object (slice)
         # This region will be bounds-checked to insure that it only accesses
         # a valid section of the image (not off the edge)
-        maxpos = (int(cntr[1])+ssnew[0].start,int(cntr[0])+ssnew[1].start)
+        maxpos = (int(cntr[1]+0.5)+ssnew[0].start,int(cntr[0]+0.5)+ssnew[1].start)
         yr0 = maxpos[0]-gradius
         yr1 = maxpos[0]+gradius+1
         if yr0 < 0 or yr1 > jdata.shape[0]: 
@@ -224,11 +224,12 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
         if (datamax is not None and jregion.max() >= datamax):
             continue
         ninit2 += 1
-        
+
         px,py,pround = xy_round(jregion,gradius,gradius,skymode,
                 rmask,xsigsq,ysigsq,datamax=datamax)
         if px is None:
             continue
+        
         fitind.append((px+xr0,py+yr0))
         # compute a source flux value
         fluxes.append(jregion.sum())
