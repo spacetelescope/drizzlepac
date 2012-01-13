@@ -4,7 +4,7 @@ import sys,os,copy
 import util
 import numpy as np
 import pyfits
-from stsci.tools import fileutil, teal, logutil
+from stsci.tools import fileutil, logutil, mputil, teal
 import outputimage,wcs_functions,processInput,util
 import stwcs
 from stwcs import distortion
@@ -19,6 +19,7 @@ except ImportError:
 
 if util.can_parallel:
     import multiprocessing
+
 
 __taskname__ = "drizzlepac.adrizzle"
 _single_step_num_ = 3
@@ -195,7 +196,7 @@ def run(configObj, wcsmap=None):
         input_wcs.det2im = None
 
     wcslin = distortion.utils.output_wcs([input_wcs],undistort=undistort)
-    
+
     # Perform actual drizzling now...
     _vers = do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
@@ -463,18 +464,19 @@ def _setDefaults(configObj={}):
     return paramDict
 
 def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
-    """Perform drizzle operation on input to create output.
-     The input parameters originally was a list
-     of dictionaries, one for each input, that matches the
-     primary parameters for an IRAF drizzle task.
+    """ Perform drizzle operation on input to create output.
+    The input parameters originally was a list
+    of dictionaries, one for each input, that matches the
+    primary parameters for an IRAF drizzle task.
 
-     This method would then loop over all the entries in the
-     list and run 'drizzle' for each entry.
+    This method would then loop over all the entries in the
+    list and run 'drizzle' for each entry.
 
     Parameters required for input in paramDict:
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """
+
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
@@ -508,7 +510,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                                        num_tasks = len(imageObjectList))
     will_parallel = single and pool_size > 1
     if will_parallel:
-        log.info('Executing %d parallel threads/processes' % len(imageObjectList)) # !!! change to pool_size
+        log.info('Executing %d parallel threads/processes' % pool_size)
     else:
         if single: # not yet an option for final drizzle, msg would confuse
             log.info('Executing serially')
@@ -525,7 +527,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     #            if single:
     # Determine how many chips make up each single image
     for img in imageObjectList:
-        for chip in img.returnAllChips(extname=img.scienceExt):            
+        for chip in img.returnAllChips(extname=img.scienceExt):
             plsingle = chip.outputNames['outSingle']
             if _numctx.has_key(plsingle): _numctx[plsingle] += 1
             else: _numctx[plsingle] = 1
@@ -561,11 +563,11 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Insure that the header reports the proper values for the start of the
     # exposure time used to make this; in particular, TIME-OBS and DATE-OBS.
     template = None
-    subprocs = []
 
     #
     # Work on each image
     #
+    subprocs = []
     for img in imageObjectList:
 
         chiplist = img.returnAllChips(extname=img.scienceExt)
@@ -585,9 +587,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 args=(img,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
                       _chipIdx,None,None,None,_hdrlist,wcsmap))
-
             subprocs.append(p)
-            p.start()
         else:
             run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,
                          single,num_in_prod,build,_versions,_numctx,_nplanes,
@@ -599,9 +599,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             _chipIdx = 0
 
     # do the join if we spawned tasks
-    if len(subprocs) > 0:
-        for p in subprocs:
-            p.join()
+    if will_parallel:
+        mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
 
     del _outsci,_outwht,_outctx,_hdrlist
     # have looped over each img/chip
