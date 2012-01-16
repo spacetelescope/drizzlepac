@@ -11,11 +11,12 @@ import pyfits
 import os
 import quickDeriv
 import util
-from stsci.tools import fileutil, teal, logutil
+from stsci.tools import fileutil, logutil, mputil, teal
 
 
 if util.can_parallel:
     import multiprocessing
+
 
 
 __version__ = '1.1'  # we should go through and update all these
@@ -79,18 +80,17 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
     # if we have the cpus and s/w, ok, but still allow user to set pool size
     pool_size = 1
     if util.can_parallel:
-        pool_size = util.get_pool_size(configObj.get('num_cores'))
-        pool_size = 1 # !!! temporarily force serial exec while checking bug
+        pool_size = util.get_pool_size(configObj.get('num_cores'),
+                                       num_tasks = len(imgObjList))
 
+    subprocs = []
     if pool_size > 1:
-        log.info('Executing up to %d parallel threads/processes' % pool_size)
-        p = multiprocessing.Pool(pool_size)
-        arglists = []
+        log.info('Executing %d parallel threads/processes' % pool_size)
         for image in imgObjList:
-            arglists.append( (image, paramDict.dict(), saveFile) )
-        p.map(_call_drizCr, arglists) # blocks till all finish
-        p.close() # kill subprocs
-        p.join()
+            p = multiprocessing.Process(target=_drizCr,
+                args=(image, paramDict.dict(), saveFile))
+            subprocs.append(p)
+        mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
     else:
         log.info('Executing serially')
         for image in imgObjList:
@@ -98,11 +98,6 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
 
     if procSteps is not None:
         procSteps.endStep('Driz_CR')
-
-
-def _call_drizCr(input_tuple):
-    """ Use a tuple of inputs; wrap _drizCr. Used by Pool. """
-    return _drizCr(*input_tuple)
 
 
 #the workhorse function
@@ -149,7 +144,7 @@ def _drizCr(sciImage, paramDict, saveFile=True):
 #    except AssertionError:
 #        print "Problem with value of chip or sciImage to drizCR"
 #        print sciImage
-#        raise AssertionError
+#        raise # raise orig error
     crcorr_list =[]
     for chip in range(1,sciImage._numchips+1,1):
         exten=sciImage.scienceExt + ',' +str(chip)
@@ -165,8 +160,7 @@ def _drizCr(sciImage, paramDict, saveFile=True):
                 os.access(blotImageName,os.F_OK)
             except IOError:
                 print "Could not find the Blotted image on disk:",blotImageName
-                raise IOError
-
+                raise # raise orig error
 
             #grab the actual image from disk
             __inputImage=sciImage.getData(exten)
@@ -176,7 +170,7 @@ def _drizCr(sciImage, paramDict, saveFile=True):
             __inputImage *= scienceChip._conversionFactor
 
             try:
-                __blotImage=pyfits.open(blotImageName,mode="readonly")
+                __blotImage=pyfits.open(blotImageName,mode="readonly") # !!! ,memmap=False) ?
             except IOError:
                 print "Problem opening blot images"
                 raise
@@ -192,7 +186,7 @@ def _drizCr(sciImage, paramDict, saveFile=True):
             # buildMask() method may work better here...
             #__dq = sciImage.maskExt + ',' + str(chip)
             #__dqMask=sciImage.getData(__dq)
-            __dqMask = sciImage.buildMask(chip,paramDict['crbit'])
+            __dqMask = sciImage.buildMask(chip,paramDict['crbit']) # both args are ints
 
             #parse out the SNR information
             __SNRList=(paramDict["driz_cr_snr"]).split()
@@ -334,6 +328,7 @@ def _drizCr(sciImage, paramDict, saveFile=True):
                 print "Removed old cosmic ray mask file:",crMaskImage
 
             util.createFile(_cr_file, outfile=crMaskImage, header = None)
+
 
     if(saveFile and paramDict['driz_cr_corr']):
         #util.createFile(__corrFile,outfile=crCorImage,header=None)
