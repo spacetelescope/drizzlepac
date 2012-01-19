@@ -88,6 +88,7 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
         log.info('Executing %d parallel threads/processes' % pool_size)
         for image in imgObjList:
             p = multiprocessing.Process(target=_drizCr,
+                name='drizCR._drizCr()', # for err msgs
                 args=(image, paramDict.dict(), saveFile))
             subprocs.append(p)
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done

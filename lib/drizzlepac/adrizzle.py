@@ -584,6 +584,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         # Work each image, possibly in parallel
         if will_parallel:
             p = multiprocessing.Process(target=run_driz_img,
+                name='adrizzle.run_driz_img()', # for err msgs
                 args=(img,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
                       _chipIdx,None,None,None,_hdrlist,wcsmap))
