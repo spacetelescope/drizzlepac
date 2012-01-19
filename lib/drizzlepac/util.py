@@ -83,6 +83,7 @@ def check_blank(cvar):
 # Logging routines
 #
 
+_log_file_handler = None
 
 def init_logging(logfile=DEFAULT_LOGNAME, default=None):
     """
@@ -106,12 +107,26 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None):
 
     if logname is not None:
         logutil.setup_global_logging()
-        print 'Setting up logfile : ',logname
-        logging.basicConfig(filename=logname, filemode='w',
-                            format='[%(levelname)-8s] %(message)s',
-                            level=logging.INFO)
+        print 'Setting up logfile : ', logname
+        # Don't use logging.basicConfig since it can only be called once in a
+        # session
+        # TODO: Would be fine to use logging.config.dictConfig, but it's not
+        # available in Python 2.5
+        global _log_file_handler
+        root_logger = logging.getLogger()
+        if _log_file_handler:
+            root_logger.removeHandler(_log_file_handler)
+        # Default mode is 'a' which is fine
+        _log_file_handler = logging.FileHandler(logname)
+        # TODO: Make the default level configurable in the task parameters
+        _log_file_handler.setLevel(logging.INFO)
+        _log_file_handler.setFormatter(
+            logging.Formatter('[%(levelname)-8s] %(message)s'))
+        root_logger.addHandler(_log_file_handler)
 
         stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
+        # Disable display of prints to stdout from all packages except
+        # drizzlepac
         stdout_logger.addFilter(logutil.EchoFilter(include=['drizzlepac']))
     else:
         print 'No trailer file created...'
@@ -129,7 +144,7 @@ def end_logging(filename=None):
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
             print 'No trailer file saved...'
-            
+
         logutil.teardown_global_logging()
     else:
         print 'No trailer file saved...'
