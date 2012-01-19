@@ -107,7 +107,6 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None):
 
     if logname is not None:
         logutil.setup_global_logging()
-        print 'Setting up logfile : ', logname
         # Don't use logging.basicConfig since it can only be called once in a
         # session
         # TODO: Would be fine to use logging.config.dictConfig, but it's not
@@ -123,6 +122,8 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None):
         _log_file_handler.setFormatter(
             logging.Formatter('[%(levelname)-8s] %(message)s'))
         root_logger.addHandler(_log_file_handler)
+
+        print 'Setting up logfile : ', logname
 
         stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
         # Disable display of prints to stdout from all packages except
@@ -186,9 +187,20 @@ class WithLogging(object):
                         init_logging(filename)
                 except (KeyError, IndexError, TypeError):
                     pass
+
             self.depth += 1
+
+            # This looks utterly bizarre, but it seems to be the only way I can
+            # ensure that any exceptions that occur in the wrapped function are
+            # logged before teardown_global_logging() is called.  Unless the
+            # except clause is explicitly included here, even with just 'pass'
+            # under it, Python discards the sys.exc_info() data by the time the
+            # finally clause is reached.
+
             try:
                 func(*args, **kwargs)
+            except:
+                pass
             finally:
                 self.depth -= 1
                 if self.depth == 0:
