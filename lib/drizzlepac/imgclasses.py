@@ -268,7 +268,6 @@ class Image(object):
                 if all_radec is not None:
                     self.all_radec = copy.deepcopy(all_radec)            
 
-
     def match(self,ref_outxy, refWCS, refname, **kwargs):
         """ Uses xyxymatch to cross-match sources between this catalog and
             a reference catalog (refCatalog).
@@ -302,7 +301,8 @@ class Image(object):
                                     ref_outxy,searchrad=radius,
                                     histplot=matchpars['see2dplot'],
                                     figure_id = self.figure_id)
-                if 'residplot' in matchpars and 'No' in matchpars['residplot']: 
+                if matchpars['see2dplot'] and ('residplot' in matchpars and 
+                                               'No' in matchpars['residplot']): 
                     a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
                     if 'n' in a.lower():
                         self.perform_update = False
@@ -329,7 +329,6 @@ class Image(object):
                 # set tolerance 
                 xyxytolerance = matchpars['tolerance']
                 xyxysep = matchpars['separation']
-    
             matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,
                                 tolerance=xyxytolerance,separation=xyxysep)
             if len(matches) > minobj:

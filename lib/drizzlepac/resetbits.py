@@ -12,8 +12,8 @@
     ----------
     filename : str
         full filename with path
-    bits : int
-        sum of integers corresponding to all the bits to be reset
+    bits : str
+        sum or list of integers corresponding to all the bits to be reset
 
     Optional Parameters
     -------------------
@@ -68,6 +68,7 @@ import numpy as np
 from stsci.tools import stpyfits as pyfits
 from stsci.tools import parseinput, logutil
 
+from . import util
 
 __taskname__ = "drizzlepac.resetbits"
 __version__ = '1.0.0'
@@ -85,8 +86,8 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
     filename : str
         full filename with path
 
-    bits : int
-        sum of integers corresponding to all the bits to be reset
+    bits : str
+        sum or list of integers corresponding to all the bits to be reset
 
     extver : int, optional
         List of version numbers of the DQ arrays
@@ -112,9 +113,12 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
         2. To reset the 2,32,64 and 4096 bits in the second DQ array,
            specified as 'dq,2', in the file input_file_flt.fits::
 
-                reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
+                reset_dq_bits("input_file_flt.fits", "2,32,64,4096", extver=2)
 
     """
+    # Interpret bits value 
+    bits = util.interpret_bits_value(bits)
+    
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
         # open input file in write mode to allow updating the DQ array in-place

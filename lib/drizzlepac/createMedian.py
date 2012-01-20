@@ -209,7 +209,6 @@ def _median(imageObjectList, paramDict):
             sci_chip = image._image[image.scienceExt,1]
             readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
 
-            #_refsky=(image.wcs.idcscale**2) * image._image["PRIMARY"].header["MDRIZSKY"]
             print "reference sky value for image ",image._filename," is ", backgroundValueList[-1]
         #
         # END Loop over input image list

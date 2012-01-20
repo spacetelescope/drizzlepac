@@ -634,6 +634,29 @@ def runmakewcs(input):
     return newNames
 
 
+def interpret_bits_value(val):
+    """ Converts input bits value from string to a single integer value or None.
+    If a comma-separated set of values are provided, they are summed.
+    """
+    if isinstance(val,int):
+        intval = val
+    else:
+        intval = 0
+        if isCommaList(val):
+            valspl = val.split(',')
+            for v in valspl:
+                intval += int(v)
+        elif '+' in val:
+            valspl = val.split('+')
+            for v in valspl:
+                intval += int(v)
+        elif is_blank(val):
+            intval = None
+        else:
+            intval = int(val)
+    
+    return intval
+
 def update_input(filelist, ivmlist=None, removed_files=None):
     """
     Removes files flagged to be removed from the input filelist.

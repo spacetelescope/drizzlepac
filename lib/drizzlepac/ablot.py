@@ -283,7 +283,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             # Apply sky subtraction and unit conversion to blotted array to
             # match un-modified input array
             if paramDict['blot_addsky']:
-                skyval = chip.subtractedSky
+                skyval = chip.computedSky
             else:
                 skyval = paramDict['blot_skyval']
             _outsci /= chip._conversionFactor

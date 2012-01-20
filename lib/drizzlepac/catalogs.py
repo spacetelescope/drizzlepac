@@ -314,7 +314,7 @@ class ImageCatalog(Catalog):
     def _compute_sigma(self):
         istats = imagestats.ImageStats(self.source,nclip=3,
                                         fields='mode,stddev',binwidth=0.01)
-        sigma = np.sqrt(2.0 * istats.mode)
+        sigma = np.sqrt(2.0 * np.abs(istats.mode))
         return sigma
         
 class UserCatalog(Catalog):

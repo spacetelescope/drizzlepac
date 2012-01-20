@@ -983,7 +983,13 @@ class imageObject(baseImageObject):
                     log.info('Reading in MDRIZSKY of %s' % subsky)
                 else:
                     subsky = 0.0
+                # .computedSky:   value to be applied by the
+                #                 adrizzle/ablot steps. 
+                # .subtractedSky: value already (or will be by adrizzle/ablot)
+                #                 subtracted from the image
                 sci_chip.subtractedSky = subsky
+                sci_chip.computedSky = subsky 
+                
                 sci_chip.darkcurrent = 0.0
 
                 # The following attributes are used when working with sub-arrays

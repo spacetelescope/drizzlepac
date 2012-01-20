@@ -167,10 +167,22 @@ def _skyUserFromFile(imageObjList,skyFile):
 
     # create dict of fname=sky pairs
     skyvals = {}
+    skyapplied = False # flag whether sky has already been applied to images
     for line in open(skyFile):
+        if line[0] == '#' and 'applied' in line:
+            if '=' in line: linesep = '='
+            if ':' in line: linesep = ':'
+            appliedstr = line.split(linesep)[1].strip()
+            if appliedstr.lower() in ['yes','true','y','t']:
+                skyapplied = True
+                print '...Sky values already applied by user...'
+
         if not util.is_blank(line) and line[0] != '#':
             lspl = line.split()
-        skyvals[lspl[0]] = float(lspl[1])
+            svals = []
+            for lvals in lspl[1:]:
+                svals.append(float(lvals))
+            skyvals[lspl[0]] = svals
         
     # Apply user values to appropriate input images
     for imageSet in imageObjList:
@@ -178,14 +190,26 @@ def _skyUserFromFile(imageObjList,skyFile):
         numchips=imageSet._numchips
         sciExt=imageSet.scienceExt
         if fname in skyvals:
-            _skyValue = skyvals[fname]
-
             print "    ...updating MDRIZSKY with user-supplied value."
             for chip in range(1,numchips+1,1):
+                if len(skyvals[fname]) == 1:
+                    _skyValue = skyvals[fname][0]
+                else:
+                    _skyValue = skyvals[fname][chip-1]
+                    
                 chipext = '%s,%d'%(sciExt,chip)
                 _updateKW(imageSet[chipext],fname,(sciExt,chip),skyKW,_skyValue)
 
                 # Update internal record with subtracted sky value
+                #
+                # .computedSky:   value to be applied by the
+                #                 adrizzle/ablot steps. 
+                # .subtractedSky: value already (or will be by adrizzle/ablot)
+                #                 subtracted from the image
+                if skyapplied:
+                    imageSet[chipext].computedSky = 0.0 # used by adrizzle/ablot
+                else:
+                    imageSet[chipext].computedSky = _skyValue
                 imageSet[chipext].subtractedSky = _skyValue
                 print "Setting ",skyKW,"=",_skyValue
         else:
@@ -257,8 +281,9 @@ def _skySub(imageSet,paramDict,saveFile=False):
 
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
+                imageSet[chipext].computedSky = 0.0
                 print "Setting ",skyKW,"=",_skyValue
-
+            
     else:
         # Compute our own sky values and record the values for use later.
         # The minimum sky value from all the  science chips in the exposure
@@ -305,6 +330,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             if idcscale is None: idcscale = image.wcs.pscale
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
+            image.computedSky = _scaledSky
             log.info("Using sky from chip %d: %f\n" % (chip,_scaledSky))
             ###_subtractSky(image,(_scaledSky))
             # Update the header so that the keyword in the image is

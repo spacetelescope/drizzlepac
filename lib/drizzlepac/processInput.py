@@ -124,6 +124,16 @@ def setCommonInput(configObj, createOutwcs=True):
     undistort = True
     if not configObj['coeffs']:
         undistort = False 
+
+    # interpret all 'bits' related parameters and convert them to integers
+    configObj['resetbits'] = util.interpret_bits_value(configObj['resetbits'])
+    step3name = util.getSectionName(configObj,3)
+    configObj[step3name]['driz_sep_bits'] = util.interpret_bits_value(
+                                        configObj[step3name]['driz_sep_bits'])
+    step7name = util.getSectionName(configObj,7)
+    configObj[step7name]['final_bits'] = util.interpret_bits_value(
+                                        configObj[step7name]['final_bits'])
+
     # Build imageObject list for all the valid, shift-updated input files
     log.info('-Creating imageObject List as input for processing steps.')
     imageObjectList = createImageObjectList(files, instrpars,
@@ -132,7 +142,7 @@ def setCommonInput(configObj, createOutwcs=True):
 
     # apply context parameter
     applyContextPar(imageObjectList, configObj['context'])
-
+    
     # reset DQ bits if requested by user
     resetDQBits(imageObjectList, cr_bits_value=configObj['resetbits'])
 
