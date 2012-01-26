@@ -43,18 +43,29 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
             break
 
     # Now read in numerical values from shiftfile
-    type_list = {'names':('fnames','xsh','ysh','rot','scale'),
-                 'formats':('S24','f4','f4','f4','f4')}
-    sdict = np.loadtxt(shiftfile,dtype=type_list,unpack=True)
+    type_list = {'names':('fnames','xsh','ysh','rot','scale','xrms','yrms'),
+                 'formats':('S24','f4','f4','f4','f4','f4','f4')}
+    try:
+        sdict = np.loadtxt(shiftfile,dtype=type_list,unpack=True)
+    except TypeError:
+        tlist = {'names':('fnames','xsh','ysh','rot','scale'),
+                     'formats':('S24','f4','f4','f4','f4')}
+        s = np.loadtxt(shiftfile,dtype=tlist,unpack=True)
+        sdict = np.zeros([s[0].shape,],dtype=type_list)
+        for sname in s.dtype.names:
+            sdict[sname] = s[sname]
     # loadtxt now returns a list of ndarray columns... need to fix this!
     for img in sdict:
-        updatewcs_with_shift(img['fnames'],refimage,wcsname=wcsname,
-                rot=img['rot'],scale=img['scale'],
-                xsh=img['xsh'],ysh=img['ysh'],force=force)
+        updatewcs_with_shift(img['fnames'], refimage, wcsname=wcsname,
+                rot=img['rot'], scale=img['scale'],
+                xsh=img['xsh'], ysh=img['ysh'],
+                xrms=img['xrms'], yrms=img['yrms'],
+                force=force)
 
 def updatewcs_with_shift(image,reference,wcsname=None,
-                        rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None,
-                            verbose=False,force=False,sciext='SCI'):
+                        rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None, 
+                        xrms=None, yrms = None,
+                        verbose=False,force=False,sciext='SCI'):
 
     """ 
     Update the SCI headers in 'image' based on the fit provided as determined
@@ -119,6 +130,20 @@ def updatewcs_with_shift(image,reference,wcsname=None,
     ysh : float 
         Offset in Y pixels from defined tangent plane to be applied to image.
         [Default=0.0]
+
+    fit : arr
+        Linear coefficients for fit 
+        [Default = None]
+
+    xrms : float
+        RMS of fit in RA (in decimal degrees) that will be recorded as 
+        CRDER1 in WCS and header
+        [Default = None]
+        
+    yrms : float
+        RMS of fit in Dec (in decimal degrees) that will be recorded as 
+        CRDER2 in WCS and header
+        [Default = None]
 
     verbose : bool 
         Print extra messages during processing? [Default=False]
@@ -193,8 +218,9 @@ def updatewcs_with_shift(image,reference,wcsname=None,
             print 'Processing %s[',ext,']'
         chip_wcs = wcsutil.HSTWCS(fimg,ext=ext)
 
-        update_refchip_with_shift(chip_wcs,wref,
-                    rot=rot,scale=scale,xsh=xsh,ysh=ysh,fit=fit)
+        update_refchip_with_shift(chip_wcs, wref,
+                    rot=rot, scale=scale, xsh=xsh, ysh=ysh,
+                    fit=fit, xrms=xrms, yrms=yrms)
         if wcsname in [None,' ','','INDEF']:
             wcsname = 'TWEAK'
         # Update FITS file with newly updated WCS for this chip
@@ -229,7 +255,8 @@ def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     return xy1x,xy1y
 
 def update_refchip_with_shift(chip_wcs, wcslin, 
-                            rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None):
+                            rot=0.0, scale=1.0, xsh=0.0, ysh=0.0,
+                            fit=None, xrms=None, yrms=None):
     # compute the matrix for the scale and rotation correction
     if fit is None:
         fitmat = fileutil.buildRotMatrix(-1*rot)*scale
@@ -282,6 +309,10 @@ def update_refchip_with_shift(chip_wcs, wcslin,
     # apply final fit to CD matrix
     chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd,rmat)
 
+    # Step 9
+    # record any reported error for this fit
+    if xrms is not None:
+        chip_wcs.wcs.crder = np.array([xrms,yrms])
 ###
 ### Header keyword prefix related archive functions
 ###

@@ -581,7 +581,11 @@ def isASNTable(inputFilelist):
 
 def isCommaList(inputFilelist):
     """Return True if the input is a comma separated list of names."""
-    if "," in inputFilelist:
+    if isinstance(inputFilelist, int) or isinstance(inputFilelist, np.int32):
+        ilist = str(inputFilelist)
+    else:
+        ilist = inputFilelist
+    if "," in ilist:
         return True
     return False
 

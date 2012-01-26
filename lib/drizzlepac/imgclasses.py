@@ -314,7 +314,9 @@ class Image(object):
                 if zpqual is not None:
                     xyoff = (zpxoff,zpyoff)
                     # set tolerance as well
-                    xyxytolerance = radius*0.1
+                    xyxyrad = radius*0.1
+                    if xyxyrad < 1: xyxyrad = 1
+                    xyxytolerance = xyxyrad
                     xyxysep = 0.0
                 else:
                     use2d = False
@@ -470,7 +472,8 @@ class Image(object):
             updatehdr.updatewcs_with_shift(self.hdulist,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
-                fit=self.fit['fit_matrix'])
+                fit=self.fit['fit_matrix'], 
+                xrms=self.fit['rms_keys']['RMS_RA'],yrms=self.fit['rms_keys']['RMS_DEC'])
 
             wnames = stwcs.wcsutil.altwcs.wcsnames(self.hdulist,ext=extlist[0])
             altkeys = []
@@ -553,7 +556,6 @@ class Image(object):
                 sipname=None, npolfile=None, d2imfile=None, 
                 author=pars['author'], descrip=pars['descrip'], 
                 history=pars['history'],
-                rms_ra=rms_pars['RMS_RA'],rms_dec=rms_pars['RMS_DEC'],
                 nmatch=rms_pars['NMATCH'],catalog=pars['catalog'],
                 attach=pars['attach'], clobber=pars['clobber']
             ) 
@@ -624,7 +626,10 @@ class Image(object):
             compatability with the IRAF-based MultiDrizzle.
         """
         if self.fit is not None:
-            rowstr = '%s    %0.6f  %0.6f    %0.6f     %0.6f\n'%(self.name,self.fit['offset'][0],self.fit['offset'][1],self.fit['rot'],self.fit['scale'][0])
+            rowstr = '%s    %0.6f  %0.6f    %0.6f     %0.6f   %0.6f  %0.6f\n'%(
+                    self.name,self.fit['offset'][0],self.fit['offset'][1],
+                    self.fit['rot'],self.fit['scale'][0],
+                    self.fit['rms'][0],self.fit['rms'][1])
         else:
             rowstr = None
         return rowstr
@@ -709,7 +714,7 @@ class RefImage(object):
         """ Return the information for a shiftfile for this image to provide
             compatability with the IRAF-based MultiDrizzle.
         """
-        rowstr = '%s    0.0  0.0    0.0     1.0\n'%(self.name)
+        rowstr = '%s    0.0  0.0    0.0     1.0    0.0 0.0\n'%(self.name)
         return rowstr
 
     def clean(self):
