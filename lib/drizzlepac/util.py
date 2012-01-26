@@ -11,6 +11,7 @@ import functools
 import os
 import sys
 import string
+import errno
 
 import numpy as np
 import pyfits
