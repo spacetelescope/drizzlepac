@@ -91,7 +91,7 @@ def _interpretMdriztabPars(rec):
         _name = rec.array.names[indx]
         _format = rec.array.formats[indx]
         _value = rec.field(_name)
-         
+        
         # Translate names from MDRIZTAB columns names to 
         # input parameter names found in IRAF par file.
         #
@@ -102,6 +102,9 @@ def _interpretMdriztabPars(rec):
         if _name in ['refimage','bits']:
             for dnames in drizstep_names:
                 tabdict[dnames+_name] = _value
+            continue
+        if _name in ['driz_sep_bits','final_bits']:
+            tabdict[_name] = str(_value)
             continue
         if _name == 'coeffs':
             _val = True
