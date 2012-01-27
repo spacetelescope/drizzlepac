@@ -530,16 +530,8 @@ class Image(object):
         """
         pars = kwargs.copy()
         rms_pars = self.fit['rms_keys']
-        
-        # interpret input strings
+
         str_kw = ['descrip','history','author','hdrfile']
-        if pars['hdrname'].strip() == '':
-            print '='*60
-            print 'ERROR:'
-            print '    No valid "hdrname" parameter value provided!'
-            print '    No headerlets can be generated!'
-            print '='*60
-            return
         for kw in str_kw:
             if pars[kw] == '': pars[kw] = None
         
@@ -747,3 +739,25 @@ def count_sci_extensions(filename):
         num_sci = 1
 
     return num_sci,extname
+
+def verify_hdrname(**pars):
+    if not pars['headerlet']:
+        return
+    
+    # Insure a valid value for hdrname
+    if util.is_blank(pars['hdrname']) and \
+        not util.is_blank(pars['wcsname']):
+            pars['hdrname'] = pars['wcsname']
+            
+    # interpret input strings
+    if pars['hdrname'].strip() == '':
+        print '='*80
+        print 'WARNING:'
+        print '    Headerlet generation requested, but '
+        print '    no valid "hdrname" parameter value was provided!'
+        print '    The requested headerlets can NOT be generated! '
+        print ' '
+        print '    Please provide valid "hdrname" or "wcsname" value '
+        print '        in your next run to write out headerlets.'
+        print '='*80
+        return

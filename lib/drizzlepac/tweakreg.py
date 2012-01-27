@@ -11,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.14'
-__vdate__ = '26-Jan-2012'
+__version__ = '0.6.15'
+__vdate__ = '27-Jan-2012'
 
 import tweakutils
 import imgclasses
@@ -49,7 +49,7 @@ def _managePsets(configobj):
     # Merge all configobj instances into a single object
     configobj['SOURCE FINDING PARS'] = {}
         
-    iparsobj = teal.teal(imagefindpars.__taskname__,loadOnly=True)
+    iparsobj = teal.load(imagefindpars.__taskname__)
 
     # merge these parameters into full set
     configobj['SOURCE FINDING PARS'].merge(iparsobj)
@@ -154,6 +154,9 @@ def run(configobj):
     hdrlet_par.update(uphdr_par) # default hdrlet name
     catfile_kwargs['updatehdr'] = uphdr_par['updatehdr']
     
+    # verify a valid hdrname was provided, if headerlet was set to True 
+    imgclasses.verify_hdrname(**hdrlet_par)
+
     print '\n'+__taskname__+': Finding shifts for ',filenames,'\n'
 
     try:
