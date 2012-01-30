@@ -10,7 +10,7 @@ skyval = float_kw(default=0.0, inactive_if='_rule5_', comment="Custom sky value 
 
 [Data Scaling Parameters]
 in_units = option_kw("counts", "cps", default="cps",comment="Units for input image (counts or cps)")
-out_units = option_kw("counts", "cps", default="cps",comment="Units for output image (counts or cps)")
+out_units = option_kw("counts", "cps", default="counts",comment="Units for output image (counts or cps)")
 expkey = string_kw(default="exptime",comment="Exposure time keyword in input data image header") 
 expout = string_kw(default="input",comment="Exposure time for output image") 
 
