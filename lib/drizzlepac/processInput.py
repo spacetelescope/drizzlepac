@@ -193,12 +193,15 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
     if util.can_parallel:
         pool_size = util.get_pool_size(num_cores)
     inimg = 0
+    chip_mem = 0
     for img in imageObjectList:
         for chip in range(img._numchips):
+            cmem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
             inimg += 1
             if inimg < numchips:
-                chip_mem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
-                input_mem += chip_mem*2
+                input_mem += cmem*2
+            if chip_mem == 0:
+                chip_mem = cmem
     max_mem = (input_mem + output_mem + chip_mem*2)//(1024*1024)
     
     print '*'*80

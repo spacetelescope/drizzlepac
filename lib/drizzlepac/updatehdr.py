@@ -186,7 +186,8 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         image_update = None
 
     # Now that we are sure we have a good reference WCS to use, continue with the update
-    print '\n....Updating header for ',filename,'...\n'
+    if verbose:
+        print '\n....Updating header for ',filename,'...\n'
 
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image,extname=sciext)
@@ -214,7 +215,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 
     # Process MEF images...
     for ext in extlist:
-        if verbose:
+        if verbose > 1:
             print 'Processing %s[',ext,']'
         chip_wcs = wcsutil.HSTWCS(fimg,ext=ext)
 
@@ -338,7 +339,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     wcsname : str
         Label to give newly updated WCS
         
-    verbose : bool
+    verbose : bool, int
         Print extra messages during processing? [Default: False]
         
     """
@@ -364,11 +365,12 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     if new_wcs.idcscale is None:
         idchdr = False
     # Open the file for updating the WCS
-    try:        
-        print 'Updating header for ',fimg.filename(),'[',extnum,']'
+    try:       
+        if verbose:     
+            print 'Updating header for ',fimg.filename(),'[',extnum,']'
         hdr = fimg[extnum].header
 
-        if verbose:
+        if verbose > 1:
             print '    with WCS of'
             new_wcs.printwcs()
         # Insure that if a copy of the WCS has not been created yet, it will be now

@@ -455,10 +455,13 @@ class Image(object):
     def updateHeader(self,wcsname=None):
         """ Update header of image with shifts computed by *perform_fit()*.
         """
-
+        verbose_level = 1
+        if not self.perform_update:
+            verbose_level = 0
         # Create WCSCORR table to keep track of WCS revisions anyway
         wcscorr.init_wcscorr(self.hdulist)
         extlist = []
+        wcscorr_extname = self.ext_name
         if self.num_sci == 1 and self.ext_name == "PRIMARY":
             extlist = [0]
         else:
@@ -472,7 +475,7 @@ class Image(object):
             updatehdr.updatewcs_with_shift(self.hdulist,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
-                fit=self.fit['fit_matrix'], 
+                fit=self.fit['fit_matrix'], verbose=verbose_level, 
                 xrms=self.fit['rms_keys']['RMS_RA'],yrms=self.fit['rms_keys']['RMS_DEC'])
 
             wnames = stwcs.wcsutil.altwcs.wcsnames(self.hdulist,ext=extlist[0])
@@ -483,8 +486,9 @@ class Image(object):
             if len(altkeys) > 1 and ' ' in altkeys:
                 altkeys.remove(' ')
             next_key = altkeys[-1]
-            print '    Writing out new WCS to alternate WCS: "',next_key,'"'
-                
+            if self.perform_update:
+                print '    Writing out new WCS to alternate WCS: "',next_key,'"'
+                    
             self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
             if self.perform_update:
@@ -499,13 +503,6 @@ class Image(object):
                 stwcs.wcsutil.altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wcsname)
             self.next_key = ' '
 
-        # copy updated WCS info to WCSCORR table
-        if self.num_sci > 0 and self.ext_name != "PRIMARY":
-            extlist = []
-            for nsci in range(1,self.num_sci+1):
-                extlist.append(('SCI',nsci))
-        else:
-            extlist = ['PRIMARY']
         # add FIT values to image's PRIMARY header
         #fimg = pyfits.open(self.name,mode='update')
         fimg = self.hdulist
@@ -520,8 +517,9 @@ class Image(object):
                 fimg[ext].header.update(kw+next_key,
                         self.fit['rms_keys'][kw],after='FITNAME'+next_key)
 
-        print 'Updating WCSCORR table with new WCS solution "',wcsname,'"'
-        stwcs.wcsutil.wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
+        if self.perform_update:
+            print 'Updating WCSCORR table with new WCS solution "',wcsname,'"'
+        wcscorr.update_wcscorr(fimg,wcs_id=wcsname,extname=self.ext_name)
         #fimg.close()
         self.hdulist = fimg
 

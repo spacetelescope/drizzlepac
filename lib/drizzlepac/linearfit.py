@@ -61,7 +61,8 @@ def iter_fit_arrays(xy,uv,nclip=3,sigma=3.0):
     fit['ref_coords'] = uv
     return fit
 
-def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,center=None):
+def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,
+                    center=None,verbose=False):
 
     if not isinstance(xy,np.ndarray): 
         # cast input list as numpy ndarray for fitting
@@ -83,7 +84,7 @@ def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,ce
     xy -= center
     uv -= center
 
-    fit = fit_all(xy,uv,mode=mode,center=center)
+    fit = fit_all(xy,uv,mode=mode,center=center,verbose=verbose)
     npts = xy.shape[0]
     npts0 = 0
     if nclip is None: nclip = 0

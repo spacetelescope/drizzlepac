@@ -8,6 +8,7 @@ supported by this package include:
   * resetbits
   * updatenpol
   * pixtosky, skytopix and pixtopix
+  * tweakback
 
 **Output**: The primary output from this task is the distortion-corrected,
 cosmic-ray cleaned, and combined image as a FITS file.
@@ -51,6 +52,9 @@ except:
 # Add updatenpol to the list of tasks imported automatically here
 from . import updatenpol
 from . import buildwcs
+
+# This module supports applying WCS from _drz to _flt files
+from . import tweakback
 
 # These lines allow TEAL to print out the names of TEAL-enabled tasks
 # upon importing this package.
