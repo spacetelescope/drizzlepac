@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import linalg as npla
+from stsci.tools import logutil
 
 """
     ##################
@@ -13,6 +14,8 @@ from numpy import linalg as npla
 """
 
 __version__ = '0.3.1 (22-Dec-2005)'
+
+log = logutil.create_logger(__name__)
 
 def RADTODEG(rad):
     return (rad * 180. / np.pi)
@@ -72,11 +75,10 @@ def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,
         uv = np.array(uv)
 
     if xy.shape[0] < nclip:
-        print 'WARNING:'
-        print '    The number of sources for the fit < number of clipping iterations.'
-        print '    Resetting number of clipping iterations to 0.'
+        log.warning('The number of sources for the fit < number of clipping iterations.',
+            '    Resetting number of clipping iterations to 0.')
         nclip=0
-        
+
     if center is None:
         xcen = uv[:,0].mean()
         ycen = uv[:,1].mean()
@@ -133,12 +135,18 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         uv = np.array(uv)
     
     if mode == 'shift':
+        logstr = 'Performing "shift" fit'
         if verbose:
-            print 'Performing "shift" fit'
+            print logstr
+        else:
+            log.info(logstr)
         result = fit_shifts(xy,uv)
     elif mode == 'general':
+        logstr = 'Performing "general" fit'
         if verbose:
-            print 'Performing "general" fit'
+            print logstr
+        else:
+            log.info(logstr)
         # Set up products used for computing the fit
         gxy = uv    
         guv = xy
@@ -177,8 +185,11 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         result['rms'] = rms
         result['resids'] = resids
     else:
+        logstr = 'Performing "rscale" fit'
         if verbose:
-            print 'Performing "rscale" fit'
+            print logstr
+        else:
+            log.info(logstr)
         result = geomap_rscale(xy,uv,center=center)
 
     return result

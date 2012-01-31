@@ -3,11 +3,13 @@ import numpy as np
 
 import pywcs
 
-from stsci.tools import fileutil
+from stsci.tools import fileutil, logutil
 from stwcs import wcsutil, updatewcs
 from stwcs.wcsutil import wcscorr
 
 import linearfit
+
+log = logutil.create_logger(__name__)
 
 wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2','CRPIX1','CRPIX2','ORIENTAT']
 
@@ -186,8 +188,11 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         image_update = None
 
     # Now that we are sure we have a good reference WCS to use, continue with the update
+    logstr = '....Updating header for %s...'%filename
     if verbose:
-        print '\n....Updating header for ',filename,'...\n'
+        print '\n'+logstr+'\n'
+    else:
+        log.info(logstr)
 
     # reset header WCS keywords to original (OPUS generated) values
     numextn = fileutil.countExtn(image,extname=sciext)
@@ -215,8 +220,11 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 
     # Process MEF images...
     for ext in extlist:
-        if verbose > 1:
-            print 'Processing %s[',ext,']'
+        logstr = 'Processing %s[%s]'%(fimg.filename(),str(ext))
+        if verbose:
+            print '\n'+logstr+'\n'
+        else:
+            log.info(logstr)
         chip_wcs = wcsutil.HSTWCS(fimg,ext=ext)
 
         update_refchip_with_shift(chip_wcs, wref,
@@ -366,12 +374,16 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         idchdr = False
     # Open the file for updating the WCS
     try:       
-        if verbose:     
-            print 'Updating header for ',fimg.filename(),'[',extnum,']'
+        logstr = 'Updating header for %s[%s]'%(fimg.filename(),str(extnum))
+        if verbose:
+            print(logstr)
+        else:
+            log.info(logstr)
+
         hdr = fimg[extnum].header
 
-        if verbose > 1:
-            print '    with WCS of'
+        if verbose:
+            log.info('    with WCS of')
             new_wcs.printwcs()
         # Insure that if a copy of the WCS has not been created yet, it will be now
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)

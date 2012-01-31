@@ -11,12 +11,15 @@ from stwcs.wcsutil import wcscorr
 from stwcs.wcsutil import headerlet
 from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
+from stsci.tools import logutil,textutil
 
 import catalogs
 import linearfit
 import updatehdr
 import util
 import tweakutils
+
+log = logutil.create_logger(__name__)
 
 class Image(object):
     """ Primary class to keep track of all WCS and catalog information for
@@ -48,6 +51,7 @@ class Image(object):
         self.origin = 1
         self.pars = kwargs
         self.exclusions = exclusions
+        self.verbose = kwargs['verbose']
 
         print 'Defining source catalogs for: ',filename
         
@@ -61,7 +65,8 @@ class Image(object):
             #  (assume a valid WCS with each SCI extension)
             num_sci,extname = count_sci_extensions(filename)
             if num_sci < 1:
-                print 'ERROR: No Valid WCS available for %s',filename
+                print >> sys.stderr,textutil.textbox(
+                        'ERROR: No Valid WCS available for %s'%filename)
                 raise InputError
             use_wcs = True
         # Record this for use with methods
@@ -190,7 +195,8 @@ class Image(object):
         """ Transform sky coords from ALL chips into X,Y coords in reference WCS.
         """
         if not isinstance(ref_wcs, pywcs.WCS):
-            print 'Reference WCS not a valid HSTWCS object'
+            print >> sys.stderr, textutil.textbox(
+                            'Reference WCS not a valid HSTWCS object')
             raise ValueError
         # Need to concatenate catalogs from each input
         if self.outxy is None or force:
@@ -215,7 +221,8 @@ class Image(object):
                 pindx = p.find(k)
                 if pindx >= 0 and self.pars[p] is not None:
                     clip_catalog = True
-                    print 'found a match for ',p,self.pars[p]
+                    log.info('found a match for %s to %s'%(
+                                str(p),str(self.pars[p])))
                     # find prefix (if any)
                     clip_prefix = p[:pindx].strip()
 
@@ -287,7 +294,7 @@ class Image(object):
                 ref_outxy.shape == self.outxy.shape) and (
                 ref_outxy == self.outxy).all():
             self.identityfit = True
-            print 'NO fit performed for reference image: ',self.name,'\n'
+            log.info('NO fit performed for reference image: %s\n'%self.name)
         else:
             # convert tolerance from units of arcseconds to pixels, as needed
             radius = matchpars['searchrad']
@@ -355,7 +362,11 @@ class Image(object):
                         matchfile.write(linestr)
                     matchfile.close()
             else:
-                print 'WARNING: Not enough matches found for input image: ',self.name
+                warnstr = textutil.textbox('WARNING: \n'+
+                    'Not enough matches found for input image: %s'%self.name)
+                for line in warnstr.split('\n'):
+                    log.warning(line)
+                print(warnstr)
                 self.goodmatch = False
 
 
@@ -386,7 +397,8 @@ class Image(object):
                     self.matches['img_indx'],self.matches['ref_indx'],
                     mode=pars['fitgeometry'],nclip=pars['nclip'],
                     sigma=pars['sigma'],minobj=pars['minobj'],
-                    center=self.refWCS.wcs.crpix)
+                    center=self.refWCS.wcs.crpix,
+                    verbose=self.verbose)
 
                 self.fit['rms_keys'] = self.compute_fit_rms()
                 if pars['fitgeometry'] != 'general':
@@ -444,7 +456,7 @@ class Image(object):
         if not self.identityfit and self.goodmatch:
             crpix = self.refWCS.wcs.crpix + self.fit['rms']
             crval_rms = self.refWCS.wcs_pix2sky([crpix],1)[0]
-            rms_ra,rms_dec = crval_rms - self.refWCS.wcs.crval
+            rms_ra,rms_dec = np.abs(crval_rms - self.refWCS.wcs.crval)
             nmatch = self.fit['resids'].shape[0]
         else:
             rms_ra = 0.0
@@ -487,12 +499,12 @@ class Image(object):
                 altkeys.remove(' ')
             next_key = altkeys[-1]
             if self.perform_update:
-                print '    Writing out new WCS to alternate WCS: "',next_key,'"'
-                    
+                log.info('    Writing out new WCS to alternate WCS: "%s"'%next_key)
+                
             self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
             if self.perform_update:
-                print '    Saving Primary WCS to alternate WCS: "',next_key,'"'
+                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
                 # archive current WCS as alternate WCS with specified WCSNAME
                 # Start by archiving original PRIMARY WCS 
                 wnames = stwcs.wcsutil.altwcs.wcsnames(self.hdulist,ext=extlist[0])
@@ -518,7 +530,7 @@ class Image(object):
                         self.fit['rms_keys'][kw],after='FITNAME'+next_key)
 
         if self.perform_update:
-            print 'Updating WCSCORR table with new WCS solution "',wcsname,'"'
+            log.info('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
         wcscorr.update_wcscorr(fimg,wcs_id=wcsname,extname=self.ext_name)
         #fimg.close()
         self.hdulist = fimg
@@ -569,7 +581,7 @@ class Image(object):
         """ Write out the catalog of all sources and resids used in the final fit.
         """
         if self.pars['writecat']:
-            print 'Creating catalog for the fit: ',self.catalog_names['fitmatch']
+            log.info('Creating catalog for the fit: %s'%self.catalog_names['fitmatch'])
             f = open(self.catalog_names['fitmatch'],'w')
             f.write('# Input image: %s\n'%self.rootname)
             f.write('# Coordinate mapping parameters: \n')
@@ -631,12 +643,13 @@ class Image(object):
         for f in self.catalog_names:
             if 'match' in f:
                 if os.path.exists(self.catalog_names[f]): 
-                    print 'Deleting intermediate match file: ',self.catalog_names[f]
+                    log.info('Deleting intermediate match file: %s'%
+                                self.catalog_names[f])
                     os.remove(self.catalog_names[f])
             else:
                 for extn in f:
                     if os.path.exists(extn): 
-                        print 'Deleting intermediate catalog: ',extn
+                        log.info('Deleting intermediate catalog: %d'%extn)
                         os.remove(extn)
 
 class RefImage(object):
@@ -688,12 +701,13 @@ class RefImage(object):
         to reference tangent plane (self.wcs) to create output X,Y positions.
         """
         if self.pars.has_key('refxyunits') and self.pars['refxyunits'] == 'pixels':
-            print 'Creating RA/Dec positions for reference sources...'
+            log.info('Creating RA/Dec positions for reference sources...')
             self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
             skypos = self.wcs.wcs_pix2sky(self.all_radec[0],self.all_radec[1],self.origin)
             self.all_radec = np.column_stack([skypos[0][:,np.newaxis],skypos[1][:,np.newaxis]])
         else:
-            print 'Converting RA/Dec positions of reference sources to X,Y positions in reference WCS...'
+            log.info('Converting RA/Dec positions of reference sources to X,Y '+
+                        'positions in reference WCS...')
             self.refWCS = self.wcs
             outxy = self.wcs.wcs_sky2pix(self.all_radec[0],self.all_radec[1],self.origin)
             # convert outxy list to a Nx2 array
@@ -712,6 +726,7 @@ class RefImage(object):
         """
         if not util.is_blank(self.catalog.catname) and os.path.exists(self.catalog.catname):
             os.remove(self.catalog.catname)
+
 
 def build_referenceWCS(catalog_list):
     """ Compute default reference WCS from list of Catalog objects.
@@ -749,13 +764,12 @@ def verify_hdrname(**pars):
             
     # interpret input strings
     if pars['hdrname'].strip() == '':
-        print '='*80
-        print 'WARNING:'
-        print '    Headerlet generation requested, but '
-        print '    no valid "hdrname" parameter value was provided!'
-        print '    The requested headerlets can NOT be generated! '
-        print ' '
-        print '    Please provide valid "hdrname" or "wcsname" value '
-        print '        in your next run to write out headerlets.'
-        print '='*80
+        warnstr = 'WARNING:\n'
+        warnstr += '    Headerlet generation requested, but \n'
+        warnstr += '    no valid "hdrname" parameter value was provided!\n'
+        warnstr += '    The requested headerlets can NOT be generated! \n'
+        warnstr += '\n'
+        warnstr += '    Please provide valid "hdrname" or "wcsname" value \n'
+        warnstr += '        in your next run to write out headerlets.\n'
+        print textutil.textbox(warnstr)
         return

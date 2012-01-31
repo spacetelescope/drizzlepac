@@ -86,7 +86,7 @@ def check_blank(cvar):
 
 _log_file_handler = None
 
-def init_logging(logfile=DEFAULT_LOGNAME, default=None):
+def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
     """
     Set up logger for capturing stdout/stderr messages.
 
@@ -119,7 +119,7 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None):
         # Default mode is 'a' which is fine
         _log_file_handler = logging.FileHandler(logname)
         # TODO: Make the default level configurable in the task parameters
-        _log_file_handler.setLevel(logging.INFO)
+        _log_file_handler.setLevel(level)
         _log_file_handler.setFormatter(
             logging.Formatter('[%(levelname)-8s] %(message)s'))
         root_logger.addHandler(_log_file_handler)
@@ -178,14 +178,16 @@ class WithLogging(object):
                         default = None
 
                     if default is not None:
-                        # Only astrodrizzle seems to have this parameter.
-                        # Could other tasks as well?  Or could we do away with
-                        # it altogether?
+                        # astrodrizzle and tweakreg have this parameter.
+                        # Could we do away with it altogether?
                         if 'runfile' in configobj:
                             filename = configobj['runfile']
                         else:
                             filename = default
-                        init_logging(filename)
+                    verbose_level=logging.INFO
+                    if 'verbose' in configobj and configobj['verbose']:
+                        verbose_level=logging.DEBUG
+                    init_logging(filename,level=verbose_level)
                 except (KeyError, IndexError, TypeError):
                     pass
 
@@ -567,7 +569,8 @@ def printParams(paramDictionary, all=False, log=None):
         output('No parameters were supplied')
     else:
         for key in sorted(paramDictionary):
-            if all or (not isinstance(paramDictionary[key], dict)):
+            if all or (not isinstance(paramDictionary[key], dict)) \
+            and key[0] != '_':
                 output('\t' + '\t'.join([str(key) + ' :',
                                          str(paramDictionary[key])]))
         if log is None:

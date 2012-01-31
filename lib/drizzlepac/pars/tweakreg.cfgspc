@@ -7,6 +7,7 @@ updatewcs = boolean_kw(default=False, comment="Update WCS keywords of input imag
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=True, comment="Remove intermediate files?")
 verbose = boolean_kw(default=False, comment="Print extra messages during processing?")
+runfile = string_kw(default="tweakreg.log",comment="Filename of processing log")
 
 [UPDATE HEADER]
 updatehdr = boolean_kw(default=False, triggers='_section_switch_', comment="Update headers of input files with shifts?")

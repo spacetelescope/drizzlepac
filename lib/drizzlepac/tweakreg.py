@@ -2,7 +2,7 @@
 """
 import os
 
-from stsci.tools import parseinput, teal
+from stsci.tools import parseinput, teal, logutil
 from stwcs import updatewcs
 
 import util
@@ -11,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.16'
-__vdate__ = '30-Jan-2012'
+__version__ = '0.6.17'
+__vdate__ = '31-Jan-2012'
 
 import tweakutils
 import imgclasses
@@ -20,6 +20,8 @@ import catalogs
 import imagefindpars
     
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
+
+log = logutil.create_logger(__name__)
 
 # 
 # Interfaces used by TEAL
@@ -65,7 +67,7 @@ def edit_imagefindpars():
     iparsobj = teal.teal(imagefindpars.__taskname__, returnDict=False, loadOnly=False, canExecute=False)
         
         
-#@util.with_logging
+@util.with_logging
 def run(configobj):
     """ Primary Python interface for image registration code
         This task replaces 'tweakshifts'
@@ -76,6 +78,10 @@ def run(configobj):
     
     # Manage PSETs for source finding algorithms
     _managePsets(configobj)
+
+    # print out user set input parameter values for running this task
+    log.info("USER INPUT PARAMETERS common to all Processing Steps:")
+    util.printParams(configobj, log=log)
 
     # start interpretation of input parameters
     input = configobj['input']
@@ -149,15 +155,26 @@ def run(configobj):
     uphdr_par = configobj['UPDATE HEADER']
     hdrlet_par = configobj['HEADERLET CREATION']
     objmatch_par = configobj['OBJECT MATCHING PARAMETERS']
-    objmatch_par['residplot'] = configobj['CATALOG FITTING PARAMETERS']['residplot']
+    catfit_pars = configobj['CATALOG FITTING PARAMETERS']
+
+    catfit_pars['minobj'] = objmatch_par['minobj']
+    objmatch_par['residplot'] = catfit_pars['residplot']
     
     hdrlet_par.update(uphdr_par) # default hdrlet name
     catfile_kwargs['updatehdr'] = uphdr_par['updatehdr']
+
+    shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']
     
     # verify a valid hdrname was provided, if headerlet was set to True 
     imgclasses.verify_hdrname(**hdrlet_par)
 
-    print '\n'+__taskname__+': Finding shifts for ',filenames,'\n'
+    print '\nFinding shifts for: '
+    for f in filenames:
+        print '    ',f
+    print '\n'
+    
+    log.info("USER INPUT PARAMETERS for finding sources for each input:")
+    util.printParams(catfile_kwargs, log=log)
 
     try:
         for imgnum in xrange(len(filenames)):
@@ -214,6 +231,20 @@ def run(configobj):
 
     if refimage.outxy is not None:    
         try:
+            log.info("USER INPUT PARAMETERS for matching sources:")
+            util.printParams(objmatch_par, log=log)
+            
+            log.info("USER INPUT PARAMETERS for fitting source lists:")
+            util.printParams(configobj['CATALOG FITTING PARAMETERS'], log=log)
+            
+            if hdrlet_par['headerlet']:
+                log.info("USER INPUT PARAMETERS for creating headerlets:")
+                util.printParams(hdrlet_par, log=log)
+
+            if shiftpars['shiftfile']:
+                log.info("USER INPUT PARAMETERS for creating a shiftfile:")
+                util.printParams(shiftpars, log=log)
+
             # Now, apply reference WCS to each image's sky positions as well as the
             # reference catalog sky positions,
             # then perform the fit between the reference catalog positions and 
@@ -225,9 +256,7 @@ def run(configobj):
                 img.match(refimage.outxy, refimage.wcs,refimage.name,
                         **objmatch_par)
 
-                configobj['CATALOG FITTING PARAMETERS']['minobj'] = \
-                                objmatch_par['minobj']
-                img.performFit(**configobj['CATALOG FITTING PARAMETERS'])
+                img.performFit(**catfit_pars)
                 if img.quit_immediately:
                     quit_immediately = True
                     img.close()
@@ -241,7 +270,6 @@ def run(configobj):
                 
             if not quit_immediately:
                 # write out shiftfile (if specified)
-                shiftpars = configobj['OPTIONAL SHIFTFILE OUTPUT']
                 if shiftpars['shiftfile']:
                     tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
         except KeyboardInterrupt:

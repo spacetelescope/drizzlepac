@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pywcs
 import astrolib.coords as coords
+from stsci.tools import logutil, textutil
 
 import stwcs
 from stwcs import wcsutil
@@ -17,6 +18,8 @@ CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','fluxmax','fluxmin','fluxuni
 
 REFCOL_PARS = ['refxcol','refycol','rfluxcol']
 REFCAT_ARGS = ['rfluxmax','rfluxmin','rfluxunits','refnbright']+REFCOL_PARS
+
+log = logutil.create_logger(__name__)
 
 def generateCatalog(wcs,mode='automatic',catalog=None,**kwargs):
     """ Function which determines what type of catalog object needs to be
@@ -111,17 +114,22 @@ class Catalog(object):
         """ Convert XY positions into sky coordinates using STWCS methods
         """
         if not isinstance(self.wcs,pywcs.WCS):
-            print 'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'
+            print >> sys.stderr,textutil.textbox(
+            'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...')
             raise ValueError
         if len(self.xypos[0]) == 0:
             self.xypos = None
         if self.xypos is None:
-            print 'No objects found for this image...'
+            warnstr = textutil.textbox('WARNING: \n'+
+                        'No objects found for this image...')
+            for line in warnstr.split('\n'):
+                log.warning(line)
+            print(warnstr)
             return
 
         if self.radec is None or force:
             if self.wcs is not None:
-                print 'Number of objects in catalog: ',len(self.xypos[0])
+                print('    Number of objects in catalog: %d'%(len(self.xypos[0])))
                 self.radec = self.wcs.all_pix2sky(self.xypos[0],self.xypos[1],self.origin)
             else:
                 # If we have no WCS, simply pass along the XY input positions
@@ -168,7 +176,7 @@ class Catalog(object):
                 xypos_trimmed.append(arr[radec_indx])
             self.radec = radec_trimmed        
             self.xypos = xypos_trimmed
-            print 'Excluded ',num_excluded,' sources from catalog.'
+            log.info('Excluded %d sources from catalog.'%num_excluded)
             
     def buildCatalogs(self,exclusions=None):
         """ Primary interface to build catalogs based on user inputs.
@@ -223,7 +231,11 @@ class Catalog(object):
         """ Write out the X,Y catalog to a file
         """
         if self.xypos is None:
-            print 'No X,Y source catalog to write to file. '
+            warnstr = textutil.textbox(
+                'WARNING: \n    No X,Y source catalog to write to file. ')
+            for line in warnstr.split('\n'):
+                log.warning(line)
+            print(warnstr)
             return
 
         f = open(filename,'w')
@@ -268,7 +280,7 @@ class ImageCatalog(Catalog):
         else:
             sigma = self.pars['sigma']
         skymode = sigma**2
-        print '   Finding sources using sigma = ',sigma
+        log.info('   Finding sources using sigma = %f'%sigma)
         if self.pars['threshold'] in [None,"INDEF",""," "]:
             hmin = skymode
         else:
@@ -285,13 +297,17 @@ class ImageCatalog(Catalog):
             if  not self.pars['computesig']:
                 sigma = self._compute_sigma()
                 hmin = sigma * self.pars['threshold']
-                print 'No sources found with original thresholds. Trying automatic settings.'
+                log.info('No sources found with original thresholds. Trying automatic settings.')
                 x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
                                         datamax=self.pars['datamax'])
             else:
                 self.xypos = [[],[],[],[]]
-                print 'No valid sources found with the current parameter values!'
-        print '###Source finding finished at: ',util._ptime()[0]
+                warnstr = textutil.textbox('WARNING: \n'+
+                    'No valid sources found with the current parameter values!')
+                for line in warnstr.split('\n'):
+                    log.warning(line)
+                print(warnstr)
+        log.info('###Source finding finished at: %s'%(util._ptime()[0]))
         if len(x) > 0:
             if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
                 fminindx = flux >= self.pars['fluxmin']
