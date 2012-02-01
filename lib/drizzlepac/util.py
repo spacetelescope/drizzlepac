@@ -506,7 +506,7 @@ def getSectionName(configObj,stepnum):
     """ Return section label based on step number.
     """
     for key in configObj.keys():
-        if key.find('STEP '+str(stepnum)) >= 0:
+        if key.find('STEP '+str(stepnum)+':') >= 0:
             return key
 
 def getConfigObjPar(configObj, parname):
