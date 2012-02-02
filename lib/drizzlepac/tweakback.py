@@ -11,8 +11,8 @@ from . import linearfit
 
 
 __taskname__ = 'tweakback' # unless someone comes up with anything better
-__version__ = '0.1.0'
-__vdate__ = '30-Jan-2012'
+__version__ = '0.1.1'
+__vdate__ = '02-Feb-2012'
 
 #### TEAL Interfaces to run this task    
 def getHelpAsString(docstring=False):
@@ -151,9 +151,20 @@ def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
     orig_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=wkeys[-2])
     
     # read in RMS values reported for new solution
-    crderr1 = pyfits.getval(drzfile,'CRDER1'+wkeys[-1],ext=sciext)
-    crderr2 = pyfits.getval(drzfile,'CRDER2'+wkeys[-2],ext=sciext)
+    scihdr = pyfits.getheader(drzfile,ext=sciext)
+    crderr1kw = 'CRDER1'+wkeys[-1]
+    crderr2kw = 'CRDER2'+wkeys[-1]
 
+    if crderr1kw in scihdr:
+        crderr1 = pyfits.getval(drzfile,crderr1kw,ext=sciext)
+    else:
+        crderr1 = 0.0
+
+    if crderr2kw in scihdr:
+        crderr2 = pyfits.getval(drzfile,crderr2kw,ext=sciext)
+    else:
+        crderr2 = 0.0
+    del scihdr
     ### Step 2: Generate footprints for each WCS
     final_fp = final_wcs.calcFootprint()
     orig_fp = orig_wcs.calcFootprint()
