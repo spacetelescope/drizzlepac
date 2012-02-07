@@ -649,6 +649,7 @@ def interpret_bits_value(val):
     if isinstance(val,int):
         intval = val
     else:
+        val = str(val)
         intval = 0
         if isCommaList(val):
             valspl = val.split(',')
