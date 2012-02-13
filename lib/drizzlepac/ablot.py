@@ -296,7 +296,8 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=False, wcs=chip.wcs, blot=True)
             _outimg.outweight = None
             _outimg.outcontext = None
-            _outimg.writeFITS(plist['data'],_outsci,None,versions=_versions)
+            _outimg.writeFITS(plist['data'],_outsci,None,
+                                versions=_versions,blend=False)
 
             #_buildOutputFits(_outsci,None,plist['outblot'])
             _hdrlist = []

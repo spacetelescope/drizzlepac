@@ -11,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.17'
-__vdate__ = '31-Jan-2012'
+__version__ = '0.6.18'
+__vdate__ = '13-Feb-2012'
 
 import tweakutils
 import imgclasses
@@ -250,7 +250,14 @@ def run(configobj):
             # then perform the fit between the reference catalog positions and 
             #    each image's positions    
             quit_immediately = False
-            for img in input_images:
+            xycat_lines = ''
+            xycat_filename = None
+            for img in input_images:                
+                if xycat_filename is None:
+                    xycat_filename = img.rootname+'_xy_catfile.list'
+                # Keep a record of all the generated input_xy catalogs
+                xycat_lines += img.get_xy_catnames()
+
                 print '\n'+'='*20
                 print 'Performing fit for: ',img.name,'\n'
                 img.match(refimage.outxy, refimage.wcs,refimage.name,
@@ -269,6 +276,14 @@ def run(configobj):
                 img.close()
                 
             if not quit_immediately:
+                if configobj['writecat'] and not configobj['clean']:
+                    # Write out catalog file recording input XY catalogs used
+                    # This file will be suitable for use as input to 'tweakreg'
+                    # as the 'catfile' parameter
+                    f=open(xycat_filename,mode='update')
+                    f.writelines(xycat_lines)
+                    f.close()
+                
                 # write out shiftfile (if specified)
                 if shiftpars['shiftfile']:
                     tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])

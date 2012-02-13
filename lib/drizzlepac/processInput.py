@@ -692,8 +692,9 @@ def manageInputCopies(filelist, **workinplace):
     for fname in filelist:
         copymade = False # If a copy is made, no need to restore
         copyname = os.path.join(origdir,fname)
+        short_copyname = os.path.join('OrIg_files',fname)
         if workinplace['overwrite']:
-            print 'Forcibly archiving original of: ',fname, 'as ',copyname
+            print 'Forcibly archiving original of: ',fname, 'as ',short_copyname
             # make a copy of the file in the sub-directory
             if os.path.exists(copyname): os.chmod(copyname, 0666)
             shutil.copy(fname,copyname)
@@ -706,7 +707,7 @@ def manageInputCopies(filelist, **workinplace):
         if (workinplace['preserve'] and not os.path.exists(copyname)) \
                 and not workinplace['overwrite']:
             # Preserving a copy of the input, but only if not already archived
-            print 'Preserving original of: ',fname, 'as ',copyname
+            print 'Preserving original of: ',fname, 'as ',short_copyname
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,0444) # make files read-only
@@ -714,7 +715,7 @@ def manageInputCopies(filelist, **workinplace):
             
         if 'restore' in workinplace and not copymade:
             if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['overwrite']:
-                print 'Restoring original input for ',fname,' from ',copyname
+                print 'Restoring original input for ',fname,' from ',short_copyname
                 # replace current files with original version
                 os.chmod(fname, 0666)
                 shutil.copy(copyname, fname)

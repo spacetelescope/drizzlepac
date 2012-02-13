@@ -405,7 +405,7 @@ def verifyFilePermissions(filelist, chmod=True):
         print '\nPlease reset permissions for these files and restart...'
         print '#'*40
         print '\n'
-        newfilelist = None
+        filelist = None
 
     return filelist
 

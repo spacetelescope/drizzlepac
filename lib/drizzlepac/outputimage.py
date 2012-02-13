@@ -3,6 +3,8 @@ from __future__ import division # confidence medium
 import pyfits
 from stsci.tools import fileutil, readgeis, logutil
 
+from fitsblender import blendheaders
+
 yes = True
 no = False
 
@@ -10,8 +12,8 @@ RESERVED_KEYS = ['NAXIS','BITPIX','DATE','IRAF-TLM','XTENSION','EXTNAME','EXTVER
 
 EXTLIST = ('SCI', 'WHT', 'CTX')
 
-DTH_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
-'CRPIX2','CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2']
+WCS_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
+'CRPIX2','CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2','WCSNAME']
 
 # Set up dictionary of default keywords to be written out to the header
 # of the output drizzle image using writeDrizKeywords()
@@ -138,7 +140,6 @@ class OutputImage:
         self.outweight = _outweight
         self.outcontext = _outcontext
 
-
     def set_bunit(self,bunit):
         """
         Method used to update the value of the bunit attribute.
@@ -151,15 +152,15 @@ class OutputImage:
         """
         self.units = units
 
-
-    def writeFITS(self, template, sciarr, whtarr, ctxarr=None, versions=None, extlist=EXTLIST, overwrite=yes):
+    def writeFITS(self, template, sciarr, whtarr, ctxarr=None, 
+                versions=None, overwrite=yes, blend=True):
         """
         Generate PyFITS objects for each output extension
         using the file given by 'template' for populating
         headers.
 
         The arrays will have the size specified by 'shape'.
-        """
+        """                
         if fileutil.findFile(self.output):
             if overwrite:
                 log.info('Deleting previous output product: %s' % self.output)
@@ -208,8 +209,14 @@ class OutputImage:
         # and those headers will have to be generated from drizzle output
         # file FITS headers.
         # NOTE: These are HEADER objects, not HDUs
-        prihdr,scihdr,errhdr,dqhdr = getTemplates(template,extlist)
+        #prihdr,scihdr,errhdr,dqhdr = getTemplates(template)
+        newhdrs, newtab = getTemplates(template,blend=blend)
 
+        prihdr = newhdrs[0]
+        scihdr = newhdrs[1]
+        errhdr = newhdrs[2]
+        dqhdr = newhdrs[3]
+        
         # Setup primary header as an HDU ready for appending to output FITS file
         prihdu = pyfits.PrimaryHDU(header=prihdr,data=None)
 
@@ -244,7 +251,6 @@ class OutputImage:
             prihdu.header['DRIZCORR'] = 'COMPLETE'
         if prihdu.header.has_key('DITHCORR') > 0:
             prihdu.header['DITHCORR'] = 'COMPLETE'
-
 
         prihdu.header.update('NDRIZIM',len(self.parlist),
             comment='Drizzle, No. images drizzled onto output')
@@ -289,7 +295,7 @@ class OutputImage:
             # Add primary header to output file...
             fo.append(prihdu)
 
-            hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=extlist[0])
+            hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
             fo.append(hdu)
 
             # Build WHT extension here, if requested...
@@ -297,7 +303,7 @@ class OutputImage:
                 errhdr.update('CCDCHIP','-999')
 
 
-            hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=extlist[1])
+            hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
             hdu.header.update('EXTVER',1)
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
@@ -316,15 +322,19 @@ class OutputImage:
             else:
                 _ctxarr = None
 
-            hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=extlist[2])
+            hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
             hdu.header.update('EXTVER',1)
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
-
             fo.append(hdu)
 
+            # add table of combined header keyword values to FITS file
+            if newtab is not None:
+                fo.append(newtab)
+                
+            # write out file to disk
             fo.writeto(self.output)
             fo.close()
             del fo, hdu
@@ -355,6 +365,10 @@ class OutputImage:
 
             # Add primary header to output file...
             fo.append(hdu)
+            # add table of combined header keyword values to FITS file
+            if newtab is not None:
+                fo.append(newtab)
+            # write out file to disk
             fo.writeto(self.outdata)
             del fo,hdu
 
@@ -468,64 +482,6 @@ class OutputImage:
             writeDrizKeywords(hdr,_imgnum,drizdict)
             del drizdict
 
-            """
-            hdr.update(_keyprefix+'XGIM',"SIP",
-                comment= 'Drizzle, X distortion image name ')
-
-            hdr.update(_keyprefix+'YGIM',"SIP",
-                comment= 'Drizzle, Y distortion image name ')
-
-    #       Convert the rotation angle back to degrees
-            rot = self.input_pars['rot']
-            if rot is None:
-                rot = ""
-            else:
-                rot = float("%0.8f"%pl['rot'])
-            hdr.update(_keyprefix+'ROT',rot,
-             comment= 'Drizzle, rotation angle, degrees anticlockwise')
-
-
-            #hdr.update(_keyprefix+'LAM',pl['plam'],
-            #    comment='Drizzle, wavelength applied for transformation (nm)')
-    #       Only put the next entries is we are NOT using WCS
-            hdr.update(_keyprefix+'SCAL',pl['scale'],
-             comment=   'Drizzle, scale (pixel size) of output image')
-
-    #       Check the SCALE and units
-    #       The units are INPUT pixels on entry to this routine
-            hdr.update(_keyprefix+'XSH',pl['xsh'],
-             comment= 'Drizzle, X shift applied')
-
-            hdr.update(_keyprefix+'YSH',pl['ysh'],
-             comment= 'Drizzle, Y shift applied')
-
-            hdr.update(_keyprefix+'SFTU','output',
-             comment='Drizzle, units used for shifts')
-
-            hdr.update(_keyprefix+'SFTF','output',
-             comment=   'Drizzle, frame in which shifts were applied')
-
-            hdr.update(_keyprefix+'EXKY','EXPTIME',
-                comment= 'Drizzle, exposure keyword name in input image')
-
-            hdr.update(_keyprefix+'INUN','counts',
-                comment= 'Drizzle, units of input image - counts or cps')
-
-            OFF=0.5
-
-            hdr.update(_keyprefix+'INXC',float(pl['blotnx']/2)+OFF,
-                comment= 'Drizzle, reference center of input image (X)')
-
-            hdr.update(_keyprefix+'INYC',float(pl['blotny']/2)+OFF,
-                comment= 'Drizzle, reference center of input image (Y)')
-
-            hdr.update(_keyprefix+'OUXC',float(pl['outnx']/2)+OFF,
-                comment= 'Drizzle, reference center of output image (X)')
-
-            hdr.update(_keyprefix+'OUYC',float(pl['outny']/2)+OFF,
-                comment= 'Drizzle, reference center of output image (Y)')
-            """
-
         # Add version information as HISTORY cards to the header
         if versions != None:
             ver_str = "PyDrizzle processing performed using: "
@@ -535,86 +491,8 @@ class OutputImage:
                 hdr.add_history(ver_str)
 
 
-
-def getTemplates(fname, extlist):
-    # Obtain default headers for output file
-    # If the output file already exists, use it
-    # If not, use an input file for this information.
-    #
-    # NOTE: Returns 'pyfits.Header' objects, not HDU objects!
-    #
-    if fname is None:
-        raise ValueError('No data files for creating FITS output.')
-
-    froot,fextn = fileutil.parseFilename(fname)
-    if fextn is not None:
-        fnum = fileutil.parseExtn(fextn)[1]
-    ftemplate = fileutil.openImage(froot,mode='readonly')
-    prihdr = pyfits.Header(cards=ftemplate['PRIMARY'].header.ascard.copy())
-    del prihdr['pcount']
-    del prihdr['gcount']
-
-    if fname.find('.fits') > 0 and len(ftemplate) > 1:
-
-        # Setup which keyword we will use to select each
-        # extension...
-        _extkey = 'EXTNAME'
-
-        defnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[0])
-        #
-        # Now, extract the headers necessary for output (as copies)
-        # 1. Find the SCI extension in the template image
-        # 2. Make a COPY of the extension header for use in new output file
-        if fextn is None:
-            extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[0])
-        else:
-            extnum = (extlist[0],fnum)
-        scihdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
-        scihdr.update('extver',1)
-
-        if fextn is None:
-            extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[1])
-        else:
-            # there may or may not be a second type of extension in the template
-            count = 0
-            for f in ftemplate:
-                if f.header.has_key('extname') and f.header['extname'] == extlist[1]:
-                    count += 1
-            if count > 0:
-                extnum = (extlist[1],fnum)
-            else:
-                # Use science header for remaining headers
-                extnum = (extlist[0],fnum)
-        errhdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
-        errhdr.update('extver',1)
-        errhdr.update('bunit','UNITLESS')
-
-
-        if fextn is None:
-            extnum = fileutil.findKeywordExtn(ftemplate,_extkey,extlist[2])
-        else:
-            count = 0
-            for f in ftemplate:
-                if f.header.has_key('extname') and f.header['extname'] == extlist[2]:
-                    count += 1
-            if count > 0:
-                extnum = (extlist[2],fnum)
-            else:
-                # Use science header for remaining headers
-                extnum = (extlist[0],fnum)
-        dqhdr = pyfits.Header(cards=ftemplate[extnum].header.ascard.copy())
-        dqhdr.update('extver',1)
-        dqhdr.update('bunit','UNITLESS')
-
-    else:
-        # Create default headers from scratch
-        scihdr = None
-        errhdr = None
-        dqhdr = None
-
-    ftemplate.close()
-    del ftemplate
-
+def cleanTemplates(scihdr,errhdr,dqhdr):
+    
     # Now, safeguard against having BSCALE and BZERO
     try:
         del scihdr['bscale']
@@ -627,18 +505,31 @@ def getTemplates(fname, extlist):
         # If these don't work, they didn't exist to start with...
         pass
 
-
     # At this point, check errhdr and dqhdr to make sure they
     # have all the requisite keywords (as listed in updateDTHKeywords).
     # Simply copy them from scihdr if they don't exist...
     if errhdr != None and dqhdr != None:
-        for keyword in DTH_KEYWORDS:
-            if not errhdr.has_key(keyword):
+        for keyword in WCS_KEYWORDS:
+            if keyword not in errhdr:
                 errhdr.update(keyword,scihdr[keyword])
-            if not dqhdr.has_key(keyword):
+            if keyword not in dqhdr:
                 dqhdr.update(keyword,scihdr[keyword])
 
-    return prihdr,scihdr,errhdr,dqhdr
+def getTemplates(fnames, blend=True):
+    """ Process all headers to produce a set of combined headers
+        that follows the rules defined by each instrument. 
+
+    """
+    if not blend:
+        newhdrs =  blendheaders.getSingleTemplate(fnames)
+        newtab = None
+    else:
+        # apply rules to create final version of headers, plus table
+        newhdrs, newtab = blendheaders.get_blended_headers(inputs=fnames)  
+    
+    cleanTemplates(newhdrs[1],newhdrs[2],newhdrs[3])
+    
+    return newhdrs, newtab
 
 def addWCSKeywords(wcs,hdr,blot=False):
     """ Update input header 'hdr' with WCS keywords.
@@ -654,41 +545,14 @@ def addWCSKeywords(wcs,hdr,blot=False):
     hdr.update('CRVAL2',wcs.wcs.crval[1])
     hdr.update('CRPIX1',wcs.wcs.crpix[0])
     hdr.update('CRPIX2',wcs.wcs.crpix[1])
+    hdr.update('WCSNAME',wcs.wcs.name)
     hdr.update('VAFACTOR',1.0)
     if not hdr.has_key('ctype1'):
         hdr.update('CTYPE1',wcs.wcs.ctype[0])
         hdr.update('CTYPE2',wcs.wcs.ctype[1])
 
     if not blot:
-        # Remove any reference to TDD correction from
-        #    distortion-corrected products
-        if hdr.has_key('TDDALPHA'):
-            del hdr['TDDALPHA']
-            del hdr['TDDBETA']
-        # Remove '-SIP' from CTYPE for output product
-        if hdr['ctype1'].find('SIP') > -1:
-            hdr.update('ctype1', hdr['ctype1'][:-4])
-            hdr.update('ctype2',hdr['ctype2'][:-4])
-        # Remove SIP coefficients from DRZ product
-        for k in hdr.items():
-            if (k[0][:2] in ['A_','B_']) or (k[0][:3] in ['IDC','SCD'] and k[0] != 'IDCTAB') or \
-            (k[0][:6] in ['SCTYPE','SCRVAL','SNAXIS','SCRPIX']):
-                del hdr[k[0]]
-        # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
-        # does not try to look for non-existent extensions
-        del hdr['D2IMEXT']
-        del hdr['D2IMERR']
-        # Remove paper IV related keywords related to the
-        #   DGEO correction here
-        for k in hdr.items():
-            if (k[0][:2] == 'DP'):
-                del hdr[k[0]+'.*']
-                del hdr[k[0]+'.*.*']
-            if (k[0][:2] == 'CP'):
-                del hdr[k[0]]
-        del hdr['DGEOEXT']
-        del hdr['NPOLEXT']
-
+        blendheaders.remove_distortion_keywords(hdr)
 
 def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
@@ -719,7 +583,7 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
         # Get default headers from multi-extension FITS file
         # If input data is not in MEF FITS format, it will return 'None'
         # NOTE: These are HEADER objects, not HDUs
-        prihdr,scihdr,errhdr,dqhdr = getTemplates(template,EXTLIST)
+        (prihdr,scihdr,errhdr,dqhdr),newtab = getTemplates(template,EXTLIST)
 
         if scihdr is None:
             scihdr = pyfits.Header()

@@ -376,7 +376,6 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
 
 # Run 'drizzle' here...
 #
-
 def mergeDQarray(maskname,dqarr):
     """ Merge static or CR mask with mask created from DQ array on-the-fly here.
     """
@@ -578,8 +577,13 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             num_in_prod = _numctx[chiplist[0].outputNames['outSingle']]
 
         # The name of the 1st image
+        fnames = []
+        for chip in chiplist:
+            fnames.append(chip.outputNames['data'])
         if _chipIdx == 0:
-            template = chiplist[0].outputNames['data']
+            template = fnames
+        else:
+            template.extend(fnames)
 
         # Work each image, possibly in parallel
         if will_parallel:
@@ -636,6 +640,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
         # See if we will be writing out data
         doWrite = chipIdxCopy == num_in_prod-1
 
+        
 #       debuglog('#chips='+str(chipIdxCopy)+', num_in_prod='+\
 #                 str(num_in_prod)+', single='+str(single)+', write='+\
 #                 str(doWrite)+', here='+str(here))
@@ -849,7 +854,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _outimg.set_units(paramDict['units'])
         _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,versions=_versions)
         del _outimg
-
 
 def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,

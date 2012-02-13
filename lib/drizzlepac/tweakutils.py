@@ -473,7 +473,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
     fin.close()
     
     for l in flines: # interpret each line from catalog file
-        if l[0] == '#':
+        if l[0].lstrip() == '#':
             continue
         else:
             # convert first row of data into column definitions using indices
