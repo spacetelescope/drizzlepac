@@ -576,12 +576,14 @@ class Image(object):
         for i in xrange(len(ralist)):
             f.write('%0.8f  %0.8f\n'%(ralist[i],declist[i]))
         f.close()
+
     def get_xy_catnames(self):
         """ Return a string with the names of input_xy catalog names
         """
         catstr = self.name+'  '
-        for xycat in self.catalog_names['input_xy']:
-            catstr += '  '+xycat
+        if 'input_xy' in self.catalog_names:
+            for xycat in self.catalog_names['input_xy']:
+                catstr += '  '+xycat
         return catstr + '\n'
     
     def write_fit_catalog(self):
