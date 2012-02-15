@@ -521,6 +521,26 @@ class baseImageObject:
 
         return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype) * sci_chip._rdnoise
 
+    def getexptimeimg(self,chip):
+        """
+        Notes
+        =====
+        Return an array representing the exposure time per pixel for the detector
+        This method will be overloaded for IR detectors which have their own 
+        EXP arrays (WFC3/IR and NICMOS).
+        
+        The method will return an array of the same shape as the image.
+        
+        :unit: None
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        if sci_chip._wtscl_par == 'expsq':
+            wtscl = sci_chip._exptime*sci_chip._exptime
+        else:
+            wtscl = sci_chip._exptime
+        
+        return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*wtscl
+        
     def getdarkimg(self,chip):
         """
         Notes
@@ -642,6 +662,16 @@ class baseImageObject:
             self._image[self.scienceExt,chip].outputNames['dqmask'] = dqmask_name
         del dqarr
         return dqmask
+    
+    def buildEXPmask(self,chip,dqarr):
+        """ Builds a weight mask from an input DQ array and the exposure time
+        per pixel for this chip. 
+        """
+        log.info("Applying EXPTIME weighting to DQ mask for chip %s" %
+                 chip)
+        expmask = self.getexptimeimg(chip)*dqarr
+        
+        return expmask.astype(np.float32)
 
     def buildIVMmask(self,chip,dqarr,scale):
         """ Builds a weight mask from an input DQ array and either an IVM array
@@ -763,7 +793,8 @@ class baseImageObject:
         """
         sci_chip = self._image[self.scienceExt,chip]
 
-        exptime = sci_chip._exptime
+        exptime = 1 #sci_chip._exptime
+        _parval = 'unity'
         if wtscl_par != None:
             if isinstance(wtscl_par, basestring):
                 if  wtscl_par.isdigit() == False :
@@ -777,6 +808,7 @@ class baseImageObject:
                         _wtscl = _wtscl_float
                     elif wtscl_par == 'expsq':
                         _wtscl = exptime*exptime
+                        _parval = 'expsq'
                     else:
                         # Default to the case of 'exptime', if
                         #   not explicitly specified as 'expsq'
@@ -791,6 +823,7 @@ class baseImageObject:
             # Default case: wt_scl = exptime
             _wtscl = exptime
 
+        sci_chip._wtscl_par = _parval
         sci_chip._wtscl = _wtscl
 
     def set_units(self):

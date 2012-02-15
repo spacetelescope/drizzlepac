@@ -16,6 +16,7 @@ class NICMOSInputImage(imageObject):
 
     def __init__(self, filename=None):
         imageObject.__init__(self,filename)
+        self.timeExt = 'TIME'
 
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
@@ -113,6 +114,18 @@ class NICMOSInputImage(imageObject):
 
     def _setchippars(self):
         self._setDefaultReadnoise()
+
+    def getexptimeimg(self,chip):
+        """
+        Return an array representing the exposure time per pixel for the detector.
+        
+        Returns
+        -------
+        dark: array
+            Exposure time array in the same shape as the input image
+        
+        """
+        return self._image[self.timeExt,chip].data
 
     def getflat(self,chip):
         """

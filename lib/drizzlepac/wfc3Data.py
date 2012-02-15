@@ -154,6 +154,7 @@ class WFC3IRInputImage(WFC3InputImage):
 
     def __init__(self,filename=None,group=None):
         WFC3InputImage.__init__(self,filename,group=group)
+        self.timeExt = 'TIME'
 
         # define the cosmic ray bits value to use in the dq array
         self.full_shape = (1024,1024)
@@ -234,6 +235,18 @@ class WFC3IRInputImage(WFC3InputImage):
 
         #Convert from ELECTRONS/S to ELECTRONS
         self.doUnitConversions()
+
+    def getexptimeimg(self,chip):
+        """
+        Return an array representing the exposure time per pixel for the detector.
+        
+        Returns
+        -------
+        dark: array
+            Exposure time array in the same shape as the input image
+        
+        """
+        return self._image[self.timeExt,chip].data
 
     def getdarkimg(self,chip):
         """

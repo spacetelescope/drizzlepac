@@ -778,7 +778,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     elif wht_type == 'IVM':
         _inwht = img.buildIVMmask(chip._chip,dqarr,pix_ratio)
     else: # wht_type == 'EXP'
-        _inwht = dqarr.astype(np.float32)
+        _inwht = img.buildEXPmask(chip._chip,dqarr)
 
     if not(paramDict['clean']):
         # Write out mask file if 'clean' has been turned off
