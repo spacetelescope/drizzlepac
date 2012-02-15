@@ -1,17 +1,15 @@
 #ifndef CDRIZZLEUTIL_H
 #define CDRIZZLEUTIL_H
+#include "driz_portability.h"
 
 #include <assert.h>
 #include <errno.h>
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
 #include <math.h>
 #if __STDC_VERSION__ >= 199901L
 #include <stdint.h>
 #endif
 #include <stdlib.h>
-
-#ifdef __SUNPRO_C
-#define inline
-#endif
 
 /*****************************************************************
  ERROR HANDLING
@@ -250,7 +248,7 @@ driz_param_dump(struct driz_param_t* p);
 
 /****************************************************************************/
 /* ARRAY ACCESSORS */
-static inline float*
+static inline_macro float*
 data_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->data);
@@ -259,7 +257,7 @@ data_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   return (p->data + (y * p->dnx) + x);
 }
 
-static inline const float*
+static inline_macro const float*
 weights_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->weights);
@@ -268,7 +266,7 @@ weights_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   return (p->weights + (y * p->dnx) + x);
 }
 
-static inline float*
+static inline_macro float*
 output_data_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_data);
@@ -277,7 +275,7 @@ output_data_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   return (p->output_data + (y * p->onx) + x);
 }
 
-static inline float*
+static inline_macro float*
 output_counts_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_counts);
@@ -286,7 +284,7 @@ output_counts_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   return (p->output_counts + (y * p->onx) + x);
 }
 
-static inline integer_t*
+static inline_macro integer_t*
 output_context_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_context);
@@ -295,7 +293,7 @@ output_context_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   return (p->output_context + (y * p->onx) + x);
 }
 
-static inline integer_t*
+static inline_macro integer_t*
 output_done_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->output_done);
@@ -304,7 +302,7 @@ output_done_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   return (p->output_done + (y * p->onx) + x);
 }
 
-static inline integer_t*
+static inline_macro integer_t*
 intab_ptr(struct driz_param_t* p, integer_t i0, integer_t i1) {
   assert(p);
   assert(p->intab);
@@ -385,7 +383,7 @@ Weighted sum of 2 real vectors.
 
 was: WSUMR
 */
-static inline void
+static inline_macro void
 weighted_sum_vectors(const integer_t npix,
                      const float* a /*[npix]*/, const float w1,
                      const float* b /*[npix]*/, const float w2,
@@ -404,12 +402,12 @@ weighted_sum_vectors(const integer_t npix,
 /**
  Round to nearest integer in a way that mimics fortrans NINT
 */
-static inline integer_t
+static inline_macro integer_t
 fortran_round(const double x) {
   return (x >= 0) ? (integer_t)floor(x + .5) : (integer_t)-floor(.5 - x);
 }
 
-static inline double
+static inline_macro double
 min_doubles(const double* a, const integer_t size) {
   const double* end = a + size;
   double value = MAX_DOUBLE;
@@ -419,7 +417,7 @@ min_doubles(const double* a, const integer_t size) {
   return value;
 }
 
-static inline double
+static inline_macro double
 max_doubles(const double* a, const integer_t size) {
   const double* end = a + size;
   double value = MIN_DOUBLE;
@@ -440,7 +438,7 @@ Evaluate a cubic geometric distortion in 2D
 
 @return The distorted value
 */
-static inline double
+static inline_macro double
 eval3(const double x, const double y, const double* co) {
 
   register double x2 = x * x;
@@ -472,7 +470,7 @@ Evaluate a 4th order (quartic) geometric distortion in 2d
 
 @return The distorted value
 */
-static inline double
+static inline_macro double
 eval4(const double x, const double y, const double* co) {
 
   register double x2 = x * x;
@@ -511,7 +509,7 @@ Evaluate a 5th order geometric distortion in 2d
 
 @return The distorted value
 */
-static inline double
+static inline_macro double
 eval5(const double x, const double y, const double* co) {
 
   register double x2 = x * x;
@@ -565,7 +563,7 @@ use the specific (eval4 etc) routines instead.
 
 @return 1 if error occurred
 */
-static inline int
+static inline_macro int
 evaln(const double x, const double y, const double* co, const integer_t order,
       /* Output parameters */
       double* result, struct driz_error_t* error) {
@@ -615,7 +613,7 @@ as this is physically meaningless.
 
 @param[out] yo The distorted y coordinate
 */
-static inline void
+static inline_macro void
 rad3(const double x, const double y, const double* co,
      /* Output parameters */
      double* xo, double* yo) {

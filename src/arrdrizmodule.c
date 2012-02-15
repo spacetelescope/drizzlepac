@@ -1,15 +1,15 @@
+#include "pywcs_api.h"
+
 #include <Python.h>
 
-#ifndef _ISOC99_SOURCE
-#define _ISOC99_SOURCE /* for strtof */
-#endif
-
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include <numpy/arrayobject.h>
+
 #include "pywcs.h"
 
 #include "cdrizzleblot.h"
@@ -17,7 +17,6 @@
 #include "cdrizzlemap.h"
 #include "cdrizzleutil.h"
 #include "cdrizzlewcs.h"
-#include "pywcs_api.h"
 
 static PyObject *gl_Error;
 
@@ -444,13 +443,16 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     fill_value = 0.0;
   } else {
     do_fill = 1;
-    fill_value = (float)strtof(fillstr, &fillstr_end);
+#ifdef _WIN32
+    fill_value = atof(fillstr);
+#else
+    fill_value = strtof(fillstr, &fillstr_end);
     if (fillstr == fillstr_end || *fillstr_end != '\0') {
       driz_error_format_message(&error, "Could not convert fill value '%s'",
                                 fillstr);
-
       goto _exit;
     }
+#endif
   }
 
   nx = img->dimensions[1];

@@ -1,6 +1,7 @@
 #ifndef CDRIZZLEDRIZ_H
 #define CDRIZZLEDRIZ_H
 
+#include "driz_portability.h"
 #include "pywcs.h"
 #include "cdrizzleutil.h"
 /**
@@ -121,7 +122,7 @@ struct mapping_param_t {
 };
 
 
-static inline const float*
+static inline_macro const float*
 x_distortion_ptr(struct mapping_param_t* m, integer_t i0, integer_t i1) {
   assert(m);
   assert(m->x_distortion);
@@ -130,7 +131,7 @@ x_distortion_ptr(struct mapping_param_t* m, integer_t i0, integer_t i1) {
   return (m->x_distortion + (i1 * m->x_dist_dim) + i0);
 }
 
-static inline const float*
+static inline_macro const float*
 y_distortion_ptr(struct mapping_param_t* m, integer_t i0, integer_t i1) {
   assert(m);
   assert(m->y_distortion);

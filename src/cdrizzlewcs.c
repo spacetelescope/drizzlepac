@@ -1,4 +1,5 @@
 #define NO_IMPORT_ARRAY
+#include "driz_portability.h"
 #include "cdrizzlewcs.h"
 #include "cdrizzlemap.h"
 
@@ -143,7 +144,7 @@ rd2xy(const double wcs[8],
 
 #define MAX_MATRIX_ORDER 10
 
-static inline double*
+static inline_macro double*
 mat_ptr(double* mat, const integer_t norder,
         const integer_t i, const integer_t j) {
   assert(mat);

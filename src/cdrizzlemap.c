@@ -1,7 +1,9 @@
 #define NO_IMPORT_ARRAY
 #define NO_IMPORT_PYWCS_API
+#include "driz_portability.h"
 #include "pywcs_api.h"
 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
 #include <math.h>
 #include <string.h>
 #include <time.h>
@@ -10,7 +12,7 @@
 #include "cdrizzlewcs.h"
 
 
-static inline int
+static inline_macro int
 drizzle_polynomial(void* state,
                    const double xd, const double yd,
                    const integer_t n,
@@ -79,7 +81,7 @@ drizzle_polynomial(void* state,
   return 0;
 }
 
-static inline int
+static inline_macro int
 drizzle_distortion_image(void* state,
                          const double xd, const double yd,
                          const integer_t n,
@@ -103,7 +105,7 @@ drizzle_distortion_image(void* state,
   return 0;
 }
 
-static inline int
+static inline_macro int
 drizzle_alpha_beta(void* state,
                    const double xd, const double yd,
                    const integer_t n,
@@ -133,7 +135,7 @@ drizzle_alpha_beta(void* state,
   return 0;
 }
 
-static inline int
+static inline_macro int
 drizzle_linear_or_secondary(void* state,
                             const double xd, const double yd,
                             const integer_t n,

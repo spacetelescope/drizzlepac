@@ -1,9 +1,11 @@
 #define NO_IMPORT_ARRAY
 
+#include "driz_portability.h"
 #include "cdrizzlemap.h"
 #include "cdrizzleblot.h"
 
 #include <assert.h>
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +36,7 @@ is always zero.  \todo Remove this parameter?)
 
 was: IIBIP3
 */
-static inline void
+static inline_macro void
 ii_bipoly3(const float* coeff /* [len_coeff][len_coeff] */,
            const integer_t len_coeff, const integer_t firstt,
            const integer_t npts,
@@ -137,7 +139,7 @@ is always zero.  \todo Remove this parameter?)
 
 was: IIBIP3
 */
-static inline void
+static inline_macro void
 ii_bipoly5(const float* coeff /* [len_coeff][len_coeff] */,
            const integer_t len_coeff, const integer_t firstt,
            const integer_t npts,
@@ -241,7 +243,7 @@ ii_bipoly5(const float* coeff /* [len_coeff][len_coeff] */,
 }
 
 /** Helper function to look up pixels in a 2D array */
-static inline float
+static inline_macro float
 data_value(const float* data, const integer_t dnx, const integer_t dny UNUSED_PARAM,
            const integer_t x, const integer_t y) {
   assert(data);
@@ -656,7 +658,7 @@ was: iinisc
 */
 #define INTERPOLATE_SINC_NCONV 15
 
-static inline int
+static inline_macro int
 interpolate_sinc_(const float* data, const integer_t firstt,
                   const integer_t npts,
                   const float* x /*[npts]*/, const float* y /*[npts]*/,

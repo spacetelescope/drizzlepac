@@ -1,9 +1,17 @@
+#include "driz_portability.h"
 #include "cdrizzleutil.h"
 
+#include <Python.h>
+
 #include <assert.h>
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef _WIN32
+#define ssize_t SSIZE_T
+#endif
 
 #ifdef WITH_CFITSIO
 /**
@@ -356,7 +364,7 @@ commented lines.
 
 See "man 3 getline" for usage info.
 */
-static inline int
+static inline_macro int
 get_line(FILE *fd,
          char** line,
          size_t* line_size) {

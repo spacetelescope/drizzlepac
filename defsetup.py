@@ -13,6 +13,7 @@ except ImportError:
 
 # This is the case for building as part of stsci_python
 if os.path.exists('pywcs'):
+    # use the not-installed-yet source tree for pywcs
     pywcsincludes = [os.path.join('pywcs', 'src')]
     candidates = []
     for path in os.listdir('pywcs'):
@@ -46,7 +47,9 @@ pythonver = 'python' + ver
 if sys.platform != 'win32':
     EXTRA_LINK_ARGS = []
 else:
-    EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT', pywcslib+'/_pywcs.dll']
+    EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT' ] # , pywcslib+'/_pywcs.dll']
+    EXTRA_LINK_ARGS = []
+    
 
 def getNumpyExtensions():
     define_macros = [('PYDRIZZLE', None)]
@@ -86,7 +89,8 @@ def getNumpyExtensions():
                          pywcsincludes,
                      extra_link_args=EXTRA_LINK_ARGS,
                      extra_compile_args=EXTRA_COMPILE_ARGS,
-                     libraries=['m']
+                     # not needed on windows; not needed on mac
+                     # libraries=['m']
                      )]
 
     return ext

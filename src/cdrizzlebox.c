@@ -1,16 +1,18 @@
 #define NO_IMPORT_ARRAY
 
+#include "driz_portability.h"
 #include "cdrizzlemap.h"
 #include "cdrizzlebox.h"
 #include "cdrizzlewcs.h"
 #include "cdrizzleutil.h"
 
 #include <assert.h>
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-static inline double*
+static inline_macro double*
 mapping_4_ptr(struct driz_param_t* p, double* arr, integer_t i0, integer_t i1) {
   assert(p);
   assert(arr);
@@ -19,7 +21,7 @@ mapping_4_ptr(struct driz_param_t* p, double* arr, integer_t i0, integer_t i1) {
   return (arr + ((i1 * p->dnx) + i0));
 }
 
-static inline double*
+static inline_macro double*
 mapping_ptr(struct driz_param_t* p, double* arr, integer_t i0) {
   assert(p);
   assert(arr);
@@ -294,7 +296,7 @@ update_context_image(struct driz_param_t* p, const integer_t ii, const integer_t
   return 0;
 }
 
-inline static int
+inline_macro static int
 update_context(struct driz_param_t* p, const integer_t ii, const integer_t jj,
                const double dow,
                /* Input/output parameters */
@@ -316,7 +318,7 @@ update_context(struct driz_param_t* p, const integer_t ii, const integer_t jj,
   return 0;
 }
 
-inline static void
+inline_macro static void
 update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
             const float d, const float vc, const float dow) {
   const double vc_plus_dow = vc + dow;
@@ -341,7 +343,7 @@ This is used by BOXER.
 NOTE: This is the single most frequently called function.  Ripe
 for optimization.
 */
-static inline double
+static inline_macro double
 sgarea(const double x1, const double y1, const double x2, const double y2) {
   double m, c, dx, dy, xlo, xhi, ylo, yhi, xtop;
   int negdx;
@@ -445,7 +447,7 @@ sgarea(const double x1, const double y1, const double x2, const double y2) {
 
  Used by do_square_kernel.
 */
-static inline double
+static inline_macro double
 boxer(double is, double js,
       const double x[4], const double y[4]) {
   integer_t i;
@@ -485,7 +487,7 @@ This is a simplified version of the BOXER code.
 
 Used by do_kernel_turbo
 */
-static inline double
+static inline_macro double
 over(const integer_t i, const integer_t j,
      const double xmin, const double xmax,
      const double ymin, const double ymax) {
