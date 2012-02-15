@@ -211,6 +211,7 @@ class OutputImage:
         # NOTE: These are HEADER objects, not HDUs
         #prihdr,scihdr,errhdr,dqhdr = getTemplates(template)
         newhdrs, newtab = getTemplates(template,blend=blend)
+        if newtab is not None: nextend += 1 # account for new table extn
 
         prihdr = newhdrs[0]
         scihdr = newhdrs[1]
@@ -296,15 +297,17 @@ class OutputImage:
             fo.append(prihdu)
 
             hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
+            hdu.header.update('EXTNAME','SCI')
+            hdu.header.update('EXTVER',1)
             fo.append(hdu)
 
             # Build WHT extension here, if requested...
             if errhdr:
                 errhdr.update('CCDCHIP','-999')
 
-
             hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
             hdu.header.update('EXTVER',1)
+            hdu.header.update('EXTNAME','WHT')
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
@@ -324,6 +327,8 @@ class OutputImage:
 
             hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
             hdu.header.update('EXTVER',1)
+            hdu.header.update('EXTNAME','CTX')
+            
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.

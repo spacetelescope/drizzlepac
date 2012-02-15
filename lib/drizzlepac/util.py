@@ -479,7 +479,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
             # variables specified by the user in the configObj filename are
             # expanded to the full path
             configObj = teal.load(fileutil.osfn(configObj))
-
+    
     # merge in the user values for this run
     # this, though, does not save the results for use later
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:
