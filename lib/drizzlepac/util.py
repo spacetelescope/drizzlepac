@@ -16,6 +16,7 @@ import errno
 import numpy as np
 import pyfits
 from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
+from stsci.tools import check_files
 
 
 __version__ = "0.1.0tng1"
@@ -363,6 +364,16 @@ def removeFileSafely(filename,clobber=True):
     if filename is not None and filename.strip() != '':
         if os.path.exists(filename) and clobber: os.remove(filename)
 
+def displayEmptyInputWarningBox(display=True, parent=None):
+    """ Displays a warning box for the 'input' parameter.
+    """
+    import tkMessageBox
+
+    if display:
+        msg = 'No valid input files found! '+\
+        'Please check the value for the "input" parameter.'
+        tkMessageBox.showwarning(parent=parent,message=msg, title="No valid inputs!")
+    return "yes"
 
 def verifyFilePermissions(filelist, chmod=True):
     """ Verify that images specified in 'filelist' can be updated.
