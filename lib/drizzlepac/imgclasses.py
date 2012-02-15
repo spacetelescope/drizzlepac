@@ -9,6 +9,7 @@ from stwcs import distortion
 from stwcs.distortion import utils
 from stwcs.wcsutil import wcscorr
 from stwcs.wcsutil import headerlet
+from stwcs.wcsutil import altwcs
 from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
 from stsci.tools import logutil,textutil
@@ -46,6 +47,23 @@ class Image(object):
             open_mode = 'readonly'
         self.hdulist = fu.openImage(filename,mode=open_mode)
 
+        # try to verify whether or not this image has been updated with 
+        # a full distortion model
+        wnames = altwcs.wcsnames(self.hdulist,ext=1)
+        # If no WCSNAME keywords were found, raise the possibility that
+        # the images have not been updated fully and may result in inaccurate
+        # alignment
+        if len(wnames) == 0:
+            print textutil.textbox('WARNING:\n'
+            '    Image %s may not have the full correct'%filename+
+            '    WCS solution in the header as created by stwcs.updatewcs'
+            '    Image alignment may not be taking into account the full'
+            '    the full distortion solution.\n'
+            '    Turning on the "updatewcs" parameter would insure that'
+            '    that each image uses the full distortion model when'
+            '    aligning this image.\n', width=60
+            )
+            
         self.name = filename
         self.rootname = filename[:filename.find('.')]
         self.origin = 1
@@ -480,7 +498,7 @@ class Image(object):
             for ext in range(1,self.num_sci+1):
                 extlist.append((self.ext_name,ext))
 
-        next_key = stwcs.wcsutil.altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
+        next_key = altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
 
         if not self.identityfit and self.goodmatch and \
                 self.fit['offset'][0] != np.nan:
@@ -490,7 +508,7 @@ class Image(object):
                 fit=self.fit['fit_matrix'], verbose=verbose_level, 
                 xrms=self.fit['rms_keys']['RMS_RA'],yrms=self.fit['rms_keys']['RMS_DEC'])
 
-            wnames = stwcs.wcsutil.altwcs.wcsnames(self.hdulist,ext=extlist[0])
+            wnames = altwcs.wcsnames(self.hdulist,ext=extlist[0])
             altkeys = []
             for k in wnames:
                 if wnames[k] == wcsname:
@@ -507,12 +525,21 @@ class Image(object):
                 log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
                 # archive current WCS as alternate WCS with specified WCSNAME
                 # Start by archiving original PRIMARY WCS 
-                wnames = stwcs.wcsutil.altwcs.wcsnames(self.hdulist,ext=extlist[0])
-                stwcs.wcsutil.altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wnames[' '])
+                wnames = altwcs.wcsnames(self.hdulist,ext=extlist[0])
+                # Define a default WCSNAME in the case that the file to be 
+                # updated did not have the WCSNAME keyword defined already
+                # (as will happen when updating images that have not been 
+                #  updated using updatewcs).
+                if len(wnames) == 0:
+                    pri_wcsname = None
+                else:
+                    pri_wcsname = wnames[' ']
+                altwcs.archiveWCS(self.hdulist,extlist,
+                                    wcskey=next_key,wcsname=pri_wcsname)
                 # Find key for next WCS and save again to replicate an updated solution
-                next_key = stwcs.wcsutil.altwcs.next_wcskey(self.hdulist[extlist[0]].header)
+                next_key = altwcs.next_wcskey(self.hdulist[extlist[0]].header)
                 # save again using new WCSNAME
-                stwcs.wcsutil.altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wcsname)
+                altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wcsname)
             self.next_key = ' '
 
         # add FIT values to image's PRIMARY header
