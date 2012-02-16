@@ -707,13 +707,15 @@ class baseImageObject:
             darkimg = self.getdarkimg(chip)
             skyimg = self.getskyimg(chip)
 
-            ivm = (flat)**2/(darkimg+(skyimg*flat)+RN**2)
+            exptime = self.getexptimeimg(chip)
+            ivm = (flat*exptime)**2/(darkimg+(skyimg*flat)+RN**2)
 
            # Multiply the IVM file by the input mask in place.
             ivmarr = ivm * dqarr
 
         # Update 'wt_scl' parameter to match use of IVM file
-        sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
+        #sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
+        sci_chip._wtscl = 1.0/pow(scale,4)
 
         return ivmarr.astype(np.float32)
 
@@ -736,10 +738,12 @@ class baseImageObject:
                          chip)
 
                 # Multiply the scaled ERR file by the input mask in place.
-                errmask = 1/(err)**2 * dqarr
+                exptime = self.getexptimeimg(chip)
+                errmask = (exptime/err)**2 * dqarr
 
                 # Update 'wt_scl' parameter to match use of IVM file
-                sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
+                #sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
+                sci_chip._wtscl = 1.0/pow(scale,4)
 
                 del err
 
