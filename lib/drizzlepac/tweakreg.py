@@ -280,7 +280,8 @@ def run(configobj):
                     # Write out catalog file recording input XY catalogs used
                     # This file will be suitable for use as input to 'tweakreg'
                     # as the 'catfile' parameter
-                    f=open(xycat_filename,mode='update')
+                    if os.path.exists(xycat_filename): os.remove(xycat_filename)
+                    f=open(xycat_filename,mode='w')
                     f.writelines(xycat_lines)
                     f.close()
                 
