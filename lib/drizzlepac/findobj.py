@@ -28,7 +28,7 @@ def gaussian1(height, x0, y0, fwhm, nsigma=1.5, ratio=1., theta=0.0):
     counter-clockwise from the x axis
     """
     
-    xsigma = 0.42466 * fwhm # computes a kernel that matches daofind
+    xsigma = (1./fwhm2sig) * fwhm # computes a kernel that matches daofind
     ysigma = ratio * xsigma
     if ratio == 0: # 1D Gaussian
         if theta == 0 or theta == 180:
@@ -56,7 +56,7 @@ def gaussian1(height, x0, y0, fwhm, nsigma=1.5, ratio=1., theta=0.0):
     
 
 def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
-    xsigma = 0.42466 * fwhm
+    xsigma = (1/fwhm2sig) * fwhm
     ysigma = ratio * xsigma
     if ratio == 0: # 1D Gaussian
         if theta == 0 or theta == 180:
@@ -70,15 +70,18 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
         else:
             print 'Unable to construct 1D Gaussian with these parameters\n'
             raise ValueError
+        theta = np.deg2rad(theta)
+        nx = 2 * int(max(2, (xsigma*nsigma*np.abs(np.cos(theta)))))+1
+        ny = 2 * int(max(2, (xsigma*nsigma*np.abs(np.sin(theta)))))+1
     else: #2D gaussian
-        a = math.cos(theta)**2/xsigma**2 + math.sin(theta)**2/ysigma**2
+        theta = np.deg2rad(theta)
+        a = math.cos(theta)**2/(xsigma**2) + math.sin(theta)**2/(ysigma**2)
         b = 2 * math.cos(theta) * math.sin(theta) *((1.0/xsigma**2)-(1./ysigma**2))
-        c = math.sin(theta)**2/xsigma**2 + math.cos(theta)**2/ysigma**2
-        
-    discrim = b**2 - 4*a*c
-    f = nsigma**2/2.
-    nx = int(2*max(2, math.sqrt(-8*c*f/discrim)))+1
-    ny = int(2*max(2, math.sqrt(-8*a*f/discrim)))+1
+        c = math.sin(theta)**2/xsigma**2 + math.cos(theta)**2/ysigma**2    
+        discrim = b**2 - 4*a*c
+        f = nsigma**2/2.
+        nx = int(2*max(2, math.sqrt(-8*c*f/discrim)))+1
+        ny = int(2*max(2, math.sqrt(-8*a*f/discrim)))+1
 
     return nx, ny
 
@@ -150,9 +153,8 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
     denom = (rmask*rmask).sum() - rmask.sum()**2/npts
     nkern = (rmask - (rmask.sum()/npts))/denom # normalize kernel to preserve fluxes for thresholds
     nkern *= xyrmask
-    
-    # initialize values used for getting source centers
 
+    # initialize values used for getting source centers
     relerr = 1./((rmask**2).sum() - (rmask.sum()**2/xyrmask.sum()))
 
     xsigsq = (fwhm/fwhm2sig)**2
@@ -224,9 +226,8 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
         if (datamax is not None and jregion.max() >= datamax):
             continue
         ninit2 += 1
-
         px,py,pround = xy_round(jregion,gradius,gradius,skymode,
-                rmask,xsigsq,ysigsq,datamax=datamax)
+                kernel,xsigsq,ysigsq,datamax=datamax)
         if px is None:
             continue
         
@@ -385,7 +386,6 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
     hy = sumgsq - (sumg ** 2) / p 
     if (hy <= 0.0):
         return None,None,None
-
     hy = (sumgd - sumg * sumd / p) / (sumgsq - (sumg ** 2) / p)
     if (hy <= 0.0):
         return None,None,None
@@ -404,6 +404,7 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
             dy = 0.0
     
     y = int(y0) + dy
+
     round = 2.0 * (hx - hy) / (hx + hy)
     return x,y,round
 

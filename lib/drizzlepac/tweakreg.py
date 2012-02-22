@@ -11,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.19'
-__vdate__ = '15-Feb-2012'
+__version__ = '0.6.20'
+__vdate__ = '22-Feb-2012'
 
 import tweakutils
 import imgclasses
@@ -260,7 +260,7 @@ def run(configobj):
 
                 print '\n'+'='*20
                 print 'Performing fit for: ',img.name,'\n'
-                img.match(refimage.outxy, refimage.wcs,refimage.name,
+                img.match(refimage.outxy, refimage.wcs, refimage.name, 
                         **objmatch_par)
 
                 img.performFit(**catfit_pars)
