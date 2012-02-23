@@ -11,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.20'
-__vdate__ = '22-Feb-2012'
+__version__ = '0.6.21'
+__vdate__ = '23-Feb-2012'
 
 import tweakutils
 import imgclasses
@@ -102,6 +102,7 @@ def run(configobj):
             raise IOError
 
     if configobj['updatewcs']:
+        print '\nRestoring WCS solutions to original state using updatewcs...\n'
         updatewcs.updatewcs(filenames)
 
     if catnames in [None,'',' ','INDEF'] or len(catnames) == 0:
@@ -260,8 +261,8 @@ def run(configobj):
 
                 print '\n'+'='*20
                 print 'Performing fit for: ',img.name,'\n'
-                img.match(refimage.outxy, refimage.wcs, refimage.name, 
-                        **objmatch_par)
+                img.match(refimage.outxy, refimage.wcs, refimage.name,
+                       **objmatch_par)
 
                 img.performFit(**catfit_pars)
                 if img.quit_immediately:

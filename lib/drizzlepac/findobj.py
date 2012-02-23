@@ -137,7 +137,10 @@ def fitgaussian(data,cntr):
     return p[0]
 
 
-def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5, theta=0.):    
+def findstars(jdata, fwhm, threshold, skymode, 
+                peakmin=None, peakmax=None,
+                ratio=1, nsigma=1.5, theta=0.):    
+
     # Define convolution inputs
     nx, ny = gausspars(fwhm, nsigma=nsigma, ratio= ratio, theta=theta)
     xin, yin = np.mgrid[0:nx, 0:ny]
@@ -223,11 +226,13 @@ def findstars(jdata, fwhm, threshold, skymode, datamax=None, ratio=1, nsigma=1.5
         # Simple Centroid on the region from the convoluted image 
         jregion = jdata[yr0:yr1,xr0:xr1]
         
-        if (datamax is not None and jregion.max() >= datamax):
+        if (peakmax is not None and jregion.max() >= peakmax):
+            continue
+        if (peakmin is not None and jregion.max() <= peakmin):
             continue
         ninit2 += 1
         px,py,pround = xy_round(jregion,gradius,gradius,skymode,
-                kernel,xsigsq,ysigsq,datamax=datamax)
+                kernel,xsigsq,ysigsq)
         if px is None:
             continue
         

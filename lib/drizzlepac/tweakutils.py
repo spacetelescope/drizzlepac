@@ -81,9 +81,11 @@ def get_configobj_root(configobj):
     return kwargs
 
 
-def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
-    star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode, datamax=datamax, 
-                                            ratio=1, nsigma=1.5, theta=0.)
+def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,
+                peakmin=None,peakmax=None,nsigma=1.5):
+    star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode, 
+                    peakmin=peakmin, peakmax=peakmax,
+                    ratio=1, nsigma=nsigma, theta=0.)
     if len(star_list) == 0:
         print 'No valid sources found...'
         return [],[],[],[]
@@ -1048,4 +1050,30 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         plot_zeropoint(plot_pars)
         
     return xp,yp,flux,zpqual
+
+def build_pos_grid(start,end,nstep, mesh=False):
+    """
+    Return a grid of positions starting at X,Y given by 'start', and ending
+    at X,Y given by 'end'. The grid will be completely filled in X and Y by 
+    every 'step' interval.
+    """
+    from . import linearfit
+    # Build X and Y arrays
+    dx = (end[0] - start[0])
+    if dx < 0: 
+        nstart = end
+        end = start
+        start = nstart
+    dx = -dx
+    stepx = dx/nstep
+    # Perform linear fit to find exact line that connects start and end
+    xarr = np.arange(start[0],end[0]+stepx/2.0,stepx)
+    yarr = np.interp(xarr,[start[0],end[0]],[start[1],end[1]])
     
+    # create grid of positions 
+    if mesh:
+        xa,ya = np.meshgrid(xarr,yarr)
+        xarr = xa.ravel()
+        yarr = ya.ravel()
+    
+    return xarr,yarr

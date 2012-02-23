@@ -259,7 +259,7 @@ class ImageCatalog(Catalog):
 
         Required input `kwargs` parameters::
 
-            computesig, sigma, threshold, datamin, datamax,
+            computesig, sigma, threshold, peakmin, peakmax,
             hmin, fwhmpsf, [roundlim, sharplim]
 
     """
@@ -286,20 +286,19 @@ class ImageCatalog(Catalog):
         else:
             hmin = sigma*self.pars['threshold']
 
-        if self.pars.has_key('datamin') and self.pars['datamin'] is not None:
-            source = np.where(self.source <= self.pars['datamin'], 0.,self.source)
-        else:
-            source = self.source
-
-        x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
-                            datamax=self.pars['datamax'])
+        x,y,flux,id = tweakutils.ndfind(self.source,hmin,self.pars['fwhmpsf'],skymode,
+                            peakmin=self.pars['peakmin'], 
+                            peakmax=self.pars['peakmax'],
+                            nsigma=self.pars['nsigma'])
         if len(x) == 0:
             if  not self.pars['computesig']:
                 sigma = self._compute_sigma()
                 hmin = sigma * self.pars['threshold']
                 log.info('No sources found with original thresholds. Trying automatic settings.')
                 x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
-                                        datamax=self.pars['datamax'])
+                                        peakmin=self.pars['peakmin'],
+                                        peakmax=self.pars['peakmax'],
+                                        nsigma=self.pars['nsigma'])
             else:
                 self.xypos = [[],[],[],[]]
                 warnstr = textutil.textbox('WARNING: \n'+

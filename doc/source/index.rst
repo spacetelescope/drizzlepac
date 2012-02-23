@@ -35,7 +35,7 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
    :maxdepth: 2
    
    tweakreg
-   imagefind
+   imagefindpars
    image
    catalogs
    wcscorr
