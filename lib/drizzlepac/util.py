@@ -17,7 +17,7 @@ import numpy as np
 import pyfits
 from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
 from stsci.tools import check_files
-
+from stsci.tools import configobj
 
 __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
@@ -420,6 +420,18 @@ def verifyFilePermissions(filelist, chmod=True):
 
     return filelist
 
+def getFullParList(configObj):
+    """
+    Return a single list of all parameter names included in the configObj
+    regardless of which section the parameter was stored
+    """
+    plist = []
+    for par in configObj.iterkeys():
+        if isinstance(configObj[par],configobj.Section):
+            plist.extend(getParList(configObj[par]))
+        else:
+            plist.append(par)
+    return plist
 
 def validateUserPars(configObj,input_dict):
     """ Compares input parameter names specified by user with those already
@@ -432,10 +444,8 @@ def validateUserPars(configObj,input_dict):
     # check to see whether any input parameters are unexpected.
     # Any unexpected parameters provided on input should be reported and
     # the code should stop
-    plist = []
+    plist = getFullParList(configObj)
     extra_pars = []
-    for par in configObj.getParList():
-        plist.append(par.name)
     for kw in input_dict:
         if kw not in plist:
             extra_pars.append(kw)

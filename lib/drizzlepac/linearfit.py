@@ -64,7 +64,9 @@ def iter_fit_arrays(xy,uv,nclip=3,sigma=3.0):
     fit['ref_coords'] = uv
     return fit
 
-def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,
+def iter_fit_all(xy,uv,xyindx,uvindx,
+                    xyorig=None,uvorig=None,
+                    mode='rscale',nclip=3,sigma=3.0,minobj=3,
                     center=None,verbose=False):
 
     if not isinstance(xy,np.ndarray): 
@@ -112,6 +114,10 @@ def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,
             uv = uv[goodpix]
             xyindx = xyindx[goodpix]
             uvindx = uvindx[goodpix]
+            if xyorig is not None:
+                xyorig = xyorig[goodpix]
+            if uvorig is not None:
+                uvorig = uvorig[goodpix]
             fit = fit_all(xy,uv,mode=mode,center=center,verbose=False)
             del goodpix,goodx,goody
         else:
@@ -121,6 +127,9 @@ def iter_fit_all(xy,uv,xyindx,uvindx,mode='rscale',nclip=3,sigma=3.0,minobj=3,
     fit['ref_coords'] = uv
     fit['img_indx'] = xyindx
     fit['ref_indx'] = uvindx
+    fit['img_orig_xy'] = xyorig
+    fit['ref_orig_xy'] = uvorig
+    
     return fit
 
 def fit_all(xy,uv,mode='rscale',center=None,verbose=True):

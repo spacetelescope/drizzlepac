@@ -115,7 +115,7 @@ aspects of each of the processing steps.</p>
 <dl class="function">
 <dt id="drizzlepac.astrodrizzle.AstroDrizzle">
 <tt class="descclassname">drizzlepac.astrodrizzle.</tt><tt class="descname">AstroDrizzle</tt><big>(</big><em>input</em>, <em>mdriztab=False</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="Permalink to this definition">¶</a></dt>
-<dd><p>astrodrizzle Version 4.2.10dev  updated on  11-Jan-2012</p>
+<dd><p>astrodrizzle Version 4.3.0dev  updated on  27-Feb-2012</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -170,6 +170,14 @@ aspects of each of the processing steps.</p>
 <p class="first admonition-title">Warning</p>
 <p class="last">Use of this parameter should be done only when all input images have been updated using the Paper I FITS standard for specifying Multiple WCS&#8217;s in each image header. This parameter assumes that the same WCS letter corresponds to WCS&#8217;s that have been updated in a consistent manner. For example, all input images have been updated to be consistent with their distortion model in the WCS&#8217;s with key of <em>A</em>.</p>
 </div>
+</blockquote>
+<p><strong id="proc_unit">proc_unit</strong> : str (Default Value = &#8216;native&#8217;)</p>
+<blockquote>
+<p>The units to be used for the final output drizzled product. Valid values and definitions are:</p>
+<ul class="simple">
+<li><strong>native</strong>: Output DRZ product and input &#8216;values&#8217; given in the native units of the input image.</li>
+<li><strong>electrons</strong>: Output DRZ product and input &#8216;values&#8217; given in units of electrons.</li>
+</ul>
 </blockquote>
 <p><strong id="coeffs">coeffs</strong> : bool (Default Value = Yes)</p>
 <blockquote>
@@ -228,10 +236,6 @@ aspects of each of the processing steps.</p>
 <p><strong id="static_sig">static_sig</strong> : float (Default Value = 4.0)</p>
 <blockquote>
 <p>The number of sigma below the RMS to use as the clipping limit for creating the static mask.</p>
-</blockquote>
-<p><strong id="staticfile">staticfile</strong> : str (Default Value = )</p>
-<blockquote>
-<p>This parameter defines the file name of the optional input static bad-pixel mask. The input data are multiplied by the contents of this static mask file.</p>
 </blockquote>
 <p><strong id="*STEP 2: SKY SUBTRACTION*">*STEP 2: SKY SUBTRACTION*</strong> :</p>
 <p><strong id="skysub">skysub</strong> : bool (Default Value = Yes)</p>

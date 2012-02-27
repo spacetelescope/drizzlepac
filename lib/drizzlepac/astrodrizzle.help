@@ -33,6 +33,13 @@ wcskey : str (Default Value = '')
     This parameter corresponds to the *key* for the WCS being selected by the user. It allows the user to select which WCS solution should be used for processing the images when multiple WCS's have been updated in each input image header using the Paper I Multiple WCS FITS standard.      
 
     .. warning:: Use of this parameter should be done only when all input images have been updated using the Paper I FITS standard for specifying Multiple WCS's in each image header. This parameter assumes that the same WCS letter corresponds to WCS's that have been updated in a consistent manner. For example, all input images have been updated to be consistent with their distortion model in the WCS's with key of *A*. 
+    
+proc_unit : str (Default Value = 'native')
+    The units to be used for the final output drizzled product. Valid values and definitions are::
+     
+    * **native**: Output DRZ product and input 'values' given in the native units of the input image.
+    * **electrons**: Output DRZ product and input 'values' given in units of electrons. 
+
 
 coeffs : bool (Default Value = Yes)
     This parameter determines whether or not to use the coefficients stored in the each input image header. If turned off, no distortion coefficients will be applied during the coordinate transformations.
@@ -48,7 +55,6 @@ group : int or str (Default Value = )
 
 build : bool (Default Value = )
     When this parameter is set to 'True', AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'False', a separate simple FITS file will be created for each aforementioned extension.
-
 
 crbit : int (Default Value = 4096)
     This parameter sets the bit value for CR identification in the DQ array.
@@ -85,13 +91,8 @@ clean : bool (Default Value = No)
 static : bool (Default Value = Yes)
     Create a static bad-pixel mask from the data?  This mask flags all pixels that deviate by more than a value of 'static_sig' sigma below the image median, since these pixels are typically the result of bad pixel oversubtraction in the dark image during calibration.
 
-
 static_sig : float (Default Value = 4.0)
     The number of sigma below the RMS to use as the clipping limit for creating the static mask.
-
-
-staticfile : str (Default Value = )
-    This parameter defines the file name of the optional input static bad-pixel mask. The input data are multiplied by the contents of this static mask file. 
 
 
 *STEP 2: SKY SUBTRACTION*

@@ -11,8 +11,8 @@ import util
 # of the modules below, so that those modules can use the values 
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
-__version__ = '0.6.21'
-__vdate__ = '23-Feb-2012'
+__version__ = '1.0.0'
+__vdate__ = '27-Feb-2012'
 
 import tweakutils
 import imgclasses
@@ -20,6 +20,8 @@ import catalogs
 import imagefindpars
     
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
+
+PSET_SECTION = 'SOURCE FINDING PARS'
 
 log = logutil.create_logger(__name__)
 
@@ -43,24 +45,25 @@ def getHelpAsString(docstring=False):
     return helpString
 
 
-def _managePsets(configobj):
+def _managePsets(configobj,iparsobj=None):
     """ Read in parameter values from PSET-like configobj tasks defined for
         source-finding algorithms, and any other PSET-like tasks under this task,
         and merge those values into the input configobj dictionary.
     """
     # Merge all configobj instances into a single object
-    configobj['SOURCE FINDING PARS'] = {}
+    configobj[PSET_SECTION] = {}
+    
+    if iparsobj is None:
+        iparsobj = teal.load(imagefindpars.__taskname__)
+        del iparsobj['_task_name_']
         
-    iparsobj = teal.load(imagefindpars.__taskname__)
-
     # merge these parameters into full set
-    configobj['SOURCE FINDING PARS'].merge(iparsobj)
+    configobj[PSET_SECTION].merge(iparsobj)
         
     # clean up configobj a little to make it easier for later...
     if '_RULES_' in configobj:
         del configobj['_RULES_']
 
-    
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
     """
@@ -75,9 +78,12 @@ def run(configobj):
     print 'TweakReg Version %s(%s) started at: %s \n'%(
                     __version__,__vdate__,util._ptime()[0])
     util.print_pkg_versions()
-    
-    # Manage PSETs for source finding algorithms
-    _managePsets(configobj)
+
+    # Check to see whether or not the imagefindpars parameters have
+    # already been loaded, as done through the python interface
+    if PSET_SECTION not in configobj:
+        # Manage PSETs for source finding algorithms
+        _managePsets(configobj)
 
     # print out user set input parameter values for running this task
     log.info("USER INPUT PARAMETERS common to all Processing Steps:")
@@ -194,41 +200,53 @@ def run(configobj):
     # Determine a reference image or catalog and 
     #    return the full list of RA/Dec positions
     # Determine what WCS needs to be used for reference tangent plane
+    refcat_par = configobj['REFERENCE CATALOG DESCRIPTION']
+    if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
+        # Update kwargs with reference catalog parameters
+        kwargs.update(refcat_par)
 
     # otherwise, extract the catalog from the first input image source list
     if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
-        refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
-        refwcs = refimg.get_wcs()
-        ref_source = refimg.all_radec
-        refwcs_fname = refwcs[0].filename
+        #refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
+        # Check to see whether the user specified a separate catalog 
+        #    of reference source positions and replace default source list with it
+        if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
+            ref_source = refcat_par['refcat']
+        else:
+            refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
+            ref_source = refimg.all_radec
+
+        try:
+            refimage = imgclasses.RefImage(configobj['refimage'],ref_source,**kwargs)
+            refwcs = refimage.wcs
+            ref_source = refimage.all_radec
+            refwcs_fname = refwcs.filename
+        except KeyboardInterrupt:
+            refimage.close()
+            for img in input_images:
+                img.close()
+            print 'Quitting as a result of user request (Ctrl-C)...'
+            return
     else:
         refwcs = []
         for i in input_images:
             refwcs.extend(i.get_wcs())
-        ref_source = input_images[0].all_radec
-        refwcs_fname = input_images[0].name
+        try:
+            refimg = input_images[0]
+            ref_source = refimg.all_radec            
+            refimage = imgclasses.RefImage(refwcs,ref_source,
+                                        xycatalog=refimg.xy_catalog,**kwargs)
+            refwcs_fname = refimg.name
+        except KeyboardInterrupt:
+            refimage.close()
+            for img in input_images:
+                img.close()
+            print 'Quitting as a result of user request (Ctrl-C)...'
+            return
 
     print '\n'+'='*20+'\n'
     print 'Aligning all input images to WCS defined by ',refwcs_fname
     print '\n'+'='*20+'\n'
-    
-    # Check to see whether the user specified a separate catalog 
-    #    of reference source positions and replace default source list with it
-    refcat_par = configobj['REFERENCE CATALOG DESCRIPTION']
-    if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
-        ref_source = refcat_par['refcat']
-        # Update kwargs with reference catalog parameters
-        kwargs.update(refcat_par)
-            
-    try:
-        # Create Reference Catalog object
-        refimage = imgclasses.RefImage(refwcs,ref_source,**kwargs)
-    except KeyboardInterrupt:
-        refimage.close()
-        for img in input_images:
-            img.close()
-        print 'Quitting as a result of user request (Ctrl-C)...'
-        return
 
     if refimage.outxy is not None:    
         try:
@@ -261,8 +279,7 @@ def run(configobj):
 
                 print '\n'+'='*20
                 print 'Performing fit for: ',img.name,'\n'
-                img.match(refimage.outxy, refimage.wcs, refimage.name,
-                       **objmatch_par)
+                img.match(refimage, **objmatch_par)
 
                 img.performFit(**catfit_pars)
                 if img.quit_immediately:
@@ -302,7 +319,8 @@ def run(configobj):
 # 
 # Primary interface for running this task from Python
 #
-def TweakReg(files, editpars=False, configobj=None, **input_dict):
+def TweakReg(files, editpars=False, configobj=None, imagefindcfg=None, 
+                **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
@@ -311,6 +329,14 @@ def TweakReg(files, editpars=False, configobj=None, **input_dict):
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = files
+    
+    # Get default or user-specified configobj for primary task
+    if configobj is None:
+        configobj = teal.load(__taskname__)
+    
+    # Merge PSET configobj with full task configobj
+    _managePsets(configobj,iparsobj=imagefindcfg)
+        
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #

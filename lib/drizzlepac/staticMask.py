@@ -118,7 +118,6 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     if procSteps is not None:
         procSteps.endStep('Static Mask')
 
-
 def constructFilename(signature):
     """Construct an output filename for the given signature::
 

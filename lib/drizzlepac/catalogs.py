@@ -396,6 +396,11 @@ class UserCatalog(Catalog):
         if xycols is not None:
             self.num_objects = len(xycols[0])
 
+        if self.numcols < 3: # account for flux column
+            self.xypos.append(np.zeros(self.num_objects))
+        # add source ID column
+        self.xypos.append(np.arange(self.num_objects)+self.start_id)
+
     def plotXYCatalog(self,**kwargs):
         """
         Plots the source catalog positions using matplotlib's `pyplot.plot()`
@@ -437,3 +442,10 @@ class RefCatalog(UserCatalog):
             self.radec = self.source
         else:
             self.radec = self._readCatalog()
+    def buildXY(self,catalogs):
+        if instance(catalogs,dict):
+            # we have chip_catalogs from an ImageClass instance
+            pass
+        else:
+            # create X,Y positions based on self.radec and self.wcs
+            pass

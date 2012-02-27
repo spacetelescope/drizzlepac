@@ -10,7 +10,6 @@ coeffs = boolean_kw(default=True, comment="Use header-based distortion coefficie
 context = boolean_kw(default=True, comment="Create context image during final drizzle?")
 group = string_kw(default="", comment="Single extension or group to be combined/cleaned")
 build = boolean_kw(default=False, comment="Create multi-extension output file for final drizzle?")
-staticfile = string_kw(default="", comment="Name of (optional) input static bad-pixel mask")
 crbit = integer_kw(default=4096, comment="Bit value for CR ident. in DQ array")
 stepsize = integer_kw(default=10, comment="Step size for drizzle coordinate computation")
 resetbits = string_kw(default="4096", comment="Bit values to reset in all input DQ arrays")

@@ -94,6 +94,7 @@ class Image(object):
 
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
+        self.xy_catalog = [[],[],[],[]]
         num_sources = 0
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
@@ -124,6 +125,11 @@ class Image(object):
             catalog.buildCatalogs(exclusions=excludefile) 
             num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
+            # Merge input X,Y positions from all chips into a single catalog 
+            # This will be used for writing output matched source catalogs
+            for i,col in enumerate(self.xy_catalog):
+                if catalog.xypos is not None and len(catalog.xypos) > 0 and i < len(catalog.xypos):
+                    col = col.extend(catalog.xypos[i])        
 
         self.catalog_names = {}
         # Build full list of all sky positions from all chips
@@ -293,10 +299,15 @@ class Image(object):
                 if all_radec is not None:
                     self.all_radec = copy.deepcopy(all_radec)            
 
-    def match(self,ref_outxy, refWCS, refname, **kwargs):
+    def match(self,refimage, **kwargs):
         """ Uses xyxymatch to cross-match sources between this catalog and
             a reference catalog (refCatalog).
         """
+        ref_outxy = refimage.outxy
+        refWCS = refimage.wcs
+        refname = refimage.name
+        ref_inxy = refimage.xy_catalog
+        
         print 'Matching sources from ',self.name,' with sources from reference image.'
         self.sortSkyCatalog() # apply any catalog sorting specified by the user
         self.transformToRef(refWCS)
@@ -363,19 +374,36 @@ class Image(object):
                                 np.newaxis],matches['input_y'][:,np.newaxis]])
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,
                                 np.newaxis],matches['ref_y'][:,np.newaxis]])
-                self.matches['ref_indx'] = matches['ref_idx']
-                self.matches['img_indx'] = self.all_radec[3][matches['input_idx']]
+                self.matches['ref_idx'] = matches['ref_idx']
+                self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]
+                self.matches['ref_orig_xy'] = np.column_stack([
+                                    np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
+                                    np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
+                self.matches['img_orig_xy'] = np.column_stack([
+                    np.array(self.xy_catalog[0])[self.matches['img_idx']][:,np.newaxis],
+                    np.array(self.xy_catalog[1])[self.matches['img_idx']][:,np.newaxis]])
                 print 'Found %d matches for %s...'%(len(matches),self.name)
 
                 if self.pars['writecat']:
                     matchfile = open(self.catalog_names['match'],mode='w+')
                     matchfile.write('#Reference: %s\n'%refname)
                     matchfile.write('#Input: %s\n'%self.name)
-                    matchfile.write('#Ref_X        Ref_Y            Input_X        Input_Y         Ref_ID    Input_ID\n')
+                    title = '#Ref_X        Ref_Y        '
+                    title += 'Input_X    Input_Y        '
+                    title += 'Ref_X0    Ref_Y0        '
+                    title += 'Input_X0    Input_Y0        '
+                    title += 'Ref_ID    Input_ID\n'
+                    fmtstr = '%0.6f    %0.6f        '*4
+                    fmtstr += '%d    %d\n'
+                    matchfile.write(title)
                     for i in xrange(len(matches['input_x'])):
-                        linestr = "%0.6f    %0.6f        %0.6f    %0.6f        %d    %d\n"%\
+                        linestr = fmtstr%\
                             (matches['ref_x'][i],matches['ref_y'][i],\
                              matches['input_x'][i],matches['input_y'][i],
+                            self.matches['ref_orig_xy'][:,0][i],
+                            self.matches['ref_orig_xy'][:,1][i],
+                            self.matches['img_orig_xy'][:,0][i],
+                            self.matches['img_orig_xy'][:,1][i],
                             matches['ref_idx'][i],matches['input_idx'][i])
                         matchfile.write(linestr)
                     matchfile.close()
@@ -412,7 +440,9 @@ class Image(object):
             if self.matches is not None and self.goodmatch:
                 self.fit = linearfit.iter_fit_all(
                     self.matches['image'],self.matches['ref'],
-                    self.matches['img_indx'],self.matches['ref_indx'],
+                    self.matches['img_idx'],self.matches['ref_idx'],
+                    xyorig=self.matches['img_orig_xy'],
+                    uvorig=self.matches['ref_orig_xy'],
                     mode=pars['fitgeometry'],nclip=pars['nclip'],
                     sigma=pars['sigma'],minobj=pars['minobj'],
                     center=self.refWCS.wcs.crpix,
@@ -438,7 +468,6 @@ class Image(object):
                 # Plot residuals, if requested by the user
                 if pars.has_key('residplot') and "No" not in pars['residplot']:
                     xy = self.fit['img_coords']
-                    #resids = linearfit.compute_resids(xy,self.fit['ref_coords'],self.fit)
                     resids = self.fit['resids']
                     xy_fit = xy + resids
                     title_str = 'Residuals\ for\ %s\ using\ %d\ sources'%(
@@ -543,7 +572,6 @@ class Image(object):
             self.next_key = ' '
 
         # add FIT values to image's PRIMARY header
-        #fimg = pyfits.open(self.name,mode='update')
         fimg = self.hdulist
         
         if wcsname in ['',' ',None,"INDEF"]:
@@ -601,7 +629,7 @@ class Image(object):
         f.write("#RA        Dec\n")
         f.write("#(deg)     (deg)\n")
         for i in xrange(len(ralist)):
-            f.write('%0.8f  %0.8f\n'%(ralist[i],declist[i]))
+            f.write('%0.12f  %0.12f\n'%(ralist[i],declist[i]))
         f.close()
 
     def get_xy_catnames(self):
@@ -621,10 +649,13 @@ class Image(object):
             f = open(self.catalog_names['fitmatch'],'w')
             f.write('# Input image: %s\n'%self.rootname)
             f.write('# Coordinate mapping parameters: \n')
-            f.write('#    X and Y rms: %20.6g  %20.6g\n'%(self.fit['rms'][0],self.fit['rms'][1]))
-            f.write('#    X and Y shift: %20.6g  %20.6g\n '%(self.fit['offset'][0],self.fit['offset'][1]))
-            f.write('#    X and Y scale: %20.6g  %20.6g\n'%(self.fit['scale'][1],self.fit['scale'][2]))
-            f.write('#    X and Y rotation: %20.6g \n'%(self.fit['rot']))
+            f.write('#    X and Y rms: %15.6g  %15.6g\n'%(self.fit['rms'][0],
+                                                        self.fit['rms'][1]))
+            f.write('#    X and Y shift: %15.6g  %15.6g\n'%(self.fit['offset'][0],
+                                                            self.fit['offset'][1]))
+            f.write('#    X and Y scale: %15.6g  %15.6g\n'%(self.fit['scale'][1],
+                                                            self.fit['scale'][2]))
+            f.write('#    X and Y rotation: %15.6g \n'%(self.fit['rot']))
             f.write('# \n# Input Coordinate Listing\n')
             f.write('#     Column 1: X (reference)\n') 
             f.write('#     Column 2: Y (reference)\n')
@@ -634,19 +665,28 @@ class Image(object):
             f.write('#     Column 6: Y (fit)\n')
             f.write('#     Column 7: X (residual)\n')
             f.write('#     Column 8: Y (residual)\n')
-            f.write('#     Column 9: Ref ID\n')
-            f.write('#     Column 10: Input ID\n')
-            
+            f.write('#     Column 9: Original X (reference)\n')
+            f.write('#     Column 10: Original Y (reference)\n')
+            f.write('#     Column 11: Original X (input)\n')
+            f.write('#     Column 12: Original Y (input)\n')
+            f.write('#     Column 13: Ref ID\n')
+            f.write('#     Column 14: Input ID\n')
+
             f.write('#\n')
             f.close()
             fitvals = self.fit['img_coords']+self.fit['resids']
             xydata = [[self.fit['ref_coords'][:,0],self.fit['ref_coords'][:,1],
                       self.fit['img_coords'][:,0],self.fit['img_coords'][:,1],
                       fitvals[:,0],fitvals[:,1],
-                      self.fit['resids'][:,0],self.fit['resids'][:,1]],
+                      self.fit['resids'][:,0],self.fit['resids'][:,1],
+                      self.fit['ref_orig_xy'][:,0],
+                      self.fit['ref_orig_xy'][:,1],
+                      self.fit['img_orig_xy'][:,0],
+                      self.fit['img_orig_xy'][:,1]],
                       [self.fit['ref_indx'],self.fit['img_indx']]
                     ]
-            tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,append=True,format=["%20.6f","%8d"])
+            tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
+                                        append=True,format=["%15.6f","%8d"])
         
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file.
@@ -692,8 +732,21 @@ class RefImage(object):
     """ This class provides all the information needed by to define a reference
         tangent plane and list of source positions on the sky.
     """
-    def __init__(self,wcs_list,catalog,**kwargs):
-        if isinstance(wcs_list,list):
+    def __init__(self,wcs_list,catalog,xycatalog=None,**kwargs):
+        if isinstance(wcs_list,str):
+            # Input was a filename for the reference image 
+            froot,fextn = fu.parseFilename(wcs_list)
+            if fextn is None:
+                num_sci,extname = count_sci_extensions(froot)
+                if num_sci < 1:
+                    fextn='[0]'
+                else:
+                    fextn = '[%s,1]'%extname
+                fname = froot+fextn
+            else:
+                fname = wcs_list
+            self.wcs = stwcs.wcsutil.HSTWCS(fname)
+        elif isinstance(wcs_list,list):
             # generate a reference tangent plane from a list of STWCS objects
             undistort = True
             if wcs_list[0].sip is None:
@@ -713,6 +766,21 @@ class RefImage(object):
         self.catalog = catalogs.RefCatalog(None,catalog,**kwargs)
         self.catalog.buildCatalogs()
         self.all_radec = self.catalog.radec
+
+        # add input source positions to RefCatalog for reporting in final
+        # matched output catalog files
+        if xycatalog is not None:
+            self.xy_catalog = xycatalog
+        else:
+            # Convert RA/Dec positions of source from refimage into 
+            # X,Y positions based on WCS of refimage
+            self.xy_catalog = [[],[],[],[]]
+            xypos = self.wcs.all_sky2pix(self.all_radec[0],self.all_radec[1],1)
+            self.xy_catalog[0] = xypos[0]
+            self.xy_catalog[1] = xypos[1]
+            self.xy_catalog[2] = np.zeros(xypos[0].shape[0],dtype=np.float32)
+            self.xy_catalog[3] = np.arange(xypos[0].shape[0],dtype=np.int32)
+
         self.outxy = None
         self.origin = 1
         self.pars = kwargs
@@ -763,6 +831,8 @@ class RefImage(object):
         if not util.is_blank(self.catalog.catname) and os.path.exists(self.catalog.catname):
             os.remove(self.catalog.catname)
 
+    def close(self):
+        pass
 
 def build_referenceWCS(catalog_list):
     """ Compute default reference WCS from list of Catalog objects.
