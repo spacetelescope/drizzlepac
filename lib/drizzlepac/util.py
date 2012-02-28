@@ -428,7 +428,7 @@ def getFullParList(configObj):
     plist = []
     for par in configObj.iterkeys():
         if isinstance(configObj[par],configobj.Section):
-            plist.extend(getParList(configObj[par]))
+            plist.extend(getFullParList(configObj[par]))
         else:
             plist.append(par)
     return plist
