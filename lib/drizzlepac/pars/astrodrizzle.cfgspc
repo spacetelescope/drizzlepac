@@ -16,7 +16,7 @@ resetbits = string_kw(default="4096", comment="Bit values to reset in all input 
 num_cores = integer_or_none_kw(default=None, comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
 
 [STATE OF INPUT FILES]
-restore = boolean_kw(default=True, comment="Copy input files FROM archive directory for processing?")
+restore = boolean_kw(default=False, comment="Copy input files FROM archive directory for processing?")
 preserve = boolean_kw(default=True, comment="Copy input files to archive directory, if not already archived?")
 overwrite = boolean_kw(default=False, comment="Copy input files into archive, overwriting if required?")
 clean = boolean_kw(default=False, comment="Delete temporary files after completion?")
@@ -59,7 +59,7 @@ driz_sep_dec = float_or_none_kw(default=None, comment="declination output frame 
 [STEP 4: CREATE MEDIAN IMAGE]
 median = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment= "Create a median image?")
 median_newmasks= boolean_kw(default=true, comment= "Create new masks when doing the median?")
-combine_maskpt = float_kw(default=0.7, comment= "Percentage of weight image value below which it is flagged as a bad pixel.")
+combine_maskpt = float_kw(default=0.3, comment= "Percentage of weight image value below which it is flagged as a bad pixel.")
 combine_type = option_kw("minmed","median","sum","imedian","iaverage",default="minmed", comment= "Type of combine operation")
 combine_nsigma = string_kw(default="4 3", comment= "Significance for accepting minimum instead of median")
 combine_nlow = integer_kw(default=0, comment= "minmax: Number of low pixels to reject")
