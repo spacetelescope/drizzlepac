@@ -363,7 +363,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             print msg
             raise IOError(msg)
     """
-    imageSet.close() #remove the data from memory
+    #imageSet.close() #remove the data from memory
 
 
 
