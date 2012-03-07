@@ -9,7 +9,7 @@ These parameters control the operation of the algorithm that extracts sources fr
 Parameters
 ----------
 computesig : bool
-    This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter 'sigma'. The automatic sigma value gets computed from the first input exposure as:
+    This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter 'skysigma'. The automatic sigma value gets computed from the first input exposure as:
     
     ::
 
@@ -17,7 +17,7 @@ computesig : bool
 
 This single value will then be used for object identification for all input exposures. [Default: Yes] 
 
-sigma : float
+skysigma : float
     The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0] 
 
 fwhmpsf : float

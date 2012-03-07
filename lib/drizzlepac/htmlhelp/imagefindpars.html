@@ -114,7 +114,7 @@
 <h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>computesig <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd><p class="first">This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter &#8216;sigma&#8217;. The automatic sigma value gets computed from the first input exposure as:</p>
+<dd><p class="first">This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter &#8216;skysigma&#8217;. The automatic sigma value gets computed from the first input exposure as:</p>
 <div class="last highlight-python"><div class="highlight"><pre><span class="mf">1.5</span> <span class="o">*</span> <span class="n">imstatistics</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">fields</span><span class="o">=</span><span class="s">&#39;stddev&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -122,7 +122,7 @@
 </dl>
 <p>This single value will then be used for object identification for all input exposures. [Default: Yes]</p>
 <dl class="docutils">
-<dt>sigma <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dt>skysigma <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0]</dd>
 <dt>fwhmpsf <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>The full-width at half-maximum of the point spread function in pixels.[Default: 2.5]</dd>

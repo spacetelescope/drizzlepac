@@ -83,7 +83,7 @@ class Catalog(object):
         self.pars = kwargs
 
         self.start_id = 0
-        if self.pars.has_key('start_id'): 
+        if self.pars.has_key('start_id'):
             self.start_id = self.pars['start_id']
 
         self.fname = catalog_source
@@ -91,7 +91,7 @@ class Catalog(object):
         self.catname = None
 
         self.num_objects = None
-        
+
         self.radec = None # catalog of sky positions for all sources on this chip/image
         self.set_colnames()
 
@@ -174,10 +174,10 @@ class Catalog(object):
                 radec_trimmed.append(arr[radec_indx])
             for arr in self.xypos:
                 xypos_trimmed.append(arr[radec_indx])
-            self.radec = radec_trimmed        
+            self.radec = radec_trimmed
             self.xypos = xypos_trimmed
             log.info('Excluded %d sources from catalog.'%num_excluded)
-            
+
     def buildCatalogs(self,exclusions=None):
         """ Primary interface to build catalogs based on user inputs.
         """
@@ -259,7 +259,7 @@ class ImageCatalog(Catalog):
 
         Required input `kwargs` parameters::
 
-            computesig, sigma, threshold, peakmin, peakmax,
+            computesig, skysigma, threshold, peakmin, peakmax,
             hmin, fwhmpsf, [roundlim, sharplim]
 
     """
@@ -278,16 +278,16 @@ class ImageCatalog(Catalog):
             # compute sigma for this image
             sigma = self._compute_sigma()
         else:
-            sigma = self.pars['sigma']
+            sigma = self.pars['skysigma']
         skymode = sigma**2
-        log.info('   Finding sources using sigma = %f'%sigma)
+        log.info('   Finding sources using sky sigma = %f'%sigma)
         if self.pars['threshold'] in [None,"INDEF",""," "]:
             hmin = skymode
         else:
             hmin = sigma*self.pars['threshold']
 
         x,y,flux,id = tweakutils.ndfind(self.source,hmin,self.pars['fwhmpsf'],skymode,
-                            peakmin=self.pars['peakmin'], 
+                            peakmin=self.pars['peakmin'],
                             peakmax=self.pars['peakmax'],
                             nsigma=self.pars['nsigma'])
         if len(x) == 0:
@@ -317,7 +317,7 @@ class ImageCatalog(Catalog):
             else:
                 fmaxindx = flux == flux
             findx = np.bitwise_and(fminindx,fmaxindx)
-                    
+
             self.xypos = [x[findx]+1,y[findx]+1,flux[findx],id[findx]+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
@@ -331,7 +331,7 @@ class ImageCatalog(Catalog):
                                         fields='mode,stddev',binwidth=0.01)
         sigma = np.sqrt(2.0 * np.abs(istats.mode))
         return sigma
-        
+
 class UserCatalog(Catalog):
     """ Class to manage user-supplied catalogs as inputs.
 
@@ -371,7 +371,7 @@ class UserCatalog(Catalog):
 
         # read the catalog now, one for each chip/mosaic
         # Currently, this only supports ASCII catalog files
-        # Support for FITS tables needs to be added        
+        # Support for FITS tables needs to be added
         catcols = tweakutils.readcols(self.source, cols=self.colnames)
         if not util.is_blank(catcols) and len(catcols[0]) == 0:
             catcols = None
