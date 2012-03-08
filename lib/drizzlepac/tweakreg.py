@@ -21,7 +21,10 @@ import imagefindpars
     
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
-PSET_SECTION = 'SOURCE FINDING PARS'
+PSET_SECTION = '_SOURCE FINDING PARS_'
+# !! Use pre and post underscores to hide this added section in TEAL, so that
+# TEAL allows its data to stay alongside the expected data during a call to
+# TweakReg().  All of this needs to be revisited.
 
 log = logutil.create_logger(__name__)
 
@@ -61,8 +64,8 @@ def _managePsets(configobj,iparsobj=None):
     configobj[PSET_SECTION].merge(iparsobj)
         
     # clean up configobj a little to make it easier for later...
-    if '_RULES_' in configobj:
-        del configobj['_RULES_']
+#   if '_RULES_' in configobj:
+#       del configobj['_RULES_']
 
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
@@ -158,7 +161,7 @@ def run(configobj):
         # reset parameters based on parameter settings in this section
         catfile_kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
     # Update parameter set with 'SOURCE FINDING PARS' now
-    catfile_kwargs.update(configobj['SOURCE FINDING PARS'])
+    catfile_kwargs.update(configobj[PSET_SECTION])
     uphdr_par = configobj['UPDATE HEADER']
     hdrlet_par = configobj['HEADERLET CREATION']
     objmatch_par = configobj['OBJECT MATCHING PARAMETERS']
@@ -336,7 +339,17 @@ def TweakReg(files, editpars=False, configobj=None, imagefindcfg=None,
     
     # Merge PSET configobj with full task configobj
     _managePsets(configobj,iparsobj=imagefindcfg)
-        
+    # !! NOTE - the above line needs to be done so that getDefaultConfigObj()
+    # can merge in input_dict, however the TEAL GUI is not going to understand
+    # the extra section, (or use it), so work needs to be done here - some
+    # more thinking about how to accomplish what we want to with PETS.
+    # !! For now, warn them that imagefindpars args will be ignored in GUI.
+    if editpars and input_dict:
+        for i in input_dict:
+           if i in configobj[PSET_SECTION]:
+               print 'WARNING: ignoring imagefindpars setting "'+i+ \
+                     '='+str(input_dict[i])+'", for now please enter directly into TEAL.'
+
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
     #
