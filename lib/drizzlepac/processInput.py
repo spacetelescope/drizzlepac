@@ -1012,7 +1012,6 @@ def _setDefaults(input_dict={}):
         'expkeyword':None,
         'crbitval':4096,
         'static':True,
-        'staticfile':None,
         'static_sig':4.0,
         'skysub':True,
         'skywidth':0.1,

@@ -29,16 +29,16 @@ def getMdriztabParameters(files):
         raise KeyError, "No MDRIZTAB found in file " + _fileName
 
     _tableName = fileutil.osfn(_tableName)
-    
+
     # Now get the filters from the primary header.
     _filters = fileutil.getFilterNames(_header)
-    
+
     # Specifically check to see whether the MDRIZTAB file can be found
     if not os.path.exists(os.path.split(_tableName)[0]): # check path first
         raise IOError, "Directory for MDRIZTAB '%s' could not be accessed!"%os.path.split(_tableName)[0]
     if not os.path.exists(_tableName): # then check for the table itself
         raise IOError, "MDRIZTAB table '%s' could not be found!"%_tableName
-    
+
     # Open MDRIZTAB file.
     try:
         _mdriztab = pyfits.open(_tableName)
@@ -63,9 +63,14 @@ def getMdriztabParameters(files):
     print '- MDRIZTAB: MultiDrizzle parameters read from row %s.'%(_row+1)
 
     mpars = _mdriztab[1].data[_row]
-    _mdriztab.close() 
+    _mdriztab.close()
 
-    return _interpretMdriztabPars(mpars)
+    interpreted = _interpretMdriztabPars(mpars)
+
+    if "staticfile" in interpreted:
+        interpreted.pop("staticfile")
+
+    return interpreted
 
 def _getRowsByFilter(table, filters):
     rows = []
@@ -85,14 +90,14 @@ def _interpretMdriztabPars(rec):
     from the user interface are.
     """
     tabdict = {}
-    # for each entry in the record... 
+    # for each entry in the record...
     for indx in xrange(len(rec.array.names)):
         # ... get the name, format, and value.
         _name = rec.array.names[indx]
         _format = rec.array.formats[indx]
         _value = rec.field(_name)
-        
-        # Translate names from MDRIZTAB columns names to 
+
+        # Translate names from MDRIZTAB columns names to
         # input parameter names found in IRAF par file.
         #
         #if _name.find('final') > -1: _name = 'driz_'+_name
@@ -111,7 +116,7 @@ def _interpretMdriztabPars(rec):
             if _value in ['INDEF',None,"None",'',' ']: _val = False
             tabdict[_name] = _val
             continue
-        
+
         par_table = {'subsky':'skysub','crbitval':'crbit','readnoise':'rdnoise'}
         if _name in par_table:
             _name = par_table[_name]
@@ -133,17 +138,17 @@ def _interpretMdriztabPars(rec):
             elif (_format == 'f4') or ('E' in _format):
                 _val = cleanNaN(_value)
             else:
-                print 'MDRIZTAB column ',_name,' has unrecognized format',_format 
+                print 'MDRIZTAB column ',_name,' has unrecognized format',_format
                 raise ValueError
             if _name in ['ra','dec']:
                 for dnames in drizstep_names:
                     tabdict[dnames+_name] = _val
             else:
                 tabdict[_name] = _val
-    
+
     return tabdict
 
-def toBoolean(flag): 
+def toBoolean(flag):
     if (flag == 1):
         return True
     return False
