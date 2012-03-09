@@ -345,10 +345,13 @@ def TweakReg(files, editpars=False, configobj=None, imagefindcfg=None,
     # more thinking about how to accomplish what we want to with PETS.
     # !! For now, warn them that imagefindpars args will be ignored in GUI.
     if editpars and input_dict:
-        for i in input_dict:
+        idkeys = input_dict.keys()
+        for i in idkeys:
            if i in configobj[PSET_SECTION]:
                print 'WARNING: ignoring imagefindpars setting "'+i+ \
                      '='+str(input_dict[i])+'", for now please enter directly into TEAL.'
+               input_dict.pop(i)
+        del configobj[PSET_SECTION] # force run() to pull it again after GUI use
 
     # If called from interactive user-interface, configObj will not be 
     # defined yet, so get defaults using EPAR/TEAL.
