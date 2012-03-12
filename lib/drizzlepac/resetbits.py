@@ -64,6 +64,7 @@
 """
 
 from __future__ import division
+import os
 import numpy as np
 from stsci.tools import stpyfits as pyfits
 from stsci.tools import parseinput, logutil
@@ -163,8 +164,27 @@ def getHelpAsString():
 
     return helpString
 
-def help():
-    print getHelpAsString()
+def help(file=None):
+    """
+    Print out syntax help for running resetbits
+    
+    Parameter
+    ---------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before 
+        writing out the help.
+        
+    """
+    helpstr = getHelpAsString()
+
+    if file is None:
+        print helpstr
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file,mode='w')
+        f.write(helpstr)
+        f.close()
 
 def main():
 

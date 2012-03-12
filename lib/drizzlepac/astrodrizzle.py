@@ -239,5 +239,22 @@ def run(configobj, wcsmap=None):
             del outwcs
 
 
-def help():
-    print getHelpAsString(docstring=True)
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+    
+    Parameter
+    ---------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before 
+        writing out the help.
+    """
+    helpstr = getHelpAsString(docstring=True)
+    if file is None:
+        print helpstr
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file,mode='w')
+        f.write(helpstr)
+        f.close()
