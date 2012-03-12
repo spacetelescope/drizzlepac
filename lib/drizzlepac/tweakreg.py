@@ -12,7 +12,7 @@ import util
 # from these variable definitions, allowing the values to be designated 
 # in one location only.
 __version__ = '1.0.0'
-__vdate__ = '27-Feb-2012'
+__vdate__ = '12-Mar-2012'
 
 import tweakutils
 import imgclasses

@@ -160,7 +160,7 @@ class OutputImage:
         headers.
 
         The arrays will have the size specified by 'shape'.
-        """                
+        """     
         if fileutil.findFile(self.output):
             if overwrite:
                 log.info('Deleting previous output product: %s' % self.output)
@@ -172,7 +172,7 @@ class OutputImage:
                 log.error('Quitting... Please remove before resuming '
                           'operations.')
                 raise IOError
-
+            
         # Default value for NEXTEND when 'build'== True
         nextend = 3
         if not self.build:
@@ -204,12 +204,19 @@ class OutputImage:
                               'operations.')
                     raise IOError
 
+
         # Get default headers from multi-extension FITS file
+        # If only writing out single drizzle product, blending needs to be 
+        # forced off as there is only 1 input to report, no blending needed 
+        if self.single:
+            blend=False
+
         # If input data is not in MEF FITS format, it will return 'None'
         # and those headers will have to be generated from drizzle output
         # file FITS headers.
         # NOTE: These are HEADER objects, not HDUs
         #prihdr,scihdr,errhdr,dqhdr = getTemplates(template)
+
         newhdrs, newtab = getTemplates(template,blend=blend)
         if newtab is not None: nextend += 1 # account for new table extn
 
@@ -526,7 +533,7 @@ def getTemplates(fnames, blend=True):
 
     """
     if not blend:
-        newhdrs =  blendheaders.getSingleTemplate(fnames)
+        newhdrs =  blendheaders.getSingleTemplate(fnames[0])
         newtab = None
     else:
         # apply rules to create final version of headers, plus table

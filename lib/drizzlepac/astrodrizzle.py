@@ -49,7 +49,7 @@ from . import wcs_functions
 __taskname__ = "astrodrizzle"
 
 __version__ = '4.3.0dev'
-__vdate__ = '01-Mar-2012'
+__vdate__ = '12-Mar-2012'
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations

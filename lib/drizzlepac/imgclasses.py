@@ -49,19 +49,22 @@ class Image(object):
 
         # try to verify whether or not this image has been updated with 
         # a full distortion model
-        wnames = altwcs.wcsnames(self.hdulist,ext=1)
+        numsci,sciname = count_sci_extensions(filename)
+        if sciname == 'PRIMARY': sciext = 0
+        else: sciext = 1
+        wnames = altwcs.wcsnames(self.hdulist,ext=sciext)
         # If no WCSNAME keywords were found, raise the possibility that
         # the images have not been updated fully and may result in inaccurate
         # alignment
         if len(wnames) == 0:
             print textutil.textbox('WARNING:\n'
-            '    Image %s may not have the full correct'%filename+
-            '    WCS solution in the header as created by stwcs.updatewcs'
-            '    Image alignment may not be taking into account the full'
-            '    the full distortion solution.\n'
-            '    Turning on the "updatewcs" parameter would insure that'
-            '    that each image uses the full distortion model when'
-            '    aligning this image.\n', width=60
+            'Image %s may not have the full correct'%filename+
+            'WCS solution in the header as created by stwcs.updatewcs'
+            'Image alignment may not be taking into account the full'
+            'the full distortion solution. \n'
+            'Turning on the "updatewcs" parameter would insure that'
+            'that each image uses the full distortion model when'
+            'aligning this image.\n', width=60
             )
             
         self.name = filename
