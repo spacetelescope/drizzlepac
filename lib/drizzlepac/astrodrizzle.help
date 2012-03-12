@@ -1,7 +1,7 @@
 
 Parameters
 ----------
-files : str or list of str (Default Value = '\*flt.fits')
+input : str or list of str (Default Value = '*flt.fits')
     The name or names of the input files to be processed, which can be provided in any of the following forms:
 
       * filename of a single image
@@ -12,7 +12,7 @@ files : str or list of str (Default Value = '\*flt.fits')
 
    .. note:: If the user specifies 'IVM' for the 'final_wht_type', but does not provide the names of IVM files, AstroDrizzle will automatically generate the IVM files itself for each input exposure. 
 
-Output : str (Default Value = 'final_drz.fits')
+Output : str (Default Value = '')
     The rootname for the output drizzled products. This step can result in the creation of several files, including:
 
       * copies of each input image as a FITS image, if workinplace=yes and/or input images are in GEIS format.
@@ -53,7 +53,7 @@ group : int or str (Default Value = )
     This parameter establishes whether or not a single FITS extension, or group will be drizzled. If an extension is provided, then only that chip will be drizzled onto the output frame. Either a FITS extension number, a GEIS group number (such as '1'), or a FITS extension name (such as 'sci,1') may be specified.
 
 
-build : bool (Default Value = )
+build : bool (Default Value = No)
     When this parameter is set to 'True', AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'False', a separate simple FITS file will be created for each aforementioned extension.
 
 crbit : int (Default Value = 4096)
@@ -72,7 +72,7 @@ num_cores: int (Default Value = None)
    
 *STATE OF INPUT FILES*
 
-restore: bool (Default Value = Yes) 
+restore: bool (Default Value = No) 
     Setting this to 'yes' (True) directs AstroDrizzle to copy the input images from the 'OrIg_files' sub-directory and use them for processing, if they had been archived by AstroDrizzle using the 'preserve' or 'overwrite' parameters already.  If set to 'yes' and the input files had not been archived already, it will simply ignore this and work with the current input images.
 
 preserve : bool (Default Value = Yes)
@@ -100,7 +100,7 @@ skysub : bool (Default Value = Yes)
     Turn on or off sky subtraction on the input data.
 
 
-skywidth : float (Default Value = 0.1)
+skywidth : float (Default Value = 0.3)
     Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.
 
 
@@ -136,7 +136,7 @@ skyfile : str (Default Value = '')
     
     
 *STEP 3: DRIZZLE SEPARATE IMAGES*
-driz_separate : bool (Default Value = No)
+driz_separate : bool (Default Value = Yes)
     This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
 
 
@@ -205,7 +205,7 @@ driz_sep_dec : float (Default Value = INDEF)
 
 
 *STEP 4: CREATE MEDIAN IMAGE*
-median : bool (Default Value = No)
+median : bool (Default Value = Yes)
     This parameter specifies whether or not to create a median image. This median image will be used as the comparison 'truth' image :in the cosmic ray rejection step.
 
 
@@ -213,7 +213,7 @@ median_newmasks : bool (Default Value = Yes)
     This parameter specifies whether or not new mask files will be created when the median image is created. These masks are generated from weight files previously produced by the "driz_separate" step, and contain all bad pixel information used to exclude pixels when calculating the median. Generally this step should be set to "Yes", unless for some reason, it is desirable to include bad pixel information when generating the median.
 
 
-combine_maskpt : float (Default Value = 0.7)
+combine_maskpt : float (Default Value = 0.3)
     Percentage of weight image values, below which the are flagged.
 
 
@@ -248,7 +248,7 @@ combine_grow : int (Default Value = 1)
 
 
 *STEP 5: BLOT BACK THE MEDIAN IMAGE*
-blot : bool (Default Value = No)
+blot : bool (Default Value = Yes)
     Perform the blot operation on the median image? If set to "Yes", the output will be median smoothed images that match each input chips location, and will be used in the cosmic ray rejection step.
 
 
@@ -269,9 +269,15 @@ blot_interp : str{'nearest', 'linear', 'poly3', 'poly5', 'sinc'} (Default Value 
 blot_sinscl : float (Default Value = 1.0)
     Size of the sinc interpolation kernel in pixels. 
 
+blot_addsky : bool (Default Value = Yes)
+    Add back a sky value using the MDRIZSKY value from the header.  If Yes, the blot_skyval parameter is ignored.
+
+blot_skyval : float (Default Value = 0.0)
+    This is a user-specified custom sky value to be added to the blot image.  This is only used if blot_addsky is No.
+
 
 *STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*
-driz_cr : bool (Default Value = No)
+driz_cr : bool (Default Value = Yes)
     Perform cosmic-ray detection? If set to "Yes", cosmic-rays will be detected and used to create cosmic-ray masks based on the algorithms from 'deriv' and 'driz_cr'.
 
 
@@ -361,7 +367,7 @@ final_refimage : str (Default Value = '')
     Reference image from which a WCS solution can be obtained.
 
 
-final_rot : float (Default Value = 0.0)
+final_rot : float (Default Value = INDEF)
     Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of INDEF specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
 
 
