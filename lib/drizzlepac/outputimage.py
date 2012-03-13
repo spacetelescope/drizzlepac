@@ -161,6 +161,9 @@ class OutputImage:
 
         The arrays will have the size specified by 'shape'.
         """     
+        if not isinstance(template, list):
+            template = [template]
+            
         if fileutil.findFile(self.output):
             if overwrite:
                 log.info('Deleting previous output product: %s' % self.output)

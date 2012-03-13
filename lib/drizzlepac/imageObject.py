@@ -489,13 +489,22 @@ class baseImageObject:
         # The use of fileutil.osfn interprets any environment variable, such as jref$,
         # used in the specification of the reference filename
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
-
+        
         try:
             handle = fileutil.openImage(filename, mode='readonly', memmap=0)
             hdu = fileutil.getExtn(handle,extn=exten)
-            _ltv1 = np.round(sci_chip.ltv1)
-            _ltv2 = np.round(sci_chip.ltv2)
-            data = hdu.data[_ltv2:sci_chip.size2, _ltv1:sci_chip.size1]
+            if hdu.data.shape[0] != sci_ship.image_shape[0]:
+                _ltv2 = np.round(sci_chip.ltv2)
+            else:
+                _ltv2 = 0
+            _size2 = sci_chip.image_shape[0]+_ltv2
+            if hdu.data.shape[1] != sci_chip.image_shape[1]:
+                _ltv1 = np.round(sci_chip.ltv1)
+            else:
+                _ltv1 = 0
+            _size1 = sci_chip.image_shape[1]+_ltv1
+
+            data = hdu.data[_ltv2:_size2, _ltv1:_size1]
             handle.close()
         except:
             data = np.ones(sci_chip.image_shape, dtype=sci_chip.image_dtype)
@@ -669,7 +678,8 @@ class baseImageObject:
         """
         log.info("Applying EXPTIME weighting to DQ mask for chip %s" %
                  chip)
-        expmask = self.getexptimeimg(chip)*dqarr
+        exparr = self.getexptimeimg(chip)
+        expmask = exparr*dqarr
         
         return expmask.astype(np.float32)
 
@@ -1043,7 +1053,8 @@ class imageObject(baseImageObject):
                     sci_chip.ltv2 = 0
                 sci_chip.size1 = sci_chip.header['NAXIS1'] + np.round(sci_chip.ltv1)
                 sci_chip.size2 = sci_chip.header['NAXIS2'] + np.round(sci_chip.ltv2)
-                sci_chip.image_shape = (sci_chip.size2,sci_chip.size1)
+                #sci_chip.image_shape = (sci_chip.size2,sci_chip.size1)
+                sci_chip.image_shape = (sci_chip.header['NAXIS2'],sci_chip.header['NAXIS1'])
                 
                 # Interpret the array dtype by translating the IRAF BITPIX value
                 for dtype in IRAF_DTYPES.keys():
