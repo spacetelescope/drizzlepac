@@ -334,6 +334,12 @@ def TweakReg(files, editpars=False, configobj=None, imagefindcfg=None,
         input_dict['input'] = files
     
     # Get default or user-specified configobj for primary task
+    if isinstance(configobj, str):
+        if not os.path.exists(configobj):
+            print 'Cannot find .cfg file: '+configobj
+            return
+        configobj = teal.load(configobj, strict=False)
+
     if configobj is None:
         configobj = teal.load(__taskname__)
     
