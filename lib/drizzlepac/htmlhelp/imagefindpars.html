@@ -69,7 +69,7 @@
                         title="next chapter">Image Class</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="_sources/imagefind.txt"
+    <li><a href="_sources/imagefindpars.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -94,9 +94,9 @@
           <div class="body">
             
   <div class="section" id="imagefindpars-source-finding-parameters">
-<span id="imagefind"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
+<span id="imagefindpars"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
 <p>This interface provides a mechanism for setting the parameters used by the built-in source finding algorithm based on the published algorithms used by DAOFIND.</p>
-<span class="target" id="module-drizzlepac.imagefindpars"></span><p>imagefindpars Version 0.6.21 updated on 23-Feb-2012</p>
+<span class="target" id="module-drizzlepac.imagefindpars"></span><p>imagefindpars Version 1.0.0 updated on 13-Mar-2012</p>
 <p>These parameters control the operation of the algorithm that extracts sources from the image as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -125,7 +125,7 @@
 <dt>skysigma <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0]</dd>
 <dt>fwhmpsf <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>The full-width at half-maximum of the point spread function in pixels.[Default: 2.5]</dd>
+<dd>The full-width at half-maximum of the point spread function in pixels.[Default: 3.0]</dd>
 <dt>peakmin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>This parameter allows the user to select only those sources whose peak value (in the units of the input image) is greater than this value. [Default: None]</dd>
 <dt>peakmax <span class="classifier-delimiter">:</span> <span class="classifier">float </span></dt>
