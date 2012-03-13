@@ -188,25 +188,25 @@ fluxcol : int
     Column number for the flux values from the user-generated catalog
     files specified in the catfile. These values will only be used if
     a flux limit has been specified by the user using the 'fluxmax' or
-    'fluxmin' parameters. [Default value = INDEF]
+    'fluxmin' parameters. [Default value = None]
 
 fluxmax : float
     Limiting flux value for selecting valid objects in the input image's
     catalog.  If specified, this flux will serve as the upper limit of a
     range for selecting objects to be used in matching with objects 
-    identified in the reference image. If the value is set to INDEF, all 
+    identified in the reference image. If the value is set to None, all 
     objects with fluxes brighter than the minimum specified in 'fluxmin' 
-    will be used. If both values are set to INDEF, all objects will be used. 
-    [Default value = INDEF]
+    will be used. If both values are set to None, all objects will be used. 
+    [Default value = None]
 
 fluxmin : float
     Limiting flux value for selecting valid objects in the input image's
     catalog. If specified, this flux value will serve as the lower limit
     of a range for selecting objects to be used in matching with objects
-    identified in the reference image. If the value is set to INDEF, all 
+    identified in the reference image. If the value is set to None, all 
     objects fainter than the limit specified by 'fluxmax' will be used. 
-    If both values are set to INDEF, all objects will be used. 
-    [Default value = INDEF]
+    If both values are set to None, all objects will be used. 
+    [Default value = None]
 
 fluxunits : str {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
@@ -221,7 +221,7 @@ xyunits : str {'pixels', 'degrees'}
 nbright : int
     The number of brightest objects to keep after sorting the full object 
     list. If nbright is set equal to None, all objects will be used. 
-    [Default value = INDEF]
+    [Default value = None]
 
 *REFERENCE CATALOG DESCRIPTION*
 refcat : str
@@ -241,25 +241,25 @@ refxyunits : str {'pixels','degrees'}
 
 rfluxcol : int
     Column number of flux/magnitude values in the external catalog file
-    specified by the refcat. [Default value = INDEF]
+    specified by the refcat. [Default value = None]
 
 rfluxmax : float
     Limiting flux value used to select valid objects in the external
     catalog. If specified, the flux value will serve as the upper limit 
     of a range for selecting objects to be used in matching with objects 
-    identified in the reference image. If the value is set to INDEF, 
+    identified in the reference image. If the value is set to None, 
     all objects with fluxes brighter than the minimum specified in 
-    'rfluxmin' will be used. If both values are set to INDEF, all 
-    objects will be used. [Default value = INDEF]
+    'rfluxmin' will be used. If both values are set to None, all 
+    objects will be used. [Default value = None]
 
 rfluxmin : float
     Limiting flux value used to select valid objects in the external
     catalog. If specified, the flux will serve as the lower limit
     of a range for selecting objects to be used in matching with objects
-    identified in the reference image. If the value is set to INDEF, 
+    identified in the reference image. If the value is set to None, 
     all objects fainter than the limit specified by 'rfluxmax' will be 
-    used. If both values are set to INDEF, all objects will be used. 
-    [Default value = INDEF]
+    used. If both values are set to None, all objects will be used. 
+    [Default value = None]
 
 rfluxunits : {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
@@ -269,7 +269,7 @@ rfluxunits : {'counts', 'cps', 'mag'}
 refnbright : int
     Number of brightest objects to keep after sorting the full object
     list. If refnbright is set to None, all objects will be used. Used in 
-    conjunction with refcat. [Default value = INDEF]
+    conjunction with refcat. [Default value = None]
 
 *OBJECT MATCHING PARAMETERS*
 minobj : int

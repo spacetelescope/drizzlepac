@@ -49,7 +49,7 @@ context : bool (Default Value = Yes)
     This parameter specifies whether or not to create a context image during the final drizzle combination. The context image contains the information regarding which image(s) contributed to each pixel encoded as a bit-mask. More information on context images can be obtained from the ACS Data Handbook.
 
 
-group : int or str (Default Value = )
+group : int (Default Value = None)
     This parameter establishes whether or not a single FITS extension, or group will be drizzled. If an extension is provided, then only that chip will be drizzled onto the output frame. Either a FITS extension number, a GEIS group number (such as '1'), or a FITS extension name (such as 'sci,1') may be specified.
 
 
@@ -108,11 +108,11 @@ skystat : {'median', 'mode', 'mean'} (Default Value = 'median')
     Statistical method for determining the sky value from the image pixel values. 
 
 
-skylower : float (Default Value = INDEF)
+skylower : float (Default Value = None)
     Lower limit of usable pixel values for computing the sky. This value should be specified in units of electrons.
 
 
-skyupper : float (Default Value = INDEF)
+skyupper : float (Default Value = None)
     Upper limit of usable pixel values for computing the sky. This value should be specified in units of electrons.
 
 
@@ -163,8 +163,8 @@ driz_sep_pixfrac : float (Default Value = 1.0)
     Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel parameter will be reset to 'point' for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the 'drizzle' task.
 
 
-driz_sep_fillval : int or INDEF (Default Value = INDEF)
-    Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'INDEF' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.
+driz_sep_fillval : int (Default Value = None)
+    Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'None' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.
 
 
 driz_sep_bits : int (Default Value = 0)
@@ -180,27 +180,27 @@ driz_sep_refimage : str (Default Value = '')
     Reference image from which a WCS solution can be obtained.
 
 
-driz_sep_rot : float (Default Value = INDEF)
-    Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of INDEF specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
+driz_sep_rot : float (Default Value = None)
+    Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of None specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
 
 
-driz_sep_scale : float (Default Value = INDEF)
-    Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of INDEF specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.
+driz_sep_scale : float (Default Value = None)
+    Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of None specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.
 
 
-driz_sep_outnx : int (Default Value = INDEF)
+driz_sep_outnx : int (Default Value = None)
     Size, in pixels, of the X axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
-driz_sep_outny : int (Default Value = INDEF)
+driz_sep_outny : int (Default Value = None)
     Size, in pixels, of the Y axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
-driz_sep_ra : float (Default Value = INDEF)
+driz_sep_ra : float (Default Value = None)
     Right ascension (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
-driz_sep_dec : float (Default Value = INDEF)
+driz_sep_dec : float (Default Value = None)
     Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
@@ -235,11 +235,11 @@ combine_nhigh : int (Default Value = 0)
     This parameter sets the number of high value pixels to reject automatically during image combination.
 
 
-combine_lthresh : float (Default Value = INDEF)
+combine_lthresh : float (Default Value = None)
     Sets the lower threshold for clipping input pixel values during image combination. This value gets passed directly to 'imcombine' for use in creating the median image. If the parameter is set to "None", no thresholds will be imposed.
 
 
-combine_hthresh : float (Default Value = INDEF)
+combine_hthresh : float (Default Value = None)
     This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to 'imcombine' for use in creating the median image. If the parameter is set to "None", no thresholds will be imposed.
 
 
@@ -346,8 +346,8 @@ final_pixfrac : float (Default Value = 1.0)
     Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel parameter will be reset to 'point' for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the 'drizzle' task.
 
 
-final_fillval : float or INDEF (Default Value = INDEF)
-    The value for this parameter is to be assigned to the output pixels that have zero weight or which do not receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'INDEF' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that numerical value.
+final_fillval : float (Default Value = None)
+    The value for this parameter is to be assigned to the output pixels that have zero weight or which do not receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'None' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that numerical value.
 
 
 final_bits : int (Default Value = 0)
@@ -367,32 +367,32 @@ final_refimage : str (Default Value = '')
     Reference image from which a WCS solution can be obtained.
 
 
-final_rot : float (Default Value = INDEF)
-    Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of INDEF specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
+final_rot : float (Default Value = None)
+    Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of None specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
 
 
-final_scale : float (Default Value = INDEF)
-    Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of INDEF specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.
+final_scale : float (Default Value = None)
+    Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of None specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.
 
 
-final_outnx : int (Default Value = INDEF)
+final_outnx : int (Default Value = None)
     Size, in pixels, of the X axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
-final_outny : int (Default Value = INDEF)
+final_outny : int (Default Value = None)
     Size, in pixels, of the Y axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
-final_ra : float (Default Valut = INDEF)
+final_ra : float (Default Valut = None)
     Right ascension (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
-final_dec : float (Default Valut = INDEF)
+final_dec : float (Default Valut = None)
     Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
 *INSTRUMENT PARAMETERS*
-gain : float (Default Value = INDEF)
+gain : float (Default Value = None)
     Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count.  This parameter should not be populated if the ''gainkeyword'' parameter is in use.
 
 
@@ -400,7 +400,7 @@ gainkeyword : str (Default Value = '')
     Keyword used to specify a value, which is used to override the instrument specific default gain values. The value is assumed to be in units of electrons/count. This parameter should not be populated if the ''gain'' parameter is in use.
 
 
-rdnoise : float (Default Value = INDEF)
+rdnoise : float (Default Value = None)
     Value used to override instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the ''rnkeyword'' parameter is in use.
 
 
@@ -408,7 +408,7 @@ rnkeyword : str (Default Value = '')
     Keyword used to specify a value, which is used to override the instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the ''rdnoise'' parameter is in use.
 
 
-exptime : float (Default Value = INDEF)
+exptime : float (Default Value = None)
     Value used to override default exposure time image header values.  The value is assumed to be in units of seconds.  This parameter should not be populated if the ''expkeyword'' parameter is in use.
 
 
