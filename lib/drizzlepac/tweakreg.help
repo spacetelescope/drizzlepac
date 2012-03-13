@@ -6,27 +6,6 @@ be due to errors in guide-star positions when combining observations from
 different observing visits or from slight offsets introduced upon re-acquiring
 the guide stars in a slightly different position.
 
-Examples
---------
-This task can be run from either the TEAL GUI or from the Python command-line. 
-These examples illustrate the syntax that can be used to run the task in a 
-couple of common modes.
-
-1. Run the task using the TEAL GUI under PyRAF:
-
-    >>> import drizzlepac 
-    >>> epar tweakreg
-
-2. Find only the shifts(no rotation or scale) for a set of calibrated ACS 
-   (\_flt.fits) images using the built-in DAOFIND-like source finding 
-   algorithm with sources >10 sigma above the background without using the 
-   TEAL GUI:
-
-  >>> from drizzlepac import tweakreg
-  >>> tweakreg.TweakReg('\*flt.fits', editpars=False, findmode='imagefind', \
-      editipars=False, computesig=True, threshold=10.0, fitgeometry='shift')
-
-
 Parameters
 ----------
 input : str or list of str
@@ -175,6 +154,11 @@ catfile : str
     columns will provide the names of the source catalogs for each chip
     in order of the science extension numbers ((SCI,1), (SCI,2), ...).
     [Default value: '']
+
+    A sample catfile, with one line per image would look like::
+
+     image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
+     image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo
 
 xcol : int
     Column number of X position from the user-generated catalog files
@@ -458,6 +442,53 @@ actually be different from one line to the next, in case multiple regions
 files written out in different formats need to be merged. So, regions from
 the second example could be included in the first examples file if needed.
 
+
+Examples
+--------
+This task can be run from either the TEAL GUI or from the Python command-line. 
+These examples illustrate the syntax that can be used to run the task in a 
+couple of common modes.
+
+1. Run the task from PyRAF using the TEAL GUI::
+
+    --> import drizzlepac 
+    --> epar tweakreg
+
+2. Run the task from PyRAF using the command line.  Find only the shifts
+   (no rotation or scale) for a set of calibrated ACS 
+   (\_flt.fits) images using the built-in DAOFIND-like source finding 
+   algorithm with sources >10 sigma above the background::
+
+    --> from drizzlepac import tweakreg
+    --> tweakreg.TweakReg('*flt.fits', updatehdr=False, fwhmpsf=3.5, threshold=200, \
+                          shiftfile=True, outshifts='shift.txt')
+
+   Do the same run from the PyRAF command line, but specify all parameters in
+   a config file named "myparam.cfg"::
+
+    --> tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')
+
+3. Run the task directly from Python:
+
+    >>> from drizzlepac import tweakreg
+    >>> tweakreg.TweakReg('*flt.fits', updatehdr=False, fwhmpsf=3.5, threshold=200, \
+                          shiftfile=True, outshifts='shift.txt')
+
+   And then edit the imagefind parameters in a TEAL GUI window:
+
+    >>> tweakreg.edit_imagefindpars()
+
+4. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  Also, on
+   the PyRAF command-line, help text is given by::
+
+    --> from drizzlepac import tweakreg
+    --> tweakreg.help()
+
+   or::
+
+    --> from drizzlepac import tweakreg
+    --> tweakreg.help(file='myhelp.txt')
+    --> page myhelp.txt
 
 
 See Also
