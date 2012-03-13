@@ -15,7 +15,7 @@ input : str or list of str (Default Value = '*flt.fits')
 Output : str (Default Value = '')
     The rootname for the output drizzled products. This step can result in the creation of several files, including:
 
-      * copies of each input image as a FITS image, if workinplace=yes and/or input images are in GEIS format.
+      * copies of each input image as a FITS image, if workinplace=Yes and/or input images are in GEIS format.
       * mask files and coeffs files created by PyDrizzle for use by 'drizzle'. 
 
     If an association file has been given as input, the specified filename will be used instead of the product name specified in the ASN file. Similarly, if a single exposure is provided, the rootname of the single exposure will be used for the output product instead of relying on the input rootname. If no value is provided when a filelist or wild-card specification is given as input, then a rootname of 'final' will be used for the output file name. 
@@ -27,7 +27,7 @@ runfile : str (Default Value = 'astrodrizzle.log')
    This log file will contain all the output messages generated during processing, including full details of any errors/exceptions. These messages will be a super-set of those reported to the screen during processing.
 
 updatewcs : bool  (Default Value = No)
-    This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should be set to 'no' when the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is', otherwise those updates will be over-written by this update. 
+    This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should be set to 'No' when the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is', otherwise those updates will be over-written by this update. 
 
 wcskey : str (Default Value = '')
     This parameter corresponds to the *key* for the WCS being selected by the user. It allows the user to select which WCS solution should be used for processing the images when multiple WCS's have been updated in each input image header using the Paper I Multiple WCS FITS standard.      
@@ -54,7 +54,7 @@ group : int or str (Default Value = )
 
 
 build : bool (Default Value = No)
-    When this parameter is set to 'True', AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'False', a separate simple FITS file will be created for each aforementioned extension.
+    When this parameter is set to 'Yes', AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'No', a separate simple FITS file will be created for each aforementioned extension.
 
 crbit : int (Default Value = 4096)
     This parameter sets the bit value for CR identification in the DQ array.
@@ -73,7 +73,7 @@ num_cores: int (Default Value = None)
 *STATE OF INPUT FILES*
 
 restore: bool (Default Value = No) 
-    Setting this to 'yes' (True) directs AstroDrizzle to copy the input images from the 'OrIg_files' sub-directory and use them for processing, if they had been archived by AstroDrizzle using the 'preserve' or 'overwrite' parameters already.  If set to 'yes' and the input files had not been archived already, it will simply ignore this and work with the current input images.
+    Setting this to 'Yes' (True) directs AstroDrizzle to copy the input images from the 'OrIg_files' sub-directory and use them for processing, if they had been archived by AstroDrizzle using the 'preserve' or 'overwrite' parameters already.  If set to 'Yes' and the input files had not been archived already, it will simply ignore this and work with the current input images.
 
 preserve : bool (Default Value = Yes)
     Copy input files to archive directory, if not already archived. This parameter determines whether or not astrodrizzle creates a copy of the input file in a sub-directory called 'OrIg_files'. If a copy already exists in this directory, then the previously existing version will NOT be overwritten.
@@ -84,7 +84,7 @@ overwrite : bool (Default Value = No)
 
 
 clean : bool (Default Value = No)
-    The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to 'True'. The affected files include the coefficient and static mask files created by PyDrizzle, in addition to other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. However, when running AstroDrizzle routinely, or on a small disk drive, these files can be removed to conserve space.
+    The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to 'Yes'. The affected files include the coefficient and static mask files created by PyDrizzle, in addition to other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. However, when running AstroDrizzle routinely, or on a small disk drive, these files can be removed to conserve space.
 
 
 *STEP 1: STATIC MASK*

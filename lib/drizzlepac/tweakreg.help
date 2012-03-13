@@ -47,28 +47,11 @@ input : str or list of str
     'IVM' to the parameter 'final_wht_type' described further below),
     then these are simply provided as a second column in the filelist,
     with each IVM filename listed on the same line as a second entry,
-    after its corresponding exposure filename. [Default value: '\*flt.fits']
+    after its corresponding exposure filename. [Default value: '*flt.fits']
 
 refimage : str
     Filename of reference image. Sources derived from this image will be 
     used as the reference for matching with sources from all input images.
-    [Default value: '']
-
-findmode : str {'imagefind', 'sextractor'}
-    This parameter specifies what method should be used to extract source
-    catalogs from each input image. 
-    
-    Selection of 'sextractor' only specifies that should the 'sextractor'
-    executable be found on the user's system, it will be used. Otherwise,
-    'tweakreg' will use the built-in imagefind function by default. This 
-    function is similar in operation to DAOFIND. [Default value: 'imagefind']
-
-execname : string
-    This parameter allows the user to specify the full path and filename 
-    of the SExtractor executable they want to use.  This would generally
-    only need to be set should the task not automatically find the 
-    SExtractor executable or if more than 1 instance of SExtractor has been
-    installed on the system.  
     [Default value: '']
 
 exclusions: string
@@ -83,6 +66,10 @@ exclusions: string
     'circle()' regions are interpreted and used and only with units for the 
     positions of the exclusion center of 'fk[4|5]' and 'image'. Support for
     additional region file options will be added at a later date. 
+    [Default value: '']
+
+updatewcs : bool
+    Update WCS keywords of input images?  [Default value: No]
 
 writecat : bool
     Specify whether or not to write out the source catalogs generated for
@@ -92,18 +79,22 @@ writecat : bool
 clean : bool
     Specify whether or not to remove the temporary files created by
     'tweakreg', including any catalog files generated for the shift
-    determination. [Default value = Yes]
+    determination. [Default value = No]
 
 verbose : bool
     Specify whether or not to print extra messages during
     processing. [Default value = No]
+
+runfile : string
+    Specify the filename of the processing log.
+    [Default value = 'tweakreg.log']
 
 *UPDATE HEADER*
 updatehdr : bool
     Specify whether or not to update the headers of each input image
     directly with the shifts that were determined. This will allow the
     input images to be combined by AstroDrizzle without having to provide
-    the shiftfile as well. [Default value = False]
+    the shiftfile as well. [Default value = No]
 
 wcsname : str
     Name of updated WCS. [Default value = 'TWEAK']
@@ -113,11 +104,12 @@ headerlet: bool
     Specify whether or not to generate a headerlet from the images at
     the end of the task? If turned on, this will create a headerlet
     from the images regardless of the value of the 'updatehdr'
-    parameter.
+    parameter. [Default value = No]
 
 attach: bool
     If creating a headerlet, choose whether or not to attach the new 
     headerlet to the input image as a new extension.
+    [Default value = Yes]
     
 hdrfile: string
     Filename to use for writing out headerlet to a separate file. If the name
@@ -125,26 +117,29 @@ hdrfile: string
     rootname of the input image, the value of this string, and it will end
     in '_hlet.fits'. For example, if only 'hdrlet1' is given, the full filename
     created will be 'j99da1f2q_hdrlet1_hlet.fits' when creating a headerlet
-    for image 'j99da1f2q_flt.fits'. 
+    for image 'j99da1f2q_flt.fits'. [Default value = '']
     
 clobber: bool
     If a headerlet with 'hdrfile' already exists on disk, specify
     whether or not to overwrite that previous file.
+    [Default value = No]
 
 hdrname: string
     Unique name to give to headerlet solution. This name will be used to 
     identify this specific WCS alignment solution contained in the headerlet.
+    [Default value = '']
     
 author: string, optional
-    Name of the creator of the headerlet.
+    Name of the creator of the headerlet. [Default value = '']
 
 descrip: string, optional
     Short (1-line) description to be included in headerlet as 'DESCRIP' keyword.
     This can be used to provide a quick look description of the WCS alignment
-    contained in the headerlet.
+    contained in the headerlet. [Default value = '']
 
 catalog: string, optional
     Name of reference catalog used as the basis for the image alignment.
+    [Default value = '']
     
 history: string, optional
     Filename of a file containing detailed information regarding the history
@@ -152,6 +147,7 @@ history: string, optional
     on the catalog used for the alignment, or notes on processing that went
     into finalizing the WCS alignment stored in this headerlet. This information
     will be reformatted as 70-character wide FITS HISTORY keyword section.
+    [Default value = '']
 
 *OPTIONAL SHIFTFILE OUTPUT*
 shiftfile : bool
@@ -169,10 +165,10 @@ outwcs : str
     those shifts. This reference WCS file will be a FITS file that
     only contains the WCS keywords in a Primary header with no image
     data itself. The values will be derived from the FIRST input image
-    specified. [Default value: 'tweak_wcs.fits']
+    specified. [Default value: 'shifts_wcs.fits']
 
 *COORDINATE FILE DESCRIPTION*
-catfile:str
+catfile : str
     Name of file that contains a list of input images and associated
     catalog files generated by the user. Each line of this file will
     contain the name of an input image in the first column. The remaining
@@ -192,7 +188,7 @@ fluxcol : int
     Column number for the flux values from the user-generated catalog
     files specified in the catfile. These values will only be used if
     a flux limit has been specified by the user using the 'fluxmax' or
-    'fluxmin' parameters. [Default value = None]
+    'fluxmin' parameters. [Default value = INDEF]
 
 fluxmax : float
     Limiting flux value for selecting valid objects in the input image's
@@ -201,7 +197,7 @@ fluxmax : float
     identified in the reference image. If the value is set to INDEF, all 
     objects with fluxes brighter than the minimum specified in 'fluxmin' 
     will be used. If both values are set to INDEF, all objects will be used. 
-    [Default value = None]
+    [Default value = INDEF]
 
 fluxmin : float
     Limiting flux value for selecting valid objects in the input image's
@@ -210,7 +206,7 @@ fluxmin : float
     identified in the reference image. If the value is set to INDEF, all 
     objects fainter than the limit specified by 'fluxmax' will be used. 
     If both values are set to INDEF, all objects will be used. 
-    [Default value = None]
+    [Default value = INDEF]
 
 fluxunits : str {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
@@ -225,7 +221,7 @@ xyunits : str {'pixels', 'degrees'}
 nbright : int
     The number of brightest objects to keep after sorting the full object 
     list. If nbright is set equal to None, all objects will be used. 
-    [Default value = None]
+    [Default value = INDEF]
 
 *REFERENCE CATALOG DESCRIPTION*
 refcat : str
@@ -245,7 +241,7 @@ refxyunits : str {'pixels','degrees'}
 
 rfluxcol : int
     Column number of flux/magnitude values in the external catalog file
-    specified by the refcat. [Default value = None]
+    specified by the refcat. [Default value = INDEF]
 
 rfluxmax : float
     Limiting flux value used to select valid objects in the external
@@ -254,7 +250,7 @@ rfluxmax : float
     identified in the reference image. If the value is set to INDEF, 
     all objects with fluxes brighter than the minimum specified in 
     'rfluxmin' will be used. If both values are set to INDEF, all 
-    objects will be used. [Default value = None]
+    objects will be used. [Default value = INDEF]
 
 rfluxmin : float
     Limiting flux value used to select valid objects in the external
@@ -263,7 +259,7 @@ rfluxmin : float
     identified in the reference image. If the value is set to INDEF, 
     all objects fainter than the limit specified by 'rfluxmax' will be 
     used. If both values are set to INDEF, all objects will be used. 
-    [Default value = None]
+    [Default value = INDEF]
 
 rfluxunits : {'counts', 'cps', 'mag'}
     This allows the task to correctly interpret the flux limits specified
@@ -273,7 +269,7 @@ rfluxunits : {'counts', 'cps', 'mag'}
 refnbright : int
     Number of brightest objects to keep after sorting the full object
     list. If refnbright is set to None, all objects will be used. Used in 
-    conjunction with refcat. [Default value = None]
+    conjunction with refcat. [Default value = INDEF]
 
 *OBJECT MATCHING PARAMETERS*
 minobj : int
@@ -290,7 +286,7 @@ use2dhist : bool
     Use 2d histogram to find initial offset? [Default value = Yes]
 
 see2dplot : bool
-    See 2d histogram for initial offset? [Default value = No]
+    See 2d histogram for initial offset? [Default value = Yes]
 
 tolerance : float 
     The matching tolerance in pixels after applying an initial solution
@@ -319,18 +315,18 @@ yoffset : float
     be assumed in matching sources in 'xyxymatch'. [Default value = 0.0]
 
 *CATALOG FITTING PARAMETERS*
-fitgeometry : str {'shift', 'rscale', 'general'}
+fitgeometry : str {'shift', 'rscale'}
     The fitting geometry to be used in fitting the matched object lists.
     This parameter is used in fitting the offsets, rotations and/or scale
     changes from the matched object lists. [Default value = 'rscale']
 
 residplot : str {'No plot', 'vector', 'residuals', 'both'}
-    Plot residuals from fit?  [Default value = 'No plot']
+    Plot residuals from fit?  [Default value = 'both']
     If 'both' is selected, the 'vector' and 'residuals' plots will be displayed
     in separate plotting windows at the same time.
 
 nclip : int
-    Number of clipping iterations in fit. [Default value = 0]
+    Number of clipping iterations in fit. [Default value = 3]
 
 sigma : float
     Clipping limit in sigma units. [Default value = 3.0]
