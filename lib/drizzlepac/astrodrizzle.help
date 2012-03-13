@@ -1,7 +1,7 @@
 
 Parameters
 ----------
-input : str or list of str (Default Value = '*flt.fits')
+input : str or list of str (Default Value = '\*flt.fits')
     The name or names of the input files to be processed, which can be provided in any of the following forms:
 
       * filename of a single image
@@ -432,11 +432,7 @@ EXAMPLES
 --------
 This task also has the ability to be called directly from Python for use in larger tasks. 
 
-The primary Python interface to AstroDrizzle has been developed as::
-
-  def MultiDrizzle('*flt.fits', editpars=False, configObj=None, wcsmap=None, **input_dict)
-
 A basic example of how to call this from within a Python task would be::
 
 >>> from drizzlepac import astrodrizzle
->>> astrodrizzle.AstroDrizzle('*flt.fits', editpars=False)
+>>> astrodrizzle.AstroDrizzle('\*flt.fits', editpars=False)

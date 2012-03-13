@@ -63,7 +63,7 @@ log = logutil.create_logger(__name__)
 #
 def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None,
                  wcsmap=None, **input_dict):
-    """
+    """ AstroDrizzle command-line interface
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
@@ -73,7 +73,7 @@ def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None,
     if not util.is_blank(input):
         input_dict['input'] = input
 
-    #input_dict['mdriztab'] = mdriztab
+    # input_dict['mdriztab'] = mdriztab
 
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
