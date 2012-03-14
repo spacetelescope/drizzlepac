@@ -48,7 +48,7 @@ from . import wcs_functions
 
 __taskname__ = "astrodrizzle"
 
-__version__ = '4.3.0dev'
+__version__ = '4.3.0'
 __vdate__ = '13-Mar-2012'
 
 

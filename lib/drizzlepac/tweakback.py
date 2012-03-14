@@ -13,33 +13,7 @@ from . import linearfit
 __taskname__ = 'tweakback' # unless someone comes up with anything better
 __version__ = '0.1.1'
 __vdate__ = '02-Feb-2012'
-
-#### TEAL Interfaces to run this task    
-def getHelpAsString(docstring=False):
-    """ 
-    return useful help from a file in the script directory called __taskname__.help
-    """
-    install_dir = os.path.dirname(__file__)
-    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
-    helpfile = os.path.join(install_dir,__taskname__+'.help')
-    if docstring or (not docstring and not os.path.exists(htmlfile)):
-        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
-        if os.path.exists(helpfile):
-            helpString += teal.getHelpFileAsString(__taskname__,__file__)
-        else:
-            helpString += tweakback.__doc__
-    else:
-        helpString = 'file://'+htmlfile
-
-    return helpString
-
-def run(configobj):
-    # Interpret user-input from TEAL GUI and call function
-    tweakback(configobj['drzfile'],input=configobj['input'],
-            extname=configobj['extname'],verbose=configobj['verbose'],
-            force=configobj['force'])
-
-
+        
 #### Primary function
 def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
     """ 
@@ -187,7 +161,51 @@ def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
                         xrms=crderr1, yrms = crderr2,
                         verbose=verbose,force=force,sciext=extname)
 
+#### TEAL Interfaces to run this task    
+def getHelpAsString(docstring=False):
+    """ 
+    return useful help from a file in the script directory called __taskname__.help
+    """
+    install_dir = os.path.dirname(__file__)
+    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
+    helpfile = os.path.join(install_dir,__taskname__+'.help')
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(__taskname__,__file__)
+        else:
+            helpString += tweakback.__doc__
+    else:
+        helpString = 'file://'+htmlfile
 
+    return helpString
+
+def run(configobj):
+    # Interpret user-input from TEAL GUI and call function
+    tweakback(configobj['drzfile'],input=configobj['input'],
+            extname=configobj['extname'],verbose=configobj['verbose'],
+            force=configobj['force'])
+
+def help(file=None):
+    """
+    Print out syntax help for running tweakback
+    
+    Parameter
+    ---------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before 
+        writing out the help.
+        
+    """
+    helpstr = getHelpAsString(docstring=True)
+    if file is None:
+        print helpstr
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file,mode='w')
+        f.write(helpstr)
+        f.close()
 #
 #### Utility functions
 #
@@ -211,14 +229,12 @@ def determine_extnum(drzfile, extname='SCI'):
     # Determine what kind of drizzled file input has been provided: MEF or single
     hdulist = pyfits.open(drzfile)
     numext = len(hdulist)
-    sciext = 1
-    if numext == 1:
-        sciext = 0
-    else:
-        for e,i in zip(hdulist,range(numext)):
-            if 'extname' in e.header and e.header['extname'] == extname:
-                sciext = i
-                break
+    sciext = 0
+    for e,i in zip(hdulist,range(numext)):
+        if 'extname' in e.header and e.header['extname'] == extname:
+            sciext = i
+            break
     hdulist.close()
     
     return sciext
+
