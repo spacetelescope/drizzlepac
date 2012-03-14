@@ -572,6 +572,9 @@ class Image(object):
                 next_key = altwcs.next_wcskey(self.hdulist[extlist[0]].header)
                 # save again using new WCSNAME
                 altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wcsname)
+                # update WCSNAME to be the new name
+                for ext in extlist:
+                    self.hdulist[ext].header['WCSNAME'] = wcsname
             self.next_key = ' '
 
         # add FIT values to image's PRIMARY header
@@ -674,7 +677,22 @@ class Image(object):
             f.write('#     Column 12: Original Y (input)\n')
             f.write('#     Column 13: Ref ID\n')
             f.write('#     Column 14: Input ID\n')
-
+            #f.write('#     Column 15: Input Chip\n')
+            #
+            # Need to add chip ID for each matched source to the fitmatch file
+            # The chip information can be extracted from the following source:
+            #
+            #     self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
+            #     xypos = catalog.xypos
+            #ref_chip_id = self.fit['ref_indx'].copy()
+            img_chip_id = self.fit['img_indx'].copy()
+            for sci_extn in range(1,self.num_sci+1):
+                img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[-1]
+                chip_min = img_indx_orig.min()
+                chip_max = img_indx_orig.max()
+                cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
+                img_chip_id = np.where(cid, sci_extn, img_chip_id) 
+            #
             f.write('#\n')
             f.close()
             fitvals = self.fit['img_coords']+self.fit['resids']
@@ -688,6 +706,7 @@ class Image(object):
                       self.fit['img_orig_xy'][:,1]],
                       [self.fit['ref_indx'],self.fit['img_indx']]
                     ]
+#                      [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id]
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
                                         append=True,format=["%15.6f","%8d"])
         

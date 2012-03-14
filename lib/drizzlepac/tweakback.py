@@ -111,6 +111,7 @@ def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
         fltfiles = [fltfiles]
     
     sciext = determine_extnum(drzfile, extname='SCI')
+    scihdr = pyfits.getheader(drzfile,ext=sciext)
 
     ### Step 1: Read in updated and original WCS solutions
     # determine keys for all alternate WCS solutions in drizzled image header
@@ -122,10 +123,10 @@ def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
     # from drizzled image header
     # The final solution also serves as reference WCS when using updatehdr
     final_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=wkeys[-1])
-    orig_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=wkeys[-2])
+    orig_wcsname,orig_wcskey = determine_orig_wcsname(scihdr,wnames)
+    orig_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=orig_wcskey)
     
     # read in RMS values reported for new solution
-    scihdr = pyfits.getheader(drzfile,ext=sciext)
     crderr1kw = 'CRDER1'+wkeys[-1]
     crderr2kw = 'CRDER2'+wkeys[-1]
 
@@ -238,3 +239,23 @@ def determine_extnum(drzfile, extname='SCI'):
     
     return sciext
 
+def determine_orig_wcsname(header,wnames):
+    """
+    Determine the name of the original, unmodified WCS solution
+    """
+    orig_wcsname = None
+    for k,w in wnames.items():
+        if w[:4] == 'IDC_' and (w[4:] in header['idctab']):
+            orig_wcsname = w
+            orig_key = k
+            break
+    if orig_wcsname is None:
+        for k,w in wnames.items():
+            if w[:4] == 'IDC_': 
+                orig_wcsname = w
+                orig_key = k
+                break
+    if orig_wcsname is None and 'wcsname' in header:
+        orig_wcsname = header['wcsname']
+        orig_key = ' '
+    return orig_wcsname,orig_key
