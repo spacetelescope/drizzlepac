@@ -21,7 +21,7 @@ skysigma : float
     The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0] 
 
 fwhmpsf : float
-    The full-width at half-maximum of the point spread function in pixels.[Default: 3.0] 
+    The full-width at half-maximum of the point spread function in pixels. [Default: 3.0] 
 
 peakmin : float
     This parameter allows the user to select only those sources whose peak value (in the units of the input image) is greater than this value. [Default: None] 
@@ -36,7 +36,7 @@ nsigma : float
     The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]
 
 fluxmin : float
-    This parameter allows the user to select only those sources whose total flux (in the units of the input image) is greater than this value.[Default: None]
+    This parameter allows the user to select only those sources whose total flux (in the units of the input image) is greater than this value. [Default: None]
 
 fluxmax : float
     This parameter allows the user to select only those sources whose total flux (in the units of the input image) is less than this value. [Default: None]

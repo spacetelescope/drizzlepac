@@ -445,25 +445,29 @@ the second example could be included in the first examples file if needed.
 
 Examples
 --------
-This task can be run from either the TEAL GUI or from the Python command-line. 
-These examples illustrate the syntax that can be used to run the task in a 
-couple of common modes.
+The tweakreg task can be run from either the TEAL GUI or from the command-line
+using PyRAF or Python.
+These examples illustrate the various syntax options available.
+
+**Example 1:**  Align a set of calibrated (\_flt.fits) images using IMAGEFIND, a built-in source
+finding algorithm based on DAOPHOT.   Auto-detect the sky sigma value and select sources > 200
+sigma.   (Auto-sigma is computed from the first input exposure as: 1.5 * imstat(image,nclip=3,fields='stddev'). )
+Set the convolution kernel width to ~2x the value of the PSF FWHM.
+Save the residual offsets (dx, dy, rot, scale, xfit_rms, yfit_rms) to a text file.
 
 1. Run the task from PyRAF using the TEAL GUI::
 
     --> import drizzlepac 
     --> epar tweakreg
 
-2. Run the task from PyRAF using the command line.  Find only the shifts
-   (no rotation or scale) for a set of calibrated ACS 
-   (\_flt.fits) images using the built-in DAOFIND-like source finding 
-   algorithm with sources >10 sigma above the background::
+2. Run the task from PyRAF using the command line. ::
 
+    --> import drizzlepac 
     --> from drizzlepac import tweakreg
     --> tweakreg.TweakReg('*flt.fits', updatehdr=False, fwhmpsf=3.5, threshold=200, \
                           shiftfile=True, outshifts='shift.txt')
 
-   Do the same run from the PyRAF command line, but specify all parameters in
+   Or, run the same task from the PyRAF command line, but specify all parameters in
    a config file named "myparam.cfg"::
 
     --> tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')
@@ -474,24 +478,22 @@ couple of common modes.
     >>> tweakreg.TweakReg('*flt.fits', updatehdr=False, fwhmpsf=3.5, threshold=200, \
                           shiftfile=True, outshifts='shift.txt')
 
-   And then edit the imagefind parameters in a TEAL GUI window:
+   Alternately, edit the imagefind parameters in a TEAL GUI window prior to running the task:
 
     >>> tweakreg.edit_imagefindpars()
 
-4. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  Also, on
-   the PyRAF command-line, help text is given by::
+4. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
+   be accessed from the PyRAF command-line and saved to a text file::
 
     --> from drizzlepac import tweakreg
     --> tweakreg.help()
 
    or::
 
-    --> from drizzlepac import tweakreg
-    --> tweakreg.help(file='myhelp.txt')
-    --> page myhelp.txt
+    --> tweakreg.help(file='help.txt')
+    --> page help.txt
 
 
 See Also
 --------
 astrodrizzle
-
