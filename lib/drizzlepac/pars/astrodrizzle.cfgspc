@@ -77,7 +77,7 @@ blot_skyval = float_kw(default=0.0, active_if='_rule5_', comment="Custom sky val
 
 [STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR]
 driz_cr = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment="Perform CR rejection with deriv and driz_cr?")
-driz_cr_corr = boolean_kw(default=False, comment= "Create CR cleaned _cor file and a _crmask file?")
+driz_cr_corr = boolean_kw(default=False, comment= "Create CR cleaned _crclean file and a _crmask file?")
 driz_cr_snr = string_kw(default="3.5 3.0", comment= "Driz_cr.SNR parameter")
 driz_cr_grow = integer_kw(default=1, comment="Driz_cr_grow parameter")
 driz_cr_ctegrow = integer_kw(default=0, comment="Driz_cr_ctegrow parameter")
