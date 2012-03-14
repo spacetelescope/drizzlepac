@@ -2,7 +2,8 @@
 """
 import os
 
-from stsci.tools import parseinput, teal, logutil
+from stsci.tools import parseinput, teal
+from stsci.tools import logutil, textutil
 from stwcs import updatewcs
 
 import util
@@ -109,6 +110,18 @@ def run(configobj):
         filenames = util.verifyFilePermissions(filenames)
         if filenames is None or len(filenames) == 0:
             raise IOError
+
+    if configobj['UPDATE HEADER']['updatehdr']:
+        wname = configobj['UPDATE HEADER']['wcsname']
+        # verify that a unique WCSNAME has been specified by the user
+        for fname in filenames:
+            uniq = util.verifyUniqueWcsname(fname,wname)
+            if not uniq:
+                errstr = 'WCSNAME "%s" already present in "%s".  '%(wname,fname)+\
+                'A unique value for the "wcsname" parameter needs to be ' + \
+                'specified. \n\nQuitting!'
+                print textutil.textbox(errstr,width=60)
+                raise IOError
 
     if configobj['updatewcs']:
         print '\nRestoring WCS solutions to original state using updatewcs...\n'

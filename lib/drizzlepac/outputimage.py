@@ -294,7 +294,7 @@ class OutputImage:
 
             # Add WCS keywords to SCI header
             if self.wcs:
-                addWCSKeywords(self.wcs,scihdr,blot=self.blot)
+                addWCSKeywords(self.wcs,scihdr,blot=self.blot,single=self.single)
 
         ##########
         # Now, build the output file
@@ -321,8 +321,8 @@ class OutputImage:
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
-                addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
-
+                addWCSKeywords(self.wcs,hdu.header,blot=self.blot, 
+                                single=self.single)
             fo.append(hdu)
 
             # Build CTX extension here
@@ -342,7 +342,8 @@ class OutputImage:
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
-                addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
+                addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
+                                single=self.single)
             fo.append(hdu)
 
             # add table of combined header keyword values to FITS file
@@ -376,7 +377,8 @@ class OutputImage:
 
             if self.wcs:
                 # Add WCS keywords to header
-                addWCSKeywords(self.wcs, hdu.header, blot=self.blot)
+                addWCSKeywords(self.wcs, hdu.header, blot=self.blot,
+                                single=self.single)
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -407,7 +409,8 @@ class OutputImage:
                 if self.wcs:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
-                    addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
+                    addWCSKeywords(self.wcs,hdu.header, blot=self.blot, 
+                                    single=self.single)
 
                 # Add primary header to output file...
                 fwht.append(hdu)
@@ -437,7 +440,8 @@ class OutputImage:
                 if self.wcs:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
-                    addWCSKeywords(self.wcs,hdu.header,blot=self.blot)
+                    addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
+                                    single=self.single)
 
                 fctx.append(hdu)
                 fctx.writeto(self.outcontext)
@@ -546,9 +550,12 @@ def getTemplates(fnames, blend=True):
     
     return newhdrs, newtab
 
-def addWCSKeywords(wcs,hdr,blot=False):
+def addWCSKeywords(wcs,hdr,blot=False,single=False):
     """ Update input header 'hdr' with WCS keywords.
     """
+    wname = wcs.wcs.name
+    if not single:
+        wname = 'DRZWCS'
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
     hdr.update('ORIENTAT',wcs.orientat)
@@ -560,7 +567,7 @@ def addWCSKeywords(wcs,hdr,blot=False):
     hdr.update('CRVAL2',wcs.wcs.crval[1])
     hdr.update('CRPIX1',wcs.wcs.crpix[0])
     hdr.update('CRPIX2',wcs.wcs.crpix[1])
-    hdr.update('WCSNAME',wcs.wcs.name)
+    hdr.update('WCSNAME',wname)
     hdr.update('VAFACTOR',1.0)
     if not hdr.has_key('ctype1'):
         hdr.update('CTYPE1',wcs.wcs.ctype[0])

@@ -8,14 +8,16 @@ from stsci.tools import parseinput
 
 from . import updatehdr
 from . import linearfit
+from . import util
 
 
 __taskname__ = 'tweakback' # unless someone comes up with anything better
-__version__ = '0.1.1'
-__vdate__ = '02-Feb-2012'
+__version__ = '0.2.0'
+__vdate__ = '14-Mar-2012'
         
 #### Primary function
-def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
+def tweakback(drzfile, input=None,  origwcs = None, wcsname = None, 
+                extname='SCI', force=False, verbose=False):
     """ 
     Apply WCS solution recorded in drizzled file to distorted input images
     (_flt.fits files) used to create the drizzled file.  This task relies on
@@ -24,7 +26,7 @@ def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
     
     Parameters
     ----------
-    drzfile: str (Default: '')
+    drzfile : str (Default: '')
         filename of undistorted image which contains the new WCS
         and WCS prior to being updated
     
@@ -39,9 +41,20 @@ def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
         (or MultiDrizzle or drizzle).  
         If they can not be found, the task will quit.
 
-    extname: str (Default: 'SCI')
+    origwcs : str (Default: None)
+        Value of WCSNAME keyword prior to the drzfile image being updated 
+        by tweakreg.  If left blank or None, it will default to using the 
+        second to last WCSNAME* keyword value found in the header.
+    
+    wcsname : str (Default: None)
+        Value of WCSNAME for updated solution written out by 'tweakreg' as 
+        specified by the 'wcsname' parameter from 'tweakreg'.  If this is 
+        left blank or None, it will default to the current WCSNAME value from the 
+        input drzfile.
+
+    extname : str (Default: 'SCI')
         Name of extension in 'input' files to be updated with new WCS
-            
+                
     force: bool  (Default: False)
         This parameters specified whether or not to force an update of the WCS
         even though WCS already exists with this solution or wcsname? 
@@ -122,9 +135,26 @@ def tweakback(drzfile, input=None, extname='SCI', force=False, verbose=False):
     # Read in HSTWCS objects for final,updated WCS and previous WCS from 
     # from drizzled image header
     # The final solution also serves as reference WCS when using updatehdr
+    if not util.is_blank(wcsname):
+        for k in wnames:
+            if wnames[k] == wcsname: 
+                wcskey = k
+                break
+    else:
+        wcskey = wkeys[-1]
     final_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=wkeys[-1])
-    orig_wcsname,orig_wcskey = determine_orig_wcsname(scihdr,wnames)
+
+    if not util.is_blank(origwcs):
+        for k in wnames:
+            if wnames[k] == origwcs: 
+                orig_wcskey = k
+                orig_wcsname = origwcs
+                break
+    else:
+        orig_wcsname,orig_wcskey = determine_orig_wcsname(scihdr,wnames,wkeys)
+    
     orig_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=orig_wcskey)
+        
     
     # read in RMS values reported for new solution
     crderr1kw = 'CRDER1'+wkeys[-1]
@@ -184,6 +214,7 @@ def getHelpAsString(docstring=False):
 def run(configobj):
     # Interpret user-input from TEAL GUI and call function
     tweakback(configobj['drzfile'],input=configobj['input'],
+            origwcs = configobj['origwcs'], wcsname = configobj['wcsname'],
             extname=configobj['extname'],verbose=configobj['verbose'],
             force=configobj['force'])
 
@@ -217,9 +248,8 @@ def extract_input_filenames(drzfile):
     data_kws = pyfits.getval(drzfile,'d*data',ext=0)
     if len(data_kws) == 0:
         return None
-    
     fnames = []
-    for kw in data_kws:
+    for kw in data_kws.ascard:
         f = kw.value.split('[')[0]
         if f not in fnames:
             fnames.append(f)
@@ -239,23 +269,21 @@ def determine_extnum(drzfile, extname='SCI'):
     
     return sciext
 
-def determine_orig_wcsname(header,wnames):
+def determine_orig_wcsname(header, wnames, wkeys):
     """
     Determine the name of the original, unmodified WCS solution
     """
     orig_wcsname = None
-    for k,w in wnames.items():
-        if w[:4] == 'IDC_' and (w[4:] in header['idctab']):
-            orig_wcsname = w
-            orig_key = k
-            break
+    orig_key = None
     if orig_wcsname is None:
         for k,w in wnames.items():
             if w[:4] == 'IDC_': 
                 orig_wcsname = w
                 orig_key = k
                 break
-    if orig_wcsname is None and 'wcsname' in header:
-        orig_wcsname = header['wcsname']
-        orig_key = ' '
+    if orig_wcsname is None:
+        # No IDC_ wcsname found... revert to second to last if available
+        if len(wnames) > 1:
+            orig_key = wkeys[-2]
+            orig_wcsname = wnames[orig_key]
     return orig_wcsname,orig_key

@@ -19,6 +19,9 @@ from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
 from stsci.tools import check_files
 from stsci.tools import configobj
 
+from stwcs import wcsutil
+from stwcs.wcsutil import altwcs
+
 __version__ = "0.1.0tng1"
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
@@ -374,6 +377,35 @@ def displayEmptyInputWarningBox(display=True, parent=None):
         'Please check the value for the "input" parameter.'
         tkMessageBox.showwarning(parent=parent,message=msg, title="No valid inputs!")
     return "yes"
+
+def count_sci_extensions(filename):
+    """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
+    """
+    num_sci = 0
+    extname = 'SCI'
+    num_ext = 0
+    for extn in fileutil.openImage(filename):
+        num_ext += 1
+        if extn.header.has_key('extname') and extn.header['extname'] == extname:
+            num_sci += 1
+    if num_sci == 0:
+        extname = 'PRIMARY'
+        num_sci = 1
+
+    return num_sci,extname
+
+def verifyUniqueWcsname(fname,wcsname):
+    """
+    Report whether or not the specified WCSNAME already exists in the file
+    """
+    uniq = True
+    numsci,extname = count_sci_extensions(fname)
+    wnames = altwcs.wcsnames(fname,ext=(extname,1))
+
+    if wcsname in wnames.values():
+        uniq = False
+
+    return uniq
 
 def verifyFilePermissions(filelist, chmod=True):
     """ Verify that images specified in 'filelist' can be updated.

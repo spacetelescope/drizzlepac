@@ -49,7 +49,7 @@ class Image(object):
 
         # try to verify whether or not this image has been updated with 
         # a full distortion model
-        numsci,sciname = count_sci_extensions(filename)
+        numsci,sciname = util.count_sci_extensions(filename)
         if sciname == 'PRIMARY': sciext = 0
         else: sciext = 1
         wnames = altwcs.wcsnames(self.hdulist,ext=sciext)
@@ -84,7 +84,7 @@ class Image(object):
             # WCS required, so verify that we can get one
             # Need to count number of SCI extensions
             #  (assume a valid WCS with each SCI extension)
-            num_sci,extname = count_sci_extensions(filename)
+            num_sci,extname = util.count_sci_extensions(filename)
             if num_sci < 1:
                 print >> sys.stderr,textutil.textbox(
                         'ERROR: No Valid WCS available for %s'%filename)
@@ -759,7 +759,7 @@ class RefImage(object):
             # Input was a filename for the reference image 
             froot,fextn = fu.parseFilename(wcs_list)
             if fextn is None:
-                num_sci,extname = count_sci_extensions(froot)
+                num_sci,extname = util.count_sci_extensions(froot)
                 if num_sci < 1:
                     fextn='[0]'
                 else:
@@ -864,22 +864,6 @@ def build_referenceWCS(catalog_list):
         for scichip in catalog.catalogs:
             wcslist.append(catalog.catalogs[scichip]['wcs'])
     return utils.output_wcs(wcslist)
-
-def count_sci_extensions(filename):
-    """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
-    """
-    num_sci = 0
-    extname = 'SCI'
-    num_ext = 0
-    for extn in fu.openImage(filename):
-        num_ext += 1
-        if extn.header.has_key('extname') and extn.header['extname'] == extname:
-            num_sci += 1
-    if num_sci == 0:
-        extname = 'PRIMARY'
-        num_sci = 1
-
-    return num_sci,extname
 
 def verify_hdrname(**pars):
     if not pars['headerlet']:
