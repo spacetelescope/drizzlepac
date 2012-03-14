@@ -92,7 +92,7 @@
 <dl class="function">
 <dt id="drizzlepac.tweakreg.TweakReg">
 <tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>imagefindcfg=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
-<dd><p>tweakreg Version 1.0.0 updated on 13-Mar-2012</p>
+<dd><p>tweakreg Version 1.0.0 updated on 14-Mar-2012</p>
 <p><strong>Tweakreg</strong> provides an automated interface for computing residual shifts
 between input exposures being combined using AstroDrizzle. The offsets
 computed by Tweakreg correspond to pointing differences after applying the WCS
@@ -593,24 +593,27 @@ actually be different from one line to the next, in case multiple regions
 files written out in different formats need to be merged. So, regions from
 the second example could be included in the first examples file if needed.</p>
 <p class="rubric">Examples</p>
-<p>This task can be run from either the TEAL GUI or from the Python command-line. 
-These examples illustrate the syntax that can be used to run the task in a 
-couple of common modes.</p>
+<p>The tweakreg task can be run from either the TEAL GUI or from the command-line
+using PyRAF or Python.
+These examples illustrate the various syntax options available.</p>
+<p><strong>Example 1:</strong>  Align a set of calibrated (_flt.fits) images using IMAGEFIND, a built-in source
+finding algorithm based on DAOPHOT.   Auto-detect the sky sigma value and select sources &gt; 200
+sigma.   (Auto-sigma is computed from the first input exposure as: 1.5 * imstat(image,nclip=3,fields=&#8217;stddev&#8217;). )
+Set the convolution kernel width to ~2x the value of the PSF FWHM.
+Save the residual offsets (dx, dy, rot, scale, xfit_rms, yfit_rms) to a text file.</p>
 <ol class="arabic">
 <li><p class="first">Run the task from PyRAF using the TEAL GUI:</p>
 <div class="highlight-python"><pre>--&gt; import drizzlepac 
 --&gt; epar tweakreg</pre>
 </div>
 </li>
-<li><p class="first">Run the task from PyRAF using the command line.  Find only the shifts
-(no rotation or scale) for a set of calibrated ACS 
-(_flt.fits) images using the built-in DAOFIND-like source finding 
-algorithm with sources &gt;10 sigma above the background:</p>
-<div class="highlight-python"><pre>--&gt; from drizzlepac import tweakreg
+<li><p class="first">Run the task from PyRAF using the command line.</p>
+<div class="highlight-python"><pre>--&gt; import drizzlepac 
+--&gt; from drizzlepac import tweakreg
 --&gt; tweakreg.TweakReg('*flt.fits', updatehdr=False, fwhmpsf=3.5, threshold=200, \
                       shiftfile=True, outshifts='shift.txt')</pre>
 </div>
-<p>Do the same run from the PyRAF command line, but specify all parameters in
+<p>Or, run the same task from the PyRAF command line, but specify all parameters in
 a config file named &#8220;myparam.cfg&#8221;:</p>
 <div class="highlight-python"><pre>--&gt; tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')</pre>
 </div>
@@ -621,20 +624,19 @@ a config file named &#8220;myparam.cfg&#8221;:</p>
 <span class="go">                      shiftfile=True, outshifts=&#39;shift.txt&#39;)</span>
 </pre></div>
 </div>
-<p>And then edit the imagefind parameters in a TEAL GUI window:</p>
+<p>Alternately, edit the imagefind parameters in a TEAL GUI window prior to running the task:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">edit_imagefindpars</span><span class="p">()</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Help can be accessed via the &#8220;Help&#8221; pulldown menu in the TEAL GUI.  Also, on
-the PyRAF command-line, help text is given by:</p>
+<li><p class="first">Help can be accessed via the &#8220;Help&#8221; pulldown menu in the TEAL GUI.  It can also
+be accessed from the PyRAF command-line and saved to a text file:</p>
 <div class="highlight-python"><pre>--&gt; from drizzlepac import tweakreg
 --&gt; tweakreg.help()</pre>
 </div>
 <p>or:</p>
-<div class="highlight-python"><pre>--&gt; from drizzlepac import tweakreg
---&gt; tweakreg.help(file='myhelp.txt')
---&gt; page myhelp.txt</pre>
+<div class="highlight-python"><pre>--&gt; tweakreg.help(file='help.txt')
+--&gt; page help.txt</pre>
 </div>
 </li>
 </ol>
