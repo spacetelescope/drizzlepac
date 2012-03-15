@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>imageObject Classes &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="next" title="Base ImageObject Classes" href="baseobjects.html" />
+    <link rel="prev" title="Primary User Interface: AstroDrizzle()" href="astrodrizzle.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="baseobjects.html" title="Base ImageObject Classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="astrodrizzle.html" title="Primary User Interface: AstroDrizzle()"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="astrodrizzle.html"
+                        title="previous chapter">Primary User Interface: AstroDrizzle()</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="baseobjects.html"
+                        title="next chapter">Base ImageObject Classes</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/imageobject.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="imageobject-classes">
+<span id="imageobject"></span><span id="imageobjects"></span><h1>imageObject Classes<a class="headerlink" href="#imageobject-classes" title="Permalink to this headline">¶</a></h1>
+<p>This class and related sub-classes manage all the instrument-specific images for processing by AstroDrizzle.</p>
+<p class="graphviz">
+<img src="_images/inheritance-6caf17009a44fcd574efd74d4b554927bdc64703.png" alt="Inheritance diagram of drizzlepac.imageObject, drizzlepac.acsData, drizzlepac.wfc3Data, drizzlepac.wfpc2Data, drizzlepac.nicmosData, drizzlepac.stisData" usemap="#inheritance3817996138" class="inheritance"/>
+<map id="inheritance3817996138" name="inheritance3817996138">
+<area shape="rect" id="node1" href="acsobjects.html#drizzlepac.acsData.SBCInputImage" title="acsData.SBCInputImage" alt="" coords="612,4,745,23"/>
+<area shape="rect" id="node2" href="acsobjects.html#drizzlepac.acsData.ACSInputImage" title="acsData.ACSInputImage" alt="" coords="405,59,538,78"/>
+<area shape="rect" id="node8" href="acsobjects.html#drizzlepac.acsData.WFCInputImage" title="acsData.WFCInputImage" alt="" coords="611,41,746,60"/>
+<area shape="rect" id="node34" href="acsobjects.html#drizzlepac.acsData.HRCInputImage" title="acsData.HRCInputImage" alt="" coords="611,77,746,96"/>
+<area shape="rect" id="node4" href="baseobjects.html#drizzlepac.imageObject.baseImageObject" title="imageObject.baseImageObject" alt="" coords="5,279,171,298"/>
+<area shape="rect" id="node16" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="imageObject.imageObject" alt="" coords="207,261,350,280"/>
+<area shape="rect" id="node29" href="baseobjects.html#drizzlepac.imageObject.WCSObject" title="imageObject.WCSObject" alt="" coords="211,297,346,316"/>
+<area shape="rect" id="node5" href="stisobjects.html#drizzlepac.stisData.CCDInputImage" title="stisData.CCDInputImage" alt="" coords="611,114,746,133"/>
+<area shape="rect" id="node6" href="stisobjects.html#drizzlepac.stisData.STISInputImage" title="stisData.STISInputImage" alt="" coords="404,169,539,188"/>
+<area shape="rect" id="node23" href="stisobjects.html#drizzlepac.stisData.NUVInputImage" title="stisData.NUVInputImage" alt="" coords="611,151,746,170"/>
+<area shape="rect" id="node27" href="stisobjects.html#drizzlepac.stisData.FUVInputImage" title="stisData.FUVInputImage" alt="" coords="612,187,745,206"/>
+<area shape="rect" id="node10" href="nicmosobjects.html#drizzlepac.nicmosData.NIC1InputImage" title="nicmosData.NIC1InputImage" alt="" coords="600,224,756,243"/>
+<area shape="rect" id="node11" href="nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage" title="nicmosData.NICMOSInputImage" alt="" coords="386,261,558,280"/>
+<area shape="rect" id="node20" href="nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage" title="nicmosData.NIC2InputImage" alt="" coords="600,261,756,280"/>
+<area shape="rect" id="node36" href="nicmosobjects.html#drizzlepac.nicmosData.NIC3InputImage" title="nicmosData.NIC3InputImage" alt="" coords="600,297,756,316"/>
+<area shape="rect" id="node13" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3UVISInputImage" title="wfc3Data.WFC3UVISInputImage" alt="" coords="592,334,764,353"/>
+<area shape="rect" id="node14" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3InputImage" title="wfc3Data.WFC3InputImage" alt="" coords="398,315,546,335"/>
+<area shape="rect" id="node25" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3IRInputImage" title="wfc3Data.WFC3IRInputImage" alt="" coords="599,370,757,390"/>
+<area shape="rect" id="node32" href="wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage" title="wfpc2Data.WFPC2InputImage" alt="" coords="392,352,552,371"/>
+</map>
+</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="baseobjects.html">Base ImageObject Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acsobjects.html">ACS ImageObjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wfc3objects.html">WFC3 ImageObjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stisobjects.html">STIS ImageObjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nicmosobjects.html">NICMOS ImageObjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wfpc2objects.html">WFPC2 ImageObjects</a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="baseobjects.html" title="Base ImageObject Classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="astrodrizzle.html" title="Primary User Interface: AstroDrizzle()"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

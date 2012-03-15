@@ -1,0 +1,150 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Step 5: Create a Median Image &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="next" title="Step 6: Blotting the Median Image" href="blot.html" />
+    <link rel="prev" title="Step 4 and 8: Drizzling the Images" href="drizzle.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="blot.html" title="Step 6: Blotting the Median Image"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="drizzle.html" title="Step 4 and 8: Drizzling the Images"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="drizzle.html"
+                        title="previous chapter">Step 4 and 8: Drizzling the Images</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="blot.html"
+                        title="next chapter">Step 6: Blotting the Median Image</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/median.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="step-5-create-a-median-image">
+<span id="median"></span><h1>Step 5: Create a Median Image<a class="headerlink" href="#step-5-create-a-median-image" title="Permalink to this headline">¶</a></h1>
+<p>A median image gets generated from the stack of undistorted single drizzle images.</p>
+<span class="target" id="module-drizzlepac.createMedian"></span><dl class="function">
+<dt id="drizzlepac.createMedian.createMedian">
+<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">createMedian</tt><big>(</big><em>imgObjList</em>, <em>configObj</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.createMedian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level interface to createMedian step called from top-level MultiDrizzle.</p>
+<p>This function parses the input parameters then calls the <em class="xref py py-obj">_median()</em> function
+to median-combine the input images into a single image.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.createMedian.getHelpAsString">
+<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return useful help from a file in the script directory called module.help</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.createMedian.median">
+<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">median</tt><big>(</big><em>input=None</em>, <em>configObj=None</em>, <em>editpars=False</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.median" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a median image from the seperately drizzled images.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.createMedian.run">
+<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">run</tt><big>(</big><em>configObj</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="blot.html" title="Step 6: Blotting the Median Image"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="drizzle.html" title="Step 4 and 8: Drizzling the Images"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,267 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Step 2: Generate a Static Mask &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="next" title="Step 3: Subtracting the Sky" href="sky.html" />
+    <link rel="prev" title="Step 1: Process Input" href="process.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sky.html" title="Step 3: Subtracting the Sky"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="process.html" title="Step 1: Process Input"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="process.html"
+                        title="previous chapter">Step 1: Process Input</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sky.html"
+                        title="next chapter">Step 3: Subtracting the Sky</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/static.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="step-2-generate-a-static-mask">
+<span id="staticmask"></span><h1>Step 2: Generate a Static Mask<a class="headerlink" href="#step-2-generate-a-static-mask" title="Permalink to this headline">¶</a></h1>
+<p>This step focuses entirely on creating a static mask for each detector used in the input images of all negative (presumably bad) pixel values.</p>
+<span class="target" id="module-drizzlepac.staticMask"></span><p>This class manages the creation of the global static mask which
+masks pixels which are negative in the SCI array.
+A static mask numpy object gets created for each global
+mask needed, one for each chip from each instrument/detector.
+Each static mask array has type Int16, and resides in memory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Program:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">staticMask.py</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Notes:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">Class that manages the creation of a global static
+mask which is used to mask pixels that are some
+sigma BELOW the mode computed for the image.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="drizzlepac.staticMask.staticMask">
+<em class="property">class </em><tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">staticMask</tt><big>(</big><em>configObj=None</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class manages the creation of the global static mask which
+masks pixels that are unwanted in the SCI array.
+A static mask  object gets created for each global
+mask needed, one for each chip from each instrument/detector.
+Each static mask array has type Int16, and resides in memory.</p>
+<dl class="method">
+<dt id="drizzlepac.staticMask.staticMask.addMember">
+<tt class="descname">addMember</tt><big>(</big><em>imagePtr=None</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.addMember" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combines the input image with the static mask that
+has the same signature.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="imagePtr">imagePtr</strong> : object</p>
+<blockquote class="last">
+<p>An imageObject reference</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The signature parameter consists of the tuple:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">instrument</span><span class="o">/</span><span class="n">detector</span><span class="p">,</span> <span class="p">(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span> <span class="n">chip_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The signature is defined in the image object for each chip</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.staticMask.staticMask.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes all static mask objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.staticMask.staticMask.deleteMask">
+<tt class="descname">deleteMask</tt><big>(</big><em>signature</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.deleteMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete just the mask that matches the signature given.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.staticMask.staticMask.getFilename">
+<tt class="descname">getFilename</tt><big>(</big><em>signature</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.getFilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the output mask file that
+should reside on disk for the given signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.staticMask.staticMask.getMaskArray">
+<tt class="descname">getMaskArray</tt><big>(</big><em>signature</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.getMaskArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the appropriate StaticMask array for the image.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.staticMask.staticMask.getMaskname">
+<tt class="descname">getMaskname</tt><big>(</big><em>chipid</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.getMaskname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct an output filename for the given signature:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">signature</span><span class="o">=</span><span class="p">[</span><span class="n">instr</span><span class="o">+</span><span class="n">detector</span><span class="p">,(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span><span class="n">detnum</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The signature is in the image object and the
+name of the static mask file is saved as sci_chip.outputNames[&#8220;staticMask&#8221;].</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.staticMask.staticMask.saveToFile">
+<tt class="descname">saveToFile</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.saveToFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the static mask to a file
+it uses the signatures associated with each
+mask to contruct the filename for the output mask image.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.staticMask.constructFilename">
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">constructFilename</tt><big>(</big><em>signature</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.constructFilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct an output filename for the given signature:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">signature</span><span class="o">=</span><span class="p">[</span><span class="n">instr</span><span class="o">+</span><span class="n">detector</span><span class="p">,(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span><span class="n">detnum</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The signature is in the image object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.staticMask.createMask">
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">createMask</tt><big>(</big><em>input=None</em>, <em>static_sig=4.0</em>, <em>group=None</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.createMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>The user can input a list of images if they like to create static masks
+as well as optional values for static_sig and inputDict.</p>
+<p>The configObj.cfg file will set the defaults and then override them
+with the user options.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.staticMask.createStaticMask">
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">createStaticMask</tt><big>(</big><em>imageObjectList=</em><span class="optional">[</span><span class="optional">]</span>, <em>configObj=None</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.createStaticMask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.staticMask.getHelpAsString">
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return useful help from a file in the script directory called module.help</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.staticMask.help">
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.staticMask.run">
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">run</tt><big>(</big><em>configObj</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sky.html" title="Step 3: Subtracting the Sky"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="process.html" title="Step 1: Process Input"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

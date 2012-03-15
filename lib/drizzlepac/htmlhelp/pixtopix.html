@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pixtopix: Coordinate transformation to/from drizzled images &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="next" title="pixtosky: Coordinate transformation to sky coordinates" href="pixtosky.html" />
+    <link rel="prev" title="UPDATEHDR: Functions for Updating WCS with New Solutions" href="updatehdr.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pixtopix: Coordinate transformation to/from drizzled images</a><ul>
+<li><a class="reference internal" href="#parameters">PARAMETERS</a></li>
+<li><a class="reference internal" href="#optional-parameters">Optional Parameters</a></li>
+<li><a class="reference internal" href="#returns">RETURNS</a></li>
+<li><a class="reference internal" href="#notes">NOTES</a></li>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#examples">EXAMPLES</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="updatehdr.html"
+                        title="previous chapter">UPDATEHDR: Functions for Updating WCS with New Solutions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pixtosky.html"
+                        title="next chapter">pixtosky: Coordinate transformation to sky coordinates</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pixtopix.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pixtopix-coordinate-transformation-to-from-drizzled-images">
+<span id="pixtopix"></span><h1>pixtopix: Coordinate transformation to/from drizzled images<a class="headerlink" href="#pixtopix-coordinate-transformation-to-from-drizzled-images" title="Permalink to this headline">¶</a></h1>
+<p>This task allows a user to perform coordinate transformations
+with the full WCS and distortion model to and from drizzled image
+positions. This task serves as a replacement for the STSDAS.dither
+task &#8216;tran&#8217;.</p>
+<span class="target" id="module-drizzlepac.pixtopix"></span><dl class="docutils">
+<dt>pixtosky - A module to perform coordinate transformation from pixel coordinates</dt>
+<dd>in one image to pixel coordinates in another frame</dd>
+<dt>License:</dt>
+<dd><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></dd>
+</dl>
+<div class="section" id="parameters">
+<h2>PARAMETERS<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>inimage <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>full filename with path of input image, an extension name [&#8216;sci&#8217;,1] should be 
+provided if input is a multi-extension FITS file</dd>
+<dt>outimage <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>full filename with path of output image, an extension name [&#8216;sci&#8217;,1] should be 
+provided if output is a multi-extension FITS file</dd>
+<dt>direction <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Direction of transform (forward or backward). The &#8216;forward&#8217; transform 
+takes the pixel positions (assumed to be from the &#8216;input&#8217; image) and determines 
+their position in the &#8216;output&#8217; image. The &#8216;backward&#8217; transform converts 
+the pixel positions (assumed to be from the &#8216;output&#8217; image) into pixel 
+positions in the &#8216;input&#8217; image.</dd>
+</dl>
+</div>
+<div class="section" id="optional-parameters">
+<h2>Optional Parameters<a class="headerlink" href="#optional-parameters" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd>X position from image</dd>
+<dt>y <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd>Y position from image</dd>
+<dt>coords <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>full filename with path of file with starting x,y coordinates</dd>
+<dt>colnames <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>comma separated list of column names from &#8216;coords&#8217; files 
+containing x,y coordinates, respectively. Will default to 
+first two columns if None are specified. Column names for ASCII
+files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
+<dt>separator <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>non-blank separator used as the column delimiter in the coords file</dd>
+<dt>precision <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd>Number of floating-point digits in output values</dd>
+<dt>output <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>Name of output file with results, if desired</dd>
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Print out full list of transformation results (default: False)</dd>
+</dl>
+</div>
+<div class="section" id="returns">
+<h2>RETURNS<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>outx <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>X position of transformed pixel. If more than 1 input value, then it 
+will be a numpy array.</dd>
+<dt>outy <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Y position of transformed pixel. If more than 1 input value, then it 
+will be a numpy array.</dd>
+</dl>
+</div>
+<div class="section" id="notes">
+<h2>NOTES<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<p>This module performs a full distortion-corrected coordinate transformation
+based on all WCS keywords and any recognized distortion keywords from the 
+input image header.</p>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>It can be called from within Python using the syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">pixtopix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outx</span><span class="p">,</span><span class="n">outy</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="go">                &quot;output_drz.fits[sci,1],&quot;forward&quot;,100,100)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="examples">
+<h2>EXAMPLES<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>The following command will transform the position 256,256 from </dt>
+<dd><p class="first">&#8216;input_flt.fits[sci,1]&#8217; into a position on the output image 
+&#8216;output_drz.fits[sci,1]&#8217; using:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">pixtopix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outx</span><span class="p">,</span><span class="n">outy</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="go">            &quot;output_drz.fits[sci,1],&quot;forward&quot;, 256,256)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>The set of X,Y positions from &#8216;output_drz.fits[sci,1]&#8217; stored as </dt>
+<dd><p class="first">the 3rd and 4th columns from the ASCII file &#8216;xy_sci1.dat&#8217; 
+will be transformed into pixel positions from &#8216;input_flt.fits[sci,1]&#8217;
+and written out to &#8216;xy_flt1.dat&#8217; using:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">pixtopix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span> <span class="s">&quot;output_drz.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="go">        &quot;backward&quot;, coords=&#39;xy_sci1.dat&#39;, colnames=[&#39;c3&#39;,&#39;c4&#39;], </span>
+<span class="go">        output=&quot;xy_flt1.dat&quot;)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ol>
+</div>
+<dl class="function">
+<dt id="drizzlepac.pixtopix.tran">
+<tt class="descclassname">drizzlepac.pixtopix.</tt><tt class="descname">tran</tt><big>(</big><em>inimage</em>, <em>outimage</em>, <em>direction='forward'</em>, <em>x=None</em>, <em>y=None</em>, <em>coords=None</em>, <em>colnames=None</em>, <em>separator=None</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.pixtopix.tran" title="Permalink to this definition">¶</a></dt>
+<dd><p>Primary interface to perform coordinate transformations in pixel
+coordinates between 2 images using STWCS and full distortion models
+read from each image&#8217;s header.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

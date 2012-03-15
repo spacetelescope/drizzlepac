@@ -1,0 +1,245 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Step 3: Subtracting the Sky &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="next" title="Step 4 and 8: Drizzling the Images" href="drizzle.html" />
+    <link rel="prev" title="Step 2: Generate a Static Mask" href="static.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="drizzle.html" title="Step 4 and 8: Drizzling the Images"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="static.html" title="Step 2: Generate a Static Mask"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="static.html"
+                        title="previous chapter">Step 2: Generate a Static Mask</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="drizzle.html"
+                        title="next chapter">Step 4 and 8: Drizzling the Images</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/sky.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="step-3-subtracting-the-sky">
+<span id="subtractsky"></span><h1>Step 3: Subtracting the Sky<a class="headerlink" href="#step-3-subtracting-the-sky" title="Permalink to this headline">¶</a></h1>
+<p>This step measures and subtracts the sky from each input image while recording the subtracted value in the image header.</p>
+<span class="target" id="module-drizzlepac.sky"></span><p>Function for computing and subtracting the backgroud of
+an image.  The algorithm employed here uses a sigma
+clipped median of  each <em>sci</em> image in a data file.
+Then the sky value for each detector is compared
+and the lowest value is  subtracted from all chips
+in the detector.  Finally, the MDRIZSKY keyword
+is updated in the header of the input files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">Christopher Hanley, Megan Sosey</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="drizzlepac.sky.getHelpAsString">
+<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.sky.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called module.help</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.sky.getreferencesky">
+<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">getreferencesky</tt><big>(</big><em>image</em>, <em>keyval</em><big>)</big><a class="headerlink" href="#drizzlepac.sky.getreferencesky" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.sky.help">
+<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.sky.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.sky.run">
+<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">run</tt><big>(</big><em>configObj</em>, <em>outExt=None</em><big>)</big><a class="headerlink" href="#drizzlepac.sky.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.sky.sky">
+<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">sky</tt><big>(</big><em>input=None</em>, <em>outExt=None</em>, <em>configObj=None</em>, <em>group=None</em>, <em>editpars=False</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.sky.sky" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform sky subtraction on input list of images</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
+<blockquote>
+<p>a python list of image filenames, or just a single filename</p>
+</blockquote>
+<p><strong id="configObj">configObj</strong> : configObject</p>
+<blockquote>
+<p>an instance of configObject</p>
+</blockquote>
+<p><strong id="inputDict">inputDict</strong> : dict, optional</p>
+<blockquote>
+<p>an optional list of parameters specified by the user</p>
+</blockquote>
+<p><strong id="outExt">outExt</strong> : str</p>
+<blockquote class="last">
+<p>The extension of the output image. If the output already exists
+then the input image is overwritten</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>These are parameters that the configObj should contain by default,
+they can be altered on the fly using the inputDict</p>
+<p>Parameters that should be in configobj:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="88%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Name</th>
+<th class="head">Definition</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>skyuser</td>
+<td>&#8216;KEYWORD in header which indicates a sky subtraction value to use&#8217;.</td>
+</tr>
+<tr><td>skysub</td>
+<td>&#8216;Perform sky subtraction?&#8217;</td>
+</tr>
+<tr><td>skywidth</td>
+<td>&#8216;Bin width for sampling sky statistics (in sigma)&#8217;</td>
+</tr>
+<tr><td>skystat</td>
+<td>&#8216;Sky correction statistics parameter&#8217;</td>
+</tr>
+<tr><td>skylower</td>
+<td>&#8216;Lower limit of usable data for sky (always in electrons)&#8217;</td>
+</tr>
+<tr><td>skyupper</td>
+<td>&#8216;Upper limit of usable data for sky (always in electrons)&#8217;</td>
+</tr>
+<tr><td>skyclip</td>
+<td>&#8216;Number of clipping iterations&#8217;</td>
+</tr>
+<tr><td>skylsigma</td>
+<td>&#8216;Lower side clipping factor (in sigma)&#8217;</td>
+</tr>
+<tr><td>skyusigma</td>
+<td>&#8216;Upper side clipping factor (in sigma)&#8217;</td>
+</tr>
+</tbody>
+</table>
+<p>The output from sky subtraction is a copy of the original input file
+where all the science data extensions have been sky subtracted.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.sky.subtractSky">
+<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">subtractSky</tt><big>(</big><em>imageObjList</em>, <em>configObj</em>, <em>saveFile=False</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.sky.subtractSky" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="drizzle.html" title="Step 4 and 8: Drizzling the Images"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="static.html" title="Step 2: Generate a Static Mask"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

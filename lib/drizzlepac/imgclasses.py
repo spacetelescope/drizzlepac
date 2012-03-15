@@ -677,14 +677,13 @@ class Image(object):
             f.write('#     Column 12: Original Y (input)\n')
             f.write('#     Column 13: Ref ID\n')
             f.write('#     Column 14: Input ID\n')
-            #f.write('#     Column 15: Input Chip\n')
+            f.write('#     Column 15: Input EXTVER ID \n')
             #
             # Need to add chip ID for each matched source to the fitmatch file
             # The chip information can be extracted from the following source:
             #
             #     self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
             #     xypos = catalog.xypos
-            #ref_chip_id = self.fit['ref_indx'].copy()
             img_chip_id = self.fit['img_indx'].copy()
             for sci_extn in range(1,self.num_sci+1):
                 img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[-1]
@@ -704,9 +703,9 @@ class Image(object):
                       self.fit['ref_orig_xy'][:,1],
                       self.fit['img_orig_xy'][:,0],
                       self.fit['img_orig_xy'][:,1]],
-                      [self.fit['ref_indx'],self.fit['img_indx']]
+                      [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id]
                     ]
-#                      [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id]
+#                      [self.fit['ref_indx'],self.fit['img_indx']]
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
                                         append=True,format=["%15.6f","%8d"])
         

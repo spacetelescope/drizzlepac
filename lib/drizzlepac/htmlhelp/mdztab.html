@@ -1,0 +1,161 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>MultiDrizzle Reference Table &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="up" title="Utilities" href="util.html" />
+    <link rel="next" title="TWEAKREG: Alignment of Images" href="tweakreg.html" />
+    <link rel="prev" title="Output Image Generation" href="outimage.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="outimage.html" title="Output Image Generation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+          <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="outimage.html"
+                        title="previous chapter">Output Image Generation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tweakreg.html"
+                        title="next chapter">TWEAKREG: Alignment of Images</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/mdztab.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="multidrizzle-reference-table">
+<span id="mdzhandler"></span><h1>MultiDrizzle Reference Table<a class="headerlink" href="#multidrizzle-reference-table" title="Permalink to this headline">¶</a></h1>
+<p>This module supports the interpretation of the MDRIZTAB for processing as used in the pipeline.</p>
+<span class="target" id="module-drizzlepac.mdzhandler"></span><dl class="function">
+<dt id="drizzlepac.mdzhandler.cleanBlank">
+<tt class="descclassname">drizzlepac.mdzhandler.</tt><tt class="descname">cleanBlank</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#drizzlepac.mdzhandler.cleanBlank" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.mdzhandler.cleanInt">
+<tt class="descclassname">drizzlepac.mdzhandler.</tt><tt class="descname">cleanInt</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#drizzlepac.mdzhandler.cleanInt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.mdzhandler.cleanNaN">
+<tt class="descclassname">drizzlepac.mdzhandler.</tt><tt class="descname">cleanNaN</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#drizzlepac.mdzhandler.cleanNaN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.mdzhandler.findFormat">
+<tt class="descclassname">drizzlepac.mdzhandler.</tt><tt class="descname">findFormat</tt><big>(</big><em>format</em><big>)</big><a class="headerlink" href="#drizzlepac.mdzhandler.findFormat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.mdzhandler.getMdriztabParameters">
+<tt class="descclassname">drizzlepac.mdzhandler.</tt><tt class="descname">getMdriztabParameters</tt><big>(</big><em>files</em><big>)</big><a class="headerlink" href="#drizzlepac.mdzhandler.getMdriztabParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets entry in MDRIZTAB where task parameters live.
+This method returns a record array mapping the selected
+row.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.mdzhandler.toBoolean">
+<tt class="descclassname">drizzlepac.mdzhandler.</tt><tt class="descname">toBoolean</tt><big>(</big><em>flag</em><big>)</big><a class="headerlink" href="#drizzlepac.mdzhandler.toBoolean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="outimage.html" title="Output Image Generation"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+          <li><a href="util.html" >Utilities</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

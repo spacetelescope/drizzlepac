@@ -1,0 +1,262 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>STIS ImageObjects &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="up" title="imageObject Classes" href="imageobject.html" />
+    <link rel="next" title="NICMOS ImageObjects" href="nicmosobjects.html" />
+    <link rel="prev" title="WFC3 ImageObjects" href="wfc3objects.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="nicmosobjects.html" title="NICMOS ImageObjects"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="wfc3objects.html" title="WFC3 ImageObjects"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="wfc3objects.html"
+                        title="previous chapter">WFC3 ImageObjects</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="nicmosobjects.html"
+                        title="next chapter">NICMOS ImageObjects</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/stisobjects.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="stis-imageobjects">
+<span id="stisdata"></span><h1>STIS ImageObjects<a class="headerlink" href="#stis-imageobjects" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="drizzlepac.stisData.STISInputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.stisData.</tt><tt class="descname">STISInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.STISInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="drizzlepac.imageObject.imageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.imageObject</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.stisData.STISInputImage.doUnitConversions">
+<tt class="descname">doUnitConversions</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.stisData.STISInputImage.doUnitConversions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the data to electrons.</p>
+<p>This converts all science data extensions and saves
+the results back to disk. We need to make sure
+the data inside the chips already in memory is altered as well.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.stisData.STISInputImage.getflat">
+<tt class="descname">getflat</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.STISInputImage.getflat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for retrieving a detector&#8217;s flat field. For STIS there are three.
+This method will return an array the same shape as the image.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.stisData.CCDInputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.stisData.</tt><tt class="descname">CCDInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.CCDInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.stisData.STISInputImage" title="drizzlepac.stisData.STISInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.stisData.STISInputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.stisData.CCDInputImage.getReadNoise">
+<tt class="descname">getReadNoise</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.stisData.CCDInputImage.getReadNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for returning the readnoise of a detector (in DN).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Units :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">DN</td>
+</tr>
+</tbody>
+</table>
+<p>This should work on a chip, since different chips to be consistant with other
+detector classes where different chips have different gains.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.stisData.CCDInputImage.getdarkcurrent">
+<tt class="descname">getdarkcurrent</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.stisData.CCDInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dark current for the STIS CCD chip.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
+<blockquote class="last">
+<p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.stisData.CCDInputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.CCDInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.stisData.NUVInputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.stisData.</tt><tt class="descname">NUVInputImage</tt><big>(</big><em>input</em>, <em>dqname</em>, <em>platescale</em>, <em>memmap=0</em>, <em>proc_unit='native'</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.NUVInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.stisData.STISInputImage" title="drizzlepac.stisData.STISInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.stisData.STISInputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.stisData.NUVInputImage.getdarkcurrent">
+<tt class="descname">getdarkcurrent</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.stisData.NUVInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dark current for the STIS NUV detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
+<blockquote class="last">
+<p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.stisData.NUVInputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.NUVInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.stisData.FUVInputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.stisData.</tt><tt class="descname">FUVInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.FUVInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.stisData.STISInputImage" title="drizzlepac.stisData.STISInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.stisData.STISInputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.stisData.FUVInputImage.getdarkcurrent">
+<tt class="descname">getdarkcurrent</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.stisData.FUVInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dark current for the STIS FUV detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
+<blockquote class="last">
+<p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.stisData.FUVInputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.stisData.FUVInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="nicmosobjects.html" title="NICMOS ImageObjects"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="wfc3objects.html" title="WFC3 ImageObjects"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,567 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>TWEAKUTILS: Utility Functions for Tweakreg &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="next" title="UPDATEHDR: Functions for Updating WCS with New Solutions" href="updatehdr.html" />
+    <link rel="prev" title="Functions to Manage WCS Table Extension" href="wcscorr.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="wcscorr.html"
+                        title="previous chapter">Functions to Manage WCS Table Extension</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="updatehdr.html"
+                        title="next chapter">UPDATEHDR: Functions for Updating WCS with New Solutions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tweakutils.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tweakutils-utility-functions-for-tweakreg">
+<span id="tweakutils"></span><h1>TWEAKUTILS: Utility Functions for Tweakreg<a class="headerlink" href="#tweakutils-utility-functions-for-tweakreg" title="Permalink to this headline">¶</a></h1>
+<p>The functions in this module support the various aspects of tweakreg, including finding the objects in the images and plotting the residuals.</p>
+<span class="target" id="module-drizzlepac.tweakutils"></span><dl class="function">
+<dt id="drizzlepac.tweakutils.build_pos_grid">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">build_pos_grid</tt><big>(</big><em>start</em>, <em>end</em>, <em>nstep</em>, <em>mesh=False</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.build_pos_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a grid of positions starting at X,Y given by &#8216;start&#8217;, and ending
+at X,Y given by &#8216;end&#8217;. The grid will be completely filled in X and Y by 
+every &#8216;step&#8217; interval.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.build_xy_zeropoint">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">build_xy_zeropoint</tt><big>(</big><em>imgxy</em>, <em>refxy</em>, <em>searchrad=3.0</em>, <em>histplot=False</em>, <em>figure_id=1</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.build_xy_zeropoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a matrix which contains the delta between each XY position and 
+each UV position.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.createWcsHDU">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">createWcsHDU</tt><big>(</big><em>wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.createWcsHDU" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a WCS header object that can be used to populate a reference WCS HDU.</p>
+<p>For most applications, stwcs.wcsutil.HSTWCS.wcs2header() 
+will work just as well.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.find_xy_peak">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">find_xy_peak</tt><big>(</big><em>img</em>, <em>center=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.find_xy_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the center of the peak of offsets</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.gauss">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">gauss</tt><big>(</big><em>x</em>, <em>sigma</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.gauss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute 1-D value of gaussian at position x relative to center.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.gauss_array">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">gauss_array</tt><big>(</big><em>nx</em>, <em>ny=None</em>, <em>fwhm=1.0</em>, <em>sigma_x=None</em>, <em>sigma_y=None</em>, <em>zero_norm=False</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.gauss_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the 2D Gaussian with size nx*ny.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="nx">nx</strong> : int</p>
+<p><strong id="ny">ny</strong> : int [Default: None]</p>
+<blockquote>
+<p>Size of output array for the generated Gaussian. If ny == None,
+output will be an array nx X nx pixels.</p>
+</blockquote>
+<p><strong id="fwhm">fwhm</strong> : float [Default: 1.0]</p>
+<blockquote>
+<p>Full-width, half-maximum of the Gaussian to be generated</p>
+</blockquote>
+<p><strong id="sigma_x">sigma_x</strong> : float [Default:  None]</p>
+<p><strong id="sigma_y">sigma_y</strong> : float [Default:  None]</p>
+<blockquote>
+<p>Sigma_x and sigma_y are the stddev of the Gaussian functions.</p>
+</blockquote>
+<p><strong id="zero_norm">zero_norm</strong> : bool [Default:  False]</p>
+<blockquote>
+<p>The kernel will be normalized to a sum of 1 when True.</p>
+</blockquote>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>gauss_arr</strong> : array</p>
+<blockquote class="last">
+<p>A numpy array with the generated gaussian function</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.isfloat">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">isfloat</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.isfloat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if all characters are part of a floating point value</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.make_vector_plot">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">make_vector_plot</tt><big>(</big><em>coordfile, columns=[1, 2, 3, 4], data=None, figure_id=None, title=None, axes=None, every=1, limit=None, xlower=None, ylower=None, output=None, headl=4, headw=3, xsh=0.0, ysh=0.0, fit=None, scale=1.0, vector=True, textscale=5, append=False, linfit=False, rms=True</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.make_vector_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a XYXYMATCH file into a vector plot or set of residuals plots.</p>
+<p>This function provides a single interface for generating either a vector
+plot of residuals or a set of 4 plots showing residuals.  The data being
+plotted can also be adjusted for a linear fit on-the-fly.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="coordfile">coordfile</strong> : string</p>
+<blockquote>
+<p>Name of file with matched sets of coordinates. This input file can
+be a file compatible for use with IRAF&#8217;s geomap.</p>
+</blockquote>
+<p><strong id="columns">columns</strong> : list [Default: [0,1,2,3]]</p>
+<blockquote>
+<p>Column numbers for the X,Y positions from each image</p>
+</blockquote>
+<p><strong id="data">data</strong> : list of arrays</p>
+<blockquote>
+<p>If specified, this can be used to input matched data directly</p>
+</blockquote>
+<p><strong id="title">title</strong> : string</p>
+<blockquote>
+<p>Title to be used for the generated plot</p>
+</blockquote>
+<p><strong id="axes">axes</strong> : list</p>
+<blockquote>
+<p>List of X and Y min/max values to customize the plot axes</p>
+</blockquote>
+<p><strong id="every">every</strong> : int [Default: 1]</p>
+<blockquote>
+<p>Slice value for the data to be plotted</p>
+</blockquote>
+<p><strong id="limit">limit</strong> : float</p>
+<blockquote>
+<p>Radial offset limit for selecting which sources are included in the plot</p>
+</blockquote>
+<p><strong id="xlower">xlower</strong> : float</p>
+<p><strong id="ylower">ylower</strong> : float</p>
+<blockquote>
+<p>Limit in X and/or Y offset for selecting which sources are included in the plot</p>
+</blockquote>
+<p><strong id="output">output</strong> : string</p>
+<blockquote>
+<p>Filename of output file for generated plot</p>
+</blockquote>
+<p><strong id="headl">headl</strong> : int [Default: 4]</p>
+<blockquote>
+<p>Length of arrow head to be used in vector plot</p>
+</blockquote>
+<p><strong id="headw">headw</strong> : int [Default: 3]</p>
+<blockquote>
+<p>Width of arrow head to be used in vector plot</p>
+</blockquote>
+<p><strong id="xsh">xsh</strong> : float</p>
+<p><strong id="ysh">ysh</strong> : float</p>
+<blockquote>
+<p>Shift in X and Y from linear fit to be applied to source positions 
+from the first image</p>
+</blockquote>
+<p><strong id="scale">scale</strong> : float</p>
+<blockquote>
+<p>Scale from linear fit to be applied to source positions from the 
+first image</p>
+</blockquote>
+<p><strong id="fit">fit</strong> : array</p>
+<blockquote>
+<p>Array of linear coefficients for rotation (and scale?) in X and Y from 
+a linear fit to be applied to source positions from the first image</p>
+</blockquote>
+<p><strong id="vector">vector</strong> : bool [Default: True]</p>
+<blockquote>
+<p>Specifies whether or not to generate a vector plot. If False, task
+will generate a set of 4 residuals plots instead</p>
+</blockquote>
+<p><strong id="textscale">textscale</strong> : int [Default: 5]</p>
+<blockquote>
+<p>Scale factor for text used for labelling the generated plot</p>
+</blockquote>
+<p><strong id="append">append</strong> : bool [Default: False]</p>
+<blockquote>
+<p>If True, will overplot new plot on any pre-existing plot</p>
+</blockquote>
+<p><strong id="linfit">linfit</strong> : bool [Default: False]</p>
+<blockquote>
+<p>If True, a linear fit to the residuals will be generated and 
+added to the generated residuals plots</p>
+</blockquote>
+<p><strong id="rms">rms</strong> : bool [Default: True]</p>
+<blockquote class="last">
+<p>Specifies whether or not to report the RMS of the residuals as a
+label on the generated plot(s).</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.ndfind_old">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">ndfind_old</tt><big>(</big><em>array, hmin, fwhm, sharplim=[0.2, 1.0], roundlim=[-1, 1], minpix=5, datamax=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.ndfind_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Source finding algorithm based on NDIMAGE routines</p>
+<p>This function provides a simple replacement for the DAOFIND task.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="array">array</strong> : arr</p>
+<blockquote>
+<p>Input image as numpy array</p>
+</blockquote>
+<p><strong id="hmin">hmin</strong> : float</p>
+<blockquote>
+<p>Limit for source detection in pixel values</p>
+</blockquote>
+<p><strong id="fwhm">fwhm</strong> : float</p>
+<blockquote>
+<p>Full-width half-maximum of the PSF in the image</p>
+</blockquote>
+<p><strong id="minpix">minpix</strong> : int</p>
+<blockquote>
+<p>Minimum number of pixels for any valid source</p>
+</blockquote>
+<p><strong id="sharplim">sharplim</strong> : tuple</p>
+<blockquote>
+<p>[Not used at this time]</p>
+</blockquote>
+<p><strong id="roundlim">roundlim</strong> : tuple</p>
+<blockquote>
+<p>[Not used at this time]</p>
+</blockquote>
+<p><strong id="datamax">datamax</strong> : float</p>
+<blockquote>
+<p>Maximum good pixel value found in any detected source</p>
+</blockquote>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>x</strong> : arr</p>
+<blockquote>
+<p>Array of detected source X positions (in array coordinates, 0-based)</p>
+</blockquote>
+<p><strong>y</strong> : arr</p>
+<blockquote>
+<p>Array of detected source Y positions (in array coordinates, 0-based)</p>
+</blockquote>
+<p><strong>flux</strong> : arr</p>
+<blockquote>
+<p>Array of detected source fluxes in pixel values</p>
+</blockquote>
+<p><strong>id</strong> : arr</p>
+<blockquote class="last">
+<p>Array of detected source ID numbers</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.parse_atfile_cat">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">parse_atfile_cat</tt><big>(</big><em>input</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.parse_atfile_cat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of catalog filenames specified as part of the input &#64;-file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.parse_colname">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">parse_colname</tt><big>(</big><em>colname</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.parse_colname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Common function to interpret input column names provided by the user.</p>
+<p>This function translates column specification provided by the user 
+into a column number.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="colname :">colname :</strong> :</p>
+<blockquote>
+<p>Column name or names to be interpreted</p>
+</blockquote>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>cols</strong> : list</p>
+<blockquote class="last">
+<p>The return value will be a list of strings.</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This function will understand the following inputs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;1,2,3&#39;</span> <span class="ow">or</span>   <span class="s">&#39;c1,c2,c3&#39;</span> <span class="ow">or</span> <span class="p">[</span><span class="s">&#39;c1&#39;</span><span class="p">,</span><span class="s">&#39;c2&#39;</span><span class="p">,</span><span class="s">&#39;c3&#39;</span><span class="p">]</span>
+<span class="s">&#39;1-3&#39;</span>   <span class="ow">or</span>   <span class="s">&#39;c1-c3&#39;</span>
+<span class="s">&#39;1:3&#39;</span>   <span class="ow">or</span>   <span class="s">&#39;c1:c3&#39;</span>
+<span class="s">&#39;1 2 3&#39;</span> <span class="ow">or</span>   <span class="s">&#39;c1 c2 c3&#39;</span>
+<span class="s">&#39;1&#39;</span>     <span class="ow">or</span>   <span class="s">&#39;c1&#39;</span>
+<span class="mi">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.parse_exclusions">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">parse_exclusions</tt><big>(</big><em>exclusions</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.parse_exclusions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read in exclusion definitions from file named by &#8216;exclusions&#8217;
+and return a list of positions and distances</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.parse_skypos">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">parse_skypos</tt><big>(</big><em>ra</em>, <em>dec</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.parse_skypos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to parse RA and Dec input values and turn them into decimal degrees</p>
+<dl class="docutils">
+<dt>Input formats could be: </dt>
+<dd>[&#8220;nn&#8221;,&#8221;nn&#8221;,&#8221;nn.nn&#8221;]
+&#8220;nn nn nn.nnn&#8221;
+&#8220;nn:nn:nn.nn&#8221;
+&#8220;nnH nnM nn.nnS&#8221; or &#8220;nnD nnM nn.nnS&#8221;
+nn.nnnnnnnn
+&#8220;nn.nnnnnnn&#8221;</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.plot_zeropoint">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">plot_zeropoint</tt><big>(</big><em>pars</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.plot_zeropoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot 2d histogram.</p>
+<dl class="docutils">
+<dt>Pars will be a dictionary containing: </dt>
+<dd>data, figure_id, vmax, title_str, xp,yp, searchrad</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.radec_hmstodd">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">radec_hmstodd</tt><big>(</big><em>ra</em>, <em>dec</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.radec_hmstodd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to convert HMS values into decimal degrees.</p>
+<p>This function relies on the astrolib.coords package to perform the
+conversion to decimal degrees.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="ra">ra</strong> : list or array</p>
+<blockquote>
+<p>List or array of input RA positions</p>
+</blockquote>
+<p><strong id="dec">dec</strong> : list or array</p>
+<blockquote>
+<p>List or array of input Dec positions</p>
+</blockquote>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>pos</strong> : arr</p>
+<blockquote class="last">
+<p>Array of RA,Dec positions in decimal degrees</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><tt class="xref py py-obj docutils literal"><span class="pre">astrolib.coords</span></tt></p>
+</div>
+<p class="rubric">Notes</p>
+<p>Formats of ra and dec inputs supported:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="s">&quot;nn&quot;</span><span class="p">,</span><span class="s">&quot;nn&quot;</span><span class="p">,</span><span class="s">&quot;nn.nn&quot;</span><span class="p">]</span>
+<span class="s">&quot;nn nn nn.nnn&quot;</span>
+<span class="s">&quot;nn:nn:nn.nn&quot;</span>
+<span class="s">&quot;nnH nnM nn.nnS&quot;</span> <span class="ow">or</span> <span class="s">&quot;nnD nnM nn.nnS&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.read_ASCII_cols">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">read_ASCII_cols</tt><big>(</big><em>infile, cols=[1, 2, 3]</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.read_ASCII_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpret input ASCII file to return arrays for specified columns.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>outarr</strong> : list of arrays</p>
+<blockquote class="last">
+<p>The return value will be a list of numpy arrays, one for each &#8216;column&#8217;.</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The specification of the columns should be expected to have lists for
+each &#8216;column&#8217;, with all columns in each list combined into a single entry.
+For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;1,2,3&#39;</span><span class="p">,</span><span class="s">&#39;4,5,6&#39;</span><span class="p">,</span><span class="mi">7</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>where &#8216;1,2,3&#8217; represent the X/RA values, &#8216;4,5,6&#8217; represent the Y/Dec values
+and 7 represents the flux value for a total of 3 requested columns of data
+to be returned.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.read_FITS_cols">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">read_FITS_cols</tt><big>(</big><em>infile</em>, <em>cols=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.read_FITS_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read columns from FITS table</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.readcols">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">readcols</tt><big>(</big><em>infile</em>, <em>cols=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.readcols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function which reads specified columns from either FITS tables or
+ASCII files</p>
+<p>This function reads in the columns specified by the user into numpy arrays
+regardless of the format of the input table (ASCII or FITS table).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="infile">infile</strong> : string</p>
+<blockquote>
+<p>Filename of the input file</p>
+</blockquote>
+<p><strong id="cols">cols</strong> : string or list of strings</p>
+<blockquote>
+<p>Columns to be read into arrays</p>
+</blockquote>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>outarr</strong> : array</p>
+<blockquote class="last">
+<p>Numpy array or arrays of columns from the table</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakutils.write_shiftfile">
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">write_shiftfile</tt><big>(</big><em>image_list</em>, <em>filename</em>, <em>outwcs='tweak_wcs.fits'</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.write_shiftfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out a shiftfile for a given list of input Image class objects</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>

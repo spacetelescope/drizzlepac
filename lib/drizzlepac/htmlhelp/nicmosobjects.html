@@ -1,0 +1,272 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>NICMOS ImageObjects &mdash; drizzlepac v4.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '4.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="up" title="imageObject Classes" href="imageobject.html" />
+    <link rel="next" title="WFPC2 ImageObjects" href="wfpc2objects.html" />
+    <link rel="prev" title="STIS ImageObjects" href="stisobjects.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="stisobjects.html" title="STIS ImageObjects"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="stisobjects.html"
+                        title="previous chapter">STIS ImageObjects</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="wfpc2objects.html"
+                        title="next chapter">WFPC2 ImageObjects</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/nicmosobjects.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="nicmos-imageobjects">
+<span id="nicmosdata"></span><h1>NICMOS ImageObjects<a class="headerlink" href="#nicmos-imageobjects" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="drizzlepac.nicmosData.NICMOSInputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.nicmosData.</tt><tt class="descname">NICMOSInputImage</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="drizzlepac.imageObject.imageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.imageObject</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NICMOSInputImage.doUnitConversions">
+<tt class="descname">doUnitConversions</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage.doUnitConversions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the data to electrons</p>
+<p>This converts all science data extensions and saves
+the results back to disk. We need to make sure
+the data inside the chips already in memory is altered as well.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NICMOSInputImage.getdarkcurrent">
+<tt class="descname">getdarkcurrent</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the dark current for the NICMOS detectors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
+<blockquote class="last">
+<p>Dark current value with <strong>units of cps</strong>.</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NICMOSInputImage.getdarkimg">
+<tt class="descname">getdarkimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage.getdarkimg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array representing the dark image for the detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark</strong> : array</p>
+<blockquote class="last">
+<p>The dark array in the same shape as the image with <strong>units of cps</strong>.</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NICMOSInputImage.getexptimeimg">
+<tt class="descname">getexptimeimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage.getexptimeimg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array representing the exposure time per pixel for the detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark: array</strong> :</p>
+<blockquote class="last">
+<p>Exposure time array in the same shape as the input image</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NICMOSInputImage.getflat">
+<tt class="descname">getflat</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage.getflat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for retrieving a detector&#8217;s flat field.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>flat</strong> : array</p>
+<blockquote class="last">
+<p>The flat field array in the same shape as the input image with <strong>units of cps</strong>.</p>
+</blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NICMOSInputImage.isCountRate">
+<tt class="descname">isCountRate</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage.isCountRate" title="Permalink to this definition">¶</a></dt>
+<dd><p>isCountRate: Method or IRInputObject used to indicate if the
+science data is in units of counts or count rate.  This method
+assumes that the keyword &#8216;BUNIT&#8217; is in the header of the input
+FITS file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.nicmosData.NIC1InputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.nicmosData.</tt><tt class="descname">NIC1InputImage</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NIC1InputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.nicmosData.NICMOSInputImage" title="drizzlepac.nicmosData.NICMOSInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.nicmosData.NICMOSInputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NIC1InputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NIC1InputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.nicmosData.NIC2InputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.nicmosData.</tt><tt class="descname">NIC2InputImage</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NIC2InputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.nicmosData.NICMOSInputImage" title="drizzlepac.nicmosData.NICMOSInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.nicmosData.NICMOSInputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NIC2InputImage.createHoleMask">
+<tt class="descname">createHoleMask</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NIC2InputImage.createHoleMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add in a mask for the coronographic hole to the general static pixel mask.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NIC2InputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NIC2InputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.nicmosData.NIC3InputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.nicmosData.</tt><tt class="descname">NIC3InputImage</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NIC3InputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.nicmosData.NICMOSInputImage" title="drizzlepac.nicmosData.NICMOSInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.nicmosData.NICMOSInputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.nicmosData.NIC3InputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NIC3InputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="np-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="stisobjects.html" title="STIS ImageObjects"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>
