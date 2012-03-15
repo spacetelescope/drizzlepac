@@ -61,7 +61,7 @@ log = logutil.create_logger(__name__)
 #
 #### Interactive user interface (functional form)
 #
-def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None,
+def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
                  wcsmap=None, **input_dict):
     """ AstroDrizzle command-line interface
     """
@@ -70,10 +70,19 @@ def AstroDrizzle(input, mdriztab=False, editpars=False, configobj=None,
     if input_dict is None:
         input_dict = {}
 
-    if not util.is_blank(input):
+    if input is None and configobj is None:
+        raise TypeError('AstroDrizzle() needs either "input" or "configobj" arg')
+
+    if input and not util.is_blank(input):
         input_dict['input'] = input
 
     # input_dict['mdriztab'] = mdriztab
+
+    # Load any user-specified configobj
+    if isinstance(configobj, str):
+        if not os.path.exists(configobj):
+            raise RuntimeError('Cannot find .cfg file: '+configobj)
+        configobj = teal.load(configobj, strict=False)
 
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.

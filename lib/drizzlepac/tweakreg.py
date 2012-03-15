@@ -335,13 +335,16 @@ def run(configobj):
 # 
 # Primary interface for running this task from Python
 #
-def TweakReg(files, editpars=False, configobj=None, imagefindcfg=None, 
+def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None, 
                 **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if not util.is_blank(files):
+    if files is None and configobj is None:
+        raise TypeError('TweakReg() needs either "files" or "configobj" arg')
+
+    if files and not util.is_blank(files):
         if input_dict is None:
             input_dict = {}
         input_dict['input'] = files
