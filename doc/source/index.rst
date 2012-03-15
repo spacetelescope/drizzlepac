@@ -41,7 +41,20 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
    wcscorr
    tweakutils
    updatehdr
+
+Coordinate Transformation Tasks
+-------------------------------
+These tasks support transformations of source positions to and from 
+distorted and drizzled images. 
+
+.. toctree::
+   :maxdepth: 1
    
+   pixtopix
+   pixtosky
+   skytopix
+
+
 
 ACS Header Update Task
 ----------------------

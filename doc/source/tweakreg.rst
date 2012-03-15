@@ -6,6 +6,8 @@ TWEAKREG: Alignment of Images
 Combining images using astrodrizzle requires that the WCS information in the headers of each input image align to within sub-pixel accuracy.  The 'tweakreg' task allows the user to align sets of images to each other and/or to and external astrometric reference frame or image.
     
 .. automodule:: drizzlepac.tweakreg
-   :members:
-   :undoc-members:
+
+.. autofunction:: TweakReg
+
+.. autofunction:: help
      
