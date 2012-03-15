@@ -3,6 +3,8 @@ from __future__ import division # confidence medium
 import pyfits
 from stsci.tools import fileutil, readgeis, logutil
 
+from . import wcs_functions
+
 from fitsblender import blendheaders
 
 yes = True
@@ -346,6 +348,9 @@ class OutputImage:
                                 single=self.single)
             fo.append(hdu)
 
+            # remove all alternate WCS solutions from headers of this product
+            wcs_functions.removeAllAltWCS(fo,[1])
+
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
@@ -382,6 +387,9 @@ class OutputImage:
 
             # Add primary header to output file...
             fo.append(hdu)
+            # remove all alternate WCS solutions from headers of this product
+            wcs_functions.removeAllAltWCS(fo,[0])
+
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
@@ -414,6 +422,9 @@ class OutputImage:
 
                 # Add primary header to output file...
                 fwht.append(hdu)
+                # remove all alternate WCS solutions from headers of this product
+                wcs_functions.removeAllAltWCS(fwht,[0])
+
                 fwht.writeto(self.outweight)
                 del fwht,hdu
 
@@ -444,6 +455,8 @@ class OutputImage:
                                     single=self.single)
 
                 fctx.append(hdu)
+                # remove all alternate WCS solutions from headers of this product
+                wcs_functions.removeAllAltWCS(fctx,[0])
                 fctx.writeto(self.outcontext)
                 del fctx,hdu
 
@@ -575,7 +588,7 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False):
 
     if not blot:
         blendheaders.remove_distortion_keywords(hdr)
-
+    
 def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.

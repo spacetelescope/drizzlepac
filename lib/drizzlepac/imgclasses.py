@@ -567,11 +567,13 @@ class Image(object):
                 else:
                     pri_wcsname = wnames[' ']
                 altwcs.archiveWCS(self.hdulist,extlist,
-                                    wcskey=next_key,wcsname=pri_wcsname)
+                                    wcskey=next_key,wcsname=pri_wcsname,
+                                    reusekey=True)
                 # Find key for next WCS and save again to replicate an updated solution
                 next_key = altwcs.next_wcskey(self.hdulist[extlist[0]].header)
                 # save again using new WCSNAME
-                altwcs.archiveWCS(self.hdulist,extlist,wcskey=next_key,wcsname=wcsname)
+                altwcs.archiveWCS(self.hdulist,extlist,
+                    wcskey=next_key,wcsname=wcsname)
                 # update WCSNAME to be the new name
                 for ext in extlist:
                     self.hdulist[ext].header['WCSNAME'] = wcsname
@@ -705,7 +707,6 @@ class Image(object):
                       self.fit['img_orig_xy'][:,1]],
                       [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id]
                     ]
-#                      [self.fit['ref_indx'],self.fit['img_indx']]
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
                                         append=True,format=["%15.6f","%8d"])
         

@@ -407,6 +407,21 @@ def verifyUniqueWcsname(fname,wcsname):
 
     return uniq
 
+def verifyUpdatewcs(fname):
+    """
+    Verify the existence of WCSNAME in the file.  If it is not present,
+    report this to the user and raise an exception.  Returns True if WCSNAME
+    was found in all SCI extensions.
+    """
+    updated = True
+    numsci,extname = count_sci_extensions(fname)
+    for n in range(1,numsci+1):
+        hdr = pyfits.getheader(fname,extname=extname,extver=n)
+        if 'wcsname' not in hdr:
+            updated = False
+            break
+    return updated
+    
 def verifyFilePermissions(filelist, chmod=True):
     """ Verify that images specified in 'filelist' can be updated.
 

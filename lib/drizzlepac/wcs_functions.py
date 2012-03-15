@@ -11,7 +11,7 @@ import stwcs
 import pywcs
 from stwcs import distortion, wcsutil
 from stwcs.distortion import coeff_converter, utils
-
+from stwcs.wcsutil import altwcs
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'scale':None,'rot':None,
                      'outnx':None,'outny':None,
@@ -433,6 +433,16 @@ def createWCSObject(output,default_wcs,imageObjectList):
 
     return outwcs
 
+def removeAllAltWCS(hdulist,extlist):
+    """
+    Removes all alternate WCS solutions from the header
+    """
+    hdr = hdulist[extlist[0]].header
+    wkeys = altwcs.wcskeys(hdr)
+    wkeys.remove(' ')
+    for extn in extlist:
+        for wkey in wkeys:
+            altwcs.deleteWCS(hdulist,extn,wkey)
 
 def updateImageWCS(imageObjectList, output_wcs):
 

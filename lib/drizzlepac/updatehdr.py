@@ -216,7 +216,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         fimg = image
     
     if image_update is True:
-        wcsutil.altwcs.archiveWCS(fimg,extlist)
+        wcsutil.altwcs.archiveWCS(fimg,extlist,reusekey=True)
 
     # Process MEF images...
     for ext in extlist:

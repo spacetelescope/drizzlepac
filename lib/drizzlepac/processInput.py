@@ -105,6 +105,23 @@ def setCommonInput(configObj, createOutwcs=True):
         return None, None
     # convert the filenames from asndict into a list of full filenames
     files = [fileutil.buildRootname(f) for f in asndict['order']]
+    
+    # Check all input files to see whether or not they have been updated
+    # with 'updatewcs', which would have been done in process_input()
+    not_updated = []
+    for fname in files:
+        if not util.verifyUpdatewcs(fname):
+            not_updated.append(fname)
+    if len(not_updated) > 0:
+        errstr = 'ERROR:\n'
+        errstr += '    The following images do not have an updated WCS. \n'
+        for fname in not_updated:
+            errstr += '        %s\n'%(fname)
+        errstr += '    Required keyword "WCSNAME" was missing from the images.\n'
+        errstr += '    Please re-start and turn on "updatewcs" parameter. \n'
+        errstr += '    Quitting now...\n'
+        print textutil.textbox(errstr)
+        return None,None
 
     # interpret MDRIZTAB, if specified, and update configObj accordingly
     # This can be done here because MDRIZTAB does not include values for
