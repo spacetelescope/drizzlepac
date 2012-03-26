@@ -277,7 +277,7 @@ class Image(object):
                 all_radec.append(self.all_radec_orig[0][flux_indx])
                 all_radec.append(self.all_radec_orig[1][flux_indx])
                 all_radec.append(self.all_radec_orig[2][flux_indx])
-                all_radec.append(self.all_radec_orig[3][flux_indx])
+                all_radec.append(np.arange(len(self.all_radec_orig[0][flux_indx])))
 
             if self.pars.has_key(clip_prefix+'nbright') and \
                     self.pars[clip_prefix+'nbright'] is not None:
@@ -296,7 +296,7 @@ class Image(object):
                 self.all_radec[0] = all_radec[0][nbright_indx]
                 self.all_radec[1] = all_radec[1][nbright_indx]
                 self.all_radec[2] = all_radec[2][nbright_indx]
-                self.all_radec[3] = all_radec[3][nbright_indx]
+                self.all_radec[3] = np.arange(len(all_radec[0][nbright_indx]))
     
             else:
                 if all_radec is not None:
@@ -378,7 +378,7 @@ class Image(object):
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,
                                 np.newaxis],matches['ref_y'][:,np.newaxis]])
                 self.matches['ref_idx'] = matches['ref_idx']
-                self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]
+                self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]                
                 self.matches['ref_orig_xy'] = np.column_stack([
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
