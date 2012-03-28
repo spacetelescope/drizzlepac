@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 import pywcs
@@ -174,6 +173,7 @@ class Catalog(object):
                 radec_trimmed.append(arr[radec_indx])
             for arr in self.xypos:
                 xypos_trimmed.append(arr[radec_indx])
+            xypos_trimmed[-1] = np.arange(len(xypos_trimmed[0]))
             self.radec = radec_trimmed
             self.xypos = xypos_trimmed
             log.info('Excluded %d sources from catalog.'%num_excluded)
