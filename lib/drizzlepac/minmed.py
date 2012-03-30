@@ -75,7 +75,7 @@ class minmed:
         __median_file = np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)
         if (self.__numberOfImages == 2):
             __tmp = numCombine(self.__imageList,numarrayMaskList=self.__weightMaskList,
-                                 combinationType="mean",nlow=0,nhigh=0,
+                                 combinationType="imean",nlow=0,nhigh=0,
                                  nkeep=1,upper=None,lower=None)
             __median_file = __tmp.combArrObj
         else:
@@ -86,7 +86,7 @@ class minmed:
             # inputs and the number of masked values/pixel.
             #
             __tmp = numCombine(self.__imageList,numarrayMaskList=self.__weightMaskList,
-                                 combinationType="median",nlow=0,nhigh=1,
+                                 combinationType="imedian",nlow=0,nhigh=1,
                                  nkeep=1,upper=None,lower=None)
             __median_file = __tmp.combArrObj
 
@@ -148,7 +148,7 @@ class minmed:
             
         # Call numcombine throwing out the highest N - 1 pixels.
         __tmp = numCombine(self.__imageList,numarrayMaskList=None,
-                                 combinationType="median",nlow=0,nhigh=self.__numberOfImages-1,
+                                 combinationType="imedian",nlow=0,nhigh=self.__numberOfImages-1,
                                  nkeep=1,upper=None,lower=None)
         __minimum_file = __tmp.combArrObj
         # Reset any pixl at _maxValue + 1 to 0.
