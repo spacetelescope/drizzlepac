@@ -54,8 +54,9 @@ class minmed:
             weightMaskList= None,   # list of imput data weight masks to use for pixel rejection.
             combine_grow = 1,       # Radius (pixels) for neighbor rejection
             combine_nsigma1 = 4,    # Significance for accepting minimum instead of median
-            combine_nsigma2 = 3     # Significance for accepting minimum instead of median
-
+            combine_nsigma2 = 3,     # Significance for accepting minimum instead of median
+            fillval = False         # Turn on use of imedian/imean
+            
             ):
 
         # Define input variables
@@ -70,12 +71,19 @@ class minmed:
         self.__combine_nsigma1 = combine_nsigma1
         self.__combine_nsigma2 = combine_nsigma2
         
+        if fillval:
+            combtype_mean = 'imean'
+            combtype_median = 'imedian'
+        else:
+            combtype_mean = 'mean'
+            combtype_median = 'median'
+        
         
         # Create a different median image based upon the number of images in the input list.
         __median_file = np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)
         if (self.__numberOfImages == 2):
             __tmp = numCombine(self.__imageList,numarrayMaskList=self.__weightMaskList,
-                                 combinationType="imean",nlow=0,nhigh=0,
+                                 combinationType=combtype_mean,nlow=0,nhigh=0,
                                  nkeep=1,upper=None,lower=None)
             __median_file = __tmp.combArrObj
         else:
@@ -86,7 +94,7 @@ class minmed:
             # inputs and the number of masked values/pixel.
             #
             __tmp = numCombine(self.__imageList,numarrayMaskList=self.__weightMaskList,
-                                 combinationType="imedian",nlow=0,nhigh=1,
+                                 combinationType=combtype_median,nlow=0,nhigh=1,
                                  nkeep=1,upper=None,lower=None)
             __median_file = __tmp.combArrObj
 
@@ -148,7 +156,7 @@ class minmed:
             
         # Call numcombine throwing out the highest N - 1 pixels.
         __tmp = numCombine(self.__imageList,numarrayMaskList=None,
-                                 combinationType="imedian",nlow=0,nhigh=self.__numberOfImages-1,
+                                 combinationType=combtype_median,nlow=0,nhigh=self.__numberOfImages-1,
                                  nkeep=1,upper=None,lower=None)
         __minimum_file = __tmp.combArrObj
         # Reset any pixl at _maxValue + 1 to 0.

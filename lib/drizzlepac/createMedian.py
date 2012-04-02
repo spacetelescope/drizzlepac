@@ -299,7 +299,13 @@ def _median(imageObjectList, paramDict):
                 listIndex += 1
 
         # Do MINMED
-        if ( comb_type.lower() == "minmed"):
+        if ( "minmed" in comb_type.lower()):
+            if comb_type.lower()[0] == 'i':
+                # set up use of 'imedian'/'imean' in minmed algorithm
+                fillval = True
+            else:
+                fillval = False
+                
             if (_weight_mask_list in [None,[]]):
                 _weight_mask_list = None
 
@@ -312,7 +318,8 @@ def _median(imageObjectList, paramDict):
                                 weightMaskList = _weight_mask_list,  # list of imput data weight masks to use for pixel rejection.
                                 combine_grow = grow,                   # Radius (pixels) for neighbor rejection
                                 combine_nsigma1 = nsigma1,             # Significance for accepting minimum instead of median
-                                combine_nsigma2 = nsigma2              # Significance for accepting minimum instead of median
+                                combine_nsigma2 = nsigma2,              # Significance for accepting minimum instead of median
+                                fillval=fillval                      # turn on use of imedian/imean
                             )
 #              medianOutput[prange[0]:prange[1],:] = result.out_file1
 #             minOutput[prange[0]:prange[1],:] = result.out_file2
