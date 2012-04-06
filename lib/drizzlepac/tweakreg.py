@@ -71,7 +71,8 @@ def _managePsets(configobj,iparsobj=None):
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
     """
-    iparsobj = teal.teal(imagefindpars.__taskname__, returnDict=False, loadOnly=False, canExecute=False)
+    teal.teal(imagefindpars.__taskname__, returnAs=None,
+              autoClose=True, loadOnly=False, canExecute=False)
         
         
 @util.with_logging
