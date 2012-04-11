@@ -1,0 +1,31 @@
+_task_name_ = string_kw(default="ablot")
+data = string_kw(default="",comment="Input data image")
+outdata = string_kw(default="",comment="Output data image") 
+coeffs = boolean_kw(default=True,comment="Use header-based distortion coefficients?") 
+interpol = option_kw("nearest","linear","poly3", "poly5", "spline3", "sinc", default="poly5",comment="Interpolant") 
+sinscl = float_kw(default=1.,comment="Scale for sinc interpolation kernel") 
+stepsize = integer_or_none_kw(default=10,comment="Number of pixels for WCS interpolation") 
+addsky = boolean_kw(default=True, triggers='_rule5_', comment= "Add sky using MDRIZSKY value from header?")
+skyval = float_kw(default=0.0, inactive_if='_rule5_', comment="Custom sky value to be added to blot image")
+
+[Data Scaling Parameters]
+in_units = option_kw("counts", "cps", default="cps",comment="Units for input image (counts or cps)")
+out_units = option_kw("counts", "cps", default="counts",comment="Units for output image (counts or cps)")
+expkey = string_kw(default="exptime",comment="Exposure time keyword in input data image header") 
+expout = string_kw(default="input",comment="Exposure time for output image") 
+
+[User WCS Parameters]
+refimage = string_kw(default="",triggers='_rule1_',comment="Reference image for defining the blotted WCS") 
+outscale = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Absolute size of output pixels in arcsec/pixel") 
+orient = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Orientation of output (PA of Y axis, N through E)") 
+raref = float_or_none_kw(default=None,inactive_if='_rule1_',comment="RA of reference point on output image(CRVAL1,degrees)") 
+decref = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Dec of reference point on output image (CRVAL2, degrees)") 
+xrefpix = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Reference pixel X position on output (CRPIX1)") 
+yrefpix = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Reference pixel Y position on output (CRPIX2)") 
+outnx = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Size of output image's X-axis (pixels)") 
+outny = float_or_none_kw(default=None,inactive_if='_rule1_',comment="Size of output image's Y-axis (pixels)") 
+
+[ _RULES_ ]
+
+_rule1_ = string_kw(default="",when='defaults,entry', code='OUT =(VAL != "")')
+_rule5_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":False, "no":True}; OUT = tyfn[VAL]')

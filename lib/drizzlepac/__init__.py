@@ -60,7 +60,8 @@ from . import tweakback
 # upon importing this package.
 from stsci.tools import teal
 
-teal.print_tasknames(__name__, os.path.dirname(__file__))
+teal.print_tasknames(__name__, os.path.dirname(__file__),
+                     hidden=['adrizzle','ablot','buildwcs'])
 
 # Begin Version Information -------------------------------------------
 if False :
