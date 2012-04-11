@@ -260,7 +260,7 @@ class ImageCatalog(Catalog):
         Required input `kwargs` parameters::
 
             computesig, skysigma, threshold, peakmin, peakmax,
-            hmin, fwhmpsf, [roundlim, sharplim]
+            hmin, conv_width, [roundlim, sharplim]
 
     """
     def __init__(self,wcs,catalog_source,**kwargs):
@@ -286,7 +286,7 @@ class ImageCatalog(Catalog):
         else:
             hmin = sigma*self.pars['threshold']
 
-        x,y,flux,id = tweakutils.ndfind(self.source,hmin,self.pars['fwhmpsf'],skymode,
+        x,y,flux,id = tweakutils.ndfind(self.source,hmin,self.pars['conv_width'],skymode,
                             peakmin=self.pars['peakmin'],
                             peakmax=self.pars['peakmax'],
                             nsigma=self.pars['nsigma'])
@@ -295,7 +295,7 @@ class ImageCatalog(Catalog):
                 sigma = self._compute_sigma()
                 hmin = sigma * self.pars['threshold']
                 log.info('No sources found with original thresholds. Trying automatic settings.')
-                x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['fwhmpsf'],skymode,
+                x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['conv_width'],skymode,
                                         peakmin=self.pars['peakmin'],
                                         peakmax=self.pars['peakmax'],
                                         nsigma=self.pars['nsigma'])
