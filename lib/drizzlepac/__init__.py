@@ -89,3 +89,34 @@ try:
                                      __setup_datetime__)
 except ImportError:
     pass
+
+def help():
+    msg = \
+""" The DrizzlePac package contains a suite of tasks that allow users to align HST images, combine them, and perform coordinate transformations on source positions.
+
+drizzlepac:
+       astrodrizzle - primary task for combining images, removing cosmic rays, and removing distortion
+           tweakreg - task to compute offsets in WCS between images and a reference image or reference frame
+      imagefindpars - sub-task containing parameters to find point sources used by tweakreg to build source catalogs for each tweakreg input image
+          tweakback - apply an updated WCS solution created by tweakreg for a drizzled image to the constituent distorted (flt.fits) images
+           pixtopix - task to convert pixel positions from an input image to pixel positions in an output WCS or image
+           pixtosky - task to convert pixel positions from an input image to sky coordinates with full distortion correction as appropriate
+           skytopix - task to convert sky positions to pixel positions in an image
+          resetbits - sub-task to reset specified flt.fits data quality (DQ) values to 0
+         updatenpol - task to add the names of the new ACS distortion reference files NPOLFILE and D2IMFILE then update headers to include residual distortion corrections as image extensions
+
+fitsblender:
+       blendheaders - task to merge the keywords from all images used to create a drizzle product into a single header with a table extension using rules defined for each instrument
+
+stwcs:
+    apply_headerlet - apply a headerlet to a file
+  archive_headerlet - save a WCS solution as a headerlet extension and write it out as a headerlet FITS file
+   attach_headerlet - attach a headerlet as an extension to a file
+   delete_headerlet - delete a headerlet extension from a file
+  extract_headerlet - write out a headerlet extension as a separate FITS file
+  headerlet_summary - print a summary of all headerlet extensions in a file
+  restore_headerlet - replace current WCS solution with the WCS solution from a headerlet extension
+    write_headerlet - save a WCS solution as a separate headerlet FITS file
+          updatewcs - recompute the WCS keywords and import the distortion model from the reference files
+"""
+    print msg
