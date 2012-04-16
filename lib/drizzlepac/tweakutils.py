@@ -8,11 +8,11 @@ import pyfits
 import astrolib.coords as coords
 
 
-import stsci.imagestats as imagestats 
+import stsci.imagestats as imagestats
 
 import findobj
 
-def parse_input(input, prodonly=False):    
+def parse_input(input, prodonly=False):
     catlist = None
 
     if (isinstance(input, list) == False) and \
@@ -83,7 +83,7 @@ def get_configobj_root(configobj):
 
 def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,
                 peakmin=None,peakmax=None,nsigma=1.5):
-    star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode, 
+    star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode,
                     peakmin=peakmin, peakmax=peakmax,
                     ratio=1, nsigma=nsigma, theta=0.)
     if len(star_list) == 0:
@@ -92,13 +92,13 @@ def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,
     star_arr = np.array(star_list)
     fluxes = np.array(fluxes,np.float32)
     return star_arr[:,0],star_arr[:,1],fluxes,np.arange(star_arr.shape[0])
-    
+
 # Object finding algorithm based on NDIMAGE routines
 def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
     """ Source finding algorithm based on NDIMAGE routines
-    
+
         This function provides a simple replacement for the DAOFIND task.
-        
+
         Parameters
         ----------
         array : arr
@@ -115,7 +115,7 @@ def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datam
             [Not used at this time]
         datamax  : float
             Maximum good pixel value found in any detected source
-        
+
         Returns
         -------
         x  : arr
@@ -137,7 +137,7 @@ def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datam
     cmask = cimg >= climit
     gwidth = int(2*fwhm+0.5)
     gradius = gwidth//2
-    
+
     #cmask = cimg >= hmin
     # find and label sources
     ckern = ndimage.generate_binary_structure(2,1)
@@ -153,7 +153,7 @@ def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datam
             if datamax is not None and (imgsect.max() > datamax):
                 continue # skip any source with pixel value > datamax
             cimgsect = cimg[s]*cmask[s]
-            
+
             maxposind = np.where(cimgsect==cimgsect.max())
             maxpos = (maxposind[0][0],maxposind[1][0])
             yr0 = maxpos[0]-gradius
@@ -187,8 +187,8 @@ def isfloat(value):
 def parse_skypos(ra,dec):
     """
     Function to parse RA and Dec input values and turn them into decimal degrees
-    
-    Input formats could be: 
+
+    Input formats could be:
         ["nn","nn","nn.nn"]
         "nn nn nn.nnn"
         "nn:nn:nn.nn"
@@ -215,35 +215,35 @@ def make_val_float(val):
 
 def radec_hmstodd(ra,dec):
     """ Function to convert HMS values into decimal degrees.
-        
+
         This function relies on the astrolib.coords package to perform the
-        conversion to decimal degrees.  
-        
+        conversion to decimal degrees.
+
         Parameters
         ----------
         ra  : list or array
-            List or array of input RA positions 
+            List or array of input RA positions
         dec : list or array
             List or array of input Dec positions
-            
+
         Returns
         -------
         pos : arr
             Array of RA,Dec positions in decimal degrees
-            
+
         Notes
         -----
         Formats of ra and dec inputs supported::
-        
+
             ["nn","nn","nn.nn"]
             "nn nn nn.nnn"
             "nn:nn:nn.nn"
             "nnH nnM nn.nnS" or "nnD nnM nn.nnS"
-        
+
         See Also
         --------
         astrolib.coords
-        
+
     """
     hmstrans = string.maketrans(string.letters,' '*len(string.letters))
 
@@ -273,7 +273,7 @@ def radec_hmstodd(ra,dec):
 def parse_exclusions(exclusions):
     """ Read in exclusion definitions from file named by 'exclusions'
         and return a list of positions and distances
-    """ 
+    """
     fname = fileutil.osfn(exclusions)
     if os.path.exists(fname):
         fobj = open(fname)
@@ -283,7 +283,7 @@ def parse_exclusions(exclusions):
         print 'No valid exclusions file "',fname,'" could be found!'
         print 'Skipping application of exclusions files to source catalogs.'
         return None
-    
+
     # Parse out lines which can be interpreted as positions and distances
     exclusion_list = []
     units = None
@@ -292,9 +292,9 @@ def parse_exclusions(exclusions):
             continue
         # Only interpret the part of the line prior to the comment
         # if a comment has been attached to the line
-        if '#' in line: 
+        if '#' in line:
             line = line.split('#')[0].rstrip()
-        
+
         if units is None:
             units='pixels'
             if line[:3] in ['fk4','fk5','sky']:
@@ -314,7 +314,7 @@ def parse_exclusions(exclusions):
                 posval = (float(vals[0]),float(vals[1]))
         else:
             # Try to interpret unformatted line
-            if ',' in line: 
+            if ',' in line:
                 split_tok = ','
             else:
                 split_tok=' '
@@ -332,14 +332,14 @@ def parse_exclusions(exclusions):
 
 def parse_colname(colname):
     """ Common function to interpret input column names provided by the user.
-    
-        This function translates column specification provided by the user 
+
+        This function translates column specification provided by the user
         into a column number.
 
         Notes
         -----
         This function will understand the following inputs::
-        
+
             '1,2,3' or   'c1,c2,c3' or ['c1','c2','c3']
             '1-3'   or   'c1-c3'
             '1:3'   or   'c1:c3'
@@ -351,7 +351,7 @@ def parse_colname(colname):
         ----------
         colname :
             Column name or names to be interpreted
-        
+
         Returns
         -------
         cols : list
@@ -365,11 +365,11 @@ def parse_colname(colname):
         cname = cname.rstrip(',')
     elif isinstance(colname,int) or colname.isdigit():
         cname = str(colname)
-    else:   
+    else:
         cname = colname
-         
+
     if 'c' in cname[0]: cname = cname.replace('c','')
-    
+
     ctok = None
     cols = None
     if '-' in cname:
@@ -382,7 +382,7 @@ def parse_colname(colname):
         cols = []
         for i in c:
             cols.append(str(i))
-            
+
     if cols is None:
         ctok = ' '
         if ',' in cname:
@@ -397,19 +397,19 @@ def readcols(infile, cols=None):
 
         This function reads in the columns specified by the user into numpy arrays
         regardless of the format of the input table (ASCII or FITS table).
-        
+
         Parameters
         ----------
         infile : string
-            Filename of the input file 
+            Filename of the input file
         cols   : string or list of strings
             Columns to be read into arrays
-        
+
         Returns
         -------
         outarr : array
             Numpy array or arrays of columns from the table
-    
+
     """
     if infile in [None,'',' ',"None","INDEF"]:
         return None
@@ -448,19 +448,19 @@ def read_FITS_cols(infile,cols=None):
 
 def read_ASCII_cols(infile,cols=[1,2,3]):
     """ Interpret input ASCII file to return arrays for specified columns.
-    
+
         Notes
         -----
         The specification of the columns should be expected to have lists for
         each 'column', with all columns in each list combined into a single entry.
         For example::
-        
+
             cols = ['1,2,3','4,5,6',7]
 
         where '1,2,3' represent the X/RA values, '4,5,6' represent the Y/Dec values
         and 7 represents the flux value for a total of 3 requested columns of data
         to be returned.
-        
+
         Returns
         -------
         outarr : list of arrays
@@ -473,7 +473,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
     fin = open(infile,'r')
     flines = fin.readlines()
     fin.close()
-    
+
     for l in flines: # interpret each line from catalog file
         if l[0].lstrip() == '#':
             continue
@@ -497,14 +497,14 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
         if l[0] == '#':
             continue
         l = l.strip()
-        # skip blank lines, comment lines, or lines with 
+        # skip blank lines, comment lines, or lines with
         # fewer columns than requested by user
         if len(l) == 0 or len(l.split()) < numcols or (
             len(l) > 0 and (l[0] == '#' or "INDEF" in l)
             ): continue
         lspl = l.split()
         nsplit = len(lspl)
-        
+
         # For each 'column' requested by user, pull data from row
         for c,i in zip(cols,range(numcols)):
             cnames = parse_colname(c)
@@ -517,7 +517,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
                     outval += cval+' '
                 outarr[i].append(outval)
                 convert_radec = True
-            else:                
+            else:
                 #pull single value from row for this column
                 cnum = coldict[cnames[0]]
                 if isfloat(lspl[cnum]):
@@ -529,7 +529,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
                         cval = cval.replace(':',' ')
                         convert_radec = True
                 outarr[i].append(cval)
-                
+
     fin.close()
     # convert multi-column RA/Dec specifications
     if convert_radec:
@@ -541,12 +541,12 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
             outdec.append(decdd)
         outarr[0] = outra
         outarr[1] = outdec
-        
+
     # convert all lists to numpy arrays
     for c in range(len(outarr)):
         outarr[c] = np.array(outarr[c])
     return outarr
-    
+
 def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     """ Write out a shiftfile for a given list of input Image class objects
     """
@@ -583,7 +583,7 @@ def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
 def createWcsHDU(wcs):
     """ Generate a WCS header object that can be used to populate a reference WCS HDU.
 
-        For most applications, stwcs.wcsutil.HSTWCS.wcs2header() 
+        For most applications, stwcs.wcsutil.HSTWCS.wcs2header()
         will work just as well.
     """
 
@@ -654,16 +654,16 @@ def idlgauss_convolve(image,fwhm):
 
 def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
     """ Computes the 2D Gaussian with size nx*ny.
-    
+
         Parameters
         ----------
         nx : int
         ny : int [Default: None]
             Size of output array for the generated Gaussian. If ny == None,
-            output will be an array nx X nx pixels. 
+            output will be an array nx X nx pixels.
 
         fwhm : float [Default: 1.0]
-            Full-width, half-maximum of the Gaussian to be generated 
+            Full-width, half-maximum of the Gaussian to be generated
 
         sigma_x : float [Default:  None]
         sigma_y : float [Default:  None]
@@ -671,7 +671,7 @@ def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
 
         zero_norm : bool [Default:  False]
             The kernel will be normalized to a sum of 1 when True.
-        
+
         Returns
         -------
         gauss_arr : array
@@ -684,7 +684,7 @@ def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
     if sigma_x is None:
         if fwhm is None:
             print 'A value for either "fwhm" or "sigma_x" needs to be specified!'
-            raise ValueError 
+            raise ValueError
         else:
             # Convert input FWHM into sigma
             sigma_x = fwhm/(2*np.sqrt(2*np.log(2)))
@@ -720,16 +720,16 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,
                     append=False,linfit=False,rms=True):
     """ Convert a XYXYMATCH file into a vector plot or set of residuals plots.
-    
+
         This function provides a single interface for generating either a vector
         plot of residuals or a set of 4 plots showing residuals.  The data being
-        plotted can also be adjusted for a linear fit on-the-fly.  
-        
+        plotted can also be adjusted for a linear fit on-the-fly.
+
         Parameters
         ----------
         coordfile : string
             Name of file with matched sets of coordinates. This input file can
-            be a file compatible for use with IRAF's geomap. 
+            be a file compatible for use with IRAF's geomap.
         columns : list [Default: [0,1,2,3]]
             Column numbers for the X,Y positions from each image
         data : list of arrays
@@ -753,13 +753,13 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             Width of arrow head to be used in vector plot
         xsh : float
         ysh : float
-            Shift in X and Y from linear fit to be applied to source positions 
+            Shift in X and Y from linear fit to be applied to source positions
             from the first image
         scale : float
-            Scale from linear fit to be applied to source positions from the 
+            Scale from linear fit to be applied to source positions from the
             first image
         fit : array
-            Array of linear coefficients for rotation (and scale?) in X and Y from 
+            Array of linear coefficients for rotation (and scale?) in X and Y from
             a linear fit to be applied to source positions from the first image
         vector : bool [Default: True]
             Specifies whether or not to generate a vector plot. If False, task
@@ -769,16 +769,16 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         append : bool [Default: False]
             If True, will overplot new plot on any pre-existing plot
         linfit : bool [Default: False]
-            If True, a linear fit to the residuals will be generated and 
+            If True, a linear fit to the residuals will be generated and
             added to the generated residuals plots
         rms : bool [Default: True]
             Specifies whether or not to report the RMS of the residuals as a
             label on the generated plot(s).
-        
-    
+
+
     """
     from matplotlib import pyplot as plt
-    
+
     if data is None:
         data = readcols(coordfile,cols=columns)
 
@@ -814,18 +814,18 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         xy1x = xy1x[xindx].copy()
         xy1y = xy1y[xindx].copy()
     print '# of points after clipping: ',len(dx)
-    
+
     dr = np.sqrt(dx**2 + dy**2)
     max_vector = dr.max()
-    
+
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
-        
+
     plt.figure(num=figure_id)
     if not append:
         plt.clf()
     plt.ioff()
-    if vector: 
+    if vector:
         dxs = imagestats.ImageStats(dx.astype(np.float32))
         dys = imagestats.ImageStats(dy.astype(np.float32))
         minx = xy1x.min()
@@ -841,7 +841,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         key_dy = yrange*(0.005*textscale)
         maxvec = max_vector/2.
         key_len = round((maxvec+0.005),2)
-        
+
         plt.text(minx+key_dx, miny-key_dy,'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
         plt.text(minx+key_dx, miny-key_dy*2,'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
         plt.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(
@@ -859,7 +859,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             maxx = xy1x.max()
             miny = dx.min()
             maxy = dx.max()
-            
+
             if xy1y.min() < minx: minx = xy1y.min()
             if xy1y.max() > maxx: maxx = xy1y.max()
             if dy.min() < miny: miny = dy.min()
@@ -870,8 +870,8 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             miny = axes[1][0]
             maxy = axes[1][1]
         xrange = maxx - minx
-        yrange = maxy - miny 
-        
+        yrange = maxy - miny
+
         for pnum,plot in zip(range(1,5),plot_defs):
             ax = plt.subplot(2,2,pnum)
             ax.plot(plot[0],plot[1],'.')
@@ -897,15 +897,15 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                 plt.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
     plt.draw()
     plt.ion()
-        
+
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
     xy1y = data[1]
     numpts = xy1x.shape[0]
     if fit is not None:
         xy1 = np.zeros((xy1x.shape[0],2),np.float64)
-        xy1[:,0] = xy1x 
-        xy1[:,1] = xy1y 
+        xy1[:,0] = xy1x
+        xy1[:,1] = xy1y
         xy1 = np.dot(xy1,fit)
         xy1x = xy1[:,0] + xsh
         xy1y = xy1[:,1] + ysh
@@ -925,15 +925,18 @@ def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
                 outstr += fmts%(cols[col][row])
         fout1.write(outstr+"\n")
     fout1.close()
-    print 'wrote XY data to: ',outname  
- 
+    print 'wrote XY data to: ',outname
+
 def find_xy_peak(img,center=None):
     """ Find the center of the peak of offsets
     """
     # find level of noise in histogram
-    istats = imagestats.ImageStats(img.astype(np.float32),nclip=1,fields='mode')
+    istats = imagestats.ImageStats(img.astype(np.float32),nclip=1,fields='mode,mean')
+    if istats.stddev == 0.0:
+        print 'Invalid peak found. Recomputing solution...'
+        istats = imagestats.ImageStats(img.astype(np.float32),fields='mode,mean')
     imgsum = img.sum()
-    
+
     # clip out all values below mean+3*sigma from histogram
     imgc =img[:,:].copy()
     imgc[imgc < istats.mode+istats.stddev*3] = 0.0
@@ -941,10 +944,10 @@ def find_xy_peak(img,center=None):
     yp0,xp0 = np.where(imgc == imgc.max())
 
     # Perform bounds checking on slice from img
-    ymin = max(0,int(yp0[0])-13)
-    ymax = min(img.shape[0],int(yp0[0])+14)
-    xmin = max(0,int(xp0[0])-13)
-    xmax = min(img.shape[1],int(xp0[0])+14)
+    ymin = max(0,int(yp0[0])-3)
+    ymax = min(img.shape[0],int(yp0[0])+4)
+    xmin = max(0,int(xp0[0])-3)
+    xmax = min(img.shape[1],int(xp0[0])+4)
     # take sum of at most a 13x13 pixel box around peak
     xp_slice = (slice(ymin,ymax),
                 slice(xmin,xmax))
@@ -963,32 +966,30 @@ def find_xy_peak(img,center=None):
         delta_size = float(img.size - imgc[xp_slice].size)
         if delta_size == 0: delta_size = 1
         delta_flux = float(imgsum - flux)
-        if delta_flux != 0.0:
-            zpqual = flux/np.sqrt(delta_flux/delta_size)
-            if np.isnan(zpqual) or np.isinf(zpqual):
-                zpqual = None
-        else:    
+        zpqual = flux/np.sqrt(delta_flux/delta_size)
+        if np.isnan(zpqual) or np.isinf(zpqual):
             zpqual = None
 
         if center is not None:
             xp -= center[0]
             yp -= center[1]
-    
+        flux = imgc[xp_slice].max()
+        
     del imgc
     return xp,yp,flux,zpqual
 
 def plot_zeropoint(pars):
     """ Plot 2d histogram.
-    
-    Pars will be a dictionary containing: 
+
+    Pars will be a dictionary containing:
         data, figure_id, vmax, title_str, xp,yp, searchrad
     """
     from matplotlib import pyplot as plt
-    
+
     xp = pars['xp']
     yp = pars['yp']
-    searchrad = pars['searchrad']
-    
+    searchrad = int(pars['searchrad']+0.5)
+
     plt.figure(num=pars['figure_id'])
     plt.clf()
     plt.ioff()
@@ -1004,35 +1005,36 @@ def plot_zeropoint(pars):
     plt.ylabel("Offset in Y (pixels)")
     plt.draw()
     plt.ion()
-    
+
 def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
-    """ Create a matrix which contains the delta between each XY position and 
-        each UV position. 
+    """ Create a matrix which contains the delta between each XY position and
+        each UV position.
     """
     print 'Computing initial guess for X and Y shifts...'
     xyshape = int(searchrad*2)+1
     zpmat = np.zeros([xyshape,xyshape],dtype=np.int32)
 
-    for xy in imgxy:        
+    for xy in imgxy:
         deltax = xy[0] - refxy[:,0]
         deltay = xy[1] - refxy[:,1]
         xyind = np.bitwise_and(np.abs(deltax) < searchrad,np.abs(deltay) < searchrad)
-        
+
         deltax = (deltax+searchrad)[xyind].astype(np.int32)
         deltay = (deltay+searchrad)[xyind].astype(np.int32)
         zpmat[deltay,deltax] += 1
-    
+
     xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
     if zpqual is not None:
-        print 'Found initial X and Y shifts of ',xp,yp,'\n     with significance of ',zpqual
+        print 'Found initial X and Y shifts of ',xp,yp
+        print '    with significance of ',zpqual, 'and ',flux,' matches'
     else:
         print '!'*80
         print '!'
         print '! WARNING: No valid shift found within a search radius of ',searchrad,' pixels.'
         print '!'
         print '!'*80
-        
-    if histplot: 
+
+    if histplot:
         zpstd = flux//5
         if zpstd < 10: zpstd = 10
         #if zpstd > 100: zpstd = 100
@@ -1046,21 +1048,21 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         plot_pars = {'data':zpmat,'figure_id':figure_id,'vmax':zpstd,
                     'xp':xp,'yp':yp,'searchrad':searchrad,'title_str':title_str
                     }
-        
+
         plot_zeropoint(plot_pars)
-        
+
     return xp,yp,flux,zpqual
 
 def build_pos_grid(start,end,nstep, mesh=False):
     """
     Return a grid of positions starting at X,Y given by 'start', and ending
-    at X,Y given by 'end'. The grid will be completely filled in X and Y by 
+    at X,Y given by 'end'. The grid will be completely filled in X and Y by
     every 'step' interval.
     """
     from . import linearfit
     # Build X and Y arrays
     dx = (end[0] - start[0])
-    if dx < 0: 
+    if dx < 0:
         nstart = end
         end = start
         start = nstart
@@ -1069,11 +1071,11 @@ def build_pos_grid(start,end,nstep, mesh=False):
     # Perform linear fit to find exact line that connects start and end
     xarr = np.arange(start[0],end[0]+stepx/2.0,stepx)
     yarr = np.interp(xarr,[start[0],end[0]],[start[1],end[1]])
-    
-    # create grid of positions 
+
+    # create grid of positions
     if mesh:
         xa,ya = np.meshgrid(xarr,yarr)
         xarr = xa.ravel()
         yarr = ya.ravel()
-    
+
     return xarr,yarr

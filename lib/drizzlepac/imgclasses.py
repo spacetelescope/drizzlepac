@@ -47,7 +47,7 @@ class Image(object):
             open_mode = 'readonly'
         self.hdulist = fu.openImage(filename,mode=open_mode)
 
-        # try to verify whether or not this image has been updated with 
+        # try to verify whether or not this image has been updated with
         # a full distortion model
         numsci,sciname = util.count_sci_extensions(filename)
         if sciname == 'PRIMARY': sciext = 0
@@ -66,7 +66,7 @@ class Image(object):
             'that each image uses the full distortion model when'
             'aligning this image.\n', width=60
             )
-            
+
         self.name = filename
         self.rootname = filename[:filename.find('.')]
         self.origin = 1
@@ -75,7 +75,7 @@ class Image(object):
         self.verbose = kwargs['verbose']
 
         print 'Defining source catalogs for: ',filename
-        
+
         if input_catalogs is not None and kwargs['xyunits'] == 'degrees':
             # Input was a catalog of sky positions, so no WCS or image needed
             use_wcs = False
@@ -114,9 +114,9 @@ class Image(object):
             else:
                 source = input_catalogs[sci_extn-1]
                 catalog_mode='user'
-                
+
             if exclusions is not None and len(exclusions) >= sci_extn:
-                if exclusions[sci_extn-1] not in ['None',' ','INDEF']: 
+                if exclusions[sci_extn-1] not in ['None',' ','INDEF']:
                     excludefile=exclusions[sci_extn-1]
                 else:
                     excludefile = None
@@ -125,14 +125,14 @@ class Image(object):
             kwargs['start_id'] = num_sources
             catalog = catalogs.generateCatalog(wcs,mode=catalog_mode,catalog=source,**kwargs)
             # read in and convert all catalog positions to RA/Dec
-            catalog.buildCatalogs(exclusions=excludefile) 
+            catalog.buildCatalogs(exclusions=excludefile)
             num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
-            # Merge input X,Y positions from all chips into a single catalog 
+            # Merge input X,Y positions from all chips into a single catalog
             # This will be used for writing output matched source catalogs
             for i,col in enumerate(self.xy_catalog):
                 if catalog.xypos is not None and len(catalog.xypos) > 0 and i < len(catalog.xypos):
-                    col = col.extend(catalog.xypos[i])        
+                    col = col.extend(catalog.xypos[i])
 
         self.catalog_names = {}
         # Build full list of all sky positions from all chips
@@ -162,9 +162,9 @@ class Image(object):
         self.identityfit = False # set to True when matching/fitting to itself
         self.goodmatch = True # keep track of whether enough matches were found for a fit
         self.figure_id = 1
-        
+
         self.next_key = ' '
-        
+
         self.quit_immediately = False
 
     def close(self):
@@ -206,7 +206,7 @@ class Image(object):
                 self.all_radec = [np.concatenate(ralist),np.concatenate(declist),
                         np.concatenate(fluxlist),np.concatenate(idlist)]
                 self.all_radec_orig = copy.deepcopy(self.all_radec)
-        
+
 
     def buildDefaultRefWCS(self):
         """ Generate a default reference WCS for this image.
@@ -268,7 +268,7 @@ class Image(object):
                     fluxmax = self.pars[clip_prefix+'fluxmax']
                 else:
                     fluxmax = self.all_radec[2].max()
-                
+
                 # apply flux limit clipping
                 minindx = self.all_radec_orig[2] >= fluxmin
                 maxindx = self.all_radec_orig[2] <= fluxmax
@@ -287,20 +287,20 @@ class Image(object):
                     nbslice = slice(None,nbright)
                 else:
                     nbslice = slice(nbright,None)
-                
+
                 if all_radec is None:
                     # work on copy of all original data
                     all_radec = copy.deepcopy(self.all_radec_orig)
                 # find indices of brightest
-                nbright_indx = np.argsort(all_radec[2])[nbslice] 
+                nbright_indx = np.argsort(all_radec[2])[nbslice]
                 self.all_radec[0] = all_radec[0][nbright_indx]
                 self.all_radec[1] = all_radec[1][nbright_indx]
                 self.all_radec[2] = all_radec[2][nbright_indx]
                 self.all_radec[3] = np.arange(len(all_radec[0][nbright_indx]))
-    
+
             else:
                 if all_radec is not None:
-                    self.all_radec = copy.deepcopy(all_radec)            
+                    self.all_radec = copy.deepcopy(all_radec)
 
     def match(self,refimage, **kwargs):
         """ Uses xyxymatch to cross-match sources between this catalog and
@@ -310,8 +310,8 @@ class Image(object):
         refWCS = refimage.wcs
         refname = refimage.name
         ref_inxy = refimage.xy_catalog
-        
-        print 'Matching sources from ',self.name,' with sources from reference image.'
+
+        print 'Matching sources from ',self.name,' with sources from reference image',refname
         self.sortSkyCatalog() # apply any catalog sorting specified by the user
         self.transformToRef(refWCS)
         self.refWCS = refWCS
@@ -322,9 +322,9 @@ class Image(object):
         del matchpars['minobj'] # not needed in xyxymatch
 
         # Check to see whether or not it is being matched to itself
-        if (refname.strip() == self.name.strip()) or (
-                ref_outxy.shape == self.outxy.shape) and (
-                ref_outxy == self.outxy).all():
+        if (refname.strip() == self.name.strip()):# or (
+#                ref_outxy.shape == self.outxy.shape) and (
+#                ref_outxy == self.outxy).all():
             self.identityfit = True
             log.info('NO fit performed for reference image: %s\n'%self.name)
         else:
@@ -340,8 +340,8 @@ class Image(object):
                                     ref_outxy,searchrad=radius,
                                     histplot=matchpars['see2dplot'],
                                     figure_id = self.figure_id)
-                if matchpars['see2dplot'] and ('residplot' in matchpars and 
-                                               'No' in matchpars['residplot']): 
+                if matchpars['see2dplot'] and ('residplot' in matchpars and
+                                               'No' in matchpars['residplot']):
                     a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
                     if 'n' in a.lower():
                         self.perform_update = False
@@ -353,9 +353,9 @@ class Image(object):
                 if zpqual is not None:
                     xyoff = (zpxoff,zpyoff)
                     # set tolerance as well
-                    xyxyrad = radius*0.1
-                    if xyxyrad < 1: xyxyrad = 1
-                    xyxytolerance = xyxyrad
+                    # This value allows initial guess to be off by 1 in both and
+                    # still pick up the identified matches
+                    xyxytolerance = 1.5
                     xyxysep = 0.0
                 else:
                     use2d = False
@@ -367,7 +367,7 @@ class Image(object):
                 if not util.is_blank(matchpars['yoffset']):
                     yoff = matchpars['yoffset']
                 xyoff = (xoff,yoff)
-                # set tolerance 
+                # set tolerance based on user-specified input
                 xyxytolerance = matchpars['tolerance']
                 xyxysep = matchpars['separation']
             matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,
@@ -378,7 +378,7 @@ class Image(object):
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,
                                 np.newaxis],matches['ref_y'][:,np.newaxis]])
                 self.matches['ref_idx'] = matches['ref_idx']
-                self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]                
+                self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]
                 self.matches['ref_orig_xy'] = np.column_stack([
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
@@ -412,7 +412,7 @@ class Image(object):
                     matchfile.close()
             else:
                 warnstr = textutil.textbox('WARNING: \n'+
-                    'Not enough matches found for input image: %s'%self.name)
+                    'Not enough matches (< %d) found for input image: %s'%(minobj,self.name))
                 for line in warnstr.split('\n'):
                     log.warning(line)
                 print(warnstr)
@@ -457,7 +457,7 @@ class Image(object):
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
-                    self.fit['offset'][0],self.fit['offset'][1], 
+                    self.fit['offset'][0],self.fit['offset'][1],
                     self.fit['rot'],self.fit['scale'][0])
                 print 'XRMS: %0.6g    YRMS: %0.6g\n'%(
                         self.fit['rms'][0],self.fit['rms'][1])
@@ -465,7 +465,7 @@ class Image(object):
                         self.fit['rms_keys']['RMS_RA'],
                         self.fit['rms_keys']['RMS_DEC'])
                 print 'Final solution based on ',self.fit['rms_keys']['NMATCH'],' objects.'
-                
+
                 self.write_fit_catalog()
 
                 # Plot residuals, if requested by the user
@@ -479,18 +479,18 @@ class Image(object):
                     if pars['residplot'] == 'both':
                         tweakutils.make_vector_plot(None,
                             data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                            figure_id=self.figure_id, vector=True,title=title_str)    
-                        ptype=False # Setup 
+                            figure_id=self.figure_id, vector=True,title=title_str)
+                        ptype=False # Setup
                         self.figure_id += 1
                     elif pars['residplot'] == 'vector':
                         ptype = True
                     else:
                         ptype = False
 
-                    # Generate new plot 
+                    # Generate new plot
                     tweakutils.make_vector_plot(None,
                         data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                        figure_id=self.figure_id, vector=ptype,title=title_str)    
+                        figure_id=self.figure_id, vector=ptype,title=title_str)
                     a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
                     if 'n' in a.lower():
                         self.perform_update = False
@@ -500,7 +500,7 @@ class Image(object):
                 self.fit['offset'] = [np.nan,np.nan]
                 self.fit['rot'] = np.nan
                 self.fit['scale'] = [np.nan]
-        
+
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
         if not self.identityfit and self.goodmatch:
@@ -537,7 +537,7 @@ class Image(object):
             updatehdr.updatewcs_with_shift(self.hdulist,self.refWCS,wcsname=wcsname,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
-                fit=self.fit['fit_matrix'], verbose=verbose_level, 
+                fit=self.fit['fit_matrix'], verbose=verbose_level,
                 xrms=self.fit['rms_keys']['RMS_RA'],yrms=self.fit['rms_keys']['RMS_DEC'])
 
             wnames = altwcs.wcsnames(self.hdulist,ext=extlist[0])
@@ -550,17 +550,17 @@ class Image(object):
             next_key = altkeys[-1]
             if self.perform_update:
                 log.info('    Writing out new WCS to alternate WCS: "%s"'%next_key)
-                
+
             self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
             if self.perform_update:
                 log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
                 # archive current WCS as alternate WCS with specified WCSNAME
-                # Start by archiving original PRIMARY WCS 
+                # Start by archiving original PRIMARY WCS
                 wnames = altwcs.wcsnames(self.hdulist,ext=extlist[0])
-                # Define a default WCSNAME in the case that the file to be 
+                # Define a default WCSNAME in the case that the file to be
                 # updated did not have the WCSNAME keyword defined already
-                # (as will happen when updating images that have not been 
+                # (as will happen when updating images that have not been
                 #  updated using updatewcs).
                 if len(wnames) == 0:
                     pri_wcsname = None
@@ -581,7 +581,7 @@ class Image(object):
 
         # add FIT values to image's PRIMARY header
         fimg = self.hdulist
-        
+
         if wcsname in ['',' ',None,"INDEF"]:
             wcsname = 'TWEAK'
         # Record values for the fit with both the PRIMARY WCS being updated
@@ -607,24 +607,24 @@ class Image(object):
         str_kw = ['descrip','history','author','hdrfile']
         for kw in str_kw:
             if pars[kw] == '': pars[kw] = None
-        
+
         # Call function with properly interpreted input parameters
-        # Syntax: write_headerlet(filename, hdrname, output, sciext='SCI', 
+        # Syntax: write_headerlet(filename, hdrname, output, sciext='SCI',
         #                    wcsname=None, wcskey=None, destim=None,
-        #                    sipname=None, npolfile=None, d2imfile=None, 
+        #                    sipname=None, npolfile=None, d2imfile=None,
         #                    author=None, descrip=None, history=None,
         #                    rms_ra=None, rms_dec=None, nmatch=None, catalog=None,
         #                    attach=True, clobber=False):
-        headerlet.write_headerlet(self.hdulist, pars['hdrname'], 
-                output=pars['hdrfile'], 
+        headerlet.write_headerlet(self.hdulist, pars['hdrname'],
+                output=pars['hdrfile'],
                 wcsname=None, wcskey=self.next_key, destim=None,
-                sipname=None, npolfile=None, d2imfile=None, 
-                author=pars['author'], descrip=pars['descrip'], 
+                sipname=None, npolfile=None, d2imfile=None,
+                author=pars['author'], descrip=pars['descrip'],
                 history=pars['history'],
                 nmatch=rms_pars['NMATCH'],catalog=pars['catalog'],
                 attach=pars['attach'], clobber=pars['clobber']
-            ) 
-        
+            )
+
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """
@@ -648,7 +648,7 @@ class Image(object):
             for xycat in self.catalog_names['input_xy']:
                 catstr += '  '+xycat
         return catstr + '\n'
-    
+
     def write_fit_catalog(self):
         """ Write out the catalog of all sources and resids used in the final fit.
         """
@@ -665,7 +665,7 @@ class Image(object):
                                                             self.fit['scale'][2]))
             f.write('#    X and Y rotation: %15.6g \n'%(self.fit['rot']))
             f.write('# \n# Input Coordinate Listing\n')
-            f.write('#     Column 1: X (reference)\n') 
+            f.write('#     Column 1: X (reference)\n')
             f.write('#     Column 2: Y (reference)\n')
             f.write('#     Column 3: X (input)\n')
             f.write('#     Column 4: Y (input)\n')
@@ -692,7 +692,7 @@ class Image(object):
                 chip_min = img_indx_orig.min()
                 chip_max = img_indx_orig.max()
                 cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
-                img_chip_id = np.where(cid, sci_extn, img_chip_id) 
+                img_chip_id = np.where(cid, sci_extn, img_chip_id)
             #
             f.write('#\n')
             f.close()
@@ -709,7 +709,7 @@ class Image(object):
                     ]
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
                                         append=True,format=["%15.6f","%8d"])
-        
+
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file.
         """
@@ -737,16 +737,16 @@ class Image(object):
 
     def clean(self):
         """ Remove intermediate files created.
-        """            
+        """
         for f in self.catalog_names:
             if 'match' in f:
-                if os.path.exists(self.catalog_names[f]): 
+                if os.path.exists(self.catalog_names[f]):
                     log.info('Deleting intermediate match file: %s'%
                                 self.catalog_names[f])
                     os.remove(self.catalog_names[f])
             else:
                 for extn in f:
-                    if os.path.exists(extn): 
+                    if os.path.exists(extn):
                         log.info('Deleting intermediate catalog: %d'%extn)
                         os.remove(extn)
 
@@ -756,7 +756,7 @@ class RefImage(object):
     """
     def __init__(self,wcs_list,catalog,xycatalog=None,**kwargs):
         if isinstance(wcs_list,str):
-            # Input was a filename for the reference image 
+            # Input was a filename for the reference image
             froot,fextn = fu.parseFilename(wcs_list)
             if fextn is None:
                 num_sci,extname = util.count_sci_extensions(froot)
@@ -781,7 +781,7 @@ class RefImage(object):
                 self.wcs = stwcs.wcsutil.HSTWCS(wcs_list)
             else: # User provided full HSTWCS object
                 self.wcs = wcs_list
-        
+
         self.name = self.wcs.filename
         self.refWCS = None
         # Interpret the provided catalog
@@ -794,7 +794,7 @@ class RefImage(object):
         if xycatalog is not None:
             self.xy_catalog = xycatalog
         else:
-            # Convert RA/Dec positions of source from refimage into 
+            # Convert RA/Dec positions of source from refimage into
             # X,Y positions based on WCS of refimage
             self.xy_catalog = [[],[],[],[]]
             xypos = self.wcs.all_sky2pix(self.all_radec[0],self.all_radec[1],1)
@@ -832,13 +832,13 @@ class RefImage(object):
             skypos = self.wcs.wcs_pix2sky(self.all_radec[0],self.all_radec[1],self.origin)
             self.all_radec = np.column_stack([skypos[0][:,np.newaxis],skypos[1][:,np.newaxis]])
         else:
-            log.info('Converting RA/Dec positions of reference sources to X,Y '+
-                        'positions in reference WCS...')
+            log.info('Converting RA/Dec positions of reference sources from "%s" to '%self.name+
+                        'X,Y positions in reference WCS...')
             self.refWCS = self.wcs
             outxy = self.wcs.wcs_sky2pix(self.all_radec[0],self.all_radec[1],self.origin)
             # convert outxy list to a Nx2 array
             self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
-            
+
 
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
@@ -868,12 +868,12 @@ def build_referenceWCS(catalog_list):
 def verify_hdrname(**pars):
     if not pars['headerlet']:
         return
-    
+
     # Insure a valid value for hdrname
     if util.is_blank(pars['hdrname']) and \
         not util.is_blank(pars['wcsname']):
             pars['hdrname'] = pars['wcsname']
-            
+
     # interpret input strings
     if pars['hdrname'].strip() == '':
         warnstr = 'WARNING:\n'

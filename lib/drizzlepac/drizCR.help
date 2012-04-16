@@ -66,7 +66,7 @@ def drizCR(input=None,configObj=None, editpars=False, **inputDict):
     inputDict is an optional python dictionary which contains parameter settings that will override the defaults
     
 
-Basic example of how to call static yourself from a python command line using the default parameters for the task. 
+Basic example of how to call drizCR yourself from a python command line using the default parameters for the task. 
 
 >from drizzlepac import drizCR
 >drizCR.drizCR('*flt.fits')

@@ -29,7 +29,7 @@ static_sig = float_kw(default=4.0, comment= "Sigma*rms below mode to clip for st
 [STEP 2: SKY SUBTRACTION ]
 skysub = boolean_kw(default=True, triggers='_section_switch_', comment= "Perform sky subtraction?")
 skywidth = float_or_none_kw(default=0.3, comment= "Bin width for sampling sky statistics (in sigma)")
-skystat = string_kw(default="median", comment= "Sky correction statistics parameter")
+skystat = option_kw("median","mode","mean", default="median", comment= "Sky correction statistics parameter")
 skylower = float_or_none_kw(default=None, comment= "Lower limit of usable data for sky (always in electrons)")
 skyupper = float_or_none_kw(default=None, comment= "Upper limit of usable data for sky (always in electrons)")
 skyclip = integer_kw(default=5, comment= "Number of clipping iterations")
