@@ -105,7 +105,7 @@ def setCommonInput(configObj, createOutwcs=True):
         return None, None
     # convert the filenames from asndict into a list of full filenames
     files = [fileutil.buildRootname(f) for f in asndict['order']]
-    
+
     # Check all input files to see whether or not they have been updated
     # with 'updatewcs', which would have been done in process_input()
     not_updated = []
@@ -140,7 +140,7 @@ def setCommonInput(configObj, createOutwcs=True):
 
     undistort = True
     if not configObj['coeffs']:
-        undistort = False 
+        undistort = False
 
     # interpret all 'bits' related parameters and convert them to integers
     configObj['resetbits'] = util.interpret_bits_value(configObj['resetbits'])
@@ -150,6 +150,26 @@ def setCommonInput(configObj, createOutwcs=True):
     step7name = util.getSectionName(configObj,7)
     configObj[step7name]['final_bits'] = util.interpret_bits_value(
                                         configObj[step7name]['final_bits'])
+    # Verify any refimage parameters to be used
+    step3aname = util.getSectionName(configObj,'3a')
+    if not util.verifyRefimage(configObj[step3aname]['driz_sep_refimage']):
+        msg = 'No refimage with WCS found!\n '+\
+        ' This could be caused by one of 2 problems:\n'+\
+        '   * filename does not specify an extension with a valid WCS.\n'+\
+        '   * can not find the file.\n'+\
+        'Please check the filename specified in the "refimage" parameter.'
+        print textutil.textbox(msg)
+        return None,None
+    step7aname = util.getSectionName(configObj,'7a')
+    if not util.verifyRefimage(configObj[step7aname]['final_refimage']):
+        msg = 'No refimage with WCS found!\n '+\
+        ' This could be caused by one of 2 problems:\n'+\
+        '   * filename does not specify an extension with a valid WCS.\n'+\
+        '   * can not find the file.\n'+\
+        'Please check the filename specified in the "refimage" parameter.'
+        print textutil.textbox(msg)
+        return None,None
+
 
     # Build imageObject list for all the valid, shift-updated input files
     log.info('-Creating imageObject List as input for processing steps.')
@@ -159,7 +179,7 @@ def setCommonInput(configObj, createOutwcs=True):
 
     # apply context parameter
     applyContextPar(imageObjectList, configObj['context'])
-    
+
     # reset DQ bits if requested by user
     resetDQBits(imageObjectList, cr_bits_value=configObj['resetbits'])
 
@@ -175,14 +195,14 @@ def setCommonInput(configObj, createOutwcs=True):
         outwcs.final_wcs.printwcs()
     else:
         outwcs = None
-        
+
     try:
         # Provide user with some information on resource usage for this run
         reportResourceUsage(imageObjectList, outwcs,
                             configObj.get('num_cores'))
     except ValueError:
         imageObjectList = None
-        
+
     return imageObjectList, outwcs
 
 
@@ -190,7 +210,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
     """ Provide some information to the user on the estimated resource
     usage (primarily memory) for this run.
     """
-    
+
     if outwcs is None:
         output_mem = 0
     else:
@@ -204,7 +224,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
     input_mem = 0
     for img in imageObjectList:
         numchips += img._numchips
-    
+
     # if we have the cpus and s/w, ok, but still allow user to set pool size
     pool_size = 1
     if util.can_parallel:
@@ -220,7 +240,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
             if chip_mem == 0:
                 chip_mem = cmem
     max_mem = (input_mem + output_mem + chip_mem*2)//(1024*1024)
-    
+
     print '*'*80
     print '*'
     print '*  Estimated memory usage:  >= %d Mb.'%(max_mem)
@@ -229,14 +249,14 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
     print '*  Cores used by task:      %d'%(pool_size)
     print '*'
     print '*'*80
-    
+
     if interactive:
         print 'Continue with processing?'
         k = raw_input("(y)es or (n)o")
         if 'n' in k.lower():
             raise ValueError
-    
-    
+
+
 def getMdriztabPars(input):
     """ High-level function for getting the parameters from MDRIZTAB
 
@@ -440,6 +460,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     # this ensures the list of input files has the same order on all platforms
     # it can have ifferent order because listdir() uses inode order, not unix type order
     #filelist.sort()
+
 
 
     return filelist, output, ivmlist, oldasndict
@@ -720,7 +741,7 @@ def manageInputCopies(filelist, **workinplace):
                 print '\nTurning OFF "preserve" and "restore" actions...\n'
                 printMsg = False # We only need to print this one time...
             copymade = True
-            
+
         if (workinplace['preserve'] and not os.path.exists(copyname)) \
                 and not workinplace['overwrite']:
             # Preserving a copy of the input, but only if not already archived
@@ -729,7 +750,7 @@ def manageInputCopies(filelist, **workinplace):
             shutil.copy(fname,copyname)
             os.chmod(copyname,0444) # make files read-only
             copymade = True
-            
+
         if 'restore' in workinplace and not copymade:
             if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['overwrite']:
                 print 'Restoring original input for ',fname,' from ',short_copyname

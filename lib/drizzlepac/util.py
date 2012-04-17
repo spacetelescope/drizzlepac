@@ -466,7 +466,6 @@ def verifyRefimage(refimage):
     if valid:
         # check for CD matrix in WCS object
         refwcs = wcsutil.HSTWCS(refimage)
-        print refwcs.wcs.has_cd()
         if not refwcs.wcs.has_cd():
             valid = False
         else:
