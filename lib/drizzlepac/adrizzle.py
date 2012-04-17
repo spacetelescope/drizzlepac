@@ -9,6 +9,8 @@ import outputimage,wcs_functions,processInput,util
 import stwcs
 from stwcs import distortion
 
+from . import adriz_versions
+
 try:
     import cdriz
 except ImportError:
@@ -25,8 +27,8 @@ __taskname__ = "drizzlepac.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
-__version__ = '4.1.0dev13255'
-__vdate__ = "27-June-2011"
+__version__ = adriz_versions.__full_version__
+__vdate__ = "17-Apr-2011"
 
 
 log = logutil.create_logger(__name__)
@@ -484,7 +486,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Setup the versions info dictionary for output to PRIMARY header
     # The keys will be used as the name reported in the header, as-is
     #
-    _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
+    _versions = {'AstroDrizzle':adriz_versions.__version__,
+                 'PyFITS':util.__pyfits_version__,
+                 'Numpy':util.__numpy_version__}
 
     # Set sub-sampling rate for drizzling
     #stepsize = 2.0
@@ -640,7 +644,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
         # See if we will be writing out data
         doWrite = chipIdxCopy == num_in_prod-1
 
-        
+
 #       debuglog('#chips='+str(chipIdxCopy)+', num_in_prod='+\
 #                 str(num_in_prod)+', single='+str(single)+', write='+\
 #                 str(doWrite)+', here='+str(here))
@@ -798,7 +802,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                 pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
                 fillval=paramDict['fillval'], stepsize=paramDict['stepsize'],
                 wcsmap=wcsmap)
-
     # Set up information for generating output FITS image
     #### Check to see what names need to be included here for use in _hdrlist
     chip.outputNames['driz_version'] = _vers

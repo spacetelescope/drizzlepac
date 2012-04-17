@@ -44,12 +44,12 @@ from . import sky
 from . import staticMask
 from . import util
 from . import wcs_functions
-
+from . import adriz_versions
 
 __taskname__ = "astrodrizzle"
 
-__version__ = '4.3.0'
-__vdate__ = '15-Mar-2012'
+__version__ = adriz_versions.__version__
+__vdate__ = adriz_versions.__vdate__
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations
@@ -176,7 +176,7 @@ def run(configobj, wcsmap=None):
 
     stateObj = configobj['STATE OF INPUT FILES']
     procSteps = util.ProcSteps()
-    
+
     print ('AstroDrizzle Version %s(%s) started at: %s\n' %
            (__version__, __vdate__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
@@ -251,12 +251,12 @@ def run(configobj, wcsmap=None):
 def help(file=None):
     """
     Print out syntax help for running astrodrizzle
-    
+
     Parameter
     ---------
     file : str (Default = None)
         If given, write out help to the filename specified by this parameter
-        Any previously existing file with this name will be deleted before 
+        Any previously existing file with this name will be deleted before
         writing out the help.
     """
     helpstr = getHelpAsString(docstring=True)

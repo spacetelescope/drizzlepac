@@ -489,7 +489,7 @@ class baseImageObject:
         # The use of fileutil.osfn interprets any environment variable, such as jref$,
         # used in the specification of the reference filename
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
-        
+
         try:
             handle = fileutil.openImage(filename, mode='readonly', memmap=0)
             hdu = fileutil.getExtn(handle,extn=exten)
@@ -535,11 +535,11 @@ class baseImageObject:
         Notes
         =====
         Return an array representing the exposure time per pixel for the detector
-        This method will be overloaded for IR detectors which have their own 
+        This method will be overloaded for IR detectors which have their own
         EXP arrays (WFC3/IR and NICMOS).
-        
+
         The method will return an array of the same shape as the image.
-        
+
         :unit: None
         """
         sci_chip = self._image[self.scienceExt,chip]
@@ -547,9 +547,9 @@ class baseImageObject:
             wtscl = sci_chip._exptime*sci_chip._exptime
         else:
             wtscl = sci_chip._exptime
-        
+
         return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*wtscl
-        
+
     def getdarkimg(self,chip):
         """
         Notes
@@ -671,16 +671,16 @@ class baseImageObject:
             self._image[self.scienceExt,chip].outputNames['dqmask'] = dqmask_name
         del dqarr
         return dqmask
-    
+
     def buildEXPmask(self,chip,dqarr):
         """ Builds a weight mask from an input DQ array and the exposure time
-        per pixel for this chip. 
+        per pixel for this chip.
         """
         log.info("Applying EXPTIME weighting to DQ mask for chip %s" %
                  chip)
         exparr = self.getexptimeimg(chip)
         expmask = exparr*dqarr
-        
+
         return expmask.astype(np.float32)
 
     def buildIVMmask(self,chip,dqarr,scale):
@@ -1031,12 +1031,12 @@ class imageObject(baseImageObject):
                 else:
                     subsky = 0.0
                 # .computedSky:   value to be applied by the
-                #                 adrizzle/ablot steps. 
+                #                 adrizzle/ablot steps.
                 # .subtractedSky: value already (or will be by adrizzle/ablot)
                 #                 subtracted from the image
                 sci_chip.subtractedSky = subsky
-                sci_chip.computedSky = subsky 
-                
+                sci_chip.computedSky = subsky
+
                 sci_chip.darkcurrent = 0.0
 
                 # The following attributes are used when working with sub-arrays
@@ -1055,7 +1055,7 @@ class imageObject(baseImageObject):
                 sci_chip.size2 = sci_chip.header['NAXIS2'] + np.round(sci_chip.ltv2)
                 #sci_chip.image_shape = (sci_chip.size2,sci_chip.size1)
                 sci_chip.image_shape = (sci_chip.header['NAXIS2'],sci_chip.header['NAXIS1'])
-                
+
                 # Interpret the array dtype by translating the IRAF BITPIX value
                 for dtype in IRAF_DTYPES.keys():
                     if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:
@@ -1103,7 +1103,12 @@ class imageObject(baseImageObject):
             _bunit = 'ELECTRONS/S'
         sci_chip._bunit = _bunit
         #
-        sci_chip.in_units = 'counts'
+        if '/s' in _bunit.lower():
+            _in_units = 'cps'
+        else:
+            _in_units = 'counts'
+        sci_chip.in_units = _in_units
+
 
 
 class WCSObject(baseImageObject):
@@ -1141,4 +1146,3 @@ class WCSObject(baseImageObject):
 
     def restore_wcs(self):
         self.wcs = copy.copy(self.default_wcs)
-

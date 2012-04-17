@@ -48,7 +48,7 @@ driz_sep_bits = string_kw(default="0", comment="Integer mask bit values consider
 
 [STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS]
 driz_sep_wcs = boolean_kw(default=False, triggers='_section_switch_', is_disabled_by='_rule3a_', comment= "Define custom WCS for separate output images?")
-driz_sep_refimage = string_kw(default="", comment="Reference image from which to obtain a WCS")
+driz_sep_refimage = string_kw(default="", triggers='_rule4a_', comment="Reference image from which to obtain a WCS")
 driz_sep_rot = float_or_none_kw(default=None, comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
 driz_sep_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
 driz_sep_outnx = integer_or_none_kw(default=None, comment="Size of separate output frame's X-axis (pixels)" )
@@ -95,7 +95,7 @@ final_units = option_kw("counts", "cps", default="cps", comment="Units for final
 
 [STEP 7a: CUSTOM WCS FOR FINAL OUTPUT]
 final_wcs = boolean_kw(default=False, triggers='_section_switch_', is_disabled_by='_rule7a_', comment= "Define custom WCS for final output image?")
-final_refimage = string_kw(default="", comment="Reference image from which to obtain a WCS")
+final_refimage = string_kw(default="", triggers='_rule4b_', comment="Reference image from which to obtain a WCS")
 final_rot = float_or_none_kw(default=None, comment= "Position Angle of drizzled image's Y-axis w.r.t. North (degrees)")
 final_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
 final_outnx = integer_or_none_kw(default=None, comment= "Size of FINAL output frame X-axis (pixels)")
@@ -117,5 +117,7 @@ _rule1_ = string_kw(default='', when='entry', code='from stsci.tools import chec
 _rule1a_ = string_kw(default='', when='defaults,entry', code='from drizzlepac import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
 _rule2_ = string_kw(default='', code='from drizzlepac import processInput; odict=TEAL.getDict(); newdict = processInput.getMdriztabPars(odict["input"]); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
+_rule4a_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT= util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')
+_rule4b_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT=util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')
 _rule5_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":False, "no":True}; OUT = tyfn[VAL]')
 _rule7a_ = string_kw(default='', code='OUT = VAL')

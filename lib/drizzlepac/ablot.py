@@ -9,6 +9,7 @@ import outputimage, wcs_functions, processInput, util
 import stwcs
 from stwcs import distortion
 
+from . import adriz_versions
 
 try:
     import cdriz
@@ -23,8 +24,8 @@ __taskname__ = 'drizzlepac.ablot'
 _blot_step_num_ = 5
 
 
-__version__ = '4.1.0dev13255'
-__vdate__ = "27-June-2011"
+__version__ = adriz_versions.__full_version__
+__vdate__ = "17-Apr-2012"
 
 
 log = logutil.create_logger(__name__)
@@ -242,7 +243,9 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
     # Setup the versions info dictionary for output to PRIMARY header
     # The keys will be used as the name reported in the header, as-is
     #
-    _versions = {'PyDrizzle':util.__version__,'PyFITS':util.__pyfits_version__,'Numpy':util.__numpy_version__}
+    _versions = {'AstroDrizzle':adriz_versions.__version__,
+                 'PyFITS':util.__pyfits_version__,
+                 'Numpy':util.__numpy_version__}
 
     _hdrlist = []
 
@@ -253,7 +256,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             print '    Blot: creating blotted image: ',chip.outputNames['data']
 
             #### Check to see what names need to be included here for use in _hdrlist
-            chip.outputNames['driz_version'] = _versions['PyDrizzle']
+            chip.outputNames['driz_version'] = _versions['AstroDrizzle']
             outputvals = chip.outputNames.copy()
             outputvals.update(img.outputValues)
             outputvals['blotnx'] = chip.wcs.naxis1
@@ -372,5 +375,3 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
     del mapping
 
     return _outsci
-
-

@@ -378,6 +378,21 @@ def displayEmptyInputWarningBox(display=True, parent=None):
         tkMessageBox.showwarning(parent=parent,message=msg, title="No valid inputs!")
     return "yes"
 
+def displayBadRefimageWarningBox(display=True, parent=None):
+    """ Displays a warning box for the 'input' parameter.
+    """
+    import tkMessageBox
+
+    if display:
+        msg = 'No refimage with WCS found!\n '+\
+        ' This could be caused by one of 2 problems:\n'+\
+        '   * filename does not specify an extension with a valid WCS.\n'+\
+        '   * can not find the file.\n'+\
+        'Please check the filename specified in the "refimage" parameter.'
+
+        tkMessageBox.showwarning(parent=parent,message=msg, title="No valid inputs!")
+    return "yes"
+
 def count_sci_extensions(filename):
     """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
     """
@@ -421,7 +436,45 @@ def verifyUpdatewcs(fname):
             updated = False
             break
     return updated
-    
+
+def verifyRefimage(refimage):
+    """
+    Verify that the value of refimage specified by the user points to an
+    extension with a proper WCS defined. It starts by making sure an extension gets
+    specified by the user when using a MEF file. The final check comes by looking
+    for a CD matrix in the WCS object itself. If either test fails, it returns
+    a value of False.
+    """
+    valid = True
+
+    # start by trying to see whether the code can even find the file
+    if is_blank(refimage):
+        valid=True
+        return valid
+
+    refroot = fileutil.parseFilename(refimage)[0]
+    if not os.path.exists(refroot):
+        valid = False
+        return valid
+
+    # start by checking to make sure user specified an extension specified
+    # when using an MEF as refimage
+    ftype = fileutil.isFits(refimage)
+    if ftype[1] == 'mef' and '[' not in refimage:
+        valid = False
+    # if a MEF has been specified, make sure extension contains a valid WCS
+    if valid:
+        # check for CD matrix in WCS object
+        refwcs = wcsutil.HSTWCS(refimage)
+        print refwcs.wcs.has_cd()
+        if not refwcs.wcs.has_cd():
+            valid = False
+        else:
+            valid = True
+        del refwcs
+
+    return valid
+
 def verifyFilePermissions(filelist, chmod=True):
     """ Verify that images specified in 'filelist' can be updated.
 
@@ -547,7 +600,7 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
             # variables specified by the user in the configObj filename are
             # expanded to the full path
             configObj = teal.load(fileutil.osfn(configObj))
-    
+
     # merge in the user values for this run
     # this, though, does not save the results for use later
     if input_dict not in [None,{}]:# and configObj not in [None, {}]:
@@ -731,7 +784,7 @@ def interpret_bits_value(val):
             intval = None
         else:
             intval = int(val)
-    
+
     return intval
 
 def update_input(filelist, ivmlist=None, removed_files=None):

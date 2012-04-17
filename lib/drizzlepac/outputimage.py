@@ -154,7 +154,7 @@ class OutputImage:
         """
         self.units = units
 
-    def writeFITS(self, template, sciarr, whtarr, ctxarr=None, 
+    def writeFITS(self, template, sciarr, whtarr, ctxarr=None,
                 versions=None, overwrite=yes, blend=True):
         """
         Generate PyFITS objects for each output extension
@@ -162,10 +162,10 @@ class OutputImage:
         headers.
 
         The arrays will have the size specified by 'shape'.
-        """     
+        """
         if not isinstance(template, list):
             template = [template]
-            
+
         if fileutil.findFile(self.output):
             if overwrite:
                 log.info('Deleting previous output product: %s' % self.output)
@@ -177,7 +177,7 @@ class OutputImage:
                 log.error('Quitting... Please remove before resuming '
                           'operations.')
                 raise IOError
-            
+
         # Default value for NEXTEND when 'build'== True
         nextend = 3
         if not self.build:
@@ -211,8 +211,8 @@ class OutputImage:
 
 
         # Get default headers from multi-extension FITS file
-        # If only writing out single drizzle product, blending needs to be 
-        # forced off as there is only 1 input to report, no blending needed 
+        # If only writing out single drizzle product, blending needs to be
+        # forced off as there is only 1 input to report, no blending needed
         if self.single:
             blend=False
 
@@ -229,7 +229,7 @@ class OutputImage:
         scihdr = newhdrs[1]
         errhdr = newhdrs[2]
         dqhdr = newhdrs[3]
-        
+
         # Setup primary header as an HDU ready for appending to output FITS file
         prihdu = pyfits.PrimaryHDU(header=prihdr,data=None)
 
@@ -323,7 +323,7 @@ class OutputImage:
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
-                addWCSKeywords(self.wcs,hdu.header,blot=self.blot, 
+                addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
                                 single=self.single)
             fo.append(hdu)
 
@@ -340,7 +340,7 @@ class OutputImage:
             hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
             hdu.header.update('EXTVER',1)
             hdu.header.update('EXTNAME','CTX')
-            
+
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
@@ -354,7 +354,7 @@ class OutputImage:
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
-                
+
             # write out file to disk
             fo.writeto(self.output)
             fo.close()
@@ -362,7 +362,7 @@ class OutputImage:
 
         else:
             print('-Generating simple FITS output: %s' % self.outdata)
-            
+
             fo = pyfits.HDUList()
 
             hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
@@ -417,7 +417,7 @@ class OutputImage:
                 if self.wcs:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
-                    addWCSKeywords(self.wcs,hdu.header, blot=self.blot, 
+                    addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
                                     single=self.single)
 
                 # Add primary header to output file...
@@ -516,7 +516,7 @@ class OutputImage:
 
         # Add version information as HISTORY cards to the header
         if versions != None:
-            ver_str = "PyDrizzle processing performed using: "
+            ver_str = "AstroDrizzle processing performed using: "
             hdr.add_history(ver_str)
             for k in versions.keys():
                 ver_str = '    '+str(k)+' Version '+str(versions[k])
@@ -524,7 +524,7 @@ class OutputImage:
 
 
 def cleanTemplates(scihdr,errhdr,dqhdr):
-    
+
     # Now, safeguard against having BSCALE and BZERO
     try:
         del scihdr['bscale']
@@ -549,7 +549,7 @@ def cleanTemplates(scihdr,errhdr,dqhdr):
 
 def getTemplates(fnames, blend=True):
     """ Process all headers to produce a set of combined headers
-        that follows the rules defined by each instrument. 
+        that follows the rules defined by each instrument.
 
     """
     if not blend:
@@ -557,10 +557,10 @@ def getTemplates(fnames, blend=True):
         newtab = None
     else:
         # apply rules to create final version of headers, plus table
-        newhdrs, newtab = blendheaders.get_blended_headers(inputs=fnames)  
-    
+        newhdrs, newtab = blendheaders.get_blended_headers(inputs=fnames)
+
     cleanTemplates(newhdrs[1],newhdrs[2],newhdrs[3])
-    
+
     return newhdrs, newtab
 
 def addWCSKeywords(wcs,hdr,blot=False,single=False):
@@ -588,7 +588,7 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False):
 
     if not blot:
         blendheaders.remove_distortion_keywords(hdr)
-    
+
 def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.
@@ -658,7 +658,7 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
     outhdu.append(prihdu)
     outhdu.append(scihdu)
     outhdu.writeto(outname)
-    
+
     if verbose:
         print('Created output image: %s' % outname)
 
@@ -678,5 +678,3 @@ def writeDrizKeywords(hdr,imgnum,drizdict):
         comment = drizdict[key]['comment']
         if comment is None: comment = ""
         hdr.update(_keyprefix+key,val,comment=drizdict[key]['comment'])
-
-

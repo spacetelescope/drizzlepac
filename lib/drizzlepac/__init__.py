@@ -34,6 +34,7 @@ from . import sky
 from . import staticMask
 from . import util
 from . import wcs_functions
+from . import adriz_versions
 
 
 # These modules provide the user-interfaces to coordinate transformation tasks
@@ -77,10 +78,10 @@ if False :
         pass
 
 else :
-    __version__ = '4.3.0dev'
+    __version__ = adriz_versions.__version__
 
 
-__vdate__ = '01-Mar-2012'
+__vdate__ = adriz_versions.__vdate__
 
 
 # Revision based version info
