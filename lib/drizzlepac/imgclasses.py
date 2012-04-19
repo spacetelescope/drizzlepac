@@ -50,20 +50,23 @@ class Image(object):
         # try to verify whether or not this image has been updated with
         # a full distortion model
         numsci,sciname = util.count_sci_extensions(filename)
+        numwht = fu.countExtn(filename,extname='WHT')
+
         if sciname == 'PRIMARY': sciext = 0
         else: sciext = 1
         wnames = altwcs.wcsnames(self.hdulist,ext=sciext)
         # If no WCSNAME keywords were found, raise the possibility that
         # the images have not been updated fully and may result in inaccurate
         # alignment
-        if len(wnames) == 0:
+        # use 'numwht' != 0 to indicate a DRZ file has been specified as input
+        if len(wnames) == 0 and numwht == 0:
             print textutil.textbox('WARNING:\n'
-            'Image %s may not have the full correct'%filename+
-            'WCS solution in the header as created by stwcs.updatewcs'
-            'Image alignment may not be taking into account the full'
+            'Image %s may not have the full correct '%filename+
+            'WCS solution in the header as created by stwcs.updatewcs '
+            'Image alignment may not be taking into account the full '
             'the full distortion solution. \n'
-            'Turning on the "updatewcs" parameter would insure that'
-            'that each image uses the full distortion model when'
+            'Turning on the "updatewcs" parameter would insure '
+            'that each image uses the full distortion model when '
             'aligning this image.\n', width=60
             )
 
@@ -521,7 +524,9 @@ class Image(object):
         if not self.perform_update:
             verbose_level = 0
         # Create WCSCORR table to keep track of WCS revisions anyway
-        wcscorr.init_wcscorr(self.hdulist)
+        if self.perform_update:
+            wcscorr.init_wcscorr(self.hdulist)
+
         extlist = []
         wcscorr_extname = self.ext_name
         if self.num_sci == 1 and self.ext_name == "PRIMARY":
@@ -529,6 +534,11 @@ class Image(object):
         else:
             for ext in range(1,self.num_sci+1):
                 extlist.append((self.ext_name,ext))
+                # add WCSNAME to SCI headers, if not provided (such as for
+                # drizzled images directly obtained from the archive pre-AD)
+                if ('wcsname' not in self.hdulist[self.ext_name,ext].header and
+                    self.hdulist.fileinfo(0)['filemode'] == 'update'):
+                    self.hdulist[self.ext_name,ext].header['wcsname'] = 'Default'
 
         next_key = altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
 
@@ -594,7 +604,7 @@ class Image(object):
 
         if self.perform_update:
             log.info('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
-        wcscorr.update_wcscorr(fimg,wcs_id=wcsname,extname=self.ext_name)
+            wcscorr.update_wcscorr(fimg,wcs_id=wcsname,extname=self.ext_name)
         #fimg.close()
         self.hdulist = fimg
 
