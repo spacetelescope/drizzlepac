@@ -20,8 +20,8 @@ This single value will then be used for object identification for all input expo
 skysigma : float
     The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0] 
 
-fwhmpsf : float
-    The convolution kernel width in pixels. [Default: 3.0] 
+conv_width : float
+    The convolution kernel width in pixels. Recommended values (~2x the PSF FWHM): ACS/WFC & WFC3/UVIS ~3.5 pix and WFC3/IR ~2.5 pix. [Default: 3.5] 
 
 peakmin : float
     This parameter allows the user to select only those sources whose peak value (in the units of the input image) is greater than this value. [Default: None] 
