@@ -187,6 +187,12 @@ information to correctly set this itself.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="drizzlepac.util.displayBadRefimageWarningBox">
+<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">displayBadRefimageWarningBox</tt><big>(</big><em>display=True</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.displayBadRefimageWarningBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays a warning box for the &#8216;input&#8217; parameter.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="drizzlepac.util.displayEmptyInputWarningBox">
 <tt class="descclassname">drizzlepac.util.</tt><tt class="descname">displayEmptyInputWarningBox</tt><big>(</big><em>display=True</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.displayEmptyInputWarningBox" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays a warning box for the &#8216;input&#8217; parameter.</p>
@@ -449,9 +455,27 @@ do not have write-permission, then quit.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="drizzlepac.util.verifyRefimage">
+<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">verifyRefimage</tt><big>(</big><em>refimage</em><big>)</big><a class="headerlink" href="#drizzlepac.util.verifyRefimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify that the value of refimage specified by the user points to an
+extension with a proper WCS defined. It starts by making sure an extension gets
+specified by the user when using a MEF file. The final check comes by looking
+for a CD matrix in the WCS object itself. If either test fails, it returns
+a value of False.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="drizzlepac.util.verifyUniqueWcsname">
 <tt class="descclassname">drizzlepac.util.</tt><tt class="descname">verifyUniqueWcsname</tt><big>(</big><em>fname</em>, <em>wcsname</em><big>)</big><a class="headerlink" href="#drizzlepac.util.verifyUniqueWcsname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Report whether or not the specified WCSNAME already exists in the file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.util.verifyUpdatewcs">
+<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">verifyUpdatewcs</tt><big>(</big><em>fname</em><big>)</big><a class="headerlink" href="#drizzlepac.util.verifyUpdatewcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify the existence of WCSNAME in the file.  If it is not present,
+report this to the user and raise an exception.  Returns True if WCSNAME
+was found in all SCI extensions.</p>
 </dd></dl>
 
 </div>

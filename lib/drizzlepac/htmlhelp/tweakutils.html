@@ -92,14 +92,14 @@
 <dt id="drizzlepac.tweakutils.build_pos_grid">
 <tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">build_pos_grid</tt><big>(</big><em>start</em>, <em>end</em>, <em>nstep</em>, <em>mesh=False</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.build_pos_grid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a grid of positions starting at X,Y given by &#8216;start&#8217;, and ending
-at X,Y given by &#8216;end&#8217;. The grid will be completely filled in X and Y by 
+at X,Y given by &#8216;end&#8217;. The grid will be completely filled in X and Y by
 every &#8216;step&#8217; interval.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakutils.build_xy_zeropoint">
 <tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">build_xy_zeropoint</tt><big>(</big><em>imgxy</em>, <em>refxy</em>, <em>searchrad=3.0</em>, <em>histplot=False</em>, <em>figure_id=1</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.build_xy_zeropoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a matrix which contains the delta between each XY position and 
+<dd><p>Create a matrix which contains the delta between each XY position and
 each UV position.</p>
 </dd></dl>
 
@@ -107,7 +107,7 @@ each UV position.</p>
 <dt id="drizzlepac.tweakutils.createWcsHDU">
 <tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">createWcsHDU</tt><big>(</big><em>wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.createWcsHDU" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a WCS header object that can be used to populate a reference WCS HDU.</p>
-<p>For most applications, stwcs.wcsutil.HSTWCS.wcs2header() 
+<p>For most applications, stwcs.wcsutil.HSTWCS.wcs2header()
 will work just as well.</p>
 </dd></dl>
 
@@ -231,17 +231,17 @@ be a file compatible for use with IRAF&#8217;s geomap.</p>
 <p><strong id="xsh">xsh</strong> : float</p>
 <p><strong id="ysh">ysh</strong> : float</p>
 <blockquote>
-<p>Shift in X and Y from linear fit to be applied to source positions 
+<p>Shift in X and Y from linear fit to be applied to source positions
 from the first image</p>
 </blockquote>
 <p><strong id="scale">scale</strong> : float</p>
 <blockquote>
-<p>Scale from linear fit to be applied to source positions from the 
+<p>Scale from linear fit to be applied to source positions from the
 first image</p>
 </blockquote>
 <p><strong id="fit">fit</strong> : array</p>
 <blockquote>
-<p>Array of linear coefficients for rotation (and scale?) in X and Y from 
+<p>Array of linear coefficients for rotation (and scale?) in X and Y from
 a linear fit to be applied to source positions from the first image</p>
 </blockquote>
 <p><strong id="vector">vector</strong> : bool [Default: True]</p>
@@ -259,7 +259,7 @@ will generate a set of 4 residuals plots instead</p>
 </blockquote>
 <p><strong id="linfit">linfit</strong> : bool [Default: False]</p>
 <blockquote>
-<p>If True, a linear fit to the residuals will be generated and 
+<p>If True, a linear fit to the residuals will be generated and
 added to the generated residuals plots</p>
 </blockquote>
 <p><strong id="rms">rms</strong> : bool [Default: True]</p>
@@ -346,7 +346,7 @@ label on the generated plot(s).</p>
 <dt id="drizzlepac.tweakutils.parse_colname">
 <tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">parse_colname</tt><big>(</big><em>colname</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.parse_colname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Common function to interpret input column names provided by the user.</p>
-<p>This function translates column specification provided by the user 
+<p>This function translates column specification provided by the user
 into a column number.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -392,7 +392,7 @@ and return a list of positions and distances</p>
 <tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">parse_skypos</tt><big>(</big><em>ra</em>, <em>dec</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.parse_skypos" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to parse RA and Dec input values and turn them into decimal degrees</p>
 <dl class="docutils">
-<dt>Input formats could be: </dt>
+<dt>Input formats could be:</dt>
 <dd>[&#8220;nn&#8221;,&#8221;nn&#8221;,&#8221;nn.nn&#8221;]
 &#8220;nn nn nn.nnn&#8221;
 &#8220;nn:nn:nn.nn&#8221;
@@ -407,7 +407,7 @@ nn.nnnnnnnn
 <tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">plot_zeropoint</tt><big>(</big><em>pars</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.plot_zeropoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot 2d histogram.</p>
 <dl class="docutils">
-<dt>Pars will be a dictionary containing: </dt>
+<dt>Pars will be a dictionary containing:</dt>
 <dd>data, figure_id, vmax, title_str, xp,yp, searchrad</dd>
 </dl>
 </dd></dl>

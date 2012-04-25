@@ -89,12 +89,12 @@
 <span id="catalogs"></span><h1>Classes to manage Catalogs and WCS&#8217;s<a class="headerlink" href="#classes-to-manage-catalogs-and-wcs-s" title="Permalink to this headline">¶</a></h1>
 <p>This module provides the classes used to generate and manage source catalogs for each input chip. Those positions can be transformed to undistorted sky positions, written out to files, or plotted using various methods defined for these classes.</p>
 <p class="graphviz">
-<img src="_images/inheritance-254430f28e16c76e876ec46d577beba5839ca897.png" alt="Inheritance diagram of drizzlepac.catalogs" usemap="#inheritancee4936daf73" class="inheritance"/>
+<img src="_images/inheritance-ec43254fd4ed335f6d071b581634fbc941ccc096.png" alt="Inheritance diagram of drizzlepac.catalogs" usemap="#inheritancee4936daf73" class="inheritance"/>
 <map id="inheritancee4936daf73" name="inheritancee4936daf73">
-<area shape="rect" id="node1" href="#drizzlepac.catalogs.Catalog" title="catalogs.Catalog" alt="" coords="7,31,140,57"/>
-<area shape="rect" id="node3" href="#drizzlepac.catalogs.UserCatalog" title="catalogs.UserCatalog" alt="" coords="196,5,361,32"/>
-<area shape="rect" id="node5" href="#drizzlepac.catalogs.ImageCatalog" title="catalogs.ImageCatalog" alt="" coords="191,56,367,83"/>
-<area shape="rect" id="node2" href="#drizzlepac.catalogs.RefCatalog" title="catalogs.RefCatalog" alt="" coords="416,5,573,32"/>
+<area shape="rect" id="node1" href="#drizzlepac.catalogs.UserCatalog" title="catalogs.UserCatalog" alt="" coords="196,5,361,32"/>
+<area shape="rect" id="node4" href="#drizzlepac.catalogs.RefCatalog" title="catalogs.RefCatalog" alt="" coords="416,5,573,32"/>
+<area shape="rect" id="node2" href="#drizzlepac.catalogs.Catalog" title="catalogs.Catalog" alt="" coords="7,31,140,57"/>
+<area shape="rect" id="node6" href="#drizzlepac.catalogs.ImageCatalog" title="catalogs.ImageCatalog" alt="" coords="191,56,367,83"/>
 </map>
 </p>
 <dl class="function">
@@ -143,7 +143,7 @@ associated source catalog</p>
 Python-based, daofind-like algorithms</p>
 <p>Required input <em class="xref py py-obj">kwargs</em> parameters:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">computesig</span><span class="p">,</span> <span class="n">skysigma</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">peakmin</span><span class="p">,</span> <span class="n">peakmax</span><span class="p">,</span>
-<span class="n">hmin</span><span class="p">,</span> <span class="n">fwhmpsf</span><span class="p">,</span> <span class="p">[</span><span class="n">roundlim</span><span class="p">,</span> <span class="n">sharplim</span><span class="p">]</span>
+<span class="n">hmin</span><span class="p">,</span> <span class="n">conv_width</span><span class="p">,</span> <span class="p">[</span><span class="n">roundlim</span><span class="p">,</span> <span class="n">sharplim</span><span class="p">]</span>
 </pre></div>
 </div>
 <dl class="method">
