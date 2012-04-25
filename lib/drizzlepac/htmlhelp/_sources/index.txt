@@ -35,13 +35,26 @@ Documentation for the replacement task for IRAF's `tweakshifts`, currently named
    :maxdepth: 2
    
    tweakreg
-   imagefind
+   imagefindpars
    image
    catalogs
    wcscorr
    tweakutils
    updatehdr
+
+Coordinate Transformation Tasks
+-------------------------------
+These tasks support transformations of source positions to and from 
+distorted and drizzled images. 
+
+.. toctree::
+   :maxdepth: 1
    
+   pixtopix
+   pixtosky
+   skytopix
+
+
 
 ACS Header Update Task
 ----------------------
