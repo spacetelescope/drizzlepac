@@ -80,7 +80,6 @@ class WCSMap:
         """
         return wcs.wcs_sky2pix(ra,dec,1)
 
-
 def get_pix_ratio_from_WCS(input,output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""
     return output.pscale/input.pscale
@@ -97,6 +96,26 @@ class IdentityMap:
 
     def forward(self,pixx,pixy):
         return pixx,pixy
+##
+#
+#### Linear transformation mapper
+#
+##
+class LinearMap:
+    def __init__(self,xsh=0.0,ysh=0.0,rot=0.0,scale=1.0):
+        # Define rotation matrix
+        _theta = np.deg2rad(rot)
+        _mrot = np.zeros(shape=(2,2),dtype=np.float64)
+        _mrot[0] = (np.cos(_theta),np.sin(_theta))
+        _mrot[1] = (-np.sin(_theta),np.cos(_theta))
+        # apply scaling factor to rotation matrix
+        self.transform = _mrot*scale
+        # define offset to be applied to positions after rotation
+        self.offset = [[xsh],[ysh]]
+
+    def forward(self,pixx,pixy):
+        return np.dot(self.transform,[pixx,pixy])+self.offset
+
 ##
 #
 #### Stand-alone functions for WCS handling
@@ -824,4 +843,3 @@ def apply_fitlin(data,P,Q):
         xy1x = xy1[:,0] + xsh
         xy1y = xy1[:,1] + ysh
     return xy1x,xy1y
-

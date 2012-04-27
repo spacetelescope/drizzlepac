@@ -221,6 +221,7 @@ class OutputImage:
         # file FITS headers.
         # NOTE: These are HEADER objects, not HDUs
         #prihdr,scihdr,errhdr,dqhdr = getTemplates(template)
+        self.fullhdrs, intab = getTemplates(template, blend=False)
 
         newhdrs, newtab = getTemplates(template,blend=blend)
         if newtab is not None: nextend += 1 # account for new table extn
@@ -241,9 +242,10 @@ class OutputImage:
         # Update the ROOTNAME with the new value as well
         _indx = self.output.find('_drz')
         if _indx < 0:
-            prihdu.header.update('ROOTNAME', self.output)
+            rootname_val = self.output
         else:
-            prihdu.header.update('ROOTNAME', self.output[:_indx])
+            rootname_val = self.output[:_indx]
+        prihdu.header.update('ROOTNAME', rootname_val)
 
 
         # Get the total exposure time for the image
@@ -282,21 +284,25 @@ class OutputImage:
                 scihdr.update('NCOMBINE', self.parlist[0]['nimages'])
 
             # If BUNIT keyword was found and reset, then
-
+            bunit_last_kw = self.find_kwupdate_location(scihdr,'bunit')
             if self.bunit is not None:
                 comment_str = "Units of science product"
                 if self.bunit.lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
-                scihdr.update('BUNIT',self.bunit,comment=comment_str)
+                scihdr.update('BUNIT',self.bunit,comment=comment_str,
+                              after=bunit_last_kw)
             else:
                 # check to see whether to update already present BUNIT comment
                 if scihdr.has_key('bunit') and scihdr['bunit'].lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
-                    scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str)
+                    scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str,
+                              after=bunit_last_kw)
 
             # Add WCS keywords to SCI header
             if self.wcs:
-                addWCSKeywords(self.wcs,scihdr,blot=self.blot,single=self.single)
+                pre_wcs_kw = self.find_kwupdate_location(scihdr,'CD1_1')
+                addWCSKeywords(self.wcs,scihdr,blot=self.blot,
+                                single=self.single, after=pre_wcs_kw)
 
         ##########
         # Now, build the output file
@@ -309,8 +315,9 @@ class OutputImage:
             fo.append(prihdu)
 
             hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
-            hdu.header.update('EXTNAME','SCI')
-            hdu.header.update('EXTVER',1)
+            last_kw = self.find_kwupdate_location(scihdr,'EXTNAME')
+            hdu.header.update('EXTNAME','SCI',after=last_kw)
+            hdu.header.update('EXTVER',1,after='EXTNAME')
             fo.append(hdu)
 
             # Build WHT extension here, if requested...
@@ -318,13 +325,13 @@ class OutputImage:
                 errhdr.update('CCDCHIP','-999')
 
             hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
-            hdu.header.update('EXTVER',1)
-            hdu.header.update('EXTNAME','WHT')
+            hdu.header.update('EXTNAME','WHT',after=last_kw)
+            hdu.header.update('EXTVER',1,after='EXTNAME')
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
-                                single=self.single)
+                                single=self.single, after=pre_wcs_kw)
             fo.append(hdu)
 
             # Build CTX extension here
@@ -338,14 +345,14 @@ class OutputImage:
                 _ctxarr = None
 
             hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
-            hdu.header.update('EXTVER',1)
-            hdu.header.update('EXTNAME','CTX')
+            hdu.header.update('EXTNAME','CTX',after=last_kw)
+            hdu.header.update('EXTVER',1,after='EXTNAME')
 
             if self.wcs:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
-                                single=self.single)
+                                single=self.single, after=pre_wcs_kw)
             fo.append(hdu)
 
             # remove all alternate WCS solutions from headers of this product
@@ -383,7 +390,7 @@ class OutputImage:
             if self.wcs:
                 # Add WCS keywords to header
                 addWCSKeywords(self.wcs, hdu.header, blot=self.blot,
-                                single=self.single)
+                                single=self.single, after=pre_wcs_kw)
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -418,7 +425,7 @@ class OutputImage:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
                     addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
-                                    single=self.single)
+                                    single=self.single, after=pre_wcs_kw)
 
                 # Add primary header to output file...
                 fwht.append(hdu)
@@ -445,20 +452,55 @@ class OutputImage:
                 # header to Primary header...
                 if dqhdr:
                     for _card in dqhdr.ascard:
-                        if _card.key not in RESERVED_KEYS and hdu.header.has_key(_card.key) == 0:
+                        if ( (_card.key not in RESERVED_KEYS) and
+                                (hdu.header.has_key(_card.key)) ) == 0:
                             hdu.header.ascard.append(_card)
                 hdu.header.update('filename', self.outcontext)
                 if self.wcs:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
                     addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
-                                    single=self.single)
+                                    single=self.single, after=pre_wcs_kw)
 
                 fctx.append(hdu)
                 # remove all alternate WCS solutions from headers of this product
                 wcs_functions.removeAllAltWCS(fctx,[0])
                 fctx.writeto(self.outcontext)
                 del fctx,hdu
+
+    def find_kwupdate_location(self,hdr,keyword):
+        """
+        Find the last keyword in the output header that comes before the new
+        keyword in the original, full input headers.
+        This will rely on the original ordering of keywords from the original input
+        files in order to place the updated keyword in the correct location in case
+        the keyword was removed from the output header prior to calling this method.
+        """
+        # start by looping through the full templates
+        kw_list = None
+        last_kw = None
+        for extn in self.fullhdrs:
+            if keyword in extn:
+                indx = extn.ascard.index_of(keyword)
+                kw_list = extn.keys()[:indx]
+                break
+        if kw_list:
+            # find which keyword from this list exists in header to be updated
+            for kw in kw_list[::-1]:
+                if kw in hdr:
+                    last_kw = kw
+                    break
+        # determine new value for the last keyword found before the HISTORY kws
+        if last_kw is None:
+            hdrkeys = hdr.keys()
+            i = -1
+            last_kw = hdrkeys[i]
+            while last_kw == 'HISTORY':
+                i -= 1
+                last_kw = hdrkeys[i]
+
+        return last_kw
+
 
     def addDrizKeywords(self,hdr,versions):
         """ Add drizzle parameter keywords to header. """
@@ -542,10 +584,11 @@ def cleanTemplates(scihdr,errhdr,dqhdr):
     # Simply copy them from scihdr if they don't exist...
     if errhdr != None and dqhdr != None:
         for keyword in WCS_KEYWORDS:
-            if keyword not in errhdr:
-                errhdr.update(keyword,scihdr[keyword])
-            if keyword not in dqhdr:
-                dqhdr.update(keyword,scihdr[keyword])
+            if keyword in scihdr:
+                if keyword not in errhdr:
+                    errhdr[keyword] = scihdr[keyword]
+                if keyword not in dqhdr:
+                    dqhdr[keyword]= scihdr[keyword]
 
 def getTemplates(fnames, blend=True):
     """ Process all headers to produce a set of combined headers
@@ -563,7 +606,7 @@ def getTemplates(fnames, blend=True):
 
     return newhdrs, newtab
 
-def addWCSKeywords(wcs,hdr,blot=False,single=False):
+def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     """ Update input header 'hdr' with WCS keywords.
     """
     wname = wcs.wcs.name
@@ -571,20 +614,20 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False):
         wname = 'DRZWCS'
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
-    hdr.update('ORIENTAT',wcs.orientat)
-    hdr.update('CD1_1',wcs.wcs.cd[0][0])
-    hdr.update('CD1_2',wcs.wcs.cd[0][1])
-    hdr.update('CD2_1',wcs.wcs.cd[1][0])
-    hdr.update('CD2_2',wcs.wcs.cd[1][1])
-    hdr.update('CRVAL1',wcs.wcs.crval[0])
-    hdr.update('CRVAL2',wcs.wcs.crval[1])
-    hdr.update('CRPIX1',wcs.wcs.crpix[0])
-    hdr.update('CRPIX2',wcs.wcs.crpix[1])
-    hdr.update('WCSNAME',wname)
-    hdr.update('VAFACTOR',1.0)
+    hdr.update('WCSNAME',wname, after=after)
+    hdr.update('VAFACTOR',1.0, after=after)
+    hdr.update('ORIENTAT',wcs.orientat, after=after)
     if not hdr.has_key('ctype1'):
-        hdr.update('CTYPE1',wcs.wcs.ctype[0])
-        hdr.update('CTYPE2',wcs.wcs.ctype[1])
+        hdr.update('CTYPE2',wcs.wcs.ctype[1], after=after)
+        hdr.update('CTYPE1',wcs.wcs.ctype[0], after=after)
+    hdr.update('CRPIX2',wcs.wcs.crpix[1], after=after)
+    hdr.update('CRPIX1',wcs.wcs.crpix[0], after=after)
+    hdr.update('CRVAL2',wcs.wcs.crval[1], after=after)
+    hdr.update('CRVAL1',wcs.wcs.crval[0], after=after)
+    hdr.update('CD2_2',wcs.wcs.cd[1][1], after=after)
+    hdr.update('CD2_1',wcs.wcs.cd[1][0], after=after)
+    hdr.update('CD1_2',wcs.wcs.cd[0][1], after=after)
+    hdr.update('CD1_1',wcs.wcs.cd[0][0], after=after)
 
     if not blot:
         blendheaders.remove_distortion_keywords(hdr)
@@ -637,9 +680,6 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
         prihdr.update('EXTEND',pyfits.TRUE,after='NAXIS')
         prihdr.update('FILENAME', outname)
 
-    for _card in wcshdr.ascard:
-        scihdr.update(_card.key, _card.value, comment=_card.comment)
-
     if outextname == '':
         outextname = 'sci'
     if outextver == 0: outextver = 1
@@ -661,7 +701,6 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
 
     if verbose:
         print('Created output image: %s' % outname)
-
 
 def writeDrizKeywords(hdr,imgnum,drizdict):
     """ Write basic drizzle-related keywords out to image header as a record

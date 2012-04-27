@@ -91,7 +91,7 @@
 <span class="target" id="module-drizzlepac.updatehdr"></span><dl class="function">
 <dt id="drizzlepac.updatehdr.update_from_shiftfile">
 <tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_from_shiftfile</tt><big>(</big><em>shiftfile</em>, <em>wcsname=None</em>, <em>force=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_from_shiftfile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update headers of all images specified in shiftfile with shifts 
+<dd><p>Update headers of all images specified in shiftfile with shifts
 from shiftfile.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -105,7 +105,7 @@ from shiftfile.</p>
 <p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
 <p>Label to give to new WCS solution being created by this fit. If
-a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the 
+a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
 label. [Default =None]</p>
 </blockquote>
 <p><strong id="force">force</strong> : bool</p>
@@ -124,7 +124,7 @@ wcsname? [Default=False]</p>
 <tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_wcs</tt><big>(</big><em>image</em>, <em>extnum</em>, <em>new_wcs</em>, <em>wcsname=''</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_wcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates the WCS of the specified extension number with the new WCS
 after archiving the original WCS.</p>
-<p>The value of &#8216;new_wcs&#8217; needs to be the full 
+<p>The value of &#8216;new_wcs&#8217; needs to be the full
 HSTWCS object.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -170,8 +170,8 @@ generated for use with &#8216;make_vector_plot()&#8217;.</p>
 <tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="image">image</strong> : str or PyFITS.HDUList object</p>
 <blockquote>
-<p>Filename, or PyFITS object, of image with WCS to be updated. 
-All extensions with EXTNAME matches the value of the &#8216;sciext&#8217; 
+<p>Filename, or PyFITS object, of image with WCS to be updated.
+All extensions with EXTNAME matches the value of the &#8216;sciext&#8217;
 parameter value (by default, all &#8216;SCI&#8217; extensions) will be updated.</p>
 </blockquote>
 <p><strong id="reference">reference</strong> : str</p>
@@ -183,7 +183,7 @@ used to define the tangent plane in which all the fit parameters
 <p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
 <p>Label to give to new WCS solution being created by this fit. If
-a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the 
+a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
 label. [Default =None]</p>
 </blockquote>
 <p><strong id="rot">rot</strong> : float</p>
@@ -208,18 +208,18 @@ label. [Default =None]</p>
 </blockquote>
 <p><strong id="fit">fit</strong> : arr</p>
 <blockquote>
-<p>Linear coefficients for fit 
+<p>Linear coefficients for fit
 [Default = None]</p>
 </blockquote>
 <p><strong id="xrms">xrms</strong> : float</p>
 <blockquote>
-<p>RMS of fit in RA (in decimal degrees) that will be recorded as 
+<p>RMS of fit in RA (in decimal degrees) that will be recorded as
 CRDER1 in WCS and header
 [Default = None]</p>
 </blockquote>
 <p><strong id="yrms">yrms</strong> : float</p>
 <blockquote>
-<p>RMS of fit in Dec (in decimal degrees) that will be recorded as 
+<p>RMS of fit in Dec (in decimal degrees) that will be recorded as
 CRDER2 in WCS and header
 [Default = None]</p>
 </blockquote>
@@ -234,7 +234,7 @@ wcsname? [Default=False]</p>
 </blockquote>
 <p><strong id="sciext">sciext</strong> : string</p>
 <blockquote class="last">
-<p>Value of FITS EXTNAME keyword for extensions with WCS headers to 
+<p>Value of FITS EXTNAME keyword for extensions with WCS headers to
 be updated with the fit values. [Default=&#8217;SCI&#8217;]</p>
 </blockquote>
 </td>
@@ -243,7 +243,7 @@ be updated with the fit values. [Default=&#8217;SCI&#8217;]</p>
 </table>
 <p class="rubric">Notes</p>
 <p>The algorithm used to apply the provided fit solution to the image
-involves applying the following steps to the WCS of each of the 
+involves applying the following steps to the WCS of each of the
 input image&#8217;s chips:</p>
 <ol class="arabic">
 <li><dl class="first docutils">

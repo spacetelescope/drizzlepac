@@ -133,6 +133,16 @@ plist['expend']   - end time of combined exposure</pre>
 </dd></dl>
 
 <dl class="method">
+<dt id="drizzlepac.outputimage.OutputImage.find_kwupdate_location">
+<tt class="descname">find_kwupdate_location</tt><big>(</big><em>hdr</em>, <em>keyword</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.find_kwupdate_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the last keyword in the output header that comes before the new
+keyword in the original, full input headers.
+This will rely on the original ordering of keywords from the original input
+files in order to place the updated keyword in the correct location in case
+the keyword was removed from the output header prior to calling this method.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="drizzlepac.outputimage.OutputImage.set_bunit">
 <tt class="descname">set_bunit</tt><big>(</big><em>bunit</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.set_bunit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method used to update the value of the bunit attribute.</p>

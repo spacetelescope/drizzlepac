@@ -229,6 +229,8 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
     pool_size = 1
     if util.can_parallel:
         pool_size = util.get_pool_size(num_cores)
+    pool_size = pool_size if (numchips >= pool_size) else numchips
+
     inimg = 0
     chip_mem = 0
     for img in imageObjectList:
