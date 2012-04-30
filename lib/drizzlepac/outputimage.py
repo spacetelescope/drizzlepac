@@ -325,6 +325,7 @@ class OutputImage:
                 errhdr.update('CCDCHIP','-999')
 
             hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
+            last_kw = self.find_kwupdate_location(errhdr,'EXTNAME')
             hdu.header.update('EXTNAME','WHT',after=last_kw)
             hdu.header.update('EXTVER',1,after='EXTNAME')
             if self.wcs:
@@ -345,6 +346,7 @@ class OutputImage:
                 _ctxarr = None
 
             hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
+            last_kw = self.find_kwupdate_location(dqhdr,'EXTNAME')
             hdu.header.update('EXTNAME','CTX',after=last_kw)
             hdu.header.update('EXTVER',1,after='EXTNAME')
 
