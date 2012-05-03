@@ -79,7 +79,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     # input_dict['mdriztab'] = mdriztab
 
     # Load any user-specified configobj
-    if isinstance(configobj, str):
+    if isinstance(configobj, str) and configobj != 'defaults':
         if not os.path.exists(configobj):
             raise RuntimeError('Cannot find .cfg file: '+configobj)
         configobj = teal.load(configobj, strict=False)
