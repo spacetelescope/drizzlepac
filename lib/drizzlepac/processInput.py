@@ -612,7 +612,8 @@ def changeSuffixinASN(asnfile, suffix):
     # Open up the new copy and convert all MEMNAME's to lower-case
     fasn = pyfits.open(_new_asn,'update')
     for i in xrange(len(fasn[1].data)):
-        fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME')+'_'+suffix)
+        if "prod" not in fasn[1].data[i].field('MEMTYPE').lower():
+            fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME')+'_'+suffix)
     fasn.close()
 
     return _new_asn
