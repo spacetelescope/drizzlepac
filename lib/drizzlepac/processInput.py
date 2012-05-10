@@ -45,8 +45,10 @@ import resetbits
 import mdzhandler
 import imageObject
 
-
 log = logutil.create_logger(__name__)
+
+# list parameters which correspond to steps where multiprocessing can be used
+parallel_steps = [(3,'driz_separate'),(6,'driz_cr')]
 
 
 def setCommonInput(configObj, createOutwcs=True):
@@ -142,6 +144,17 @@ def setCommonInput(configObj, createOutwcs=True):
     if not configObj['coeffs']:
         undistort = False
 
+    # determine whether parallel processing will be performed
+    use_parallel = False
+    if util.can_parallel:
+        # look to see whether steps which can be run using multiprocessing
+        # have been turned on
+        for stepnum in parallel_steps:
+            sname = util.getSectionName(configObj,stepnum[0])
+            if configObj[sname][stepnum[1]]:
+                use_parallel = True
+                break
+
     # interpret all 'bits' related parameters and convert them to integers
     configObj['resetbits'] = util.interpret_bits_value(configObj['resetbits'])
     step3name = util.getSectionName(configObj,3)
@@ -198,15 +211,18 @@ def setCommonInput(configObj, createOutwcs=True):
 
     try:
         # Provide user with some information on resource usage for this run
-        reportResourceUsage(imageObjectList, outwcs,
-                            configObj.get('num_cores'))
+        # raises ValueError Exception in interactive mode and user quits
+        num_cores = configObj.get('num_cores') if use_parallel else 1
+
+        reportResourceUsage(imageObjectList, outwcs, num_cores)
     except ValueError:
         imageObjectList = None
 
     return imageObjectList, outwcs
 
 
-def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
+def reportResourceUsage(imageObjectList, outwcs, num_cores,
+                        interactive=False):
     """ Provide some information to the user on the estimated resource
     usage (primarily memory) for this run.
     """
@@ -237,15 +253,15 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores, interactive=False):
         for chip in range(img._numchips):
             cmem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
             inimg += 1
-            if inimg < numchips:
+            if inimg < pool_size:
                 input_mem += cmem*2
             if chip_mem == 0:
                 chip_mem = cmem
-    max_mem = (input_mem + output_mem + chip_mem*2)//(1024*1024)
+    max_mem = (input_mem + output_mem*pool_size + chip_mem*2)//(1024*1024)
 
     print '*'*80
     print '*'
-    print '*  Estimated memory usage:  >= %d Mb.'%(max_mem)
+    print '*  Estimated memory usage:  up to %d Mb.'%(max_mem)
     print '*  Output image size:       %d X %d pixels. '%(owcs.naxis1,owcs.naxis2)
     print '*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024))
     print '*  Cores used by task:      %d'%(pool_size)
