@@ -1,10 +1,9 @@
 
-from __future__ import division 
+from __future__ import division
 import sys
 
 import math
 import numpy as np
-import scipy as sp
 from stsci import convolve
 from stsci import ndimage as ndim
 
@@ -12,7 +11,6 @@ import stsci.imagestats as imagestats
 
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):
 #from numpy import *
-#from scipy import optimize
 
 fwhm2sig = 2*np.sqrt(2*np.log(2))
 
@@ -24,10 +22,10 @@ def gaussian1(height, x0, y0, fwhm, nsigma=1.5, ratio=1., theta=0.0):
     fwhm - full width at half maximum of the observation
     nsigma - cut the gaussian at nsigma
     ratio = ratio of xsigma/ysigma
-    theta - angle of position angle of the major axis measured 
+    theta - angle of position angle of the major axis measured
     counter-clockwise from the x axis
     """
-    
+
     xsigma = (1./fwhm2sig) * fwhm # computes a kernel that matches daofind
     ysigma = ratio * xsigma
     if ratio == 0: # 1D Gaussian
@@ -46,14 +44,14 @@ def gaussian1(height, x0, y0, fwhm, nsigma=1.5, ratio=1., theta=0.0):
         a = (math.cos(theta)**2/xsigma**2 + math.sin(theta)**2/ysigma**2)
         b = 2 * math.cos(theta) * math.sin(theta) *(1/xsigma**2-1./ysigma**2)
         c = (math.sin(theta)**2/xsigma**2 + math.cos(theta)**2/ysigma**2)
-        
+
     discrim = b**2 - 4*a*c
     f = nsigma**2/2.
     #nx = int(2*max(2, math.sqrt(-8*c*f/discrim)))
     #ny = int(2*max(2, math.sqrt(-8*a*f/discrim)))
-    
+
     return lambda x, y: height * np.exp(-0.5* (a*(x-x0)**2 + 2*b*(x-x0)*(y-y0) + c*(y-y0)**2))
-    
+
 
 def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
     xsigma = (1/fwhm2sig) * fwhm
@@ -77,7 +75,7 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
         theta = np.deg2rad(theta)
         a = math.cos(theta)**2/(xsigma**2) + math.sin(theta)**2/(ysigma**2)
         b = 2 * math.cos(theta) * math.sin(theta) *((1.0/xsigma**2)-(1./ysigma**2))
-        c = math.sin(theta)**2/xsigma**2 + math.cos(theta)**2/ysigma**2    
+        c = math.sin(theta)**2/xsigma**2 + math.cos(theta)**2/ysigma**2
         discrim = b**2 - 4*a*c
         f = nsigma**2/2.
         nx = int(2*max(2, math.sqrt(-8*c*f/discrim)))+1
@@ -114,32 +112,14 @@ def moments(data,cntr):
     return height, x, y, width_x, width_y
 
 def errfunc(p, *args):
-    
+
     func = gaussian1(*p)
     ret =np.ravel(func(*args[1:]) - args[0])
     return ret
 
-def fitgaussian(data,cntr):
-    """Returns (height, x, y, width_x, width_y)
-    the gaussian parameters of a 2D distribution found by a fit
-    """
-    from scipy import optimize
-    if data.shape[1] < 3 or data.shape[0] < 3:
-        raise ValueError
-
-    params = moments(data,cntr)
-    #params = gausspars(data, fwhm) 
-    #errorfunction = lambda p: np.ravel(gaussian1(*p)(*np.indices(data.shape)) -
-    #                             data)
-    y,x = np.indices(data.shape)
-
-    p = optimize.leastsq(errfunc, params, args=(data, x,y), maxfev=10)
-    return p[0]
-
-
-def findstars(jdata, fwhm, threshold, skymode, 
+def findstars(jdata, fwhm, threshold, skymode,
                 peakmin=None, peakmax=None,
-                ratio=1, nsigma=1.5, theta=0.):    
+                ratio=1, nsigma=1.5, theta=0.):
 
     # Define convolution inputs
     nx, ny = gausspars(fwhm, nsigma=nsigma, ratio= ratio, theta=theta)
@@ -174,15 +154,15 @@ def findstars(jdata, fwhm, threshold, skymode,
     ldata,nobj=ndim.label(tdata,structure=s)
     fobjects = ndim.find_objects(ldata)
     #print 'Number of potential sources: ',nobj
-    
+
     fluxes = []
     fitind = []
     if nobj < 2:
         print 'No objects found for this image. Please check value of "threshold".'
         return fitind,fluxes
-    
+
     # determine center of each source, while removing spurious sources or
-    # applying limits defined by the user 
+    # applying limits defined by the user
     ninit = 0
     ninit2 = 0
     minxy = gradius * 2 + 1
@@ -195,7 +175,7 @@ def findstars(jdata, fwhm, threshold, skymode,
         yr1 = ss[0].stop+gradius+1
         if yr0 <= 0: yr0 = 0
         if yr1 >= jdata.shape[0]: yr1 = jdata.shape[0]
-        
+
         xr0 = ss[1].start - gradius
         xr1 = ss[1].stop + gradius+1
         if xr0 <= 0: xr0 = 0
@@ -203,9 +183,9 @@ def findstars(jdata, fwhm, threshold, skymode,
 
         ssnew = (slice(yr0,yr1),slice(xr0,xr1))
         region = tdata[ssnew]
-        
+
         if region.shape[0] < minxy or region.shape[1] < minxy:
-            continue 
+            continue
 
         cntr = centroid(region)
 
@@ -215,17 +195,17 @@ def findstars(jdata, fwhm, threshold, skymode,
         maxpos = (int(cntr[1]+0.5)+ssnew[0].start,int(cntr[0]+0.5)+ssnew[1].start)
         yr0 = maxpos[0]-gradius
         yr1 = maxpos[0]+gradius+1
-        if yr0 < 0 or yr1 > jdata.shape[0]: 
+        if yr0 < 0 or yr1 > jdata.shape[0]:
             continue
         xr0 = maxpos[1] - gradius
         xr1 = maxpos[1] + gradius+1
         if xr0 < 0 or xr1 > jdata.shape[1]:
             continue
-        
+
         ninit += 1
-        # Simple Centroid on the region from the convoluted image 
+        # Simple Centroid on the region from the convoluted image
         jregion = jdata[yr0:yr1,xr0:xr1]
-        
+
         if (peakmax is not None and jregion.max() >= peakmax):
             continue
         if (peakmin is not None and jregion.max() <= peakmin):
@@ -235,13 +215,13 @@ def findstars(jdata, fwhm, threshold, skymode,
                 kernel,xsigsq,ysigsq)
         if px is None:
             continue
-        
+
         fitind.append((px+xr0,py+yr0))
         # compute a source flux value
         fluxes.append(jregion.sum())
     #print 'ninit: ',ninit,'   ninit2: ',ninit2,' final n: ',len(fitind)
     return fitind, fluxes
-    
+
 def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
     """ Compute center of source
     Original code from IRAF.noao.digiphot.daofind.apfind ap_xy_round()
@@ -275,13 +255,13 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
     for k in range(nxk):
         sg = 0.0
         sd = 0.0
-        for j in range(nyk): 
+        for j in range(nyk):
             wt = float(ymiddle+1 - abs (j - ymiddle))
             pixval = data[y0-ymiddle+j,x0-xmiddle+k]
             if (pixval < datamin or pixval > datamax):
                 sg=None
                 break
-            
+
             sd = sd + (pixval - skymode) * wt
             sg = sg + ker2d[j,k] * wt
 
@@ -289,7 +269,7 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
             sg = None
             break
         dxk = xmiddle-k
-        wt = float(xmiddle+1 - abs (dxk))  
+        wt = float(xmiddle+1 - abs (dxk))
         sumgd += wt * sg * sd
         sumgsq += wt * sg ** 2
         sumg += wt * sg
@@ -329,11 +309,11 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
         if (sumd == 0.0):
             dx = 0.0
         else:
-            dx = sumdx / sumd 
+            dx = sumdx / sumd
         if (abs (dx) > xhalf):
             dx = 0.0
-            
-    x = int(x0) + dx 
+
+    x = int(x0) + dx
 
     # Initialize y fit.
     sumgd = 0.0
@@ -359,7 +339,7 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
                 break
             sd += (pixval - skymode) * wt
             sg += ker2d[j,k] * wt
-        
+
         if (sg <= 0.0):
             sg = None
             break
@@ -369,7 +349,7 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
         sumgd += wt * sg * sd
         sumgsq += wt * sg ** 2
         sumg += wt * sg
-        sumd += wt * sd   
+        sumd += wt * sd
         sumdx += wt * sd * dyj
         p = p + wt
         n = n + 1
@@ -388,13 +368,13 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
     # Solve for the height of the best-fitting gaussian to the
     # y marginal. Reject the star if the height is non-positive.
 
-    hy = sumgsq - (sumg ** 2) / p 
+    hy = sumgsq - (sumg ** 2) / p
     if (hy <= 0.0):
         return None,None,None
     hy = (sumgd - sumg * sumd / p) / (sumgsq - (sumg ** 2) / p)
     if (hy <= 0.0):
         return None,None,None
-    
+
     # Solve for the new x centroid.
     skylvl = (sumd - hy * sumg) / p
     dy = (sgdgdx - (sddgdx - sdgdx * (hy * sumg + skylvl * p))) / \
@@ -403,11 +383,11 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
         if (sumd == 0.0):
             dy = 0.0
         else :
-            dy = sumdx / sumd 
-            
+            dy = sumdx / sumd
+
         if (abs (dy) > yhalf):
             dy = 0.0
-    
+
     y = int(y0) + dy
 
     round = 2.0 * (hx - hy) / (hx + hy)
@@ -452,9 +432,9 @@ def nmoment(im,p,q):
 def centroid(im):
     """
     Computes the centroid of an image using the image moments:
-    
+
     centroid = {m10/m00, m01/m00}
-    """    
+    """
     m00 = immoments(im,0,0)
     m10 = immoments(im, 1,0)
     m01 = immoments(im,0,1)
@@ -468,10 +448,10 @@ def cmoment(im,p,q):
     #x,y=np.meshgrid(range(403,412),range(423,432))
     x = range(im.shape[1])
     y = range(im.shape[0])
-    mu = np.sum([(i-xcen)**p * (j-ycen)**q * im[i,j] for i in y for j in x], 
+    mu = np.sum([(i-xcen)**p * (j-ycen)**q * im[i,j] for i in y for j in x],
                 dtype=np.float64)
     return mu
-    
+
 def central_moments(im):
     xcen,ycen = centroid(im)
     mu00 = cmoment(im,p=0,q=0)
@@ -498,7 +478,7 @@ def central_moments(im):
                 'mu03': mu03
                 }
     return cmoments
-    
+
 def covmat(im):
     cmoments = central_moments(im)
     nmu20 = cmoments['mu20'] / cmoments['mu00']
@@ -506,110 +486,3 @@ def covmat(im):
     nmu11 = cmoments['mu11'] / cmoments['mu00']
     covmat = np.array([[nmu20, nmu11],[nmu11,nmu02]])
     return covmat
-
-"""
-def central_moments(im, xcen, ycen, p, q):
-    moment = 0.
-
-    moment += 
-    for (y = 0, y < ny; y++) {;
-        for (x = 0; x < nx; x++){
-            moment += (pow((x-xcen),p) * pow((y-ycen),q) * fimage[x + y*nx]);
-        }
-    }
-
-    return moment;
-""" 
-#def run(jdata, fwhm=2.5, ratio=1, nsigma=1.5, theta=0., threshold=4., skysigma=
-"""
-from pylab import *
-# Create the gaussian data
-Xin, Yin = mgrid[0:201, 0:201]
-data = gaussian(3, 100, 100, 20, 40)(Xin, Yin) + np.random.random(Xin.shape)
-data1 = gaussian1(5, 100, 200, .2)(Xin, Yin) + np.random.random(Xin.shape)
-matshow(data1, cmap=cm.gist_earth_r)
-
-params = fitgaussian(data1)
-fit = gaussian(*params)
-
-contour(fit(*indices(data.shape)), cmap=cm.copper)
-ax = gca()
-(height, x, y, width_x, width_y) = params
-"""
-#text(0.95, 0.05, 
-"""
-#x : %.1f
-#y : %.1f
-#width_x : %.1f
-#width_y : %.1f
-#%(x, y, width_x, width_y),
-#        fontsize=16, horizontalalignment='right',
-#        verticalalignment='bottom', transform=ax.transAxes)
-"""
-'''
-histograms
--ACS:
-h=im.histogram1d((data.flatten()).astype(np.int), 1900, 500, data.min())
-x=np.arange(h.minValue,h.maxValue, 500)
-plt.plot(x,np.log10(h.histogram))
-threshold=25000
-objacs=findobj.findstars(data,2.5,60000)
-objacsar=np.array(objacs)
-plt.imshow(data, vmin=-1100, vmax=1000, aspect='auto')
-plt.scatter(objacsar[:,1],objacsar[:,0], marker='+', color='r')
-
-
-WFPC2 - chip4 - almost no stars
-hu4=im.histogram1d((u4.flatten()).astype(np.int), 512, 100, u4.min())
-xu4=np.arange(hu4.minValue,hu4.maxValue, 100)
-plt.plot(xu4,np.log10(hu4.histogram))
-
-threshold=450 (500)
-'''
-
-'''
-testing detection
-ACS:
-objacs=findobj.findstars(data,2.5,25000)
-obj=np.array(objacs)
-objacsar = np.roll(obj,1)
-w1=wcsutil.HSTWCS('j94f05bgq_flt.fits', ext=1)
-w4=wcsutil.HSTWCS('j94f05bgq_flt.fits', ext=4)
-outwcs=utils.output_wcs([w1,w4])
-sky=w1.all_pix2sky(objacsar+1,1)
-tan=outwcs.wcs_sky2pix(sky,1)
-datasingle=pyfits.getdata('j94f05bgq_single_sci.fits')
-plt.imshow(datasingle, vmin=-11, vmax=150, aspect='auto')
-plt.scatter(tan[:,0],tan[:,1], marker='+', color='r')
-
-f=open('tvmarkobj.txt', 'w')
-for i in tan:
-    f.writelines([str(i[0])," ", str(i[1]), '\n'])
-    
-f.close()
-'''
-
-'''
-compare daofind
-f=open('j94f05bgq_flt.fits.coo.1')
-lines=f.readlines()
-f.close()
-nlines=[l.strip().split() for l in lines[43:]]
-nlinesarr=np.array(nlines)
-xdao=nlinesarr[:,0].astype(np.float)
-ydao=nlinesarr[:,1].astype(np.float)
-skydao=w1.all_pix2sky(xdao,ydao,1)
-tandao=outwcs.wcs_sky2pix(np.array(skydao).T,1)
-plt.scatter(tan[:,0],tan[:,1], marker='+', color='r')
-'''
-
-"""
-#imports
-import numpy as np
-import pyfits
-import findobj
-from stwcs.distortion import utils
-from stwcs import wcsutil
-from matplotlib import pyplot as plt
-
-"""
