@@ -253,6 +253,7 @@ class OutputImage:
         # the pardict, then leave value from the template image.
         if self.texptime:
             prihdu.header.update('EXPTIME', self.texptime)
+            prihdu.header.update('TEXPTIME', self.texptime,after='EXPTIME')
             prihdu.header.update('EXPSTART', self.expstart)
             prihdu.header.update('EXPEND', self.expend)
 

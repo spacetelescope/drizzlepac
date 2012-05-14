@@ -503,12 +503,6 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     if newfilelist is None:
         return None, None, None
 
-    # make an asn table at the end
-    if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
-        # Make sure there is a WCSCORR table for each input image
-        for img in newfilelist:
-            wcscorr.init_wcscorr(img)
-
     if wcskey in ['', ' ', 'INDEF', None]:
         if updatewcs:
             log.info('Updating input WCS using "updatewcs"')
@@ -530,6 +524,12 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
                 wkey = ' '
             altwcs.restoreWCS(fname, extlist, wcskey=wkey, wcsname=wname)
         pydr_input = newfilelist
+
+    # make an asn table at the end
+    if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
+        # Make sure there is a WCSCORR table for each input image
+        for img in newfilelist:
+            wcscorr.init_wcscorr(img)
 
     # AsnTable will handle the case when output==None
     if not oldasndict:# and output is not None:
@@ -671,7 +671,6 @@ def runmakewcs(input):
         returns a list of names of the modified files
         (For GEIS files returns the translated names.)
     """
-
     newNames = updatewcs.updatewcs(input, checkfiles=False)
     #newNames = makewcs.run(input)
     return newNames
