@@ -649,7 +649,7 @@ def checkForDuplicateInputs(rootnames):
         f1 = fileutil.buildRootname(fname,ext=['_flc.fits'])
         f2 = fileutil.buildRootname(fname)
         flist.append(f2)
-        if f1 != f2:
+        if os.path.exists(f1) and f1 != f2:
             # More than 1 valid input found for this rootname
             duplist.append(f1)
 

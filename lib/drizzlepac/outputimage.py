@@ -304,6 +304,8 @@ class OutputImage:
                 pre_wcs_kw = self.find_kwupdate_location(scihdr,'CD1_1')
                 addWCSKeywords(self.wcs,scihdr,blot=self.blot,
                                 single=self.single, after=pre_wcs_kw)
+                # Recompute this after removing distortion kws
+                pre_wcs_kw = self.find_kwupdate_location(scihdr,'CD1_1')
 
         ##########
         # Now, build the output file
@@ -384,16 +386,11 @@ class OutputImage:
             # header to Primary header...
             if scihdr:
                 for _card in scihdr.ascard:
-                    if _card.key not in RESERVED_KEYS and hdu.header.has_key(_card.key) == 0:
+                    if _card.key not in RESERVED_KEYS and _card.key not in hdu.header:
                         hdu.header.ascard.append(_card)
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
             hdu.header.update('filename',self.outdata)
-
-            if self.wcs:
-                # Add WCS keywords to header
-                addWCSKeywords(self.wcs, hdu.header, blot=self.blot,
-                                single=self.single, after=pre_wcs_kw)
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -420,11 +417,12 @@ class OutputImage:
                 # header to Primary header...
                 if errhdr:
                     for _card in errhdr.ascard:
-                        if _card.key not in RESERVED_KEYS and hdu.header.has_key(_card.key) == 0:
+                        if _card.key not in RESERVED_KEYS and _card.key not in hdu.header:
                             hdu.header.ascard.append(_card)
                 hdu.header.update('filename',self.outweight)
                 hdu.header.update('CCDCHIP','-999')
                 if self.wcs:
+                    pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
                     addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
@@ -456,10 +454,11 @@ class OutputImage:
                 if dqhdr:
                     for _card in dqhdr.ascard:
                         if ( (_card.key not in RESERVED_KEYS) and
-                                (hdu.header.has_key(_card.key)) ) == 0:
+                                _card.key not in hdu.header):
                             hdu.header.ascard.append(_card)
                 hdu.header.update('filename', self.outcontext)
                 if self.wcs:
+                    pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
                     addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
@@ -615,6 +614,7 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     wname = wcs.wcs.name
     if not single:
         wname = 'DRZWCS'
+
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
     hdr.update('WCSNAME',wname, after=after)
@@ -720,3 +720,4 @@ def writeDrizKeywords(hdr,imgnum,drizdict):
         comment = drizdict[key]['comment']
         if comment is None: comment = ""
         hdr.update(_keyprefix+key,val,comment=drizdict[key]['comment'])
+

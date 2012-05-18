@@ -327,6 +327,7 @@ def run(configobj):
             refimage.close()
             for img in input_images:
                 img.close()
+                del img
             print 'Quitting as a result of user request (Ctrl-C)...'
             return
     else:
