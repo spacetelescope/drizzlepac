@@ -332,6 +332,7 @@ class OutputImage:
             hdu.header.update('EXTNAME','WHT',after=last_kw)
             hdu.header.update('EXTVER',1,after='EXTNAME')
             if self.wcs:
+                pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
@@ -354,6 +355,7 @@ class OutputImage:
             hdu.header.update('EXTVER',1,after='EXTNAME')
 
             if self.wcs:
+                pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
