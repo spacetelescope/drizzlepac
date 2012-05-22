@@ -109,11 +109,11 @@ skystat : {'median', 'mode', 'mean'} (Default Value = 'median')
 
 
 skylower : float (Default Value = None)
-    Lower limit of usable pixel values for computing the sky. This value should be specified in units of electrons.
+    Lower limit of usable pixel values for computing the sky. This value should be specified in the units of the input image(s).
 
 
 skyupper : float (Default Value = None)
-    Upper limit of usable pixel values for computing the sky. This value should be specified in units of electrons.
+    Upper limit of usable pixel values for computing the sky. This value should be specified in the units of the input image(s).
 
 
 skyclip : int (Default Value = 5)

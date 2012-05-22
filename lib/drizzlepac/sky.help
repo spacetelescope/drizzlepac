@@ -39,11 +39,11 @@ skystat : {'median', 'mode', 'mean'} (Default Value = 'median')
 
 
 skylower : float (Default Value = INDEF)
-    Lower limit of usable pixel values for computing the sky. This value should be specified in units of electrons.
+    Lower limit of usable pixel values for computing the sky. This value should be specified in the units of the input image.
 
 
 skyupper : float (Default Value = INDEF)
-    Upper limit of usable pixel values for computing the sky. This value should be specified in units of electrons.
+    Upper limit of usable pixel values for computing the sky. This value should be specified in the units of the input image.
 
 
 skyclip : int (Default Value = 5)
@@ -96,8 +96,8 @@ def sky(imageList=None,configObj=None, editpars=False, **inputDict):
     skysub		'Perform sky subtraction?'
     skywidth	'Bin width for sampling sky statistics (in sigma)'
     skystat	 	'Sky correction statistics parameter'
-    skylower	'Lower limit of usable data for sky (always in electrons)'
-    skyupper	'Upper limit of usable data for sky (always in electrons)'
+    skylower	'Lower limit of usable data for sky'
+    skyupper	'Upper limit of usable data for sky'
     skyclip		'Number of clipping iterations'
     skylsigma	'Lower side clipping factor (in sigma)'
     skyusigma	'Upper side clipping factor (in sigma)'
