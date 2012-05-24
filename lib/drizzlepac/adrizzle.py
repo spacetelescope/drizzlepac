@@ -695,7 +695,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     # Apply sky subtraction and unit conversion to input array
     _insci = _sciext.data - chip.computedSky
-    _insci *= chip._conversionFactor
+    _insci *= chip._effGain
 
     # Set additional parameters needed by 'drizzle'
     _in_units = chip.in_units.lower()
@@ -826,13 +826,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         #
         ###########################
 
-        #determine what exposure time needs to be used
-        # to rescale the product.
-        if single:
-            _expscale = chip._exptime
-        else:
-            _expscale = img.outputValues['texptime']
-
         # Convert output data from electrons/sec to counts/sec as specified
         native_units = img.native_units
         if paramDict['proc_unit'].lower() == 'native' and native_units.lower()[:6] == 'counts':
@@ -846,6 +839,12 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         paramDict['idcscale'] = chip.wcs.idcscale
         #If output units were set to 'counts', rescale the array in-place
         if paramDict['units'] == 'counts':
+            #determine what exposure time needs to be used
+            # to rescale the product.
+            if single:
+                _expscale = chip._exptime
+            else:
+                _expscale = img.outputValues['texptime']
             np.multiply(_outsci, _expscale, _outsci)
 
         #
