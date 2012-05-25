@@ -206,14 +206,9 @@ def _drizCr(sciImage, paramDict, saveFile=True):
             # Define output cosmic ray mask to populate
             __crMask = np.zeros(__inputImage.shape,dtype=np.uint8)
 
-            # Determine a scaling factor depending on the units of the input image, "counts" or "cps"
-            if (scienceChip.in_units.lower()== "counts"):
-                __expmult = 1.
-            elif(scienceChip.in_units.lower()=="cps"):
-                __expmult = scienceChip._exptime
-            else:
-                print "drizCR found Unrecognized value in input image for BUNIT:", scienceChip.in_units
-                raise ValueError
+            # Set scaling factor (used by MultiDrizzle) to 1 since scaling has
+            # already been accounted for in blotted image
+            __expmult = 1.
 
         ##################   COMPUTATION PART I    ###################
             # Create a temporary array mask
@@ -246,9 +241,11 @@ def _drizCr(sciImage, paramDict, saveFile=True):
             del __xtb
             # It is necessary to use a bitwise 'and' to create the mask with numarray objects.
             __crMask = np.logical_not(np.greater(__xt1, __xt2) & np.less(__tmp2,9) )
+
             del __xt1
             del __xt2
             del __tmp2
+
 
 
         ##################   COMPUTATION PART III    ###################
@@ -286,8 +283,8 @@ def _drizCr(sciImage, paramDict, saveFile=True):
             # select high pixels from both convolution outputs; then 'and' them to create new __crMask
             where_cr_grow_kernel_conv    = np.where( cr_grow_kernel_conv < grow*grow,0,1 )        # radial
             where_cr_ctegrow_kernel_conv = np.where( cr_ctegrow_kernel_conv < ctegrow, 0, 1 )     # length
-            __crMask = np.logical_and( where_cr_ctegrow_kernel_conv, where_cr_grow_kernel_conv) # combine masks
 
+            __crMask = np.logical_and( where_cr_ctegrow_kernel_conv, where_cr_grow_kernel_conv) # combine masks
             __crMask = __crMask.astype(np.uint8) # cast back to Bool
 
             del __crMask_orig_bool
@@ -385,5 +382,3 @@ def setDefaults(configObj={}):
 
 
     return paramDict
-
-

@@ -140,7 +140,6 @@ def run(configObj,wcsmap=None):
         skyval = configObj['skyval']
     _outsci += skyval
 
-
     # Write output Numpy objects to a PyFITS file
     # Blotting only occurs from a drizzled SCI extension
     # to a blotted SCI extension...
@@ -275,7 +274,6 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             # Return the PyFITS HDU corresponding to the named extension
             _scihdu = fileutil.getExtn(_inimg,_sciextn)
             _insci = _scihdu.data.copy()
-
             _inimg.close()
             del _inimg, _scihdu
 
