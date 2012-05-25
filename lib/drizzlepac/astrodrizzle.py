@@ -250,8 +250,8 @@ def run(configobj, wcsmap=None):
                 image.clean()
             image.close()
 
-            del imgObjList
-            del outwcs
+        del imgObjList
+        del outwcs
 
 
 def help(file=None):
