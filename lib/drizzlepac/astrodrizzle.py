@@ -181,68 +181,74 @@ def run(configobj, wcsmap=None):
            (__version__, __vdate__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
+    #try:
     try:
-        try:
-            # Define list of imageObject instances and output WCSObject instance
-            # based on input paramters
-            procSteps.addStep('Initialization')
-            imgObjList = None
-            imgObjList, outwcs = processInput.setCommonInput(configobj)
-            procSteps.endStep('Initialization')
+        # Define list of imageObject instances and output WCSObject instance
+        # based on input paramters
+        procSteps.addStep('Initialization')
+        imgObjList = None
+        imgObjList, outwcs = processInput.setCommonInput(configobj)
+        procSteps.endStep('Initialization')
 
-            if not imgObjList:
-                raise ValueError
+        if not imgObjList:
+            raise ValueError
 
-            log.info("USER INPUT PARAMETERS common to all Processing Steps:")
-            util.printParams(configobj, log=log)
+        log.info("USER INPUT PARAMETERS common to all Processing Steps:")
+        util.printParams(configobj, log=log)
 
-            # Call rest of MD steps...
-            #create static masks for each image
-            staticMask.createStaticMask(imgObjList, configobj,
-                                        procSteps=procSteps)
+        # Call rest of MD steps...
+        #create static masks for each image
+        staticMask.createStaticMask(imgObjList, configobj,
+                                    procSteps=procSteps)
 
-            #subtract the sky
-            sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
+        #subtract the sky
+        sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
-            #drizzle to separate images
-            adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+        #drizzle to separate images
+        adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                              procSteps=procSteps)
+
+        #create the median images from the driz sep images
+        createMedian.createMedian(imgObjList, configobj,
                                   procSteps=procSteps)
 
-            #create the median images from the driz sep images
-            createMedian.createMedian(imgObjList, configobj,
-                                      procSteps=procSteps)
+        #blot the images back to the original reference frame
+        ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                      procSteps=procSteps)
 
-            #blot the images back to the original reference frame
-            ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
-                          procSteps=procSteps)
+        #look for cosmic rays
+        drizCR.rundrizCR(imgObjList, configobj,
+                         saveFile=not(stateObj["clean"]),
+                         procSteps=procSteps)
 
-            #look for cosmic rays
-            drizCR.rundrizCR(imgObjList, configobj,
-                             saveFile=not(stateObj["clean"]),
-                             procSteps=procSteps)
+        #Make your final drizzled image
+        adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                           procSteps=procSteps)
 
-            #Make your final drizzled image
-            adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
-                               procSteps=procSteps)
-
-            print
-            print ' '.join(['AstroDrizzle Version', __version__,
-                            'is finished processing at ',
-                            util._ptime()[0]]) + '!\n'
-        except:
-            print >> sys.stderr, textutil.textbox(
-                'ERROR:\nAstroDrizzle Version %s encountered a problem!  '
-                'Processing terminated at %s.' %
-                (__version__, util._ptime()[0]))
-            raise
-    finally:
+        print
+        print ' '.join(['AstroDrizzle Version', __version__,
+                        'is finished processing at ',
+                        util._ptime()[0]]) + '!\n'
+    except:
+        print >> sys.stderr, textutil.textbox(
+            'ERROR:\nAstroDrizzle Version %s encountered a problem!  '
+            'Processing terminated at %s.' %
+            (__version__, util._ptime()[0]))
         procSteps.reportTimes()
-
         if imgObjList:
             for image in imgObjList:
-                if stateObj['clean']:
-                    image.clean()
                 image.close()
+            del imgObjList
+            del outwcs
+        raise
+
+    procSteps.reportTimes()
+
+    if imgObjList:
+        for image in imgObjList:
+            if stateObj['clean']:
+                image.clean()
+            image.close()
 
             del imgObjList
             del outwcs

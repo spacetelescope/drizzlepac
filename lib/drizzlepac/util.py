@@ -165,6 +165,7 @@ class WithLogging(object):
         def wrapper(*args, **kwargs):
             from .processInput import processFilenames
 
+            errorobj = None
             filename = None
             if self.depth == 0:
                 # Setup logging for this task; otherwise we're being called as
@@ -206,12 +207,15 @@ class WithLogging(object):
 
             try:
                 func(*args, **kwargs)
-            except:
+            except Exception, errorobj:
                 pass
             finally:
                 self.depth -= 1
                 if self.depth == 0:
                     end_logging(filename)
+                    # Insure that any exception raised by the code gets passed on
+                    if errorobj:
+                        raise Exception, errorobj
 
         return wrapper
 
