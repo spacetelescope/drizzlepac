@@ -8,7 +8,6 @@ from __future__ import division # confidence high
 from stsci.tools import fileutil
 from nictools import readTDD
 from imageObject import imageObject
-from staticMask import constructFilename
 import numpy as np
 
 class WFC3InputImage(imageObject):
@@ -41,8 +40,6 @@ class WFC3InputImage(imageObject):
 
         sig=(instr+self._detector,(nx,ny),int(chip)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
-        filename=constructFilename(sig)
-        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
 
 
 class WFC3UVISInputImage(WFC3InputImage):

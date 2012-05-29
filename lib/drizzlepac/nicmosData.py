@@ -8,7 +8,6 @@ from stsci.tools import fileutil
 from nictools import readTDD
 import numpy as np
 from imageObject import imageObject
-from staticMask import constructFilename
 
 class NICMOSInputImage(imageObject):
 
@@ -51,8 +50,6 @@ class NICMOSInputImage(imageObject):
 
         sig=(instr+str(self._detector),(nx,ny),int(detnum)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
-        filename=constructFilename(sig)
-        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
 
 
     def doUnitConversions(self):
@@ -118,12 +115,12 @@ class NICMOSInputImage(imageObject):
     def getexptimeimg(self,chip):
         """
         Return an array representing the exposure time per pixel for the detector.
-        
+
         Returns
         -------
         dark: array
             Exposure time array in the same shape as the input image
-        
+
         """
         return self._image[self.timeExt,chip].data
 
@@ -417,5 +414,3 @@ class NIC3InputImage(NICMOSInputImage):
 
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()
-
-

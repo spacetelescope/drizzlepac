@@ -11,7 +11,6 @@ import numpy as np
 from stsci.tools import fileutil
 
 from imageObject import imageObject
-from staticMask import constructFilename
 import buildmask
 
 # Translation table for any image that does not use the DQ extension of the MEF
@@ -298,8 +297,6 @@ class WFPC2InputImage (imageObject):
 
         sig=(instr+WFPC2_DETECTOR_NAMES[detnum],(nx,ny),chip) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
-        filename=constructFilename(sig)
-        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
 
     def _setchippars(self):
         for chip in self.returnAllChips(extname=self.scienceExt):
@@ -307,4 +304,3 @@ class WFPC2InputImage (imageObject):
                 chip._gain,chip._rdnoise = WFPC2_GAINS[chip.detnum][chip._headergain]
             except KeyError:
                 raise ValueError, "! Header gain value is not valid for WFPC2"
-

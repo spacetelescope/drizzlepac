@@ -109,7 +109,8 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     myMask = staticMask(configObj)
 
     for image in imageObjectList:
-        myMask.addMember(image)
+        myMask.addMember(image) # create tmp filename here...
+
 
     #save the masks to disk for later access
     myMask.saveToFile()
@@ -125,9 +126,18 @@ def constructFilename(signature):
 
     The signature is in the image object.
     """
-    filename=signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
+    import tempfile
+    prefix='tmp'
+    suffix = buildSignatureKey(signature)
+    fhandle,filename = tempfile.mkstemp(prefix=prefix,suffix=suffix,dir='.')
+    os.remove(filename)
     return filename
 
+def buildSignatureKey(signature):
+    """
+    Build static file filename suffix used by mkstemp()
+    """
+    return '_'+signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
 
 class staticMask(object):
     """
@@ -144,6 +154,7 @@ class staticMask(object):
         # the signature is created in the imageObject class
 
         self.masklist={}
+        self.masknames = {}
         self.step_name=util.getSectionName(configObj,_step_num_)
         if configObj is not None:
             self.static_sig = configObj[self.step_name]['static_sig']
@@ -184,6 +195,15 @@ class staticMask(object):
             # only create a new mask if one doesn't already exist
             if ((not self.masklist.has_key(signature)) or (len(self.masklist) == 0)):
                 self.masklist[signature] = self._buildMaskArray(signature)
+                maskname =  constructFilename(signature)
+                self.masknames[signature] = maskname
+            else:
+                chip_sig = buildSignatureKey(signature)
+                for s in self.masknames:
+                    if chip_sig in self.masknames[s]:
+                        maskname  = self.masknames[s]
+                        break
+            imagePtr[chipid].outputNames['staticMask'] = maskname
 
             stats = ImageStats(chipimage,nclip=3,fields='mode')
             mode = stats.mode
@@ -258,7 +278,7 @@ class staticMask(object):
 
         for key in self.masklist.keys():
             #check to see if the file already exists on disk
-            filename=constructFilename(key)
+            filename=self.masknames[key]
 
             if not(fileutil.checkFileExists(filename)):
                 #create a new fits image with the mask array and a standard header
@@ -274,4 +294,3 @@ class staticMask(object):
                     log.error("Problem saving static mask file: %s to "
                               "disk!\n" % filename)
                     raise IOError
-

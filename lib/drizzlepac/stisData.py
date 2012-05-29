@@ -8,7 +8,6 @@ from stsci.tools import fileutil
 import numpy as np
 from stsci.imagemanip import interp2d
 from imageObject import imageObject
-from staticMask import constructFilename
 
 
 class STISInputImage (imageObject):
@@ -129,8 +128,6 @@ class STISInputImage (imageObject):
 
         sig=(instr+self._detector,(nx,ny),int(detnum)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
-        filename=constructFilename(sig)
-        sci_chip.outputNames["staticMask"]=filename #this is the name of the static mask file
 
 
 
