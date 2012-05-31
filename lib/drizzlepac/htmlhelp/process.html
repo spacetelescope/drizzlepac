@@ -3,17 +3,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 1: Process Input &mdash; drizzlepac v4.3.0 documentation</title>
+    <title>Step 1: Process Input &mdash; drizzlepac 1.0.0 documentation</title>
+    
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '4.3.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
     <link rel="next" title="Step 2: Generate a Static Mask" href="static.html" />
     <link rel="prev" title="WFPC2 ImageObjects" href="wfpc2objects.html" /> 
   </head>
@@ -45,7 +48,7 @@
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -82,7 +85,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -104,7 +107,7 @@
 <span id="processinput"></span><h1>Step 1: Process Input<a class="headerlink" href="#step-1-process-input" title="Permalink to this headline">¶</a></h1>
 <p>This module supports the interpretation and initial verification of all the input files specified by the user. These functions:</p>
 <blockquote>
-<ul class="simple">
+<div><ul class="simple">
 <li>reads in parameter values from MDRIZTAB reference file and merges those merges those values in with the rest of the parameters from the GUI/configObj, if use of MDRIZTAB was specified</li>
 <li>insure that all input files are multi-extension FITS files and converts them if they are not</li>
 <li>updates all input WCS&#8217;s to be consistent with IDCTAB, if specified</li>
@@ -113,17 +116,17 @@
 <li>adds info about any user-provided IVM files to the ImageObjects</li>
 <li>generates the output WCS based on user inputs</li>
 </ul>
-</blockquote>
+</div></blockquote>
 <span class="target" id="module-drizzlepac.processInput"></span><p>Process input to MultiDrizzle/PyDrizzle.</p>
 <p>The input can be one of:</p>
 <blockquote>
-<ul class="simple">
+<div><ul class="simple">
 <li>a python list of files</li>
 <li>a comma separated string of filenames (including wild card characters)</li>
 <li>an association table</li>
 <li>an &#64;file (can have a second column with names of ivm files)</li>
 </ul>
-</blockquote>
+</div></blockquote>
 <p>No mixture of instruments is allowed.
 No mixture of association tables, &#64;files and regular fits files is allowed.
 Files can be in GEIS or MEF format (but not waiver fits).</p>
@@ -166,15 +169,15 @@ where all data has been excluded from processing.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str</p>
 <blockquote>
-<p>filename of the initial input to process_input</p>
-</blockquote>
+<div><p>filename of the initial input to process_input</p>
+</div></blockquote>
 <p><strong id="output">output</strong> : str</p>
 <blockquote class="last">
-<p>filename of the default empty _drz.fits file to be generated</p>
-</blockquote>
+<div><p>filename of the default empty _drz.fits file to be generated</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -213,11 +216,11 @@ correction at runtime.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filenames">filenames</strong> : list of str</p>
 <blockquote class="last">
-<p>file names of all images to be checked</p>
-</blockquote>
+<div><p>file names of all images to be checked</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -301,19 +304,19 @@ usage (primarily memory) for this run.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
 <blockquote>
-<p>a list of files</p>
-</blockquote>
+<div><p>a list of files</p>
+</div></blockquote>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
-<p>returns a list of names of the modified files
+<div><p>returns a list of names of the modified files
 (For GEIS files returns the translated names.)</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -331,19 +334,19 @@ as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="configObj">configObj</strong> : object</p>
 <blockquote>
-<p>configObj instance or simple dictionary of input parameters</p>
-</blockquote>
+<div><p>configObj instance or simple dictionary of input parameters</p>
+</div></blockquote>
 <p><strong id="imageObjectList">imageObjectList</strong> : list of imageObject objects</p>
 <blockquote>
-<p>list of imageObject instances, 1 for each input exposure</p>
-</blockquote>
+<div><p>list of imageObject instances, 1 for each input exposure</p>
+</div></blockquote>
 <p><strong id="outwcs">outwcs</strong> : object</p>
 <blockquote class="last">
-<p>imageObject instance defining the final output frame</p>
-</blockquote>
+<div><p>imageObject instance defining the final output frame</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -471,25 +474,25 @@ second DQ array, specified as &#8216;dq,2&#8217;, in the file &#8216;input_flt.f
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filename">filename</strong> : str</p>
 <blockquote>
-<p>full filename with path</p>
-</blockquote>
+<div><p>full filename with path</p>
+</div></blockquote>
 <p><strong id="bits">bits</strong> : str</p>
 <blockquote>
-<p>sum or list of integers corresponding to all the bits to be reset</p>
-</blockquote>
+<div><p>sum or list of integers corresponding to all the bits to be reset</p>
+</div></blockquote>
 <p><strong id="extver">extver</strong> : int, optional</p>
 <blockquote>
-<p>List of version numbers of the DQ arrays
+<div><p>List of version numbers of the DQ arrays
 to be corrected [Default Value: None, will do all]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="extname">extname</strong> : str, optional</p>
 <blockquote class="last">
-<p>EXTNAME of the DQ arrays in the FITS file
+<div><p>EXTNAME of the DQ arrays in the FITS file
 [Default Value: &#8216;dq&#8217;]</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -549,12 +552,12 @@ specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>

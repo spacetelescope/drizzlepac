@@ -3,17 +3,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>imageObject Classes &mdash; drizzlepac v4.3.0 documentation</title>
+    <title>imageObject Classes &mdash; drizzlepac 1.0.0 documentation</title>
+    
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '4.3.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
     <link rel="next" title="Base ImageObject Classes" href="baseobjects.html" />
     <link rel="prev" title="Primary User Interface: AstroDrizzle()" href="astrodrizzle.html" /> 
   </head>
@@ -45,7 +48,7 @@
         <li class="right" >
           <a href="astrodrizzle.html" title="Primary User Interface: AstroDrizzle()"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -67,7 +70,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -89,27 +92,27 @@
 <span id="imageobject"></span><span id="imageobjects"></span><h1>imageObject Classes<a class="headerlink" href="#imageobject-classes" title="Permalink to this headline">¶</a></h1>
 <p>This class and related sub-classes manage all the instrument-specific images for processing by AstroDrizzle.</p>
 <p class="graphviz">
-<img src="_images/inheritance-660ea48969ff1fb91fde01153b17d32923a06a20.png" alt="Inheritance diagram of drizzlepac.imageObject, drizzlepac.acsData, drizzlepac.wfc3Data, drizzlepac.wfpc2Data, drizzlepac.nicmosData, drizzlepac.stisData" usemap="#inheritance3817996138" class="inheritance"/>
+<img src="_images/inheritance-854bbd6594ac35cd5bf6d5ac3f271f0f2231c01b.png" alt="Inheritance diagram of drizzlepac.imageObject, drizzlepac.acsData, drizzlepac.wfc3Data, drizzlepac.wfpc2Data, drizzlepac.nicmosData, drizzlepac.stisData" usemap="#inheritance3817996138" class="inheritance"/>
 <map id="inheritance3817996138" name="inheritance3817996138">
-<area shape="rect" id="node1" href="nicmosobjects.html#drizzlepac.nicmosData.NIC3InputImage" title="nicmosData.NIC3InputImage" alt="" coords="600,4,756,23"/>
-<area shape="rect" id="node2" href="nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage" title="nicmosData.NICMOSInputImage" alt="" coords="386,59,558,78"/>
-<area shape="rect" id="node27" href="nicmosobjects.html#drizzlepac.nicmosData.NIC1InputImage" title="nicmosData.NIC1InputImage" alt="" coords="600,41,756,60"/>
-<area shape="rect" id="node33" href="nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage" title="nicmosData.NIC2InputImage" alt="" coords="600,77,756,96"/>
-<area shape="rect" id="node4" href="acsobjects.html#drizzlepac.acsData.HRCInputImage" title="acsData.HRCInputImage" alt="" coords="611,114,746,133"/>
-<area shape="rect" id="node5" href="acsobjects.html#drizzlepac.acsData.ACSInputImage" title="acsData.ACSInputImage" alt="" coords="405,169,538,188"/>
-<area shape="rect" id="node13" href="acsobjects.html#drizzlepac.acsData.WFCInputImage" title="acsData.WFCInputImage" alt="" coords="611,151,746,170"/>
-<area shape="rect" id="node31" href="acsobjects.html#drizzlepac.acsData.SBCInputImage" title="acsData.SBCInputImage" alt="" coords="612,187,745,206"/>
-<area shape="rect" id="node7" href="baseobjects.html#drizzlepac.imageObject.WCSObject" title="imageObject.WCSObject" alt="" coords="211,206,346,225"/>
-<area shape="rect" id="node8" href="baseobjects.html#drizzlepac.imageObject.baseImageObject" title="imageObject.baseImageObject" alt="" coords="5,224,171,243"/>
-<area shape="rect" id="node15" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="imageObject.imageObject" alt="" coords="207,242,350,261"/>
-<area shape="rect" id="node10" href="stisobjects.html#drizzlepac.stisData.CCDInputImage" title="stisData.CCDInputImage" alt="" coords="611,224,746,243"/>
-<area shape="rect" id="node11" href="stisobjects.html#drizzlepac.stisData.STISInputImage" title="stisData.STISInputImage" alt="" coords="404,242,539,261"/>
-<area shape="rect" id="node29" href="stisobjects.html#drizzlepac.stisData.NUVInputImage" title="stisData.NUVInputImage" alt="" coords="611,261,746,280"/>
-<area shape="rect" id="node35" href="stisobjects.html#drizzlepac.stisData.FUVInputImage" title="stisData.FUVInputImage" alt="" coords="612,297,745,316"/>
-<area shape="rect" id="node17" href="wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage" title="wfpc2Data.WFPC2InputImage" alt="" coords="392,279,552,298"/>
-<area shape="rect" id="node20" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3InputImage" title="wfc3Data.WFC3InputImage" alt="" coords="398,334,546,353"/>
-<area shape="rect" id="node23" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3IRInputImage" title="wfc3Data.WFC3IRInputImage" alt="" coords="599,334,757,353"/>
-<area shape="rect" id="node25" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3UVISInputImage" title="wfc3Data.WFC3UVISInputImage" alt="" coords="592,370,764,390"/>
+<area shape="rect" id="node1" href="stisobjects.html#drizzlepac.stisData.CCDInputImage" title="stisData.CCDInputImage" alt="" coords="611,4,746,23"/>
+<area shape="rect" id="node2" href="stisobjects.html#drizzlepac.stisData.STISInputImage" title="stisData.STISInputImage" alt="" coords="404,59,539,78"/>
+<area shape="rect" id="node21" href="stisobjects.html#drizzlepac.stisData.NUVInputImage" title="stisData.NUVInputImage" alt="" coords="611,41,746,60"/>
+<area shape="rect" id="node28" href="stisobjects.html#drizzlepac.stisData.FUVInputImage" title="stisData.FUVInputImage" alt="" coords="612,77,745,96"/>
+<area shape="rect" id="node4" href="nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage" title="nicmosData.NIC2InputImage" alt="" coords="600,114,756,133"/>
+<area shape="rect" id="node5" href="nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage" title="nicmosData.NICMOSInputImage" alt="" coords="386,169,558,188"/>
+<area shape="rect" id="node23" href="nicmosobjects.html#drizzlepac.nicmosData.NIC1InputImage" title="nicmosData.NIC1InputImage" alt="" coords="600,151,756,170"/>
+<area shape="rect" id="node30" href="nicmosobjects.html#drizzlepac.nicmosData.NIC3InputImage" title="nicmosData.NIC3InputImage" alt="" coords="600,187,756,206"/>
+<area shape="rect" id="node7" href="wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage" title="wfpc2Data.WFPC2InputImage" alt="" coords="392,215,552,234"/>
+<area shape="rect" id="node8" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="imageObject.imageObject" alt="" coords="207,215,350,234"/>
+<area shape="rect" id="node11" href="acsobjects.html#drizzlepac.acsData.ACSInputImage" title="acsData.ACSInputImage" alt="" coords="405,252,538,271"/>
+<area shape="rect" id="node14" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3InputImage" title="wfc3Data.WFC3InputImage" alt="" coords="398,334,546,353"/>
+<area shape="rect" id="node10" href="acsobjects.html#drizzlepac.acsData.HRCInputImage" title="acsData.HRCInputImage" alt="" coords="611,224,746,243"/>
+<area shape="rect" id="node16" href="acsobjects.html#drizzlepac.acsData.SBCInputImage" title="acsData.SBCInputImage" alt="" coords="612,261,745,280"/>
+<area shape="rect" id="node36" href="acsobjects.html#drizzlepac.acsData.WFCInputImage" title="acsData.WFCInputImage" alt="" coords="611,297,746,316"/>
+<area shape="rect" id="node18" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3UVISInputImage" title="wfc3Data.WFC3UVISInputImage" alt="" coords="592,334,764,353"/>
+<area shape="rect" id="node25" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3IRInputImage" title="wfc3Data.WFC3IRInputImage" alt="" coords="599,370,757,390"/>
+<area shape="rect" id="node20" href="baseobjects.html#drizzlepac.imageObject.baseImageObject" title="imageObject.baseImageObject" alt="" coords="5,233,171,253"/>
+<area shape="rect" id="node33" href="baseobjects.html#drizzlepac.imageObject.WCSObject" title="imageObject.WCSObject" alt="" coords="211,252,346,271"/>
 </map>
 </p>
 <div class="toctree-wrapper compound">
@@ -148,12 +151,12 @@
         <li class="right" >
           <a href="astrodrizzle.html" title="Primary User Interface: AstroDrizzle()"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>

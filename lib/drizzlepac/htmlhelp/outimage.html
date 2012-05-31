@@ -3,17 +3,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Output Image Generation &mdash; drizzlepac v4.3.0 documentation</title>
+    <title>Output Image Generation &mdash; drizzlepac 1.0.0 documentation</title>
+    
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '4.3.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="MultiDrizzle Reference Table" href="mdztab.html" />
     <link rel="prev" title="WCS Utilities" href="wcsutils.html" /> 
@@ -46,7 +49,7 @@
         <li class="right" >
           <a href="wcsutils.html" title="WCS Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -69,7 +72,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -133,6 +136,16 @@ plist['expend']   - end time of combined exposure</pre>
 </dd></dl>
 
 <dl class="method">
+<dt id="drizzlepac.outputimage.OutputImage.find_kwupdate_location">
+<tt class="descname">find_kwupdate_location</tt><big>(</big><em>hdr</em>, <em>keyword</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.find_kwupdate_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the last keyword in the output header that comes before the new
+keyword in the original, full input headers.
+This will rely on the original ordering of keywords from the original input
+files in order to place the updated keyword in the correct location in case
+the keyword was removed from the output header prior to calling this method.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="drizzlepac.outputimage.OutputImage.set_bunit">
 <tt class="descname">set_bunit</tt><big>(</big><em>bunit</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.set_bunit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method used to update the value of the bunit attribute.</p>
@@ -181,13 +194,13 @@ headers.</p>
         <li class="right" >
           <a href="wcsutils.html" title="WCS Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>

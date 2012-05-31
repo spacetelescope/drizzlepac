@@ -3,17 +3,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Updatenpol &mdash; drizzlepac v4.3.0 documentation</title>
+    <title>Updatenpol &mdash; drizzlepac 1.0.0 documentation</title>
+    
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '4.3.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
     <link rel="prev" title="skytopix: Coordinate transformation from sky coordinates" href="skytopix.html" /> 
   </head>
   <body>
@@ -41,7 +44,7 @@
         <li class="right" >
           <a href="skytopix.html" title="skytopix: Coordinate transformation from sky coordinates"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -60,7 +63,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -88,16 +91,16 @@ C version of MultiDrizzle (astrodrizzle).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">License:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></p>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Usage:</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Usage:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first">This task can be run from the operating system command line with:</p>
 <p>updatenpol [options] input [refdir]</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Command-line Options:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Command-line Options:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><dl class="first last docutils">
 <dt><em class="xref py py-obj">input</em>   </dt>
 <dd><p class="first last">The specification of the files to be updated, either as a single filename, 
@@ -136,7 +139,7 @@ EACH separate INPUT file when the option <em class="xref py py-obj">-i</em> has 
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Example:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Example:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first">1. This command will update all the FLT files in the current directory
 with the new NPOLFILE and D2IMFILE reference files found in the &#8216;myjref&#8217; 
 directory as defined in the environment:</p>
@@ -144,8 +147,8 @@ directory as defined in the environment:</p>
 </div>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Compatability with MultiDrizzle:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first last">The new version of MultiDrizzle (<em class="xref py py-obj">astrodrizzle</em>) and <em class="xref py py-obj">updatewcs</em> 
+<tr class="field-even field"><th class="field-name" colspan="2">Compatability with MultiDrizzle:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">The new version of MultiDrizzle (<em class="xref py py-obj">astrodrizzle</em>) and <tt class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></tt> 
 only work with the new NPOLFILE reference file for the DGEO correction 
 (to replace the use of DGEOFILE).  
 In fact, astrodrizzle has been extensively modified to
@@ -191,10 +194,10 @@ NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : string or list</p>
 <blockquote>
-<dl class="docutils">
+<div><dl class="docutils">
 <dt>Name of input file or files acceptable forms: </dt>
 <dd><ul class="first last simple">
 <li>single filename with or without directory</li>
@@ -205,28 +208,28 @@ NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle.</p>
 </ul>
 </dd>
 </dl>
-</blockquote>
+</div></blockquote>
 <p><strong id="refdir">refdir</strong> : string</p>
 <blockquote>
-<p>Path to directory containing new reference files, either 
+<div><p>Path to directory containing new reference files, either 
 environment variable or full path.</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="local">local</strong> : boolean</p>
 <blockquote>
-<p>Specifies whether or not to copy new reference files to local
+<div><p>Specifies whether or not to copy new reference files to local
 directory for use with the input files.</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="interactive">interactive</strong> : boolean</p>
 <blockquote>
-<p>Specifies whether or not to interactively ask the user for the
+<div><p>Specifies whether or not to interactively ask the user for the
 exact names of the new reference files instead of automatically
 searching a directory for them.</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="updatewcs">updatewcs</strong> : boolean</p>
 <blockquote class="last">
-<p>Specifies whether or not to update the WCS information in this
+<div><p>Specifies whether or not to update the WCS information in this
 file to use the new reference files.</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -299,12 +302,12 @@ to be updated using:</p>
         <li class="right" >
           <a href="skytopix.html" title="skytopix: Coordinate transformation from sky coordinates"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>

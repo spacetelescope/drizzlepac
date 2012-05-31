@@ -3,17 +3,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utility Functions &mdash; drizzlepac v4.3.0 documentation</title>
+    <title>Utility Functions &mdash; drizzlepac 1.0.0 documentation</title>
+    
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '4.3.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="WCS Utilities" href="wcsutils.html" />
     <link rel="prev" title="Utilities" href="util.html" /> 
@@ -46,7 +49,7 @@
         <li class="right" >
           <a href="util.html" title="Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -69,7 +72,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -232,29 +235,29 @@ with user-specified values from input_dict.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : string</p>
 <blockquote>
-<p>Name of task to load into TEAL</p>
-</blockquote>
+<div><p>Name of task to load into TEAL</p>
+</div></blockquote>
 <p><strong id="configObj">configObj</strong> : string</p>
 <blockquote>
-<p>The valid values for &#8216;configObj&#8217; would be:</p>
+<div><p>The valid values for &#8216;configObj&#8217; would be:</p>
 <div class="highlight-python"><pre>None                      - loads last saved user .cfg file
 'defaults'                - loads task default .cfg file
 name of .cfg file (string)- loads user-specified .cfg file</pre>
 </div>
-</blockquote>
+</div></blockquote>
 <p><strong id="input_dict">input_dict</strong> : dict</p>
 <blockquote>
-<p>Set of parameters and values specified by user to be different from
+<div><p>Set of parameters and values specified by user to be different from
 what gets loaded in from the .cfg file for the task</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="loadOnly">loadOnly</strong> : bool</p>
 <blockquote class="last">
-<p>Setting &#8216;loadOnly&#8217; to False causes the TEAL GUI to start allowing the
+<div><p>Setting &#8216;loadOnly&#8217; to False causes the TEAL GUI to start allowing the
 user to edit the values further and then run the task if desired.</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -373,23 +376,23 @@ ivm filenames from the first two columns.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="infile">infile</strong> : str</p>
 <blockquote>
-<p>Filename of ASCII file with array data as columns.</p>
-</blockquote>
+<div><p>Filename of ASCII file with array data as columns.</p>
+</div></blockquote>
 <p><strong id="cols">cols</strong> : list of int</p>
 <blockquote>
-<p>List of 0-indexed column numbers for columns to be turned into numpy arrays
+<div><p>List of 0-indexed column numbers for columns to be turned into numpy arrays
 (DEFAULT- [0,1,2,3]).</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>outarr</strong> : list of numpy arrays</p>
 <blockquote class="last">
-<p>Simple list of numpy arrays in the order as specifed in the &#8216;cols&#8217; parameter.</p>
-</blockquote>
+<div><p>Simple list of numpy arrays in the order as specifed in the &#8216;cols&#8217; parameter.</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -410,19 +413,19 @@ ivm filenames from the first two columns.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : list of str</p>
 <blockquote>
-<p>A list of file names.</p>
-</blockquote>
+<div><p>A list of file names.</p>
+</div></blockquote>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
-<p>Returns a list of names of the modified files
+<div><p>Returns a list of names of the modified files
 (For GEIS files returns the translated names).</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -504,13 +507,13 @@ was found in all SCI extensions.</p>
         <li class="right" >
           <a href="util.html" title="Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>

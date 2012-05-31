@@ -3,17 +3,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>STIS ImageObjects &mdash; drizzlepac v4.3.0 documentation</title>
+    <title>STIS ImageObjects &mdash; drizzlepac 1.0.0 documentation</title>
+    
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '4.3.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
     <link rel="up" title="imageObject Classes" href="imageobject.html" />
     <link rel="next" title="NICMOS ImageObjects" href="nicmosobjects.html" />
     <link rel="prev" title="WFC3 ImageObjects" href="wfc3objects.html" /> 
@@ -46,7 +49,7 @@
         <li class="right" >
           <a href="wfc3objects.html" title="WFC3 ImageObjects"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
           <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
       </ul>
     </div>
@@ -69,7 +72,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -109,6 +112,11 @@ the data inside the chips already in memory is altered as well.</p>
 This method will return an array the same shape as the image.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="drizzlepac.stisData.STISInputImage.SEPARATOR">
+<tt class="descname">SEPARATOR</tt><em class="property"> = '_'</em><a class="headerlink" href="#drizzlepac.stisData.STISInputImage.SEPARATOR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -123,7 +131,7 @@ This method will return an array the same shape as the image.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Units :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Units :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">DN</td>
 </tr>
 </tbody>
@@ -140,11 +148,11 @@ detector classes where different chips have different gains.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
 <blockquote class="last">
-<p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
-</blockquote>
+<div><p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -172,11 +180,11 @@ the parameter dictionary, in case empty entries are provided.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
 <blockquote class="last">
-<p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
-</blockquote>
+<div><p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -204,11 +212,11 @@ the parameter dictionary, in case empty entries are provided.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
 <blockquote class="last">
-<p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
-</blockquote>
+<div><p>Dark current value in <strong>units of electrons</strong> (or counts, if proc_unit==&#8217;native&#8217;).</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -250,13 +258,13 @@ the parameter dictionary, in case empty entries are provided.</p>
         <li class="right" >
           <a href="wfc3objects.html" title="WFC3 ImageObjects"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
           <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>

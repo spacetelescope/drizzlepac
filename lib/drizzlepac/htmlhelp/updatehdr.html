@@ -3,17 +3,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &mdash; drizzlepac v4.3.0 documentation</title>
+    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &mdash; drizzlepac 1.0.0 documentation</title>
+    
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '4.3.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac v4.3.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
     <link rel="next" title="pixtopix: Coordinate transformation to/from drizzled images" href="pixtopix.html" />
     <link rel="prev" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" /> 
   </head>
@@ -45,7 +48,7 @@
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -67,7 +70,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -97,22 +100,22 @@ from shiftfile.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="shiftfile">shiftfile</strong> : str</p>
 <blockquote>
-<p>Filename of shiftfile.</p>
-</blockquote>
+<div><p>Filename of shiftfile.</p>
+</div></blockquote>
 <p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
-<p>Label to give to new WCS solution being created by this fit. If
+<div><p>Label to give to new WCS solution being created by this fit. If
 a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
 label. [Default =None]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="force">force</strong> : bool</p>
 <blockquote class="last">
-<p>Update header even though WCS already exists with this solution or
+<div><p>Update header even though WCS already exists with this solution or
 wcsname? [Default=False]</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -130,27 +133,27 @@ HSTWCS object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="image">image</strong> : str</p>
 <blockquote>
-<p>Filename of image with WCS that needs to be updated</p>
-</blockquote>
+<div><p>Filename of image with WCS that needs to be updated</p>
+</div></blockquote>
 <p><strong id="extnum">extnum</strong> : int</p>
 <blockquote>
-<p>Extension number for extension with WCS to be updated/replaced</p>
-</blockquote>
+<div><p>Extension number for extension with WCS to be updated/replaced</p>
+</div></blockquote>
 <p><strong id="new_wcs">new_wcs</strong> : object</p>
 <blockquote>
-<p>Full HSTWCS object which will replace/update the existing WCS</p>
-</blockquote>
+<div><p>Full HSTWCS object which will replace/update the existing WCS</p>
+</div></blockquote>
 <p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
-<p>Label to give newly updated WCS</p>
-</blockquote>
+<div><p>Label to give newly updated WCS</p>
+</div></blockquote>
 <p><strong id="verbose">verbose</strong> : bool, int</p>
 <blockquote class="last">
-<p>Print extra messages during processing? [Default: False]</p>
-</blockquote>
+<div><p>Print extra messages during processing? [Default: False]</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -167,76 +170,76 @@ generated for use with &#8216;make_vector_plot()&#8217;.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="image">image</strong> : str or PyFITS.HDUList object</p>
 <blockquote>
-<p>Filename, or PyFITS object, of image with WCS to be updated.
+<div><p>Filename, or PyFITS object, of image with WCS to be updated.
 All extensions with EXTNAME matches the value of the &#8216;sciext&#8217;
 parameter value (by default, all &#8216;SCI&#8217; extensions) will be updated.</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="reference">reference</strong> : str</p>
 <blockquote>
-<p>Filename of image/headerlet (FITS file) which contains the WCS
+<div><p>Filename of image/headerlet (FITS file) which contains the WCS
 used to define the tangent plane in which all the fit parameters
 (shift, rot, scale) were measured.</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
-<p>Label to give to new WCS solution being created by this fit. If
+<div><p>Label to give to new WCS solution being created by this fit. If
 a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
 label. [Default =None]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="rot">rot</strong> : float</p>
 <blockquote>
-<p>Amount of rotation measured in fit to be applied.
+<div><p>Amount of rotation measured in fit to be applied.
 [Default=0.0]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="scale">scale</strong> : float</p>
 <blockquote>
-<p>Amount of scale change measured in fit to be applied.
+<div><p>Amount of scale change measured in fit to be applied.
 [Default=1.0]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="xsh">xsh</strong> : float</p>
 <blockquote>
-<p>Offset in X pixels from defined tangent plane to be applied to image.
+<div><p>Offset in X pixels from defined tangent plane to be applied to image.
 [Default=0.0]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="ysh">ysh</strong> : float</p>
 <blockquote>
-<p>Offset in Y pixels from defined tangent plane to be applied to image.
+<div><p>Offset in Y pixels from defined tangent plane to be applied to image.
 [Default=0.0]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="fit">fit</strong> : arr</p>
 <blockquote>
-<p>Linear coefficients for fit
+<div><p>Linear coefficients for fit
 [Default = None]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="xrms">xrms</strong> : float</p>
 <blockquote>
-<p>RMS of fit in RA (in decimal degrees) that will be recorded as
+<div><p>RMS of fit in RA (in decimal degrees) that will be recorded as
 CRDER1 in WCS and header
 [Default = None]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="yrms">yrms</strong> : float</p>
 <blockquote>
-<p>RMS of fit in Dec (in decimal degrees) that will be recorded as
+<div><p>RMS of fit in Dec (in decimal degrees) that will be recorded as
 CRDER2 in WCS and header
 [Default = None]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="verbose">verbose</strong> : bool</p>
 <blockquote>
-<p>Print extra messages during processing? [Default=False]</p>
-</blockquote>
+<div><p>Print extra messages during processing? [Default=False]</p>
+</div></blockquote>
 <p><strong id="force">force</strong> : bool</p>
 <blockquote>
-<p>Update header even though WCS already exists with this solution or
+<div><p>Update header even though WCS already exists with this solution or
 wcsname? [Default=False]</p>
-</blockquote>
+</div></blockquote>
 <p><strong id="sciext">sciext</strong> : string</p>
 <blockquote class="last">
-<p>Value of FITS EXTNAME keyword for extensions with WCS headers to
+<div><p>Value of FITS EXTNAME keyword for extensions with WCS headers to
 be updated with the fit values. [Default=&#8217;SCI&#8217;]</p>
-</blockquote>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -307,12 +310,12 @@ input image&#8217;s chips:</p>
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac v4.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>
