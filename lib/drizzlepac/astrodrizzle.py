@@ -14,10 +14,10 @@ This process involves a number of steps, namely:
   7.  Identifying and flagging cosmic-rays
   8.  Final combination
 
-A full description of this process can be found in the AstroDrizzle Handbook
+A full description of this process can be found in the DrizzlePac Handbook
 available online at:
 
-http://mediawiki.stsci.edu/mediawiki/index.php/Telescopedia:Astrodrizzle:AstroDrizzle
+http://drizzlepac.stsci.edu
 
 **Output**: The primary output from this task is the distortion-corrected,
 cosmic-ray cleaned, and combined image as a FITS file.

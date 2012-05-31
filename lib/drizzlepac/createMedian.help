@@ -36,9 +36,9 @@ combine_maskpt : float (Default Value = 0.7)
 
 
 combine_type : str {'average', 'median', 'sum', 'minmed'} (Default Value = 'minmed')
-    This parameter defines the method that will be used to create the median image.  The 'average', 'median', and 'sum' options set the calculation type when running 'numcombine', a numpy method for median-combining arrays to create the median image. The "minmed" option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, "minmed" will choose the minimum value. The sigma thresholds for this decision are provided by the "combine_nsigma" parameter. However, as the "combine_nsigma" parameter does not adjust for the larger probability of a single "nsigma" event with a greater number of images, "minmed" will bias the comparison image low for a large number of images. "minmed" is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images. 
+    This parameter defines the method that will be used to create the median image.  The 'average', 'median', and 'sum' options set the calculation type when running 'numcombine', a numpy method for median-combining arrays to create the median image. The "minmed" option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, "minmed" will choose the minimum value. The sigma thresholds for this decision are provided by the "combine_nsigma" parameter. However, as the "combine_nsigma" parameter does not adjust for the larger probability of a single "nsigma" event with a greater number of images, "minmed" will bias the comparison image low for a large number of images. "minmed" is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images.
 
-    A value of 'median' is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the "combine_nhigh" parameter to a value of 1 when using "median" with four images, and consider raising this parameter's value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus "combine_nhigh" odd when using "median". 
+    A value of 'median' is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the "combine_nhigh" parameter to a value of 1 when using "median" with four images, and consider raising this parameter's value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus "combine_nhigh" odd when using "median".
 
 
 combine_nsigma : float (Default Value = '4 3')
@@ -62,11 +62,11 @@ combine_hthresh : float (Default Value = INDEF)
 
 
 combine_grow : int (Default Value = 1)
-    Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the 'grow' parameter in 'imcombine' for use in creating the median image. 
+    Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the 'grow' parameter in 'imcombine' for use in creating the median image.
 
-For more information on the science applications of the createMedian task, see the AstroDrizzle Handbook:
+For more information on the science applications of the createMedian task, see the DrizzlePac Handbook:
 
-http://mediawiki.stsci.edu/mediawiki/index.php/Telescopedia:Astrodrizzle:AstroDrizzle
+http://drizzlepac.stsci.edu
 
 
 ---------------------------------------------------------------
@@ -74,14 +74,14 @@ How to use the tasks stand alone interface in your own scripts:
 ---------------------------------------------------------------
 
 
-For createMedian, the user interface function is "median" and has the following input: 
+For createMedian, the user interface function is "median" and has the following input:
 
 def median(input=None,configObj=None, editpars=False, **inputDict):
- 
+
     input is the list of images
     configObj is the alternate configObject which overrides default parameter settings
     set editpars = True to use the GUI to edit parameters
     inputDict is a dictionary of parameter settings which can also be used to override the defaults
-    
+
 >from drizzlepac import createMedian
 >createMedian.median('*flt.fits')

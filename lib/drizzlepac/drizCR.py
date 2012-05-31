@@ -351,7 +351,6 @@ def createCorrFile(outfile, arrlist, template):
     for arr in arrlist:
         ftemplate[arr['sciext']].data = arr['corrFile']
         if arr['dqext'][0] != arr['sciext'][0]:
-            print 'updating CRClean file with DQ array in ext ',arr['dqext'][0],arr['sciext'][0]
             ftemplate[arr['dqext']].data = arr['dqMask']
     ftemplate.writeto(outfile)
     print 'Created CR corrected file: ',outfile

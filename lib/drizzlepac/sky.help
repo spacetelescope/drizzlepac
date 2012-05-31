@@ -10,16 +10,16 @@ Basic Explanation:
 
 Sky subtraction is generally recommended for optimal flagging and removal of CR's when the sky background is more than a few electrons.  However, some science applications may require the sky to not be removed, allowing for the final drizzle step to be performed with no sky subtraction. If you turn off sky subtraction, you should also set drizzle.pixfrac to 1, otherwise variations in sky between images will add noise to your data.
 
-For cameras with multiple detectors (such as ACS/WFC, WFPC2, or WFC3), the sky values in each exposure are first measured separately for the different detectors. These different values are then compared, and the lowest measured sky value is used as the estimate for all of the detectors for that exposure. This is based on the premise that for large extended or bright targets, the pixel intensity distribution in one or more of the detectors may be significantly skewed toward the bright end by the target itself, thereby overestimating the sky on that detector. If the other detector is less affected by such a target, then its sky value  will be lower, and can therefore also be substituted as the sky value for the detector with the bright source. 
+For cameras with multiple detectors (such as ACS/WFC, WFPC2, or WFC3), the sky values in each exposure are first measured separately for the different detectors. These different values are then compared, and the lowest measured sky value is used as the estimate for all of the detectors for that exposure. This is based on the premise that for large extended or bright targets, the pixel intensity distribution in one or more of the detectors may be significantly skewed toward the bright end by the target itself, thereby overestimating the sky on that detector. If the other detector is less affected by such a target, then its sky value  will be lower, and can therefore also be substituted as the sky value for the detector with the bright source.
 
 
 :Input: Aside from the input parameters, this step requires opening each image to access the science (SCI) extensions for computing the sky values.
 
 :Output: The input file's primary headers is updated with the computed sky value, and each input image's SCI array (or copy of, if 'workinplace' is set to False), gets sky subtracted.
 
-For more information on the science applications of the sky task, see the AstroDrizzle Handbook:
+For more information on the science applications of the sky task, see the DrizzlePac Handbook:
 
-http://mediawiki.stsci.edu/mediawiki/index.php/Telescopedia:Astrodrizzle:AstroDrizzle
+http://drizzlepac.stsci.edu
 
 
 -----------------------------------
@@ -35,7 +35,7 @@ skywidth : float (Default Value = 0.1)
 
 
 skystat : {'median', 'mode', 'mean'} (Default Value = 'median')
-    Statistical method for determining the sky value from the image pixel values. 
+    Statistical method for determining the sky value from the image pixel values.
 
 
 skylower : float (Default Value = INDEF)
@@ -66,11 +66,11 @@ skyuser : str (Default Value = '')
 How to use the tasks stand alone interface in your own scripts:
 ---------------------------------------------------------------
 
-These tasks are designed to work together seemlessly when run in the full AstroDrizzle interface. More advanced users may wish to create specialized scripts for their own datasets, making use of only a subset of the predefined AstroDrizzle tasks, or add additional processing, which may be usefull for their particular data. In these cases, individual access to the tasks is important. 
+These tasks are designed to work together seemlessly when run in the full AstroDrizzle interface. More advanced users may wish to create specialized scripts for their own datasets, making use of only a subset of the predefined AstroDrizzle tasks, or add additional processing, which may be usefull for their particular data. In these cases, individual access to the tasks is important.
 
 **Something to keep in mind is that the full AstroDrizzle interface will make backup copies of your original files and place them in the OrIg/ directory of your current working directory. If you are working with the stand alone interfaces, it is assumed that the user has already taken care of backing up their original datafiles as the input file with be directly altered.
 
-For sky, the user interface function is "sky" and has the following input: 
+For sky, the user interface function is "sky" and has the following input:
 
 
 def sky(imageList=None,configObj=None, editpars=False, **inputDict):
@@ -80,7 +80,7 @@ def sky(imageList=None,configObj=None, editpars=False, **inputDict):
     configObj is an instance of configObject
 
     inputDict is an optional list of parameters specified by the user
-    
+
     These are parameters that configObj should contain by default. These
     parameters can be altered on the fly using the inputDict. If configObj
     is set to None and there is no inputDict information, then the values
