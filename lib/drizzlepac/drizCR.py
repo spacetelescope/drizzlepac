@@ -308,7 +308,7 @@ def _drizCr(sciImage, paramDict, saveFile=True):
                 crcorr_list.append({'sciext':fileutil.parseExtn(exten),
                                 'corrFile':__corrFile.copy(),
                                 'dqext':fileutil.parseExtn(scienceChip.dq_extn),
-                                'dqMask':__corrDQMask})
+                                'dqMask':__corrDQMask.copy()})
 
 
             ######## Save the cosmic ray mask file to disk
@@ -350,7 +350,9 @@ def createCorrFile(outfile, arrlist, template):
     ftemplate = pyfits.open(template)
     for arr in arrlist:
         ftemplate[arr['sciext']].data = arr['corrFile']
-        ftemplate[arr['dqext']].data = arr['dqMask']
+        if arr['dqext'][0] != arr['sciext'][0]:
+            print 'updating CRClean file with DQ array in ext ',arr['dqext'][0],arr['sciext'][0]
+            ftemplate[arr['dqext']].data = arr['dqMask']
     ftemplate.writeto(outfile)
     print 'Created CR corrected file: ',outfile
 

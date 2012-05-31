@@ -622,7 +622,8 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     hdr.update('WCSNAME',wname, after=after)
     hdr.update('VAFACTOR',1.0, after=after)
     hdr.update('ORIENTAT',wcs.orientat, after=after)
-    if not hdr.has_key('ctype1'):
+
+    if 'CTYPE1' not in hdr:
         hdr.update('CTYPE2',wcs.wcs.ctype[1], after=after)
         hdr.update('CTYPE1',wcs.wcs.ctype[0], after=after)
     hdr.update('CRPIX2',wcs.wcs.crpix[1], after=after)
