@@ -8,6 +8,6 @@ if svn_version:
 else:
     sversion = ''
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __full_version__ = __version__+sversion
-__vdate__ = '31-May-2012'
+__vdate__ = '20-June-2012'

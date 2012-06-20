@@ -853,7 +853,7 @@ def buildEmptyDRZ(input, output):
     fitsobj.append(hdu)
 
     # Add HISTORY comments explaining the creation of this file.
-    fitsobj[0].header.add_history("** Multidrizzle has created this empty "
+    fitsobj[0].header.add_history("** AstroDrizzle has created this empty "
                                   "DRZ product because**")
     fitsobj[0].header.add_history("** all input images were excluded from "
                                   "processing.**")
@@ -886,7 +886,7 @@ def buildEmptyDRZ(input, output):
     fitsobj.writeto(output)
 
     print >> sys.stderr, textutil.textbox(
-        'ERROR:\nMultidrizzle has created an empty DRZ product because all '
+        'ERROR:\nAstroDrizzle has created an empty DRZ product because all '
         'input images were excluded from processing or a user requested the '
         'program to stop.') + '\n'
 

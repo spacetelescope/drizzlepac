@@ -51,6 +51,9 @@ __taskname__ = "astrodrizzle"
 __version__ = adriz_versions.__version__
 __vdate__ = adriz_versions.__vdate__
 
+# Definitions for flags on when to raise an EXCEPTION
+RAISE = 1
+DO_NOT_RAISE = 0
 
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
@@ -154,6 +157,7 @@ def run(configobj, wcsmap=None):
         The example config files are in drizzlepac/pars
 
     """
+    raise_status = RAISE
     #
     # turn on logging, redirecting stdout/stderr messages to a log file
     # while also printing them out to stdout as well
@@ -191,6 +195,11 @@ def run(configobj, wcsmap=None):
         procSteps.endStep('Initialization')
 
         if not imgObjList:
+            errmsg = "No valid images found for processing!\n"
+            errmsg += "Check log file for full details.\n"
+            errmsg += "Exiting AstroDrizzle now..."
+            print textutil.textbox(errmsg,width=65)
+            raise_status = DO_NOT_RAISE
             raise ValueError
 
         log.info("USER INPUT PARAMETERS common to all Processing Steps:")
@@ -240,7 +249,12 @@ def run(configobj, wcsmap=None):
                 image.close()
             del imgObjList
             del outwcs
-        raise
+
+        # Raise an exception ONLY if requested...
+        if raise_status == RAISE:
+            raise
+        else:
+            return
 
     procSteps.reportTimes()
 

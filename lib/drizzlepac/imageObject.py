@@ -954,6 +954,13 @@ class imageObject(baseImageObject):
 
         self._isSimpleFits = False
 
+        # Clean out any stray MDRIZSKY keywords from PRIMARY headers
+        fimg = fileutil.openImage(filename,mode='update')
+        if 'MDRIZSKY' in fimg['PRIMARY'].header:
+            del fimg['PRIMARY'].header['MDRIZSKY']
+        fimg.close()
+        del fimg
+
         if group not in [None,'']:
             # Only use selected chip(s?)
             group_id = fileutil.parseExtn(str(group))

@@ -60,7 +60,7 @@ def getMdriztabParameters(files):
         _numimages = _mdriztab[1].data.field('numimages')[i]
         if _nimages >= _numimages:
             _row = i
-    print '- MDRIZTAB: MultiDrizzle parameters read from row %s.'%(_row+1)
+    print '- MDRIZTAB: AstroDrizzle parameters read from row %s.'%(_row+1)
 
     mpars = _mdriztab[1].data[_row]
     _mdriztab.close()

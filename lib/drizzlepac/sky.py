@@ -160,7 +160,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
 
 # this function applies user supplied sky values from an input file
 def _skyUserFromFile(imageObjList,skyFile):
-    """ 
+    """
     Apply sky value as read in from a user-supplied input file
     """
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
@@ -183,7 +183,7 @@ def _skyUserFromFile(imageObjList,skyFile):
             for lvals in lspl[1:]:
                 svals.append(float(lvals))
             skyvals[lspl[0]] = svals
-        
+
     # Apply user values to appropriate input images
     for imageSet in imageObjList:
         fname = imageSet._filename
@@ -196,14 +196,14 @@ def _skyUserFromFile(imageObjList,skyFile):
                     _skyValue = skyvals[fname][0]
                 else:
                     _skyValue = skyvals[fname][chip-1]
-                    
+
                 chipext = '%s,%d'%(sciExt,chip)
                 _updateKW(imageSet[chipext],fname,(sciExt,chip),skyKW,_skyValue)
 
                 # Update internal record with subtracted sky value
                 #
                 # .computedSky:   value to be applied by the
-                #                 adrizzle/ablot steps. 
+                #                 adrizzle/ablot steps.
                 # .subtractedSky: value already (or will be by adrizzle/ablot)
                 #                 subtracted from the image
                 if skyapplied:
@@ -220,7 +220,7 @@ def _skyUserFromFile(imageObjList,skyFile):
             print "    .... Setting sky to a value of 0.0! "
             print "*"
             print "*"*40
-            
+
 #this is the main function that does all the real work in computing the
 # statistical sky value for each image (set of chips)
 def _skySub(imageSet,paramDict,saveFile=False):
@@ -283,7 +283,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
                 imageSet[chipext].subtractedSky = _skyValue
                 imageSet[chipext].computedSky = 0.0
                 print "Setting ",skyKW,"=",_skyValue
-            
+
     else:
         # Compute our own sky values and record the values for use later.
         # The minimum sky value from all the  science chips in the exposure
@@ -336,35 +336,6 @@ def _skySub(imageSet,paramDict,saveFile=False):
             # Update the header so that the keyword in the image is
             #the sky value which should be subtracted from the image
             _updateKW(image,imageSet._filename,(sciExt,chip),skyKW,_scaledSky)
-
-            """
-            if not saveFile:
-                print "**Updating input image with sky subtracted image"
-                # Write out the sky-subtracted array back to the input image
-                imageSet.updateData(sciExt+","+str(chip),image.data)
-            """
-        #update the value of MDRIZSKY in the global header
-        # This does not make sense for STIS ASN files that
-        #haven't been chunked up into separate fits files already
-        #_updateKW(imageSet["PRIMARY"],imageSet._filename,'PRIMARY',skyKW,_skyValue)
-
-    """
-    if(saveFile):
-        print "Saving output sky subtracted image: ",imageSet.outputNames["outSky"]
-        #get the rest of the data extensions
-        imageSet.getAllData(exclude="SCI")
-        if os.access(imageSet.outputNames['outSky'],os.F_OK):
-            os.remove(imageSet.outputNames['outSky'])
-
-        try:
-            imageSet._image.writeto(imageSet.outputNames['outSky'])
-        except IOError:
-            msg = "Image already exists on disk!"
-            print msg
-            raise IOError(msg)
-    """
-    #imageSet.close() #remove the data from memory
-
 
 
 ###############################
@@ -437,7 +408,8 @@ def _updateKW(image, filename, exten, skyKW, Value):
         strexten = '[%s]'%(exten)
     log.info('Updating keyword %s in %s' % (skyKW, filename + strexten))
     fobj = fileutil.openImage(filename, mode='update')
-    fobj[exten].header.update(skyKW, Value)
+    fobj[exten].header.update(skyKW, Value,
+                    comment='Sky value computed by AstroDrizzle')
     fobj.close()
 
 #this is really related to each individual chip

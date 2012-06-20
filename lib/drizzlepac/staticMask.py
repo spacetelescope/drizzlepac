@@ -129,8 +129,9 @@ def constructFilename(signature):
     import tempfile
     prefix='tmp'
     suffix = buildSignatureKey(signature)
-    fhandle,filename = tempfile.mkstemp(prefix=prefix,suffix=suffix,dir='.')
-    os.remove(filename)
+    filename = tempfile.mktemp(prefix=prefix,suffix=suffix,dir='.')
+    #fhandle,filename = tempfile.mkstemp(prefix=prefix,suffix=suffix,dir='.')
+    #os.remove(filename)
     return filename
 
 def buildSignatureKey(signature):
