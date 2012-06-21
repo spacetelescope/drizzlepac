@@ -139,6 +139,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
 
     if not util.getConfigObjPar(configObj, 'skysub'):
         log.info('Sky Subtraction step not performed.')
+        _addDefaultSkyKW(imageObjList)
         procSteps.endStep('Subtract Sky')
         return
 
@@ -411,6 +412,27 @@ def _updateKW(image, filename, exten, skyKW, Value):
     fobj[exten].header.update(skyKW, Value,
                     comment='Sky value computed by AstroDrizzle')
     fobj.close()
+
+def _addDefaultSkyKW(imageObjList):
+    """Add MDRIZSKY keyword to SCI headers of all input images,
+        if that keyword does not already exist.
+    """
+    skyKW = "MDRIZSKY"
+    Value = 0.0
+    for imageSet in imageObjList:
+        fname = imageSet._filename
+        numchips=imageSet._numchips
+        sciExt=imageSet.scienceExt
+        fobj = fileutil.openImage(fname, mode='update')
+        for chip in range(1,numchips+1,1):
+            exten = (sciExt,chip)
+            if skyKW not in fobj[exten].header:
+                fobj[exten].header.update(skyKW, Value,
+                                comment='Sky value computed by AstroDrizzle')
+                log.info("MDRIZSKY keyword not found in the %s[%s,%d] header."%(
+                            fname,sciExt,chip))
+                log.info("    Adding MDRIZSKY to header with default value of 0.")
+        fobj.close()
 
 #this is really related to each individual chip
 #so pass in the image for that chip, image contains header and data
