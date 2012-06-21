@@ -278,7 +278,6 @@ class OutputImage:
             self.addDrizKeywords(prihdu.header,versions)
 
         if scihdr:
-            del scihdr['MDRIZSKY']
             del scihdr['OBJECT']
             if scihdr.has_key('CCDCHIP'): scihdr.update('CCDCHIP','-999')
             if scihdr.has_key('NCOMBINE') > 0:
@@ -723,4 +722,3 @@ def writeDrizKeywords(hdr,imgnum,drizdict):
         comment = drizdict[key]['comment']
         if comment is None: comment = ""
         hdr.update(_keyprefix+key,val,comment=drizdict[key]['comment'])
-
