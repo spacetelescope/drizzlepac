@@ -29,7 +29,6 @@ class NICMOSInputImage(imageObject):
 
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0   #no correction for nicmos
-            self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
 
         self._effGain = 1. #get the specific gain from the detector subclass
 
@@ -150,8 +149,8 @@ class NICMOSInputImage(imageObject):
         """
 
         try:
-            darkcurrent = self.header['exptime'] * self.darkrate
-
+            darkcurrent = self._image[0].header['exptime'] * \
+                            self._image[self.scienceExt,1]._darkrate
         except:
             str =  "#############################################\n"
             str += "#                                           #\n"
@@ -165,7 +164,6 @@ class NICMOSInputImage(imageObject):
             str += "#                                           #\n"
             str += "#############################################\n"
             raise ValueError, str
-
 
         return darkcurrent
 
@@ -220,6 +218,7 @@ class NIC1InputImage(NICMOSInputImage):
         self._detector=self._image["PRIMARY"].header["CAMERA"]
         self.proc_unit = "native"
 
+
     def _getDarkRate(self):
         _darkrate = 0.08 #electrons/s
         if self.proc_unit == 'native':
@@ -271,6 +270,7 @@ class NIC1InputImage(NICMOSInputImage):
                 chip._rdnoise = self._getDefaultReadnoise()
 
             chip._darkrate=self._getDarkRate()
+            chip.darkcurrent = self.getdarkcurrent()
 
             chip._effGain = chip._gain
             self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
@@ -337,6 +337,7 @@ class NIC2InputImage(NICMOSInputImage):
                 chip._rdnoise = self._getDefaultReadnoise()
 
             chip._darkrate=self._getDarkRate()
+            chip.darkcurrent = self.getdarkcurrent()
 
             chip._effGain = chip._gain
             self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
@@ -407,6 +408,7 @@ class NIC3InputImage(NICMOSInputImage):
                 chip._rdnoise = self._getDefaultReadnoise()
 
             chip._darkrate=self._getDarkRate()
+            chip.darkcurrent = self.getdarkcurrent()
 
             chip._effGain = chip._gain
             self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
