@@ -493,7 +493,7 @@ class baseImageObject:
         try:
             handle = fileutil.openImage(filename, mode='readonly', memmap=0)
             hdu = fileutil.getExtn(handle,extn=exten)
-            if hdu.data.shape[0] != sci_ship.image_shape[0]:
+            if hdu.data.shape[0] != sci_chip.image_shape[0]:
                 _ltv2 = np.round(sci_chip.ltv2)
             else:
                 _ltv2 = 0
