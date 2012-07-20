@@ -253,7 +253,8 @@ def _median(imageObjectList, paramDict):
     _niter = nimageiter.computeNumberBuff(_imgrows,_nrows,_overlap)
     #computeNumberBuff actually returns (niter,buffrows)
     _niter=_niter[0]
-    _lastrows = _imgrows - (_niter*_nrows)
+    _nrows = _niter[1]
+    _lastrows = _imgrows - (_niter*(_nrows-_overlap))
 
     # check to see if this buffer size will leave enough rows for
     # the section returned on the last iteration
@@ -305,7 +306,7 @@ def _median(imageObjectList, paramDict):
                 fillval = True
             else:
                 fillval = False
-                
+
             if (_weight_mask_list in [None,[]]):
                 _weight_mask_list = None
 
@@ -408,4 +409,3 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
         raise IOError(msg)
 
     del _pf
-
