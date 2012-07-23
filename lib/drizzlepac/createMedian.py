@@ -250,10 +250,10 @@ def _median(imageObjectList, paramDict):
 #        _overlaprows = _nrows - (_overlap+1)
 #        _niter = int(_imgrows/_nrows)
 #        _niter = 1 + int( (_imgrows - _overlaprows)/_nrows)
-    _niter = nimageiter.computeNumberBuff(_imgrows,_nrows,_overlap)
+    niter = nimageiter.computeNumberBuff(_imgrows,_nrows,_overlap)
     #computeNumberBuff actually returns (niter,buffrows)
-    _niter=_niter[0]
-    _nrows = _niter[1]
+    _niter= niter[0]
+    _nrows = niter[1]
     _lastrows = _imgrows - (_niter*(_nrows-_overlap))
 
     # check to see if this buffer size will leave enough rows for
