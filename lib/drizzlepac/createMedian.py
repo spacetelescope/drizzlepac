@@ -260,7 +260,7 @@ def _median(imageObjectList, paramDict):
     # the section returned on the last iteration
     if _lastrows < _overlap+1:
         _delta_rows = (_overlap+1 - _lastrows)//_niter
-        if _delta_rows < 1 and _delta_rows > 0: _delta_rows = 1
+        if _delta_rows < 1 and _delta_rows >= 0: _delta_rows = 1
         _bufsize += (_imgarr.shape[1]*_imgarr.itemsize) * _delta_rows
 
     masterList[0].close()
