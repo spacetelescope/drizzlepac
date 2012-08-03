@@ -678,7 +678,8 @@ class baseImageObject:
         """
         log.info("Applying EXPTIME weighting to DQ mask for chip %s" %
                  chip)
-        exparr = self.getexptimeimg(chip)
+        #exparr = self.getexptimeimg(chip)
+        exparr = self._image[self.scienceExt,chip]._exptime
         expmask = exparr*dqarr
 
         return expmask.astype(np.float32)
@@ -717,7 +718,8 @@ class baseImageObject:
             darkimg = self.getdarkimg(chip)
             skyimg = self.getskyimg(chip)
 
-            exptime = self.getexptimeimg(chip)
+            #exptime = self.getexptimeimg(chip)
+            exptime = sci_chip._exptime
             ivm = (flat*exptime)**2/(darkimg+(skyimg*flat)+RN**2)
 
            # Multiply the IVM file by the input mask in place.
@@ -748,7 +750,8 @@ class baseImageObject:
                          chip)
 
                 # Multiply the scaled ERR file by the input mask in place.
-                exptime = self.getexptimeimg(chip)
+                #exptime = self.getexptimeimg(chip)
+                exptime = sci_chip._exptime
                 errmask = (exptime/err)**2 * dqarr
 
                 # Update 'wt_scl' parameter to match use of IVM file
