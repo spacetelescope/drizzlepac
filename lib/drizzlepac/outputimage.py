@@ -622,6 +622,10 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     hdr.update('VAFACTOR',1.0, after=after)
     hdr.update('ORIENTAT',wcs.orientat, after=after)
 
+    # Use of 'after' not needed if these keywords already exist in the header
+    if after in WCS_KEYWORDS:
+        after = None
+
     if 'CTYPE1' not in hdr:
         hdr.update('CTYPE2',wcs.wcs.ctype[1], after=after)
         hdr.update('CTYPE1',wcs.wcs.ctype[0], after=after)

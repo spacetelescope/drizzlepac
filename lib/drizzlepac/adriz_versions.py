@@ -10,4 +10,4 @@ else:
 
 __version__ = '1.0.5'
 __full_version__ = __version__+sversion
-__vdate__ = '3-Aug-2012'
+__vdate__ = '8-Aug-2012'
