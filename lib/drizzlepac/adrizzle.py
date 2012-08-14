@@ -785,7 +785,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _inwht = img.buildEXPmask(chip._chip,dqarr)
     else: # wht_type == None, used for single drizzle images
         _inwht = chip._exptime * dqarr.astype(np.float32)
-        
+
     if not(paramDict['clean']):
         # Write out mask file if 'clean' has been turned off
         if single:
@@ -815,6 +815,10 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     for kw in img.outputNames:
         if kw[:3] == 'out':
             outputvals[kw] = img.outputNames[kw]
+
+    outputvals['exptime'] = chip._exptime
+    outputvals['wt_scl_val'] = chip._wtscl
+
     _hdrlist.append(outputvals)
 
     if doWrite:

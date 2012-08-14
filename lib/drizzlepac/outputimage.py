@@ -368,10 +368,10 @@ class OutputImage:
             if newtab is not None:
                 fo.append(newtab)
 
-            # write out file to disk
-            fo.writeto(self.output)
-            fo.close()
-            del fo, hdu
+                # write out file to disk
+                fo.writeto(self.output)
+                fo.close()
+                del fo, hdu
 
         else:
             print('-Generating simple FITS output: %s' % self.outdata)
@@ -401,9 +401,9 @@ class OutputImage:
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
-            # write out file to disk
-            fo.writeto(self.outdata)
-            del fo,hdu
+                # write out file to disk
+                fo.writeto(self.outdata)
+                del fo,hdu
 
             if self.outweight and whtarr != None:
                 # We need to build new PyFITS objects for each WHT array
@@ -538,9 +538,13 @@ class OutputImage:
 
             # Process the values of WT_SCL to be consistent with
             # what IRAF Drizzle would output
-            if pl['wt_scl'] == 'exptime': _wtscl = pl['exptime']
-            elif pl['wt_scl'] == 'expsq': _wtscl = pl['exptime']*pl['exptime']
-            else: _wtscl = pl['wt_scl']
+            if 'wt_scl_val' in pl:
+                _wtscl = pl['wt_scl_val']
+            else:
+                if pl['wt_scl'] == 'exptime': _wtscl = pl['exptime']
+                elif pl['wt_scl'] == 'expsq': _wtscl = pl['exptime']*pl['exptime']
+                else: _wtscl = pl['wt_scl']
+
             drizdict['WTSC']['value'] = _wtscl
             drizdict['KERN']['value'] = pl['kernel']
             drizdict['PIXF']['value'] = pl['pixfrac']

@@ -481,7 +481,7 @@ class baseImageObject:
         """
 
         sci_chip = self._image[self.scienceExt, chip]
-        exten = '%s,%d' % (self.errExt, chip)
+        exten = '%s,%d' % (self.scienceExt, chip)
         # The keyword for ACS flat fields in the primary header of the flt
         # file is pfltfile.  This flat file is already in the required
         # units of electrons.
@@ -719,15 +719,16 @@ class baseImageObject:
             skyimg = self.getskyimg(chip)
 
             #exptime = self.getexptimeimg(chip)
-            exptime = sci_chip._exptime
-            ivm = (flat*exptime)**2/(darkimg+(skyimg*flat)+RN**2)
+            #exptime = sci_chip._exptime
+            #ivm = (flat*exptime)**2/(darkimg+(skyimg*flat)+RN**2)
+            ivm = (flat)**2/(darkimg+(skyimg*flat)+RN**2)
 
            # Multiply the IVM file by the input mask in place.
             ivmarr = ivm * dqarr
 
         # Update 'wt_scl' parameter to match use of IVM file
-        #sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
-        sci_chip._wtscl = 1.0/pow(scale,4)
+        sci_chip._wtscl = pow(sci_chip._exptime,2)/pow(scale,4)
+        #sci_chip._wtscl = 1.0/pow(scale,4)
 
         return ivmarr.astype(np.float32)
 
@@ -935,7 +936,7 @@ class imageObject(baseImageObject):
         self._exptime =1. #to avoid divide by zero
  #           print "Setting exposure time to 1. to avoid div/0!"
 
-       #this is the number of science chips to be processed in the file
+        #this is the number of science chips to be processed in the file
         self._numchips=self._countEXT(extname=self.scienceExt)
 
         self.proc_unit = None
