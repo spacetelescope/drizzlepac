@@ -209,15 +209,16 @@ class staticMask(object):
             stats = ImageStats(chipimage,nclip=3,fields='mode')
             mode = stats.mode
             rms  = stats.stddev
+            nbins = len(stats.histogram)
             del stats
 
             log.info('  mode = %9f;   rms = %7f;   static_sig = %0.2f' %
                      (mode, rms, self.static_sig))
-
-            sky_rms_diff = mode - (self.static_sig*rms)
-            np.bitwise_and(self.masklist[signature],
-                           np.logical_not(np.less(chipimage, sky_rms_diff)),
-                           self.masklist[signature])
+            if nbins >= 2: # only combine data from new image if enough data to mask
+                sky_rms_diff = mode - (self.static_sig*rms)
+                np.bitwise_and(self.masklist[signature],
+                               np.logical_not(np.less(chipimage, sky_rms_diff)),
+                               self.masklist[signature])
             del chipimage
 
 
