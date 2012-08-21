@@ -401,9 +401,10 @@ class OutputImage:
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
-                # write out file to disk
-                fo.writeto(self.outdata)
-                del fo,hdu
+
+            # write out file to disk
+            fo.writeto(self.outdata)
+            del fo,hdu
 
             if self.outweight and whtarr != None:
                 # We need to build new PyFITS objects for each WHT array
