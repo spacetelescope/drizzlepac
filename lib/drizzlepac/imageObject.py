@@ -48,6 +48,7 @@ class baseImageObject:
         self.outputValues = {}
         self.createContext = True
 
+        self.inmemory = False # flag for all in-memory operations
         #this is the number of science chips to be processed in the file
         self._numchips=1
         self._nextend=0
@@ -156,10 +157,12 @@ class baseImageObject:
                 _data=fileutil.getExtn(_image,extn=exten).data
                 _image.close()
                 del _image
+                self._image[extnum].data = _data
             else:
                 _data = None
         else:
             _data = self._image[extnum].data
+
         return _data
 
     def getHeader(self,exten=None):
@@ -396,6 +399,42 @@ class baseImageObject:
         fnames['data'] = sci_chip.sciname
         return fnames
 
+##############################################################
+#
+# Methods related to managing virtual intermediate output products
+# as opposed to writing them out as files on disk
+#
+##############################################################
+    def _initVirtualOutputs(self):
+        """ Sets up the structure to hold all the output data arrays for
+            this image in memory.
+        """
+        self.virtualOutputs = {}
+        for product in self.outputNames:
+            self.virtualOutputs[product] = None
+
+    def saveVirtualOutputs(self,outdict):
+        """ Assign in-memory versions of generated products for this imageObject
+            based on dictionary 'outdict'.
+        """
+        if not self.inmemory:
+            return
+        for outname in outdict:
+            self.virtualOutputs[outname] = outdict[outname]
+
+    def getOutputName(self,name):
+        """ Return the name of the file or PyFITS object associated with that
+            name, depending on the setting of self.inmemory.
+        """
+        val = self.outputNames[name]
+        if self.inmemory: # if inmemory was turned on...
+            # return virtualOutput object saved with that name
+            val = self.virtualOutputs[val]
+        return val
+
+##############################################################
+# Methods for managing output values associated with this input
+##############################################################
     def updateOutputValues(self,output_wcs):
         """ Copy info from output WCSObject into outputnames for each chip
             for use in creating outputimage object.
@@ -915,7 +954,7 @@ class imageObject(baseImageObject):
         only to the specific chip.
     """
 
-    def __init__(self,filename,group=None):
+    def __init__(self,filename,group=None,inmemory=False):
         baseImageObject.__init__(self,filename)
 
         #filutil open returns a pyfits object
@@ -929,6 +968,11 @@ class imageObject(baseImageObject):
         #self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
         self._rootname=fileutil.buildNewRootname(filename)
         self.outputNames=self._setOutputNames(self._rootname)
+
+        # flag to indicate whether or not to write out intermediate products
+        # to disk (default) or keep everything in memory
+        self.inmemory = inmemory
+        self._initVirtualOutputs()
 
         #self._exptime=self._image["PRIMARY"].header["EXPTIME"]
         #exptime should be set in the image subclass code since it's kept in different places
@@ -1072,6 +1116,10 @@ class imageObject(baseImageObject):
                     if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:
                         sci_chip.image_dtype = dtype
                         break
+
+                if self.inmemory:
+                    # read image data array into memory
+                    shape = sci_chip.data.shape
 
 
     def setInstrumentParameters(self,instrpars):

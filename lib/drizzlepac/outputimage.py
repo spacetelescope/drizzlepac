@@ -134,6 +134,7 @@ class OutputImage:
 
         if blot:
             _outdata = plist[0]['blotImage']
+            self.outblot_key = 'blotImage'
 
         if not self.build or single:
             self.output = _outdata
@@ -155,7 +156,7 @@ class OutputImage:
         self.units = units
 
     def writeFITS(self, template, sciarr, whtarr, ctxarr=None,
-                versions=None, overwrite=yes, blend=True):
+                versions=None, overwrite=yes, blend=True, virtual=False):
         """
         Generate PyFITS objects for each output extension
         using the file given by 'template' for populating
@@ -178,6 +179,8 @@ class OutputImage:
                           'operations.')
                 raise IOError
 
+        # initialize output value for this method
+        outputFITS = {}
         # Default value for NEXTEND when 'build'== True
         nextend = 3
         if not self.build:
@@ -368,10 +371,15 @@ class OutputImage:
             if newtab is not None:
                 fo.append(newtab)
 
+            if not virtual:
+                print 'Writing out to disk:',self.output
                 # write out file to disk
                 fo.writeto(self.output)
                 fo.close()
                 del fo, hdu
+                fo = None
+            # End 'if not virtual'
+            outputFITS[self.output]= fo
 
         else:
             print('-Generating simple FITS output: %s' % self.outdata)
@@ -402,9 +410,14 @@ class OutputImage:
             if newtab is not None:
                 fo.append(newtab)
 
-            # write out file to disk
-            fo.writeto(self.outdata)
-            del fo,hdu
+            if not virtual:
+                print 'Writing out image to disk:',self.outdata
+                # write out file to disk
+                fo.writeto(self.outdata)
+                del fo,hdu
+                fo = None
+            # End 'if not virtual'
+            outputFITS[self.outdata]= fo
 
             if self.outweight and whtarr != None:
                 # We need to build new PyFITS objects for each WHT array
@@ -435,8 +448,13 @@ class OutputImage:
                 # remove all alternate WCS solutions from headers of this product
                 wcs_functions.removeAllAltWCS(fwht,[0])
 
-                fwht.writeto(self.outweight)
-                del fwht,hdu
+                if not virtual:
+                    print 'Writing out image to disk:',self.outweight
+                    fwht.writeto(self.outweight)
+                    del fwht,hdu
+                    fwht = None
+                # End 'if not virtual'
+                outputFITS[self.outweight]= fwht
 
             # If a context image was specified, build a PyFITS object
             # for it as well...
@@ -469,8 +487,16 @@ class OutputImage:
                 fctx.append(hdu)
                 # remove all alternate WCS solutions from headers of this product
                 wcs_functions.removeAllAltWCS(fctx,[0])
-                fctx.writeto(self.outcontext)
-                del fctx,hdu
+                if not virtual:
+                    print 'Writing out image to disk:',self.outcontext
+                    fctx.writeto(self.outcontext)
+                    del fctx,hdu
+                    fctx = None
+                # End 'if not virtual'
+
+                outputFITS[self.outcontext]= fctx
+
+        return outputFITS
 
     def find_kwupdate_location(self,hdr,keyword):
         """

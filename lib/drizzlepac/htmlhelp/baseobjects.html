@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Base ImageObject Classes &mdash; drizzlepac 1.0.0 documentation</title>
+    <title>Base ImageObject Classes &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.0',
+        VERSION:     '1.0.6 (14-Aug-2012)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
     <link rel="up" title="imageObject Classes" href="imageobject.html" />
     <link rel="next" title="ACS ImageObjects" href="acsobjects.html" />
     <link rel="prev" title="imageObject Classes" href="imageobject.html" /> 
@@ -41,15 +41,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="np-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
           <a href="acsobjects.html" title="ACS ImageObjects"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
           <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
       </ul>
     </div>
@@ -235,6 +232,13 @@ imageObject.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="drizzlepac.imageObject.baseImageObject.getOutputName">
+<tt class="descname">getOutputName</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getOutputName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the name of the file or PyFITS object associated with that
+name, depending on the setting of self.inmemory.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getReadNoiseImage">
 <tt class="descname">getReadNoiseImage</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getReadNoiseImage" title="Permalink to this definition">¶</a></dt>
 <dd><p class="rubric">Notes</p>
@@ -374,6 +378,13 @@ extname given minus those specified for exclusion (if any).</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="drizzlepac.imageObject.baseImageObject.saveVirtualOutputs">
+<tt class="descname">saveVirtualOutputs</tt><big>(</big><em>outdict</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.saveVirtualOutputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign in-memory versions of generated products for this imageObject
+based on dictionary &#8216;outdict&#8217;.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.set_mt_wcs">
 <tt class="descname">set_mt_wcs</tt><big>(</big><em>image</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.set_mt_wcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the WCS for this image based on the WCS information from
@@ -424,7 +435,7 @@ for use in creating outputimage object.</p>
 
 <dl class="class">
 <dt id="drizzlepac.imageObject.imageObject">
-<em class="property">class </em><tt class="descclassname">drizzlepac.imageObject.</tt><tt class="descname">imageObject</tt><big>(</big><em>filename</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.imageObject" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">drizzlepac.imageObject.</tt><tt class="descname">imageObject</tt><big>(</big><em>filename</em>, <em>group=None</em>, <em>inmemory=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.imageObject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#drizzlepac.imageObject.baseImageObject" title="drizzlepac.imageObject.baseImageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.baseImageObject</span></tt></a></p>
 <p>This returns an imageObject that contains all the
 necessary information to run the image file through
@@ -485,15 +496,12 @@ methods defined in each instrument&#8217;s sub-class.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="np-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
           <a href="acsobjects.html" title="ACS ImageObjects"
              >next</a> |</li>
         <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
           <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
       </ul>
     </div>

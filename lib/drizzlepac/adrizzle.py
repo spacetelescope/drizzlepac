@@ -22,13 +22,12 @@ except ImportError:
 if util.can_parallel:
     import multiprocessing
 
-
 __taskname__ = "drizzlepac.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
 __version__ = adriz_versions.__full_version__
-__vdate__ = "17-Apr-2011"
+__vdate__ = "23-Aug-2012"
 
 
 log = logutil.create_logger(__name__)
@@ -381,11 +380,22 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
 def mergeDQarray(maskname,dqarr):
     """ Merge static or CR mask with mask created from DQ array on-the-fly here.
     """
-    if maskname is not None and os.path.exists(maskname):
-        mask = fileutil.openImage(maskname)
-        maskarr = mask[0].data.astype(np.bool)
+    if maskname is not None:
+        if isinstance(maskname, str):
+            # working with file on disk (default case)
+            if os.path.exists(maskname):
+                mask = fileutil.openImage(maskname)
+                maskarr = mask[0].data.astype(np.bool)
+                mask.close()
+        else:
+            if isinstance(maskname, pyfits.HDUList):
+                # working with a virtual input file
+                maskarr = maskname[0].data.astype(np.bool)
+            else:
+                maskarr = maskname.data.astype(np.bool)
+
+        # merge array with dqarr now
         np.bitwise_and(dqarr,maskarr,dqarr)
-        mask.close()
 
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
     if not os.path.exists(crmaskname):
@@ -498,7 +508,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     outwcs = copy.deepcopy(output_wcs)
 
     # Check for existance of output file.
-    if single == False and build == True and fileutil.findFile(imageObjectList[0].outputNames['outFinal']):
+    if single == False and build == True and fileutil.findFile(
+                                imageObjectList[0].outputNames['outFinal']):
         log.info('Removing previous output product...')
         os.remove(imageObjectList[0].outputNames['outFinal'])
 
@@ -584,6 +595,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         fnames = []
         for chip in chiplist:
             fnames.append(chip.outputNames['data'])
+
         if _chipIdx == 0:
             template = fnames
         else:
@@ -591,14 +603,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
         # Work each image, possibly in parallel
         if will_parallel:
+            manager = multiprocessing.Manager()
+            mgr = manager.dict(img.virtualOutputs)
+
             p = multiprocessing.Process(target=run_driz_img,
                 name='adrizzle.run_driz_img()', # for err msgs
-                args=(img,chiplist,output_wcs,outwcs,template,paramDict,
+                args=(img,mgr,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
                       _chipIdx,None,None,None,_hdrlist,wcsmap))
             subprocs.append(p)
+            img.virtualOutputs = mgr
         else:
-            run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,
+            run_driz_img(img,img.virtualOutputs,chiplist,output_wcs,outwcs,template,paramDict,
                          single,num_in_prod,build,_versions,_numctx,_nplanes,
                          _chipIdx,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
 
@@ -619,7 +635,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 # Still to check:
 #    - why have both output_wcs and outwcs?
 
-def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
+def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDict,single,
                  num_in_prod,build,_versions,_numctx,_nplanes,chipIdxCopy,
                  _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single image.
@@ -650,7 +666,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
 #                 str(doWrite)+', here='+str(here))
 
         # run_driz_chip
-        run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
+        run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
                       single,doWrite,build,_versions,_numctx,_nplanes,
                       chipIdxCopy,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
 
@@ -670,8 +686,10 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
         while len(_hdrlist)>0: _hdrlist.pop()
     # else, these were intended to live and be used beyond this function call
 
+    if img.inmemory:
+        virtual_outputs = img.virtualOutputs
 
-def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
+def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,single,
                   doWrite,build,_versions,_numctx,_nplanes,_numchips,
                   _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single chip.
@@ -679,7 +697,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     the entirety of the code which is inside the loop over
     chips.  See the run_driz() code for more documentation.
     """
-
     # Look for sky-subtracted product
     if os.path.exists(chip.outputNames['outSky']):
         chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
@@ -694,6 +711,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
     # Apply sky subtraction and unit conversion to input array
+    #print "Applying sky value of: ", chip.computedSky
     _insci = _sciext.data - chip.computedSky
     _insci *= chip._effGain
 
@@ -751,19 +769,29 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Build basic DQMask from DQ array and bits value
     dqarr = img.buildMask(chip._chip,bits=paramDict['bits'])
 
+    # get correct mask filenames/objects
+    staticMaskName = chip.outputNames['staticMask']
+    crMaskName = chip.outputNames['crmaskImage']
+
+    if img.inmemory:
+        staticMaskName = img.virtualOutputs[staticMaskName]
+        if crMaskName in img.virtualOutputs:
+            crMaskName = img.virtualOutputs[crMaskName]
+
     # Merge appropriate additional mask(s) with DQ mask
     if single:
-        mergeDQarray(chip.outputNames['staticMask'],dqarr)
+        mergeDQarray(staticMaskName,dqarr)
         if dqarr.sum() == 0:
             log.warning('All pixels masked out when applying static mask!')
     else:
-        mergeDQarray(chip.outputNames['staticMask'],dqarr)
+        mergeDQarray(staticMaskName,dqarr)
+
         if dqarr.sum() == 0:
             log.warning('All pixels masked out when applying static mask!')
         else:
             # Only apply cosmic-ray mask when some good pixels remain after
             # applying the static mask
-            mergeDQarray(chip.outputNames['crmaskImage'],dqarr)
+            mergeDQarray(crMaskName,dqarr)
             if dqarr.sum() == 0:
                 log.warning('WARNING: All pixels masked out when applying '
                             'cosmic ray mask to %s' % _expname)
@@ -777,25 +805,32 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Convert mask to a datatype expected by 'tdriz'
     # Also, base weight mask on ERR or IVM file as requested by user
     wht_type = paramDict['wht_type']
+
     if wht_type == 'ERR':
         _inwht = img.buildERRmask(chip._chip,dqarr,pix_ratio)
     elif wht_type == 'IVM':
         _inwht = img.buildIVMmask(chip._chip,dqarr,pix_ratio)
     elif wht_type == 'EXP':
         _inwht = img.buildEXPmask(chip._chip,dqarr)
-    else: # wht_type == None, used for single drizzle images
+    else:  # wht_type == None, used for single drizzle images
         _inwht = chip._exptime * dqarr.astype(np.float32)
 
     if not(paramDict['clean']):
         # Write out mask file if 'clean' has been turned off
         if single:
-            _outmaskname = chip.outputNames['singleDrizMask']
+            step_mask = 'singleDrizMask'
         else:
-            _outmaskname = chip.outputNames['finalMask']
+            step_mask = 'finalMask'
+
+        _outmaskname = chip.outputNames[step_mask]
         if os.path.exists(_outmaskname): os.remove(_outmaskname)
-        pimg = pyfits.PrimaryHDU(data=_inwht).writeto(_outmaskname)
-        del pimg
-        log.info('Writing out mask file: %s' % _outmaskname)
+        pimg = pyfits.PrimaryHDU(data=_inwht)
+        img.saveVirtualOutputs({step_mask:pimg})
+        # Only write out mask files if in_memory=False
+        if not img.inmemory:
+            pimg.writeto(_outmaskname)
+            del pimg
+            log.info('Writing out mask file: %s' % _outmaskname)
 
     # New interface to performing the drizzle operation on a single chip/image
     _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
@@ -815,7 +850,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     for kw in img.outputNames:
         if kw[:3] == 'out':
             outputvals[kw] = img.outputNames[kw]
-
     outputvals['exptime'] = chip._exptime
     outputvals['wt_scl_val'] = chip._wtscl
 
@@ -856,12 +890,20 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         #
         # Write output arrays to FITS file(s)
         #
+        if not single:
+            img.inmemory = False
+
         _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=build,
                                           wcs=output_wcs, single=single)
         _outimg.set_bunit(_bunit)
         _outimg.set_units(paramDict['units'])
-        _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,versions=_versions)
+        outimgs = _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,
+                                        versions=_versions,virtual=img.inmemory)
         del _outimg
+
+        # update imageObject with product in memory
+        if single:
+            img.saveVirtualOutputs(outimgs)
 
 def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,

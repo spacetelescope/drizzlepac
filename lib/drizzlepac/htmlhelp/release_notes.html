@@ -1,0 +1,191 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>DrizzlePac Release Notes &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.6 (14-Aug-2012)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="next" title="TWEAKREG: Alignment of Images" href="tweakreg.html" />
+    <link rel="prev" title="MultiDrizzle Reference Table" href="mdztab.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mdztab.html" title="MultiDrizzle Reference Table"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">DrizzlePac Release Notes</a><ul>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-0-23-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.0(23-Aug-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-7-21-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.0.7(21-Aug-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-6-14-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.0.6(14-Aug-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-5-8-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.0.5(8-Aug-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#stsci-python-v2-13-includes-astrodrizzle-v1-0-2-13-july-2012">stsci_python v2.13 [Includes astrodrizzle v1.0.2(13-July-2012)]</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-1-20-june-2012">DrizzlePac(astrodrizzle) v1.0.1(20-June-2012)</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-0-25-may-2012">DrizzlePac(astrodrizzle) v1.0.0(25-May-2012)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mdztab.html"
+                        title="previous chapter">MultiDrizzle Reference Table</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tweakreg.html"
+                        title="next chapter">TWEAKREG: Alignment of Images</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/release_notes.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="drizzlepac-release-notes">
+<span id="release-notes"></span><h1>DrizzlePac Release Notes<a class="headerlink" href="#drizzlepac-release-notes" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>The code for this package gets released through a number of methods: namely,</dt>
+<dd><ul class="first last simple">
+<li>the use of the package for pipeline and archive processing of ACS and WFC3 data,</li>
+<li>SSB&#8217;s semi-annual public release of the stsci_python package, and</li>
+<li>a weekly beta release of the development version.</li>
+</ul>
+</dd>
+</dl>
+<p>The following notes provide some details on what has been revised for each version in
+reverse chronological order (most recent version at the top of the list).</p>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-0-23-aug-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.0(23-Aug-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-0-23-aug-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Sept 3, 2012</p>
+<p>Major revision to astrodrizzle allowing the option to process without writing out any intermediate products to disk. The intermediate products remain in memory requiring significantly more memory than usual. This improves the overall processing time by eliminating as much disk activity as possible as long as the OS does not start disk swapping due to lack of RAM.</p>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-0-7-21-aug-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.0.7(21-Aug-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-0-7-21-aug-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Aug 27, 2012</p>
+<ul class="simple">
+<li>Fixes problems with missing single_sci images.</li>
+<li>Static mask step revised to skip updates to static mask if all pixel data falls within a single histogram bin. This avoids problems with masking out entire images, which happens if low S/N SBC data is processed with static_mask=yes.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-0-6-14-aug-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.0.6(14-Aug-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-0-6-14-aug-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Aug 20, 2012</p>
+<p>Use of IVM for final_wht now correct, as previous code used wrong inputs when IVM weighting was automatically generated by astrodrizzle.</p>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-0-5-8-aug-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.0.5(8-Aug-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-0-5-8-aug-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Aug 13, 2012</p>
+<ul class="simple">
+<li>Completely removed the use of the TIME arrays for weighting IR drizzle products so that the photometry for saturated sources in drizzled products now comes out correct.</li>
+<li>Corrected a problem with astrodrizzle which affected processing of WFPC2 data where CRPIX2 was not found when creating the output single sci image.</li>
+</ul>
+</div>
+<div class="section" id="stsci-python-v2-13-includes-astrodrizzle-v1-0-2-13-july-2012">
+<h2>stsci_python v2.13 [Includes astrodrizzle v1.0.2(13-July-2012)]<a class="headerlink" href="#stsci-python-v2-13-includes-astrodrizzle-v1-0-2-13-july-2012" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Aug 3, 2012</p>
+<p>The complete version of stsci_python can be downloaded from <a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/current/stsci-python-download">our download page</a></p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/release-notes/releasenotes.2.13">stsci_python v2.13 Release Notes</a></li>
+<li><a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/release-notes">Old stsci_python release notes</a></li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-0-1-20-june-2012">
+<h2>DrizzlePac(astrodrizzle) v1.0.1(20-June-2012)<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-0-1-20-june-2012" title="Permalink to this headline">¶</a></h2>
+<p><strong>Used in archive/pipeline starting:</strong> July 10, 2012</p>
+<p>Pipeline and archive started processing ACS data with this version.</p>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-0-0-25-may-2012">
+<h2>DrizzlePac(astrodrizzle) v1.0.0(25-May-2012)<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-0-0-25-may-2012" title="Permalink to this headline">¶</a></h2>
+<p><strong>Used in archive/pipeline starting:</strong> June 6, 2012</p>
+<p>Pipeline and archive first started using astrodrizzle by processing WFC3 images.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mdztab.html" title="MultiDrizzle Reference Table"
+             >previous</a> |</li>
+        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

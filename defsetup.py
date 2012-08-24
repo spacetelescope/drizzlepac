@@ -100,7 +100,7 @@ pkg = "drizzlepac"
 
 setupargs = {
 
-    'version' :         '4.2.10dev',
+    'version' :         '1.1.0dev',
     'description' :     "C-based MultiDrizzle",
     'author' :          "Megan Sosey, Warren Hack, Christopher Hanley, Chris Sontag",
     'author_email' :    "help@stsci.edu",

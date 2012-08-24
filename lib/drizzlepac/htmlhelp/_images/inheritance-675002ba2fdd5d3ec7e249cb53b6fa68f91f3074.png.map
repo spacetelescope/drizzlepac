@@ -1,0 +1,21 @@
+<map id="inheritance3817996138" name="inheritance3817996138">
+<area shape="rect" id="node1" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="imageObject.imageObject" alt="" coords="207,169,350,188"/>
+<area shape="rect" id="node4" href="acsobjects.html#drizzlepac.acsData.ACSInputImage" title="acsData.ACSInputImage" alt="" coords="405,59,538,78"/>
+<area shape="rect" id="node6" href="wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage" title="wfpc2Data.WFPC2InputImage" alt="" coords="392,132,552,151"/>
+<area shape="rect" id="node11" href="stisobjects.html#drizzlepac.stisData.STISInputImage" title="stisData.STISInputImage" alt="" coords="404,169,539,188"/>
+<area shape="rect" id="node20" href="nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage" title="nicmosData.NICMOSInputImage" alt="" coords="386,242,558,261"/>
+<area shape="rect" id="node25" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3InputImage" title="wfc3Data.WFC3InputImage" alt="" coords="398,334,546,353"/>
+<area shape="rect" id="node2" href="baseobjects.html#drizzlepac.imageObject.baseImageObject" title="imageObject.baseImageObject" alt="" coords="5,187,171,206"/>
+<area shape="rect" id="node33" href="baseobjects.html#drizzlepac.imageObject.WCSObject" title="imageObject.WCSObject" alt="" coords="211,206,346,225"/>
+<area shape="rect" id="node8" href="acsobjects.html#drizzlepac.acsData.WFCInputImage" title="acsData.WFCInputImage" alt="" coords="611,4,746,23"/>
+<area shape="rect" id="node17" href="acsobjects.html#drizzlepac.acsData.HRCInputImage" title="acsData.HRCInputImage" alt="" coords="611,41,746,60"/>
+<area shape="rect" id="node28" href="acsobjects.html#drizzlepac.acsData.SBCInputImage" title="acsData.SBCInputImage" alt="" coords="612,77,745,96"/>
+<area shape="rect" id="node10" href="stisobjects.html#drizzlepac.stisData.FUVInputImage" title="stisData.FUVInputImage" alt="" coords="612,114,745,133"/>
+<area shape="rect" id="node13" href="stisobjects.html#drizzlepac.stisData.NUVInputImage" title="stisData.NUVInputImage" alt="" coords="611,151,746,170"/>
+<area shape="rect" id="node15" href="stisobjects.html#drizzlepac.stisData.CCDInputImage" title="stisData.CCDInputImage" alt="" coords="611,187,746,206"/>
+<area shape="rect" id="node19" href="nicmosobjects.html#drizzlepac.nicmosData.NIC3InputImage" title="nicmosData.NIC3InputImage" alt="" coords="600,224,756,243"/>
+<area shape="rect" id="node22" href="nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage" title="nicmosData.NIC2InputImage" alt="" coords="600,261,756,280"/>
+<area shape="rect" id="node31" href="nicmosobjects.html#drizzlepac.nicmosData.NIC1InputImage" title="nicmosData.NIC1InputImage" alt="" coords="600,297,756,316"/>
+<area shape="rect" id="node24" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3IRInputImage" title="wfc3Data.WFC3IRInputImage" alt="" coords="599,334,757,353"/>
+<area shape="rect" id="node36" href="wfc3objects.html#drizzlepac.wfc3Data.WFC3UVISInputImage" title="wfc3Data.WFC3UVISInputImage" alt="" coords="592,370,764,390"/>
+</map>

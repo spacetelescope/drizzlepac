@@ -25,7 +25,7 @@ _blot_step_num_ = 5
 
 
 __version__ = adriz_versions.__full_version__
-__vdate__ = "17-Apr-2012"
+__vdate__ = "23-Aug-2012"
 
 
 log = logutil.create_logger(__name__)
@@ -268,8 +268,16 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             # PyFITS can be used here as it will always operate on
             # output from PyDrizzle (which will always be a FITS file)
             # Open the input science file
-            _fname,_sciextn = fileutil.parseFilename(img.outputNames['outMedian'])
-            _inimg = fileutil.openImage(_fname)
+            medianPar = 'outMedian'
+            outMedianObj = img.getOutputName(medianPar)
+            if img.inmemory:
+                outMedian = img.outputNames[medianPar]
+                _fname,_sciextn = fileutil.parseFilename(outMedian)
+                _inimg = outMedianObj
+            else:
+                outMedian = outMedianObj
+                _fname,_sciextn = fileutil.parseFilename(outMedian)
+                _inimg = fileutil.openImage(_fname)
 
             # Return the PyFITS HDU corresponding to the named extension
             _scihdu = fileutil.getExtn(_inimg,_sciextn)
@@ -297,13 +305,16 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             _outimg = outputimage.OutputImage(_hdrlist, paramDict, build=False, wcs=chip.wcs, blot=True)
             _outimg.outweight = None
             _outimg.outcontext = None
-            _outimg.writeFITS(plist['data'],_outsci,None,
-                                versions=_versions,blend=False)
+            outimgs = _outimg.writeFITS(plist['data'],_outsci,None,
+                                versions=_versions,blend=False,
+                                virtual=img.inmemory)
 
+            img.saveVirtualOutputs(outimgs)
             #_buildOutputFits(_outsci,None,plist['outblot'])
             _hdrlist = []
 
             del _outsci
+
         del _outimg
 
 def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5', sinscl=1.0,

@@ -69,7 +69,10 @@ resetbits : int (Default Value = 4096)
 
 num_cores: int (Default Value = None) 
     This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing. 
-   
+
+in_memory: bool (Default Value = False)
+    This parameter sets whether or not to keep all intermediate products in memory when processing. This includes all single drizzle products (*single_sci and *single_wht), median image, blot images, and crmask images.  The use of this option will therefore require significantly more memory than usual to process the data while reducing the overall processing time by eliminating most of the disk activity. *Only* the products of the final drizzle step will get written out when this parameter gets specified as 'True'.
+       
 *STATE OF INPUT FILES*
 
 restore: bool (Default Value = No) 

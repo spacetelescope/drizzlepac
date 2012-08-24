@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; drizzlepac 1.0.0 documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.0',
+        VERSION:     '1.0.6 (14-Aug-2012)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.0 documentation" href="index.html" />
+    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s documentation!" href="index.html" /> 
   </head>
@@ -40,15 +40,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="np-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -118,7 +115,7 @@ aspects of each of the processing steps.</p>
 <dl class="function">
 <dt id="drizzlepac.astrodrizzle.AstroDrizzle">
 <tt class="descclassname">drizzlepac.astrodrizzle.</tt><tt class="descname">AstroDrizzle</tt><big>(</big><em>input=None</em>, <em>mdriztab=False</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="Permalink to this definition">¶</a></dt>
-<dd><p>astrodrizzle Version 1.0.0  updated on  31-May-2012</p>
+<dd><p>astrodrizzle Version 1.1.0dev  updated on  23-Aug-2012</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -209,9 +206,13 @@ aspects of each of the processing steps.</p>
 <blockquote>
 <div><p>This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the &#8216;updatewcs&#8217; parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).</p>
 </div></blockquote>
-<p><strong id="num_cores: int (Default Value = None)">num_cores: int (Default Value = None)</strong> :</p>
+<p><strong id="num_cores">num_cores</strong> : int (Default Value = None)</p>
 <blockquote>
 <div><p>This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing.</p>
+</div></blockquote>
+<p><strong id="in_memory">in_memory</strong> : bool (Default Value = False)</p>
+<blockquote>
+<div><p>This parameter sets whether or not to keep all intermediate products in memory when processing. This includes all single drizzle products (single_sci and single_wht), median image, blot images, and crmask images.  The use of this option will therefore require significantly more memory than usual to process the data while reducing the overall processing time by eliminating most of the disk activity. <strong>Only</strong> the products of the final drizzle step will get written out when this parameter gets specified as &#8216;True&#8217;.</p>
 </div></blockquote>
 <p><strong id="*STATE OF INPUT FILES*">*STATE OF INPUT FILES*</strong> :</p>
 <p><strong id="restore: bool (Default Value = No)">restore: bool (Default Value = No)</strong> :</p>
@@ -662,15 +663,12 @@ be accessed from the PyRAF command-line and saved to a text file:</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="np-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -42,12 +42,12 @@ import processInput,util
 
 __taskname__ = 'drizzlepac.buildmask'
 #
-#### Interactive interface 
+#### Interactive interface
 #
 def run(configObj=None,input_dict={},loadOnly=False):
     """ Build DQ masks from all input images, then apply static mask(s).
     """
-    # If called from interactive user-interface, configObj will not be 
+    # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
@@ -61,7 +61,7 @@ def run(configObj=None,input_dict={},loadOnly=False):
 
     # Build DQ masks for all input images.
     buildMask(imgObjList,configObj)
-        
+
 #
 #### Functional interface for MultiDrizzle
 #
@@ -71,7 +71,7 @@ def buildDQMasks(imageObjectList,configObj):
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
-    
+
     for img in imageObjectList:
         img.buildMask(configObj['bits'],configObj['single'])
 
@@ -112,7 +112,7 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
             dqarr = fdq[_extn].data
         else:
             dqarr = None
-            
+
         # For the case where there is no DQ array,
         # create a mask image of all ones.
         if dqarr == None:

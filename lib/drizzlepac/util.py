@@ -991,15 +991,13 @@ def parse_colnames(colnames,coords=None):
 
 
 def createFile(dataArray=None, outfile=None, header=None):
-    """Create a simple fits file for the given data array and header."""
+    """Create a simple fits file for the given data array and header.
+        Returns either the FITS object in-membory when outfile==None or
+            None when the FITS file was written out to a file.
+    """
 
-    try:
-        assert(outfile != None), "Please supply an output filename for createFile"
-        assert(dataArray != None), "Please supply a data array for createFiles"
-    except AssertionError:
-        raise AssertionError
-
-    print 'Creating output : ',outfile
+    # Insure that at least a data-array has been provided to create the file
+    assert(dataArray != None), "Please supply a data array for createFiles"
 
     try:
         # Create the output file
@@ -1025,9 +1023,13 @@ def createFile(dataArray=None, outfile=None, header=None):
             hdu = pyfits.PrimaryHDU(data=dataArray)
 
         fitsobj.append(hdu)
-        fitsobj.writeto(outfile)
-
+        if outfile:
+            fitsobj.writeto(outfile)
     finally:
         # CLOSE THE IMAGE FILES
         fitsobj.close()
-        del fitsobj
+
+        if outfile:
+            del fitsobj
+            fitsobj = None
+    return fitsobj

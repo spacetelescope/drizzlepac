@@ -186,9 +186,14 @@ def setCommonInput(configObj, createOutwcs=True):
 
     # Build imageObject list for all the valid, shift-updated input files
     log.info('-Creating imageObject List as input for processing steps.')
+    if 'in_memory' in configObj:
+        virtual = configObj['in_memory']
+    else:
+        virtual = False
     imageObjectList = createImageObjectList(files, instrpars,
                                             group=configObj['group'],
-                                            undistort=undistort)
+                                            undistort=undistort,
+                                            inmemory=virtual)
 
     # apply context parameter
     applyContextPar(imageObjectList, configObj['context'])
@@ -305,7 +310,8 @@ def checkMultipleFiles(input):
     f,i,o,a=buildFileList(input)
     return len(f) > 1
 
-def createImageObjectList(files,instrpars,group=None,undistort=True):
+def createImageObjectList(files,instrpars,group=None,
+                            undistort=True, inmemory=False):
     """ Returns a list of imageObject instances, 1 for each input image in the list of input filenames.
     """
     imageObjList = []
@@ -334,7 +340,7 @@ def createImageObjectList(files,instrpars,group=None,undistort=True):
                 mt_refimg = image
             else:
                 image.set_mt_wcs(mt_refimg)
-
+        image.inmemory = inmemory # set flag for inmemory processing
         # Now add (possibly updated) image object to list
         imageObjList.append(image)
 

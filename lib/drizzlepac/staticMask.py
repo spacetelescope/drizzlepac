@@ -113,7 +113,7 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
 
 
     #save the masks to disk for later access
-    myMask.saveToFile()
+    myMask.saveToFile(imageObjectList)
     myMask.close()
 
     if procSteps is not None:
@@ -214,6 +214,7 @@ class staticMask(object):
 
             log.info('  mode = %9f;   rms = %7f;   static_sig = %0.2f' %
                      (mode, rms, self.static_sig))
+
             if nbins >= 2: # only combine data from new image if enough data to mask
                 sky_rms_diff = mode - (self.static_sig*rms)
                 np.bitwise_and(self.masklist[signature],
@@ -272,27 +273,31 @@ class staticMask(object):
         else:
             log.warning("No matching mask")
 
-    def saveToFile(self):
+    def saveToFile(self,imageObjectList):
         """ Saves the static mask to a file
             it uses the signatures associated with each
             mask to contruct the filename for the output mask image.
         """
+        virtual = imageObjectList[0].inmemory
 
         for key in self.masklist.keys():
             #check to see if the file already exists on disk
             filename=self.masknames[key]
+            #create a new fits image with the mask array and a standard header
+            #open a new header and data unit
+            newHDU = pyfits.PrimaryHDU()
+            newHDU.data = self.masklist[key]
 
-            if not(fileutil.checkFileExists(filename)):
-                #create a new fits image with the mask array and a standard header
-                #open a new header and data unit
-                newHDU = pyfits.PrimaryHDU()
-                newHDU.data = self.masklist[key]
+            if not virtual:
+                if not(fileutil.checkFileExists(filename)):
+                    try:
+                        newHDU.writeto(filename)
+                        log.info("Saving static mask to disk: %s" % filename)
 
-                try:
-                    newHDU.writeto(filename)
-                    log.info("Saving static mask to disk: %s" % filename)
-
-                except IOError:
-                    log.error("Problem saving static mask file: %s to "
-                              "disk!\n" % filename)
-                    raise IOError
+                    except IOError:
+                        log.error("Problem saving static mask file: %s to "
+                                  "disk!\n" % filename)
+                        raise IOError
+            else:
+                for img in imageObjectList:
+                    img.saveVirtualOutputs({filename:newHDU})

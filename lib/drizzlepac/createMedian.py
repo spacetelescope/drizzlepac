@@ -149,8 +149,12 @@ def _median(imageObjectList, paramDict):
     #skylist=[] #the list of platescale values for the images
     _wht_mean = [] # Compute the mean value of each wht image
 
+    virtual = None
+
     #for each image object
     for image in imageObjectList:
+        if virtual is None:
+            virtual = image.inmemory
 
         det_gain = image.getGain(1)
         img_exptime = image._image['sci',1]._exptime
@@ -168,15 +172,33 @@ def _median(imageObjectList, paramDict):
                     if native_units.lower() == "counts/s":
                         hthresh = hthresh * img_exptime
 
-        singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
-        singleWeight=image.outputNames["outSWeight"]
+        singleDriz = image.getOutputName("outSingle")
+        singleDriz_name = image.outputNames['outSingle']
+        singleWeight = image.getOutputName("outSWeight")
+        singleWeight_name = image.outputNames['outSWeight']
+        #singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
+        #singleWeight=image.outputNames["outSWeight"]
 
-        _singleImage=iterfile.IterFitsFile(singleDriz)#this returns the handles for the image
+        if not virtual:
+            #this returns the handles for the image
+            _singleImage=iterfile.IterFitsFile(singleDriz)
+        else:
+            _singleImage=iterfile.IterFitsFile(singleDriz_name)
+            _singleImage.handle = singleDriz
+            _singleImage.inmemory = True
+
         singleDrizList.append(_singleImage) #add to an array for bookkeeping
 
         # If it exists, extract the corresponding weight images
-        if (os.access(singleWeight,os.F_OK)):
-            _weight_file=iterfile.IterFitsFile(singleWeight)
+        if (not virtual and os.access(singleWeight,os.F_OK)) or (
+                virtual and singleWeight):
+            if not virtual:
+                _weight_file=iterfile.IterFitsFile(singleWeight)
+            else:
+                _weight_file=iterfile.IterFitsFile(singleWeight_name)
+                _weight_file.handle = singleWeight
+                _weight_file.inmemory = True
+
             singleWeightList.append(_weight_file)
             tmp_mean_value = ImageStats(_weight_file.data,lower=1e-8,lsig=None,usig=None,fields="mean",nclip=0)
             _wht_mean.append(tmp_mean_value.mean * maskpt)
@@ -216,6 +238,10 @@ def _median(imageObjectList, paramDict):
 
     # create an array for the median output image, use the size of the first image in the list
     medianImageArray = np.zeros(singleDrizList[0].shape,dtype=singleDrizList[0].type())
+
+    if ( comb_type.lower() == "minmed") and not newmasks:
+        # Issue a warning if minmed is being run with newmasks turned off.
+            print('\nWARNING: Creating median image without the application of bad pixel masks!\n')
 
     # create the master list to be used by the image iterator
     masterList = []
@@ -263,12 +289,9 @@ def _median(imageObjectList, paramDict):
         if _delta_rows < 1 and _delta_rows >= 0: _delta_rows = 1
         _bufsize += (_imgarr.shape[1]*_imgarr.itemsize) * _delta_rows
 
-    masterList[0].close()
+    if not virtual:
+        masterList[0].close()
     del _imgarr
-
-    if ( comb_type.lower() == "minmed") and not newmasks:
-        # Issue a warning if minmed is being run with newmasks turned off.
-            print('\nWARNING: Creating median image without the application of bad pixel masks!\n')
 
     for imageSectionsList,prange in nimageiter.FileIter(masterList,overlap=_overlap,bufsize=_bufsize):
 
@@ -352,19 +375,37 @@ def _median(imageObjectList, paramDict):
     # Write out the combined image
     # use the header from the first single drizzled image in the list
     #header=pyfits.getheader(imageObjectList[0].outputNames["outSingle"])
-    _writeImage(medianImageArray, inputHeader=None, outputFilename=medianfile)
+    _pf = _writeImage(medianImageArray, inputHeader=None, outputFilename=medianfile)
+
+    if virtual:
+        mediandict = {}
+        mediandict[medianfile] = _pf
+        for img in imageObjectList:
+            img.saveVirtualOutputs(mediandict)
+    else:
+        try:
+            print "Saving output median image to: ",medianfile
+            _pf.writeto(medianfile)
+        except IOError:
+            msg = "Problem writing file: "+medianfile
+            print msg
+            raise IOError(msg)
+
+    del _pf
 
     # Always close any files opened to produce median image; namely,
     # single drizzle images and singly-drizzled weight images
     #
 
     for img in singleDrizList:
-        img.close()
+        if not virtual:
+            img.close()
     singeDrizList = []
 
     # Close all singly drizzled weight images used to create median image.
     for img in singleWeightList:
-        img.close()
+        if not virtual:
+            img.close()
     singleWeightList = []
 
     # If new median masks was turned on, close those files
@@ -400,12 +441,5 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
 
     _pf = pyfits.HDUList()
     _pf.append(_prihdu)
-    try:
-        print "Saving output median image to: ",outputFilename
-        _pf.writeto(outputFilename)
-    except IOError:
-        msg = "Problem writing file: "+outputFilename
-        print msg
-        raise IOError(msg)
 
-    del _pf
+    return _pf

@@ -8,9 +8,9 @@ if svn_version:
 else:
     sversion = ''
 
-__version__ = '1.0.7'
+__version__ = '1.1.0dev'
 __full_version__ = __version__+sversion
-__vdate__ = '21-Aug-2012'
+__vdate__ = '23-Aug-2012'
 
 def main():
     print '%s(%s)'%(__version__,__vdate__)

@@ -73,6 +73,7 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
         return
     paramDict = configObj[step_name]
     paramDict['crbit'] = configObj['crbit']
+    paramDict['inmemory'] = imgObjList[0].inmemory
 
     log.info("USER INPUT PARAMETERS for Driz_CR Step:")
     util.printParams(paramDict, log=log)
@@ -87,22 +88,26 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
     if pool_size > 1:
         log.info('Executing %d parallel threads/processes' % pool_size)
         for image in imgObjList:
+            manager = multiprocessing.Manager()
+            mgr = manager.dict(image.virtualOutputs)
+
             p = multiprocessing.Process(target=_drizCr,
                 name='drizCR._drizCr()', # for err msgs
-                args=(image, paramDict.dict(), saveFile))
+                args=(image, mgr, paramDict.dict(), saveFile))
             subprocs.append(p)
+            image.virtualOutputs = mgr
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
     else:
         log.info('Executing serially')
         for image in imgObjList:
-            _drizCr(image,paramDict,saveFile)
+            _drizCr(image,image.virtualOutputs,paramDict,saveFile)
 
     if procSteps is not None:
         procSteps.endStep('Driz_CR')
 
 
 #the workhorse function
-def _drizCr(sciImage, paramDict, saveFile=True):
+def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
     """mask blemishes in dithered data by comparison of an image
     with a model image and the derivative of the model image.
 
@@ -147,21 +152,37 @@ def _drizCr(sciImage, paramDict, saveFile=True):
 #        print sciImage
 #        raise # raise orig error
     crcorr_list =[]
+    crMaskDict = {}
+
     for chip in range(1,sciImage._numchips+1,1):
         exten=sciImage.scienceExt + ',' +str(chip)
         scienceChip=sciImage[exten]
 
         if scienceChip.group_member:
-            blotImageName=scienceChip.outputNames["blotImage"]
-            crMaskImage=scienceChip.outputNames["crmaskImage"]
+            blotImagePar = 'blotImage'
+            blotImageName = scienceChip.outputNames[blotImagePar]
+
+            if sciImage.inmemory:
+                __blotImage = sciImage.virtualOutputs[blotImageName]
+            else:
+                try:
+                    os.access(blotImageName,os.F_OK)
+                except IOError:
+                    print "Could not find the Blotted image on disk:",blotImageName
+                    raise # raise orig error
+
+                try:
+                    __blotImage=pyfits.open(blotImageName,mode="readonly") # !!! ,memmap=False) ?
+                except IOError:
+                    print "Problem opening blot images"
+                    raise
+
+
+            #blotImageName=scienceChip.outputNames["blotImage"] # input file
+            crMaskImage=scienceChip.outputNames["crmaskImage"] # output file
             ctedir=scienceChip.cte_dir
 
             #check that sciImage and blotImage are the same size?
-            try:
-                os.access(blotImageName,os.F_OK)
-            except IOError:
-                print "Could not find the Blotted image on disk:",blotImageName
-                raise # raise orig error
 
             #grab the actual image from disk
             __inputImage=sciImage.getData(exten)
@@ -170,16 +191,11 @@ def _drizCr(sciImage, paramDict, saveFile=True):
             # with blotted image in units of electrons
             __inputImage *= scienceChip._conversionFactor
 
-            try:
-                __blotImage=pyfits.open(blotImageName,mode="readonly") # !!! ,memmap=False) ?
-            except IOError:
-                print "Problem opening blot images"
-                raise
-
             #make the derivative blot image
             __blotData=__blotImage[0].data*scienceChip._conversionFactor #simple fits
             __blotDeriv = quickDeriv.qderiv(__blotData)
-            __blotImage.close()
+            if not sciImage.inmemory:
+                __blotImage.close()
 
             #this grabs the original dq mask from the science image
             # This mask needs to take into account any crbits values
@@ -315,24 +331,35 @@ def _drizCr(sciImage, paramDict, saveFile=True):
             _cr_file = np.zeros(__inputImage.shape,np.uint8)
             _cr_file = np.where(__crMask,1,0).astype(np.uint8)
 
-            #if(saveFile):
-            # Always write out crmaskimage, as it is required input for
-            # the final drizzle step. The final drizzle step combines this
-            # image with the DQ information on-the-fly.
-            #
-            # Remove the existing mask file if it exists
-            if(os.access(crMaskImage, os.F_OK)):
-                os.remove(crMaskImage)
-                print "Removed old cosmic ray mask file:",crMaskImage
+            if not paramDict['inmemory']:
+                outfile = crMaskImage
+                #if(saveFile):
+                # Always write out crmaskimage, as it is required input for
+                # the final drizzle step. The final drizzle step combines this
+                # image with the DQ information on-the-fly.
+                #
+                # Remove the existing mask file if it exists
+                if(os.access(crMaskImage, os.F_OK)):
+                    os.remove(crMaskImage)
+                    print "Removed old cosmic ray mask file:",crMaskImage
+                print 'Creating output : ',outfile
+            else:
+                print 'Creating in-memory(virtual) FITS file...'
+                outfile = None
 
-            util.createFile(_cr_file, outfile=crMaskImage, header = None)
+            _pf = util.createFile(_cr_file, outfile=outfile, header = None)
 
+            if paramDict['inmemory']:
+                crMaskDict[crMaskImage] = _pf
 
     if(saveFile and paramDict['driz_cr_corr']):
         #util.createFile(__corrFile,outfile=crCorImage,header=None)
         createCorrFile(sciImage.outputNames["crcorImage"],
                         crcorr_list, sciImage._filename)
     del crcorr_list
+    if paramDict['inmemory']:
+        sciImage.saveVirtualOutputs(crMaskDict)
+        virtual_outputs = sciImage.virtualOutputs
 
 #### Create _cor file based on format of original input image
 def createCorrFile(outfile, arrlist, template):
