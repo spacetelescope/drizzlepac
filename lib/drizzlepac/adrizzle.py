@@ -380,6 +380,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
 def mergeDQarray(maskname,dqarr):
     """ Merge static or CR mask with mask created from DQ array on-the-fly here.
     """
+    maskarr = None
     if maskname is not None:
         if isinstance(maskname, str):
             # working with file on disk (default case)
@@ -394,8 +395,9 @@ def mergeDQarray(maskname,dqarr):
             else:
                 maskarr = maskname.data.astype(np.bool)
 
-        # merge array with dqarr now
-        np.bitwise_and(dqarr,maskarr,dqarr)
+        if maskarr is not None:
+            # merge array with dqarr now
+            np.bitwise_and(dqarr,maskarr,dqarr)
 
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
     if not os.path.exists(crmaskname):
