@@ -776,7 +776,8 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
     crMaskName = chip.outputNames['crmaskImage']
 
     if img.inmemory:
-        staticMaskName = img.virtualOutputs[staticMaskName]
+        if staticMaskName in img.virtualOutputs:
+            staticMaskName = img.virtualOutputs[staticMaskName]
         if crMaskName in img.virtualOutputs:
             crMaskName = img.virtualOutputs[crMaskName]
 
