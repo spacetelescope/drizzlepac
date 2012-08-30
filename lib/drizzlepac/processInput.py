@@ -89,7 +89,7 @@ def setCommonInput(configObj, createOutwcs=True):
 
     """
 
-    if not createOutwcs:
+    if not createOutwcs or not configObj['coeffs']:
         # we're probably just working on single images here
         configObj['updatewcs']=False
 
