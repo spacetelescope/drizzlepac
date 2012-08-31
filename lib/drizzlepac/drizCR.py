@@ -89,13 +89,14 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
         log.info('Executing %d parallel threads/processes' % pool_size)
         for image in imgObjList:
             manager = multiprocessing.Manager()
-            mgr = manager.dict(image.virtualOutputs)
+            mgr = manager.dict({})
+            #mgr = manager.dict(image.virtualOutputs)
 
             p = multiprocessing.Process(target=_drizCr,
                 name='drizCR._drizCr()', # for err msgs
                 args=(image, mgr, paramDict.dict(), saveFile))
             subprocs.append(p)
-            image.virtualOutputs = mgr
+            image.virtualOutputs.update(mgr)
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
     else:
         log.info('Executing serially')
@@ -161,7 +162,6 @@ def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
         if scienceChip.group_member:
             blotImagePar = 'blotImage'
             blotImageName = scienceChip.outputNames[blotImagePar]
-
             if sciImage.inmemory:
                 __blotImage = sciImage.virtualOutputs[blotImageName]
             else:
@@ -176,7 +176,6 @@ def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
                 except IOError:
                     print "Problem opening blot images"
                     raise
-
 
             #blotImageName=scienceChip.outputNames["blotImage"] # input file
             crMaskImage=scienceChip.outputNames["crmaskImage"] # output file
