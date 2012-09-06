@@ -11,12 +11,18 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
-DrizzlePac(astrodrizzle) v1.1.0(23-Aug-2012) in IRAFX
+DrizzlePac(astrodrizzle) v1.1.2(5-Sep-2012) in IRAFX
+-----------------------------------------------------
+**available starting:** Sept 10, 2012
+
+Remove the restriction of only being able to process images which have WCSNAME keyword as imposed by r15631. The removal of this restriction will now allow for processing of non-updated input files with updatewcs=False for cases where no distortion model exists for the data (as required by CADC). 
+
+DrizzlePac(astrodrizzle) v1.1.1(30-Aug-2012) in IRAFX
 -----------------------------------------------------
 **available starting:** Sept 3, 2012
 
-Major revision to astrodrizzle allowing the option to process without writing out any intermediate products to disk. The intermediate products remain in memory requiring significantly more memory than usual. This improves the overall processing time by eliminating as much disk activity as possible as long as the OS does not start disk swapping due to lack of RAM. 
-
+- Major revision to astrodrizzle allowing the option to process without writing out any intermediate products to disk. The intermediate products remain in memory requiring significantly more memory than usual. This improves the overall processing time by eliminating as much disk activity as possible as long as the OS does not start disk swapping due to lack of RAM. 
+- revised to turn off 'updatewcs' when coeffs=False(no) so that exposures with filter combinations not found in the IDCTAB will not cause an error
 
 DrizzlePac(astrodrizzle) v1.0.7(21-Aug-2012) in IRAFX
 -----------------------------------------------------
