@@ -713,7 +713,7 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
     # Apply sky subtraction and unit conversion to input array
-    #print "Applying sky value of: ", chip.computedSky
+    log.info("Applying sky value of %0.6f to %s"%(chip.computedSky,_expname))
     _insci = _sciext.data - chip.computedSky
     _insci *= chip._effGain
 
