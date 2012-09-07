@@ -11,11 +11,19 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.3(7-Sep-2012) in IRAFX
+-----------------------------------------------------
+**available starting:** Sept 17, 2012
+
+- Fixed the logic so that crclean images always get created regardless of the value of the 'clean' parameter.
+
+
 DrizzlePac(astrodrizzle) v1.1.2(5-Sep-2012) in IRAFX
 -----------------------------------------------------
 **available starting:** Sept 10, 2012
 
-Remove the restriction of only being able to process images which have WCSNAME keyword as imposed by r15631. The removal of this restriction will now allow for processing of non-updated input files with updatewcs=False for cases where no distortion model exists for the data (as required by CADC). 
+- Remove the restriction of only being able to process images which have WCSNAME keyword as imposed by r15631. The removal of this restriction will now allow for processing of non-updated input files with updatewcs=False for cases where no distortion model exists for the data (as required by CADC). 
+- Added log statements reporting what sky value was actually used in the drizzle and blot steps
 
 DrizzlePac(astrodrizzle) v1.1.1(30-Aug-2012) in IRAFX
 -----------------------------------------------------

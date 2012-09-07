@@ -227,7 +227,6 @@ def run(configobj, wcsmap=None):
 
         #look for cosmic rays
         drizCR.rundrizCR(imgObjList, configobj,
-                         saveFile=not(stateObj["clean"]),
                          procSteps=procSteps)
 
         #Make your final drizzled image

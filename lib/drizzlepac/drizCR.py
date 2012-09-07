@@ -58,11 +58,11 @@ def run(configObj):
     # outwcs is not neaded here
     imgObjList,outwcs = processInput.setCommonInput(configObj,
                                                     createOutwcs=False)
-    rundrizCR(imgObjList, configObj, saveFile=not(configObj["clean"]))
+    rundrizCR(imgObjList, configObj)
 
 
 #the final function that calls the workhorse
-def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
+def rundrizCR(imgObjList,configObj,procSteps=None):
 
     if procSteps is not None:
         procSteps.addStep('Driz_CR')
@@ -94,21 +94,21 @@ def rundrizCR(imgObjList,configObj,saveFile=True,procSteps=None):
 
             p = multiprocessing.Process(target=_drizCr,
                 name='drizCR._drizCr()', # for err msgs
-                args=(image, mgr, paramDict.dict(), saveFile))
+                args=(image, mgr, paramDict.dict()))
             subprocs.append(p)
             image.virtualOutputs.update(mgr)
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
     else:
         log.info('Executing serially')
         for image in imgObjList:
-            _drizCr(image,image.virtualOutputs,paramDict,saveFile)
+            _drizCr(image,image.virtualOutputs,paramDict)
 
     if procSteps is not None:
         procSteps.endStep('Driz_CR')
 
 
 #the workhorse function
-def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
+def _drizCr(sciImage, virtual_outputs, paramDict):
     """mask blemishes in dithered data by comparison of an image
     with a model image and the derivative of the model image.
 
@@ -117,7 +117,6 @@ def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
     chip should be the science chip that corresponds to the blotted image that was sent
     paramDict contains the user parameters derived from the full configObj instance
     dgMask is inferred from the sciImage object, the name of the mask file to combine with the generated Cosmic ray mask
-    saveFile saves intermediate files to disk
 
     here are the options you can override in configObj
 
@@ -319,7 +318,7 @@ def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
             __corrDQMask = np.where(np.equal(__dqMask,0),
                                     paramDict['crbit'],0).astype(np.uint16)
 
-            if(saveFile and paramDict['driz_cr_corr']):
+            if paramDict['driz_cr_corr']:
                 crcorr_list.append({'sciext':fileutil.parseExtn(exten),
                                 'corrFile':__corrFile.copy(),
                                 'dqext':fileutil.parseExtn(scienceChip.dq_extn),
@@ -332,7 +331,6 @@ def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
 
             if not paramDict['inmemory']:
                 outfile = crMaskImage
-                #if(saveFile):
                 # Always write out crmaskimage, as it is required input for
                 # the final drizzle step. The final drizzle step combines this
                 # image with the DQ information on-the-fly.
@@ -351,7 +349,7 @@ def _drizCr(sciImage, virtual_outputs, paramDict, saveFile=True):
             if paramDict['inmemory']:
                 crMaskDict[crMaskImage] = _pf
 
-    if(saveFile and paramDict['driz_cr_corr']):
+    if paramDict['driz_cr_corr']:
         #util.createFile(__corrFile,outfile=crCorImage,header=None)
         createCorrFile(sciImage.outputNames["crcorImage"],
                         crcorr_list, sciImage._filename)
