@@ -36,7 +36,7 @@ import pyfits
 
 from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
                          check_files, logutil, textutil)
-from stwcs import updatewcs
+from stwcs import updatewcs as uw
 from stwcs.wcsutil import altwcs, wcscorr
 
 import wcs_functions
@@ -492,33 +492,8 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     if newfilelist is None:
         return None, None, None
 
-    if wcskey in ['', ' ', 'INDEF', None]:
-        if updatewcs:
-            log.info('Updating input WCS using "updatewcs"')
-            pydr_input = runmakewcs(newfilelist)
-        else:
-            pydr_input = newfilelist
-    else:
-        log.info('Resetting input WCS to be based on WCS key = %s' % wcskey)
-        for fname in newfilelist:
-            numext = fileutil.countExtn(fname)
-            extlist = []
-            for extn in xrange(1, numext + 1):
-                extlist.append(('SCI', extn))
-            if wcskey in string.uppercase:
-                wkey = wcskey
-                wname = ' '
-            else:
-                wname = wcskey
-                wkey = ' '
-            altwcs.restoreWCS(fname, extlist, wcskey=wkey, wcsname=wname)
-        pydr_input = newfilelist
-
-    # make an asn table at the end
-    if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
-        # Make sure there is a WCSCORR table for each input image
-        for img in newfilelist:
-            wcscorr.init_wcscorr(img)
+    # run all WCS updating
+    pydr_input = _process_input_wcs(newfilelist, wcskey, updatewcs)
 
     # AsnTable will handle the case when output==None
     if not oldasndict:# and output is not None:
@@ -548,6 +523,47 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     log.info('Setting up output name: %s' % output)
 
     return asndict, ivmlist, output
+
+
+def _process_input_wcs(infiles, wcskey, updatewcs):
+    """
+    This is a subset of process_input(), for internal use only.  This is the
+    portion of process input which sets/updates WCS data, and is a performance
+    hit - a target for parallelization. Returns the expanded list of filenames.
+    """
+
+    outfiles = None # must be set below
+    if wcskey in ['', ' ', 'INDEF', None]:
+        if updatewcs:
+            log.info('Updating input WCS using "updatewcs"')
+            outfiles = uw.updatewcs(infiles, checkfiles=False)
+            # ! note - above 1st calls parseinput.parseinput() on infiles
+            # tho it likely has already been called in buildFileList above
+        else:
+            outfiles = infiles
+    else:
+        log.info('Resetting input WCS to be based on WCS key = %s' % wcskey)
+        for fname in infiles:
+            numext = fileutil.countExtn(fname)
+            extlist = []
+            for extn in xrange(1, numext + 1):
+                extlist.append(('SCI', extn))
+            if wcskey in string.uppercase:
+                wkey = wcskey
+                wname = ' '
+            else:
+                wname = wcskey
+                wkey = ' '
+            altwcs.restoreWCS(fname, extlist, wcskey=wkey, wcsname=wname)
+        outfiles = infiles
+
+    # make an asn table at the end
+    if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
+        # Make sure there is a WCSCORR table for each input image
+        for img in infiles:
+            wcscorr.init_wcscorr(img)
+
+    return outfiles
 
 
 def buildFileList(input, output=None, ivmlist=None,**workinplace):
@@ -660,7 +676,7 @@ def runmakewcs(input):
         returns a list of names of the modified files
         (For GEIS files returns the translated names.)
     """
-    newNames = updatewcs.updatewcs(input, checkfiles=False)
+    newNames = uw.updatewcs(input, checkfiles=False)
     #newNames = makewcs.run(input)
     return newNames
 
