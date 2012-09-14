@@ -79,10 +79,8 @@ def rundrizCR(imgObjList,configObj,procSteps=None):
     util.printParams(paramDict, log=log)
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
-    pool_size = 1
-    if util.can_parallel:
-        pool_size = util.get_pool_size(configObj.get('num_cores'),
-                                       num_tasks = len(imgObjList))
+    pool_size = util.get_pool_size(configObj.get('num_cores'),
+                                   num_tasks = len(imgObjList))
 
     subprocs = []
     if pool_size > 1:

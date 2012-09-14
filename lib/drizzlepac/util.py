@@ -44,26 +44,30 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
 
 
 def get_pool_size(usr_config_value=None, num_tasks=None):
-    """ Examine the cpu_count to decide and return the right pool
+    """ Determine size of thread/process-pool for parallel processing.
+    This examines the cpu_count to decide and return the right pool
     size to use.  Also take into account the user's wishes via the config
     object value, if specified.  On top of that, don't allow the pool size
     returned to be any higher than the number of parallel tasks, if specified.
     Only use what we need (mp.Pool starts pool_size processes, needed or not).
     If number of tasks is unknown, call this with "num_tasks" set to None.
+    Returns 1 when indicating that parallel processing should not be used.
     Consolidate all such logic here, not in the caller. """
 
     if not can_parallel:
-        return 0
+        return 1
     # Give priority to their specified cfg value, over the actual cpu count
     if usr_config_value != None:
         if num_tasks == None:
             return usr_config_value
         else:
+            # usr_config_value may be needlessly high
             return min(usr_config_value, num_tasks)
-    # They haven't specified a cfg value, so go with the cpu_count
+    # they haven't specified a cfg value, so go with the cpu_count
     if num_tasks == None:
         return _cpu_count
     else:
+        # run no more workers than tasks
         return min(_cpu_count, num_tasks)
 
 
