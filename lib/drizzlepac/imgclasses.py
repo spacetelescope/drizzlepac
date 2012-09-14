@@ -338,6 +338,7 @@ class Image(object):
 
             # Determine xyoff (X,Y offset) and tolerance to be used with xyxymatch
             use2d = matchpars['use2dhist']
+            xyxysep = matchpars['separation']
             if use2d:
                 zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
                                     ref_outxy,searchrad=radius,
@@ -359,7 +360,7 @@ class Image(object):
                     # This value allows initial guess to be off by 1 in both and
                     # still pick up the identified matches
                     xyxytolerance = 1.5
-                    xyxysep = 0.0
+                    #xyxysep = 0.
                 else:
                     use2d = False
             if not use2d:
@@ -372,9 +373,10 @@ class Image(object):
                 xyoff = (xoff,yoff)
                 # set tolerance based on user-specified input
                 xyxytolerance = matchpars['tolerance']
-                xyxysep = matchpars['separation']
+
             matches = xyxymatch(self.outxy,ref_outxy,origin=xyoff,
                                 tolerance=xyxytolerance,separation=xyxysep)
+
             if len(matches) > minobj:
                 self.matches['image'] = np.column_stack([matches['input_x'][:,
                                 np.newaxis],matches['input_y'][:,np.newaxis]])

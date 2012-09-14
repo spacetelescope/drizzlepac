@@ -12,8 +12,8 @@ import util
 # of the modules below, so that those modules can use the values
 # from these variable definitions, allowing the values to be designated
 # in one location only.
-__version__ = '1.0.2'
-__vdate__ = '11-Apr-2012'
+__version__ = '1.0.3'
+__vdate__ = '14-Sep-2012'
 
 import tweakutils
 import imgclasses
