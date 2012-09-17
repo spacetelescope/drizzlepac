@@ -50,6 +50,9 @@ log = logutil.create_logger(__name__)
 # list parameters which correspond to steps where multiprocessing can be used
 parallel_steps = [(3,'driz_separate'),(6,'driz_cr')]
 
+if util.can_parallel:
+    import multiprocessing
+
 
 def setCommonInput(configObj, createOutwcs=True):
     """
@@ -230,9 +233,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
         numchips += img._numchips
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
-    pool_size = 1
-    if util.can_parallel:
-        pool_size = util.get_pool_size(num_cores)
+    pool_size = util.get_pool_size(num_cores)
     pool_size = pool_size if (numchips >= pool_size) else numchips
 
     inimg = 0
@@ -532,15 +533,24 @@ def _process_input_wcs(infiles, wcskey, updatewcs):
     hit - a target for parallelization. Returns the expanded list of filenames.
     """
 
-    outfiles = None # must be set below
+    # parallel process?
+#   pool_size = util.get_pool_size(cfg---val??, len(infiles))
+
+    outfiles = parseinput.parseinput(infiles)[0]
+
+    # !!!
+    # !!! temporary check - will be removed - just double checking with all our
+    # !!! test cases the code routes that I think I have already verified
+    infiles_ = infiles[:]; outfiles_ = outfiles[:]; infiles_.sort(); outfiles_.sort();
+    assert infiles_ == outfiles_, "Unequal file lists? "+str(infiles_)+' != '+str(outfiles_)
+    # !!!
+
+    # do the WCS updating
     if wcskey in ['', ' ', 'INDEF', None]:
         if updatewcs:
             log.info('Updating input WCS using "updatewcs"')
-            outfiles = uw.updatewcs(infiles, checkfiles=False)
-            # ! note - above 1st calls parseinput.parseinput() on infiles
-            # tho it likely has already been called in buildFileList above
-        else:
-            outfiles = infiles
+            for f in outfiles:
+                uw.updatewcs(f, checkfiles=False)
     else:
         log.info('Resetting input WCS to be based on WCS key = %s' % wcskey)
         for fname in infiles:
@@ -555,12 +565,11 @@ def _process_input_wcs(infiles, wcskey, updatewcs):
                 wname = wcskey
                 wkey = ' '
             altwcs.restoreWCS(fname, extlist, wcskey=wkey, wcsname=wname)
-        outfiles = infiles
 
-    # make an asn table at the end
-    if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
+    for img in infiles:
+        # make an asn table at the end
         # Make sure there is a WCSCORR table for each input image
-        for img in infiles:
+        if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
             wcscorr.init_wcscorr(img)
 
     return outfiles
