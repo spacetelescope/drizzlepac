@@ -84,7 +84,7 @@ def rundrizCR(imgObjList,configObj,procSteps=None):
 
     subprocs = []
     if pool_size > 1:
-        log.info('Executing %d parallel threads/processes' % pool_size)
+        log.info('Executing %d parallel workers' % pool_size)
         for image in imgObjList:
             manager = multiprocessing.Manager()
             mgr = manager.dict({})

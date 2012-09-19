@@ -524,7 +524,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                                    num_tasks = len(imageObjectList))
     will_parallel = single and pool_size > 1
     if will_parallel:
-        log.info('Executing %d parallel threads/processes' % pool_size)
+        log.info('Executing %d parallel workers' % pool_size)
     else:
         if single: # not yet an option for final drizzle, msg would confuse
             log.info('Executing serially')
