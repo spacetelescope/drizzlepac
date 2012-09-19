@@ -35,7 +35,7 @@ import sys
 import pyfits
 
 from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
-                         check_files, logutil, textutil)
+                         check_files, logutil, mputil, textutil)
 from stwcs import updatewcs as uw
 from stwcs.wcsutil import altwcs, wcscorr
 
@@ -327,7 +327,6 @@ def createImageObjectList(files,instrpars,group=None,
         image.inmemory = inmemory # set flag for inmemory processing
         # Now add (possibly updated) image object to list
         imageObjList.append(image)
-
     return imageObjList
 
 def applyContextPar(imageObjectList,contextpar):
@@ -341,7 +340,7 @@ def _getInputImage (input,group=None):
     """ Factory function to return appropriate imageObject class instance"""
     # extract primary header and SCI,1 header from input image
     if group in [None,'']:
-        exten = '[sci,1]'
+        phdu = pyfits.getheader(input)
     else:
         if group.find(',') > 0:
             grp = group.split(',')
@@ -350,8 +349,8 @@ def _getInputImage (input,group=None):
         fimg = fileutil.openImage(input)
         exten = '['+str(fileutil.findExtname(fimg,extname=grp[0],extver=grp[1]))+']'
         fimg.close()
-
-    phdu = fileutil.getHeader(input+exten)
+        # ! change to use pyfits directly here !
+        phdu = fileutil.getHeader(input+exten)
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
     _instrument = phdu['INSTRUME']
@@ -359,7 +358,7 @@ def _getInputImage (input,group=None):
     # Determine the instrument detector in use.  NICMOS is a special case because it does
     # not use the 'DETECTOR' keyword.  It instead used 'CAMERA' to identify which of it's
     # 3 camera's is in use.  All other instruments support the 'DETECTOR' keyword.
-    if (_instrument == 'NICMOS'):
+    if _instrument == 'NICMOS':
         _detector = phdu['CAMERA']
     else:
         _detector = phdu['DETECTOR']
@@ -529,50 +528,67 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
 def _process_input_wcs(infiles, wcskey, updatewcs):
     """
     This is a subset of process_input(), for internal use only.  This is the
-    portion of process input which sets/updates WCS data, and is a performance
+    portion of input handling which sets/updates WCS data, and is a performance
     hit - a target for parallelization. Returns the expanded list of filenames.
     """
 
-    # parallel process?
-#   pool_size = util.get_pool_size(cfg---val??, len(infiles))
-
+    # run parseinput though it's likely already been done in processFilenames
     outfiles = parseinput.parseinput(infiles)[0]
 
-    # !!!
-    # !!! temporary check - will be removed - just double checking with all our
-    # !!! test cases the code routes that I think I have already verified
-    infiles_ = infiles[:]; outfiles_ = outfiles[:]; infiles_.sort(); outfiles_.sort();
-    assert infiles_ == outfiles_, "Unequal file lists? "+str(infiles_)+' != '+str(outfiles_)
-    # !!!
+    # parallel process?
+    pool_size = util.get_pool_size(None, len(outfiles))
+    pool_size = 1 # disable for now until more testing is done - since this
+                  # is IO bound, parallelizing doesn't help more than a little
+                  # and may actually slow this down on slower desktop nodes
 
     # do the WCS updating
     if wcskey in ['', ' ', 'INDEF', None]:
         if updatewcs:
             log.info('Updating input WCS using "updatewcs"')
-            for f in outfiles:
-                uw.updatewcs(f, checkfiles=False)
     else:
         log.info('Resetting input WCS to be based on WCS key = %s' % wcskey)
-        for fname in infiles:
-            numext = fileutil.countExtn(fname)
-            extlist = []
-            for extn in xrange(1, numext + 1):
-                extlist.append(('SCI', extn))
-            if wcskey in string.uppercase:
-                wkey = wcskey
-                wname = ' '
-            else:
-                wname = wcskey
-                wkey = ' '
-            altwcs.restoreWCS(fname, extlist, wcskey=wkey, wcsname=wname)
 
-    for img in infiles:
-        # make an asn table at the end
-        # Make sure there is a WCSCORR table for each input image
-        if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
-            wcscorr.init_wcscorr(img)
+    if pool_size > 1:
+        log.info('Executing %d parallel workers' % pool_size)
+        subprocs = []
+        for fname in outfiles:
+            p = multiprocessing.Process(target=_process_input_wcs_single,
+                name='processInput._process_input_wcs()', # for err msgs
+                args=(fname, wcskey, updatewcs) )
+            subprocs.append(p)
+        mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
+    else:
+        log.info('Executing serially')
+        for fname in outfiles:
+            _process_input_wcs_single(fname, wcskey, updatewcs)
 
     return outfiles
+
+
+def _process_input_wcs_single(fname, wcskey, updatewcs):
+    """
+    See docs for _process_input_wcs.
+    This is separated to be spawned in parallel.
+    """
+    if wcskey in ['', ' ', 'INDEF', None]:
+        if updatewcs:
+            uw.updatewcs(fname, checkfiles=False)
+    else:
+        numext = fileutil.countExtn(fname)
+        extlist = []
+        for extn in xrange(1, numext + 1):
+            extlist.append(('SCI', extn))
+        if wcskey in string.uppercase:
+            wkey = wcskey
+            wname = ' '
+        else:
+            wname = wcskey
+            wkey = ' '
+        altwcs.restoreWCS(fname, extlist, wcskey=wkey, wcsname=wname)
+    # make an asn table at the end
+    # Make sure there is a WCSCORR table for each input image
+    if wcskey not in ['', ' ', 'INDEF', None] or updatewcs:
+        wcscorr.init_wcscorr(fname)
 
 
 def buildFileList(input, output=None, ivmlist=None,**workinplace):
