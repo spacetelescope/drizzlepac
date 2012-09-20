@@ -28,7 +28,7 @@ __version__ = '0.1dev1'
 log = logutil.create_logger(__name__)
 
 
-class baseImageObject:
+class baseImageObject(object):
     """ Base ImageObject which defines the primary set of methods.
     """
     def __init__(self,filename):
