@@ -340,8 +340,10 @@ def _getInputImage (input,group=None):
     """ Factory function to return appropriate imageObject class instance"""
     # extract primary header and SCI,1 header from input image
     if group in [None,'']:
+        exten = '[sci,1]'
         phdu = pyfits.getheader(input)
     else:
+        # change to use pyfits more directly here?
         if group.find(',') > 0:
             grp = group.split(',')
         else:
@@ -349,7 +351,6 @@ def _getInputImage (input,group=None):
         fimg = fileutil.openImage(input)
         exten = '['+str(fileutil.findExtname(fimg,extname=grp[0],extver=grp[1]))+']'
         fimg.close()
-        # ! change to use pyfits directly here !
         phdu = fileutil.getHeader(input+exten)
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
@@ -361,7 +362,13 @@ def _getInputImage (input,group=None):
     if _instrument == 'NICMOS':
         _detector = phdu['CAMERA']
     else:
-        _detector = phdu['DETECTOR']
+        try:
+            _detector = phdu['DETECTOR']
+        except KeyError:
+            # using the phdu as set above (pyfits.getheader) is MUCH faster and
+            # works for the majority of data; but fileutil handles waivered fits
+            phdu = fileutil.getHeader(input+exten)
+            _detector = phdu['DETECTOR'] # if this fails, let it throw
 
     del phdu # just to keep clean
     # Match up the instrument and detector with the right class
