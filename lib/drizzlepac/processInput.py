@@ -539,14 +539,15 @@ def _process_input_wcs(infiles, wcskey, updatewcs):
     hit - a target for parallelization. Returns the expanded list of filenames.
     """
 
-    # run parseinput though it's likely already been done in processFilenames
+    # Run parseinput though it's likely already been done in processFilenames
     outfiles = parseinput.parseinput(infiles)[0]
 
-    # parallel process?
-    pool_size = util.get_pool_size(None, len(outfiles))
-    pool_size = 1 # disable for now until more testing is done - since this
-                  # is IO bound, parallelizing doesn't help more than a little
-                  # and may actually slow this down on slower desktop nodes
+    # Disable parallel processing here for now until hardware I/O gets "wider".
+    # Since this part is IO bound, parallelizing doesn't help more than a little
+    # in most cases, and may actually slow this down on some desktop nodes.
+#   cfgval_num_cores = None # get this from paramDict
+#   pool_size = util.get_pool_size(cfgval_num_cores, len(outfiles))
+    pool_size = 1
 
     # do the WCS updating
     if wcskey in ['', ' ', 'INDEF', None]:
