@@ -11,12 +11,17 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.4dev(20-Sep-2012) in IRAFX
+--------------------------------------------------------
+**available starting:** Sept 24, 2012
+- Bug fixed to allow use of final_wht_type=IVM for processing WFPC2 data
+- Revised Initialization processing to speed it up by using more up-to-date, direct pyfits calls.
+
 DrizzlePac(astrodrizzle) v1.1.3(7-Sep-2012) in IRAFX
 -----------------------------------------------------
 **available starting:** Sept 17, 2012
 
 - Fixed the logic so that crclean images always get created regardless of the value of the 'clean' parameter.
-
 
 DrizzlePac(astrodrizzle) v1.1.2(5-Sep-2012) in IRAFX
 -----------------------------------------------------
