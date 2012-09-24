@@ -5,8 +5,8 @@ DrizzlePac Release Notes
 **************************************
 The code for this package gets released through a number of methods: namely,
   - the use of the package for pipeline and archive processing of ACS and WFC3 data, 
-  - SSB's semi-annual public release of the stsci_python package, and 
-  - a weekly beta release of the development version.  
+  - SSB's semi-annual `public release of the stsci_python package <http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/current/stsci-python-download>`_, and 
+  - a weekly beta release of the development version as part of the `IRAFX download <http://stsdas.stsci.edu/irafx/>`_.  
   
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
@@ -14,6 +14,7 @@ reverse chronological order (most recent version at the top of the list).
 DrizzlePac(astrodrizzle) v1.1.4dev(20-Sep-2012) in IRAFX
 --------------------------------------------------------
 **available starting:** Sept 24, 2012
+
 - Bug fixed to allow use of final_wht_type=IVM for processing WFPC2 data
 - Revised Initialization processing to speed it up by using more up-to-date, direct pyfits calls.
 
