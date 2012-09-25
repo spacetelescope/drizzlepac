@@ -117,9 +117,9 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
                 reset_dq_bits("input_file_flt.fits", "2,32,64,4096", extver=2)
 
     """
-    # Interpret bits value 
+    # Interpret bits value
     bits = util.interpret_bits_value(bits)
-    
+
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
         # open input file in write mode to allow updating the DQ array in-place
@@ -142,8 +142,9 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
         # for each DQ array identified in the file...
         for extn in extver:
             dqarr = p[extname,extn].data
+            dqdtype = dqarr.dtype
             # reset the desired bits
-            p[extname,extn].data = (dqarr & ~bits).astype(np.int16)
+            p[extname,extn].data = (dqarr & ~bits).astype(dqdtype) # preserve original dtype
             log.info('Reset bit values of %s to a value of 0 in %s[%s,%s]' %
                      (bits, filename, extname, extn))
         # close the file with the updated DQ array(s)
@@ -167,14 +168,14 @@ def getHelpAsString():
 def help(file=None):
     """
     Print out syntax help for running resetbits
-    
+
     Parameter
     ---------
     file : str (Default = None)
         If given, write out help to the filename specified by this parameter
-        Any previously existing file with this name will be deleted before 
+        Any previously existing file with this name will be deleted before
         writing out the help.
-        
+
     """
     helpstr = getHelpAsString()
 
