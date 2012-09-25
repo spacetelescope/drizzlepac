@@ -111,7 +111,7 @@ class baseImageObject(object):
         if not self._isSimpleFits:
             for ext,hdu in enumerate(self._image):
                 #use the datatype for the extension
-                dtype=self.getNumpyType(hdu.header["BITPIX"])
+                #dtype=self.getNumpyType(hdu.header["BITPIX"])
                 hdu.data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet
         else:
             self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
@@ -679,7 +679,7 @@ class baseImageObject(object):
         """ Return the corresponding numpy data type.
         """
 
-        iraf={-64:'float64',-32:'float32',8:'uint8',16:'int16',32:'int32'}
+        iraf={-64:'float64',-32:'float32',8:'uint8',16:'int16',32:'int32',64:'int64'}
 
         return iraf[irafType]
 
