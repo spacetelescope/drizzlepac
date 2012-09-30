@@ -1,6 +1,6 @@
 from __future__ import division # confidence medium
 
-import sys,os,copy
+import sys,os,copy,time
 import util
 import numpy as np
 import pyfits
@@ -689,6 +689,7 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
     if img.inmemory:
         virtual_outputs = img.virtualOutputs
 
+
 def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,single,
                   doWrite,build,_versions,_numctx,_nplanes,_numchips,
                   _outsci,_outwht,_outctx,_hdrlist,wcsmap):
@@ -697,6 +698,9 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
     the entirety of the code which is inside the loop over
     chips.  See the run_driz() code for more documentation.
     """
+
+    epoch = time.time()
+
     # Look for sky-subtracted product
     if os.path.exists(chip.outputNames['outSky']):
         chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
@@ -833,6 +837,7 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
             del pimg
             log.info('Writing out mask file: %s' % _outmaskname)
 
+    time_pre = time.time() - epoch; epoch = time.time()
     # New interface to performing the drizzle operation on a single chip/image
     _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
                 _expin, _in_units, chip._wtscl,
@@ -840,6 +845,8 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
                 pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
                 fillval=paramDict['fillval'], stepsize=paramDict['stepsize'],
                 wcsmap=wcsmap)
+    time_driz = time.time() - epoch; epoch = time.time()
+
     # Set up information for generating output FITS image
     #### Check to see what names need to be included here for use in _hdrlist
     chip.outputNames['driz_version'] = _vers
@@ -855,6 +862,7 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
     outputvals['wt_scl_val'] = chip._wtscl
 
     _hdrlist.append(outputvals)
+    time_post = time.time() - epoch; epoch = time.time()
 
     if doWrite:
         ###########################
@@ -905,6 +913,15 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
         # update imageObject with product in memory
         if single:
             img.saveVirtualOutputs(outimgs)
+
+    # this is after the doWrite
+    time_write = time.time() - epoch; epoch = time.time()
+    if not single:
+        log.info('chip time pre-drizzling:  %.3f' % time_pre)
+        log.info('chip time drizzling:      %.3f' % time_driz)
+        log.info('chip time post-drizzling: %.3f' % time_post)
+        log.info('chip time writing output: %.3f' % time_write)
+
 
 def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
