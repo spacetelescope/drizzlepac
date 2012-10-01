@@ -33,6 +33,11 @@ __vdate__ = "23-Aug-2012"
 log = logutil.create_logger(__name__)
 
 
+time_pre_all = []
+time_driz_all = []
+time_post_all = []
+time_write_all = []
+
 #
 #### Interactive interface for running drizzle tasks separately
 #
@@ -489,6 +494,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """
+    global time_pre_all, time_driz_all, time_post_all, time_write_all
 
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
@@ -698,6 +704,7 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
     the entirety of the code which is inside the loop over
     chips.  See the run_driz() code for more documentation.
     """
+    global time_pre_all, time_driz_all, time_post_all, time_write_all
 
     epoch = time.time()
 
@@ -917,10 +924,27 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
     # this is after the doWrite
     time_write = time.time() - epoch; epoch = time.time()
     if not single:
-        log.info('chip time pre-drizzling:  %.3f' % time_pre)
-        log.info('chip time drizzling:      %.3f' % time_driz)
-        log.info('chip time post-drizzling: %.3f' % time_post)
-        log.info('chip time writing output: %.3f' % time_write)
+        time_pre_all.append(time_pre)
+        time_driz_all.append(time_driz)
+        time_post_all.append(time_post)
+        time_write_all.append(time_write)
+
+        log.info('chip time pre-drizzling:  %6.3f' % time_pre)
+        log.info('chip time drizzling:      %6.3f' % time_driz)
+        log.info('chip time post-drizzling: %6.3f' % time_post)
+        log.info('chip time writing output: %6.3f' % time_write)
+
+        if doWrite:
+            tot_pre = sum(time_pre_all)
+            tot_driz = sum(time_driz_all)
+            tot_post = sum(time_post_all)
+            tot_write = sum(time_write_all)
+            tot = tot_pre+tot_driz+tot_post+tot_write
+            log.info('chip total pre-drizzling:  %6.3f (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
+            log.info('chip total drizzling:      %6.3f (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
+            log.info('chip total post-drizzling: %6.3f (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
+            log.info('chip total writing output: %6.3f (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
+
 
 
 def do_driz(insci, input_wcs, inwht,
