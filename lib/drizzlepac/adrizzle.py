@@ -32,7 +32,6 @@ __vdate__ = "23-Aug-2012"
 
 log = logutil.create_logger(__name__)
 
-
 time_pre_all = []
 time_driz_all = []
 time_post_all = []
@@ -494,8 +493,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         build,single,units,wt_scl,pixfrac,kernel,fillval,
         rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
     """
-    global time_pre_all, time_driz_all, time_post_all, time_write_all
-
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
@@ -923,7 +920,7 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
 
     # this is after the doWrite
     time_write = time.time() - epoch; epoch = time.time()
-    if not single:
+    if False and not single: # turn off all this perf reporting for now
         time_pre_all.append(time_pre)
         time_driz_all.append(time_driz)
         time_post_all.append(time_post)
