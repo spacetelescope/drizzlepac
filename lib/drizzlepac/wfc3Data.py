@@ -274,6 +274,22 @@ class WFC3IRInputImage(WFC3InputImage):
 
         return darkobj
 
+    def getskyimg(self,chip):
+        """
+        Notes
+        =====
+        Return an array representing the sky image for the detector.  The value
+        of the sky is what would actually be subtracted from the exposure by
+        the skysub step.
+
+        :units: electrons
+
+        """
+        sci_chip = self._image[self.scienceExt,chip]
+        skyimg = np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*sci_chip.subtractedSky
+        if sci_chip._conversionFactor != 1.0: # If units are not already ELECTRONS
+            skyimg *= self.getexptimeimg(chip)
+        return skyimg
 
     def getdarkcurrent(self):
         """

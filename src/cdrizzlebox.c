@@ -7,7 +7,7 @@
 #include "cdrizzleutil.h"
 
 #include <assert.h>
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +16,7 @@ static inline_macro double*
 mapping_4_ptr(struct driz_param_t* p, double* arr, integer_t i0, integer_t i1) {
   assert(p);
   assert(arr);
-  assert(i0 >= 0 && i0 < p->dnx);
+  assert(i0 >= 0 && i0 <= p->dnx);
   assert(i1 >= 0 && i1 < 4);
   return (arr + ((i1 * p->dnx) + i0));
 }
@@ -25,7 +25,7 @@ static inline_macro double*
 mapping_ptr(struct driz_param_t* p, double* arr, integer_t i0) {
   assert(p);
   assert(arr);
-  assert(i0 >= 0 && i0 < p->dnx);
+  assert(i0 >= 0 && i0 <= p->dnx);
   return (arr + i0);
 }
 
@@ -475,7 +475,7 @@ boxer(double is, double js,
   for (i = 0; i < 4; ++i) {
     sum += sgarea(px[i], py[i], px[(i+1) & 0x3], py[(i+1) & 0x3]);
   }
-  
+
   return sum;
 }
 
@@ -709,7 +709,7 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
         ddx = xx - (double)ii;
         /* Radial distance */
         r2 = ddx*ddx + ddy*ddy;
-        
+
         /* Weight is a scaled Gaussian function of radial
            distance */
         dover = p->gaussian.es * exp(-r2 * p->gaussian.efac);
@@ -960,7 +960,7 @@ do_kernel_square(struct driz_param_t* p,
       return 1;
     }
   }
-  
+
   for (i = x1; i <= x2; ++i) {
     /* Offset within the subset */
     for (ii = 0; ii < 4; ++ii) {
@@ -1275,7 +1275,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
 
         *mapping_ptr(p, yi, x1) = y;
         *mapping_ptr(p, yi, x1+1) = 0.0;
-        
+
 
         if (map_value(p, TRUE, x2 - x1 + 1,
                       mapping_ptr(p, xi, x1), mapping_ptr(p, yi, x1),
@@ -1288,7 +1288,7 @@ dobox(struct driz_param_t* p, const integer_t ystart,
                            &oldcon, &newcon, nmiss, error)) {
           goto dobox_exit_;
         }
-      } else {        
+      } else {
         if (do_kernel_square(p, j, y, x1, x2, last_x1, last_x2,
                              xi, yi, xtmp, ytmp, xo, yo,
                              &oldcon, &newcon, nmiss, error)) {

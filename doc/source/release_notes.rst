@@ -11,6 +11,13 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.5dev(22-Oct-2012) in IRAFX
+--------------------------------------------------------
+**available starting:** Oct 29, 2012
+
+- Scaling of sky array for WFC3/IR IVM generation now correct
+
+
 DrizzlePac(astrodrizzle) v1.1.1(31-Aug-2012) in HST Archive
 -----------------------------------------------------------
 **available starting:** Sept 26, 2012
