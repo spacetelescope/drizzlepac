@@ -194,7 +194,6 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
     _funcroot = '_func_Shadow_WF'
 
     # build template shadow mask's filename
-    _mask = 'wfpc2_inmask'+detnum+'.fits'
 
     # If an old version of the maskfile was present, remove it and rebuild it.
     if fileutil.findFile(maskname):
@@ -204,48 +203,42 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
     if fileutil.findFile(dqfile) != True or bitvalue == None:
         _use_inmask = True
 
-    # Check to see if file exists...
-    if _use_inmask and not fileutil.findFile(_mask):
-    # If not, create the file.
-    # This takes a long time to run, so it should be done
-    # only when absolutely necessary...
-        try:
-            _funcx = _funcroot+detnum+'x'
-            _funcy = _funcroot+detnum+'y'
-
-            _xarr = np.clip(np.fromfunction(eval(_funcx),(800,800)),0.0,1.0).astype(np.uint8)
-            _yarr = np.clip(np.fromfunction(eval(_funcy),(800,800)),0.0,1.0).astype(np.uint8)
-            maskarr = _xarr * _yarr
-
-            if binned !=1:
-                bmaskarr = maskarr[::2,::2]
-                bmaskarr *= maskarr[1::2,::2]
-                bmaskarr *= maskarr[::2,1::2]
-                bmaskarr *= maskarr[1::2,1::2]
-                maskarr = bmaskarr.copy()
-                del bmaskarr
-
-            #Write out the mask file as simple FITS file
-            fmask = pyfits.open(_mask,'append')
-            maskhdu = pyfits.PrimaryHDU(data=maskarr)
-            fmask.append(maskhdu)
-
-            #Close files
-            fmask.close()
-            del fmask
-        except:
-            return None
-
-
     # Check for existance of input .c1h file for use in making inmask file
-    if fileutil.findFile(dqfile) != True:
-        print 'DQ file ',dqfile,' NOT found...'
-        print 'Copying ',_mask,'to ',maskname,' as input mask file.'
-        # Now, copy template mask file to output file, if necessary
-        fileutil.copyFile(_mask,maskname,replace=True)
-    elif bitvalue == None:
-        # If bitvalue was not set, then do not use anything but shadow mask
-        fileutil.copyFile(_mask,maskname,replace=True)
+    if fileutil.findFile(dqfile) != True or bitvalue is None:
+        #_mask = 'wfpc2_inmask'+detnum+'.fits'
+        _mask = maskname
+        # Check to see if file exists...
+        if _use_inmask and not fileutil.findFile(_mask):
+        # If not, create the file.
+        # This takes a long time to run, so it should be done
+        # only when absolutely necessary...
+            try:
+                _funcx = _funcroot+detnum+'x'
+                _funcy = _funcroot+detnum+'y'
+
+                _xarr = np.clip(np.fromfunction(eval(_funcx),(800,800)),0.0,1.0).astype(np.uint8)
+                _yarr = np.clip(np.fromfunction(eval(_funcy),(800,800)),0.0,1.0).astype(np.uint8)
+                maskarr = _xarr * _yarr
+
+                if binned !=1:
+                    bmaskarr = maskarr[::2,::2]
+                    bmaskarr *= maskarr[1::2,::2]
+                    bmaskarr *= maskarr[::2,1::2]
+                    bmaskarr *= maskarr[1::2,1::2]
+                    maskarr = bmaskarr.copy()
+                    del bmaskarr
+
+                #Write out the mask file as simple FITS file
+                fmask = pyfits.open(_mask,'append')
+                maskhdu = pyfits.PrimaryHDU(data=maskarr)
+                fmask.append(maskhdu)
+
+                #Close files
+                fmask.close()
+                del fmask
+            except:
+                return None
+
     else:
         #
         # Build full mask based on .c1h and shadow mask

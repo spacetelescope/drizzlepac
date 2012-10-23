@@ -11,12 +11,13 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
-DrizzlePac(astrodrizzle) v1.1.5dev(22-Oct-2012) in IRAFX
+DrizzlePac(astrodrizzle) v1.1.5dev(23-Oct-2012) in IRAFX
 --------------------------------------------------------
 **available starting:** Oct 29, 2012
 
 - Scaling of sky array for WFC3/IR IVM generation now correct
-
+- template mask files for WFPC2 no longer generated so that WFPC2 data can now be processed using num_cores > 1 (parallel processing)
+- interpretation of the 'group' parameter fixed to support a single integer, a comma-separated list of integers or a single 'sci,<n>' value. The values correspond to the FITS extension number of the extensions that should be combined. This fix may also speed up the initialization step as more direct use of pyfits was implemented for the interpretation of the 'group' parameter.
 
 DrizzlePac(astrodrizzle) v1.1.1(31-Aug-2012) in HST Archive
 -----------------------------------------------------------

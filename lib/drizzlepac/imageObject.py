@@ -1010,15 +1010,22 @@ class imageObject(baseImageObject):
         del fimg
 
         if group not in [None,'']:
-            # Only use selected chip(s?)
-            group_id = fileutil.parseExtn(str(group))
-            if group_id[0] == '':
-                # find extname/extver which corresponds to this extension number
-                group_extname = self._image[group_id[1]].header['EXTNAME']
-                group_extver = self._image[group_id[1]].header['EXTVER']
-                self.group = [group_extname,group_extver]
+            # Only use selected chip
+            if ',' in group:
+                group_id = group.split(',')
+                if group_id[0].isalpha(): # user specified a specific extname,extver
+                    self.group = [int(group_id[1])]
+                else: # user specified a list of extension numbers to process
+                    self.group = []
+                    for grp in group_id:
+                        # find extname/extver which corresponds to this extension number
+                        group_extname = self._image[int(grp)].header['EXTNAME']
+                        group_extver = self._image[int(grp)].header['EXTVER']
+                        self.group.append(group_extver)
             else:
-                self.group = group_id
+                # find extname/extver which corresponds to this extension number
+                group_extver = self._image[int(group)].header['EXTVER']
+                self.group = [int(group_extver)]
         else:
             # Use all chips
             self.group = None
@@ -1033,7 +1040,7 @@ class imageObject(baseImageObject):
 
                 # Set a flag to indicate whether this chip should be included
                 # or not, based on user input from the 'group' parameter.
-                if self.group is None or (self.group is not None and self.group[1] == chip):
+                if self.group is None or (self.group is not None and chip in self.group):
                     sci_chip.group_member = True
                     self._nmembers += 1
                 else:

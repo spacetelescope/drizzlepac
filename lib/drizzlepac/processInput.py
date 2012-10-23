@@ -230,7 +230,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     numchips = 0
     input_mem = 0
     for img in imageObjectList:
-        numchips += img._numchips
+        numchips += img._nmembers # account for group parameter set by user
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
     pool_size = util.get_pool_size(num_cores)
@@ -339,6 +339,7 @@ def applyContextPar(imageObjectList,contextpar):
 def _getInputImage (input,group=None):
     """ Factory function to return appropriate imageObject class instance"""
     # extract primary header and SCI,1 header from input image
+    sci_ext = 'SCI'
     if group in [None,'']:
         exten = '[sci,1]'
         phdu = pyfits.getheader(input)
@@ -346,12 +347,14 @@ def _getInputImage (input,group=None):
         # change to use pyfits more directly here?
         if group.find(',') > 0:
             grp = group.split(',')
+            if grp[0].isalpha():
+                grp = (grp[0],int(grp[1]))
+            else:
+                grp = int(grp[0])
         else:
-            grp = ['SCI',int(group)]
-        fimg = fileutil.openImage(input)
-        exten = '['+str(fileutil.findExtname(fimg,extname=grp[0],extver=grp[1]))+']'
-        fimg.close()
-        phdu = fileutil.getHeader(input+exten)
+            grp = int(group)
+        phdu = pyfits.getheader(input)
+        phdu.extend(pyfits.getheader(input,ext=grp))
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
     _instrument = phdu['INSTRUME']
