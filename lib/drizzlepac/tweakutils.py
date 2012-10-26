@@ -61,6 +61,8 @@ def parse_atfile_cat(input):
     f = open(input[1:])
     catlist = []
     for line in f.readlines():
+        if line[0] == '#' or len(line.strip()) == 0:
+            continue
         lspl = line.split()
         if len(lspl) > 1:
             catlist.append(lspl[1:])
@@ -974,7 +976,7 @@ def find_xy_peak(img,center=None):
             xp -= center[0]
             yp -= center[1]
         flux = imgc[xp_slice].max()
-        
+
     del imgc
     return xp,yp,flux,zpqual
 
