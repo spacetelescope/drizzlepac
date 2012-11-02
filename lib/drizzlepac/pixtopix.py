@@ -7,18 +7,20 @@
     PARAMETERS
     ----------
     inimage : str
-        full filename with path of input image, an extension name ['sci',1] should be 
-        provided if input is a multi-extension FITS file 
-    outimage : str
-        full filename with path of output image, an extension name ['sci',1] should be 
-        provided if output is a multi-extension FITS file 
+        full filename with path of input image, an extension name ['sci',1] should be
+        provided if input is a multi-extension FITS file
+    outimage : str, optional
+        full filename with path of output image, an extension name ['sci',1] should be
+        provided if output is a multi-extension FITS file. If no image gets
+        specified, the input image will be used to generate a default output
+        WCS using stwcs.distortion.util.output_wcs().
     direction : str
-        Direction of transform (forward or backward). The 'forward' transform 
-        takes the pixel positions (assumed to be from the 'input' image) and determines 
-        their position in the 'output' image. The 'backward' transform converts 
-        the pixel positions (assumed to be from the 'output' image) into pixel 
+        Direction of transform (forward or backward). The 'forward' transform
+        takes the pixel positions (assumed to be from the 'input' image) and determines
+        their position in the 'output' image. The 'backward' transform converts
+        the pixel positions (assumed to be from the 'output' image) into pixel
         positions in the 'input' image.
-        
+
 
     Optional Parameters
     -------------------
@@ -29,14 +31,14 @@
     coords : str, optional
         full filename with path of file with starting x,y coordinates
     colnames : str, optional
-        comma separated list of column names from 'coords' files 
-        containing x,y coordinates, respectively. Will default to 
+        comma separated list of column names from 'coords' files
+        containing x,y coordinates, respectively. Will default to
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
     separator : str, optional
         non-blank separator used as the column delimiter in the coords file
     precision : int, optional
-        Number of floating-point digits in output values 
+        Number of floating-point digits in output values
     output : str, optional
         Name of output file with results, if desired
     verbose : bool
@@ -45,22 +47,22 @@
     RETURNS
     -------
     outx : float
-        X position of transformed pixel. If more than 1 input value, then it 
-        will be a numpy array. 
+        X position of transformed pixel. If more than 1 input value, then it
+        will be a numpy array.
     outy : float
-        Y position of transformed pixel. If more than 1 input value, then it 
+        Y position of transformed pixel. If more than 1 input value, then it
         will be a numpy array.
 
     NOTES
     -----
     This module performs a full distortion-corrected coordinate transformation
-    based on all WCS keywords and any recognized distortion keywords from the 
-    input image header.   
+    based on all WCS keywords and any recognized distortion keywords from the
+    input image header.
 
     Usage
     -----
     It can be called from within Python using the syntax::
-    
+
         >>> from drizzlepac import pixtopix
         >>> outx,outy = pixtopix.tran("input_flt.fits[sci,1]",
                         "output_drz.fits[sci,1],"forward",100,100)
@@ -68,8 +70,8 @@
     EXAMPLES
     --------
 
-    1. The following command will transform the position 256,256 from 
-        'input_flt.fits[sci,1]' into a position on the output image 
+    1. The following command will transform the position 256,256 from
+        'input_flt.fits[sci,1]' into a position on the output image
         'output_drz.fits[sci,1]' using::
 
             >>> from drizzlepac import pixtopix
@@ -77,14 +79,14 @@
                         "output_drz.fits[sci,1],"forward", 256,256)
 
 
-    2. The set of X,Y positions from 'output_drz.fits[sci,1]' stored as 
-        the 3rd and 4th columns from the ASCII file 'xy_sci1.dat' 
+    2. The set of X,Y positions from 'output_drz.fits[sci,1]' stored as
+        the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
         will be transformed into pixel positions from 'input_flt.fits[sci,1]'
         and written out to 'xy_flt1.dat' using::
 
             >>> from drizzlepac import pixtopix
             >>> x,y = pixtopix.tran("input_flt.fits[sci,1]", "output_drz.fits[sci,1]",
-                    "backward", coords='xy_sci1.dat', colnames=['c3','c4'], 
+                    "backward", coords='xy_sci1.dat', colnames=['c3','c4'],
                     output="xy_flt1.dat")
 
 """
@@ -97,7 +99,7 @@ import pyfits
 from stsci.tools import fileutil, teal
 import wcs_functions
 import util
-from stwcs import wcsutil
+from stwcs import wcsutil, distortion
 
 __version__ = '0.1'
 __vdate__ = '1-Mar-2011'
@@ -127,11 +129,22 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
 
     # start by reading in WCS+distortion info for each image
     im1wcs = wcsutil.HSTWCS(inimage)
-    im2wcs = wcsutil.HSTWCS(outimage)
-    
+
+    if util.is_blank(outimage):
+        fname,fextn = fileutil.parseFilename(inimage)
+        numsci = fileutil.countExtn(fname)
+        chips = []
+        for e in range(1,numsci+1):
+            chips.append(wcsutil.HSTWCS(fname,ext=('sci',e)))
+        if len(chips) == 0:
+            chips = [im1wcs]
+        im2wcs = distortion.utils.output_wcs(chips)
+    else:
+        im2wcs = wcsutil.HSTWCS(outimage)
+
     # Setup the transformation
     p2p = wcs_functions.WCSMap(im1wcs,im2wcs)
-    
+
     if direction[0].lower() == 'f':
         outx,outy = p2p.forward(xlist,ylist)
     else:
@@ -144,7 +157,7 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
     for x,y in zip(outx,outy):
         xstr.append(fmt%x)
         ystr.append(fmt%y)
-    
+
     if verbose or util.is_blank(output):
         print '# Coordinate transformations for ',inimage
         print '# X(in)      Y(in)             X(out)         Y(out)\n'
@@ -159,7 +172,7 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
             f.write('%s    %s\n'%(x,y))
         f.close()
         print 'Wrote out results to: ',output
-        
+
     return outx,outy
 
 
@@ -167,18 +180,19 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
 # TEAL Interface functions
 #--------------------------
 def run(configObj):
-    
+
     coords = util.check_blank(configObj['coords'])
     colnames = util.check_blank(configObj['colnames'])
     sep = util.check_blank(configObj['separator'])
     outfile = util.check_blank(configObj['output'])
 
-    tran(configObj['inimage'], configObj['outimage'],direction=configObj['direction'],
+    outimage = util.check_blank(configObj['outimage'])
+    tran(configObj['inimage'], outimage,direction=configObj['direction'],
             x = configObj['x'], y = configObj['y'],
             coords = coords, colnames = colnames,
             separator= sep, precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
-    
+
 def getHelpAsString():
     helpString = ''
     if teal:
