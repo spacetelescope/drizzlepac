@@ -34,8 +34,9 @@ def getMdriztabParameters(files):
     _filters = fileutil.getFilterNames(_header)
 
     # Specifically check to see whether the MDRIZTAB file can be found
-    if not os.path.exists(os.path.split(_tableName)[0]): # check path first
-        raise IOError, "Directory for MDRIZTAB '%s' could not be accessed!"%os.path.split(_tableName)[0]
+    mtab_path = os.path.split(_tableName)[0] # protect against no path given for _tableName
+    if mtab_path and not os.path.exists(mtab_path): # check path first, if given
+        raise IOError, "Directory for MDRIZTAB '%s' could not be accessed!"%mtab_path
     if not os.path.exists(_tableName): # then check for the table itself
         raise IOError, "MDRIZTAB table '%s' could not be found!"%_tableName
 
