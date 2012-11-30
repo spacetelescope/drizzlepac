@@ -573,13 +573,18 @@ class baseImageObject(object):
         """
         Notes
         =====
-        Return an array representing the exposure time per pixel for the detector
+        Return an array representing the exposure time per pixel for the detector.
         This method will be overloaded for IR detectors which have their own
-        EXP arrays (WFC3/IR and NICMOS).
+        EXP arrays, namely, WFC3/IR and NICMOS images.
 
-        The method will return an array of the same shape as the image.
+        :units:
+          None
 
-        :unit: None
+        Returns
+        =======
+        exptimeimg : numpy array
+            The method will return an array of the same shape as the image.
+
         """
         sci_chip = self._image[self.scienceExt,chip]
         if sci_chip._wtscl_par == 'expsq':

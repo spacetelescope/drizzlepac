@@ -3,56 +3,57 @@
 # $Id: updatenpol.py 8609 2010-01-19 16:22:48Z hack $
 
 """
-**updatenpol**: Update the header of ACS file(s) with the names of new 
-NPOLFILE and D2IMFILE reference files for use with the 
+**updatenpol**: Update the header of ACS file(s) with the names of new
+NPOLFILE and D2IMFILE reference files for use with the
 C version of MultiDrizzle (astrodrizzle).
 
-:License: 
+:License:
     http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
 
-:Usage: This task can be run from the operating system command line with::
+:Usage:
+    This task can be run from the operating system command line with::
 
         updatenpol [options] input [refdir]
 
 :Command-line Options:
-    `input`   
-        The specification of the files to be updated, either as a single filename, 
+    `input`
+        The specification of the files to be updated, either as a single filename,
         an ASN table name, or wild-card specification
         of a list of files.
-    `refdir`  
-        The name of the directory containing all the new reference files 
-        (`\*_npl.fits` and `\*_d2i.fits` files). 
-        If no directory is given, it will look in `jref$` by default. 
+    `refdir`
+        The name of the directory containing all the new reference files
+        (`\*_npl.fits` and `\*_d2i.fits` files).
+        If no directory is given, it will look in `jref$` by default.
 
-    ``-h``        
+    ``-h``
         Print the help (this text).
 
     ``-l``
-        If specified, copy NPOLFILEs and D2IMFILEs to local directory 
+        If specified, copy NPOLFILEs and D2IMFILEs to local directory
         for use with the input files.
 
     ``-i``
-        If specified, the program will interactively request the exact 
-        names of the NPOLFILE and D2IMFILE reference files to be used 
-        for updating the header of each file. The value of 'refdir' 
+        If specified, the program will interactively request the exact
+        names of the NPOLFILE and D2IMFILE reference files to be used
+        for updating the header of each file. The value of 'refdir'
         will be ignored in interactive mode.
 
 
 .. warning:: It will ask for the names of the NPOLFILE and D2IMFILE for
-             EACH separate INPUT file when the option `-i` has been specified. 
+             EACH separate INPUT file when the option `-i` has been specified.
 
 :Example:
     1. This command will update all the FLT files in the current directory
-    with the new NPOLFILE and D2IMFILE reference files found in the 'myjref' 
+    with the new NPOLFILE and D2IMFILE reference files found in the 'myjref'
     directory as defined in the environment::
 
         updatenpol *flt.fits myjref$
 
 
-:Compatability with MultiDrizzle:  
-    The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs` 
-    only work with the new NPOLFILE reference file for the DGEO correction 
-    (to replace the use of DGEOFILE).  
+:Compatability with MultiDrizzle:
+    The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs`
+    only work with the new NPOLFILE reference file for the DGEO correction
+    (to replace the use of DGEOFILE).
     In fact, astrodrizzle has been extensively modified to
     prompt the user with a very lengthy explanation on whether it should
     stop and allow the user to update the header or continue without
@@ -78,29 +79,29 @@ from stwcs import updatewcs
 
 
 def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
-    """ 
-    Updates headers of files given as input to point to the new reference files 
-    NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle. 
-    
+    """
+    Updates headers of files given as input to point to the new reference files
+    NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle.
+
     Parameters
     -----------
     input : string or list
-                Name of input file or files acceptable forms: 
+                Name of input file or files acceptable forms:
                   - single filename with or without directory
                   - @-file
                   - association table
                   - python list of filenames
                   - wildcard specification of filenames
-                
+
     refdir : string
-                Path to directory containing new reference files, either 
+                Path to directory containing new reference files, either
                 environment variable or full path.
 
     local : boolean
                 Specifies whether or not to copy new reference files to local
                 directory for use with the input files.
 
-    interactive : boolean 
+    interactive : boolean
                 Specifies whether or not to interactively ask the user for the
                 exact names of the new reference files instead of automatically
                 searching a directory for them.
@@ -112,7 +113,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     Examples
     --------
     1. A set of associated images specified by an ASN file can be updated to use
-       the NPOLFILEs and D2IMFILE found in the local directory defined using 
+       the NPOLFILEs and D2IMFILE found in the local directory defined using
        the `myjref$` environment variable under PyRAF using::
 
             >>>import updatenpol
@@ -122,23 +123,23 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
        to be updated using::
 
           >>> updatenpol.update(['file1_flt.fits','file2_flt.fits'],'myjref$')
-        
+
     3. Files in another directory can also be processed using::
-        
-         >>> updatenpol.update('data$*flt.fits','../new/ref/')
+
+          >>> updatenpol.update('data$*flt.fits','../new/ref/')
 
     Notes
     -----
-    .. warning:: 
-        This program requires access to the `jref$` directory in order 
-        to evaluate the DGEOFILE specified in the input image header.  
-        This evaluation allows the program to get the information it 
+    .. warning::
+        This program requires access to the `jref$` directory in order
+        to evaluate the DGEOFILE specified in the input image header.
+        This evaluation allows the program to get the information it
         needs to identify the correct NPOLFILE.
 
     The use of this program now requires that a directory be set up with
     all the new NPOLFILE and D2IMFILE reference files for ACS (a single
     directory for all files for all ACS detectors will be fine, much like
-    jref).  Currently, all the files generated by the ACS team has initially 
+    jref).  Currently, all the files generated by the ACS team has initially
     been made available at::
 
         /grp/hst/acs/lucas/new-npl/
@@ -149,14 +150,14 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     have been checked into CDBS multiple times, and there are several
     versions that apply to the same detector/filter combination.  However,
     that can be sorted out later if we get into that situation at all.
-    
-    """ 
+
+    """
     print 'UPDATENPOL Version',__version__+'('+__vdate__+')'
     # expand (as needed) the list of input files
     files,fcol = parseinput.parseinput(input)
 
     if not interactive:
-        # expand reference directory name (if necessary) to 
+        # expand reference directory name (if necessary) to
         # interpret IRAF or environment variable names
         rdir = fu.osfn(refdir)
         ngeofiles,ngcol = parseinput.parseinput(os.path.join(rdir,'*npl.fits'))
@@ -164,16 +165,16 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         d2ifiles,d2col = parseinput.parseinput(os.path.join(rdir,"*d2i.fits"))
 
     # Now, build a matched list of input files and DGEOFILE reference files
-    # to use for selecting the appropriate new reference file from the 
-    # refdir directory. 
-    for f in files: 
+    # to use for selecting the appropriate new reference file from the
+    # refdir directory.
+    for f in files:
         print 'Updating: ',f
         fdir = os.path.split(f)[0]
         # Open each file...
         fimg = pyfits.open(f,mode='update')
         phdr = fimg['PRIMARY'].header
         fdet = phdr['detector']
-        # get header of DGEOFILE 
+        # get header of DGEOFILE
         dfile = phdr.get('DGEOFILE','')
         if dfile in ['N/A','',' ',None]:
             npolname = ''
@@ -185,12 +186,12 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
             else:
                 npol = raw_input("Enter name of NPOLFILE for %s:"%f)
                 if npol == "": npol = None
-                
+
             if npol is None:
                 errstr =  "No valid NPOLFILE found in "+rdir+" for detector="+fdet+"\n"
                 errstr += " filters = "+phdr['filter1']+","+phdr['filter2']
                 raise ValueError,errstr
-                
+
             npolname = os.path.split(npol)[1]
             if local:
                 npolname = os.path.join(fdir,npolname)
@@ -210,7 +211,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         else:
             d2i = raw_input("Enter name of D2IMFILE for %s:"%f)
             if d2i == "": d2i = None
-            
+
         if d2i is None:
             print '=============\nWARNING:'
             print "    No valid D2IMFILE found in "+rdir+" for detector ="+fdet
@@ -230,29 +231,29 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                     d2iname = refdir+d2iname
                 else:
                     d2iname = os.path.join(refdir,d2iname)
-            
+
         phdr.update('D2IMFILE',d2iname,comment="Column correction table",after='DGEOFILE')
 
         # Close this input file header and go on to the next
         fimg.close()
-        
+
         if wcsupdate:
             updatewcs.updatewcs(f)
-        
+
 def find_d2ifile(flist,detector):
     """ Search a list of files for one that matches the detector specified.
     """
     d2ifile = None
     for f in flist:
-        fdet = pyfits.getval(f,'detector') 
+        fdet = pyfits.getval(f,'detector')
         if fdet == detector:
             d2ifile = f
     return d2ifile
-        
+
 def find_npolfile(flist,detector,filters):
-    """ Search a list of files for one that matches the configuration 
+    """ Search a list of files for one that matches the configuration
         of detector and filters used.
-    """      
+    """
     npolfile = None
     for f in flist:
         fdet = pyfits.getval(f,'detector')
@@ -271,10 +272,10 @@ def find_npolfile(flist,detector,filters):
 def run(configobj=None,editpars=False):
     """ Teal interface for running this code.
     """
-    
-    if configobj is None: 
+
+    if configobj is None:
         configobj =teal.teal(__taskname__,loadOnly=(not editpars))
-    
+
     update(configobj['input'],configobj['refdir'],
         local=configobj['local'],interactive=configobj['interactive'],
         wcsupdate=configobj['wcsupdate'])
@@ -298,12 +299,12 @@ def getHelpAsString(docstring=False):
 def help(file=None):
     """
     Print out syntax help for running updatenpol
-    
-    Parameter
-    ---------
+
+    Parameters
+    ----------
     file : str (Default = None)
         If given, write out help to the filename specified by this parameter
-        Any previously existing file with this name will be deleted before 
+        Any previously existing file with this name will be deleted before
         writing out the help.
     """
     helpstr = getHelpAsString(docstring=True)
@@ -314,7 +315,7 @@ def help(file=None):
         f = open(file,mode='w')
         f.write(helpstr)
         f.close()
-    
+
 def main():
 
     import getopt
@@ -330,7 +331,7 @@ def main():
     help = 0
     local = False
     interactive = False
-    
+
     # read options
     for opt, value in optlist:
         if opt == "-h":

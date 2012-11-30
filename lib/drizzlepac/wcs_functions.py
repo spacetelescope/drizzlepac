@@ -590,16 +590,17 @@ def updateWCS(drizwcs,inwcs):
 def wcsfit(img_wcs, ref_wcs):
     """
     Perform a linear fit between 2 WCS for shift, rotation and scale.
-    Based on 'WCSLIN' from 'drutil.f'(Drizzle V2.9) and modified to
+    Based on the WCSLIN function from 'drutil.f'(Drizzle V2.9) and modified to
     allow for differences in reference positions assumed by PyDrizzle's
     distortion model and the coeffs used by 'drizzle'.
 
     Parameters
     ----------
-        img  : obj
-            ObsGeometry instance for input image
-        ref_wcs : obj
-            Undistorted WCSObject instance for output frame
+    img  : obj
+        ObsGeometry instance for input image
+
+    ref_wcs : obj
+        Undistorted WCSObject instance for output frame
 
     """
     # Define objects that we need to use for the fit...

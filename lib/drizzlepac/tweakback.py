@@ -14,90 +14,90 @@ from . import util
 __taskname__ = 'tweakback' # unless someone comes up with anything better
 __version__ = '0.2.0'
 __vdate__ = '14-Mar-2012'
-        
+
 #### Primary function
-def tweakback(drzfile, input=None,  origwcs = None, wcsname = None, 
+def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
                 extname='SCI', force=False, verbose=False):
-    """ 
+    """
     Apply WCS solution recorded in drizzled file to distorted input images
     (_flt.fits files) used to create the drizzled file.  This task relies on
-    the original WCS and updated WCS to be recorded in the drizzled image's 
+    the original WCS and updated WCS to be recorded in the drizzled image's
     header as the last 2 alternate WCSs.
-    
+
     Parameters
     ----------
     drzfile : str (Default: '')
         filename of undistorted image which contains the new WCS
         and WCS prior to being updated
-    
+
     input : str (Default: '')
         filenames of distorted images to be updated using new WCS
         from 'drzfile'.  These can be provided either as an '@'-file,
-        a comma-separated list of filenames or using wildcards. 
+        a comma-separated list of filenames or using wildcards.
 
         .. note:: A blank value will indicate that the task should derive the
-        filenames from the 'drzfile' itself, if possible. The filenames will be 
-        derived from the D*DATA keywords written out by astrodrizzle 
-        (or MultiDrizzle or drizzle).  
+        filenames from the 'drzfile' itself, if possible. The filenames will be
+        derived from the D*DATA keywords written out by astrodrizzle
+        (or MultiDrizzle or drizzle).
         If they can not be found, the task will quit.
 
     origwcs : str (Default: None)
-        Value of WCSNAME keyword prior to the drzfile image being updated 
-        by tweakreg.  If left blank or None, it will default to using the 
+        Value of WCSNAME keyword prior to the drzfile image being updated
+        by tweakreg.  If left blank or None, it will default to using the
         second to last WCSNAME* keyword value found in the header.
-    
+
     wcsname : str (Default: None)
-        Value of WCSNAME for updated solution written out by 'tweakreg' as 
-        specified by the 'wcsname' parameter from 'tweakreg'.  If this is 
-        left blank or None, it will default to the current WCSNAME value from the 
+        Value of WCSNAME for updated solution written out by 'tweakreg' as
+        specified by the 'wcsname' parameter from 'tweakreg'.  If this is
+        left blank or None, it will default to the current WCSNAME value from the
         input drzfile.
 
     extname : str (Default: 'SCI')
         Name of extension in 'input' files to be updated with new WCS
-                
+
     force: bool  (Default: False)
         This parameters specified whether or not to force an update of the WCS
-        even though WCS already exists with this solution or wcsname? 
+        even though WCS already exists with this solution or wcsname?
 
     verbose: bool (Default: False)
-        This parameter specifies whether or not to print out additional 
+        This parameter specifies whether or not to print out additional
         messages during processing.
 
-        
+
     Notes
     -----
     The algorithm used by this function follows these steps::
 
     0. Verify or determine list of distorted image's that need to be updated
-        with final solution from drizzled image 
+        with final solution from drizzled image
     1. Read in HSTWCS objects for last 2 alternate WCS solutions
     2. Generate footprints using .calFootprint() for each WCS
-    3. Create pixel positions for corners of each WCS's footprint 
+    3. Create pixel positions for corners of each WCS's footprint
         by running the .wcs_sky2pix() method for the last (updated) WCS
     4. Perform linear 'rscale' fit between the 2 sets of X,Y coords
     5. Update each input image WCS with fit using 'updatehdr_with_shift()'
 
     If no input distorted files are specified as input, this task will attempt
     to generate the list of filenames from the drizzled input file's own
-    header. 
-     
+    header.
+
     EXAMPLES
     --------
-    An image named 'acswfc_mos2_drz.fits' was created from 4 images using 
+    An image named 'acswfc_mos2_drz.fits' was created from 4 images using
     astrodrizzle. This drizzled image was then aligned to another image using
-    tweakreg and the header was updated using the WCSNAME = TWEAK_DRZ.  
-    The new WCS can then be used to update each of the 4 images that were 
+    tweakreg and the header was updated using the WCSNAME = TWEAK_DRZ.
+    The new WCS can then be used to update each of the 4 images that were
     combined to make up this drizzled image using::
-    
+
     >>> from drizzlepac import tweakback
     >>> tweakback.tweakback('acswfc_mos2_drz.fits')
-    
+
     If the same WCS should be applied to a specific set of images, those images
     can be updated using::
-    
+
     >>> tweakback.tweakback('acswfc_mos2_drz.fits',
             input='img_mos2a_flt.fits,img_mos2e_flt.fits')
-    
+
     See Also
     --------
     stwcs.wcsutil.altwcs: Alternate WCS implementation
@@ -119,10 +119,10 @@ def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
             print '*'
             print '*'*60
             raise ValueError
-        
+
     if not isinstance(fltfiles,list):
         fltfiles = [fltfiles]
-    
+
     sciext = determine_extnum(drzfile, extname='SCI')
     scihdr = pyfits.getheader(drzfile,ext=sciext)
 
@@ -131,13 +131,13 @@ def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
     wkeys = wcsutil.altwcs.wcskeys(drzfile,ext=sciext)
     wnames = wcsutil.altwcs.wcsnames(drzfile,ext=sciext)
     final_name = wnames[wkeys[-1]]
-    
-    # Read in HSTWCS objects for final,updated WCS and previous WCS from 
+
+    # Read in HSTWCS objects for final,updated WCS and previous WCS from
     # from drizzled image header
     # The final solution also serves as reference WCS when using updatehdr
     if not util.is_blank(wcsname):
         for k in wnames:
-            if wnames[k] == wcsname: 
+            if wnames[k] == wcsname:
                 wcskey = k
                 break
     else:
@@ -146,16 +146,16 @@ def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
 
     if not util.is_blank(origwcs):
         for k in wnames:
-            if wnames[k] == origwcs: 
+            if wnames[k] == origwcs:
                 orig_wcskey = k
                 orig_wcsname = origwcs
                 break
     else:
         orig_wcsname,orig_wcskey = determine_orig_wcsname(scihdr,wnames,wkeys)
-    
+
     orig_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=orig_wcskey)
-        
-    
+
+
     # read in RMS values reported for new solution
     crderr1kw = 'CRDER1'+wkeys[-1]
     crderr2kw = 'CRDER2'+wkeys[-1]
@@ -173,28 +173,28 @@ def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
     ### Step 2: Generate footprints for each WCS
     final_fp = final_wcs.calcFootprint()
     orig_fp = orig_wcs.calcFootprint()
-    
+
     ### Step 3: Create pixel positions in final WCS for each footprint
     final_xy_fp = final_wcs.wcs_sky2pix(final_fp,1)
     orig_xy_fp = final_wcs.wcs_sky2pix(orig_fp,1)
-    
+
     ### Step 4: Perform fit between footprint X,Y positions
     wfit = linearfit.iter_fit_all(orig_xy_fp,final_xy_fp,range(4),range(4),
                                 mode='rscale',nclip=0, verbose=verbose,
                                 center=final_wcs.wcs.crpix)
-    
+
     ### Step 5: Apply solution to input file headers
     for fname in fltfiles:
         updatehdr.updatewcs_with_shift(fname,final_wcs,wcsname=final_name,
                         rot=wfit['rot'],scale=wfit['scale'][0],
                         xsh=wfit['offset'][0],ysh=wfit['offset'][1],
-                        fit=wfit['fit_matrix'], 
+                        fit=wfit['fit_matrix'],
                         xrms=crderr1, yrms = crderr2,
                         verbose=verbose,force=force,sciext=extname)
 
-#### TEAL Interfaces to run this task    
+#### TEAL Interfaces to run this task
 def getHelpAsString(docstring=False):
-    """ 
+    """
     return useful help from a file in the script directory called __taskname__.help
     """
     install_dir = os.path.dirname(__file__)
@@ -221,14 +221,14 @@ def run(configobj):
 def help(file=None):
     """
     Print out syntax help for running tweakback
-    
-    Parameter
-    ---------
+
+    Parameters
+    ----------
     file : str (Default = None)
         If given, write out help to the filename specified by this parameter
-        Any previously existing file with this name will be deleted before 
+        Any previously existing file with this name will be deleted before
         writing out the help.
-        
+
     """
     helpstr = getHelpAsString(docstring=True)
     if file is None:
@@ -243,7 +243,7 @@ def help(file=None):
 #
 def extract_input_filenames(drzfile):
     """
-    Generate a list of filenames from a drizzled image's header 
+    Generate a list of filenames from a drizzled image's header
     """
     data_kws = pyfits.getval(drzfile,'d*data',ext=0)
     if len(data_kws) == 0:
@@ -253,7 +253,7 @@ def extract_input_filenames(drzfile):
         f = kw.value.split('[')[0]
         if f not in fnames:
             fnames.append(f)
-    
+
     return fnames
 
 def determine_extnum(drzfile, extname='SCI'):
@@ -266,7 +266,7 @@ def determine_extnum(drzfile, extname='SCI'):
             sciext = i
             break
     hdulist.close()
-    
+
     return sciext
 
 def determine_orig_wcsname(header, wnames, wkeys):
@@ -277,7 +277,7 @@ def determine_orig_wcsname(header, wnames, wkeys):
     orig_key = None
     if orig_wcsname is None:
         for k,w in wnames.items():
-            if w[:4] == 'IDC_': 
+            if w[:4] == 'IDC_':
                 orig_wcsname = w
                 orig_key = k
                 break

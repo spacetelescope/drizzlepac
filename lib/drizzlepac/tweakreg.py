@@ -402,8 +402,8 @@ def help(file=None):
     """
     Print out syntax help for running tweakreg
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     file : str (Default = None)
         If given, write out help to the filename specified by this parameter
         Any previously existing file with this name will be deleted before
