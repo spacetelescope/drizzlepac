@@ -422,6 +422,8 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
 
 def buildDrizParamDict(configObj,single=True):
     chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
+    cfunc_pars = {'pixfrac':float}
+
     # Initialize paramDict with global parameter(s)
     paramDict = {'build':configObj['build'],'stepsize':configObj['stepsize'],
                 'coeffs':configObj['coeffs'],'wcskey':configObj['wcskey']}
@@ -443,7 +445,10 @@ def buildDrizParamDict(configObj,single=True):
             else:
                 paramDict[par] = configObj[section_name][driz_prefix+par]
         else:
-            paramDict[par] = configObj[section_name][driz_prefix+par]
+            val = configObj[section_name][driz_prefix+par]
+            if par in cfunc_pars:
+                val = cfunc_pars[par](val)
+            paramDict[par] = val
     return paramDict
 
 def _setDefaults(configObj={}):
@@ -863,6 +868,9 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
         if kw[:3] == 'out':
             outputvals[kw] = img.outputNames[kw]
     outputvals['exptime'] = chip._exptime
+    outputvals['expstart'] = chip._expstart
+    outputvals['expend'] = chip._expend
+
     outputvals['wt_scl_val'] = chip._wtscl
 
     _hdrlist.append(outputvals)
@@ -899,7 +907,6 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
             else:
                 _expscale = img.outputValues['texptime']
             np.multiply(_outsci, _expscale, _outsci)
-
         #
         # Write output arrays to FITS file(s)
         #

@@ -116,9 +116,9 @@ class OutputImage:
             _outweight = plist[0]['outSWeight']
             _outcontext = plist[0]['outSContext']
             # Only report values appropriate for single exposure
-            self.texptime = plist[0]['texptime']
-            self.expstart = plist[0]['texpstart']
-            self.expend = plist[0]['texpend']
+            self.texptime = plist[0]['exptime']
+            self.expstart = plist[0]['expstart']
+            self.expend = plist[0]['expend']
         else:
             if self.build:
                 _outdata = plist[0]['outFinal']
