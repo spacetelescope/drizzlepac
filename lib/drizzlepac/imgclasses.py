@@ -42,10 +42,11 @@ class Image(object):
         """
         self.perform_update = kwargs['updatehdr']
         if self.perform_update:
-            open_mode = 'update'
+            self.open_mode = 'update'
         else:
-            open_mode = 'readonly'
-        self.hdulist = fu.openImage(filename,mode=open_mode)
+            self.open_mode = 'readonly'
+        self.name = filename
+        self.openFile()
 
         # try to verify whether or not this image has been updated with
         # a full distortion model
@@ -70,7 +71,6 @@ class Image(object):
             'aligning this image.\n', width=60
             )
 
-        self.name = filename
         self.rootname = filename[:filename.find('.')]
         self.origin = 1
         self.pars = kwargs
@@ -169,11 +169,20 @@ class Image(object):
         self.next_key = ' '
 
         self.quit_immediately = False
+        # close file handle... for now.
+        self.close()
 
     def close(self):
         """ Close any open file handles and flush updates to disk
         """
         self.hdulist.close()
+        self.hdulist = None
+
+    def openFile(self):
+        """ Open file and set up filehandle for image file
+        """
+        if not hasattr(self, 'hdulist') or self.hdulist is None:
+            self.hdulist = fu.openImage(self.name,mode=self.open_mode)
 
     def get_wcs(self):
         """ Helper method to return a list of all the input WCS objects associated
@@ -522,6 +531,9 @@ class Image(object):
     def updateHeader(self,wcsname=None):
         """ Update header of image with shifts computed by *perform_fit()*.
         """
+        # Insure filehandle is open and available...
+        self.openFile()
+
         verbose_level = 1
         if not self.perform_update:
             verbose_level = 0
@@ -613,6 +625,9 @@ class Image(object):
     def writeHeaderlet(self,**kwargs):
         """ Write and/or attach a headerlet based on update to PRIMARY WCS
         """
+        # Insure filehandle is open and available...
+        self.openFile()
+
         pars = kwargs.copy()
         rms_pars = self.fit['rms_keys']
 
