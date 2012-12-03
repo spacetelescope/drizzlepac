@@ -462,7 +462,7 @@ class baseImageObject(object):
 
     def updateContextImage(self, contextpar):
         """
-        Reset the name of the context image to None if parameter `context`== False.
+        Reset the name of the context image to None if parameter `context` == False.
         """
 
         self.createContext = contextpar
