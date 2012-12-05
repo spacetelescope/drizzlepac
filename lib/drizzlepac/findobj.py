@@ -8,6 +8,7 @@ from stsci import convolve
 from stsci import ndimage as ndim
 
 import stsci.imagestats as imagestats
+from . import cdriz, util
 
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):
 #from numpy import *
@@ -121,6 +122,7 @@ def findstars(jdata, fwhm, threshold, skymode,
                 peakmin=None, peakmax=None,
                 ratio=1, nsigma=1.5, theta=0.):
 
+    print 'PARS: ',fwhm,threshold,skymode,peakmin,peakmax,ratio,nsigma,theta
     # Define convolution inputs
     nx, ny = gausspars(fwhm, nsigma=nsigma, ratio= ratio, theta=theta)
     xin, yin = np.mgrid[0:nx, 0:ny]
@@ -144,7 +146,7 @@ def findstars(jdata, fwhm, threshold, skymode,
     ysigsq = (fwhm/fwhm2sig)**2
 
     # convolve image with gaussian kernel
-    convdata = convolve.convolve2d(jdata, nkern)
+    convdata = convolve.convolve2d(jdata, nkern).astype(np.float32)
 
     # clip image to create regions around each source for segmentation
     #tdata=np.where(convdata > skymode*2.0, convdata, 0)
@@ -166,6 +168,7 @@ def findstars(jdata, fwhm, threshold, skymode,
     ninit = 0
     ninit2 = 0
     minxy = gradius * 2 + 1
+    _start_time = util._ptime()[1]
     for ss,n in zip(fobjects,range(len(fobjects))):
         ssx = ss[1].stop - ss[1].start
         ssy = ss[0].stop - ss[1].start
@@ -202,7 +205,7 @@ def findstars(jdata, fwhm, threshold, skymode,
         if xr0 < 0 or xr1 > jdata.shape[1]:
             continue
 
-        ninit += 1
+        #ninit += 1
         # Simple Centroid on the region from the convoluted image
         jregion = jdata[yr0:yr1,xr0:xr1]
 
@@ -210,15 +213,19 @@ def findstars(jdata, fwhm, threshold, skymode,
             continue
         if (peakmin is not None and jregion.max() <= peakmin):
             continue
-        ninit2 += 1
+        #ninit2 += 1
         px,py,pround = xy_round(jregion,gradius,gradius,skymode,
                 kernel,xsigsq,ysigsq)
+
         if px is None:
             continue
 
         fitind.append((px+xr0,py+yr0))
         # compute a source flux value
         fluxes.append(jregion.sum())
+
+    _end_time = util._ptime()
+    print "Source finding loop ended at ",_end_time[0]," after ",_end_time[1]-_start_time," seconds."
     #print 'ninit: ',ninit,'   ninit2: ',ninit2,' final n: ',len(fitind)
     return fitind, fluxes
 
@@ -232,165 +239,17 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
     if datamax is None:
         datamax = data.max()
 
-    # These are all 0-based indices
-    xhalf = (nxk / 2.0) - 0.5
-    yhalf = (nyk / 2.0) - 0.5
-    xmiddle = nxk // 2
-    ymiddle = nyk // 2
+    # call C function for speed now...
+    xy_val = cdriz.arrxyround(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin,datamax)
+    if xy_val is None:
+        x = None
+        y = None
+        round = None
+    else:
+        x = xy_val[0]
+        y = xy_val[1]
+        round = xy_val[2]
 
-    # Initialize the x fit.
-    sumgd = 0.0
-    sumgsq = 0.0
-    sumg = 0.0
-    sumd = 0.0
-    sumdx = 0.0
-    sdgdx = 0.0
-    sdgdxsq = 0.0
-    sddgdx = 0.0
-    sgdgdx = 0.0
-    p = 0.0
-    n = 0
-
-    # Compute the sums required for the x fit.
-    for k in range(nxk):
-        sg = 0.0
-        sd = 0.0
-        for j in range(nyk):
-            wt = float(ymiddle+1 - abs (j - ymiddle))
-            pixval = data[y0-ymiddle+j,x0-xmiddle+k]
-            if (pixval < datamin or pixval > datamax):
-                sg=None
-                break
-
-            sd = sd + (pixval - skymode) * wt
-            sg = sg + ker2d[j,k] * wt
-
-        if (sg <= 0.0):
-            sg = None
-            break
-        dxk = xmiddle-k
-        wt = float(xmiddle+1 - abs (dxk))
-        sumgd += wt * sg * sd
-        sumgsq += wt * sg ** 2
-        sumg += wt * sg
-        sumd += wt * sd
-        sumdx += wt * sd * dxk
-
-        p += wt
-        n += 1
-        dgdx = sg * dxk
-        sdgdxsq += wt * dgdx ** 2
-        sdgdx += wt * dgdx
-        sddgdx += wt * sd * dgdx
-        sgdgdx += wt * sg * dgdx
-
-    # Need at least three points to estimate the x height, position
-    # and local sky brightness of the star.
-
-    if sg is None or (n <= 2 or p <= 0.0) :
-        return None,None,None
-
-    # Solve for the height of the best-fitting gaussian to the
-    # xmarginal. Reject the star if the height is non-positive.
-
-    hx = sumgsq - (sumg ** 2) / p
-    if (hx <= 0.0):
-        return None,None,None
-
-    hx = (sumgd - sumg * sumd / p) / hx
-    if (hx <= 0.0):
-        return None,None,None
-
-    # Solve for the new x centroid.
-    skylvl = (sumd - hx * sumg) / p
-    dx = (sgdgdx - (sddgdx - sdgdx * (hx * sumg + skylvl * p))) / \
-        (hx * sdgdxsq / xsigsq)
-    if (abs (dx) > xhalf):
-        if (sumd == 0.0):
-            dx = 0.0
-        else:
-            dx = sumdx / sumd
-        if (abs (dx) > xhalf):
-            dx = 0.0
-
-    x = int(x0) + dx
-
-    # Initialize y fit.
-    sumgd = 0.0
-    sumgsq = 0.0
-    sumg = 0.0
-    sumd = 0.0
-    sumdx = 0.0
-    sdgdx = 0.0
-    sdgdxsq = 0.0
-    sddgdx = 0.0
-    sgdgdx = 0.0
-    p = 0.0
-    n = 0
-
-    for j in range(nyk):
-        sg = 0.0
-        sd = 0.0
-        for k in range(nxk) :
-            wt = float(xmiddle+1 - abs (k - xmiddle))
-            pixval = data[y0-ymiddle+j,x0-xmiddle+k]
-            if (pixval < datamin or pixval > datamax):
-                sg = None
-                break
-            sd += (pixval - skymode) * wt
-            sg += ker2d[j,k] * wt
-
-        if (sg <= 0.0):
-            sg = None
-            break
-        dyj = ymiddle-j
-        wt = float(ymiddle+1 - abs (j - ymiddle))
-
-        sumgd += wt * sg * sd
-        sumgsq += wt * sg ** 2
-        sumg += wt * sg
-        sumd += wt * sd
-        sumdx += wt * sd * dyj
-        p = p + wt
-        n = n + 1
-        dgdx = sg * dyj
-        sdgdx += wt * dgdx
-        sdgdxsq += wt * dgdx ** 2
-        sddgdx += wt * sd * dgdx
-        sgdgdx += wt * sg * dgdx
-
-    # Need at least three points to estimate the y height, position
-    # and local sky brightness of the star.
-
-    if sg is None or (n <= 2 or p <= 0.0):
-        return None,None,None
-
-    # Solve for the height of the best-fitting gaussian to the
-    # y marginal. Reject the star if the height is non-positive.
-
-    hy = sumgsq - (sumg ** 2) / p
-    if (hy <= 0.0):
-        return None,None,None
-    hy = (sumgd - sumg * sumd / p) / (sumgsq - (sumg ** 2) / p)
-    if (hy <= 0.0):
-        return None,None,None
-
-    # Solve for the new x centroid.
-    skylvl = (sumd - hy * sumg) / p
-    dy = (sgdgdx - (sddgdx - sdgdx * (hy * sumg + skylvl * p))) / \
-        (hy * sdgdxsq / ysigsq)
-    if (abs (dy) > yhalf):
-        if (sumd == 0.0):
-            dy = 0.0
-        else :
-            dy = sumdx / sumd
-
-        if (abs (dy) > yhalf):
-            dy = 0.0
-
-    y = int(y0) + dy
-
-    round = 2.0 * (hx - hy) / (hx + hy)
     return x,y,round
 
 def roundness(im):
@@ -435,9 +294,17 @@ def centroid(im):
 
     centroid = {m10/m00, m01/m00}
     """
+    """
+    # These calls point to Python version of moments function
     m00 = immoments(im,0,0)
     m10 = immoments(im, 1,0)
     m01 = immoments(im,0,1)
+    """
+    # These calls point to Python version of moments function
+    m00 = cdriz.arrmoments(im,0,0)
+    m10 = cdriz.arrmoments(im, 1,0)
+    m01 = cdriz.arrmoments(im,0,1)
+
     ycen = m10 / m00
     xcen = m01 / m00
     return xcen, ycen

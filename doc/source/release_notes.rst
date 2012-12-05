@@ -11,6 +11,16 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.6dev(5-Dec-2012) in IRAFX
+-------------------------------------------------------
+**available starting:** Dec 10, 2012
+
+- tweakreg v1.1.0 source finding algorithm now runs many times faster (no algorithmic changes). No changes have been made yet to speed up the 2d histogram source matching code.
+- The 'pixtopix' task was updated to make the 'outimage' parameter optional by using the input image as the default. This required no API changes, but the help files were updated
+- Very minor update to guard against MDRIZTAB being specified without any explicit path. 
+- Update astrodrizzle to correctly report the exposure time, exposure start, and exposure end for the single drizzle products, in addition to insuring the final drizzle values remain correct.
+- astrodrizzle also includes initial changes to safeguard the C code from getting improperly cast values from the configObj(TEAL) input. 
+
 DrizzlePac(astrodrizzle) v1.1.5dev(23-Oct-2012) in IRAFX
 --------------------------------------------------------
 **available starting:** Oct 29, 2012

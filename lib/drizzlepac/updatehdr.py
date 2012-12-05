@@ -49,11 +49,11 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
                  'formats':('S24','f4','f4','f4','f4','f4','f4')}
     try:
         sdict = np.loadtxt(shiftfile,dtype=type_list,unpack=True)
-    except TypeError:
+    except IndexError:
         tlist = {'names':('fnames','xsh','ysh','rot','scale'),
                      'formats':('S24','f4','f4','f4','f4')}
         s = np.loadtxt(shiftfile,dtype=tlist,unpack=True)
-        sdict = np.zeros([s[0].shape,],dtype=type_list)
+        sdict = np.zeros([s[0].shape[0],],dtype=type_list)
         for sname in s.dtype.names:
             sdict[sname] = s[sname]
     # loadtxt now returns a list of ndarray columns... need to fix this!

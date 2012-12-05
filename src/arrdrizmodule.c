@@ -776,11 +776,304 @@ cleanup:
 }
 
 
+static PyObject *
+arrmoments(PyObject *obj, PyObject *args)
+{
+  /* Arguments in the order they appear */
+  PyObject *oimg;
+  long p,q ;
+
+  /* Derived values */
+  PyArrayObject *img = NULL;
+  long x,y;
+  double moment;
+  integer_t i,j;
+  double val;
+
+  if (!PyArg_ParseTuple(args,"Oll:arrmoments", &oimg, &p, &q)){
+    return PyErr_Format(gl_Error, "cdriz.arrmoments: Invalid Parameters.");
+  }
+
+  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
+  if (!img) {
+    goto _exit;
+  }
+  
+  x = img->dimensions[1];
+  y = img->dimensions[0];
+
+  moment = 0.0;
+  /* Perform computation */
+  for (i = 0; i < y; i++) {
+    for (j = 0; j < x; j++) {
+      val = *(float *)(img->data + j*img->strides[1] + i*img->strides[0]);
+      moment += pow(i,p)*pow(j,q)*val;
+    }
+  }
+  
+ _exit:
+  Py_DECREF(img);
+
+  return Py_BuildValue("d",moment);
+}
+
+static PyObject *
+arrxyround(PyObject *obj, PyObject *args)
+{
+  /* Arguments (mostly) in the order they appear */
+  PyObject *oimg, *oker2d;
+  double x0,y0, skymode ;
+  double xsigsq,ysigsq, datamin,datamax;
+  
+  /* Derived values */
+  PyArrayObject *img = NULL;
+  PyArrayObject *ker2d = NULL;
+  long nyk,nxk;
+
+  double xc,yc,round;
+  long j, k;
+  double xhalf, yhalf;
+  long xmiddle, ymiddle;
+  double sg, sd, wt;
+  double sumgd, sumgsq, sumg, sumd, sumdx;
+  double sdgdx, sdgdxsq, sddgdx, sgdgdx;
+  double p;
+  float pixval, ker2dval;
+  long px,py;
+  long n;
+  double dxk, dgdx, dyj;
+  double hx, hy, hx1, hy1, dy, dx, dy1, skylvl;
+  integer_t return_val = 0;
+
+
+  if (!PyArg_ParseTuple(args,"OdddOdddd:arrxyround", &oimg, &x0, &y0, &skymode, 
+                        &oker2d, &xsigsq, &ysigsq, &datamin, &datamax)){
+    return PyErr_Format(gl_Error, "cdriz.arrxyround: Invalid Parameters.");
+  }
+
+  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
+  if (!img) {
+    goto _exit;
+  }
+
+  ker2d = (PyArrayObject *)PyArray_ContiguousFromAny(oker2d, PyArray_DOUBLE, 2, 2);
+  if (!ker2d) {
+    goto _exit;
+  }
+
+  nxk = ker2d->dimensions[1];
+  nyk = ker2d->dimensions[0];
+  
+  /* Perform computation */
+  /*These are all 0-based indices */
+  xhalf = (nxk / 2.0) - 0.5;
+  yhalf = (nyk / 2.0) - 0.5;
+  xmiddle = (int)floor(nxk / 2);
+  ymiddle = (int)floor(nyk / 2);  
+  
+  /* Initialize the x fit. */
+  sumgd = 0.0;
+  sumgsq = 0.0;
+  sumg = 0.0;
+  sumd = 0.0;
+  sumdx = 0.0;
+  sdgdx = 0.0;
+  sdgdxsq = 0.0;
+  sddgdx = 0.0;
+  sgdgdx = 0.0;
+  p = 0.0;
+  n = 0;
+  
+  /* Compute the sums required for the x fit. */
+  for (k=0; k < nxk; k++){
+      sg = 0.0;
+      sd = 0.0;
+      for (j=0; j < nyk; j++){
+          wt = (float)(ymiddle+1 - abs (j - ymiddle));
+          px = x0-xmiddle+k;
+          py = y0-ymiddle+j;
+          pixval = *(float *)(img->data + px*img->strides[1] + py*img->strides[0]);
+          /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
+          if ((pixval < datamin) || (pixval > datamax)){
+              sg=-1.0;
+              break;
+          }
+
+          sd += (pixval - skymode) * wt;
+          ker2dval = *(double *)(ker2d->data + k*ker2d->strides[1] + j*ker2d->strides[0]);
+          sg += ker2dval * wt;
+      }
+      if (sg <= 0.0){
+          break;
+      }
+      dxk = xmiddle-k;
+      wt = (float)(xmiddle+1 - abs(dxk));
+      sumgd += wt * sg * sd;
+      sumgsq += wt * pow(sg, 2);
+      sumg += wt * sg;
+      sumd += wt * sd;
+      sumdx += wt * sd * dxk;
+      p += wt;
+      n += 1;
+      dgdx = sg * dxk;
+      sdgdxsq += wt * pow(dgdx, 2);
+      sdgdx += wt * dgdx;
+      sddgdx += wt * sd * dgdx;
+      sgdgdx += wt * sg * dgdx;
+  }
+  /*
+  Need at least three points to estimate the x height, position
+  and local sky brightness of the star.
+  */
+  if ( (sg < 1.0) || ((n <= 2) || (p <= 0.0))){
+      return_val = -1;
+      goto _exit;
+  }
+
+  /*
+  Solve for the height of the best-fitting gaussian to the
+  xmarginal. Reject the star if the height is non-positive.
+  */
+  hx1 = sumgsq - (pow(sumg,2)) / p;
+  if (hx1 <= 0.0){
+      return_val = -1;
+      goto _exit;
+  }
+  hx = (sumgd - sumg * sumd / p) / hx1;
+  if (hx <= 0.0){
+      return_val = -1;
+      goto _exit;
+  }
+  
+  /* Solve for the new x centroid. */
+  skylvl = (sumd - hx * sumg) / p;
+  dx = (sgdgdx - (sddgdx - sdgdx * (hx * sumg + skylvl * p))) / (hx * sdgdxsq / xsigsq);
+
+  if (fabs(dx) > xhalf){
+      if (sumd == 0.0){
+          dx = 0.0;
+      } else{
+          dx = sumdx / sumd;
+      }
+      if (fabs(dx) > xhalf){
+          dx = 0.0;
+      }
+  }
+  xc = (int)floor(x0) + dx;
+  
+  /* Initialize y fit. */
+  sumgd = 0.0;
+  sumgsq = 0.0;
+  sumg = 0.0;
+  sumd = 0.0;
+  sumdx = 0.0;
+  sdgdx = 0.0;
+  sdgdxsq = 0.0;
+  sddgdx = 0.0;
+  sgdgdx = 0.0;
+  p = 0.0;
+  n = 0;
+
+  for (j=0; j < nyk; j++){
+      sg = 0.0;
+      sd = 0.0;
+      for (k=0; k<nxk; k++){
+          wt = (float)(xmiddle+1 - abs(k - xmiddle));
+          px = x0-xmiddle+k;
+          py = y0-ymiddle+j;
+          pixval = *(float *)(img->data + px*img->strides[1] + py*img->strides[0]);
+          /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */          
+          if ((pixval < datamin) || (pixval > datamax)){
+              sg = -1.0;
+              break;
+          }
+          sd += (pixval - skymode) * wt;
+          ker2dval = *(double *)(ker2d->data + k*ker2d->strides[1] + j*ker2d->strides[0]);
+          sg += ker2dval * wt;
+      }
+      if (sg <= 0.0){
+          break;
+      }
+      dyj = ymiddle-j;
+      wt = (float)(ymiddle+1 - abs(j - ymiddle));
+
+      sumgd += wt * sg * sd;
+      sumgsq += wt * pow(sg, 2);
+      sumg += wt * sg;
+      sumd += wt * sd;
+      sumdx += wt * sd * dyj;
+      p = p + wt;
+      n = n + 1;
+      dgdx = sg * dyj;
+      sdgdx += wt * dgdx;
+      sdgdxsq += wt * pow(dgdx, 2);
+      sddgdx += wt * sd * dgdx;
+      sgdgdx += wt * sg * dgdx;
+  }
+  /*
+   Need at least three points to estimate the y height, position
+   and local sky brightness of the star.
+  */
+  if ((sg < 0.0) || ((n <= 2) || (p <= 0.0))){
+      return_val = -1;
+      goto _exit;
+  }
+  /*
+  Solve for the height of the best-fitting gaussian to the
+  y marginal. Reject the star if the height is non-positive.
+  */
+
+  hy1 = sumgsq - (pow(sumg,2) / p);  
+  if (hy1 <= 0.0){
+      return_val = -1;
+      goto _exit;
+  }
+  hy = (sumgd - ((sumg * sumd) / p)) / hy1;
+  if (hy <= 0.0){
+      return_val = -1;
+      goto _exit;
+  }
+  
+  /* Solve for the new x centroid. */
+  skylvl = (sumd - hy * sumg) / p;
+  dy1 = sgdgdx - (sddgdx - (sdgdx * ((hy * sumg) + (skylvl * p))));
+  dy = dy1 / (hy * sdgdxsq / ysigsq);
+
+  if (fabs(dy) > yhalf){
+      if (sumd == 0.0){
+          dy = 0.0;
+      } else {
+          dy = sumdx / sumd;
+      }
+      if (fabs(dy) > yhalf){
+          dy = 0.0;
+      }
+  }
+  yc = (int)floor(y0) + dy;
+
+  round = 2.0 * (hx - hy) / (hx + hy);
+
+ _exit:
+  Py_DECREF(img);
+  Py_DECREF(ker2d);
+
+  if (return_val < 0){
+      return Py_BuildValue("");
+  } else {
+      return Py_BuildValue("ddd",xc,yc,round);
+  }
+}
+
+
+
+
 static PyMethodDef cdriz_methods[] =
   {
     {"tdriz",  tdriz, METH_VARARGS, "tdriz(image, weight, output, outweight, context, uniqid, ystart, xmin, ymin, dny, scale, xscale, yscale, align, pfrace, kernel, inun, expin, wtscl, fill, nmiss, nskip, vflag, callback)"},
     /*{"twdriz",  tdriz, METH_VARARGS, "triz(image, weight, output, outweight, ystart, xmin, ymin, dny, wcsin, wcsout,pxg,pyg,pfract, kernel, coeffs, fillstr,nmiss,nskip,vflag)"},*/
     {"tblot",  tblot, METH_VARARGS, "tblot(image, output, xmin, xmax, ymin, ymax, scale, kscale, xscale, yscale, align, interp, ef, misval, sinscl, vflag, callback)"},
+    {"arrmoments", arrmoments, METH_VARARGS, "arrmoments(image, p, q)"},
+    {"arrxyround", arrxyround, METH_VARARGS, "arrxyround(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin,datamax)"},
     {0, 0, 0, 0}                             /* sentinel */
   };
 
