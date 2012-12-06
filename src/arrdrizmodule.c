@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <float.h>
 
 #include <numpy/arrayobject.h>
 
@@ -883,7 +884,7 @@ arrxyround(PyObject *obj, PyObject *args)
   sgdgdx = 0.0;
   p = 0.0;
   n = 0;
-  
+
   /* Compute the sums required for the x fit. */
   for (k=0; k < nxk; k++){
       sg = 0.0;
@@ -895,15 +896,15 @@ arrxyround(PyObject *obj, PyObject *args)
           pixval = *(float *)(img->data + px*img->strides[1] + py*img->strides[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
-              sg=-1.0;
+              sg=DBL_MIN;
               break;
           }
-
+          
           sd += (pixval - skymode) * wt;
           ker2dval = *(double *)(ker2d->data + k*ker2d->strides[1] + j*ker2d->strides[0]);
           sg += ker2dval * wt;
       }
-      if (sg <= 0.0){
+      if (sg == DBL_MIN){
           break;
       }
       dxk = xmiddle-k;
@@ -924,8 +925,8 @@ arrxyround(PyObject *obj, PyObject *args)
   /*
   Need at least three points to estimate the x height, position
   and local sky brightness of the star.
-  */
-  if ( (sg < 1.0) || ((n <= 2) || (p <= 0.0))){
+  */  
+  if ( (sg == DBL_MIN) || ((n <= 2) || (p <= 0.0))){
       return_val = -1;
       goto _exit;
   }
@@ -984,14 +985,14 @@ arrxyround(PyObject *obj, PyObject *args)
           pixval = *(float *)(img->data + px*img->strides[1] + py*img->strides[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */          
           if ((pixval < datamin) || (pixval > datamax)){
-              sg = -1.0;
+              sg = DBL_MIN;
               break;
           }
           sd += (pixval - skymode) * wt;
           ker2dval = *(double *)(ker2d->data + k*ker2d->strides[1] + j*ker2d->strides[0]);
           sg += ker2dval * wt;
       }
-      if (sg <= 0.0){
+      if (sg == DBL_MIN){
           break;
       }
       dyj = ymiddle-j;
@@ -1014,7 +1015,8 @@ arrxyround(PyObject *obj, PyObject *args)
    Need at least three points to estimate the y height, position
    and local sky brightness of the star.
   */
-  if ((sg < 0.0) || ((n <= 2) || (p <= 0.0))){
+
+  if ((sg == DBL_MIN) || ((n <= 2) || (p <= 0.0))){
       return_val = -1;
       goto _exit;
   }

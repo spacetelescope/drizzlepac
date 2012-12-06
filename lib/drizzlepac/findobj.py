@@ -8,7 +8,7 @@ from stsci import convolve
 from stsci import ndimage as ndim
 
 import stsci.imagestats as imagestats
-from . import cdriz, util
+from . import cdriz
 
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):
 #from numpy import *
@@ -122,7 +122,6 @@ def findstars(jdata, fwhm, threshold, skymode,
                 peakmin=None, peakmax=None,
                 ratio=1, nsigma=1.5, theta=0.):
 
-    print 'PARS: ',fwhm,threshold,skymode,peakmin,peakmax,ratio,nsigma,theta
     # Define convolution inputs
     nx, ny = gausspars(fwhm, nsigma=nsigma, ratio= ratio, theta=theta)
     xin, yin = np.mgrid[0:nx, 0:ny]
@@ -168,7 +167,6 @@ def findstars(jdata, fwhm, threshold, skymode,
     ninit = 0
     ninit2 = 0
     minxy = gradius * 2 + 1
-    _start_time = util._ptime()[1]
     for ss,n in zip(fobjects,range(len(fobjects))):
         ssx = ss[1].stop - ss[1].start
         ssy = ss[0].stop - ss[1].start
@@ -224,8 +222,6 @@ def findstars(jdata, fwhm, threshold, skymode,
         # compute a source flux value
         fluxes.append(jregion.sum())
 
-    _end_time = util._ptime()
-    print "Source finding loop ended at ",_end_time[0]," after ",_end_time[1]-_start_time," seconds."
     #print 'ninit: ',ninit,'   ninit2: ',ninit2,' final n: ',len(fitind)
     return fitind, fluxes
 
