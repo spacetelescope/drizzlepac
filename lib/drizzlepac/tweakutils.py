@@ -10,7 +10,8 @@ import astrolib.coords as coords
 
 import stsci.imagestats as imagestats
 
-import findobj
+from . import findobj
+from . import cdriz
 
 def parse_input(input, prodonly=False):
     catlist = None
@@ -1013,17 +1014,10 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         each UV position.
     """
     print 'Computing initial guess for X and Y shifts...'
+
+    # run C function to create ZP matrix
     xyshape = int(searchrad*2)+1
-    zpmat = np.zeros([xyshape,xyshape],dtype=np.int32)
-
-    for xy in imgxy:
-        deltax = xy[0] - refxy[:,0]
-        deltay = xy[1] - refxy[:,1]
-        xyind = np.bitwise_and(np.abs(deltax) < searchrad,np.abs(deltay) < searchrad)
-
-        deltax = (deltax+searchrad)[xyind].astype(np.int32)
-        deltay = (deltay+searchrad)[xyind].astype(np.int32)
-        zpmat[deltay,deltax] += 1
+    zpmat = cdriz.arrxyzero(imgxy.astype(np.float32), refxy.astype(np.float32), searchrad)
 
     xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
     if zpqual is not None:
@@ -1052,6 +1046,7 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
                     }
 
         plot_zeropoint(plot_pars)
+    del zpmat
 
     return xp,yp,flux,zpqual
 

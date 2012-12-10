@@ -1066,7 +1066,77 @@ arrxyround(PyObject *obj, PyObject *args)
   }
 }
 
+static PyObject *
+arrxyzero(PyObject *obj, PyObject *args)
+{
+  /* Arguments (mostly) in the order they appear */
+  PyObject *oimgxy, *orefxy;
+  double searchrad;
+  
+  /* Derived values */
+  PyArrayObject *imgxy = NULL;
+  PyArrayObject *refxy = NULL;  
+  PyArrayObject *ozpmat = NULL;
+  long **zpmat;
+  long *a;
+  
+  long imgnum, refnum;
+  integer_t dimensions[2];
+  integer_t xind, yind;
+  double dx, dy;
+  long j, k;
 
+  if (!PyArg_ParseTuple(args,"OOd:arrxyzero", &oimgxy, &orefxy, &searchrad)){
+    return PyErr_Format(gl_Error, "cdriz.arrxyzero: Invalid Parameters.");
+  }
+  
+  imgxy = (PyArrayObject *)PyArray_ContiguousFromAny(oimgxy, PyArray_FLOAT, 2, 2);
+  if (!imgxy) {
+    goto _exit;
+  }
+
+  refxy = (PyArrayObject *)PyArray_ContiguousFromAny(orefxy, PyArray_FLOAT, 2, 2);
+  if (!refxy) {
+    goto _exit;
+  }
+   
+  dimensions[0] = (integer_t)(searchrad*2) + 1;
+  dimensions[1] = (integer_t)(searchrad*2) + 1;
+  ozpmat = (PyArrayObject *)PyArray_FromDims(2, dimensions, PyArray_LONG);
+  if (!ozpmat) {
+    goto _exit;
+  }
+  zpmat=(long **)malloc((size_t) (dimensions[0]*sizeof(long)));
+  a=(long *) ozpmat->data; /* pointer to arrayin data as double */
+  for ( j=0; j<dimensions[0]; j++) {
+      zpmat[j]=a+j*dimensions[1];
+  }
+  
+  imgnum = imgxy->dimensions[0];
+  refnum = refxy->dimensions[0];
+  
+  /* For each entry in the input image...*/
+  for (j=0; j< imgnum; j++){
+    /* compute the delta relative to each source in ref image */
+    for (k = 0; k < refnum; k++){
+        dx = *(float *)(imgxy->data + j*imgxy->strides[0]) - *(float *)(refxy->data + k*refxy->strides[0]);
+        dy = *(float *)(imgxy->data + j*imgxy->strides[0]+ imgxy->strides[1]) - 
+             *(float *)(refxy->data + k*refxy->strides[0]+ refxy->strides[1]);
+        if ((abs(dx) < searchrad) && (abs(dy) < searchrad)) {
+            xind = (integer_t)(dx+searchrad);
+            yind = (integer_t)(dy+searchrad);
+            zpmat[yind][xind] = zpmat[yind][xind] + 1;
+        }
+    }
+  }
+
+ _exit:
+  Py_DECREF(imgxy);
+  Py_DECREF(refxy);  
+  free((long *)zpmat);
+
+  return PyArray_Return(ozpmat);
+}
 
 
 static PyMethodDef cdriz_methods[] =
@@ -1076,6 +1146,7 @@ static PyMethodDef cdriz_methods[] =
     {"tblot",  tblot, METH_VARARGS, "tblot(image, output, xmin, xmax, ymin, ymax, scale, kscale, xscale, yscale, align, interp, ef, misval, sinscl, vflag, callback)"},
     {"arrmoments", arrmoments, METH_VARARGS, "arrmoments(image, p, q)"},
     {"arrxyround", arrxyround, METH_VARARGS, "arrxyround(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin,datamax)"},
+    {"arrxyzero", arrxyzero, METH_VARARGS, "arrxyzero(imgxy,refxy,searchrad,zpmat)"},
     {0, 0, 0, 0}                             /* sentinel */
   };
 
