@@ -1066,6 +1066,39 @@ arrxyround(PyObject *obj, PyObject *args)
   }
 }
 
+/* ==== Allocate a double *vector (vec of pointers) ======================
+    Memory is Allocated!  See void free_Carray(double ** )                  */
+double **ptrvector(long n)  {
+    double **v;
+    v=(double **)malloc((size_t) (n*sizeof(double)));
+    if (!v)   {
+        printf("In **ptrvector. Allocation of memory for double array failed.");
+        exit(0);  }
+    return v;
+}
+
+
+/* ==== Create Carray from PyArray ======================
+    Assumes PyArray is contiguous in memory.
+    Memory is allocated!                                    */
+double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
+    double **c, *a;
+    long i,n,m;
+    
+    n=arrayin->dimensions[0];
+    m=arrayin->dimensions[1];
+    c=(double **)ptrvector(n);
+    a=(double *) arrayin->data;  /* pointer to arrayin data as double */
+    for ( i=0; i<n; i++)  {
+        c[i]=a+i*m;  }
+    return c;
+}
+
+/* ==== Free a double *vector (vec of pointers) ========================== */ 
+void free_Carrayptrs(double **v)  {
+    free((char*) v);
+}
+
 static PyObject *
 arrxyzero(PyObject *obj, PyObject *args)
 {
@@ -1077,7 +1110,7 @@ arrxyzero(PyObject *obj, PyObject *args)
   PyArrayObject *imgxy = NULL;
   PyArrayObject *refxy = NULL;  
   PyArrayObject *ozpmat = NULL;
-  long **zpmat;
+  double **zpmat;
   long *a;
   
   long imgnum, refnum;
@@ -1085,6 +1118,7 @@ arrxyzero(PyObject *obj, PyObject *args)
   integer_t xind, yind;
   double dx, dy;
   long j, k;
+  long nsource = 0;
 
   if (!PyArg_ParseTuple(args,"OOd:arrxyzero", &oimgxy, &orefxy, &searchrad)){
     return PyErr_Format(gl_Error, "cdriz.arrxyzero: Invalid Parameters.");
@@ -1102,16 +1136,13 @@ arrxyzero(PyObject *obj, PyObject *args)
    
   dimensions[0] = (integer_t)(searchrad*2) + 1;
   dimensions[1] = (integer_t)(searchrad*2) + 1;
-  ozpmat = (PyArrayObject *)PyArray_FromDims(2, dimensions, PyArray_LONG);
+  ozpmat = (PyArrayObject *)PyArray_FromDims(2, dimensions, NPY_DOUBLE);
   if (!ozpmat) {
     goto _exit;
   }
-  zpmat=(long **)malloc((size_t) (dimensions[0]*sizeof(long)));
-  a=(long *) ozpmat->data; /* pointer to arrayin data as double */
-  for ( j=0; j<dimensions[0]; j++) {
-      zpmat[j]=a+j*dimensions[1];
-  }
-  
+  /* Allocate memory for return matrix */
+  zpmat=pymatrix_to_Carrayptrs(ozpmat);
+
   imgnum = imgxy->dimensions[0];
   refnum = refxy->dimensions[0];
   
@@ -1122,22 +1153,21 @@ arrxyzero(PyObject *obj, PyObject *args)
         dx = *(float *)(imgxy->data + j*imgxy->strides[0]) - *(float *)(refxy->data + k*refxy->strides[0]);
         dy = *(float *)(imgxy->data + j*imgxy->strides[0]+ imgxy->strides[1]) - 
              *(float *)(refxy->data + k*refxy->strides[0]+ refxy->strides[1]);
-        if ((abs(dx) < searchrad) && (abs(dy) < searchrad)) {
+        if ((fabs(dx) < searchrad) && (fabs(dy) < searchrad)) {
             xind = (integer_t)(dx+searchrad);
             yind = (integer_t)(dy+searchrad);
-            zpmat[yind][xind] = zpmat[yind][xind] + 1;
+            zpmat[yind][xind] += 1;
         }
     }
   }
-
+    
  _exit:
   Py_DECREF(imgxy);
   Py_DECREF(refxy);  
-  free((long *)zpmat);
+  free_Carrayptrs(zpmat);
 
   return PyArray_Return(ozpmat);
 }
-
 
 static PyMethodDef cdriz_methods[] =
   {
