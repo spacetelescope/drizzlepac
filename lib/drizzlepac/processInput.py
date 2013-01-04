@@ -491,7 +491,8 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     """
 
     newfilelist, ivmlist, output, oldasndict = buildFileList(
-            input, output=output, ivmlist=ivmlist, **workinplace)
+            input, output=output, ivmlist=ivmlist, wcskey=wcskey,
+            updatewcs=updatewcs, **workinplace)
 
     if not newfilelist:
         buildEmptyDRZ(input, output)
@@ -502,8 +503,9 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     if newfilelist is None:
         return None, None, None
 
-    # run all WCS updating
-    pydr_input = _process_input_wcs(newfilelist, wcskey, updatewcs)
+    # run all WCS updating -- Now done in buildFileList
+    #pydr_input = _process_input_wcs(newfilelist, wcskey, updatewcs)
+    pydr_input = newfilelist
 
     # AsnTable will handle the case when output==None
     if not oldasndict:# and output is not None:
@@ -602,7 +604,8 @@ def _process_input_wcs_single(fname, wcskey, updatewcs):
         wcscorr.init_wcscorr(fname)
 
 
-def buildFileList(input, output=None, ivmlist=None,**workinplace):
+def buildFileList(input, output=None, ivmlist=None,
+                wcskey=None, updatewcs=True, **workinplace):
     """
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
@@ -616,7 +619,10 @@ def buildFileList(input, output=None, ivmlist=None,**workinplace):
 
     manageInputCopies(filelist,**workinplace)
 
-    newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
+    # run all WCS updating
+    updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
+
+    newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
     return newfilelist,ivmlist,output,oldasndict
 
