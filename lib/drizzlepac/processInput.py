@@ -498,11 +498,6 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         buildEmptyDRZ(input, output)
         return None, None, output
 
-    # check for non-polynomial distortion correction
-    newfilelist = checkDGEOFile(newfilelist)
-    if newfilelist is None:
-        return None, None, None
-
     # run all WCS updating -- Now done in buildFileList
     #pydr_input = _process_input_wcs(newfilelist, wcskey, updatewcs)
     pydr_input = newfilelist
@@ -618,6 +613,9 @@ def buildFileList(input, output=None, ivmlist=None,
         return None, None, None, None
 
     manageInputCopies(filelist,**workinplace)
+
+    # check for non-polynomial distortion correction
+    filelist = checkDGEOFile(filelist)
 
     # run all WCS updating
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
