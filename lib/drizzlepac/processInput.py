@@ -614,6 +614,9 @@ def buildFileList(input, output=None, ivmlist=None,
 
     manageInputCopies(filelist,**workinplace)
 
+    # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
+    filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
+
     # check for non-polynomial distortion correction
     filelist = checkDGEOFile(filelist)
 
