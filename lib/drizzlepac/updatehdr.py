@@ -160,7 +160,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 
     """
     # if input reference is a ref_wcs file from tweakshifts, use it
-    if isinstance(reference, wcsutil.HSTWCS) or isinstance(reference, pywcs.pywcs.WCS):
+    if isinstance(reference, wcsutil.HSTWCS) or isinstance(reference, pywcs.WCS):
         wref = reference
     else:
         refimg = pyfits.open(reference)
