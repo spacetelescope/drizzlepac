@@ -649,7 +649,7 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
 
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
-    hdr.update('WCSNAME',wname, after=after)
+    hdr.update('WCSNAME',wname)
     hdr.update('VAFACTOR',1.0, after=after)
     hdr.update('ORIENTAT',wcs.orientat, after=after)
 
