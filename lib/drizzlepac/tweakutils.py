@@ -85,9 +85,10 @@ def get_configobj_root(configobj):
 
 
 def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,
-                peakmin=None,peakmax=None,nsigma=1.5):
+                peakmin=None,peakmax=None,fluxmin=None,fluxmax=None,nsigma=1.5):
     star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode,
                     peakmin=peakmin, peakmax=peakmax,
+                    fluxmin=fluxmin, fluxmax=fluxmax,
                     ratio=1, nsigma=nsigma, theta=0.)
     if len(star_list) == 0:
         print 'No valid sources found...'
@@ -930,7 +931,7 @@ def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
     fout1.close()
     print 'wrote XY data to: ',outname
 
-def find_xy_peak(img,center=None):
+def find_xy_peak(img,center=None,sigma=3.0):
     """ Find the center of the peak of offsets
     """
     # find level of noise in histogram
@@ -942,7 +943,7 @@ def find_xy_peak(img,center=None):
 
     # clip out all values below mean+3*sigma from histogram
     imgc =img[:,:].copy()
-    imgc[imgc < istats.mode+istats.stddev*3] = 0.0
+    imgc[imgc < istats.mode+istats.stddev*sigma] = 0.0
     # identify position of peak
     yp0,xp0 = np.where(imgc == imgc.max())
 
@@ -1024,11 +1025,17 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
         print 'Found initial X and Y shifts of ',xp,yp
         print '    with significance of ',zpqual, 'and ',flux,' matches'
     else:
-        print '!'*80
-        print '!'
-        print '! WARNING: No valid shift found within a search radius of ',searchrad,' pixels.'
-        print '!'
-        print '!'*80
+        # try with a lower sigma to detect a peak in a sparse set of sources
+        xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad),sigma=1.0)
+        if zpqual:
+            print 'Found initial X and Y shifts of ',xp,yp
+            print '    with significance of ',zpqual, 'and ',flux,' matches'
+        else:
+            print '!'*80
+            print '!'
+            print '! WARNING: No valid shift found within a search radius of ',searchrad,' pixels.'
+            print '!'
+            print '!'*80
 
     if histplot:
         zpstd = flux//5

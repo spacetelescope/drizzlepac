@@ -289,6 +289,8 @@ class ImageCatalog(Catalog):
         x,y,flux,id = tweakutils.ndfind(self.source,hmin,self.pars['conv_width'],skymode,
                             peakmin=self.pars['peakmin'],
                             peakmax=self.pars['peakmax'],
+                            fluxmin=self.pars['fluxmin'],
+                            fluxmax=self.pars['fluxmax'],
                             nsigma=self.pars['nsigma'])
         if len(x) == 0:
             if  not self.pars['computesig']:
@@ -298,6 +300,8 @@ class ImageCatalog(Catalog):
                 x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['conv_width'],skymode,
                                         peakmin=self.pars['peakmin'],
                                         peakmax=self.pars['peakmax'],
+                                        fluxmin=self.pars['fluxmin'],
+                                        fluxmax=self.pars['fluxmax'],
                                         nsigma=self.pars['nsigma'])
             else:
                 self.xypos = [[],[],[],[]]
@@ -307,18 +311,7 @@ class ImageCatalog(Catalog):
                     log.warning(line)
                 print(warnstr)
         log.info('###Source finding finished at: %s'%(util._ptime()[0]))
-        if len(x) > 0:
-            if self.pars.has_key('fluxmin') and self.pars['fluxmin'] is not None:
-                fminindx = flux >= self.pars['fluxmin']
-            else:
-                fminindx = flux == flux
-            if self.pars.has_key('fluxmax') and self.pars['fluxmax'] is not None:
-                fmaxindx = flux <= self.pars['fluxmax']
-            else:
-                fmaxindx = flux == flux
-            findx = np.bitwise_and(fminindx,fmaxindx)
-
-            self.xypos = [x[findx]+1,y[findx]+1,flux[findx],id[findx]+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
+        self.xypos = [x+1,y+1,flux,id+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = None # sharp

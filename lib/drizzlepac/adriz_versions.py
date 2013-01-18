@@ -10,7 +10,7 @@ else:
 
 __version__ = '1.1.7dev'
 __full_version__ = __version__+sversion
-__vdate__ = '15-Jan-2013'
+__vdate__ = '18-Jan-2013'
 
 def main():
     print '%s(%s)'%(__version__,__vdate__)

@@ -175,8 +175,9 @@ class Image(object):
     def close(self):
         """ Close any open file handles and flush updates to disk
         """
-        self.hdulist.close()
-        self.hdulist = None
+        if self.hdulist:
+            self.hdulist.close()
+            self.hdulist = None
 
     def openFile(self):
         """ Open file and set up filehandle for image file

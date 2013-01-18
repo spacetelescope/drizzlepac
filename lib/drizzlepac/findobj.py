@@ -119,7 +119,7 @@ def errfunc(p, *args):
     return ret
 
 def findstars(jdata, fwhm, threshold, skymode,
-                peakmin=None, peakmax=None,
+                peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
                 ratio=1, nsigma=1.5, theta=0.):
 
     # Define convolution inputs
@@ -167,6 +167,7 @@ def findstars(jdata, fwhm, threshold, skymode,
     ninit = 0
     ninit2 = 0
     minxy = gradius * 2 + 1
+
     for ss,n in zip(fobjects,range(len(fobjects))):
         ssx = ss[1].stop - ss[1].start
         ssy = ss[0].stop - ss[1].start
@@ -174,19 +175,21 @@ def findstars(jdata, fwhm, threshold, skymode,
             continue
         yr0 = ss[0].start-gradius
         yr1 = ss[0].stop+gradius+1
-        if yr0 <= 0: yr0 = 0
-        if yr1 >= jdata.shape[0]: yr1 = jdata.shape[0]
+        if yr0 <= 0 or yr1 >= jdata.shape[0]: continue # ignore sources within ny//2 of edge
+        #if yr0 <= 0: yr0 = 0
+        #if yr1 >= jdata.shape[0]: yr1 = jdata.shape[0]
 
         xr0 = ss[1].start - gradius
         xr1 = ss[1].stop + gradius+1
-        if xr0 <= 0: xr0 = 0
-        if xr1 >= jdata.shape[1]: xr1 = jdata.shape[1]
+        if xr0 <= 0 or xr1 >= jdata.shape[1]: continue # ignore sources within nx//2 of edge
+        #if xr0 <= 0: xr0 = 0
+        #if xr1 >= jdata.shape[1]: xr1 = jdata.shape[1]
 
         ssnew = (slice(yr0,yr1),slice(xr0,xr1))
         region = tdata[ssnew]
 
-        if region.shape[0] < minxy or region.shape[1] < minxy:
-            continue
+        #if region.shape[0] < minxy or region.shape[1] < minxy:
+        #    continue
 
         cntr = centroid(region)
 
@@ -206,11 +209,19 @@ def findstars(jdata, fwhm, threshold, skymode,
         #ninit += 1
         # Simple Centroid on the region from the convoluted image
         jregion = jdata[yr0:yr1,xr0:xr1]
+        src_flux = jregion.sum()
+        src_peak = jregion.max()
 
-        if (peakmax is not None and jregion.max() >= peakmax):
+        if (peakmax is not None and src_peak >= peakmax):
             continue
-        if (peakmin is not None and jregion.max() <= peakmin):
+        if (peakmin is not None and src_peak <= peakmin):
             continue
+
+        if fluxmin and src_flux <= fluxmin:
+            continue
+        if fluxmax and src_flux >= fluxmax:
+            continue
+
         #ninit2 += 1
         px,py,pround = xy_round(jregion,gradius,gradius,skymode,
                 kernel,xsigsq,ysigsq)
@@ -222,8 +233,40 @@ def findstars(jdata, fwhm, threshold, skymode,
         # compute a source flux value
         fluxes.append(jregion.sum())
 
+    fitindc,fluxesc = apply_nsigma_separation(fitind,fluxes,fwhm*nsigma/2)
+
     #print 'ninit: ',ninit,'   ninit2: ',ninit2,' final n: ',len(fitind)
-    return fitind, fluxes
+    return fitindc, fluxesc
+
+def apply_nsigma_separation(fitind,fluxes,separation,niter=10):
+    """
+    Remove sources which are within nsigma*fwhm/2 pixels of each other, leaving
+    only a single valid source in that region.
+
+    This algorithm only works for sources which end up sequentially next to each other
+    based on Y position and removes enough duplicates to make the final source list more
+    managable.  It sorts the positions by Y value in order to group those at the
+    same positions as much as possible.
+    """
+    for n in range(niter):
+        fitarr = np.array(fitind,np.float32)
+        fluxarr = np.array(fluxes,np.float32)
+        inpind = np.argsort(fitarr[:,1])
+        npind = fitarr[inpind]
+        fluxind = fluxarr[inpind]
+        fitind = npind.tolist()
+        fluxes = fluxind.tolist()
+        dx = npind[1:,0] - npind[:-1,0]
+        dy = npind[1:,1] - npind[:-1,1]
+        dr = np.sqrt(np.power(dx,2)+np.power(dy,2))
+        nsame = np.where(dr <= separation)[0]
+        if nsame.shape[0] > 0:
+            for ind in nsame[-1::-1]:
+                del fitind[ind]
+                del fluxes[ind]
+        else:
+            break
+    return fitind,fluxes
 
 def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
     """ Compute center of source
@@ -250,6 +293,7 @@ def xy_round(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin=None,datamax=None):
 
 def roundness(im):
     """
+    import pyfits
     data=pyfits.getdata('j94f05bgq_flt.fits',ext=1)
     star0=data[403:412,423:432]
     star=data[396:432,3522:3558]
