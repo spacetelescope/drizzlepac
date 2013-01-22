@@ -46,9 +46,10 @@ from . import pixtopix
 # it easier to get to this code interactively
 try:
     from . import tweakreg, catalogs, imgclasses, tweakutils, imagefindpars
-except:
+except ImportError as e :
     print 'The libraries needed for "tweakreg" were not available!'
     print 'None of the code related to that task can be used at this time.'
+    print '   (If you want to report this error, the details are "%s")'%(str(e))
 
 # Add updatenpol to the list of tasks imported automatically here
 from . import updatenpol
