@@ -935,10 +935,9 @@ def find_xy_peak(img,center=None,sigma=3.0):
     """ Find the center of the peak of offsets
     """
     # find level of noise in histogram
-    istats = imagestats.ImageStats(img.astype(np.float32),nclip=1,fields='mode,mean')
+    istats = imagestats.ImageStats(img.astype(np.float32),nclip=1,fields='stddev,mode,mean,max,min')
     if istats.stddev == 0.0:
-        print 'Invalid peak found. Recomputing solution...'
-        istats = imagestats.ImageStats(img.astype(np.float32),fields='mode,mean')
+        istats = imagestats.ImageStats(img.astype(np.float32),fields='stddev,mode,mean,max,min')
     imgsum = img.sum()
 
     # clip out all values below mean+3*sigma from histogram
@@ -952,7 +951,7 @@ def find_xy_peak(img,center=None,sigma=3.0):
     ymax = min(img.shape[0],int(yp0[0])+4)
     xmin = max(0,int(xp0[0])-3)
     xmax = min(img.shape[1],int(xp0[0])+4)
-    # take sum of at most a 13x13 pixel box around peak
+    # take sum of at most a 7x7 pixel box around peak
     xp_slice = (slice(ymin,ymax),
                 slice(xmin,xmax))
     yp,xp = ndimage.center_of_mass(img[xp_slice])
@@ -970,6 +969,8 @@ def find_xy_peak(img,center=None,sigma=3.0):
         delta_size = float(img.size - imgc[xp_slice].size)
         if delta_size == 0: delta_size = 1
         delta_flux = float(imgsum - flux)
+        if flux > imgc[xp_slice].max(): delta_flux = flux - imgc[xp_slice].max()
+        else: delta_flux = flux
         zpqual = flux/np.sqrt(delta_flux/delta_size)
         if np.isnan(zpqual) or np.isinf(zpqual):
             zpqual = None
