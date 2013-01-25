@@ -22,6 +22,8 @@ import tweakutils
 
 log = logutil.create_logger(__name__)
 
+sortKeys = ['fluxmax','fluxmin','nbright','fluxunits']
+
 class Image(object):
     """ Primary class to keep track of all WCS and catalog information for
         a single input image. This class also performs all matching and fitting.
@@ -216,10 +218,10 @@ class Image(object):
                     fluxlist.append([999.0]*len(skycat[0]))
                     idlist.append(np.arange(len(skycat[0])))
 
+
                 self.all_radec = [np.concatenate(ralist),np.concatenate(declist),
                         np.concatenate(fluxlist),np.concatenate(idlist)]
                 self.all_radec_orig = copy.deepcopy(self.all_radec)
-
 
     def buildDefaultRefWCS(self):
         """ Generate a default reference WCS for this image.
@@ -253,21 +255,32 @@ class Image(object):
             by the user.
             It keeps a copy of the original full list in order to support iteration.
         """
-        _sortKeys = ['fluxmax','fluxmin','nbright']
+        if len(self.all_radec_orig[2].nonzero()[0]) == 0:
+            warn_str = "Source catalog NOT trimmed by flux/mag. No fluxes read in for sources!"
+            print '\nWARNING: ',warn_str,'\n'
+            log.warning(warn_str)
+            return
         clip_catalog = False
         clip_prefix = ''
-        for k in _sortKeys:
+        for k in sortKeys:
             for p in self.pars.keys():
                 pindx = p.find(k)
                 if pindx >= 0 and self.pars[p] is not None:
-                    clip_catalog = True
                     log.info('found a match for %s to %s'%(
                                 str(p),str(self.pars[p])))
                     # find prefix (if any)
                     clip_prefix = p[:pindx].strip()
+                    #Only clip the catalog if one of the keys is specified
+                    # in the catalog parameters, not the source finding pars
+                    if clip_prefix and 'units' not in p:
+                        clip_catalog = True
+                        break
+            if clip_catalog:
+                break
 
         all_radec = None
         if clip_catalog:
+
             # Start by clipping by any specified flux range
             if self.pars[clip_prefix+'fluxmax'] is not None or \
                     self.pars[clip_prefix+'fluxmin'] is not None:
@@ -590,6 +603,12 @@ class Image(object):
                 if len(wnames) == 0:
                     pri_wcsname = None
                 else:
+                    # Safeguard against headers not having WCSNAME defined
+                    # This would occur if they were written out by something
+                    # other than stwcs.updatewcs v
+                    if ' ' not in wnames:
+                        self.hdulist[extlist[0]].header['wscname'] = ''
+                        wnames[' '] = ''
                     pri_wcsname = wnames[' ']
                 altwcs.archiveWCS(self.hdulist,extlist,
                                     wcskey=next_key,wcsname=pri_wcsname,

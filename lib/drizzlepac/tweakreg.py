@@ -12,8 +12,8 @@ import util
 # of the modules below, so that those modules can use the values
 # from these variable definitions, allowing the values to be designated
 # in one location only.
-__version__ = '1.2.0'
-__vdate__ = '24-Jan-2013'
+__version__ = '1.2.1'
+__vdate__ = '25-Jan-2013'
 
 import tweakutils
 import imgclasses
@@ -174,6 +174,8 @@ def run(configobj):
     if use_catfile:
         # reset parameters based on parameter settings in this section
         catfile_kwargs.update(configobj['COORDINATE FILE DESCRIPTION'])
+        for sort_par in imgclasses.sortKeys:
+            catfile_kwargs['sort_'+sort_par] = catfile_kwargs[sort_par]
     # Update parameter set with 'SOURCE FINDING PARS' now
     catfile_kwargs.update(configobj[PSET_SECTION])
     uphdr_par = configobj['UPDATE HEADER']
