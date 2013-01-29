@@ -19,6 +19,8 @@ from __future__ import division  # confidence high
 
 import os
 
+from .version import *
+
 from . import ablot
 from . import adrizzle
 from . import astrodrizzle
@@ -34,7 +36,6 @@ from . import sky
 from . import staticMask
 from . import util
 from . import wcs_functions
-from . import adriz_versions
 
 
 # These modules provide the user-interfaces to coordinate transformation tasks
@@ -65,33 +66,6 @@ from stsci.tools import teal
 teal.print_tasknames(__name__, os.path.dirname(__file__),
                      hidden=['adrizzle','ablot','buildwcs'])
 
-# Begin Version Information -------------------------------------------
-if False :
-    __version__ = ''
-    __svn_version__ = 'Unable to determine SVN revision'
-    __full_svn_info__ = ''
-    __setup_datetime__ = None
-
-    try:
-        __version__ = __import__('pkg_resources').\
-                            get_distribution('drizzlepac').version
-    except:
-        pass
-
-else :
-    __version__ = adriz_versions.__version__
-
-
-__vdate__ = adriz_versions.__vdate__
-
-
-# Revision based version info
-# End Version Information ---------------------------------------------
-try:
-    from drizzlepac.svninfo import (__svn_version__, __full_svn_info__,
-                                     __setup_datetime__)
-except ImportError:
-    pass
 
 def help():
     msg = \
