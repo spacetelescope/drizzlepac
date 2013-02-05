@@ -1,3 +1,5 @@
+import re
+
 import pyfits
 import numpy as np
 
@@ -115,7 +117,10 @@ def updatewcs_with_shift(image,reference,wcsname=None,
     wcsname : str
         Label to give to new WCS solution being created by this fit. If
         a value of None is given, it will automatically use 'TWEAK' as the
-        label. [Default =None]
+        label. If a WCS has a name with this specific value, the code will
+        automatically append a version ID using the format '_n', such as
+        'TWEAK_1', 'TWEAK_2',or 'TWEAK_update_1'.
+        [Default =None]
 
     rot : float
         Amount of rotation measured in fit to be applied.
@@ -355,9 +360,6 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     # Start by insuring that the correct value of 'orientat' has been computed
     new_wcs.setOrient()
 
-    if wcsname in ['',' ',None,'INDEF','N/A']:
-        wcsname = 'TWEAK'
-
     fimg_open=False
     if not isinstance(image,pyfits.HDUList):
         fimg = pyfits.open(image,mode='update')
@@ -369,6 +371,12 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
             fimg_update = True
         else:
             fimg_update = False
+
+    # Determine final (unique) WCSNAME value, either based on the default or
+    # user-provided name
+    if wcsname in ['',' ',None,'INDEF','N/A']:
+        wcsname = 'TWEAK'
+    wcsname = create_unique_wcsname(fimg, extnum, wcsname)
 
     idchdr = True
     if new_wcs.idcscale is None:
@@ -386,6 +394,8 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         if verbose:
             log.info('    with WCS of')
             new_wcs.printwcs()
+            print "WCSNAME  : ",wcsname
+
         # Insure that if a copy of the WCS has not been created yet, it will be now
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
 
@@ -408,3 +418,43 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         if fimg_open:
             # finish up by closing the file now
             fimg.close()
+
+def create_unique_wcsname(fimg, extnum ,wcsname):
+    """
+    This function evaluates whether the specified wcsname value has
+    already been used in this image.  If so, it automatically modifies
+    the name with a simple version ID using wcsname_NNN format.
+
+    Parameters
+    ---------
+    fimg : obj
+        PyFITS object of image with WCS information to be updated
+
+    extnum : int
+        Index of extension with WCS information to be updated
+
+    wcsname : str
+        Value of WCSNAME specified by user for labelling the new WCS
+
+    Returns
+    -------
+    uniqname : str
+        Unique WCSNAME value
+
+    """
+    wnames = wcsutil.altwcs.wcsnames(fimg, ext=extnum).values()
+    if wcsname not in wnames:
+        uniqname = wcsname
+    else:
+        # setup pattern to match
+        rpatt = re.compile(wcsname+'_\d')
+        index = 0
+        for wname in wnames:
+            rmatch = rpatt.match(wname)
+            if rmatch:
+                # get index
+                n = int(wname[wname.rfind('_')+1:])
+                if n > index: index = 1
+        index += 1 # for use with new name
+        uniqname = "%s_%d"%(wcsname,index)
+    return uniqname

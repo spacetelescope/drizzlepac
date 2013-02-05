@@ -12,11 +12,12 @@ from . import util
 
 
 __taskname__ = 'tweakback' # unless someone comes up with anything better
-__version__ = '0.2.0'
-__vdate__ = '14-Mar-2012'
+__version__ = '0.3.0'
+__vdate__ = '1-Feb-2012'
 
 #### Primary function
-def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
+def tweakback(drzfile, input=None,  origwcs = None,
+                newname = None, wcsname = None,
                 extname='SCI', force=False, verbose=False):
     """
     Apply WCS solution recorded in drizzled file to distorted input images
@@ -29,6 +30,11 @@ def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
     drzfile : str (Default: '')
         filename of undistorted image which contains the new WCS
         and WCS prior to being updated
+
+    newname : str (Default: None)
+        Value of WCSNAME to be used to label the updated solution in the
+        output (eq., _flt.fits) files.  If left blank or None, it will
+        default to using the current WCSNAME value from the input drzfile.
 
     input : str (Default: '')
         filenames of distorted images to be updated using new WCS
@@ -103,6 +109,9 @@ def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
     stwcs.wcsutil.altwcs: Alternate WCS implementation
 
     """
+    print 'TweakBack Version %s(%s) started at: %s \n'%(
+                    __version__,__vdate__,util._ptime()[0])
+    
     # Interpret input list/string into list of filename(s)
     fltfiles = parseinput.parseinput(input)[0]
 
@@ -130,7 +139,10 @@ def tweakback(drzfile, input=None,  origwcs = None, wcsname = None,
     # determine keys for all alternate WCS solutions in drizzled image header
     wkeys = wcsutil.altwcs.wcskeys(drzfile,ext=sciext)
     wnames = wcsutil.altwcs.wcsnames(drzfile,ext=sciext)
-    final_name = wnames[wkeys[-1]]
+    if not util.is_blank(newname):
+        final_name = newname
+    else:
+        final_name = wnames[wkeys[-1]]
 
     # Read in HSTWCS objects for final,updated WCS and previous WCS from
     # from drizzled image header
@@ -213,8 +225,9 @@ def getHelpAsString(docstring=False):
 
 def run(configobj):
     # Interpret user-input from TEAL GUI and call function
-    tweakback(configobj['drzfile'],input=configobj['input'],
-            origwcs = configobj['origwcs'], wcsname = configobj['wcsname'],
+    tweakback(configobj['drzfile'], newname = configobj['newname'],
+            input=configobj['input'], origwcs = configobj['origwcs'],
+            wcsname = configobj['wcsname'],
             extname=configobj['extname'],verbose=configobj['verbose'],
             force=configobj['force'])
 
