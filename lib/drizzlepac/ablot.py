@@ -9,7 +9,7 @@ import outputimage, wcs_functions, processInput, util
 import stwcs
 from stwcs import distortion
 
-from . import adriz_versions
+from .version import *
 
 try:
     import cdriz
@@ -22,11 +22,6 @@ except ImportError:
 
 __taskname__ = 'drizzlepac.ablot'
 _blot_step_num_ = 5
-
-
-__version__ = adriz_versions.__full_version__
-__vdate__ = "23-Aug-2012"
-
 
 log = logutil.create_logger(__name__)
 

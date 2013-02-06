@@ -44,12 +44,10 @@ from . import sky
 from . import staticMask
 from . import util
 from . import wcs_functions
-from . import adriz_versions
+from .version import *
+
 
 __taskname__ = "astrodrizzle"
-
-__version__ = adriz_versions.__version__
-__vdate__ = adriz_versions.__vdate__
 
 # Definitions for flags on when to raise an EXCEPTION
 RAISE = 1
