@@ -3,7 +3,7 @@ from __future__ import division  # confidence high
 
 import sys
 from drizzlepac import AstroDrizzle
-from drizzlepac import __version__
+from drizzlepac.version import __version__
 
 
 #-------------------------------------------------------------------------------
