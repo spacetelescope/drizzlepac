@@ -6,8 +6,8 @@
     PARAMETERS
     ----------
     input : str
-        full filename with path of input image, an extension name ['sci',1] should be 
-        provided if input is a multi-extension FITS file 
+        full filename with path of input image, an extension name ['sci',1] should be
+        provided if input is a multi-extension FITS file
 
     Optional Parameters
     -------------------
@@ -18,8 +18,8 @@
     coords : str, optional
         full filename with path of file with x,y coordinates
     colnames : str, optional
-        comma separated list of column names from 'coords' files 
-        containing x,y coordinates, respectively. Will default to 
+        comma separated list of column names from 'coords' files
+        containing x,y coordinates, respectively. Will default to
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
     separator : str, optional
@@ -27,7 +27,7 @@
     hms : bool, optional
         Produce output in HH:MM:SS.S format instead of decimal degrees? (default: False)
     precision : int, optional
-        Number of floating-point digits in output values 
+        Number of floating-point digits in output values
     output : str, optional
         Name of output file with results, if desired
     verbose : bool
@@ -36,22 +36,22 @@
     RETURNS
     -------
     ra : float
-        Right Ascension of pixel. If more than 1 input value, then it will be a 
-        numpy array. 
+        Right Ascension of pixel. If more than 1 input value, then it will be a
+        numpy array.
     dec : float
-        Declination of pixel. If more than 1 input value, then it will be a 
+        Declination of pixel. If more than 1 input value, then it will be a
         numpy array.
 
     NOTES
     -----
     This module performs a full distortion-corrected coordinate transformation
-    based on all WCS keywords and any recognized distortion keywords from the 
-    input image header.   
+    based on all WCS keywords and any recognized distortion keywords from the
+    input image header.
 
     Usage
     -----
     It can be called from within Python using the syntax::
-    
+
         >>> from drizzlepac import pixtosky
         >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]",100,100)
 
@@ -65,8 +65,8 @@
             >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
 
 
-    2. The set of X,Y positions from 'input_flt.fits[sci,1]' stored as 
-        the 3rd and 4th columns from the ASCII file 'xy_sci1.dat' 
+    2. The set of X,Y positions from 'input_flt.fits[sci,1]' stored as
+        the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
         will be transformed and written out to 'radec_sci1.dat' using::
 
             >>> from drizzlepac import pixtosky
@@ -86,6 +86,7 @@ import wcs_functions
 import stwcs
 from stwcs import distortion, wcsutil
 
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
 __vdate__ = '20-Jan-2011'
 
@@ -95,7 +96,7 @@ blank_list = [None, '', ' ']
 
 def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
             hms=True, precision=6,output=None,verbose=True):
-    """ Primary interface to perform coordinate transformations from 
+    """ Primary interface to perform coordinate transformations from
         pixel to sky coordinates using STWCS and full distortion models
         read from the input image header.
     """
@@ -110,8 +111,12 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         ylist = xyvals[:,1].copy()
         del xyvals
     else:
-        xlist = [x]
-        ylist = [y]
+        if not isinstance(x,list):
+            xlist = [x]
+            ylist = [y]
+        else:
+            xlist = x
+            ylist = y
 
     # start by reading in WCS+distortion info for input image
     inwcs = wcsutil.HSTWCS(input)
@@ -132,11 +137,11 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         for r,d in zip(dra,ddec):
             rastr.append(fmt%r)
             decstr.append(fmt%d)
-        
+
         ra = dra
         dec = ddec
 
-    if verbose or util.is_blank(output):
+    if verbose or (not verbose and util.is_blank(output)):
         print '# Coordinate transformations for ',input
         print '# X      Y         RA             Dec\n'
         for x,y,r,d in zip(xlist,ylist,rastr,decstr):
@@ -150,14 +155,14 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
             f.write('%s    %s\n'%(r,d))
         f.close()
         print 'Wrote out results to: ',output
-        
+
     return ra,dec
-   
+
 #--------------------------
 # TEAL Interface functions
 #--------------------------
 def run(configObj):
-    
+
     coords = util.check_blank(configObj['coords'])
     colnames = util.check_blank(configObj['colnames'])
     sep = util.check_blank(configObj['separator'])
@@ -168,7 +173,7 @@ def run(configObj):
             coords = coords, colnames = colnames,
             separator= sep, hms = configObj['hms'], precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
-    
+
 def getHelpAsString():
     helpString = ''
     if teal:

@@ -702,6 +702,7 @@ interpolate_sinc_(const float* data, const integer_t firstt,
     }
   } else {
     sdx = -1.0;
+    errno = 0;
     for (j = -nsinc; j <= nsinc; ++j) {
       assert(j + nsinc >= 0 && j + nsinc < INTERPOLATE_SINC_NCONV);
 

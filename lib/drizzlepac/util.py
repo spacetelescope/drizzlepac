@@ -22,7 +22,8 @@ from stsci.tools import configobj
 from stwcs import wcsutil
 from stwcs.wcsutil import altwcs
 
-__version__ = "0.1.0tng1"
+from .version import *
+
 __pyfits_version__ = pyfits.__version__
 __numpy_version__ = np.__version__
 

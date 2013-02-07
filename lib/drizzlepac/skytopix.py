@@ -83,6 +83,7 @@ import util,wcs_functions,tweakutils
 import stwcs
 from stwcs import distortion,wcsutil
 
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
 __vdate__ = '25-Feb-2011'
 
@@ -102,7 +103,7 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         else:
             colnames = colnames.split(',')
         # convert input file coordinates to lists of decimal degrees values
-        xlist,ylist = tweakutils.readcols(coordfile,cols=colnames)            
+        xlist,ylist = tweakutils.readcols(coordfile,cols=colnames)
     else:
         # convert input value into decimal degrees value
         xval,yval = tweakutils.parse_skypos(ra,dec)
@@ -125,7 +126,7 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         xstr.append(fmt%x)
         ystr.append(fmt%y)
 
-    if verbose or util.is_blank(output):
+    if verbose or (not verbose and util.is_blank(output)):
         print '# Coordinate transformations for ',input
         print '# X      Y         RA             Dec\n'
         for x,y,r,d in zip(xstr,ystr,xlist,ylist):

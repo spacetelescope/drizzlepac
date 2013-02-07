@@ -101,6 +101,7 @@ import wcs_functions
 import util
 from stwcs import wcsutil, distortion
 
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
 __vdate__ = '1-Mar-2011'
 
@@ -124,8 +125,12 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         ylist = xyvals[:,1].copy()
         del xyvals
     else:
-        xlist = [x]
-        ylist = [y]
+        if not isinstance(x,list):
+            xlist = [x]
+            ylist = [y]
+        else:
+            xlist = x
+            ylist = y
 
     # start by reading in WCS+distortion info for each image
     im1wcs = wcsutil.HSTWCS(inimage)
@@ -158,7 +163,7 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         xstr.append(fmt%x)
         ystr.append(fmt%y)
 
-    if verbose or util.is_blank(output):
+    if verbose or (not verbose and util.is_blank(output)):
         print '# Coordinate transformations for ',inimage
         print '# X(in)      Y(in)             X(out)         Y(out)\n'
         for x,y,a,b in zip(xlist,ylist,xstr,ystr):

@@ -12,6 +12,8 @@ from stwcs import distortion,wcsutil
 from stwcs.wcsutil import headerlet
 
 __taskname__ = 'buildwcs'
+
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1.0'
 __vdate__ = '22-June-2011'
 

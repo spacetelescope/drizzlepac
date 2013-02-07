@@ -19,7 +19,8 @@ import stsci.convolve as NC
 
 from stsci.image.numcombine import numCombine
 
-__version__ = '0.2.0'
+from .version import *
+
 class minmed:
     """ Create a median array, rejecting the highest pixel and computing the lowest valid pixel after mask application"""
 
@@ -56,7 +57,7 @@ class minmed:
             combine_nsigma1 = 4,    # Significance for accepting minimum instead of median
             combine_nsigma2 = 3,     # Significance for accepting minimum instead of median
             fillval = False         # Turn on use of imedian/imean
-            
+
             ):
 
         # Define input variables
@@ -70,15 +71,15 @@ class minmed:
         self.__combine_grow = combine_grow
         self.__combine_nsigma1 = combine_nsigma1
         self.__combine_nsigma2 = combine_nsigma2
-        
+
         if fillval:
             combtype_mean = 'imean'
             combtype_median = 'imedian'
         else:
             combtype_mean = 'mean'
             combtype_median = 'median'
-        
-        
+
+
         # Create a different median image based upon the number of images in the input list.
         __median_file = np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)
         if (self.__numberOfImages == 2):
@@ -88,7 +89,7 @@ class minmed:
             __median_file = __tmp.combArrObj
         else:
             # The value of NHIGH=1 will cause problems when there is only 1 valid
-            # unmasked input image for that pixel due to a difference in behavior 
+            # unmasked input image for that pixel due to a difference in behavior
             # between 'numcombine' and 'iraf.imcombine'.
             # This value may need to be adjusted on the fly based on the number of
             # inputs and the number of masked values/pixel.
@@ -118,15 +119,15 @@ class minmed:
             # if this new procedure is used that value in the resulting images will
             # be the value that was rejected by the nhigh rejection step.
             #
-            
+
             # We need to make certain that "bad" pixels in the sci data are set to 0.  That way,
             # when the sci images are summed, the value of the sum will only come from the "good"
             # pixels.
             tmpList = []
             for image in xrange(len(self.__imageList)):
-                tmp =np.where(self.__weightMaskList[image] == 1, 0, self.__imageList[image]) 
+                tmp =np.where(self.__weightMaskList[image] == 1, 0, self.__imageList[image])
                 tmpList.append(tmp)
-                
+
             # Sum the mask files
             maskSum = self.__sumImages(self.__weightMaskList)
             # Sum the science images
@@ -141,7 +142,7 @@ class minmed:
             self.__weightMaskList = [np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)]*len(self.__imageList)
         # Sum the weightMaskList elements
         __maskSum = self.__sumImages(self.__weightMaskList)
-        
+
         # Create the minimum image from the stack of input images.
         # Find the maximum pixel value for the image stack.
         _maxValue = -1e+9
@@ -149,11 +150,11 @@ class minmed:
             _newMax = image.max()
             if (_newMax > _maxValue):
                 _maxValue = _newMax
-        
+
         # For each image, set pixels masked as "bad" to the "super-maximum" value.
         for image in xrange(len(self.__imageList)):
             self.__imageList[image] = np.where(self.__weightMaskList[image] == 1,_maxValue+1,self.__imageList[image])
-            
+
         # Call numcombine throwing out the highest N - 1 pixels.
         __tmp = numCombine(self.__imageList,numarrayMaskList=None,
                                  combinationType=combtype_median,nlow=0,nhigh=self.__numberOfImages-1,
@@ -161,7 +162,7 @@ class minmed:
         __minimum_file = __tmp.combArrObj
         # Reset any pixl at _maxValue + 1 to 0.
         __minimum_file = np.where(__maskSum == self.__numberOfImages, 0, __minimum_file)
-        
+
         # Scale the weight images by the background values and add them to the bk
         __backgroundFileList = []
         for image in xrange(len(self.__weightImageList)):
@@ -198,7 +199,7 @@ class minmed:
         # per pixel.
         #
         __minimum_file_weighted = __minimum_file * __weight_file
-        __median_file_weighted = __median_file * __weight_file  
+        __median_file_weighted = __median_file * __weight_file
         del(__weight_file)
 
         # Calculate the 1-sigma r.m.s.:
@@ -242,7 +243,7 @@ class minmed:
             __boxshape = (__boxsize,__boxsize)
             __minimum_grow_file = np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)
 
-            
+
             # If the boxcar convolution has failed it is potentially for two reasons:
             #   1) The kernel size for the boxcar is bigger than the actual image.
             #   2) The grow parameter was specified with a value < 0.  This would result
@@ -251,7 +252,7 @@ class minmed:
             #
             #   If the boxcar convolution has failed, try to give a meaningfull explanation
             #   as to why based upon the conditionals described above.
-            
+
             if (__boxsize <= 0):
                 errormsg1 =  "############################################################\n"
                 errormsg1 += "# The boxcar convolution in minmed has failed.  The 'grow' #\n"
@@ -273,7 +274,7 @@ class minmed:
 
             # Attempt the boxcar convolution using the boxshape based upon the user input value of "grow"
             NC.boxcar(__minimum_flag_file,__boxshape,output=__minimum_grow_file,mode='constant',cval=0)
-            
+
             del(__minimum_flag_file)
 
             __temp1 = (__median_file_weighted - (__rms_file * self.__combine_nsigma1))
@@ -303,7 +304,7 @@ class minmed:
 
         # Set fill regions to a pixel value of 0.
         self.combArrObj = np.where(__maskSum == self.__numberOfImages, 0, self.combArrObj)
-                                        
+
 #        self.out_file1 = __median_rms2_file.copy()
 #        self.out_file2 = __minimum_file_weighted.copy()
 

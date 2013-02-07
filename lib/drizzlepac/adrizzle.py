@@ -9,7 +9,7 @@ import outputimage,wcs_functions,processInput,util
 import stwcs
 from stwcs import distortion
 
-from . import adriz_versions
+from .version import *
 
 try:
     import cdriz
@@ -25,10 +25,6 @@ if util.can_parallel:
 __taskname__ = "drizzlepac.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
-
-__version__ = adriz_versions.__full_version__
-__vdate__ = "23-Aug-2012"
-
 
 log = logutil.create_logger(__name__)
 
