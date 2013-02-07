@@ -6,14 +6,12 @@
 #
 # AUTHOR: CHRISTOPHER HANLEY
 #
-# VERSION: 
-#   Version 0.1.0: created -- CJH 
+# VERSION:
+#   Version 0.1.0: created -- CJH
 #
 from __future__ import division # confidence high
 
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.1.0'
-
+from .version import *
 # IMPORT EXTERNAL MODULES
 import numpy as np
 
@@ -55,8 +53,8 @@ def qderiv(array): # TAKE THE ABSOLUTE DERIVATIVE OF A NUMARRY OBJECT
         #print "call _absoluteSubtract()"
         (tmpArray,outArray) = _absoluteSubtract(array,tmpArray,outArray)
 
-    
-    
+
+
     return outArray.astype(np.float32)
 
 
@@ -73,4 +71,3 @@ def _absoluteSubtract(array,tmpArray,outArray):
     return (tmpArray,outArray)
 
 # END MODULE
-

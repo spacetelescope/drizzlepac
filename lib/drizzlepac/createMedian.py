@@ -15,9 +15,7 @@ from stsci.tools import iterfile, nimageiter, teal, logutil
 from minmed import minmed
 import processInput
 
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.1'
-
+from .version import *
 
 __taskname__= "drizzlepac.createMedian" #looks in drizzlepac for createMedian.cfg
 _step_num_ = 4  #this relates directly to the syntax in the cfg file

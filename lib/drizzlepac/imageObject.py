@@ -22,9 +22,7 @@ import buildmask
 IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
 
 
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.1dev1'
-
+from .version import *
 
 log = logutil.create_logger(__name__)
 

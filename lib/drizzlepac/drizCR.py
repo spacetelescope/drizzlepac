@@ -17,8 +17,7 @@ from stsci.tools import fileutil, logutil, mputil, teal
 if util.can_parallel:
     import multiprocessing
 
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.1'  # we should go through and update all these
+from .version import *
 
 __taskname__= "drizzlepac.drizCR"  # looks in drizzlepac for sky.cfg
 _step_num_ = 6  # this relates directly to the syntax in the cfg file
