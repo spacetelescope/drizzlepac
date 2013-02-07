@@ -15,7 +15,7 @@ from stsci.tools import iterfile, nimageiter, teal, logutil
 from minmed import minmed
 import processInput
 
-
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.1'
 
 

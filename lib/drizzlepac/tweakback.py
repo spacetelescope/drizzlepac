@@ -12,6 +12,8 @@ from . import util
 
 
 __taskname__ = 'tweakback' # unless someone comes up with anything better
+
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.3.0'
 __vdate__ = '1-Feb-2012'
 

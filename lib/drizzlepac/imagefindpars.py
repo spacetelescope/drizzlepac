@@ -3,6 +3,8 @@ from stsci.tools import teal
 import tweakreg
 
 __taskname__ = 'imagefindpars'
+
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = tweakreg.__version__
 __vdate__ = tweakreg.__vdate__
 

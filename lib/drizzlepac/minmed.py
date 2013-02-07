@@ -19,7 +19,9 @@ import stsci.convolve as NC
 
 from stsci.image.numcombine import numCombine
 
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.2.0'
+
 class minmed:
     """ Create a median array, rejecting the highest pixel and computing the lowest valid pixel after mask application"""
 

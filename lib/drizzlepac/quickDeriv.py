@@ -11,6 +11,7 @@
 #
 from __future__ import division # confidence high
 
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1.0'
 
 # IMPORT EXTERNAL MODULES

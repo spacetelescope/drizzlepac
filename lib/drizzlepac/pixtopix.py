@@ -101,6 +101,7 @@ import wcs_functions
 import util
 from stwcs import wcsutil, distortion
 
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
 __vdate__ = '1-Mar-2011'
 

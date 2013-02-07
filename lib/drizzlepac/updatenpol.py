@@ -66,8 +66,11 @@ from __future__ import division
 __docformat__ = 'restructuredtext'
 
 __taskname__ = "updatenpol"
+
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.1.0'
 __vdate__ = '16-Aug-2011'
+
 import os,sys,shutil
 
 import pyfits

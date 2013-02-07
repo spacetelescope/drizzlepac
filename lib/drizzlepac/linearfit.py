@@ -13,7 +13,10 @@ from stsci.tools import logutil
     
 """
 
-__version__ = '0.3.1 (22-Dec-2005)'
+# This is specifically NOT intended to match the package-wide version information.
+__version__ = '0.3.1'
+__vdate__ = '22-Dec-2005'
+
 
 log = logutil.create_logger(__name__)
 

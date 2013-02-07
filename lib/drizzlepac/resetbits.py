@@ -72,6 +72,8 @@ from stsci.tools import parseinput, logutil
 from . import util
 
 __taskname__ = "drizzlepac.resetbits"
+
+# This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.0.0'
 __vdate__ = '3-Aug-2010'
 
