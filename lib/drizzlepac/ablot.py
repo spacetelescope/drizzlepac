@@ -237,7 +237,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
     # Setup the versions info dictionary for output to PRIMARY header
     # The keys will be used as the name reported in the header, as-is
     #
-    _versions = {'AstroDrizzle':adriz_versions.__version__,
+    _versions = {'AstroDrizzle':__version__,
                  'PyFITS':util.__pyfits_version__,
                  'Numpy':util.__numpy_version__}
 
