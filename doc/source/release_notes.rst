@@ -11,6 +11,44 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2012) in IRAFX
+-------------------------------------------------------
+**available starting:** Feb 11, 2013
+
+- Fixed a bug in astrodrizzle which caused blot to raise an exception when using 'sinc' interpolation. 
+- Cleaned up the logic for writing out the results from the pixtopix, pixtosky, and skytopix tasks to avoid an Exception when a list of inputs are provided and no output file is specified.
+- A new parameter was added to the tweakback task to allow a user to specify the value of WCSNAME when updating the FLT images with a new solution from a DRZ image header.
+- Code in tweakback for updating the header with a new WCS will now automatically generate a unique WCSNAME if the there is a WCS solution in the FLT headers with the default or user-defined value of WCSNAME.
+
+
+DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
+-------------------------------------------------------
+**available starting:** Feb 4, 2013
+
+- Updated astrodrizzle to work with input images which do not have WCSNAME defined. This should make it easier to support non-HST input images in the future. 
+- cleared up confusion between flux parameters in imagefindpars and catalog inputs in tweakreg. 
+- turned of use of fluxes for trimming input source catalogs when no flux column can be found in input source catalogs
+
+
+DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
+-------------------------------------------------------
+**available starting:** Dec 10, 2012
+
+- Update tweakreg 2d histogram building mode to correctly find the peak when all the inputs match with the same offset (no spurious sources in either source catalog).
+- Fixed a bug so that Ctrl-C does not cause an exception when used while tweakreg is running
+- revised the source finding logic to ignore sources near the image edge, a change from how daofind works (daofind expands the image with blanks then fits anyway) 
+- created a new function to apply the nsigma separation criteria to (try to) eliminate duplicate entries for the same source from the source list. It turns out daofind does have problems with reporting some duplicate sources as well. This function does not work perfectly, but works to remove nearly all (if not all) duplicates in most cases.
+
+DrizzlePac(astrodrizzle) v1.1.7dev(8-Jan-2012) in IRAFX
+-------------------------------------------------------
+**available starting:** Jan 14, 2013
+
+- Bug fixed in updatehdr module to allow shiftfiles without RMS columns to work as inputs to manually apply shifts to headers of input images
+- Revised astrodrizzle to update WCS of all input images BEFORE checking whether or not they are valid. This insures that all files provided as input to astrodrizzle in the pipeline have the headers updated with the distortion model and new WCS.
+- Images with NGOODPIX=0 now identified for WFC3 and WFPC2 inputs, so they can be ignored during astrodrizzle processing.
+- Replaced 2d histogram building code originally written in Python with a C function that run about 4x faster.
+
+
 DrizzlePac(astrodrizzle) v1.1.6dev(5-Dec-2012) in IRAFX
 -------------------------------------------------------
 **available starting:** Dec 10, 2012
