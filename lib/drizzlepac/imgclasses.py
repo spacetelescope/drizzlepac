@@ -411,8 +411,8 @@ class Image(object):
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
                 self.matches['img_orig_xy'] = np.column_stack([
-                    np.array(self.xy_catalog[0])[self.matches['img_idx']][:,np.newaxis],
-                    np.array(self.xy_catalog[1])[self.matches['img_idx']][:,np.newaxis]])
+                    np.array(self.xy_catalog[0])[matches['input_idx']][:,np.newaxis],
+                    np.array(self.xy_catalog[1])[matches['input_idx']][:,np.newaxis]])
                 print 'Found %d matches for %s...'%(len(matches),self.name)
 
                 if self.pars['writecat']:
