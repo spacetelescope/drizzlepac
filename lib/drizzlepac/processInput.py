@@ -1055,41 +1055,6 @@ def update_wfpc2_d2geofile(filename, fhdu=None):
     return d2imfile
 
 
-def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
-    """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
-    """
-    dgeo = fileutil.openImage(dgeofile)
-    outname = output+'_d2im.fits'
-
-    util.removeFileSafely(outname)
-
-    scihdu = pyfits.ImageHDU(data=dgeo['dy',1].data[:,0])
-    dgeo.close()
-    # add required keywords for D2IM header
-    scihdu.header.update('EXTNAME','DY',comment='Extension name')
-    scihdu.header.update('EXTVER',1,comment='Extension version')
-    pyfits_str = 'PYFITS Version '+str(pyfits.__version__)
-    scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
-    scihdu.header.update('INHERIT',False,comment='Inherits global header')
-
-    dnow = datetime.datetime.now()
-    scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
-
-    scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT1',0,comment='Grid step size in first coordinate')
-    scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
-    scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
-    scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
-
-    d2imhdu = pyfits.HDUList()
-    d2imhdu.append(pyfits.PrimaryHDU())
-    d2imhdu.append(scihdu)
-    d2imhdu.writeto(outname)
-    d2imhdu.close()
-
-    return outname
-
 def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
     """
@@ -1116,7 +1081,44 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
     scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
     scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
+    
+    d2imhdu = pyfits.HDUList()
+    d2imhdu.append(pyfits.PrimaryHDU())
+    d2imhdu.append(scihdu)
+    d2imhdu.writeto(outname)
+    d2imhdu.close()
 
+    return outname
+
+def convert_dgeo_to_d2im_NEW(dgeofile,output,clobber=True):
+    """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
+    """
+    dgeo = fileutil.openImage(dgeofile)
+    outname = output+'_d2im.fits'
+
+    util.removeFileSafely(outname)
+
+    scihdu = pyfits.ImageHDU(data=dgeo['dy',1].data[:,0])
+    dgeo.close()
+    # add required keywords for D2IM header
+    scihdu.header.update('EXTNAME','DY',comment='Extension name')
+    scihdu.header.update('EXTVER',1,comment='Extension version')
+    pyfits_str = 'PYFITS Version '+str(pyfits.__version__)
+    scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
+    scihdu.header.update('INHERIT',False,comment='Inherits global header')
+
+    dnow = datetime.datetime.now()
+    scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
+
+    scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
+    scihdu.header.update('CDELT1',0,comment='Grid step size in first coordinate')
+    scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
+    scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
+    scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
+    scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
+
+    phdu = pyfits.PrimaryHDU()
+    phdu.header.update('INSTRUME', 'WFPC2')
     d2imhdu = pyfits.HDUList()
     d2imhdu.append(pyfits.PrimaryHDU())
     d2imhdu.append(scihdu.copy())
