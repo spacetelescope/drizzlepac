@@ -1,0 +1,9 @@
+make sure you are using the current pywcs pulled from here:
+
+https://svn.stsci.edu/svn/ssb/astrolib/trunk/pywcs
+
+and the updatewcs that in:
+
+https://www.stsci.edu/svn/ssb/stsci_python/development/trunk/
+
+
