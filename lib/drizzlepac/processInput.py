@@ -1081,7 +1081,7 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
     scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
     scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
-
+    
     d2imhdu = pyfits.HDUList()
     d2imhdu.append(pyfits.PrimaryHDU())
     d2imhdu.append(scihdu)
@@ -1090,7 +1090,7 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
 
     return outname
 
-def convert_dgeo_to_NEW_d2im(dgeofile,output,clobber=True):
+def convert_dgeo_to_d2im_NEW(dgeofile,output,clobber=True):
     """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
     """
     dgeo = fileutil.openImage(dgeofile)
@@ -1117,6 +1117,8 @@ def convert_dgeo_to_NEW_d2im(dgeofile,output,clobber=True):
     scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
     scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
 
+    phdu = pyfits.PrimaryHDU()
+    phdu.header.update('INSTRUME', 'WFPC2')
     d2imhdu = pyfits.HDUList()
     d2imhdu.append(pyfits.PrimaryHDU())
     d2imhdu.append(scihdu.copy())
