@@ -199,7 +199,7 @@ class NICMOSInputImage(imageObject):
         FITS file.
         """
         has_bunit = False
-        if self._image['sci',1].header.has_key('BUNIT') :
+        if 'BUNIT' in self._image['sci',1].header :
             has_bunit = True
 
         countrate = False

@@ -219,7 +219,7 @@ def build(outname, wcsname, refimage, undistort=False,
 
     # synchronize this new WCS with the rest of the chips in the image
     for ext in outhdr:
-        if ext.header.has_key('extname') and ext.header['extname'] == 'SIPWCS':
+        if 'extname' in ext.header and ext.header['extname'] == 'SIPWCS':
             ext_wcs = wcsutil.HSTWCS(ext)
             stwcs.updatewcs.makewcs.MakeWCS.updateWCS(ext_wcs,outwcs)
     
@@ -304,7 +304,7 @@ def apply_model(refwcs):
         
     """
     # apply distortion model to CD matrix
-    if refwcs.__dict__.has_key('ocx10') and refwcs.ocx10 is not None:
+    if 'ocx10' in refwcs.__dict__ and refwcs.ocx10 is not None:
         linmat = np.array([[refwcs.ocx11,refwcs.ocx10],[refwcs.ocy11,refwcs.ocy10]])/refwcs.idcscale
         refwcs.wcs.cd = np.dot(refwcs.wcs.cd,linmat)
         

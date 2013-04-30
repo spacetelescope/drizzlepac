@@ -134,7 +134,7 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
             for hdu in p:
                 # find only those extensions which match the input extname
                 # using case-insensitive name comparisons for 'extname'
-                if hdu.header.has_key('extver') and \
+                if 'extver' in hdu.header and \
                    hdu.header['extname'].lower() == extname.lower():
                     extver.append(int(hdu.header['extver']))
         else:

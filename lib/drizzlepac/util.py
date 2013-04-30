@@ -322,7 +322,7 @@ class ProcSteps(object):
         total_time = 0
         print ProcSteps.__report_header
         for step in self.order:
-            if self.steps[step].has_key('elapsed'):
+            if 'elapsed' in self.steps[step]:
                 _time = self.steps[step]['elapsed']
             else:
                 _time = 0.0
@@ -410,7 +410,7 @@ def count_sci_extensions(filename):
     num_ext = 0
     for extn in fileutil.openImage(filename):
         num_ext += 1
-        if extn.header.has_key('extname') and extn.header['extname'] == extname:
+        if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
     if num_sci == 0:
         extname = 'PRIMARY'
@@ -845,12 +845,12 @@ def get_detnum(hstwcs,filename,extnum):
 def get_expstart(header,primary_hdr):
     """shouldn't this just be defined in the instrument subclass of imageobject?"""
 
-    if primary_hdr.has_key('expstart'):
+    if 'expstart' in primary_hdr:
         exphdr = primary_hdr
     else:
         exphdr = header
 
-    if exphdr.has_key('EXPSTART'):
+    if 'EXPSTART' in exphdr:
         expstart = float(exphdr['EXPSTART'])
         expend = float(exphdr['EXPEND'])
     else:
@@ -1010,14 +1010,14 @@ def createFile(dataArray=None, outfile=None, header=None):
         if (header != None):
             del(header['NAXIS1'])
             del(header['NAXIS2'])
-            if header.has_key('XTENSION'):
+            if 'XTENSION' in header:
                 del(header['XTENSION'])
-            if header.has_key('EXTNAME'):
+            if 'EXTNAME' in header:
                 del(header['EXTNAME'])
-            if header.has_key('EXTVER'):
+            if 'EXTVER' in header:
                 del(header['EXTVER'])
 
-            if header.has_key('NEXTEND'):
+            if 'NEXTEND' in header:
                 header['NEXTEND'] = 0
 
             hdu = pyfits.PrimaryHDU(data=dataArray,header=header)

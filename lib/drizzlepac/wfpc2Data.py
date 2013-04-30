@@ -176,7 +176,7 @@ class WFPC2InputImage (imageObject):
             chip=self._image[self.scienceExt,det]
             conversionFactor = 1.0
             # add D2IMFILE to outputNames for removal by 'clean()' method later
-            if _handle[0].header.has_key('D2IMFILE') and _handle[0].header['D2IMFILE'] not in ["","N/A"]:
+            if 'D2IMFILE' in _handle[0].header and _handle[0].header['D2IMFILE'] not in ["","N/A"]:
                 chip.outputNames['d2imfile'] = _handle[0].header['D2IMFILE']
 
             if chip._gain != None:

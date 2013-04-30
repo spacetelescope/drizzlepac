@@ -266,9 +266,9 @@ class OutputImage:
 
         # Update DITHCORR calibration keyword if present
         # Remove when we can modify FITS headers in place...
-        if prihdu.header.has_key('DRIZCORR') > 0:
+        if 'DRIZCORR' in prihdu.header:
             prihdu.header['DRIZCORR'] = 'COMPLETE'
-        if prihdu.header.has_key('DITHCORR') > 0:
+        if 'DITHCORR' in prihdu.header:
             prihdu.header['DITHCORR'] = 'COMPLETE'
 
         prihdu.header.update('NDRIZIM',len(self.parlist),
@@ -282,8 +282,8 @@ class OutputImage:
 
         if scihdr:
             del scihdr['OBJECT']
-            if scihdr.has_key('CCDCHIP'): scihdr.update('CCDCHIP','-999')
-            if scihdr.has_key('NCOMBINE') > 0:
+            if 'CCDCHIP' in scihdr: scihdr.update('CCDCHIP','-999')
+            if 'NCOMBINE' in scihdr:
                 scihdr.update('NCOMBINE', self.parlist[0]['nimages'])
 
             # If BUNIT keyword was found and reset, then
@@ -296,7 +296,7 @@ class OutputImage:
                               after=bunit_last_kw)
             else:
                 # check to see whether to update already present BUNIT comment
-                if scihdr.has_key('bunit') and scihdr['bunit'].lower()[:5] == 'count':
+                if 'bunit' in scihdr and scihdr['bunit'].lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
                     scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str,
                               after=bunit_last_kw)
@@ -669,8 +669,19 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     hdr.update('CD1_2',wcs.wcs.cd[0][1], after=after)
     hdr.update('CD1_1',wcs.wcs.cd[0][0], after=after)
 
+    # delete distortion model related keywords
+    deleteDistortionKeywords(hdr)
+
     if not blot:
         blendheaders.remove_distortion_keywords(hdr)
+
+def deleteDistortionKeywords(hdr):
+    """ Delete distortion related keywords from output drizzle science header
+        since the drizzled image should have no remaining distortion.
+    """
+    dist_kws = ['D2IMERR1','D2IMERR2','D2IMDIS1','D2IMDIS2','D2IM1.*','D2IM2.*','D2IMEXT']
+    for kw in dist_kws:
+        if kw in hdr: del hdr[kw]
 
 def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
