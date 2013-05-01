@@ -1055,7 +1055,7 @@ def update_wfpc2_d2geofile(filename, fhdu=None):
     return d2imfile
 
 
-def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
+def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
     """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
     """
     dgeo = fileutil.openImage(dgeofile)
@@ -1090,7 +1090,7 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
 
     return outname
 
-def convert_dgeo_to_d2im_NEW(dgeofile,output,clobber=True):
+def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
     """
     dgeo = fileutil.openImage(dgeofile)
