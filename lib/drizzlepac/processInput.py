@@ -1120,7 +1120,7 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     phdu = pyfits.PrimaryHDU()
     phdu.header.update('INSTRUME', 'WFPC2')
     d2imhdu = pyfits.HDUList()
-    d2imhdu.append(pyfits.PrimaryHDU())
+    d2imhdu.append(phdu)
     d2imhdu.append(scihdu.copy())
     scihdu.header.update('EXTVER', 2, comment='Extension version')
     d2imhdu.append(scihdu.copy())
