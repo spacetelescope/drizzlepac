@@ -82,7 +82,7 @@ class Catalog(object):
         self.pars = kwargs
 
         self.start_id = 0
-        if self.pars.has_key('start_id'):
+        if 'start_id' in self.pars:
             self.start_id = self.pars['start_id']
 
         self.fname = catalog_source
@@ -207,20 +207,20 @@ class Catalog(object):
             pl.clf()
             pars = kwargs.copy()
 
-            if not pars.has_key('marker'):
+            if 'marker' not in pars:
                 pars['marker'] = 'b+'
 
-            if pars.has_key('cmap'):
+            if 'cmap' in pars:
                 pl_cmap = pars['cmap']
                 del pars['cmap']
             else:
                 pl_cmap = 'summer'
             pl_vmin = None
             pl_vmax = None
-            if pars.has_key('vmin'):
+            if 'vmin' in pars:
                 pl_vmin = pars['vmin']
                 del pars['vmin']
-            if pars.has_key('vmax'):
+            if 'vmax' in pars:
                 pl_vmax = pars['vmax']
                 del pars['vmax']
 

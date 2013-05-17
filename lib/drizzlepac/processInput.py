@@ -32,6 +32,7 @@ import shutil
 import string
 import sys
 
+import numpy as np
 import pyfits
 
 from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
@@ -1055,7 +1056,7 @@ def update_wfpc2_d2geofile(filename, fhdu=None):
     return d2imfile
 
 
-def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
+def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
     """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
     """
     dgeo = fileutil.openImage(dgeofile)
@@ -1090,15 +1091,15 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
 
     return outname
 
-def convert_dgeo_to_d2im_NEW(dgeofile,output,clobber=True):
+def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
     """
     dgeo = fileutil.openImage(dgeofile)
     outname = output+'_d2im.fits'
 
     util.removeFileSafely(outname)
-
-    scihdu = pyfits.ImageHDU(data=dgeo['dy',1].data[:,0])
+    data = np.array([dgeo['dy',1].data[:,0]])
+    scihdu = pyfits.ImageHDU(data=data)
     dgeo.close()
     # add required keywords for D2IM header
     scihdu.header.update('EXTNAME','DY',comment='Extension name')
@@ -1111,22 +1112,26 @@ def convert_dgeo_to_d2im_NEW(dgeofile,output,clobber=True):
     scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
 
     scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT1',0,comment='Grid step size in first coordinate')
+    scihdu.header.update('CDELT1',1,comment='Grid step size in first coordinate')
     scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
     scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
+    scihdu.header.update('CDELT2',1,comment='Grid step size in second coordinate')
     scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
 
     phdu = pyfits.PrimaryHDU()
     phdu.header.update('INSTRUME', 'WFPC2')
     d2imhdu = pyfits.HDUList()
-    d2imhdu.append(pyfits.PrimaryHDU())
+    d2imhdu.append(phdu)
+    scihdu.header.update('DETECTOR', 1, comment='CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
     scihdu.header.update('EXTVER', 2, comment='Extension version')
+    scihdu.header.update('DETECTOR', 2, comment='CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
     scihdu.header.update('EXTVER', 3, comment='Extension version')
+    scihdu.header.update('DETECTOR', 3, comment='CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
     scihdu.header.update('EXTVER', 4, comment='Extension version')
+    scihdu.header.update('DETECTOR', 4, comment='CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
     d2imhdu.writeto(outname)
     d2imhdu.close()

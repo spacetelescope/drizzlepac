@@ -129,7 +129,7 @@ class baseImageObject(object):
         # Now remove chip-specific intermediate files, if any were created.
         for chip in self.returnAllChips(extname='SCI'):
             for fname in clean_files:
-                if chip.outputNames.has_key(fname):
+                if fname in chip.outputNames:
                     util.removeFileSafely(chip.outputNames[fname])
 
     def getData(self,exten=None):
@@ -261,7 +261,7 @@ class baseImageObject(object):
         extensions = self._findExtnames(extname=extname,exclude=exclude)
         chiplist = []
         for i in range(1,self._nextend+1,1):
-            if self._image[i].header.has_key('extver'):
+            if 'extver' in self._image[i].header:
                 extver = self._image[i].header['extver']
             else:
                 extver = 1
@@ -481,7 +481,7 @@ class baseImageObject(object):
         if(self.maskExt != None):
             for hdu in self._image:
                 # Look for DQ extension in input file
-                if hdu.header.has_key('extname') and hdu.header['extname'].lower() == self.maskExt.lower():
+                if 'extname' in hdu.header and hdu.header['extname'].lower() == self.maskExt.lower():
                     dqfile = self._filename
                     dq_suffix=self.maskExt
                     break
@@ -643,7 +643,7 @@ class baseImageObject(object):
             numext = 0
             section = []
             for hdu in self._image:
-               if hdu.header.has_key('extname') and hdu.header['extname'] == extname:
+               if 'extname' in hdu.header and hdu.header['extname'] == extname:
                     section.append(hdu.header['extver'])
         else:
             if not isinstance(section,list):
@@ -664,11 +664,11 @@ class baseImageObject(object):
             for i,hdu in enumerate(self._image):
                 if i > 0:
                     hduExtname = False
-                    if hdu.header.has_key('EXTNAME'):
+                    if 'EXTNAME' in hdu.header:
                         self._image[i].extnum=i
                         self._image[i].extname=hdu.header["EXTNAME"]
                         hduExtname = True
-                    if hdu.header.has_key('EXTVER'):
+                    if 'EXTVER' in hdu.header:
                         self._image[i].extver=hdu.header["EXTVER"]
                     else:
                         self._image[i].extver = 1
@@ -924,7 +924,7 @@ class baseImageObject(object):
         """
         _list = ''
         for _kw in keyword.split(','):
-            if header.has_key(_kw):
+            if _kw in header:
                 _list = _list + ',' + str(header[_kw])
             else:
                 return None
@@ -1167,7 +1167,7 @@ class imageObject(baseImageObject):
         sci_chip = self._image[self.scienceExt,chip]
 
         _bunit = None
-        if sci_chip.header.has_key('BUNIT') and sci_chip.header['BUNIT'].find('ergs') < 0:
+        if 'BUNIT' in sci_chip.header and sci_chip.header['BUNIT'].find('ergs') < 0:
             _bunit = sci_chip.header['BUNIT']
         else:
             _bunit = 'ELECTRONS/S'

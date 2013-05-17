@@ -194,7 +194,7 @@ class staticMask(object):
 
             # If this is a new signature, create a new Static Mask file which is empty
             # only create a new mask if one doesn't already exist
-            if ((not self.masklist.has_key(signature)) or (len(self.masklist) == 0)):
+            if ((signature not in self.masklist) or (len(self.masklist) == 0)):
                 self.masklist[signature] = self._buildMaskArray(signature)
                 maskname =  constructFilename(signature)
                 self.masknames[signature] = maskname
@@ -229,7 +229,7 @@ class staticMask(object):
 
     def getMaskArray(self, signature):
         """ Returns the appropriate StaticMask array for the image. """
-        if self.masklist.has_key(signature):
+        if signature in self.masklist:
             mask =  self.masklist[signature]
         else:
             mask = None
@@ -268,7 +268,7 @@ class staticMask(object):
 
     def deleteMask(self,signature):
         """ Delete just the mask that matches the signature given."""
-        if self.masklist.has_key(signature):
+        if signature in self.masklist:
             self.masklist[signature] = None
         else:
             log.warning("No matching mask")

@@ -171,7 +171,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         refimg = pyfits.open(reference)
         wref = None
         for extn in refimg:
-            if extn.header.has_key('extname') and extn.header['extname'] == 'WCS':
+            if 'extname' in extn.header and extn.header['extname'] == 'WCS':
                 wref = pywcs.WCS(refimg['wcs'].header)
                 break
         refimg.close()

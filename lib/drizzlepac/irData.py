@@ -33,7 +33,7 @@ class IRInputImage(imageObject):
         FITS file.
         """
         
-        if self.header.has_key('BUNIT'):       
+        if 'BUNIT' in self.header:       
             if self.header['BUINT'].find("/") != -1:
                 return True
         else:
