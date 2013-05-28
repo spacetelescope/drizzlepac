@@ -305,7 +305,7 @@ class Image(object):
                 all_radec.append(self.all_radec_orig[2][flux_indx])
                 all_radec.append(np.arange(len(self.all_radec_orig[0][flux_indx])))
 
-            if self.pars.has_key(clip_prefix+'nbright') and \
+            if clip_prefix+'nbright' in self.pars and \
                     self.pars[clip_prefix+'nbright'] is not None:
                 clip_catalog = True
                 # pick out only the brightest 'nbright' sources
@@ -411,8 +411,8 @@ class Image(object):
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
                 self.matches['img_orig_xy'] = np.column_stack([
-                    np.array(self.xy_catalog[0])[self.matches['img_idx']][:,np.newaxis],
-                    np.array(self.xy_catalog[1])[self.matches['img_idx']][:,np.newaxis]])
+                    np.array(self.xy_catalog[0])[matches['input_idx']][:,np.newaxis],
+                    np.array(self.xy_catalog[1])[matches['input_idx']][:,np.newaxis]])
                 print 'Found %d matches for %s...'%(len(matches),self.name)
 
                 if self.pars['writecat']:
@@ -497,7 +497,7 @@ class Image(object):
                 self.write_fit_catalog()
 
                 # Plot residuals, if requested by the user
-                if pars.has_key('residplot') and "No" not in pars['residplot']:
+                if 'residplot' in pars and "No" not in pars['residplot']:
                     xy = self.fit['img_coords']
                     resids = self.fit['resids']
                     xy_fit = xy + resids
@@ -873,7 +873,7 @@ class RefImage(object):
         """ Transform reference catalog sky positions (self.all_radec)
         to reference tangent plane (self.wcs) to create output X,Y positions.
         """
-        if self.pars.has_key('refxyunits') and self.pars['refxyunits'] == 'pixels':
+        if 'refxyunits' in self.pars and self.pars['refxyunits'] == 'pixels':
             log.info('Creating RA/Dec positions for reference sources...')
             self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
             skypos = self.wcs.wcs_pix2sky(self.all_radec[0],self.all_radec[1],self.origin)

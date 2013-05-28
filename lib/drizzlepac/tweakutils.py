@@ -430,7 +430,7 @@ def read_FITS_cols(infile,cols=None):
     extnum = 0
     extfound = False
     for extn in ftab:
-        if extn.header.has_key('tfields'):
+        if 'tfields' in extn.header:
             extfound = True
             break
         extnum += 1

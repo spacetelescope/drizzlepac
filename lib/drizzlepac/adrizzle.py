@@ -115,7 +115,7 @@ def run(configObj, wcsmap=None):
 
         out_sci_hdr = pyfits.getheader(outname)
         outexptime = out_sci_hdr['DRIZEXPT']
-        if out_sci_hdr.has_key('ndrizim'):
+        if 'ndrizim' in out_sci_hdr:
             uniqid = out_sci_hdr['ndrizim']+1
         else:
             uniqid = 1
@@ -547,7 +547,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     for img in imageObjectList:
         for chip in img.returnAllChips(extname=img.scienceExt):
             plsingle = chip.outputNames['outSingle']
-            if _numctx.has_key(plsingle): _numctx[plsingle] += 1
+            if plsingle in _numctx: _numctx[plsingle] += 1
             else: _numctx[plsingle] = 1
     #
     # A image buffer needs to be setup for converting the input

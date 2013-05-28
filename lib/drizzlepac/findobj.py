@@ -170,7 +170,7 @@ def findstars(jdata, fwhm, threshold, skymode,
 
     for ss,n in zip(fobjects,range(len(fobjects))):
         ssx = ss[1].stop - ss[1].start
-        ssy = ss[0].stop - ss[1].start
+        ssy = ss[0].stop - ss[0].start 
         if ssx >= tdata.shape[1]-1 or ssy >= tdata.shape[0]-1:
             continue
         yr0 = ss[0].start-gradius

@@ -507,12 +507,12 @@ def mergeWCS(default_wcs,user_pars):
     if not merge:
         return outwcs
 
-    if (not user_pars.has_key('ra')) or user_pars['ra'] == None:
+    if ('ra' not in user_pars) or user_pars['ra'] == None:
         _crval = None
     else:
         _crval = (user_pars['ra'],user_pars['dec'])
 
-    if (not user_pars.has_key('scale')) or user_pars['scale'] == None:
+    if ('scale' not in user_pars) or user_pars['scale'] == None:
         _ratio = 1.0
         _psize = None
         # Need to resize the WCS for any changes in pscale
@@ -520,7 +520,7 @@ def mergeWCS(default_wcs,user_pars):
         _ratio = outwcs.pscale / user_pars['scale']
         _psize = user_pars['scale']
 
-    if (not user_pars.has_key('rot')) or user_pars['rot'] == None:
+    if ('rot' not in user_pars) or user_pars['rot'] == None:
         _orient = None
         _delta_rot = 0.
     else:
@@ -529,7 +529,7 @@ def mergeWCS(default_wcs,user_pars):
 
     _mrot = fileutil.buildRotMatrix(_delta_rot)
 
-    if (not user_pars.has_key('outnx')) or user_pars['outnx'] == None:
+    if ('outnx' not in user_pars) or user_pars['outnx'] == None:
         _corners = np.array([[0.,0.],[outwcs.naxis1,0.],[0.,outwcs.naxis2],[outwcs.naxis1,outwcs.naxis2]])
         _corners -= (outwcs.naxis1/2.,outwcs.naxis2/2.)
         _range = util.getRotatedSize(_corners,_delta_rot)

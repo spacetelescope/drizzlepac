@@ -23,7 +23,7 @@ def getMdriztabParameters(files):
     # consistency checks are performed.
     _fileName = files[0]
     _header = fileutil.getHeader(_fileName)
-    if _header.has_key('MDRIZTAB'):
+    if 'MDRIZTAB' in _header:
         _tableName = _header['MDRIZTAB']
     else:
         raise KeyError, "No MDRIZTAB found in file " + _fileName
