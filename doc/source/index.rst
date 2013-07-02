@@ -1,10 +1,10 @@
-.. drizzlepac documentation master file, created by
+.. drizzlepac api documentation master file, created by
    sphinx-quickstart on Wed Sep 15 14:22:04 2010.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to drizzlepac's documentation!
-========================================
+Welcome to drizzlepac's API documentation!
+===========================================
 This package supports the use of AstroDrizzle as an integrated set of modules that can be run in an automated manner to combine images, along with other tasks to support image alignment and coordinate transformations with distortion included.  The version of DrizzlePac described here implements a single task to run the entire AstroDrizzle processing pipeline, while also providing the framework for users to create their own custom pipeline based on the modules in this package merged with their own custom code if desired. These pages document what functions and classes are available for use under Python while providing the syntax for calling those functions from Python tasks.
 
 Full documentation of how to run the primary AstroDrizzle and tweakreg tasks, along with fully worked examples, can be found in the `DrizzlePac Handbook available at the http://drizzlepac.stsci.edu <http://drizzlepac.stsci.edu>`_.
