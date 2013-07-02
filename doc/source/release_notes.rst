@@ -5,14 +5,14 @@ DrizzlePac Release Notes
 **************************************
 The code for this package gets released through a number of methods: namely,
   - the use of the package for pipeline and archive processing of ACS and WFC3 data, 
-  - SSB's semi-annual `public release of the stsci_python package <http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/current/stsci-python-download>`_, and 
+  - SSB's semi-annual `public release of the stsci_python package <http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/installation>`_, and 
   - a weekly beta release of the development version as part of the `IRAFX download <http://stsdas.stsci.edu/irafx/>`_.  
   
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
 DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2012) in IRAFX
--------------------------------------------------------
+--------------------------------------------------------
 **available starting:** Feb 11, 2013
 
 - Fixed a bug in astrodrizzle which caused blot to raise an exception when using 'sinc' interpolation. 
@@ -22,7 +22,7 @@ DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2012) in IRAFX
 
 
 DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
--------------------------------------------------------
+--------------------------------------------------------
 **available starting:** Feb 4, 2013
 
 - Updated astrodrizzle to work with input images which do not have WCSNAME defined. This should make it easier to support non-HST input images in the future. 
@@ -31,7 +31,7 @@ DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
 
 
 DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
--------------------------------------------------------
+--------------------------------------------------------
 **available starting:** Dec 10, 2012
 
 - Update tweakreg 2d histogram building mode to correctly find the peak when all the inputs match with the same offset (no spurious sources in either source catalog).
@@ -40,7 +40,7 @@ DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
 - created a new function to apply the nsigma separation criteria to (try to) eliminate duplicate entries for the same source from the source list. It turns out daofind does have problems with reporting some duplicate sources as well. This function does not work perfectly, but works to remove nearly all (if not all) duplicates in most cases.
 
 DrizzlePac(astrodrizzle) v1.1.7dev(8-Jan-2012) in IRAFX
--------------------------------------------------------
+--------------------------------------------------------
 **available starting:** Jan 14, 2013
 
 - Bug fixed in updatehdr module to allow shiftfiles without RMS columns to work as inputs to manually apply shifts to headers of input images
