@@ -11,6 +11,21 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.11dev(05-Jul-2012) in IRAFX
+--------------------------------------------------------
+**available starting:** July 15, 2013
+
+- AstroDrizzle now can process all STIS data without crashing.
+
+
+DrizzlePac(astrodrizzle) v1.1.10dev(06-Feb-2012) in IRAFX
+--------------------------------------------------------
+**available starting:** May 6, 2013
+
+- The output image no longer contains references to D2IM arrays from output drizzle image headers. This allows tweakreg to work with drizzled images as input where 2-D D2IM corrections were needed.
+- Deprecated references to PyFITS .has_key() methods were also removed from the entire package, making it compatible with PyFITS 3.2.x and later.
+
+
 DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2012) in IRAFX
 --------------------------------------------------------
 **available starting:** Feb 11, 2013
