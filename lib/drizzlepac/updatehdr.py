@@ -426,7 +426,7 @@ def create_unique_wcsname(fimg, extnum ,wcsname):
     the name with a simple version ID using wcsname_NNN format.
 
     Parameters
-    ---------
+    ----------
     fimg : obj
         PyFITS object of image with WCS information to be updated
 
