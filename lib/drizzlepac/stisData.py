@@ -82,21 +82,6 @@ class STISInputImage (imageObject):
             chip=self._image[self.scienceExt,det]
             if chip._gain != None:
 
-                """
-                # Multiply the values of the sci extension pixels by the gain.
-                print "Converting %s[%s,%d] from COUNTS to ELECTRONS"%(self._filename,self.scienceExt,det)
-
-                # If the exptime is 0 the science image will be zeroed out.
-                np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)
-                chip.data=_handle[self.scienceExt,det].data
-
-                # Set the BUNIT keyword to 'electrons'
-                _handle[self.scienceExt,det].header.update('BUNIT','ELECTRONS')
-
-                # Update the PHOTFLAM value
-                photflam = _handle[self.scienceExt,det].header['PHOTFLAM']
-                _handle[self.scienceExt,det].header.update('PHOTFLAM',(photflam/chip._gain))
-                """
                 conversionFactor = chip._gain
                 chip._effGain = chip._gain #1.
                 chip._conversionFactor = conversionFactor #1.
@@ -212,8 +197,11 @@ class CCDInputImage(STISInputImage):
 
 
 class NUVInputImage(STISInputImage):
-    def __init__(self, input, dqname, platescale, memmap=0,proc_unit="native"):
-        STISInputImage.__init__(self,input,dqname,platescale,memmap=0,proc_unit=proc_unit)
+    def __init__(self, filename, group=None):
+
+        self.effGain = 1.0
+
+        STISInputImage.__init__(self,filename, group=None)
 
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
@@ -294,11 +282,10 @@ class NUVInputImage(STISInputImage):
 
     def _setMAMADefaultGain(self):
         self._gain = 1
+        self.effGain = 1
 
     def _setMAMADefaultReadnoise(self):
         self._rdnoise = 0
-
-
 
     def getdarkcurrent(self):
         """
@@ -315,8 +302,28 @@ class NUVInputImage(STISInputImage):
             return darkcurrent / self._gain()
         return darkcurrent
 
+    def doUnitConversions(self):
+        """Convert the data to electrons.
+
+        This converts all science data extensions and saves
+        the results back to disk. We need to make sure
+        the data inside the chips already in memory is altered as well.
+
+        """
+
+        for det in range(1,self._numchips+1,1):
+
+            chip=self._image[self.scienceExt,det]
+
+            conversionFactor = self.effGain
+            chip._gain = self.effGain #1.
+            chip.effGain = self.effGain
+            chip._conversionFactor = conversionFactor #1.
+
 class FUVInputImage(STISInputImage):
     def __init__(self,filename=None,group=None):
+        self.effGain=1.0
+
         STISInputImage.__init__(self,filename,group=group)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
@@ -325,8 +332,6 @@ class FUVInputImage(STISInputImage):
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0
             self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
-
-        self.effGain=1.0
 
     def setInstrumentParameters(self, instrpars):
         """ This method overrides the superclass to set default values into
@@ -410,3 +415,21 @@ class FUVInputImage(STISInputImage):
 
     def _setMAMADefaultReadnoise(self):
         return 0
+
+    def doUnitConversions(self):
+        """Convert the data to electrons.
+
+        This converts all science data extensions and saves
+        the results back to disk. We need to make sure
+        the data inside the chips already in memory is altered as well.
+
+        """
+
+        for det in range(1,self._numchips+1,1):
+
+            chip=self._image[self.scienceExt,det]
+
+            conversionFactor = self.effGain
+            chip._gain = self.effGain #1.
+            chip.effGain = self.effGain
+            chip._conversionFactor = conversionFactor #1.
