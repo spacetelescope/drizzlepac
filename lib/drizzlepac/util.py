@@ -212,15 +212,16 @@ class WithLogging(object):
 
             try:
                 func(*args, **kwargs)
-            except Exception, errorobj:
+            except Exception as errorobj:
                 pass
             finally:
                 self.depth -= 1
                 if self.depth == 0:
                     end_logging(filename)
                     # Insure that any exception raised by the code gets passed on
+                    # (hope that end_logging didn't change the last exception raised)
                     if errorobj:
-                        raise Exception, errorobj
+                        raise 
 
         return wrapper
 
