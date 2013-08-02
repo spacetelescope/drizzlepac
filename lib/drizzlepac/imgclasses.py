@@ -308,6 +308,9 @@ class Image(object):
             if clip_prefix+'nbright' in self.pars and \
                     self.pars[clip_prefix+'nbright'] is not None:
                 clip_catalog = True
+
+                nbright = self.pars[clip_prefix+'nbright']
+
                 # pick out only the brightest 'nbright' sources
                 if self.pars[clip_prefix+'fluxunits'] == 'mag':
                     nbslice = slice(None,nbright)
