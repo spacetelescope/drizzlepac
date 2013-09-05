@@ -463,6 +463,13 @@ def removeAllAltWCS(hdulist,extlist):
         for wkey in wkeys:
             altwcs.deleteWCS(hdulist,extn,wkey)
 
+        # Forcibly remove OPUS WCS Keywords, since deleteWCS will not do it
+        hwcs = altwcs.readAltWCS(hdulist,extn,wcskey='O')
+        if hwcs is None:
+            continue
+        for k in hwcs.keys():
+            del hdr[k]
+
 def updateImageWCS(imageObjectList, output_wcs):
 
      # Update input imageObjects with output WCS information
