@@ -11,22 +11,42 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
-DrizzlePac(astrodrizzle) v1.1.11dev(05-Jul-2012) in IRAFX
---------------------------------------------------------
+DrizzlePac(astrodrizzle) v1.1.13dev(11-Oct-2013) in IRAFX
+---------------------------------------------------------
+**available starting:** Oct 21, 2013
+
+- Tweakreg can now be run in 'batch' mode.  This allows the user to generate plots and have them saved to disk automatically without stopping processing and requiring any user input.
+
+
+DrizzlePac(astrodrizzle) v1.1.12dev(05-Sep-2013) in IRAFX
+---------------------------------------------------------
+**available starting:** Sept 9, 2013
+
+This version fixed a couple of bugs in astrodrizzle; namely,
+  - Logic was updated to support pixfrac = 0.0 without crashing. Ths code will now automatically reset the kernel to 'point' in that case.
+  - Astrodrizzle now forcibly removes all OPUS WCS keywords from drizzle product headers.
+  - Default rules for generating drizzle product headers (as used in the archive) were modified to add definitions for 'float_one', 'int_one', 'zero' that generate output values of 1.0, 1, and 0 (zero) respectively for use as keyword values. This allows the LTM* rules to replace 'first' with 'float_one' so that the physical and image coordinates for drizzle products are consistent.
+
+Additionally, changes were made to STWCS for reprocessing use:
+  - Problems with using apply_headerlet_as_primary() from the STWCS package on WFPC2 data have been corrected in this revision.
+
+
+DrizzlePac(astrodrizzle) v1.1.11dev(05-Jul-2013) in IRAFX
+---------------------------------------------------------
 **available starting:** July 15, 2013
 
 - AstroDrizzle now can process all STIS data without crashing.
 
 
-DrizzlePac(astrodrizzle) v1.1.10dev(06-Feb-2012) in IRAFX
---------------------------------------------------------
+DrizzlePac(astrodrizzle) v1.1.10dev(06-Feb-2013) in IRAFX
+---------------------------------------------------------
 **available starting:** May 6, 2013
 
 - The output drizzle image header no longer contains references to D2IM arrays. This allows tweakreg to work with drizzled images as input where 2-D D2IM corrections were needed.
 - Deprecated references to PyFITS .has_key() methods were also removed from the entire package, making it compatible with PyFITS 3.2.x and later.
 
 
-DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2012) in IRAFX
+DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2013) in IRAFX
 --------------------------------------------------------
 **available starting:** Feb 11, 2013
 
