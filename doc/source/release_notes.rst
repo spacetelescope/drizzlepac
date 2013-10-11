@@ -1,13 +1,13 @@
 .. _release_notes:
 
 **************************************
-DrizzlePac Release Notes 
+DrizzlePac Release Notes
 **************************************
 The code for this package gets released through a number of methods: namely,
-  - the use of the package for pipeline and archive processing of ACS and WFC3 data, 
-  - SSB's semi-annual `public release of the stsci_python package <http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/installation>`_, and 
-  - a weekly beta release of the development version as part of the `IRAFX download <http://stsdas.stsci.edu/irafx/>`_.  
-  
+  - the use of the package for pipeline and archive processing of ACS and WFC3 data,
+  - SSB's semi-annual `public release of the stsci_python package <http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/installation>`_, and
+  - a weekly beta release of the development version as part of the `IRAFX download <http://stsdas.stsci.edu/irafx/>`_.
+
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
@@ -22,7 +22,7 @@ DrizzlePac(astrodrizzle) v1.1.10dev(06-Feb-2012) in IRAFX
 --------------------------------------------------------
 **available starting:** May 6, 2013
 
-- The output image no longer contains references to D2IM arrays from output drizzle image headers. This allows tweakreg to work with drizzled images as input where 2-D D2IM corrections were needed.
+- The output drizzle image header no longer contains references to D2IM arrays. This allows tweakreg to work with drizzled images as input where 2-D D2IM corrections were needed.
 - Deprecated references to PyFITS .has_key() methods were also removed from the entire package, making it compatible with PyFITS 3.2.x and later.
 
 
@@ -30,7 +30,7 @@ DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2012) in IRAFX
 --------------------------------------------------------
 **available starting:** Feb 11, 2013
 
-- Fixed a bug in astrodrizzle which caused blot to raise an exception when using 'sinc' interpolation. 
+- Fixed a bug in astrodrizzle which caused blot to raise an exception when using 'sinc' interpolation.
 - Cleaned up the logic for writing out the results from the pixtopix, pixtosky, and skytopix tasks to avoid an Exception when a list of inputs are provided and no output file is specified.
 - A new parameter was added to the tweakback task to allow a user to specify the value of WCSNAME when updating the FLT images with a new solution from a DRZ image header.
 - Code in tweakback for updating the header with a new WCS will now automatically generate a unique WCSNAME if the there is a WCS solution in the FLT headers with the default or user-defined value of WCSNAME.
@@ -40,8 +40,8 @@ DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
 --------------------------------------------------------
 **available starting:** Feb 4, 2013
 
-- Updated astrodrizzle to work with input images which do not have WCSNAME defined. This should make it easier to support non-HST input images in the future. 
-- cleared up confusion between flux parameters in imagefindpars and catalog inputs in tweakreg. 
+- Updated astrodrizzle to work with input images which do not have WCSNAME defined. This should make it easier to support non-HST input images in the future.
+- cleared up confusion between flux parameters in imagefindpars and catalog inputs in tweakreg.
 - turned of use of fluxes for trimming input source catalogs when no flux column can be found in input source catalogs
 
 
@@ -51,7 +51,7 @@ DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX
 
 - Update tweakreg 2d histogram building mode to correctly find the peak when all the inputs match with the same offset (no spurious sources in either source catalog).
 - Fixed a bug so that Ctrl-C does not cause an exception when used while tweakreg is running
-- revised the source finding logic to ignore sources near the image edge, a change from how daofind works (daofind expands the image with blanks then fits anyway) 
+- revised the source finding logic to ignore sources near the image edge, a change from how daofind works (daofind expands the image with blanks then fits anyway)
 - created a new function to apply the nsigma separation criteria to (try to) eliminate duplicate entries for the same source from the source list. It turns out daofind does have problems with reporting some duplicate sources as well. This function does not work perfectly, but works to remove nearly all (if not all) duplicates in most cases.
 
 DrizzlePac(astrodrizzle) v1.1.7dev(8-Jan-2012) in IRAFX
@@ -70,9 +70,9 @@ DrizzlePac(astrodrizzle) v1.1.6dev(5-Dec-2012) in IRAFX
 
 - tweakreg v1.1.0 source finding algorithm now runs many times faster (no algorithmic changes). No changes have been made yet to speed up the 2d histogram source matching code.
 - The 'pixtopix' task was updated to make the 'outimage' parameter optional by using the input image as the default. This required no API changes, but the help files were updated
-- Very minor update to guard against MDRIZTAB being specified without any explicit path. 
+- Very minor update to guard against MDRIZTAB being specified without any explicit path.
 - Update astrodrizzle to correctly report the exposure time, exposure start, and exposure end for the single drizzle products, in addition to insuring the final drizzle values remain correct.
-- astrodrizzle also includes initial changes to safeguard the C code from getting improperly cast values from the configObj(TEAL) input. 
+- astrodrizzle also includes initial changes to safeguard the C code from getting improperly cast values from the configObj(TEAL) input.
 
 DrizzlePac(astrodrizzle) v1.1.5dev(23-Oct-2012) in IRAFX
 --------------------------------------------------------
@@ -105,14 +105,14 @@ DrizzlePac(astrodrizzle) v1.1.2(5-Sep-2012) in IRAFX
 -----------------------------------------------------
 **available starting:** Sept 10, 2012
 
-- Remove the restriction of only being able to process images which have WCSNAME keyword as imposed by r15631. The removal of this restriction will now allow for processing of non-updated input files with updatewcs=False for cases where no distortion model exists for the data (as required by CADC). 
+- Remove the restriction of only being able to process images which have WCSNAME keyword as imposed by r15631. The removal of this restriction will now allow for processing of non-updated input files with updatewcs=False for cases where no distortion model exists for the data (as required by CADC).
 - Added log statements reporting what sky value was actually used in the drizzle and blot steps
 
 DrizzlePac(astrodrizzle) v1.1.1(30-Aug-2012) in IRAFX
 -----------------------------------------------------
 **available starting:** Sept 3, 2012
 
-- Major revision to astrodrizzle allowing the option to process without writing out any intermediate products to disk. The intermediate products remain in memory requiring significantly more memory than usual. This improves the overall processing time by eliminating as much disk activity as possible as long as the OS does not start disk swapping due to lack of RAM. 
+- Major revision to astrodrizzle allowing the option to process without writing out any intermediate products to disk. The intermediate products remain in memory requiring significantly more memory than usual. This improves the overall processing time by eliminating as much disk activity as possible as long as the OS does not start disk swapping due to lack of RAM.
 - revised to turn off 'updatewcs' when coeffs=False(no) so that exposures with filter combinations not found in the IDCTAB will not cause an error
 
 DrizzlePac(astrodrizzle) v1.0.7(21-Aug-2012) in IRAFX
@@ -120,7 +120,7 @@ DrizzlePac(astrodrizzle) v1.0.7(21-Aug-2012) in IRAFX
 **available starting:** Aug 27, 2012
 
 - Fixes problems with missing single_sci images.
-- Static mask step revised to skip updates to static mask if all pixel data falls within a single histogram bin. This avoids problems with masking out entire images, which happens if low S/N SBC data is processed with static_mask=yes. 
+- Static mask step revised to skip updates to static mask if all pixel data falls within a single histogram bin. This avoids problems with masking out entire images, which happens if low S/N SBC data is processed with static_mask=yes.
 
 
 DrizzlePac(astrodrizzle) v1.0.6(14-Aug-2012) in IRAFX
@@ -158,4 +158,3 @@ DrizzlePac(astrodrizzle) v1.0.0(25-May-2012)
 **Used in archive/pipeline starting:** June 6, 2012
 
 Pipeline and archive first started using astrodrizzle by processing WFC3 images.
-

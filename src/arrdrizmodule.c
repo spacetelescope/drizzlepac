@@ -2,7 +2,7 @@
 
 #include <Python.h>
 
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -375,8 +375,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     goto _exit;
   }
 
-  if (pfract <= 0.0) {
-    driz_error_format_message(&error, "Invalid pfract %f (must be greater than 0.0)", scale);
+  if (pfract < 0.0) {
+    driz_error_format_message(&error, "Invalid pfract %f (must be greater than or equal to 0.0)", scale);
     goto _exit;
   }
 
@@ -432,6 +432,10 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
       kernel_str2enum(kernel_str, &kernel, &error) ||
       unit_str2enum(inun_str, &inun, &error)) {
     goto _exit;
+  }
+  if (pfract <= 0.001){
+    printf("kernel reset to POINT due to pfract being set to 0.0...\n");
+    kernel_str2enum("point", &kernel, &error);
   }
 
   /* Convert the fill value string */
@@ -799,7 +803,7 @@ arrmoments(PyObject *obj, PyObject *args)
   if (!img) {
     goto _exit;
   }
-  
+
   x = img->dimensions[1];
   y = img->dimensions[0];
 
@@ -811,7 +815,7 @@ arrmoments(PyObject *obj, PyObject *args)
       moment += pow(i,p)*pow(j,q)*val;
     }
   }
-  
+
  _exit:
   Py_DECREF(img);
 
@@ -825,7 +829,7 @@ arrxyround(PyObject *obj, PyObject *args)
   PyObject *oimg, *oker2d;
   double x0,y0, skymode ;
   double xsigsq,ysigsq, datamin,datamax;
-  
+
   /* Derived values */
   PyArrayObject *img = NULL;
   PyArrayObject *ker2d = NULL;
@@ -847,7 +851,7 @@ arrxyround(PyObject *obj, PyObject *args)
   integer_t return_val = 0;
 
 
-  if (!PyArg_ParseTuple(args,"OdddOdddd:arrxyround", &oimg, &x0, &y0, &skymode, 
+  if (!PyArg_ParseTuple(args,"OdddOdddd:arrxyround", &oimg, &x0, &y0, &skymode,
                         &oker2d, &xsigsq, &ysigsq, &datamin, &datamax)){
     return PyErr_Format(gl_Error, "cdriz.arrxyround: Invalid Parameters.");
   }
@@ -864,14 +868,14 @@ arrxyround(PyObject *obj, PyObject *args)
 
   nxk = ker2d->dimensions[1];
   nyk = ker2d->dimensions[0];
-  
+
   /* Perform computation */
   /*These are all 0-based indices */
   xhalf = (nxk / 2.0) - 0.5;
   yhalf = (nyk / 2.0) - 0.5;
   xmiddle = (int)floor(nxk / 2);
-  ymiddle = (int)floor(nyk / 2);  
-  
+  ymiddle = (int)floor(nyk / 2);
+
   /* Initialize the x fit. */
   sumgd = 0.0;
   sumgsq = 0.0;
@@ -899,7 +903,7 @@ arrxyround(PyObject *obj, PyObject *args)
               sg=DBL_MIN;
               break;
           }
-          
+
           sd += (pixval - skymode) * wt;
           ker2dval = *(double *)(ker2d->data + k*ker2d->strides[1] + j*ker2d->strides[0]);
           sg += ker2dval * wt;
@@ -925,7 +929,7 @@ arrxyround(PyObject *obj, PyObject *args)
   /*
   Need at least three points to estimate the x height, position
   and local sky brightness of the star.
-  */  
+  */
   if ( (sg == DBL_MIN) || ((n <= 2) || (p <= 0.0))){
       return_val = -1;
       goto _exit;
@@ -945,7 +949,7 @@ arrxyround(PyObject *obj, PyObject *args)
       return_val = -1;
       goto _exit;
   }
-  
+
   /* Solve for the new x centroid. */
   skylvl = (sumd - hx * sumg) / p;
   dx = (sgdgdx - (sddgdx - sdgdx * (hx * sumg + skylvl * p))) / (hx * sdgdxsq / xsigsq);
@@ -961,7 +965,7 @@ arrxyround(PyObject *obj, PyObject *args)
       }
   }
   xc = (int)floor(x0) + dx;
-  
+
   /* Initialize y fit. */
   sumgd = 0.0;
   sumgsq = 0.0;
@@ -983,7 +987,7 @@ arrxyround(PyObject *obj, PyObject *args)
           px = x0-xmiddle+k;
           py = y0-ymiddle+j;
           pixval = *(float *)(img->data + px*img->strides[1] + py*img->strides[0]);
-          /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */          
+          /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
               sg = DBL_MIN;
               break;
@@ -1025,7 +1029,7 @@ arrxyround(PyObject *obj, PyObject *args)
   y marginal. Reject the star if the height is non-positive.
   */
 
-  hy1 = sumgsq - (pow(sumg,2) / p);  
+  hy1 = sumgsq - (pow(sumg,2) / p);
   if (hy1 <= 0.0){
       return_val = -1;
       goto _exit;
@@ -1035,7 +1039,7 @@ arrxyround(PyObject *obj, PyObject *args)
       return_val = -1;
       goto _exit;
   }
-  
+
   /* Solve for the new x centroid. */
   skylvl = (sumd - hy * sumg) / p;
   dy1 = sgdgdx - (sddgdx - (sdgdx * ((hy * sumg) + (skylvl * p))));
@@ -1084,7 +1088,7 @@ double **ptrvector(long n)  {
 double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
     double **c, *a;
     long i,n,m;
-    
+
     n=arrayin->dimensions[0];
     m=arrayin->dimensions[1];
     c=(double **)ptrvector(n);
@@ -1094,7 +1098,7 @@ double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
     return c;
 }
 
-/* ==== Free a double *vector (vec of pointers) ========================== */ 
+/* ==== Free a double *vector (vec of pointers) ========================== */
 void free_Carrayptrs(double **v)  {
     free((char*) v);
 }
@@ -1105,14 +1109,14 @@ arrxyzero(PyObject *obj, PyObject *args)
   /* Arguments (mostly) in the order they appear */
   PyObject *oimgxy, *orefxy;
   double searchrad;
-  
+
   /* Derived values */
   PyArrayObject *imgxy = NULL;
-  PyArrayObject *refxy = NULL;  
+  PyArrayObject *refxy = NULL;
   PyArrayObject *ozpmat = NULL;
   double **zpmat;
   long *a;
-  
+
   long imgnum, refnum;
   integer_t dimensions[2];
   integer_t xind, yind;
@@ -1123,7 +1127,7 @@ arrxyzero(PyObject *obj, PyObject *args)
   if (!PyArg_ParseTuple(args,"OOd:arrxyzero", &oimgxy, &orefxy, &searchrad)){
     return PyErr_Format(gl_Error, "cdriz.arrxyzero: Invalid Parameters.");
   }
-  
+
   imgxy = (PyArrayObject *)PyArray_ContiguousFromAny(oimgxy, PyArray_FLOAT, 2, 2);
   if (!imgxy) {
     goto _exit;
@@ -1133,7 +1137,7 @@ arrxyzero(PyObject *obj, PyObject *args)
   if (!refxy) {
     goto _exit;
   }
-   
+
   dimensions[0] = (integer_t)(searchrad*2) + 1;
   dimensions[1] = (integer_t)(searchrad*2) + 1;
   ozpmat = (PyArrayObject *)PyArray_FromDims(2, dimensions, NPY_DOUBLE);
@@ -1145,13 +1149,13 @@ arrxyzero(PyObject *obj, PyObject *args)
 
   imgnum = imgxy->dimensions[0];
   refnum = refxy->dimensions[0];
-  
+
   /* For each entry in the input image...*/
   for (j=0; j< imgnum; j++){
     /* compute the delta relative to each source in ref image */
     for (k = 0; k < refnum; k++){
         dx = *(float *)(imgxy->data + j*imgxy->strides[0]) - *(float *)(refxy->data + k*refxy->strides[0]);
-        dy = *(float *)(imgxy->data + j*imgxy->strides[0]+ imgxy->strides[1]) - 
+        dy = *(float *)(imgxy->data + j*imgxy->strides[0]+ imgxy->strides[1]) -
              *(float *)(refxy->data + k*refxy->strides[0]+ refxy->strides[1]);
         if ((fabs(dx) < searchrad) && (fabs(dy) < searchrad)) {
             xind = (integer_t)(dx+searchrad);
@@ -1160,10 +1164,10 @@ arrxyzero(PyObject *obj, PyObject *args)
         }
     }
   }
-    
+
  _exit:
   Py_DECREF(imgxy);
-  Py_DECREF(refxy);  
+  Py_DECREF(refxy);
   free_Carrayptrs(zpmat);
 
   return PyArray_Return(ozpmat);
@@ -1199,4 +1203,3 @@ void initcdriz(void)
   Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
 }
-
