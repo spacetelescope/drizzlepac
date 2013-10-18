@@ -479,7 +479,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
     fin.close()
 
     for l in flines: # interpret each line from catalog file
-        if l[0].lstrip() == '#':
+        if l[0].lstrip() == '#' or l.lstrip() == '':
             continue
         else:
             # convert first row of data into column definitions using indices
@@ -498,7 +498,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
     # Open catalog file
     fin = open(infile,'r')
     for l in fin.readlines(): # interpret each line from catalog file
-        if l[0] == '#':
+        if l[0] == '#' or l.lstrip() == '':
             continue
         l = l.strip()
         # skip blank lines, comment lines, or lines with
@@ -722,7 +722,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                     title=None, axes=None, every=1,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,
-                    append=False,linfit=False,rms=True):
+                    append=False,linfit=False,rms=True, plotname=None):
     """ Convert a XYXYMATCH file into a vector plot or set of residuals plots.
 
         This function provides a single interface for generating either a vector
@@ -778,7 +778,8 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         rms : bool [Default: True]
             Specifies whether or not to report the RMS of the residuals as a
             label on the generated plot(s).
-
+        plotname : str [Default: None]
+            Write out plot to a file with this name if specified.
 
     """
     from matplotlib import pyplot as plt
@@ -876,14 +877,16 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         xrange = maxx - minx
         yrange = maxy - miny
 
+
         for pnum,plot in zip(range(1,5),plot_defs):
             ax = plt.subplot(2,2,pnum)
+            if pnum == 1:
+                if title is None:
+                    ax.set_title("Residuals [%d/%d]: No FIT applied"%(xy1x.shape[0],numpts),ha='left')
+                else:
+                    # This definition of the title supports math symbols in the title
+                    ax.set_title(r"$"+title+"$",ha='left')
             ax.plot(plot[0],plot[1],'.')
-            if title is None:
-                ax.set_title("Residuals [%d/%d]: No FIT applied"%(xy1x.shape[0],numpts))
-            else:
-                # This definition of the title supports math symbols in the title
-                ax.set_title(r"$"+title+"$")
             plt.xlabel(plot[2])
             plt.ylabel(plot[3])
             lx=[ int((plot[0].min()-500)/500) * 500,int((plot[0].max()+500)/500) * 500]
@@ -899,7 +902,17 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                 yr = [m*lx[0]+c,lx[-1]*m+c]
                 plt.plot([lx[0],lx[-1]],yr,'r')
                 plt.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
+
     plt.draw()
+    if plotname:
+        suffix = plotname[-4:]
+        if '.' not in suffix:
+            output += '.png'
+            format = 'png'
+        else:
+            if suffix[1:] in ['png','pdf','ps','eps','svg']:
+                format=suffix[1:]
+        plt.savefig(plotname,format=format)
     plt.ion()
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
@@ -1010,8 +1023,18 @@ def plot_zeropoint(pars):
     plt.ylabel("Offset in Y (pixels)")
     plt.draw()
     plt.ion()
+    if pars['plotname']:
+        suffix = pars['plotname'][-4:]
+        if '.' not in suffix:
+            output += '.png'
+            format = 'png'
+        else:
+            if suffix[1:] in ['png','pdf','ps','eps','svg']:
+                format=suffix[1:]
+        plt.savefig(pars['plotname'],format=format)
 
-def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
+def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
+                        plotname=None):
     """ Create a matrix which contains the delta between each XY position and
         each UV position.
     """
@@ -1049,9 +1072,10 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1):
             zqual = zpqual
 
         title_str = "Histogram of offsets: Peak has %d matches at (%0.4g, %0.4g)"%(flux,xp,yp)
+
         plot_pars = {'data':zpmat,'figure_id':figure_id,'vmax':zpstd,
-                    'xp':xp,'yp':yp,'searchrad':searchrad,'title_str':title_str
-                    }
+                    'xp':xp,'yp':yp,'searchrad':searchrad,'title_str':title_str,
+                    'plotname':plotname}
 
         plot_zeropoint(plot_pars)
     del zpmat

@@ -78,6 +78,7 @@ class Image(object):
         self.pars = kwargs
         self.exclusions = exclusions
         self.verbose = kwargs['verbose']
+        self.interactive = kwargs.get('interactive',True)
 
         print 'Defining source catalogs for: ',filename
 
@@ -366,13 +367,19 @@ class Image(object):
             use2d = matchpars['use2dhist']
             xyxysep = matchpars['separation']
             if use2d:
+                hist_name = None
+                if not self.interactive:
+                    hist_name = 'hist2d_{0}.png'.format(self.rootname)
                 zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
                                     ref_outxy,searchrad=radius,
                                     histplot=matchpars['see2dplot'],
-                                    figure_id = self.figure_id)
+                                    figure_id = self.figure_id, plotname=hist_name)
                 if matchpars['see2dplot'] and ('residplot' in matchpars and
                                                'No' in matchpars['residplot']):
-                    a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
+                    if self.interactive:
+                        a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
+                    else:
+                        a = ' '
                     if 'n' in a.lower():
                         self.perform_update = False
                     if 'q' in a.lower():
@@ -504,13 +511,19 @@ class Image(object):
                     xy = self.fit['img_coords']
                     resids = self.fit['resids']
                     xy_fit = xy + resids
-                    title_str = 'Residuals\ for\ %s\ using\ %d\ sources'%(
+                    title_str = 'Residuals\ for\ {0}\ using\ {1:6d}\ sources'.format(
                         self.name.replace('_','\_'),self.fit['rms_keys']['NMATCH'])
-
+                    if not self.interactive:
+                        resid_name = 'residuals_{0}.png'.format(self.rootname)
+                        vector_name = resid_name.replace('residuals','vector')
+                    else:
+                        resid_name = None
+                        vector_name = None
                     if pars['residplot'] == 'both':
                         tweakutils.make_vector_plot(None,
                             data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                            figure_id=self.figure_id, vector=True,title=title_str)
+                            figure_id=self.figure_id, vector=True,
+                            plotname=vector_name, title=title_str)
                         ptype=False # Setup
                         self.figure_id += 1
                     elif pars['residplot'] == 'vector':
@@ -521,8 +534,12 @@ class Image(object):
                     # Generate new plot
                     tweakutils.make_vector_plot(None,
                         data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
-                        figure_id=self.figure_id, vector=ptype,title=title_str)
-                    a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
+                        figure_id=self.figure_id, vector=ptype,
+                        plotname=resid_name, title=title_str)
+                    if self.interactive:
+                        a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
+                    else:
+                        a = ' '
                     if 'n' in a.lower():
                         self.perform_update = False
                     if 'q' in a.lower():
