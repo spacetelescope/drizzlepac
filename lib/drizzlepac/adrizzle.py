@@ -400,13 +400,17 @@ def mergeDQarray(maskname,dqarr):
             np.bitwise_and(dqarr,maskarr,dqarr)
 
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
-    if not os.path.exists(crmaskname):
+    if not isinstance(crmaskname, pyfits.HDUList) and not os.path.exists(crmaskname):
         log.warning('No CR mask file found! Input DQ array not updated.')
         return
     if cr_bits_value == None:
         log.warning('Input DQ array not updated!')
         return
-    crmask = fileutil.openImage(crmaskname)
+    if isinstance(crmaskname, pyfits.HDUList):
+        # in_memory case
+        crmask = crmaskname
+    else:
+        crmask = fileutil.openImage(crmaskname)
 
     if os.path.exists(dqfile):
         fullext=dqfile+"["+dq_extn+str(chip)+"]"
@@ -802,11 +806,12 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
             # Only apply cosmic-ray mask when some good pixels remain after
             # applying the static mask
             mergeDQarray(crMaskName,dqarr)
+
             if dqarr.sum() == 0:
                 log.warning('WARNING: All pixels masked out when applying '
                             'cosmic ray mask to %s' % _expname)
         updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,
-                           chip.outputNames['crmaskImage'],paramDict['crbit'])
+                           crMaskName, paramDict['crbit'])
 
     img.set_wtscl(chip._chip,paramDict['wt_scl'])
 
