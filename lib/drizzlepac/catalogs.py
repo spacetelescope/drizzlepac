@@ -13,10 +13,10 @@ import stsci.imagestats as imagestats
 import tweakutils,util
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
-CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','fluxmax','fluxmin','fluxunits','nbright']+COLNAME_PARS
+CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
 
 REFCOL_PARS = ['refxcol','refycol','rfluxcol']
-REFCAT_ARGS = ['rfluxmax','rfluxmin','rfluxunits','refnbright']+REFCOL_PARS
+REFCAT_ARGS = ['rmaxflux','rminflux','rfluxunits','refnbright']+REFCOL_PARS
 
 log = logutil.create_logger(__name__)
 
@@ -80,6 +80,7 @@ class Catalog(object):
         self.numcols = None
         self.origin = 1 # X,Y coords will ALWAYS be FITS 1-based, not numpy 0-based
         self.pars = kwargs
+
 
         self.start_id = 0
         if 'start_id' in self.pars:

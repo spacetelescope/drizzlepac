@@ -22,7 +22,7 @@ import tweakutils
 
 log = logutil.create_logger(__name__)
 
-sortKeys = ['fluxmax','fluxmin','nbright','fluxunits']
+sortKeys = ['minflux','maxflux','nbright','fluxunits']
 
 class Image(object):
     """ Primary class to keep track of all WCS and catalog information for
@@ -79,8 +79,6 @@ class Image(object):
         self.exclusions = exclusions
         self.verbose = kwargs['verbose']
         self.interactive = kwargs.get('interactive',True)
-
-        print 'Defining source catalogs for: ',filename
 
         if input_catalogs is not None and kwargs['xyunits'] == 'degrees':
             # Input was a catalog of sky positions, so no WCS or image needed
@@ -278,21 +276,20 @@ class Image(object):
                         break
             if clip_catalog:
                 break
-
         all_radec = None
         if clip_catalog:
 
             # Start by clipping by any specified flux range
-            if self.pars[clip_prefix+'fluxmax'] is not None or \
-                    self.pars[clip_prefix+'fluxmin'] is not None:
+            if self.pars[clip_prefix+'maxflux'] is not None or \
+                    self.pars[clip_prefix+'minflux'] is not None:
                 clip_catalog = True
-                if self.pars[clip_prefix+'fluxmin'] is not None:
-                    fluxmin = self.pars[clip_prefix+'fluxmin']
+                if self.pars[clip_prefix+'minflux'] is not None:
+                    fluxmin = self.pars[clip_prefix+'minflux']
                 else:
                     fluxmin = self.all_radec[2].min()
 
-                if self.pars[clip_prefix+'fluxmax'] is not None:
-                    fluxmax = self.pars[clip_prefix+'fluxmax']
+                if self.pars[clip_prefix+'maxflux'] is not None:
+                    fluxmax = self.pars[clip_prefix+'maxflux']
                 else:
                     fluxmax = self.all_radec[2].max()
 
@@ -417,6 +414,9 @@ class Image(object):
                                 np.newaxis],matches['ref_y'][:,np.newaxis]])
                 self.matches['ref_idx'] = matches['ref_idx']
                 self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]
+                self.matches['img_RA'] = self.all_radec[0][matches['input_idx']]
+                self.matches['img_DEC'] = self.all_radec[1][matches['input_idx']]
+
                 self.matches['ref_orig_xy'] = np.column_stack([
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
@@ -490,6 +490,8 @@ class Image(object):
                     verbose=self.verbose)
 
                 self.fit['rms_keys'] = self.compute_fit_rms()
+                self.fit['img_RA'] = self.matches['img_RA']
+                self.fit['img_DEC'] = self.matches['img_DEC']
                 if pars['fitgeometry'] != 'general':
                     self.fit['fit_matrix'] = None
 
@@ -747,6 +749,8 @@ class Image(object):
             f.write('#     Column 13: Ref ID\n')
             f.write('#     Column 14: Input ID\n')
             f.write('#     Column 15: Input EXTVER ID \n')
+            f.write('#     Column 16: RA\n')
+            f.write('#     Column 17: Dec\n')
             #
             # Need to add chip ID for each matched source to the fitmatch file
             # The chip information can be extracted from the following source:
@@ -772,10 +776,11 @@ class Image(object):
                       self.fit['ref_orig_xy'][:,1],
                       self.fit['img_orig_xy'][:,0],
                       self.fit['img_orig_xy'][:,1]],
-                      [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id]
+                      [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id],
+                      [self.fit['img_RA'],self.fit['img_DEC']]
                     ]
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
-                                        append=True,format=["%15.6f","%8d"])
+                                        append=True,format=["%15.6f","%8d","%20.12f"])
 
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file.
