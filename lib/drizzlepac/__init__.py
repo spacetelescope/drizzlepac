@@ -46,7 +46,7 @@ from . import pixtopix
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
 try:
-    from . import tweakreg, catalogs, imgclasses, tweakutils, imagefindpars
+    from . import tweakreg, catalogs, imgclasses, tweakutils, tweakregtools, imagefindpars
 except ImportError as e :
     print 'The libraries needed for "tweakreg" were not available!'
     print 'None of the code related to that task can be used at this time.'
