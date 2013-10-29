@@ -6,6 +6,7 @@ exclusions = string_kw(default="",comment="Filename for source exclusions catalo
 updatewcs = boolean_kw(default=False, comment="Update WCS keywords of input images?")
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=False, comment="Remove intermediate files?")
+interactive = boolean_kw(default=True, comment="Allow interactive display of plots?")
 verbose = boolean_kw(default=False, comment="Print extra messages during processing?")
 runfile = string_kw(default="tweakreg.log",comment="Filename of processing log")
 
@@ -27,7 +28,7 @@ history = string_kw(default="", comment="Name of ASCII file containing history f
 [OPTIONAL SHIFTFILE OUTPUT]
 shiftfile = boolean_kw(default=False,triggers='_section_switch_',comment="Create output shiftfile?")
 outshifts = string_kw(default='shifts.txt', comment="Filename of generated shiftfile")
-outwcs = string_kw(default='shifts_wcs.fits',comment="Filename of shiftfile reference WCS") 
+outwcs = string_kw(default='shifts_wcs.fits',comment="Filename of shiftfile reference WCS")
 
 [COORDINATE FILE DESCRIPTION]
 catfile = string_kw(default="", triggers="_section_switch_", comment="File containing coordinate filenames for input files")
@@ -57,7 +58,7 @@ searchrad = float_kw(default=1.0, comment="The search radius for a match")
 searchunits = option_kw("arcseconds","pixels", default="arcseconds", comment="Units for search radius")
 use2dhist = boolean_kw(default=True, triggers="_rule3_", comment="Use 2d histogram to find initial offset?")
 see2dplot = boolean_kw(default=True, active_if='_rule3_',comment="See 2d histogram for initial offset?")
-separation = float_kw(default=0.5, comment="Minimum object separation (pixels)") 
+separation = float_kw(default=0.5, comment="Minimum object separation (pixels)")
 tolerance = float_kw(default=1.0, inactive_if='_rule3_', comment="Matching tolerance for xyxymatch(pixels)")
 xoffset = float_kw(default=0.0, inactive_if='_rule3_',comment="Initial guess for X offset(pixels)")
 yoffset = float_kw(default=0.0,inactive_if='_rule3_',comment="Initial guess for Y offset(pixels)")

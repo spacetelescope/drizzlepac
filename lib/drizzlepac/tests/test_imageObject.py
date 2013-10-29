@@ -19,19 +19,19 @@ class test_imageObject():
     """test the implementation of imageObject by creating and examining an object
        from an image file thats on disk
     """
-    
+
     #not sure if this is the correct way to do it
     def testNoFilename(self,filename=''):
         self.assertRaises(IOError,imageObject.imageObect,filename)
-        
+
     def testAttributes(self, filename="./j8uq10lbq_flt.fits"):
         image=imageObject.imageObject(filename)
-    
+
         #just check to make sure the global attributes are not empty
-        self.assert(image._filename != '')
-        self.assert(image._naxis1 > 0)
-        self.assert(image._naxis2 > 0)
-        self.assert(image._instrument != '')
-    
+        assert(image._filename != '')
+        assert(image._naxis1 > 0)
+        assert(image._naxis2 > 0)
+        assert(image._instrument != '')
+
 if __name__ == "__main__":
-    nose.run()   
+    nose.run()
