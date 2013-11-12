@@ -128,7 +128,6 @@ def _interpretMdriztabPars(rec):
             # start by determining the format type of the parameter
             _fmt = findFormat(_format)
 
-            print("Format for {0}: {1}".format(_name,_fmt))
             # Based on format type, apply proper conversion/cleaning
             if (_fmt == 'a') or (_fmt == 'A'):
                 _val = cleanBlank(_value)
