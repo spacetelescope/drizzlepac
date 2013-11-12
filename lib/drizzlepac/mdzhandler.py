@@ -128,6 +128,7 @@ def _interpretMdriztabPars(rec):
             # start by determining the format type of the parameter
             _fmt = findFormat(_format)
 
+            print("Format for {0}: {1}".format(_name,_fmt))
             # Based on format type, apply proper conversion/cleaning
             if (_fmt == 'a') or (_fmt == 'A'):
                 _val = cleanBlank(_value)
@@ -136,7 +137,7 @@ def _interpretMdriztabPars(rec):
                 _val = toBoolean(_value)
             elif (_format == 'i4') or (_format == '1J'):
                 _val = cleanInt(_value)
-            elif (_format == 'f4') or ('E' in _format):
+            elif ('E' in _format) or (_format == 'f4') :
                 _val = cleanNaN(_value)
             else:
                 print 'MDRIZTAB column ',_name,' has unrecognized format',_format
