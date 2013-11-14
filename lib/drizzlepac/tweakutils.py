@@ -38,8 +38,16 @@ def parse_input(input, prodonly=False):
         if len(line.split()) > 1:
             # ...parse out the names of the catalog files as well
             catlist = parse_atfile_cat(input)
+    elif (isinstance(input, list)):
+        # input a python list
+        filelist = []
+        for fn in input:
+            flist, output = parse_input(fn, prodonly=prodonly)
+            if fn.find('*') > -1: # if wild-cards are given, sort for uniform usage
+                flist.sort()
+            filelist += flist
     else:
-        #input is a string or a python list
+        # input is either a string or something unrecognizable, so give it a try:
         try:
             filelist, output = parseinput.parseinput(input)
             if input.find('*') > -1: # if wild-cards are given, sort for uniform usage
@@ -85,11 +93,13 @@ def get_configobj_root(configobj):
 
 
 def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,
-                peakmin=None,peakmax=None,fluxmin=None,fluxmax=None,nsigma=1.5):
+                peakmin=None,peakmax=None,fluxmin=None,fluxmax=None,nsigma=1.5,
+                ratio=1.0,theta=0.0,src_find_filters=None):
     star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode,
                     peakmin=peakmin, peakmax=peakmax,
                     fluxmin=fluxmin, fluxmax=fluxmax,
-                    ratio=1, nsigma=nsigma, theta=0.)
+                    ratio=ratio, nsigma=nsigma, theta=theta,
+                    src_find_filters=src_find_filters)
     if len(star_list) == 0:
         print 'No valid sources found...'
         return [],[],[],[]

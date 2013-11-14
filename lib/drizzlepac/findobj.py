@@ -80,8 +80,8 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
         
         #        nx = int(2*max(2, math.sqrt(-8*c*f/d)))+1
         #        ny = int(2*max(2, math.sqrt(-8*a*f/d)))+1
-        nx = int(4*max(1, nsigma*math.sqrt(-c/d)))+1
-        ny = int(4*max(1, nsigma*math.sqrt(-a/d)))+1
+        nx = 2 * int(2*max(1, nsigma*math.sqrt(-c/d)))+1
+        ny = 2 * int(2*max(1, nsigma*math.sqrt(-a/d)))+1
     
     return nx, ny, a, b, c, f
 
@@ -122,10 +122,12 @@ def errfunc(p, *args):
 
 def findstars(jdata, fwhm, threshold, skymode,
               peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
-              ratio=1, nsigma=1.5, theta=0.,
+              nsigma=1.5, ratio=1.0, theta=0.0, src_find_filters=None,
               use_sharp_round=False,
               sharplo=0.2,sharphi=1.0,roundlo=-1.0,roundhi=1.0):
-        
+    import pyregion
+    from os import path
+    import matplotlib.pyplot as plt
     # store input image size:
     (img_ny, img_nx) = jdata.shape
     
@@ -156,7 +158,6 @@ def findstars(jdata, fwhm, threshold, skymode,
                                                # fluxes for thresholds
     nkern *= xyrmask
         
-    
     # initialize values used for getting source centers
     relerr = 1./((rmask**2).sum() - (rmask.sum()**2/xyrmask.sum()))
     
@@ -166,9 +167,37 @@ def findstars(jdata, fwhm, threshold, skymode,
     # convolve image with gaussian kernel
     convdata = convolve.convolve2d(jdata, nkern).astype(np.float32)
     
-    # clip image to create regions around each source for segmentation
-    #tdata=np.where(convdata > skymode*2.0, convdata, 0)
-    tdata=np.where(convdata > threshold, convdata, 0)
+    # create masks from exclude/include regions:
+    if src_find_filters is not None and 'region_file' in src_find_filters and \
+                                   'region_file_mode' in src_find_filters:
+        if not path.isfile(src_find_filters['region_file']):
+            raise IOError("The 'exclude' region file \'%s\' does not exist." % \
+                          src_find_filters['region_file'])
+        reglist = pyregion.open(src_find_filters['region_file'])
+        #TODO: Add checking that regions are in image-like coordinates???
+        
+        # depending on the region file interpretation mode, remove "exclude"
+        # regions (to have the same behavior as the previous release of the code):
+        if src_find_filters['region_file_mode'].lower() == 'exclude only':
+            # select only regular (not exclude - "-") regions:
+            reglist = pyregion.ShapeList([ reg for reg in reglist
+                                           if not reg.exclude ])
+            # create a mask from regions:
+            regmask = np.invert( reglist.get_mask( shape=(img_ny,img_nx) ) )
+        elif src_find_filters['region_file_mode'].lower() == 'normal':
+            # create a mask from regions:
+            regmask = reglist.get_mask( shape=(img_ny,img_nx) )
+        else:
+            raise TypeError("The value of 'region_file_mode' in the "     \
+                            "'src_find_filters' argument must be either " \
+                            "'normal' or 'exclude only'.")
+        # clip image to create regions around each source for segmentation
+        tdata=np.where((convdata > threshold) & regmask, convdata, 0)
+    else:
+        # clip image to create regions around each source for segmentation
+        #tdata=np.where(convdata > skymode*2.0, convdata, 0)
+        tdata=np.where(convdata > threshold, convdata, 0)
+        
     # segment image and find sources
     s = ndim.generate_binary_structure(2,2)
     ldata,nobj=ndim.label(tdata,structure=s)
@@ -403,8 +432,8 @@ def sharp_round(data, density, kskip, xc, yc, s2m, s4m, nxk, nyk,
     if (npixels < 1 or mid_dens_pix <= 0.0):
         return satur, round, None
         
-    #sharp = (mid_data_pix - np.sum(uskip*data)/npixels) / mid_dens_pix
-    sharp = (mid_data_pix - np.mean(uskip*data)) / mid_dens_pix
+    sharp = (mid_data_pix - np.sum(uskip*data)/npixels) / mid_dens_pix
+    #sharp = (mid_data_pix - np.mean(uskip*data)) / mid_dens_pix
 
     return satur, round, sharp
 

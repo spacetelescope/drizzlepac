@@ -34,6 +34,16 @@ threshold : float
 
 nsigma : float
     The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]
+    
+ratio : float
+    The  ratio of the sigma of the Gaussian convolution kernel along
+        the minor axis direction to the sigma along the major axis direction.
+        For a circularly-symmetric kernel use ratio = 1.0. [Default: 1.0]
+
+theta : float
+    The position angle (degrees) of the major axis of the Gaussian convolution
+        kernel. Theta is measured counter-clockwise from the x axis.
+        [Default: 0.0]
 
 fluxmin : float
     This parameter allows the user to select only those sources whose total flux (in the units of the input image) is greater than this value. [Default: None]

@@ -28,6 +28,7 @@ from . import buildmask
 from . import createMedian
 from . import drizCR
 from . import imageObject
+from . import mapreg
 from . import mdzhandler
 from . import outputimage
 from . import processInput
@@ -46,7 +47,7 @@ from . import pixtopix
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
 try:
-    from . import tweakreg, catalogs, imgclasses, tweakutils, tweakregtools, imagefindpars
+    from . import tweakreg, catalogs, imgclasses, tweakutils, mapreg, imagefindpars
 except ImportError as e :
     print 'The libraries needed for "tweakreg" were not available!'
     print 'None of the code related to that task can be used at this time.'
@@ -76,6 +77,7 @@ drizzlepac:
            tweakreg - task to compute offsets in WCS between images and a reference image or reference frame
       imagefindpars - sub-task containing parameters to find point sources used by tweakreg to build source catalogs for each tweakreg input image
           tweakback - apply an updated WCS solution created by tweakreg for a drizzled image to the constituent distorted (flt.fits) images
+             mapreg - task to map a DS9 region file to multiple images based on the WCS information of each image.
            pixtopix - task to convert pixel positions from an input image to pixel positions in an output WCS or image
            pixtosky - task to convert pixel positions from an input image to sky coordinates with full distortion correction as appropriate
            skytopix - task to convert sky positions to pixel positions in an image

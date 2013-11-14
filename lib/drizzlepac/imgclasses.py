@@ -103,6 +103,38 @@ class Image(object):
         self.chip_catalogs = {}
         self.xy_catalog = [[],[],[],[]]
         num_sources = 0
+    
+        # Analyze exclusion file list:
+        reg_mode = "exclude only"
+        if exclusions is not None:
+            nexclusions = len(exclusions)
+            # see if region file mode description is present and if so,
+            # trim the list at that position:
+            try:
+                iregmode = map(str.upper,exclusions).index('[CONFORMDS9]')
+                reg_mode = "normal"
+                if iregmode >= num_sci:
+                    iregmode = num_sci
+                exclusions = exclusions[:iregmode]
+                nexclusions = len(exclusions)
+                if nexclusions < num_sci:
+                    exclusions += (num_sci-nexclusions) * [ None ]
+            except ValueError:
+                nexclusions = len(exclusions)
+                if nexclusions >= num_sci:
+                    exclusions = exclusions[:num_sci]
+                else:
+                    exclusions += (num_sci-nexclusions) * [ None ]
+            except BaseException as e:
+                cmsg = "Unknown error while interpreting 'exclusions' file list."
+                if e.args:
+                    e.args = (e.args[0] + "\n" + cmsg,) + e.args[1:]
+                else:
+                    e.args=(cmsg,)
+                raise e
+        else:
+            exclusions = num_sci * [ None ]
+    
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
             extnum = fu.findExtname(pyfits.open(filename),extname,extver=sci_extn)
@@ -119,17 +151,18 @@ class Image(object):
                 source = input_catalogs[sci_extn-1]
                 catalog_mode='user'
 
-            if exclusions is not None and len(exclusions) >= sci_extn:
-                if exclusions[sci_extn-1] not in ['None',' ','INDEF']:
-                    excludefile=exclusions[sci_extn-1]
-                else:
-                    excludefile = None
+            if exclusions[sci_extn-1] not in [ None, 'None', '', ' ', 'INDEF' ]:
+                excludefile = { 'region_file': exclusions[sci_extn-1], \
+                                'region_file_mode': reg_mode }
             else:
                 excludefile = None
+
             kwargs['start_id'] = num_sources
-            catalog = catalogs.generateCatalog(wcs,mode=catalog_mode,catalog=source,**kwargs)
+            catalog = catalogs.generateCatalog(wcs, mode=catalog_mode,
+                        catalog=source, src_find_filters=excludefile, **kwargs)
+    
             # read in and convert all catalog positions to RA/Dec
-            catalog.buildCatalogs(exclusions=excludefile)
+            catalog.buildCatalogs(exclusions=None) # (exclusions=excludefile)
             num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
             # Merge input X,Y positions from all chips into a single catalog
@@ -810,6 +843,7 @@ class Image(object):
     def clean(self):
         """ Remove intermediate files created.
         """
+        #TODO: add cleaning of mask files, *if* created ...
         for f in self.catalog_names:
             if 'match' in f:
                 if os.path.exists(self.catalog_names[f]):

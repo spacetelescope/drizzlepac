@@ -106,7 +106,7 @@ def run(configobj):
     if PSET_SECTION not in configobj:
         # Manage PSETs for source finding algorithms
         _managePsets(configobj)
-    print configobj[PSET_SECTION]
+    #print configobj[PSET_SECTION]
         
     # print out user set input parameter values for running this task
     log.info("USER INPUT PARAMETERS common to all Processing Steps:")
@@ -158,6 +158,9 @@ def run(configobj):
     if 'exclusions' in configobj and \
         configobj['exclusions'] not in [None,'',' ','INDEF']:
         if os.path.exists(configobj['exclusions']):
+            #TODO: It may be useful to check that the image file names in the exclusions
+            # catalog are the same as the names specified in filenames.
+            # this way it will be easier to detect and report an incorrect exclusions file (format)
             exclusion_files = tweakutils.parse_atfile_cat(
                 '@'+configobj['exclusions'])
         else:
