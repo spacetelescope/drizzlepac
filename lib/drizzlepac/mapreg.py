@@ -135,6 +135,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                     raise RuntimeError("Extension {} is of unsupported " \
                                        "type.".format(ext))
                 # initialize region list:
+                remove_header_tdd(imghdu[ext].header)
                 extreg = all_sky_regions.as_imagecoord(imghdu[ext].header)                         
                 if extp[0]: # add "fixed" regions if any
                     extreg = pyregion.ShapeList(extreg+extp[0])
@@ -168,6 +169,34 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
             if imghdu:
                 imghdu.close()
             raise
+
+def remove_header_tdd(hdr):
+    # a workaround to pyregion using FITS 'header' (instead of 'WCS')...
+    # for some images header alone is not enough...
+    # remove offending corrections from the header...
+    #
+    # Code below is taken on 'remove_distortion_keywords' from fitsblender/blendheaders.py
+    #
+    distortion_kws = ['TDDALPHA','TDDBETA','D2IMEXT','D2IMERR',
+                      'DGEOEXT','NPOLEXT']
+
+    # Remove any reference to TDD correction from
+    #    distortion-corrected products
+    # We also need to remove the D2IM* keywords so that HSTWCS/PyWCS
+    # does not try to look for non-existent extensions
+    for kw in distortion_kws:
+        if kw in hdr:
+            del hdr[kw]
+
+    # Remove paper IV related keywords related to the
+    #   DGEO correction here
+    for k in hdr.items():
+        if (k[0][:2] == 'DP'):
+            del hdr[k[0]+'*']
+            del hdr[k[0]+'.*']
+            del hdr[k[0]+'.*.*']
+        if (k[0][:2] == 'CP'):
+            del hdr[k[0]]
 
 
 def filter_regions(reglist,nx,ny,pixcenter):
