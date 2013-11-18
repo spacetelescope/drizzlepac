@@ -99,7 +99,6 @@ outpath : string [Default value: './regions']
     The directory to which the transformed regions should be saved.
 
 filter : string {'None', 'fast', or 'precise' } [Default value: 'None']
-    **Reserved for future use.**
     Specify whether or not to remove the regions in the transformed region files
     that are outside the image array. With the 'fast' mehod only intersection
     of the bounding boxes is being checked. The 'precise' method is not
@@ -110,9 +109,9 @@ append : bool [Default value = False]
     region files with the same name.
 
 interactive : bool [Default value = True]
-    **Reserved for future use.** (This switch controls whether the program stops and
-    waits for the user to examine any generated region files before continuing
-    on to the next image.)
+    **Reserved for future use.** (This switch controls whether the program stops
+    and waits for the user to examine any generated region files before
+    continuing on to the next image.)
 
 verbose : bool [Default value = No]
     Specify whether or not to print extra messages during

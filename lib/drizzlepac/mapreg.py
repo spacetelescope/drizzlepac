@@ -5,7 +5,7 @@ from stsci.tools import teal
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
-__vdate__ = '11-Nov-2011'
+__vdate__ = '11-Nov-2013'
 __taskname__ = 'mapreg'
 __author__ = 'Mihai Cara'
 
@@ -41,7 +41,6 @@ def _simple_parse_teal_fname(fnamestr, parse_at=False):
     if not fnamestr: return None
     fnames = [ fname if fname else None \
               for fname in map(str.strip,fnamestr.split(',')) ]
-    print fnames
     if not parse_at:
         if ',' in fnamestr:
             return fnames
@@ -89,6 +88,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
     # ...
     from os import path, extsep #, remove
     import pyregion
+    from regfilter import fast_filter_outer_regions
     
     # Check that output directory exists:
     if outpath in [None, ""]:
@@ -99,6 +99,13 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
     if filter is not None and filter.lower() not in ["fast","precise"]:
         raise TypeError("The 'filter' argument can be None, 'fast', " \
                         "or 'precise'.")
+
+    #TODO: Implement the "precise" checking of region intersection
+    # with the image's bounding box.
+    if filter is not None and filter.lower() == "precise":
+        _print_warning("\"precise\" filter option is not yet supported. "\
+                       "Reverting to filter = \"fast\" instead.")
+        filter = "fast"
 
     # create a 2D list of region - header (with WCS) pairs:
     # [[reg1,ref_wcs_header1],[reg2,ref_wcs_header2],...]
@@ -141,17 +148,20 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                     extreg = pyregion.ShapeList(extreg+extp[0])
                 
                 # filter out regions outside the image:
-                extreg = filter_regions(extreg, imghdu[ext].header['NAXIS1'],
-                                        imghdu[ext].header['NAXIS2'], 0)
+                if filter and filter.lower() == 'fast':
+                    fast_filter_outer_regions( extreg,
+                                               imghdu[ext].header['NAXIS1'],
+                                               imghdu[ext].header['NAXIS2'],
+                                               origin = 1 )
             
-                #TODO: Remove the workaround below once the bug is fixed in
-                # the 'pyregion' package.
-                # As a workaround to pyregion crashing when saving regions
-                # to a file and when the regions do not have comments,
-                # add empty strings to region comments:
-                for reg in extreg:
-                    if not isinstance(reg.comment, str):
-                        reg.comment = ''
+#                #TODO: Remove the workaround below once the bug is fixed in
+#                # the 'pyregion' package.
+#                # As a workaround to pyregion crashing when saving regions
+#                # to a file and when the regions do not have comments,
+#                # add empty strings to region comments:
+#                for reg in extreg:
+#                    if not isinstance(reg.comment, str):
+#                        reg.comment = ''
             
                 # generate output region file name:
                 extsuffix = _ext2str_suffix(ext)
@@ -164,7 +174,12 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                     old_extreg = pyregion.open(regfname)
                     extreg = pyregion.ShapeList(old_extreg + extreg)
                     #remove(regfname)
-                extreg.write(regfname)
+                    
+                #TODO: pyregion.write does not work
+                # well. For now use _regwite (until the bug fixes get to the
+                # pyregion project.
+                _regwrite(extreg, regfname)
+                #extreg.write(regfname)
         except:
             if imghdu:
                 imghdu.close()
@@ -172,8 +187,8 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
 
 def remove_header_tdd(hdr):
     # a workaround to pyregion using FITS 'header' (instead of 'WCS')...
-    # for some images header alone is not enough...
-    # remove offending corrections from the header...
+    # For some images header alone is not enough...
+    # Removes offending corrections from the header...
     #
     # Code below is taken on 'remove_distortion_keywords' from fitsblender/blendheaders.py
     #
@@ -197,6 +212,81 @@ def remove_header_tdd(hdr):
             del hdr[k[0]+'.*.*']
         if (k[0][:2] == 'CP'):
             del hdr[k[0]]
+
+def _regwrite(shapelist,outfile):
+    """ Writes the current shape list out as a region file """
+    # This function corrects bugs and provides improvements over the pyregion's
+    # ShapeList.write method in the following:
+    #
+    # 1. ShapeList.write crashes if regions have no comments;
+    # 2. ShapeList.write converts 'exclude' ("-") regions to normal regions ("+");
+    # 3. ShapeList.write does not support mixed coordinate systems in a
+    #    region list.
+    #
+    # NOTE: This function is provided as a temoprary workaround for the above
+    #    listed problems of the ShapeList.write. We hope that a future version
+    #    of pyregion will address all these issues.
+    #    
+    #TODO: Push these changes to pyregion.
+    
+    if len(shapelist) < 1:
+        _print_warning("The region list is empty. The region file \"%s\" "\
+                       "will be empty." % outfile)
+        try:
+            outf = open(outfile,'w')
+            outf.close()
+            return
+        except IOError as e:
+            cmsg = "Unable to create region file \'%s\'." % outfile
+            if e.args:
+                e.args = (e.args[0] + "\n" + cmsg,) + e.args[1:]
+            else:
+                e.args=(cmsg,)
+            raise e
+        except:
+            raise
+
+    prev_cs = shapelist[0].coord_format
+
+    outf = None
+    try:
+        outf = open(outfile,'w')
+
+        attr0 = shapelist[0].attr[1]
+        defaultline = " ".join( [ "%s=%s" % (a,attr0[a]) for a in attr0 \
+                                  if a!='text' ] )
+
+        # first line is globals
+        print >>outf, "global", defaultline
+        # second line must be a coordinate format
+        print >>outf, prev_cs
+
+        for shape in shapelist:
+            shape_attr = '' if prev_cs == shape.coord_format \
+                            else shape.coord_format+"; "
+            shape_excl = '-' if shape.exclude else ''
+            text_coordlist = [ "%f" % f for f in shape.coord_list ]
+            shape_coords = "(" + ",".join(text_coordlist) + ")"
+            shape_comment = " # " + shape.comment if shape.comment else ''
+            
+            shape_str = shape_attr + shape_excl + shape.name + shape_coords + \
+                        shape_comment
+            
+            print >>outf, shape_str
+
+    except IOError as e:
+        cmsg = "Unable to create region file \'%s\'." % outfile
+        if e.args:
+            e.args = (e.args[0] + "\n" + cmsg,) + e.args[1:]
+        else:
+            e.args=(cmsg,)
+        if outf: outf.close()
+        raise e
+    except:
+        if outf: outf.close()
+        raise
+
+    outf.close()
 
 
 def filter_regions(reglist,nx,ny,pixcenter):
