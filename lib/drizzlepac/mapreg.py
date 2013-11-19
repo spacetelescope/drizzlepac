@@ -11,7 +11,7 @@ __author__ = 'Mihai Cara'
 
 
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
-           chip_reg='', outpath='./regions', filter='', iteractive=True,
+           chip_reg='', outpath='./regions', filter='', catfname='', iteractive=True,
            append=False, verbose=True):
     from util import check_blank
     from tweakutils import parse_input
@@ -30,11 +30,14 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
     outpath_par     = check_blank(outpath)
     filter_par      = check_blank(filter)
     
+    catfname_par    =  check_blank(catfname)
+    
     map_region_files( input_reg, images=images_par, img_wcs_ext=img_wcs_ext_par,
                       refimg=refimg_par, ref_wcs_ext=ref_wcs_ext_par,
                       chip_reg=chip_reg_par,
                       outpath=outpath_par, filter=filter_par,
-                      iteractive=iteractive, append=append, verbose=verbose )
+                      catfname = catfname_par, iteractive=iteractive,
+                      append=append, verbose=verbose )
 
 
 def _simple_parse_teal_fname(fnamestr, parse_at=False):
@@ -83,12 +86,13 @@ def _simple_parse_teal_extn(extnstr):
 
 def map_region_files(input_reg, images, img_wcs_ext='sci',
                      refimg=None, ref_wcs_ext='sci', chip_reg=None,
-                     outpath='./regions', filter=None,
+                     outpath='./regions', filter=None, catfname=None,
                      iteractive=True, append=False, verbose=True):
     # ...
     from os import path, extsep #, remove
-    import pyregion
+    import pyregion, stwcs
     from regfilter import fast_filter_outer_regions
+    from stsci.tools.fileutil import findExtname
     
     # Check that output directory exists:
     if outpath in [None, ""]:
@@ -128,11 +132,13 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
 
     all_sky_regions = pyregion.ShapeList(list(all_sky_regions))
 
+    cattb = []
     # create a region file (with regions in image coordinates) for each
     # image extension from the input_reg and chip_reg regions
     for fname in imgfnames:
         imghdu = None
         imghdu = pyfits.open(fname)
+        catreg = []
         try:
             for extp in cregext:
                 ext = extp[1]
@@ -141,9 +147,25 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                 if not _is_supported_hdu(imghdu[ext].header):
                     raise RuntimeError("Extension {} is of unsupported " \
                                        "type.".format(ext))
-                # initialize region list:
+                
+                # Remove references to non-SIP distortions from the header
+                #TODO: remove this line of code as well as the remove_header_tdd
+                # function once publicly available release of pyregion uses
+                # all_world2pix and all_pix2world functions and does this header
+                # cleanup itself.
                 remove_header_tdd(imghdu[ext].header)
-                extreg = all_sky_regions.as_imagecoord(imghdu[ext].header)                         
+            
+                ####### added to pass hstwcs instead of header to pyregion
+#                if isinstance(ext, str):
+#                    ext = findExtname(imghdu, extname = ext, extver = 1)
+#                elif isinstance(ext, tuple):
+#                    ext = findExtname(imghdu, extname = ext[0], extver = ext[1])
+                wcs = stwcs.wcsutil.HSTWCS(imghdu, ext=ext)
+                extreg = all_sky_regions.as_imagecoord(wcs)
+                #######
+                
+                #extreg = all_sky_regions.as_imagecoord(imghdu[ext].header)
+                
                 if extp[0]: # add "fixed" regions if any
                     extreg = pyregion.ShapeList(extreg+extp[0])
                 
@@ -154,36 +176,48 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                                                imghdu[ext].header['NAXIS2'],
                                                origin = 1 )
             
-#                #TODO: Remove the workaround below once the bug is fixed in
-#                # the 'pyregion' package.
-#                # As a workaround to pyregion crashing when saving regions
-#                # to a file and when the regions do not have comments,
-#                # add empty strings to region comments:
-#                for reg in extreg:
-#                    if not isinstance(reg.comment, str):
-#                        reg.comment = ''
-            
+                if len(extreg) < 1: # do not create empty region files
+                    catreg.append('None')
+                    continue
+
                 # generate output region file name:
                 extsuffix = _ext2str_suffix(ext)
                 basefname, fext = path.splitext(path.basename(fname))
-                regfname = path.join(outpath, basefname + extsuffix + extsep + \
-                                     "reg")
+                regfname = basefname + extsuffix + extsep + "reg"
+                fullregfname = path.join(outpath, regfname)
+            
+                catreg.append(regfname)
 
                 # save regions to a file:
-                if append and path.isfile(regfname):
-                    old_extreg = pyregion.open(regfname)
+                if append and path.isfile(fullregfname):
+                    old_extreg = pyregion.open(fullregfname)
                     extreg = pyregion.ShapeList(old_extreg + extreg)
-                    #remove(regfname)
                     
-                #TODO: pyregion.write does not work
-                # well. For now use _regwite (until the bug fixes get to the
-                # pyregion project.
-                _regwrite(extreg, regfname)
-                #extreg.write(regfname)
+                #TODO: pyregion.write does not work well. For now use _regwite
+                # (until the bug fixes get to the pyregion project).
+                #TODO: we replaced pyregion.write with our implementation
+                # of the write (code from _regwrite) in the locally maintained
+                # pyregion until these changes get to be implemented in the
+                # publicly available release of pyregion.
+                #
+                #_regwrite(extreg, regfname)
+                extreg.write(fullregfname)
+            cattb.append([fname, catreg])
         except:
             if imghdu:
                 imghdu.close()
             raise
+
+    # create exclusions catalog file:
+    if catfname:
+        catfh = open(path.join(outpath, catfname), 'w')
+        for catentry in cattb:
+            catfh.write(catentry[0]) # image file name
+            for reg in catentry[1]:
+                catfh.write(' ' + reg) # region file name
+            catfh.write('\n')
+        catfh.close()
+
 
 def remove_header_tdd(hdr):
     # a workaround to pyregion using FITS 'header' (instead of 'WCS')...
@@ -212,6 +246,7 @@ def remove_header_tdd(hdr):
             del hdr[k[0]+'.*.*']
         if (k[0][:2] == 'CP'):
             del hdr[k[0]]
+
 
 def _regwrite(shapelist,outfile):
     """ Writes the current shape list out as a region file """
@@ -287,11 +322,6 @@ def _regwrite(shapelist,outfile):
         raise
 
     outf.close()
-
-
-def filter_regions(reglist,nx,ny,pixcenter):
-    #TODO: implement region filtering
-    return reglist
 
 
 def _is_supported_hdu(header):
@@ -1007,6 +1037,7 @@ def run(configObj):
            chip_reg    = configObj['chip_reg'],
            outpath     = configObj['outpath'],
            filter      = configObj['filter'],
+           catfname    = configObj['catfname'],
            iteractive  = configObj['iteractive'],
            append      = configObj['append'],
            verbose     = configObj['verbose'])

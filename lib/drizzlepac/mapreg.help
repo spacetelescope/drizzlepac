@@ -103,6 +103,11 @@ filter : string {'None', 'fast', or 'precise' } [Default value: 'None']
     that are outside the image array. With the 'fast' mehod only intersection
     of the bounding boxes is being checked. The 'precise' method is not
     implemented in this release and, if specified, defaults to 'fast'.
+    
+catfname : string [Default value: 'exclusions_cat.txt']
+    The file name of the output exclusions catalog file to be created from the
+    supplied image and region file names. This file can be passed as an input
+    to TweakReg task. Verify that the created file is correct!
 
 append : bool [Default value = False]
     Specify whether or not to append the transformed regions to the existing
