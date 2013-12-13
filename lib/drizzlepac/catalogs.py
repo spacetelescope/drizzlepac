@@ -384,6 +384,8 @@ class UserCatalog(Catalog):
                 self.sharp = xycols[3]
             if self.numcols > 4:
                 self.round = xycols[4]
+        else:
+            self.xypos = [[],[]]
 
         self.num_objects = 0
         if xycols is not None:

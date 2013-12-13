@@ -755,11 +755,12 @@ class Image(object):
             #     xypos = catalog.xypos
             img_chip_id = self.fit['img_indx'].copy()
             for sci_extn in range(1,self.num_sci+1):
-                img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[-1]
-                chip_min = img_indx_orig.min()
-                chip_max = img_indx_orig.max()
-                cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
-                img_chip_id = np.where(cid, sci_extn, img_chip_id)
+                if self.chip_catalogs[sci_extn]['catalog'].xypos is not None:
+                    img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[-1]
+                    chip_min = img_indx_orig.min()
+                    chip_max = img_indx_orig.max()
+                    cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
+                    img_chip_id = np.where(cid, sci_extn, img_chip_id)
             #
             f.write('#\n')
             f.close()
