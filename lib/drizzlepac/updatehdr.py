@@ -403,6 +403,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
             hdr.update(key,wcs_hdr[key])
         hdr.update('ORIENTAT',new_wcs.orientat)
         hdr.update('WCSNAME',wcsname)
+        util.updateNEXTENDKw(fimg)
 
         # Only if this image was opened in update mode should this
         # newly updated WCS be archived, as it will never be written out

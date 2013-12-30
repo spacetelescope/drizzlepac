@@ -221,7 +221,7 @@ class WithLogging(object):
                     # Insure that any exception raised by the code gets passed on
                     # (hope that end_logging didn't change the last exception raised)
                     if errorobj:
-                        raise 
+                        raise
 
         return wrapper
 
@@ -402,6 +402,13 @@ def displayBadRefimageWarningBox(display=True, parent=None):
 
         tkMessageBox.showwarning(parent=parent,message=msg, title="No valid inputs!")
     return "yes"
+
+def updateNEXTENDKw(fobj):
+    """ Update NEXTEND keyword in PRIMARY header (if present) to accurately
+        reflect the number of extensions in the MEF file.
+    """
+    if 'nextend' in fobj[0].header:
+        fobj[0].header['nextend'] = len(fobj)-1
 
 def count_sci_extensions(filename):
     """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
