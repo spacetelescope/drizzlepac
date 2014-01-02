@@ -9,6 +9,8 @@ from stsci.tools import fileutil, logutil
 from stwcs import wcsutil, updatewcs
 from stwcs.wcsutil import wcscorr
 
+from . import util
+
 import linearfit
 
 log = logutil.create_logger(__name__)
