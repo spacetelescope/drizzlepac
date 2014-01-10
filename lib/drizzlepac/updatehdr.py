@@ -9,6 +9,8 @@ from stsci.tools import fileutil, logutil
 from stwcs import wcsutil, updatewcs
 from stwcs.wcsutil import wcscorr
 
+from . import util
+
 import linearfit
 
 log = logutil.create_logger(__name__)
@@ -403,6 +405,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
             hdr.update(key,wcs_hdr[key])
         hdr.update('ORIENTAT',new_wcs.orientat)
         hdr.update('WCSNAME',wcsname)
+        util.updateNEXTENDKw(fimg)
 
         # Only if this image was opened in update mode should this
         # newly updated WCS be archived, as it will never be written out

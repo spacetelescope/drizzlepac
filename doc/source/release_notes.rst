@@ -11,6 +11,20 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.15dev(30-Dec-2013) in IRAFX
+---------------------------------------------------------
+**available starting:** Jan 6, 2014
+
+- [Bug Fix] Files created or updated by drizzlepac, fitsblender, or STWCS tasks, e.g. tweakreg or apply_headerlet, will now insure that the NEXTEND keyword value correctly reflects the number of extensions in the FITS file upon completion.
+
+
+DrizzlePac(astrodrizzle) v1.1.14dev(21-Oct-2013) in IRAFX
+---------------------------------------------------------
+**available starting:** Oct 28, 2013
+
+- [Bug Fix] DQ arrays in input images now get updated with cosmic-ray masks computed by astrodrizzle when run with the parameter 'in_memory=True'. This restored the cosmic-ray masks detected during pipeline processing.
+
+
 DrizzlePac(astrodrizzle) v1.1.13dev(11-Oct-2013) in IRAFX
 ---------------------------------------------------------
 **available starting:** Oct 21, 2013
