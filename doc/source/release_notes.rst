@@ -20,6 +20,7 @@ DrizzlePac(astrodrizzle) v1.1.15dev(30-Dec-2013) in IRAFX
 
 DrizzlePac(astrodrizzle) v1.1.14dev(21-Oct-2013) in IRAFX
 ---------------------------------------------------------
+**Installed in OPUS:** Dec 11, 2013
 **available starting:** Oct 28, 2013
 
 - [Bug Fix] DQ arrays in input images now get updated with cosmic-ray masks computed by astrodrizzle when run with the parameter 'in_memory=True'. This restored the cosmic-ray masks detected during pipeline processing.
