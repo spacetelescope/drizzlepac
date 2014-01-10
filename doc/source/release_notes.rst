@@ -15,7 +15,7 @@ DrizzlePac(astrodrizzle) v1.1.15dev(30-Dec-2013) in IRAFX
 ---------------------------------------------------------
 **available starting:** Jan 6, 2014
 
-- [Bug Fix] Files created or updated by drizzlepac, fitsblender, or STWCS tasks, e.g. tweakreg or apply_headerlet, will now insure that the NEXTEND keyword value correctly reflects the number of extensions in the FITS file upon completion.
+- [Bug Fix] Files created or updated by drizzlepac, fitsblender, or STWCS tasks, e.g. tweakreg or apply_headerlet, will now ensure that the NEXTEND keyword value correctly reflects the number of extensions in the FITS file upon completion.
 
 
 DrizzlePac(astrodrizzle) v1.1.14dev(21-Oct-2013) in IRAFX
@@ -93,7 +93,7 @@ DrizzlePac(astrodrizzle) v1.1.7dev(8-Jan-2012) in IRAFX
 **available starting:** Jan 14, 2013
 
 - Bug fixed in updatehdr module to allow shiftfiles without RMS columns to work as inputs to manually apply shifts to headers of input images
-- Revised astrodrizzle to update WCS of all input images BEFORE checking whether or not they are valid. This insures that all files provided as input to astrodrizzle in the pipeline have the headers updated with the distortion model and new WCS.
+- Revised astrodrizzle to update WCS of all input images BEFORE checking whether or not they are valid. This ensures that all files provided as input to astrodrizzle in the pipeline have the headers updated with the distortion model and new WCS.
 - Images with NGOODPIX=0 now identified for WFC3 and WFPC2 inputs, so they can be ignored during astrodrizzle processing.
 - Replaced 2d histogram building code originally written in Python with a C function that run about 4x faster.
 
