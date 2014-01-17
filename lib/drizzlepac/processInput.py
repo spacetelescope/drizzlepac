@@ -240,8 +240,8 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     inimg = 0
     chip_mem = 0
     for img in imageObjectList:
-        for chip in range(img._numchips):
-            cmem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
+        for chip in range(1,img._numchips+1):
+            cmem = img[chip].shape[0]*img[chip].shape[1]*4
             inimg += 1
             if inimg < pool_size:
                 input_mem += cmem*2
@@ -1082,7 +1082,7 @@ def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
     scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
     scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
     scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
-    
+
     d2imhdu = pyfits.HDUList()
     d2imhdu.append(pyfits.PrimaryHDU())
     d2imhdu.append(scihdu)
