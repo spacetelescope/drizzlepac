@@ -8,7 +8,7 @@ import os
 import pyfits
 import numpy as np
 
-from stsci.tools import fileutil
+from stsci.tools import fileutil, readgeis
 
 from imageObject import imageObject
 import buildmask
@@ -58,30 +58,41 @@ class WFPC2InputImage (imageObject):
             which that DQ extension should be read from.
         '''
         dqfile = None
-        
         # Look for additional file with DQ array, primarily for WFPC2 data
+
         indx = self._filename.find('.fits')
-        
+
         if indx > 3:
             suffix = self._filename[indx-4:indx]
             dqfile = self._filename.replace(suffix[:3],'_c1')
-        
+
         elif indx < 0 and len(self._filename) > 3 and \
              self._filename[-4] == os.extsep and \
              self._filename[-1].lower() == 'h':
+
             # assume we've got a GEIS file
-            dqfile = self._filename[:-2]+'1'+self._filename[-1]
-        
+            dqfile  = self._filename[:-2]+'1'+self._filename[-1]
+            hdulist = readgeis.readgeis(dqfile)
+            prih    = hdulist[0].header
+            if 'FILETYPE' in prih:
+                dq_suffix = prih['FILETYPE'].strip().upper()
+            else:
+                # assume extension name is 'SDQ' for WFPC2 GEIS files
+                dq_suffix = 'SDQ'
+            hdulist.close()
+
+            return dqfile,dq_suffix
+
         else:
             raise ValueError("Input file {} does not appear to be neither " \
                         "a FITS file nor a GEIS file.".format(self._filename))
-        
+
         #dq_suffix = DQ_EXTNS[suffix[1:]]
         if os.path.exists(dqfile):
             dq_suffix = pyfits.getval(dqfile, "EXTNAME", ext=1)
         else:
             dq_suffix = "SCI"
-        
+
         return dqfile,dq_suffix
 
     def getEffGain(self):
