@@ -75,15 +75,14 @@ def buildDQMasks(imageObjectList,configObj):
     for img in imageObjectList:
         img.buildMask(configObj['bits'],configObj['single'])
 
-#def buildMask(dqarr,bitvalue):
-    #""" Builds a bit-mask from an input DQ array and a bitvalue flag"""
+def buildMask(dqarr,bitvalue):
+    """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
+
     #if bitvalue == None:
         #return ((dqarr * 0.0) + 1.0).astype(np.uint8)
     #_maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
     #return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
 
-def buildMask(dqarr,bitvalue):
-    """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
     if bitvalue is None:
         return (np.ones(dqarr.shape,dtype=np.uint8))
     return np.logical_not(np.bitwise_and(dqarr,~bitvalue)).astype(np.uint8)

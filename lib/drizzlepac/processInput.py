@@ -621,7 +621,6 @@ def buildFileList(input, output=None, ivmlist=None,
     return newfilelist,ivmlist,output,oldasndict
 
 
-
 def buildFileListOrig(input, output=None, ivmlist=None,
                 wcskey=None, updatewcs=True, **workinplace):
     """
@@ -631,6 +630,10 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     original file names as specified by the user (e.g., before GEIS->MEF, or
     WAIVER FITS->MEF conversion).
     """
+    # NOTE: original file name is required in order to correctly associate
+    # user catalog files (e.g., user masks to be used with 'skymatch') with
+    # corresponding imageObjects.
+
     filelist,output,ivmlist,oldasndict=processFilenames(input,output)
 
     # verify that all input images specified can be updated as needed

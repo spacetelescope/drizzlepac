@@ -10,7 +10,7 @@ in the detector.  Finally, the MDRIZSKY keyword
 is updated in the header of the input files.
 
 :Authors:
-    Christopher Hanley, Megan Sosey
+    Christopher Hanley, Megan Sosey, Mihai Cara (skymatch part)
 """
 
 
@@ -83,13 +83,19 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     ==========  ===================================================================
     skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
     skysub		'Perform sky subtraction?'
-    skywidth	'Bin width for sampling sky statistics (in sigma)'
+    skywidth	'Bin width of histogram for sampling sky statistics (in sigma)'
     skystat	 	'Sky correction statistics parameter'
     skylower	'Lower limit of usable data for sky (always in electrons)'
     skyupper	'Upper limit of usable data for sky (always in electrons)'
     skyclip		'Number of clipping iterations'
     skylsigma	'Lower side clipping factor (in sigma)'
     skyusigma	'Upper side clipping factor (in sigma)'
+    skymask_cat 'Catalog file listing image masks'
+    use_static  'Use static mask for skymatch computations?'
+    dqflags     'Bit flags for identifying bad pixels in DQ array'
+    skyuser     'KEYWORD indicating a sky subtraction value if done by user'
+    skyfile     'Name of file with user-computed sky values'
+
     ==========  ===================================================================
 
     The output from sky subtraction is a copy of the original input file
@@ -140,6 +146,10 @@ def run(configObj,outExt=None):
 
 #this is the workhorse looping function
 def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
+    # if neither 'skyfile' nor 'skyuser' are specified, subtractSky will
+    # call _skymatch to perform "sky background matching". When 'skyuser'
+    # is specified, subtractSky will call the old _skysub.
+
     if procSteps is not None:
         procSteps.addStep('Subtract Sky')
 
@@ -162,14 +172,33 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
             log.info('Working on sky for: %s' % image._filename)
             _skySub(image,paramDict,saveFile=saveFile)
     else:
-        _skymatch(imageObjList, paramDict, configObj['in_memory'],
-                  configObj['STATE OF INPUT FILES']['clean'], log)
+        # in_memory:
+        if 'in_memory' in configObj:
+            inmemory = configObj['in_memory']
+        elif len(imageObjList) > 0 and imageObjList[0].inmemory is not None:
+            inmemory = imageObjList[0].inmemory
+        else:
+            inmemory = False
+        # clean:
+        if 'STATE OF INPUT FILES' in configObj and \
+           'clean' in configObj['STATE OF INPUT FILES']:
+            clean = configObj['STATE OF INPUT FILES']['clean']
+        else:
+            clean = True
+
+        _skymatch(imageObjList, inmemory, clean, log)
 
     if procSteps is not None:
         procSteps.endStep('Subtract Sky')
 
 
 def _skymatch(imageList, paramDict, in_memory, clean, logfile):
+    # '_skymatch' converts input imageList and other parameters to
+    # data structures accepted by the "skymatch" package.
+    # It also creates a temporary mask by combining 'static' mask,
+    # DQ image, and user-supplied mask. The combined mask is then
+    # passed to 'skymatch' to be used for excluding "bad" pixels.
+
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
 
     nimg = len(imageList)
@@ -289,7 +318,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
              nclip       = paramDict['skyclip'],
              lsigma      = paramDict['skylsigma'],
              usigma      = paramDict['skyusigma'],
-             binwidth    = paramDict['skybinwidth'], #TODO: add to parameters
+             binwidth    = paramDict['skywidth'],
              skyuser_kwd = skyKW,
              units_kwd   = 'BUNIT',
              readonly    = not paramDict['skysub'],
@@ -299,12 +328,15 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
              clean       = clean,
              verbose     = True,
              flog        = MultiFileLog(console = True))
-    
+
     # clean-up:
     for fi in new_fi:
         fi.release_all_images()
 
 def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
+    # creates a temporary mask by combining 'static' mask,
+    # DQ image, and user-supplied mask.
+
     def merge_masks(m1, m2):
         if m1 is None: return m2
         if m2 is None: return m1
@@ -324,13 +356,17 @@ def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
             if staticMaskName in img.virtualOutputs:
                 smask = img.virtualOutputs[staticMaskName].data
         else:
-            sm, dq = openImageEx(staticMaskName, mode='readonly',
-                        saveAsMEF=False, clobber=False,
-                        imageOnly=True, openImageHDU=True, openDQHDU=False,
-                        preferMEF=False, verbose=False)
-            if sm.hdu is not None:
-                smask = sm.hdu[0].data
-                sm.release()
+            if staticMaskName is not None and os.path.isfile(staticMaskName):
+                sm, dq = openImageEx(staticMaskName, mode='readonly',
+                            saveAsMEF=False, clobber=False,
+                            imageOnly=True, openImageHDU=True, openDQHDU=False,
+                            preferMEF=False, verbose=False)
+                if sm.hdu is not None:
+                    smask = sm.hdu[0].data
+                    sm.release()
+            else:
+                log.warning("Static mask for file \'{}\', ext={} NOT FOUND." \
+                            .format(img._filename, ext))
         # combine DQ and static masks:
         mask = merge_masks(mask, smask)
 
@@ -354,7 +390,7 @@ def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
     # save mask to a temporary file:
     (tmpfname, tmpmask) = temp_mask_file(img._filename, ext, mask, fnameOnly=False)
     img[ext].outputNames['skyMatchMask'] = tmpfname
-    
+
     return (tmpmask, 0)
 
 # this function applies user supplied sky values from an input file
@@ -435,7 +471,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
     where all the science data extensions have been sky subtracted
 
     """
-    
+
     _skyValue=0.0    #this will be the sky value computed for the exposure
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
 

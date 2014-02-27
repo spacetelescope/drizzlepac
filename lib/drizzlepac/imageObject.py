@@ -36,6 +36,7 @@ class baseImageObject(object):
         self.maskExt="DQ" #the extension with the mask image in it
         self.errExt = "ERR"  # the extension the ERR array can be found in
         self._filename = filename
+        self._original_file_name = filename
         self.native_units='ELECTRONS'
 
         self.flatkey = None  # keyword which points to flat-field reference file
