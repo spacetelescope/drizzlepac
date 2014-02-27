@@ -111,6 +111,7 @@ def setCommonInput(configObj, createOutwcs=True):
         return None, None
     # convert the filenames from asndict into a list of full filenames
     files = [fileutil.buildRootname(f) for f in asndict['order']]
+    original_files = asndict['original_file_names']
 
     # interpret MDRIZTAB, if specified, and update configObj accordingly
     # This can be done here because MDRIZTAB does not include values for
@@ -177,10 +178,16 @@ def setCommonInput(configObj, createOutwcs=True):
         virtual = configObj['in_memory']
     else:
         virtual = False
+
     imageObjectList = createImageObjectList(files, instrpars,
                                             group=configObj['group'],
                                             undistort=undistort,
                                             inmemory=virtual)
+
+    # Add original file names as "hidden" attributes of imageObject
+    assert(len(original_files) == len(imageObjectList)) #TODO: remove after extensive testing
+    for i in range(len(imageObjectList)):
+        imageObjectList[i]._original_file_name = original_files[i]
 
     # apply context parameter
     applyContextPar(imageObjectList, configObj['context'])
@@ -240,8 +247,9 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     inimg = 0
     chip_mem = 0
     for img in imageObjectList:
-        for chip in range(img._numchips):
-            cmem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
+        for chip in range(1,img._numchips+1):
+            #cmem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
+            cmem = img[chip].shape[0]*img[chip].shape[1]*4
             inimg += 1
             if inimg < pool_size:
                 input_mem += cmem*2
@@ -491,7 +499,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     files as needed.
     """
 
-    newfilelist, ivmlist, output, oldasndict = buildFileList(
+    newfilelist, ivmlist, output, oldasndict, origflist = buildFileListOrig(
             input, output=output, ivmlist=ivmlist, wcskey=wcskey,
             updatewcs=updatewcs, **workinplace)
 
@@ -509,6 +517,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         oldasndict.create()
 
     asndict = update_member_names(oldasndict, pydr_input)
+    asndict['original_file_names'] = origflist
 
     # Build output filename
     drz_extn = '_drz.fits'
@@ -606,6 +615,22 @@ def buildFileList(input, output=None, ivmlist=None,
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
     """
+    newfilelist, ivmlist, output, oldasndict, filelist = \
+        buildFileListOrig(input=input, output=output, ivmlist=ivmlist,
+                    wcskey=wcskey, updatewcs=updatewcs, **workinplace)
+    return newfilelist,ivmlist,output,oldasndict
+
+
+
+def buildFileListOrig(input, output=None, ivmlist=None,
+                wcskey=None, updatewcs=True, **workinplace):
+    """
+    Builds a file list which has undergone various instrument-specific
+    checks for input to MultiDrizzle, including splitting STIS associations.
+    Compared to buildFileList, this version returns the list of the
+    original file names as specified by the user (e.g., before GEIS->MEF, or
+    WAIVER FITS->MEF conversion).
+    """
     filelist,output,ivmlist,oldasndict=processFilenames(input,output)
 
     # verify that all input images specified can be updated as needed
@@ -614,6 +639,17 @@ def buildFileList(input, output=None, ivmlist=None,
         return None, None, None, None
 
     manageInputCopies(filelist,**workinplace)
+
+    # to keep track of the original file names we do the following trick:
+    # pack filelist with the ivmlist using zip and later unpack the zipped list.
+    #
+    # NOTE: this required a small modification of the checkStisFiles function
+    # in stsci.tools.check_files to be able to handle ivmlists that are tuples.
+    if ivmlist is None:
+        ivmlist = len(filelist)*[None]
+    else:
+        assert(len(filelist) == len(ivmlist)) #TODO: remove after debugging
+    ivmlist = zip(ivmlist,filelist)
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
@@ -626,7 +662,9 @@ def buildFileList(input, output=None, ivmlist=None,
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
-    return newfilelist,ivmlist,output,oldasndict
+    ivmlist, filelist = zip(*ivmlist)
+
+    return newfilelist, ivmlist, output, oldasndict, filelist
 
 
 def buildASNList(rootnames, asnname):
@@ -1082,7 +1120,7 @@ def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
     scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
     scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
     scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
-    
+
     d2imhdu = pyfits.HDUList()
     d2imhdu.append(pyfits.PrimaryHDU())
     d2imhdu.append(scihdu)

@@ -187,7 +187,11 @@ class staticMask(object):
         numchips=imagePtr._numchips
 
         log.info("Computing static mask:\n")
-        for chip in range(1,numchips+1,1):
+        chips = imagePtr.group
+        if chips is None:
+            chips = imagePtr.getExtensions()
+        #for chip in range(1,numchips+1,1):
+        for chip in chips:
             chipid=imagePtr.scienceExt + ','+ str(chip)
             chipimage=imagePtr.getData(chipid)
             signature=imagePtr[chipid].signature

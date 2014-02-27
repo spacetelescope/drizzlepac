@@ -19,9 +19,15 @@ from __future__ import division  # confidence medium
 import os
 import sys
 
-import util
+import util, logging
 from imageObject import imageObject
 from stsci.tools import fileutil, teal, logutil
+
+from skypac.skymatch import skymatch
+from skypac.utils import MultiFileLog, ResourceRefCount, \
+     ImageRef, temp_mask_file, openImageEx
+from skypac.parseat import FileExtMaskInfo, parse_at_file
+
 import processInput
 import stsci.imagestats as imagestats
 import numpy as np
@@ -151,13 +157,205 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     util.printParams(paramDict, log=log)
     if 'skyfile' in paramDict and not util.is_blank(paramDict['skyfile']):
         _skyUserFromFile(imageObjList,paramDict['skyfile'])
-    else:
+    elif 'skyuser' in paramDict and not util.is_blank(paramDict['skyuser']):
         for image in imageObjList:
             log.info('Working on sky for: %s' % image._filename)
             _skySub(image,paramDict,saveFile=saveFile)
+    else:
+        _skymatch(imageObjList, paramDict, configObj['in_memory'],
+                  configObj['STATE OF INPUT FILES']['clean'], log)
 
     if procSteps is not None:
         procSteps.endStep('Subtract Sky')
+
+
+def _skymatch(imageList, paramDict, in_memory, clean, logfile):
+    skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
+
+    nimg = len(imageList)
+    if nimg < 2:
+        ml.logentry("Skymatch needs at least two images to perform{0}" \
+                    "sky matching. Nothing to be done.",os.linesep)
+        return
+
+    # create a list of input file names as provided by the user:
+    user_fnames   = []
+    loaded_fnames = []
+    filemaskinfos = nimg * [ None ]
+    for img in imageList:
+        user_fnames.append(img._original_file_name)
+        loaded_fnames.append(img._filename)
+
+    # parse sky mask catalog file (if any):
+    catfile = paramDict['skymask_cat']
+    if catfile:
+        #extname = imageList[0].scienceExt
+        #assert(extname is not None and extname != '')
+        catfile = catfile.strip()
+        mfindx = parse_at_file(fname = catfile,
+                               default_ext = ('SCI','*'),
+                               default_mask_ext = 0,
+                               clobber      = False,
+                               fnamesOnly   = True,
+                               doNotOpenDQ  = True,
+                               match2Images = user_fnames,
+                               im_fmode     = 'update',
+                               dq_fmode     = 'readonly',
+                               msk_fmode    = 'readonly',
+                               logfile      = MultiFileLog(console=True),
+                               verbose      = True)
+        for p in mfindx:
+            filemaskinfos[p[1]] = p[0]
+
+    # step through the list of input images and create
+    # combined (static + DQ + user supplied, if any) mask, and
+    # create a list of FileExtMaskInfo objects to be passed
+    # to 'skymatch' function.
+    #
+    # This needs to be done in several steps, mostly due to the fact that
+    # the mask catalogs use "original" (e.g., GEIS, WAIVER FITS) file names
+    # while ultimately we want to open the version converted to MEF. Second
+    # reason is that we want to combine user supplied masks with DQ+static
+    # masks provided by astrodrizzle.
+    new_fi = []
+    for i in range(nimg):
+        # extract extension information:
+        extname = imageList[i].scienceExt
+        extver  = imageList[i].group
+        if extver is None:
+            extver = imageList[i].getExtensions()
+        assert(extname is not None and extname != '')
+        assert(extver)
+
+        # create a new FileExtMaskInfo object
+        fi = FileExtMaskInfo(default_ext=(extname,'*'),
+                             default_mask_ext=0,
+                             clobber=False,
+                             doNotOpenDQ=True,
+                             fnamesOnly=False,
+                             im_fmode='update',
+                             dq_fmode='readonly',
+                             msk_fmode='readonly')
+
+        # set image file and extensions:
+        fi.image = loaded_fnames[i]
+        extlist  = [ (extname,ev) for ev in extver ]
+        fi.append_ext(extlist)
+
+        # set user masks if any (this will open the files for a later use):
+        fi0 = filemaskinfos[i]
+        if fi0 is not None:
+            nmask = len(fi0.mask_images)
+            for m in range(nmask):
+                mask = fi0.mask_images[m]
+                ext  = fi0.maskext[m]
+                fi.append_mask(mask, ext)
+        fi.finalize()
+
+        # combine user masks with static masks:
+        assert(len(extlist) == fi.count) #TODO: <-- remove after thorough testing
+
+        masklist = []
+        mextlist = []
+
+        for k in range(fi.count):
+            if fi.mask_images[k].closed:
+                umask = None
+            else:
+                umask = fi.mask_images[k].hdu[fi.maskext[k]].data
+            (mask, mext) = _buildStaticDQUserMask(imageList[i], extlist[k],
+                                            paramDict['dqflags'],
+                                            paramDict['use_static'],
+                                            fi.mask_images[k], fi.maskext[k])
+            masklist.append(mask)
+            mextlist.append(mext)
+
+        # replace the original user-supplied masks with the
+        # newly computed combined static+DQ+user masks:
+        fi.clear_masks()
+        for k in range(fi.count):
+            fi.append_mask(masklist[k], mextlist[k])
+            if masklist[k]:
+                masklist[k].release()
+        fi.finalize()
+
+        new_fi.append(fi)
+
+    # Run skymatch algorithm:
+    skymatch(new_fi,
+             skystat     = paramDict['skystat'],
+             lower       = paramDict['skylower'],
+             upper       = paramDict['skyupper'],
+             nclip       = paramDict['skyclip'],
+             lsigma      = paramDict['skylsigma'],
+             usigma      = paramDict['skyusigma'],
+             binwidth    = paramDict['skybinwidth'], #TODO: add to parameters
+             skyuser_kwd = skyKW,
+             units_kwd   = 'BUNIT',
+             readonly    = not paramDict['skysub'],
+             DQFlags     = None,
+             optimize    = 'speed' if in_memory else 'balanced',
+             clobber     = True,
+             clean       = clean,
+             verbose     = True,
+             flog        = MultiFileLog(console = True))
+    
+    # clean-up:
+    for fi in new_fi:
+        fi.release_all_images()
+
+def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
+    def merge_masks(m1, m2):
+        if m1 is None: return m2
+        if m2 is None: return m1
+        return np.logical_and(m1, m2).astype(np.uint8)
+
+    mask = None
+
+    # build DQ mask
+    if dqflags is not None:
+        mask = img.buildMask(img[ext]._chip,bits=dqflags)
+
+    # get correct static mask mask filenames/objects
+    staticMaskName = img[ext].outputNames['staticMask']
+    smask = None
+    if use_static:
+        if img.inmemory:
+            if staticMaskName in img.virtualOutputs:
+                smask = img.virtualOutputs[staticMaskName].data
+        else:
+            sm, dq = openImageEx(staticMaskName, mode='readonly',
+                        saveAsMEF=False, clobber=False,
+                        imageOnly=True, openImageHDU=True, openDQHDU=False,
+                        preferMEF=False, verbose=False)
+            if sm.hdu is not None:
+                smask = sm.hdu[0].data
+                sm.release()
+        # combine DQ and static masks:
+        mask = merge_masks(mask, smask)
+
+    # combine user mask with the previously computed mask:
+    if umask is not None and not umask.closed:
+        if mask is None:
+            # return user-supplied mask:
+            umask.hold()
+            return (umask, umaskext)
+        else:
+            # combine user mask with the previously computed mask:
+            dtm  = umask.hdu[umaskext].data
+            mask = merge_masks(mask, dtm)
+
+    if mask is None:
+        return (None, None)
+    elif mask.sum() == 0:
+        log.warning("All pixels masked out when applying DQ, " \
+                    "static, and user masks!")
+
+    # save mask to a temporary file:
+    (tmpfname, tmpmask) = temp_mask_file(img._filename, ext, mask, fnameOnly=False)
+    img[ext].outputNames['skyMatchMask'] = tmpfname
+    
+    return (tmpmask, 0)
 
 # this function applies user supplied sky values from an input file
 def _skyUserFromFile(imageObjList,skyFile):
@@ -237,8 +435,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
     where all the science data extensions have been sky subtracted
 
     """
-
-
+    
     _skyValue=0.0    #this will be the sky value computed for the exposure
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
 

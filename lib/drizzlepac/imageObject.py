@@ -121,7 +121,8 @@ class baseImageObject(object):
         clean_files = ['blotImage','crmaskImage','finalMask',
                         'staticMask','singleDrizMask','outSky',
                         'outSContext','outSWeight','outSingle',
-                        'outMedian','d2imfile','dqmask','tmpmask']
+                        'outMedian','d2imfile','dqmask','tmpmask',
+                        'skyMatchMask']
 
         log.info('Removing intermediate files for %s' % self._filename)
         # We need to remove the combined products first; namely, median image
