@@ -22,26 +22,24 @@ preserve = boolean_kw(default=True, comment="Copy input files to archive directo
 overwrite = boolean_kw(default=False, comment="Copy input files into archive, overwriting if required?")
 clean = boolean_kw(default=False, comment="Delete temporary files after completion?")
 
-
 [STEP 1: STATIC MASK ]
 static = boolean_kw(default=True, triggers='_section_switch_',triggers='_rule8_', comment="Create static bad-pixel mask from the data?")
 static_sig = float_kw(default=4.0, comment= "Sigma*rms below mode to clip for static mask")
 
 [STEP 2: SKY SUBTRACTION ]
 skysub = boolean_kw(default=True, triggers='_section_switch_', comment= "Perform sky subtraction?")
-skywidth = float_or_none_kw(default=0.3, comment= "Bin width for sampling sky statistics (in sigma)")
+skywidth = float_or_none_kw(default=0.3, comment= "Bin width of histogram for sampling sky statistics (in sigma)")
 skystat = option_kw("median","mode","mean", default="median", comment= "Sky correction statistics parameter")
 skylower = float_or_none_kw(default=None, comment= "Lower limit of usable data for sky (always in electrons)")
 skyupper = float_or_none_kw(default=None, comment= "Upper limit of usable data for sky (always in electrons)")
 skyclip = integer_kw(default=5, comment= "Number of clipping iterations")
 skylsigma = float_kw(default=4., comment="Lower side clipping factor (in sigma)")
 skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)")
-skybinwidth = float_kw(default=0.1, comment="Bin width of histogram (in sigma)")
 skymask_cat = string_kw(default="", comment="Catalog file listing image masks")
 use_static = boolean_kw(default=True, inactive_if='_rule8_', comment= "Use static mask for skymatch computations?")
 dqflags = integer_or_none_kw(default=0, comment="Bit flags for identifying bad pixels in DQ array")
-skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user.")
-skyfile = string_kw(default="", comment="Name of file with user-computed sky values.")
+skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user")
+skyfile = string_kw(default="", comment="Name of file with user-computed sky values")
 
 [STEP 3: DRIZZLE SEPARATE IMAGES]
 driz_separate = boolean_kw(default=True, triggers='_section_switch_', triggers='_rule3a_', is_set_by='_rule1_', comment= "Drizzle onto separate output images?")
