@@ -3,7 +3,7 @@
 #include "cdrizzleutil.h"
 
 #include <assert.h>
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -378,11 +378,8 @@ put_fill(struct driz_param_t* p, const float fill_value) {
 
   assert(p);
 
-  onx = p->xmax - p->xmin + 1;
-  ony = p->ymax - p->ymin + 1;
-
-  for (j = 0; j < ony; ++j) {
-    for (i = 0; i < onx; ++i) {
+  for (j = 0; j < p->ony; ++j) {
+    for (i = 0; i < p->onx; ++i) {
       if (*output_counts_ptr(p, i, j) == 0.0) {
         *output_data_ptr(p, i, j) = fill_value;
       }
@@ -401,4 +398,3 @@ mgf2(double lambda) {
               4.4543708e9/(11.17083e9-sig2) +
               4.0838897e5/(1.766361e5-sig2));
 }
-

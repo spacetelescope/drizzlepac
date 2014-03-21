@@ -4,11 +4,9 @@
 
 #include <assert.h>
 #include <errno.h>
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
-#if __STDC_VERSION__ >= 199901L
 #include <stdint.h>
-#endif
 #include <stdlib.h>
 
 /*****************************************************************
@@ -182,7 +180,7 @@ struct driz_param_t {
   integer_t ony;
   float* output_data; /* [ony][onx] */
   float* output_counts; /* [ony][onx] was: COU */
-  integer_t* output_context; /* [ony][onx] was: CONTIM */
+  int32_t* output_context; /* [ony][onx] was: CONTIM */
 
   /* Blotting-specific parameters */
   enum e_interp_t interpolation; /* was INTERP */

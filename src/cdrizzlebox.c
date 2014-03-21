@@ -89,10 +89,10 @@ check_over(struct driz_param_t* p, const integer_t y, const integer_t margin,
   }
 
   for (i = 0; i < np - 1; ++i) {
-    if (MAX(xout[i], xout[i+1]) >= 1.0 - (double)margin &&
-        MIN(xout[i], xout[i+1]) < (double)(p->onx + margin) &&
-        MAX(yout[i], yout[i+1]) >= 1.0 - (double)margin &&
-        MIN(yout[i], yout[i+1]) < (double)(p->ony + margin)) {
+    if (MAX(xout[i], xout[i+1]) >= p->xmin - (double)margin &&
+        MIN(xout[i], xout[i+1]) < (double)(p->xmax + margin) &&
+        MAX(yout[i], yout[i+1]) >= p->ymin - (double)margin &&
+        MIN(yout[i], yout[i+1]) < (double)(p->ymax + margin)) {
       logo[i] = 1;
       logo[i+1] = 1;
     }
@@ -540,10 +540,10 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
     if (ii >= 0 && ii < p->nsx &&
         jj >= 0 && jj < p->nsy) {
       vc = *output_counts_ptr(p, ii, jj);
-    /* Convert i,j 1-based pixel positions into 0-based
-       indices for accessing data array. */
-    xarr = i-1;
-    yarr = j-1;
+      /* Convert i,j 1-based pixel positions into 0-based
+         indices for accessing data array. */
+      xarr = i-1;
+      yarr = j-1;
 
       /* Allow for stretching because of scale change */
       d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
