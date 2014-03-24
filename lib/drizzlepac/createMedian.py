@@ -6,7 +6,7 @@ from __future__ import division # confidence medium
 import sys
 import numpy as np
 import pyfits
-import os
+import os, math
 import imageObject
 from stsci.imagestats import ImageStats
 import util
@@ -221,13 +221,36 @@ def _median(imageObjectList, paramDict):
             #
             exposureTimeList.append(img_exptime)
 
-           # compute sky value as sky/pixel using the single_drz pixel scale
-            bsky = image._image[image.scienceExt,1].subtractedSky# * (image.outputValues['scale']**2)
-            backgroundValueList.append(bsky)
+            # Use only "commanded" chips to extract subtractedSky and rdnoise:
+            rdnoise = 0.0
+            nchips  = 0
+            bsky    = None # minimum sky across **used** chips
 
-            # Extract the readnoise value for the chip
-            sci_chip = image._image[image.scienceExt,1]
-            readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
+            for chip in image.returnAllChips(extname=image.scienceExt):
+                # compute sky value as sky/pixel using the single_drz pixel scale
+                if bsky is None or bsky > chip.subtractedSky:
+                    bsky = chip.subtractedSky
+
+                # Extract the readnoise value for the chip
+                rdnoise += (chip._rdnoise)**2
+                nchips  += 1
+
+            if bsky is None:
+                bsky = 0.0
+
+            if nchips > 0:
+                rdnoise = math.sqrt(rdnoise/nchips)
+
+            backgroundValueList.append(bsky)
+            readnoiseList.append(rdnoise)
+
+            ## compute sky value as sky/pixel using the single_drz pixel scale
+            #bsky = image._image[image.scienceExt,1].subtractedSky# * (image.outputValues['scale']**2)
+            #backgroundValueList.append(bsky)
+
+            ## Extract the readnoise value for the chip
+            #sci_chip = image._image[image.scienceExt,1]
+            #readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
 
             print "reference sky value for image ",image._filename," is ", backgroundValueList[-1]
         #

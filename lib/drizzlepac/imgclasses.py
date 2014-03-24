@@ -22,7 +22,7 @@ import tweakutils
 
 log = logutil.create_logger(__name__)
 
-sortKeys = ['fluxmax','fluxmin','nbright','fluxunits']
+sortKeys = ['minflux','maxflux','nbright','fluxunits']
 
 class Image(object):
     """ Primary class to keep track of all WCS and catalog information for
@@ -80,8 +80,6 @@ class Image(object):
         self.verbose = kwargs['verbose']
         self.interactive = kwargs.get('interactive',True)
 
-        print 'Defining source catalogs for: ',filename
-
         if input_catalogs is not None and kwargs['xyunits'] == 'degrees':
             # Input was a catalog of sky positions, so no WCS or image needed
             use_wcs = False
@@ -105,6 +103,38 @@ class Image(object):
         self.chip_catalogs = {}
         self.xy_catalog = [[],[],[],[]]
         num_sources = 0
+    
+        # Analyze exclusion file list:
+        reg_mode = "exclude only"
+        if exclusions is not None:
+            nexclusions = len(exclusions)
+            # see if region file mode description is present and if so,
+            # trim the list at that position:
+            try:
+                iregmode = map(str.upper,exclusions).index('[CONFORMDS9]')
+                reg_mode = "normal"
+                if iregmode >= num_sci:
+                    iregmode = num_sci
+                exclusions = exclusions[:iregmode]
+                nexclusions = len(exclusions)
+                if nexclusions < num_sci:
+                    exclusions += (num_sci-nexclusions) * [ None ]
+            except ValueError:
+                nexclusions = len(exclusions)
+                if nexclusions >= num_sci:
+                    exclusions = exclusions[:num_sci]
+                else:
+                    exclusions += (num_sci-nexclusions) * [ None ]
+            except BaseException as e:
+                cmsg = "Unknown error while interpreting 'exclusions' file list."
+                if e.args:
+                    e.args = (e.args[0] + "\n" + cmsg,) + e.args[1:]
+                else:
+                    e.args=(cmsg,)
+                raise e
+        else:
+            exclusions = num_sci * [ None ]
+    
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
             extnum = fu.findExtname(pyfits.open(filename),extname,extver=sci_extn)
@@ -121,17 +151,18 @@ class Image(object):
                 source = input_catalogs[sci_extn-1]
                 catalog_mode='user'
 
-            if exclusions is not None and len(exclusions) >= sci_extn:
-                if exclusions[sci_extn-1] not in ['None',' ','INDEF']:
-                    excludefile=exclusions[sci_extn-1]
-                else:
-                    excludefile = None
+            if exclusions[sci_extn-1] not in [ None, 'None', '', ' ', 'INDEF' ]:
+                excludefile = { 'region_file': exclusions[sci_extn-1], \
+                                'region_file_mode': reg_mode }
             else:
                 excludefile = None
+
             kwargs['start_id'] = num_sources
-            catalog = catalogs.generateCatalog(wcs,mode=catalog_mode,catalog=source,**kwargs)
+            catalog = catalogs.generateCatalog(wcs, mode=catalog_mode,
+                        catalog=source, src_find_filters=excludefile, **kwargs)
+    
             # read in and convert all catalog positions to RA/Dec
-            catalog.buildCatalogs(exclusions=excludefile)
+            catalog.buildCatalogs(exclusions=None) # (exclusions=excludefile)
             num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
             # Merge input X,Y positions from all chips into a single catalog
@@ -278,21 +309,20 @@ class Image(object):
                         break
             if clip_catalog:
                 break
-
         all_radec = None
         if clip_catalog:
 
             # Start by clipping by any specified flux range
-            if self.pars[clip_prefix+'fluxmax'] is not None or \
-                    self.pars[clip_prefix+'fluxmin'] is not None:
+            if self.pars[clip_prefix+'maxflux'] is not None or \
+                    self.pars[clip_prefix+'minflux'] is not None:
                 clip_catalog = True
-                if self.pars[clip_prefix+'fluxmin'] is not None:
-                    fluxmin = self.pars[clip_prefix+'fluxmin']
+                if self.pars[clip_prefix+'minflux'] is not None:
+                    fluxmin = self.pars[clip_prefix+'minflux']
                 else:
                     fluxmin = self.all_radec[2].min()
 
-                if self.pars[clip_prefix+'fluxmax'] is not None:
-                    fluxmax = self.pars[clip_prefix+'fluxmax']
+                if self.pars[clip_prefix+'maxflux'] is not None:
+                    fluxmax = self.pars[clip_prefix+'maxflux']
                 else:
                     fluxmax = self.all_radec[2].max()
 
@@ -417,6 +447,9 @@ class Image(object):
                                 np.newaxis],matches['ref_y'][:,np.newaxis]])
                 self.matches['ref_idx'] = matches['ref_idx']
                 self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]
+                self.matches['img_RA'] = self.all_radec[0][matches['input_idx']]
+                self.matches['img_DEC'] = self.all_radec[1][matches['input_idx']]
+
                 self.matches['ref_orig_xy'] = np.column_stack([
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
@@ -490,6 +523,8 @@ class Image(object):
                     verbose=self.verbose)
 
                 self.fit['rms_keys'] = self.compute_fit_rms()
+                self.fit['img_RA'] = self.matches['img_RA']
+                self.fit['img_DEC'] = self.matches['img_DEC']
                 if pars['fitgeometry'] != 'general':
                     self.fit['fit_matrix'] = None
 
@@ -747,6 +782,8 @@ class Image(object):
             f.write('#     Column 13: Ref ID\n')
             f.write('#     Column 14: Input ID\n')
             f.write('#     Column 15: Input EXTVER ID \n')
+            f.write('#     Column 16: RA\n')
+            f.write('#     Column 17: Dec\n')
             #
             # Need to add chip ID for each matched source to the fitmatch file
             # The chip information can be extracted from the following source:
@@ -755,12 +792,11 @@ class Image(object):
             #     xypos = catalog.xypos
             img_chip_id = self.fit['img_indx'].copy()
             for sci_extn in range(1,self.num_sci+1):
-                if self.chip_catalogs[sci_extn]['catalog'].xypos is not None:
-                    img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[-1]
-                    chip_min = img_indx_orig.min()
-                    chip_max = img_indx_orig.max()
-                    cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
-                    img_chip_id = np.where(cid, sci_extn, img_chip_id)
+                img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[-1]
+                chip_min = img_indx_orig.min()
+                chip_max = img_indx_orig.max()
+                cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
+                img_chip_id = np.where(cid, sci_extn, img_chip_id)
             #
             f.write('#\n')
             f.close()
@@ -773,10 +809,11 @@ class Image(object):
                       self.fit['ref_orig_xy'][:,1],
                       self.fit['img_orig_xy'][:,0],
                       self.fit['img_orig_xy'][:,1]],
-                      [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id]
+                      [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id],
+                      [self.fit['img_RA'],self.fit['img_DEC']]
                     ]
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
-                                        append=True,format=["%15.6f","%8d"])
+                                        append=True,format=["%15.6f","%8d","%20.12f"])
 
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file.
@@ -806,6 +843,7 @@ class Image(object):
     def clean(self):
         """ Remove intermediate files created.
         """
+        #TODO: add cleaning of mask files, *if* created ...
         for f in self.catalog_names:
             if 'match' in f:
                 if os.path.exists(self.catalog_names[f]):

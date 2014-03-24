@@ -99,6 +99,56 @@ static_sig : float (Default Value = 4.0)
 
 
 *STEP 2: SKY SUBTRACTION*
+skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'localmin')
+
+    Select the algorithm for sky computation:
+
+    * **'localmin'**\ : compute a common sky for all members of *an exposure*
+      (see NOTES below). For a typical use, it will compute
+      sky values for each chip/image extension (marked for sky
+      subtraction in the :py:obj:`input` parameter) in an input image,
+      and it will subtract the previously found minimum sky value
+      from all chips (marked for sky subtraction) in that image.
+      This process is repeated for each input image.
+
+      .. note::
+        This setting is recommended when regions of overlap between images
+        are dominated by "pure" sky (as opposite to extended, diffuse
+        sources).
+
+      .. note::
+        This is similar to the "skysub" algorithm used in previous
+        versions of astrodrizzle.
+
+    * **'globalmin'**\ : compute a common sky value for all members of
+      **all** "skylines" (see NOTES below). It will compute
+      sky values for each chip/image extension (marked for sky
+      subtraction in the :py:attr:`input` parameter) in **all** input
+      images, find the minimum sky value, and then it will
+      subtract the **same** minimum sky value from **all** chips
+      (marked for sky subtraction) in **all** images. This method *may*
+      useful when input images already have matched background values.
+
+    * **'match'**\ : compute differences in sky values between images
+      in common (pair-wise) sky regions. In this case computed sky values
+      will be relative (delta) to the sky computed in one of the
+      input images whose sky value will be set to (reported to be) 0.
+      This setting will "equalize" sky values between the images in
+      large mosaics. However, this method is not recommended when used
+      in conjunction with `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_ 
+      because it computes relative sky values while `astrodrizzle` needs
+      "measured" sky values for median image generation and CR rejection.
+
+    * **'globalmin+match'**\ : first find a minimum "global" sky value
+      in all input images and then use **'match'** method to
+      equalize sky values between images.
+
+      .. note::
+        This is the *recommended* setting for images
+        containing diffuse sources (e.g., galaxies, nebulae)
+        covering significant parts of the image.
+
+
 skysub : bool (Default Value = Yes)
     Turn on or off sky subtraction on the input data.
 
@@ -131,8 +181,28 @@ skyusigma : float (Default Value = 4.0)
     Upper clipping limit, in sigma, used when computing the sky value.
 
 
+skymask_cat : str (Default Value = '')
+    File name of a catalog file listing user masks to be used with images.
+
+
+use_static : bool (Default Value = True)
+    Specifies whether or not to use static mask to exclude masked image pixels from sky computations.
+
+
+DQFlags : int, None (Default = 0)
+    Integer sum of all the DQ bit values from the input image's DQ array that should be considered "good" when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ "defects" having flags 2 and 4 as being acceptable for sky computations, then `DQFlags` should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
+
+    | Default value (0) will make *all* non-zero pixels in the DQ mask to be considered "bad" pixels, and the corresponding image pixels will not be used for sky computations.
+
+    | Set `DQFlags` to `None` to turn off the use of image's DQ array for sky computations.
+
+    .. note::
+        DQ masks (if used), *will be* combined with user masks specified in the input @-file.
+
+
 skyuser : str (Default Value = '')
     Name of header keyword which records the sky value already subtracted from the image by the user.
+
 
 skyfile : str (Default Value = '')
     Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips. 
@@ -426,8 +496,10 @@ See Also
 drizzlepac.adrizzle: Apply the 'drizzle' algorithm to the images
 drizzlepac.ablot: Apply the 'blot' algorithm to drizzled images
 drizzlepac.sky: Perform sky subtraction
+skypac.skymatch: Sky computation and equalization
 drizzlepac.median: Create a median combined image from a set of drizzled images
 drizzlepac.drizCR: Identify cosmic-rays by comparing blotted, median images to the original input images
+
 
 Notes
 ------

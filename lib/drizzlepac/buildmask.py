@@ -78,11 +78,15 @@ def buildDQMasks(imageObjectList,configObj):
 
 def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
-    if bitvalue == None:
-        return ((dqarr * 0.0) + 1.0).astype(np.uint8)
-    _maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
-    return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
 
+    #if bitvalue == None:
+        #return ((dqarr * 0.0) + 1.0).astype(np.uint8)
+    #_maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
+    #return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
+
+    if bitvalue is None:
+        return (np.ones(dqarr.shape,dtype=np.uint8))
+    return np.logical_not(np.bitwise_and(dqarr,~bitvalue)).astype(np.uint8)
 
 def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
     """ Builds mask image from rootname's DQ array
@@ -198,7 +202,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
     # If an old version of the maskfile was present, remove it and rebuild it.
     if fileutil.findFile(maskname):
         fileutil.removeFile(maskname)
-
+        
     _use_inmask = False
     if fileutil.findFile(dqfile) != True or bitvalue == None:
         _use_inmask = True

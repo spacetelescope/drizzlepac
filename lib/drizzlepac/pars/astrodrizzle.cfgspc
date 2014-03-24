@@ -24,20 +24,24 @@ clean = boolean_kw(default=False, comment="Delete temporary files after completi
 
 
 [STEP 1: STATIC MASK ]
-static = boolean_kw(default=True, triggers='_section_switch_', comment="Create static bad-pixel mask from the data?")
+static = boolean_kw(default=True, triggers='_section_switch_',triggers='_rule2a_', comment="Create static bad-pixel mask from the data?")
 static_sig = float_kw(default=4.0, comment= "Sigma*rms below mode to clip for static mask")
 
 [STEP 2: SKY SUBTRACTION ]
 skysub = boolean_kw(default=True, triggers='_section_switch_', comment= "Perform sky subtraction?")
-skywidth = float_or_none_kw(default=0.3, comment= "Bin width for sampling sky statistics (in sigma)")
+skymethod = option_kw("globalmin+match","localmin", "globalmin", "match", default="localmin", comment="Sky computation method")
 skystat = option_kw("median","mode","mean", default="median", comment= "Sky correction statistics parameter")
+skywidth = float_or_none_kw(default=0.1, comment= "Bin width of histogram for sampling sky statistics (in sigma)")
 skylower = float_or_none_kw(default=None, comment= "Lower limit of usable data for sky (always in electrons)")
 skyupper = float_or_none_kw(default=None, comment= "Upper limit of usable data for sky (always in electrons)")
 skyclip = integer_kw(default=5, comment= "Number of clipping iterations")
 skylsigma = float_kw(default=4., comment="Lower side clipping factor (in sigma)")
 skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)")
-skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user.")
-skyfile = string_kw(default="", comment="Name of file with user-computed sky values.")
+skymask_cat = string_kw(default="", comment="Catalog file listing image masks")
+use_static = boolean_kw(default=True, active_if='_rule2a_', comment= "Use static mask for skymatch computations?")
+dqflags = integer_or_none_kw(default=0, comment="Bit flags for identifying bad pixels in DQ array")
+skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user")
+skyfile = string_kw(default="", comment="Name of file with user-computed sky values")
 
 [STEP 3: DRIZZLE SEPARATE IMAGES]
 driz_separate = boolean_kw(default=True, triggers='_section_switch_', triggers='_rule3a_', is_set_by='_rule1_', comment= "Drizzle onto separate output images?")
@@ -117,6 +121,8 @@ expkeyword = string_kw(default="")
 _rule1_ = string_kw(default='', when='entry', code='from stsci.tools import check_files; from drizzlepac import util; ans={ True:"yes",False:"no"};numfiles = check_files.countInput(VAL); OUT =  util.displayEmptyInputWarningBox(VAL,PARENT) if numfiles == 0 else ans[(numfiles > 1)]')
 _rule1a_ = string_kw(default='', when='defaults,entry', code='from drizzlepac import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
 _rule2_ = string_kw(default='', code='from drizzlepac import processInput; odict=TEAL.getDict(); newdict = processInput.getMdriztabPars(odict["input"]); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
+_rule2a_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')
+#_rule2a_ = string_kw(default=True, code='from drizzlepac import util; OUT = util.useStaticRule(NAME, VAL)')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule4a_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT= util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')
 _rule4b_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT=util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')

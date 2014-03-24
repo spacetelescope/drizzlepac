@@ -14,17 +14,19 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.2.3'
-__vdate__ = '11-Dec-2013'
+__version__ = '1.3.0'
+__vdate__ = '23-Oct-2013'
 
 import tweakutils
 import imgclasses
 import catalogs
 import imagefindpars
+import refimagefindpars
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
-PSET_SECTION = '_SOURCE FINDING PARS_'
+PSET_SECTION        = '_SOURCE FINDING PARS_'
+PSET_SECTION_REFIMG = '_REF IMAGE SOURCE FINDING PARS_'
 # !! Use pre and post underscores to hide this added section in TEAL, so that
 # TEAL allows its data to stay alongside the expected data during a call to
 # TweakReg().  All of this needs to be revisited.
@@ -51,20 +53,27 @@ def getHelpAsString(docstring=False):
     return helpString
 
 
-def _managePsets(configobj,iparsobj=None):
+def _managePsets(configobj,iparsobj=None,rparsobj=None):
     """ Read in parameter values from PSET-like configobj tasks defined for
         source-finding algorithms, and any other PSET-like tasks under this task,
         and merge those values into the input configobj dictionary.
     """
     # Merge all configobj instances into a single object
     configobj[PSET_SECTION] = {}
+    configobj[PSET_SECTION_REFIMG] = {}
 
     if iparsobj is None:
         iparsobj = teal.load(imagefindpars.__taskname__)
         del iparsobj['_task_name_']
-
+    
+    if rparsobj is None:
+        rparsobj = teal.load(refimagefindpars.__taskname__)
+        del rparsobj['_task_name_']
+    
     # merge these parameters into full set
     configobj[PSET_SECTION].merge(iparsobj)
+    configobj[PSET_SECTION_REFIMG].merge(rparsobj)
+
 
     # clean up configobj a little to make it easier for later...
 #   if '_RULES_' in configobj:
@@ -72,8 +81,14 @@ def _managePsets(configobj,iparsobj=None):
 
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
-    """
+        """
     teal.teal(imagefindpars.__taskname__, returnAs=None,
+              autoClose=True, loadOnly=False, canExecute=False)
+
+def edit_refimagefindpars():
+    """ Allows the user to edit the refimagefindpars configObj in a TEAL GUI
+        """
+    teal.teal(refimagefindpars.__taskname__, returnAs=None,
               autoClose=True, loadOnly=False, canExecute=False)
 
 
@@ -91,7 +106,8 @@ def run(configobj):
     if PSET_SECTION not in configobj:
         # Manage PSETs for source finding algorithms
         _managePsets(configobj)
-
+    #print configobj[PSET_SECTION]
+        
     # print out user set input parameter values for running this task
     log.info("USER INPUT PARAMETERS common to all Processing Steps:")
     util.printParams(configobj, log=log)
@@ -142,6 +158,9 @@ def run(configobj):
     if 'exclusions' in configobj and \
         configobj['exclusions'] not in [None,'',' ','INDEF']:
         if os.path.exists(configobj['exclusions']):
+            #TODO: It may be useful to check that the image file names in the exclusions
+            # catalog are the same as the names specified in filenames.
+            # this way it will be easier to detect and report an incorrect exclusions file (format)
             exclusion_files = tweakutils.parse_atfile_cat(
                 '@'+configobj['exclusions'])
         else:
@@ -228,17 +247,25 @@ def run(configobj):
 
     # otherwise, extract the catalog from the first input image source list
     if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
+        # A hack to allow different source finding parameters for the reference image:
+        ref_sourcefind_pars = \
+            tweakutils.get_configobj_root(configobj[PSET_SECTION_REFIMG])
+        ref_catfile_kwargs  = catfile_kwargs.copy()
+        ref_catfile_kwargs.update(ref_sourcefind_pars)
+
         #refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
         # Check to see whether the user specified a separate catalog
         #    of reference source positions and replace default source list with it
         if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
             ref_source = refcat_par['refcat']
         else:
-            refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
+            refimg = imgclasses.Image(configobj['refimage'],
+                                      **ref_catfile_kwargs)
             ref_source = refimg.all_radec
 
         try:
-            refimage = imgclasses.RefImage(configobj['refimage'],ref_source,**kwargs)
+            refimage = imgclasses.RefImage(configobj['refimage'],
+                                           ref_source, **kwargs)
             refwcs = refimage.wcs
             ref_source = refimage.all_radec
             refwcs_fname = refwcs.filename
@@ -342,7 +369,7 @@ def run(configobj):
 # Primary interface for running this task from Python
 #
 def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
-                **input_dict):
+             refimagefindcfg=None, **input_dict):
     """
     """
     # support input of filenames from command-line without a parameter name
@@ -366,7 +393,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         configobj = teal.load(__taskname__)
 
     # Merge PSET configobj with full task configobj
-    _managePsets(configobj,iparsobj=imagefindcfg)
+    _managePsets(configobj,iparsobj=imagefindcfg,rparsobj=refimagefindcfg)
     # !! NOTE - the above line needs to be done so that getDefaultConfigObj()
     # can merge in input_dict, however the TEAL GUI is not going to understand
     # the extra section, (or use it), so work needs to be done here - some
