@@ -248,7 +248,6 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     chip_mem = 0
     for img in imageObjectList:
         for chip in range(1,img._numchips+1):
-            #cmem = img[chip].image_shape[0]*img[chip].image_shape[1]*4
             cmem = img[chip].shape[0]*img[chip].shape[1]*4
             inimg += 1
             if inimg < pool_size:
@@ -1207,13 +1206,19 @@ def _setDefaults(input_dict={}):
         'static':True,
         'static_sig':4.0,
         'skysub':True,
-        'skywidth':0.1,
+        'skymethod':"globalmin+match",
         'skystat':"median",
+        'skywidth':0.1,
         'skylower':None,
         'skyupper':None,
         'skyclip':5,
         'skylsigma':4.0,
         'skyusigma':4.0,
+        "skymask_cat":"",
+        "use_static":True,
+        "dqflags":0,
+        "skyuser":"",
+        "skyfile":"",
         'driz_separate':True,
         'driz_sep_outnx':None,
         'driz_sep_outny':None,

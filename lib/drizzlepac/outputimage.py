@@ -17,13 +17,6 @@ EXTLIST = ('SCI', 'WHT', 'CTX')
 WCS_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
 'CRPIX2','CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2','WCSNAME']
 
-try:
-    a = pyfits.CompImageHDU()
-    del a
-    PYFITS_COMPRESSION = True
-except:
-    PYFITS_COMPRESSION = False
-
 # Set up dictionary of default keywords to be written out to the header
 # of the output drizzle image using writeDrizKeywords()
 DRIZ_KEYWORDS = {
@@ -99,11 +92,6 @@ class OutputImage:
         self.bunit = None
         self.units = 'cps'
         self.blot = blot
-
-        if PYFITS_COMPRESSION and 'compress' in input_pars:
-            self.compress = input_pars['compress'] # Control creation of compressed FITS files
-        else:
-            self.compress = False
 
         # Merge input_pars with each chip's outputNames object
         for p in self.parlist:
@@ -330,10 +318,8 @@ class OutputImage:
 
             # Add primary header to output file...
             fo.append(prihdu)
-            if self.single and self.compress:
-                hdu = pyfits.CompImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
-            else:
-                hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
+
+            hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
             last_kw = self.find_kwupdate_location(scihdr,'EXTNAME')
             hdu.header.update('EXTNAME','SCI',after=last_kw)
             hdu.header.update('EXTVER',1,after='EXTNAME')
@@ -343,10 +329,7 @@ class OutputImage:
             if errhdr:
                 errhdr.update('CCDCHIP','-999')
 
-            if self.single and self.compress:
-                hdu = pyfits.CompImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
-            else:
-                hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
+            hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
             last_kw = self.find_kwupdate_location(errhdr,'EXTNAME')
             hdu.header.update('EXTNAME','WHT',after=last_kw)
             hdu.header.update('EXTVER',1,after='EXTNAME')
@@ -368,10 +351,7 @@ class OutputImage:
             else:
                 _ctxarr = None
 
-            if self.single and self.compress:
-                hdu = pyfits.CompImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
-            else:
-                hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
+            hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
             last_kw = self.find_kwupdate_location(dqhdr,'EXTNAME')
             hdu.header.update('EXTNAME','CTX',after=last_kw)
             hdu.header.update('EXTVER',1,after='EXTNAME')
@@ -406,13 +386,11 @@ class OutputImage:
 
             fo = pyfits.HDUList()
 
-            if self.compress:
-                hdu = pyfits.CompImageHDU(data=sciarr, header=prihdu.header)
-            else:
-                hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
+            hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
             hdu.header.update('extend',pyfits.FALSE,after='NAXIS%s'%dim)
+            del hdu.header['nextend']
 
             # Append remaining unique header keywords from template DQ
             # header to Primary header...
@@ -449,10 +427,7 @@ class OutputImage:
                 if errhdr:
                     errhdr.update('CCDCHIP','-999')
 
-                if self.compress:
-                    hdu = pyfits.CompImageHDU(data=whtarr, header=prihdu.header)
-                else:
-                    hdu = pyfits.PrimaryHDU(data=whtarr, header=prihdu.header)
+                hdu = pyfits.PrimaryHDU(data=whtarr, header=prihdu.header)
 
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
@@ -493,10 +468,7 @@ class OutputImage:
                 else:
                     _ctxarr = ctxarr
 
-                if self.compress:
-                    hdu = pyfits.CompImageHDU(data=_ctxarr, header=prihdu.header)
-                else:
-                    hdu = pyfits.PrimaryHDU(data=_ctxarr, header=prihdu.header)
+                hdu = pyfits.PrimaryHDU(data=_ctxarr, header=prihdu.header)
 
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...

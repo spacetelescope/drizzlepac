@@ -82,7 +82,6 @@ class Catalog(object):
         self.origin = 1 # X,Y coords will ALWAYS be FITS 1-based, not numpy 0-based
         self.pars = kwargs
 
-
         self.start_id = 0
         if 'start_id' in self.pars:
             self.start_id = self.pars['start_id']

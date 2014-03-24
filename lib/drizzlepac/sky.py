@@ -16,8 +16,7 @@ is updated in the header of the input files.
 
 from __future__ import division  # confidence medium
 
-import os
-import sys
+import os, sys
 
 import util, logging
 from imageObject import imageObject
@@ -25,7 +24,7 @@ from stsci.tools import fileutil, teal, logutil
 
 from skypac.skymatch import skymatch
 from skypac.utils import MultiFileLog, ResourceRefCount, \
-     ImageRef, temp_mask_file, openImageEx
+     ImageRef, file_name_components, temp_mask_file, openImageEx
 from skypac.parseat import FileExtMaskInfo, parse_at_file
 
 import processInput
@@ -82,6 +81,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     Name        Definition
     ==========  ===================================================================
     skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
+    skymethod   'Sky computation method'
     skysub		'Perform sky subtraction?'
     skywidth	'Bin width of histogram for sampling sky statistics (in sigma)'
     skystat	 	'Sky correction statistics parameter'
@@ -95,6 +95,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     dqflags     'Bit flags for identifying bad pixels in DQ array'
     skyuser     'KEYWORD indicating a sky subtraction value if done by user'
     skyfile     'Name of file with user-computed sky values'
+    in_memory   'Optimize for speed or for memory use'
 
     ==========  ===================================================================
 
@@ -156,7 +157,8 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     if not util.getConfigObjPar(configObj, 'skysub'):
         log.info('Sky Subtraction step not performed.')
         _addDefaultSkyKW(imageObjList)
-        procSteps.endStep('Subtract Sky')
+        if procSteps is not None:
+            procSteps.endStep('Subtract Sky')
         return
 
     #General values to use
@@ -170,7 +172,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     elif 'skyuser' in paramDict and not util.is_blank(paramDict['skyuser']):
         for image in imageObjList:
             log.info('Working on sky for: %s' % image._filename)
-            _skySub(image,paramDict,saveFile=saveFile)
+            _skyUserFromHeaderKwd(image,paramDict)
     else:
         # in_memory:
         if 'in_memory' in configObj:
@@ -186,7 +188,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
         else:
             clean = True
 
-        _skymatch(imageObjList, inmemory, clean, log)
+        _skymatch(imageObjList, paramDict, inmemory, clean, log)
 
     if procSteps is not None:
         procSteps.endStep('Subtract Sky')
@@ -202,8 +204,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
 
     nimg = len(imageList)
-    if nimg < 2:
-        ml.logentry("Skymatch needs at least two images to perform{0}" \
+    if nimg == 0:
+        ml.logentry("Skymatch needs at least one images to perform{0}" \
                     "sky matching. Nothing to be done.",os.linesep)
         return
 
@@ -312,6 +314,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
     # Run skymatch algorithm:
     skymatch(new_fi,
+             skymethod   = paramDict['skymethod'],
              skystat     = paramDict['skystat'],
              lower       = paramDict['skylower'],
              upper       = paramDict['skyupper'],
@@ -328,6 +331,23 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
              clean       = clean,
              verbose     = True,
              flog        = MultiFileLog(console = True))
+
+    # Populate 'subtractedSky' and 'computedSky' of input image objects:
+    for i in range(nimg):
+        assert(not new_fi[i].fnamesOnly and not new_fi[i].image.closed)
+        image       = imageList[i]
+        skysubimage = new_fi[i].image.hdu
+        numchips    = image._numchips
+        extname     = image.scienceExt
+        assert(os.path.samefile(image._filename, skysubimage.filename()))
+
+        for extver in range(1,numchips+1,1):
+            chip = image[extname,extver]
+            if not chip.group_member:
+                continue
+            subtracted_sky     = skysubimage[extname,extver].header[skyKW]
+            chip.subtractedSky = subtracted_sky
+            chip.computedSky   = subtracted_sky
 
     # clean-up:
     for fi in new_fi:
@@ -388,7 +408,8 @@ def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
                     "static, and user masks!")
 
     # save mask to a temporary file:
-    (tmpfname, tmpmask) = temp_mask_file(img._filename, ext, mask, fnameOnly=False)
+    (root,suffix,fext)  = file_name_components(img._filename)
+    (tmpfname, tmpmask) = temp_mask_file(root, 'skymatch_mask', ext, mask)
     img[ext].outputNames['skyMatchMask'] = tmpfname
 
     return (tmpmask, 0)
@@ -456,8 +477,68 @@ def _skyUserFromFile(imageObjList,skyFile):
             print "*"
             print "*"*40
 
+def _skyUserFromHeaderKwd(imageSet,paramDict):
+    """
+    subtract the sky from all the chips in the imagefile that imageSet represents
+
+    imageSet is a single imageObject reference
+    paramDict should be the subset from an actual config object
+
+    """
+    _skyValue=0.0    #this will be the sky value computed for the exposure
+    skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
+
+    #just making sure, tricky users and all, these are things that will be used
+    #by the sky function so we want them defined at least
+    try:
+        assert imageSet._numchips > 0, "invalid value for number of chips"
+        assert imageSet._filename != '', "image object filename is empty!, doh!"
+        assert imageSet._rootname != '', "image rootname is empty!, doh!"
+        assert imageSet.scienceExt !='', "image object science extension is empty!"
+
+    except AssertionError:
+        raise AssertionError
+
+    numchips=imageSet._numchips
+    sciExt=imageSet.scienceExt
+
+    # User Subtraction Case, User has done own sky subtraction,
+    # so use the image header value for subtractedsky value
+    skyuser=paramDict["skyuser"]
+
+    if skyuser != '':
+        print "User has computed their own sky values..."
+
+        if skyuser != skyKW:
+            print "    ...updating MDRIZSKY with supplied value."
+            for chip in range(1,numchips+1,1):
+                if not imageSet[chipext].group_member:
+                    # skip extensions/chips that will not be processed
+                    continue
+                try:
+                    chipext = '%s,%d'%(sciExt,chip)
+                    _skyValue = imageSet[chipext].header[skyuser]
+
+                except:
+                    print "**************************************************************"
+                    print "*"
+                    print "*  Cannot find keyword ",skyuser," in ",imageSet._filename
+                    print "*"
+                    print "**************************************************************\n\n\n"
+                    raise KeyError
+
+                _updateKW(imageSet[sciExt+','+str(chip)],
+                          imageSet._filename,(sciExt,chip),skyKW,_skyValue)
+
+                # Update internal record with subtracted sky value
+                imageSet[chipext].subtractedSky = _skyValue
+                imageSet[chipext].computedSky = 0.0
+                print "Setting ",skyKW,"=",_skyValue
+
 #this is the main function that does all the real work in computing the
 # statistical sky value for each image (set of chips)
+# mcara: '_skySub' is obsolete now:
+#        was replaced with '_skyUserFromHeaderKwd' and '_skymatch'
 def _skySub(imageSet,paramDict,saveFile=False):
     """
     subtract the sky from all the chips in the imagefile that imageSet represents
@@ -647,7 +728,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
     fobj.close()
 
 def _addDefaultSkyKW(imageObjList):
-    """Add MDRIZSKY keyword to SCI headers of all input images,
+    """Add MDRIZSKY keyword to "commanded" SCI headers of all input images,
         if that keyword does not already exist.
     """
     skyKW = "MDRIZSKY"
@@ -658,9 +739,12 @@ def _addDefaultSkyKW(imageObjList):
         sciExt=imageSet.scienceExt
         fobj = fileutil.openImage(fname, mode='update')
         for chip in range(1,numchips+1,1):
-            exten = (sciExt,chip)
-            if skyKW not in fobj[exten].header:
-                fobj[exten].header.update(skyKW, Value,
+            ext = (sciExt,chip)
+            if not imageSet[ext].group_member:
+                # skip over extensions not used in processing
+                continue
+            if skyKW not in fobj[ext].header:
+                fobj[ext].header.update(skyKW, Value,
                                 comment='Sky value computed by AstroDrizzle')
                 log.info("MDRIZSKY keyword not found in the %s[%s,%d] header."%(
                             fname,sciExt,chip))
