@@ -221,7 +221,7 @@ class WithLogging(object):
                     # Insure that any exception raised by the code gets passed on
                     # (hope that end_logging didn't change the last exception raised)
                     if errorobj:
-                        raise
+                        raise errorobj
 
         return wrapper
 
