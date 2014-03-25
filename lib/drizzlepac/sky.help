@@ -63,7 +63,7 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
       input images whose sky value will be set to (reported to be) 0.
       This setting will "equalize" sky values between the images in
       large mosaics. However, this method is not recommended when used
-      in conjunction with `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_ 
+      in conjunction with `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
       because it computes relative sky values while `astrodrizzle` needs
       "measured" sky values for median image generation and CR rejection.
 
@@ -132,7 +132,7 @@ skyuser : str (Default Value = '')
 
 
 skyfile : str (Default Value = '')
-    Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips. 
+    Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.
 
 
 in_memory : bool (Default Value = False)
@@ -229,7 +229,7 @@ Second, two new methods have been introduced: ``'globalmin'`` and
   .. note::
 
     * Footprints are managed by the
-      :py:class:`~sphere.polygon.SphericalPolygon` class.
+      :py:class:`~stsci.sphere.polygon.SphericalPolygon` class.
 
     * Both footprints *and* associated exposures (image data, WCS
       information, and other header information) are managed by the
