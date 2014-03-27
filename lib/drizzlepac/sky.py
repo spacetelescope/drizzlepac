@@ -22,10 +22,10 @@ import util, logging
 from imageObject import imageObject
 from stsci.tools import fileutil, teal, logutil
 
-from skypac.skymatch import skymatch
-from skypac.utils import MultiFileLog, ResourceRefCount, \
+from stsci.skypac.skymatch import skymatch
+from stsci.skypac.utils import MultiFileLog, ResourceRefCount, \
      ImageRef, file_name_components, temp_mask_file, openImageEx
-from skypac.parseat import FileExtMaskInfo, parse_at_file
+from stsci.skypac.parseat import FileExtMaskInfo, parse_at_file
 
 import processInput
 import stsci.imagestats as imagestats
