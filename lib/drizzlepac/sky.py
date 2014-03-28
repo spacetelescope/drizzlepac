@@ -512,13 +512,12 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
         if skyuser != skyKW:
             print "    ...updating MDRIZSKY with supplied value."
             for chip in range(1,numchips+1,1):
+                chipext = '%s,%d'%(sciExt,chip)
                 if not imageSet[chipext].group_member:
                     # skip extensions/chips that will not be processed
                     continue
                 try:
-                    chipext = '%s,%d'%(sciExt,chip)
                     _skyValue = imageSet[chipext].header[skyuser]
-
                 except:
                     print "**************************************************************"
                     print "*"
