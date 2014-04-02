@@ -330,7 +330,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
              clobber     = True,
              clean       = clean,
              verbose     = True,
-             flog        = MultiFileLog(console = True),
+             flog        = MultiFileLog(console = True, enableBold = False),
              _taskname4history = 'AstroDrizzle')
 
     # Populate 'subtractedSky' and 'computedSky' of input image objects:
