@@ -1,6 +1,8 @@
-import pyfits, pyregion
-from os import path
+import pyfits, pyregion, stwcs
+from os import path, extsep #, remove
+from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
+from regfilter import fast_filter_outer_regions
 
 
 # This is specifically NOT intended to match the package-wide version information.
@@ -10,13 +12,39 @@ __taskname__ = 'mapreg'
 __author__ = 'Mihai Cara'
 
 
+class _AuxSTWCS(object):
+    def __init__(self, fobj=None, ext=None, minerr=0.0, wcskey=" "):
+        self._stwcs = stwcs.wcsutil.HSTWCS(fobj=fobj, ext=ext,
+                                           minerr=minerr, wcskey=wcskey)
+
+    @property
+    def wcs(self):
+        return self._stwcs.wcs
+
+    def sub(self, axes):
+        return self._stwcs.sub(axes=axes)
+
+    def wcs_sky2pix(self, *args, **kwargs):
+        ar = list(args[:])
+        if 'origin' in kwargs:
+            ar.append(kwargs['origin'])
+        return self._stwcs.all_sky2pix( *tuple(ar) )
+        #return self._stwcs.all_sky2pix( *args, **kwargs )
+
+    def wcs_pix2sky(self, *args, **kwargs):
+        ar = list(args[:])
+        if 'origin' in kwargs:
+            ar.append(kwargs['origin'])
+        return self._stwcs.all_pix2sky( *tuple(ar) )
+        #return self._stwcs.all_pix2sky( *args, **kwargs )
+
+
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
            chip_reg='', outpath='./regions', filter='', catfname='', iteractive=True,
            append=False, verbose=True):
     from util import check_blank
     from tweakutils import parse_input
-    from stsci.tools.parseinput import parseinput
-    
+
     input_reg       = _simple_parse_teal_fname( check_blank(input_reg),
                                                 parse_at = True )
     images_par, cat = parse_input( check_blank(images) )
@@ -29,9 +57,9 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
                                                 parse_at = False )
     outpath_par     = check_blank(outpath)
     filter_par      = check_blank(filter)
-    
+
     catfname_par    =  check_blank(catfname)
-    
+
     map_region_files( input_reg, images=images_par, img_wcs_ext=img_wcs_ext_par,
                       refimg=refimg_par, ref_wcs_ext=ref_wcs_ext_par,
                       chip_reg=chip_reg_par,
@@ -88,12 +116,6 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                      refimg=None, ref_wcs_ext='sci', chip_reg=None,
                      outpath='./regions', filter=None, catfname=None,
                      iteractive=True, append=False, verbose=True):
-    # ...
-    from os import path, extsep #, remove
-    import pyregion, stwcs
-    from regfilter import fast_filter_outer_regions
-    from stsci.tools.fileutil import findExtname
-    
     # Check that output directory exists:
     if outpath in [None, ""]:
         outpath = path.curdir + path.sep
@@ -142,40 +164,42 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
         try:
             for extp in cregext:
                 ext = extp[1]
-                
+
                 # check that the extension is of supported type:
                 if not _is_supported_hdu(imghdu[ext].header):
                     raise RuntimeError("Extension {} is of unsupported " \
                                        "type.".format(ext))
-                
+
                 # Remove references to non-SIP distortions from the header
                 #TODO: remove this line of code as well as the remove_header_tdd
                 # function once publicly available release of pyregion uses
                 # all_world2pix and all_pix2world functions and does this header
                 # cleanup itself.
-                remove_header_tdd(imghdu[ext].header)
-            
+#                remove_header_tdd(imghdu[ext].header)
+
                 ####### added to pass hstwcs instead of header to pyregion
 #                if isinstance(ext, str):
 #                    ext = findExtname(imghdu, extname = ext, extver = 1)
 #                elif isinstance(ext, tuple):
 #                    ext = findExtname(imghdu, extname = ext[0], extver = ext[1])
-                wcs = stwcs.wcsutil.HSTWCS(imghdu, ext=ext)
-                extreg = all_sky_regions.as_imagecoord(wcs)
+
+#                wcs = stwcs.wcsutil.HSTWCS(imghdu, ext=ext)
+                wcs    = _AuxSTWCS(imghdu, ext=ext)
+                extreg = all_sky_regions.as_imagecoord(wcs, rot_wrt_axis=2)
                 #######
-                
-                #extreg = all_sky_regions.as_imagecoord(imghdu[ext].header)
-                
+
+                #extreg = all_sky_regions.as_imagecoord(imghdu[ext].header, rot_wrt_axis=2)
+
                 if extp[0]: # add "fixed" regions if any
                     extreg = pyregion.ShapeList(extreg+extp[0])
-                
+
                 # filter out regions outside the image:
                 if filter and filter.lower() == 'fast':
                     fast_filter_outer_regions( extreg,
                                                imghdu[ext].header['NAXIS1'],
                                                imghdu[ext].header['NAXIS2'],
                                                origin = 1 )
-            
+
                 if len(extreg) < 1: # do not create empty region files
                     catreg.append('None')
                     continue
@@ -185,14 +209,14 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                 basefname, fext = path.splitext(path.basename(fname))
                 regfname = basefname + extsuffix + extsep + "reg"
                 fullregfname = path.join(outpath, regfname)
-            
+
                 catreg.append(regfname)
 
                 # save regions to a file:
                 if append and path.isfile(fullregfname):
                     old_extreg = pyregion.open(fullregfname)
                     extreg = pyregion.ShapeList(old_extreg + extreg)
-                    
+
                 #TODO: pyregion.write does not work well. For now use _regwite
                 # (until the bug fixes get to the pyregion project).
                 #TODO: we replaced pyregion.write with our implementation
@@ -200,8 +224,9 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                 # pyregion until these changes get to be implemented in the
                 # publicly available release of pyregion.
                 #
-                #_regwrite(extreg, regfname)
-                extreg.write(fullregfname)
+                _regwrite(extreg, regfname)
+                #extreg.write(fullregfname) # <- use this instead of _regwrite
+                                            # once the pyregion bugs are fixed.
             cattb.append([fname, catreg])
         except:
             if imghdu:
@@ -261,9 +286,9 @@ def _regwrite(shapelist,outfile):
     # NOTE: This function is provided as a temoprary workaround for the above
     #    listed problems of the ShapeList.write. We hope that a future version
     #    of pyregion will address all these issues.
-    #    
+    #
     #TODO: Push these changes to pyregion.
-    
+
     if len(shapelist) < 1:
         _print_warning("The region list is empty. The region file \"%s\" "\
                        "will be empty." % outfile)
@@ -303,10 +328,10 @@ def _regwrite(shapelist,outfile):
             text_coordlist = [ "%f" % f for f in shape.coord_list ]
             shape_coords = "(" + ",".join(text_coordlist) + ")"
             shape_comment = " # " + shape.comment if shape.comment else ''
-            
+
             shape_str = shape_attr + shape_excl + shape.name + shape_coords + \
                         shape_comment
-            
+
             print >>outf, shape_str
 
     except IOError as e:
@@ -325,7 +350,7 @@ def _regwrite(shapelist,outfile):
 
 
 def _is_supported_hdu(header):
-    # check that NAXIS == 2: 
+    # check that NAXIS == 2:
     if not 'NAXIS' in header or header['NAXIS'] != 2:
         return False
     if header['NAXIS1'] < 1 or header['NAXIS2'] < 1:
@@ -353,27 +378,22 @@ def shapes_img2sky(reglist, wcs):
 
 
 def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
-    # ...
-    from os import path
-    from pyfits import getheader
-    import pyregion
-    
     # check input region file names and initialize region lists:
     region_lists = []
     single_inp_reg = False
-    
+
     if isinstance(input_reg, str) and len(input_reg) > 0: # a single region file
         single_inp_reg  = True
         input_regfnames = [ input_reg ]
         ref_wcs_exts    = [ 0 ] # for a single input region we assume that the
                                 # default location of the WCS is in the primary
                                 # header (if nothing else specified)
-                                
+
     elif isinstance(input_reg, list) and input_reg: # a non-empty list of files
         # select non-zero length file names;replace all other elements with None
         input_regfnames = [ fname if isinstance(fname,str) and \
                             len(fname)>0 else None for fname in input_reg ]
-        
+
         # Populate ref_wcs_exts with "default" FITS extension numbers according
         # to the input region position in the input_regfnames list
         # (starting with 1). That is, if multiple regions are given, then we
@@ -391,7 +411,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
     else:
         input_regfnames = []
         ref_wcs_exts    = [] # unnecessary, really, because of the next "if"
-    
+
     # Check that we have at least one "valid" input region file name
     if len(input_regfnames) < 1:
         raise RuntimeError("Parameter 'input_reg' must be either a non-zero " \
@@ -409,16 +429,16 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
         try:
             reglist = pyregion.open(fname)
             region_lists.append(reglist)
-        
+
         except IOError:
             raise IOError("Unable to open the input region file \'%s\'." % \
                 fname)
-        
+
         except:
             raise RuntimeError("Unexpected error parsing input region " \
                 "file \'%s\'. Suspecting either a corrupt file or "     \
                 "an unrecognizable region file format." % fname)
-        
+
         # check if WCS is needed to convert from image to sky CS
         if not _needs_ref_WCS(reglist):
             ref_wcs_exts[ireg] = None
@@ -434,22 +454,22 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
         if refimg is None:
             raise ValueError("Argument 'refimg' cannot be None when some " \
                              "input regions are given in logical coordinates.")
-        
+
         if not isinstance(refimg, str):
             raise TypeError("Argument 'refimg' must be a string with the " \
                             "name of an existing FITS file and, optionally, " \
                             "followed by an extension specification.")
-        
+
         (refimg_fname, frefext) = extension_from_filename(refimg)
-        
+
         if not path.isfile(refimg_fname):
             raise IOError("The reference FITS file \'%s\' does not exist." % \
                           refimg_fname)
-        
-        if frefext:            
+
+        if frefext:
             # Try to determine the extension name from the reference file name
             refext = parse_ext(frefext)
-            
+
             if single_inp_reg:
 
                 if isinstance(refext, tuple) or isinstance(refext, int):
@@ -458,8 +478,8 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
                     ref_wcs_exts = [ (refext,1) ]
                 else:
                     raise RuntimeError("Logical error in the code.")
-            
-            else:                
+
+            else:
                 # check that FITS extension specified in the reference image file
                 # name is not too restrictive (for multiple regions it cannot
                 # contain a specific extver):
@@ -469,14 +489,14 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
                     "region files (in logical CS) are provided as input. "     \
                     "Only extension name ('EXTNAME') is allowed (e.g., "       \
                     "[SCI], [DQ], etc.)")
-            
+
                 if isinstance(refext, int):
                     raise RuntimeError("Extension number (e.g., [0], [2], "    \
                     "etc.) in the reference file name should not be present "  \
                     "when multiple region files (in logical CS) are "          \
                     "provided as input. Only extension name ('EXTNAME') is "   \
                     "allowed (e.g., [SCI], [DQ], etc.)")
-            
+
                 ref_wcs_exts = [ None if extn is None else (refext, extn) \
                                  for extn in ref_wcs_exts ]
 
@@ -484,7 +504,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
             # Try to determine the extension name from the 'ref_wcs_ext'
             # argument:
             refext = parse_ext(ref_wcs_ext)
-            
+
             if single_inp_reg:
                 if isinstance(refext, tuple) or isinstance(refext, int):
                     ref_wcs_exts = [ refext ]
@@ -492,7 +512,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
                     ref_wcs_exts = [ (refext,1) ]
                 else:
                     raise RuntimeError("Logical error in the code.")
-            
+
             else:
                 # check that FITS extension specified in the reference image
                 # file name is not too restrictive (for multiple regions it
@@ -503,14 +523,14 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
                     "multiple region files (in logical CS) are provided "      \
                     "as input. Only extension name ('EXTNAME') is allowed "    \
                     "(e.g., [SCI], [DQ], etc.)")
-                
+
                 if isinstance(refext, int):
                     raise RuntimeError("Extension number (e.g., [0], [2], "    \
                     "etc.) in the 'ref_wcs_ext' argument should not be "       \
                     "present when multiple region files (in logical CS) are "  \
                     "provided as input. Only extension name ('EXTNAME') is "   \
                     "allowed (e.g., [SCI], [DQ], etc.)")
-                
+
                 ref_wcs_exts = [ None if extn is None else (refext, extn) \
                                  for extn in ref_wcs_exts ]
         # check if the extensions found above are present
@@ -522,9 +542,9 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
         # load headers containing WCS from the reference input FITS file:
         ref_wcs_headers = [ None if extn is None \
-                            else getheader(refimg_fname, ext=extn) \
+                            else pyfits.getheader(refimg_fname, ext=extn) \
                             for extn in ref_wcs_exts ] #TODO: return WCS instead of header
-    
+
     else:
         # no WCS is needed (regions are already in sky coordinates):
         ref_wcs_headers = [ None for reg in region_lists ]
@@ -564,7 +584,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
     imgfnames = []
     if not images:
         raise TypeError("Argument 'images' cannot be an empty list or None.")
-        
+
     if not isinstance(images, list):
         images = [ images ]
 
@@ -597,7 +617,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
     exts = parse_ext(img_wcs_ext, default_extver=None)
     if not isinstance(exts, list):
         exts = [ exts ]
-    
+
     # for each string extension in the extension list 'exts', find out how many
     # extension versions exist and create a new list of extensions in which the
     # string (e.g., 'sci') gets replaced with tuples for each available
@@ -668,11 +688,11 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
             reglist = pyregion.open(fname)
             region_lists.append(reglist)
             #TODO: Check that regions are all in *image* coordinates
-        
+
         except IOError:
             raise IOError("Unable to open the input region file \'%s\'." %     \
                           fname)
-        
+
         except:
             raise RuntimeError("Unexpected error parsing input region "        \
                                "file \'%s\'. Suspecting either a corrupt "     \
@@ -720,7 +740,7 @@ def _split_sky_img_regions(reglist):
     #
     # Return Value: a tuple of lists of regions (image, sky)
     from pyregion.wcs_helper import image_like_coordformats
-    
+
     img = []
     sky = []
 
@@ -760,7 +780,7 @@ def parse_ext(extn, default_extver=None):
 
     if isinstance(extn, list):
         return [ parse_ext(ext, default_extver) for ext in extn ]
-    
+
     if default_extver != None and not isinstance(default_extver, int):
         raise TypeError("Argument 'default_extver' must be an integer or None.")
 
@@ -773,7 +793,7 @@ def parse_ext(extn, default_extver=None):
     if isinstance(extn, tuple):
         if len(extn) < 1:
             return 0
-        
+
         extname = extn[0]
         extver  = default_extver
 
@@ -793,7 +813,7 @@ def parse_ext(extn, default_extver=None):
             extver = extn[1] if extn[1] != None else default_extver
 
         return (extname, extver) if extver != None else extname
-        
+
     if not isinstance(extn, str):
         raise TypeError("Input extension name/number is not of any of the "\
                         "supported types: integer number, string, or tuple.")
@@ -908,19 +928,19 @@ def count_extensions(img, extname='SCI'):
 def get_extver_list(img, extname='SCI'):
     """ Return a list of all extension versions of 'extname' extensions.
     'img' can be either a file name or a HDU List object (from pyfits).
-    """    
+    """
     if isinstance(img, str):
         img = pyfits.open(img)
         img.close()
     elif not isinstance(img, pyfits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) "  \
                         "or a pyfits.HDUList object.")
-    
+
     # when extver is None - return the range of all FITS extensions
     if extname is None:
         extver = range(len(img))
         return extver
-    
+
     if not isinstance(extname, str):
         raise TypeError("Argument 'extname' must be either a string "          \
             "indicating the value of the 'EXTNAME' keyword of the extensions " \
@@ -928,7 +948,7 @@ def get_extver_list(img, extname='SCI'):
             "extension numbers of all HDUs in the 'img' FITS file.")
 
     extname = extname.upper()
-    
+
     extver = []
     for e in img:
         #if not isinstance(e, pyfits.ImageHDU): continue
@@ -946,7 +966,7 @@ def _check_FITS_extvers(img, extname, extvers):
     extension versions for a given EXTNAME cannot be found in the FITS image.
     """
     default_extn = 1 if isinstance(extname, str) else 0
-    
+
     if isinstance(extvers, list):
         extv = [ ext if ext != None else default_extn for ext in extvers ]
     else:
@@ -970,10 +990,10 @@ def _check_FITS_extensions(img, extensions):
     # as keys the first elements of the tuples and the values being lists of
     # the second elements of the tuples corresponding to a given key:
     for extn in extensions:
-    
+
         if isinstance(extn, int):
             int_ext.append(extn)
-        
+
         elif isinstance(extn, tuple):
             if len(extn) < 2 or not isinstance(extn[0], str) or \
                                 not isinstance(extn[1], int):
@@ -986,7 +1006,7 @@ def _check_FITS_extensions(img, extensions):
                 ext_dict[extn[0]].append(extn[1])
             else:
                 ext_dict.update({ extn[0] : [ extn[1] ] })
-            
+
         elif isinstance(extn, str):
             if extn in ext_dict:
                 ext_dict[extn].append(1)
@@ -1046,9 +1066,9 @@ def getHelpAsString():
     helpString = ''
     if teal:
         helpString += teal.getHelpFileAsString(__taskname__,__file__)
-    
+
     if helpString.strip() == '':
         helpString += __doc__+'\n'
-    
+
     return helpString
 
