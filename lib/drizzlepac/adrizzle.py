@@ -148,7 +148,7 @@ def run(configObj, wcsmap=None):
     # Set up the output data array and insure that the units for that array is 'cps'
     if outsci is None:
         # Define a default blank array based on definition of output_wcs
-        outsci = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+        outsci = np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     else:
         # Convert array to units of 'cps', if needed
         if outexptime != 0.0:
@@ -163,7 +163,7 @@ def run(configObj, wcsmap=None):
         outwht = get_data(configObj['outweight'])
 
     if outwht is None:
-        outwht = np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+        outwht = np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     else:
         outwht = outwht.astype(np.float32)
 
@@ -174,7 +174,7 @@ def run(configObj, wcsmap=None):
         outcon = get_data(configObj['outcontext'])
         keep_con = True
         if outcon is None:
-            outcon = np.zeros((1,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+            outcon = np.zeros((1,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
         else:
             outcon = outcon.astype(np.int32)
     # Interpret wt_scl parameter
@@ -561,8 +561,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     #
     _outsci = _outwht = _outctx = None
     if not will_parallel:
-        _outsci=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
-        _outwht=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+        _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
 
     # Compute how many planes will be needed for the context image.
     _nplanes = int((_numctx['all']-1) / 32) + 1
@@ -574,7 +574,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Always initialize context images to a 3-D array
     # and only pass the appropriate plane to drizzle as needed
     if not will_parallel:
-        _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+        _outctx = np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
 
     # Keep track of how many chips have been processed
     # For single case, this will determine when to close
@@ -655,13 +655,13 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
     # Check for unintialized inputs
     here = _outsci==None and _outwht==None and _outctx==None and _hdrlist==None
     if _outsci is None:
-        _outsci=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+        _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outwht is None:
-        _outwht=np.zeros((output_wcs.naxis2,output_wcs.naxis1),dtype=np.float32)
+        _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outctx is None:
-       _outctx = np.zeros((_nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+        _outctx = np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
     if _hdrlist is None:
-       _hdrlist = []
+        _hdrlist = []
 
     # Work on each chip - note that they share access to the arrays above
     for chip in chiplist:
@@ -986,7 +986,7 @@ def do_driz(insci, input_wcs, inwht,
             nplanes = 1
         # We need to expand the context image here to accomodate the addition of
         # this new image
-        newcon = np.zeros((nplanes,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+        newcon = np.zeros((nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
         # now copy original outcon arrays into new array
         if outcon.ndim == 3:
             for n in range(outcon.shape[0]):
@@ -995,7 +995,7 @@ def do_driz(insci, input_wcs, inwht,
             newcon[0] = outcon.copy()
     else:
         if outcon is None:
-            outcon = np.zeros((1,output_wcs.naxis2,output_wcs.naxis1),dtype=np.int32)
+            outcon = np.zeros((1,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
             _planeid = 0
         newcon = outcon
 
@@ -1008,7 +1008,7 @@ def do_driz(insci, input_wcs, inwht,
     if wcsmap is None and cdriz is not None:
         log.info('Using WCSLIB-based coordinate transformation...')
         log.info('stepsize = %s' % stepsize)
-        mapping = cdriz.DefaultWCSMapping(input_wcs,output_wcs,int(input_wcs.naxis1),int(input_wcs.naxis2),stepsize)
+        mapping = cdriz.DefaultWCSMapping(input_wcs,output_wcs,int(input_wcs._naxis1),int(input_wcs._naxis2),stepsize)
     else:
         #
         ##Using the Python class for the WCS-based transformation

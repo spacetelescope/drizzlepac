@@ -444,8 +444,8 @@ class baseImageObject(object):
         outputvals = self.outputValues
 
         outputvals['output'] = output_wcs.outputNames['outFinal']
-        outputvals['outnx'] = output_wcs.wcs.naxis1
-        outputvals['outny'] = output_wcs.wcs.naxis2
+        outputvals['outnx'] = output_wcs.wcs._naxis1
+        outputvals['outny'] = output_wcs.wcs._naxis2
         outputvals['texptime'] = output_wcs._exptime
         outputvals['texpstart'] = output_wcs._expstart
         outputvals['texpend'] = output_wcs._expend
