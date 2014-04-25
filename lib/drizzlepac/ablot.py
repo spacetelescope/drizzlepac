@@ -340,9 +340,9 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
     kscale = 1.0
 
     xmin = 1
-    xmax = source_wcs.naxis1
+    xmax = source_wcs._naxis1
     ymin = 1
-    ymax = source_wcs.naxis2
+    ymax = source_wcs._naxis2
 
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
