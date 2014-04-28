@@ -233,7 +233,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
             owcs = outwcs.final_wcs
         else:
             owcs = outwcs
-        output_mem = owcs.naxis1*owcs.naxis2*4*3 # bytes used for output arrays
+        output_mem = owcs._naxis1*owcs._naxis2*4*3 # bytes used for output arrays
     img1 = imageObjectList[0]
     numchips = 0
     input_mem = 0
@@ -259,7 +259,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     print '*'*80
     print '*'
     print '*  Estimated memory usage:  up to %d Mb.'%(max_mem)
-    print '*  Output image size:       %d X %d pixels. '%(owcs.naxis1,owcs.naxis2)
+    print '*  Output image size:       %d X %d pixels. '%(owcs._naxis1,owcs._naxis2)
     print '*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024))
     print '*  Cores used by task:      %d'%(pool_size)
     print '*'

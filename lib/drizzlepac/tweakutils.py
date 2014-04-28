@@ -606,8 +606,8 @@ def createWcsHDU(wcs):
     hdu.header.update('EXTVER',1)
     # Now, update original image size information
     hdu.header.update('WCSAXES',2,comment="number of World Coordinate System axes")
-    hdu.header.update('NPIX1',wcs.naxis1,comment="Length of array axis 1")
-    hdu.header.update('NPIX2',wcs.naxis2,comment="Length of array axis 2")
+    hdu.header.update('NPIX1',wcs._naxis1,comment="Length of array axis 1")
+    hdu.header.update('NPIX2',wcs._naxis2,comment="Length of array axis 2")
     hdu.header.update('PIXVALUE',0.0,comment="values of pixels in array")
 
     # Write out values to header...

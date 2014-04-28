@@ -328,11 +328,11 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         source_wcs
             HSTWCS object representing source image WCS.
         blot_wcs
-            HSTWCS object representing the blotted image WCS.
+            (py)wcs.WCS object representing the blotted image WCS.
         exptime
 
     """
-    _outsci = np.zeros((blot_wcs.naxis2,blot_wcs.naxis1),dtype=np.float32)
+    _outsci = np.zeros((blot_wcs._naxis2,blot_wcs._naxis1),dtype=np.float32)
 
     # Now pass numpy objects to callable version of Blot...
     build=False
@@ -340,9 +340,9 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
     kscale = 1.0
 
     xmin = 1
-    xmax = source_wcs.naxis1
+    xmax = source_wcs._naxis1
     ymin = 1
-    ymax = source_wcs.naxis2
+    ymax = source_wcs._naxis2
 
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
@@ -359,7 +359,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
         Use default C mapping function.
         """
         print 'Using default C-based coordinate transformation...'
-        mapping = cdriz.DefaultWCSMapping(blot_wcs,source_wcs,int(blot_wcs.naxis1),int(blot_wcs.naxis2),stepsize)
+        mapping = cdriz.DefaultWCSMapping(blot_wcs,source_wcs,int(blot_wcs._naxis1),int(blot_wcs._naxis2),stepsize)
         pix_ratio = source_wcs.pscale/wcslin.pscale
     else:
         #

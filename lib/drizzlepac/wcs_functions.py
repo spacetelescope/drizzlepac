@@ -537,11 +537,11 @@ def mergeWCS(default_wcs,user_pars):
     _mrot = fileutil.buildRotMatrix(_delta_rot)
 
     if ('outnx' not in user_pars) or user_pars['outnx'] == None:
-        _corners = np.array([[0.,0.],[outwcs.naxis1,0.],[0.,outwcs.naxis2],[outwcs.naxis1,outwcs.naxis2]])
-        _corners -= (outwcs.naxis1/2.,outwcs.naxis2/2.)
+        _corners = np.array([[0.,0.],[outwcs._naxis1,0.],[0.,outwcs._naxis2],[outwcs._naxis1,outwcs._naxis2]])
+        _corners -= (outwcs._naxis1/2.,outwcs._naxis2/2.)
         _range = util.getRotatedSize(_corners,_delta_rot)
         shape = ((_range[0][1] - _range[0][0])*_ratio,(_range[1][1]-_range[1][0])*_ratio)
-        old_shape = (outwcs.naxis1*_ratio,outwcs.naxis2*_ratio)
+        old_shape = (outwcs._naxis1*_ratio,outwcs._naxis2*_ratio)
 
         _crpix = (shape[0]/2., shape[1]/2.)
 
@@ -560,8 +560,8 @@ def mergeWCS(default_wcs,user_pars):
     outwcs.rotateCD(_delta_rot)
     outwcs.orientat += -_delta_rot
     # Update size
-    outwcs.naxis1 =  int(shape[0])
-    outwcs.naxis2 =  int(shape[1])
+    outwcs._naxis1 =  int(shape[0])
+    outwcs._naxis2 =  int(shape[1])
     # Update reference position
     outwcs.wcs.crpix = np.array(_crpix,dtype=np.float64)
     if _crval is not None:
