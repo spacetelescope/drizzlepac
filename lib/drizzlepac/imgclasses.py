@@ -1,9 +1,11 @@
 import copy,os
 import numpy as np
 
-import pywcs
+#import pywcs
+from astropy import wcs as pywcs
 import stwcs
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 
 from stwcs import distortion
 from stwcs.distortion import utils
@@ -103,7 +105,7 @@ class Image(object):
         self.chip_catalogs = {}
         self.xy_catalog = [[],[],[],[]]
         num_sources = 0
-    
+
         # Analyze exclusion file list:
         reg_mode = "exclude only"
         if exclusions is not None:
@@ -134,7 +136,7 @@ class Image(object):
                 raise e
         else:
             exclusions = num_sci * [ None ]
-    
+
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
             extnum = fu.findExtname(pyfits.open(filename),extname,extver=sci_extn)
@@ -160,7 +162,7 @@ class Image(object):
             kwargs['start_id'] = num_sources
             catalog = catalogs.generateCatalog(wcs, mode=catalog_mode,
                         catalog=source, src_find_filters=excludefile, **kwargs)
-    
+
             # read in and convert all catalog positions to RA/Dec
             catalog.buildCatalogs(exclusions=None) # (exclusions=excludefile)
             num_sources += catalog.num_objects

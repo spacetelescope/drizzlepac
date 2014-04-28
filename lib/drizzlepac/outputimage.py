@@ -1,6 +1,7 @@
 from __future__ import division # confidence medium
 
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 from stsci.tools import fileutil, readgeis, logutil
 
 from . import wcs_functions

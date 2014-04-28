@@ -13,7 +13,8 @@ import numpy as np
 from stwcs import distortion
 
 from stsci.tools import fileutil, logutil, textutil
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 import util
 import wcs_functions
 import buildmask

@@ -8,7 +8,8 @@ from stsci.tools import fileutil, asnutil, logutil
 import util
 import imageObject
 import stwcs
-import pywcs
+#import pywcs
+from astropy import wcs as pywcs
 from stwcs import distortion, wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs

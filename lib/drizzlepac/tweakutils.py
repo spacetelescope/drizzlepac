@@ -4,7 +4,8 @@ import numpy as np
 import stsci.ndimage as ndimage
 
 from stsci.tools import asnutil, irafglob, parseinput, fileutil
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 import astrolib.coords as coords
 
 

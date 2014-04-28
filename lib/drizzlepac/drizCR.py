@@ -7,7 +7,8 @@ from __future__ import division # confidence medium
 
 import numpy as np
 import stsci.convolve as NC
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 import os
 import quickDeriv
 import util

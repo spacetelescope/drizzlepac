@@ -1,9 +1,11 @@
 import re
 
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 import numpy as np
 
-import pywcs
+#import pywcs
+from astropy import wcs as pywcs
 
 from stsci.tools import fileutil, logutil
 from stwcs import wcsutil, updatewcs

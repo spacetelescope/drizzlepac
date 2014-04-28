@@ -22,7 +22,8 @@ import sys
 
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 from stsci.imagestats import ImageStats
 import util
 import processInput

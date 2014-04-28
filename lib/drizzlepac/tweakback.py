@@ -1,7 +1,8 @@
 import os
 
 import numpy as np
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 
 from stwcs import wcsutil
 from stsci.tools import parseinput
@@ -113,7 +114,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
     """
     print 'TweakBack Version %s(%s) started at: %s \n'%(
                     __version__,__vdate__,util._ptime()[0])
-    
+
     # Interpret input list/string into list of filename(s)
     fltfiles = parseinput.parseinput(input)[0]
 
