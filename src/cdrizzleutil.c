@@ -1,9 +1,10 @@
 #define NO_IMPORT_ARRAY
+#define NO_IMPORT_ASTROPY_WCS_API
 #include "cdrizzlemap.h"
 #include "cdrizzleutil.h"
 
 #include <assert.h>
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -401,4 +402,3 @@ mgf2(double lambda) {
               4.4543708e9/(11.17083e9-sig2) +
               4.0838897e5/(1.766361e5-sig2));
 }
-

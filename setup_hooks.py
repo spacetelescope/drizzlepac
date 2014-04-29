@@ -25,19 +25,9 @@ def wcs_include(command_obj) :
 
 	# get information from astropy.wcs
 	from astropy import wcs
-	includes = [wcs.get_include()]
+        include_path = wcs.get_include()
+	includes = [os.path.join(include_path, 'astropy_wcs'),
+                    os.path.join(include_path, 'wcslib')]
 
-	# each place where the include directory is named exactly "wcs",
-	# replace it with the include directories computed above
-	for extension in command_obj.extensions:
-		if 'wcs' not in extension.include_dirs:
-			continue
-		idx = extension.include_dirs.index('wcs')
-		for inc in includes:
-			extension.include_dirs.insert(idx, inc)
-		extension.include_dirs.remove('wcs')
-
-
-
-
-
+        for extension in command_obj.extensions:
+                extension.include_dirs.extend(includes)

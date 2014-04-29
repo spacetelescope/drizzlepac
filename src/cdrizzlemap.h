@@ -2,7 +2,7 @@
 #define CDRIZZLEDRIZ_H
 
 #include "driz_portability.h"
-#include "astropy_wcs/astropy_wcs_api.h"
+#include "astropy_wcs_api.h"
 #include "cdrizzleutil.h"
 /**
 

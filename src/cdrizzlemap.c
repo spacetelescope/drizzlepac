@@ -1,9 +1,9 @@
 #define NO_IMPORT_ARRAY
-#define NO_IMPORT_PYWCS_API
+#define NO_IMPORT_ASTROPY_WCS_API
 #include "driz_portability.h"
-#include "pywcs_api.h"
+#include "astropy_wcs_api.h"
 
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
 #include <string.h>
 #include <time.h>
@@ -670,4 +670,3 @@ default_mapping(void* state,
 
   return 0;
 }
-

@@ -1,11 +1,12 @@
 #define NO_IMPORT_ARRAY
+#define NO_IMPORT_ASTROPY_WCS_API
 
 #include "driz_portability.h"
 #include "cdrizzlemap.h"
 #include "cdrizzleblot.h"
 
 #include <assert.h>
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -797,7 +798,7 @@ interpolate_sinc_(const float* data, const integer_t firstt,
 
     dnx = len_coeff;
     dny = lenary;
-    
+
     for (m = 0; m < 3; ++m) {
       for (j = indices[m][0]; j <= indices[m][1]; ++j) {
         sum = 0.0;
@@ -1100,7 +1101,7 @@ doblot(struct driz_param_t* p,
   xin[1] = 0.0;
   yin[1] = 0.0;
   v = 1.0;
-    
+
   /* Outer look over output image pixels (X, Y) */
   for (j = 0; j < p->ony; ++j) {
     yv = (double)j+1;
@@ -1117,11 +1118,11 @@ doblot(struct driz_param_t* p,
     for (i = 0; i < p->onx; ++i) {
       xo = (float)(xout[i] - dx);
       yo = (float)(yout[i] - dy);
-      
+
       /* Check it is on the input image */
       if (xo >= 0.0 && xo <= p->dnx &&
           yo >= 0.0 && yo <= p->dny) {
-        
+
         /* Check for look-up-table interpolation */
         if (interpolate(state, p->data, p->dnx, p->dny, xo, yo, &v, error)) {
           goto doblot_exit_;
