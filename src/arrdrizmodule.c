@@ -1,4 +1,3 @@
-#include "pywcs_api.h"
 
 #include <Python.h>
 
@@ -11,7 +10,7 @@
 
 #include <numpy/arrayobject.h>
 
-#include "pywcs.h"
+#include "astropy_wcs/astropy_wcs_api.h"
 
 #include "cdrizzleblot.h"
 #include "cdrizzlebox.h"
