@@ -1,4 +1,6 @@
-import pyfits, pyregion, stwcs
+#import pyfits,
+from astropy.io import fits as pyfits
+import pyregion, stwcs
 from os import path, extsep #, remove
 from stsci.tools.fileutil import findExtname
 from stsci.tools import teal

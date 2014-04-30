@@ -1,12 +1,14 @@
 import os
 import numpy as np
-import pywcs
+#import pywcs
+from astropy import wcs as pywcs
 import astrolib.coords as coords
 from stsci.tools import logutil, textutil
 
 import stwcs
 from stwcs import wcsutil
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 import stsci.imagestats as imagestats
 
 #import idlphot

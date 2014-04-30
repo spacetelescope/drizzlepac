@@ -1,4 +1,5 @@
 #define NO_IMPORT_ARRAY
+#define NO_IMPORT_ASTROPY_WCS_API
 
 #include "driz_portability.h"
 #include "cdrizzlemap.h"

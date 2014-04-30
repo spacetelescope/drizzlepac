@@ -1,4 +1,3 @@
-#include "pywcs_api.h"
 
 #include <Python.h>
 
@@ -11,7 +10,8 @@
 
 #include <numpy/arrayobject.h>
 
-#include "pywcs.h"
+#include "astropy_wcs_api.h"
+#include "astropy_wcs.h"
 
 #include "cdrizzleblot.h"
 #include "cdrizzlebox.h"
@@ -184,7 +184,7 @@ PyWCSMap_init(PyWCSMap *self, PyObject *args, PyObject *kwds)
   /* Create the C struct from all of these mapping parameters */
   istat = default_wcsmap_init(
       &self->m,
-      &((PyWcs*)input_obj)->x, &((PyWcs*)output_obj)->x,
+      &((Wcs*)input_obj)->x, &((Wcs*)output_obj)->x,
       nx, ny, factor,
       &error);
 

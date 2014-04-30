@@ -3,7 +3,8 @@ from __future__ import division # confidence medium
 import sys,types,os,copy
 import util
 import numpy as np
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 
 from stsci.tools import fileutil,teal
 import outputimage,wcs_functions,processInput,util

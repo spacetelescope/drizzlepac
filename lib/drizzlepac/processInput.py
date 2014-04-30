@@ -33,7 +33,8 @@ import string
 import sys
 
 import numpy as np
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 
 from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
                          check_files, logutil, mputil, textutil)

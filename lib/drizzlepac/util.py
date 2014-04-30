@@ -14,7 +14,9 @@ import string
 import errno
 
 import numpy as np
-import pyfits
+#import pyfits
+import astropy
+from astropy.io import fits as pyfits
 from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
 from stsci.tools import check_files
 from stsci.tools import configobj
@@ -24,7 +26,7 @@ from stwcs.wcsutil import altwcs
 
 from .version import *
 
-__pyfits_version__ = pyfits.__version__
+__fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
 
 

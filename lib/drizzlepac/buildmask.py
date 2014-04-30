@@ -35,7 +35,8 @@ import string,os,types
 
 from stsci.tools import fileutil, readgeis
 
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 import numpy as np
 
 import processInput,util
@@ -202,7 +203,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
     # If an old version of the maskfile was present, remove it and rebuild it.
     if fileutil.findFile(maskname):
         fileutil.removeFile(maskname)
-        
+
     _use_inmask = False
     if fileutil.findFile(dqfile) != True or bitvalue == None:
         _use_inmask = True

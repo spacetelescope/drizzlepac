@@ -73,7 +73,8 @@ __vdate__ = '16-Aug-2011'
 
 import os,sys,shutil
 
-import pyfits
+#import pyfits
+from astropy.io import fits as pyfits
 from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import teal
