@@ -508,7 +508,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # The keys will be used as the name reported in the header, as-is
     #
     _versions = {'AstroDrizzle':__version__,
-                 'PyFITS':util.__pyfits_version__,
+                 'PyFITS':util.__fits_version__,
                  'Numpy':util.__numpy_version__}
 
     # Set sub-sampling rate for drizzling

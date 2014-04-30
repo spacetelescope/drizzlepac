@@ -239,7 +239,7 @@ class OutputImage:
         prihdu = pyfits.PrimaryHDU(header=prihdr,data=None)
 
         # Start by updating PRIMARY header keywords...
-        prihdu.header.update('EXTEND',pyfits.TRUE,after='NAXIS')
+        prihdu.header.update('EXTEND', True ,after='NAXIS')
         prihdu.header.update('NEXTEND',nextend)
         prihdu.header.update('FILENAME', self.output)
 
@@ -390,7 +390,7 @@ class OutputImage:
             hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
-            hdu.header.update('extend',pyfits.FALSE,after='NAXIS%s'%dim)
+            hdu.header.update('extend', False, after='NAXIS%s'%dim)
             del hdu.header['nextend']
 
             # Append remaining unique header keywords from template DQ
@@ -730,7 +730,7 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
         scihdr = pyfits.Header()
         prihdr = pyfits.Header()
         # Start by updating PRIMARY header keywords...
-        prihdr.update('EXTEND',pyfits.TRUE,after='NAXIS')
+        prihdr.update('EXTEND', True ,after='NAXIS')
         prihdr.update('FILENAME', outname)
 
     if outextname == '':

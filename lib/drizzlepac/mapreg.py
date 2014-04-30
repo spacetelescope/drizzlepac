@@ -30,7 +30,7 @@ class _AuxSTWCS(object):
         ar = list(args[:])
         if 'origin' in kwargs:
             ar.append(kwargs['origin'])
-        return self._stwcs.all_sky2pix( *tuple(ar) )
+        return self._stwcs.all_world2pix( *tuple(ar) )
         #return self._stwcs.all_sky2pix( *args, **kwargs )
 
     def wcs_pix2sky(self, *args, **kwargs):
