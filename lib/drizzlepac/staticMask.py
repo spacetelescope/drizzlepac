@@ -22,8 +22,7 @@ import sys
 
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 from stsci.imagestats import ImageStats
 import util
 import processInput
@@ -292,7 +291,7 @@ class staticMask(object):
             filename=self.masknames[key]
             #create a new fits image with the mask array and a standard header
             #open a new header and data unit
-            newHDU = pyfits.PrimaryHDU()
+            newHDU = fits.PrimaryHDU()
             newHDU.data = self.masklist[key]
 
             if not virtual:

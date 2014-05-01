@@ -661,7 +661,7 @@ def _computeSky(image, skypars, memmap=0):
 
     """
     Compute the sky value for the data array passed to the function
-    image is a pyfits object which contains the data and the header
+    image is a fits object which contains the data and the header
     for one image extension
 
     skypars is passed in as paramDict
@@ -700,7 +700,7 @@ def _extractSkyValue(imstatObject,skystat):
 def _subtractSky(image,skyValue,memmap=0):
     """
     subtract the given sky value from each the data array
-    that has been passed. image is a pyfits object that
+    that has been passed. image is a fits object that
     contains the data and header for one image extension
     """
     try:

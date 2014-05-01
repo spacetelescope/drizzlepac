@@ -4,8 +4,7 @@ import numpy as np
 import stsci.ndimage as ndimage
 
 from stsci.tools import asnutil, irafglob, parseinput, fileutil
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import astrolib.coords as coords
 
 
@@ -437,7 +436,7 @@ def readcols(infile, cols=None):
 def read_FITS_cols(infile,cols=None):
     """ Read columns from FITS table
     """
-    ftab = pyfits.open(infile)
+    ftab = fits.open(infile)
     extnum = 0
     extfound = False
     for extn in ftab:
@@ -578,8 +577,8 @@ def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     # write out reference WCS now
     if os.path.exists(outwcs):
         os.remove(outwcs)
-    p = pyfits.HDUList()
-    p.append(pyfits.PrimaryHDU())
+    p = fits.HDUList()
+    p.append(fits.PrimaryHDU())
     p.append(createWcsHDU(image_list[0].refWCS))
     p.writeto(outwcs)
 
@@ -602,7 +601,7 @@ def createWcsHDU(wcs):
         will work just as well.
     """
 
-    hdu = pyfits.ImageHDU()
+    hdu = fits.ImageHDU()
     hdu.header['EXTNAME'] = 'WCS'
     hdu.header['EXTVER'] = 1
     # Now, update original image size information

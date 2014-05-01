@@ -3,8 +3,7 @@ from __future__ import division # confidence medium
 import sys,os,copy,time
 import util
 import numpy as np
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
 import outputimage,wcs_functions,processInput,util
 import stwcs
@@ -92,7 +91,7 @@ def run(configObj, wcsmap=None):
     # read file to get science array
     insci = get_data(configObj['input'])
     expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'])
-    in_sci_phdr = pyfits.getheader(fileutil.parseFilename(configObj['input'])[0])
+    in_sci_phdr = fits.getheader(fileutil.parseFilename(configObj['input'])[0])
 
     # we need to read in the input WCS
     input_wcs = stwcs.wcsutil.HSTWCS(configObj['input'],wcskey=_wcskey)
@@ -114,7 +113,7 @@ def run(configObj, wcsmap=None):
         # we also need to read in the output WCS from pre-existing output
         output_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
 
-        out_sci_hdr = pyfits.getheader(outname)
+        out_sci_hdr = fits.getheader(outname)
         outexptime = out_sci_hdr['DRIZEXPT']
         if 'ndrizim' in out_sci_hdr:
             uniqid = out_sci_hdr['ndrizim']+1
@@ -390,7 +389,7 @@ def mergeDQarray(maskname,dqarr):
                 maskarr = mask[0].data.astype(np.bool)
                 mask.close()
         else:
-            if isinstance(maskname, pyfits.HDUList):
+            if isinstance(maskname, fits.HDUList):
                 # working with a virtual input file
                 maskarr = maskname[0].data.astype(np.bool)
             else:
@@ -401,13 +400,13 @@ def mergeDQarray(maskname,dqarr):
             np.bitwise_and(dqarr,maskarr,dqarr)
 
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
-    if not isinstance(crmaskname, pyfits.HDUList) and not os.path.exists(crmaskname):
+    if not isinstance(crmaskname, fits.HDUList) and not os.path.exists(crmaskname):
         log.warning('No CR mask file found! Input DQ array not updated.')
         return
     if cr_bits_value == None:
         log.warning('Input DQ array not updated!')
         return
-    if isinstance(crmaskname, pyfits.HDUList):
+    if isinstance(crmaskname, fits.HDUList):
         # in_memory case
         crmask = crmaskname
     else:
@@ -840,7 +839,7 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
 
         _outmaskname = chip.outputNames[step_mask]
         if os.path.exists(_outmaskname): os.remove(_outmaskname)
-        pimg = pyfits.PrimaryHDU(data=_inwht)
+        pimg = fits.PrimaryHDU(data=_inwht)
         img.saveVirtualOutputs({step_mask:pimg})
         # Only write out mask files if in_memory=False
         if not img.inmemory:
@@ -1068,13 +1067,13 @@ def create_output(filename):
 
     if not os.path.exists(fileroot):
         # We need to create the new file
-        pimg = pyfits.HDUList()
-        phdu = pyfits.PrimaryHDU()
+        pimg = fits.HDUList()
+        phdu = fits.PrimaryHDU()
         phdu.header['NDRIZIM'] = 1
         pimg.append(phdu)
         if extn is not None:
             # Create a MEF file with the specified extname
-            ehdu = pyfits.ImageHDU(data=arr)
+            ehdu = fits.ImageHDU(data=arr)
             ehdu.header['EXTNAME'] = extname[0]
             ehdu.header['EXTVER'] = extname[1]
             pimg.append(ehdu)
@@ -1084,6 +1083,6 @@ def create_output(filename):
     else:
         log.info('Updating existing output file: %s' % fileroot)
 
-    handle = pyfits.open(fileroot,mode='update')
+    handle = fits.open(fileroot, mode='update')
 
     return handle,extname

@@ -1,7 +1,6 @@
 from __future__ import division # confidence medium
 
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 from stsci.tools import fileutil, readgeis, logutil
 
 from . import wcs_functions
@@ -236,10 +235,10 @@ class OutputImage:
         dqhdr = newhdrs[3]
 
         # Setup primary header as an HDU ready for appending to output FITS file
-        prihdu = pyfits.PrimaryHDU(header=prihdr,data=None)
+        prihdu = fits.PrimaryHDU(header=prihdr, data=None)
 
         # Start by updating PRIMARY header keywords...
-        prihdu.header.set('EXTEND', value=pyfits.TRUE, after='NAXIS')
+        prihdu.header.set('EXTEND', value=True, after='NAXIS')
         prihdu.header['NEXTEND'] = nextend
         prihdu.header['FILENAME'] = self.output
 
@@ -317,12 +316,12 @@ class OutputImage:
         ##########
         if self.build:
             print '-Generating multi-extension output file: ',self.output
-            fo = pyfits.HDUList()
+            fo = fits.HDUList()
 
             # Add primary header to output file...
             fo.append(prihdu)
 
-            hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
+            hdu = fits.ImageHDU(data=sciarr, header=scihdr, name=EXTLIST[0])
             last_kw = self.find_kwupdate_location(scihdr,'EXTNAME')
             hdu.header.set('EXTNAME', value='SCI', after=last_kw)
             hdu.header.set('EXTVER', value=1, after='EXTNAME')
@@ -332,7 +331,7 @@ class OutputImage:
             if errhdr:
                 errhdr['CCDCHIP'] = '-999'
 
-            hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
+            hdu = fits.ImageHDU(data=whtarr, header=errhdr, name=EXTLIST[1])
             last_kw = self.find_kwupdate_location(errhdr,'EXTNAME')
             hdu.header.set('EXTNAME', value='WHT', after=last_kw)
             hdu.header.set('EXTVER', value=1, after='EXTNAME')
@@ -354,7 +353,7 @@ class OutputImage:
             else:
                 _ctxarr = None
 
-            hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
+            hdu = fits.ImageHDU(data=_ctxarr, header=dqhdr, name=EXTLIST[2])
             last_kw = self.find_kwupdate_location(dqhdr,'EXTNAME')
             hdu.header.set('EXTNAME', value='CTX', after=last_kw)
             hdu.header.set('EXTVER', value=1, after='EXTNAME')
@@ -387,12 +386,12 @@ class OutputImage:
         else:
             print('-Generating simple FITS output: %s' % self.outdata)
 
-            fo = pyfits.HDUList()
+            fo = fits.HDUList()
 
-            hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
+            hdu = fits.PrimaryHDU(data=sciarr, header=prihdu.header)
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
-            hdu.header.set('extend', value=pyfits.FALSE, after='NAXIS%s'%dim)
+            hdu.header.set('extend', value=False, after='NAXIS%s'%dim)
             del hdu.header['nextend']
 
             # Append remaining unique header keywords from template DQ
@@ -425,12 +424,12 @@ class OutputImage:
 
             if self.outweight and whtarr != None:
                 # We need to build new PyFITS objects for each WHT array
-                fwht = pyfits.HDUList()
+                fwht = fits.HDUList()
 
                 if errhdr:
                     errhdr['CCDCHIP'] = '-999'
 
-                hdu = pyfits.PrimaryHDU(data=whtarr, header=prihdu.header)
+                hdu = fits.PrimaryHDU(data=whtarr, header=prihdu.header)
 
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
@@ -463,7 +462,7 @@ class OutputImage:
             # If a context image was specified, build a PyFITS object
             # for it as well...
             if self.outcontext and ctxarr != None:
-                fctx = pyfits.HDUList()
+                fctx = fits.HDUList()
 
                 # If there is only 1 plane, write it out as a 2-D extension
                 if ctxarr.shape[0] == 1:
@@ -471,7 +470,7 @@ class OutputImage:
                 else:
                     _ctxarr = ctxarr
 
-                hdu = pyfits.PrimaryHDU(data=_ctxarr, header=prihdu.header)
+                hdu = fits.PrimaryHDU(data=_ctxarr, header=prihdu.header)
 
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
@@ -719,7 +718,7 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
         (prihdr,scihdr,errhdr,dqhdr),newtab = getTemplates(template,EXTLIST)
 
         if scihdr is None:
-            scihdr = pyfits.Header()
+            scihdr = fits.Header()
             indx = 0
             for c in prihdr.ascard:
                 if c.key not in ['INHERIT','EXPNAME']: indx += 1
@@ -729,10 +728,10 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
             for i in range(indx,len(prihdr.ascard)):
                 del prihdr.ascard[indx]
     else:
-        scihdr = pyfits.Header()
-        prihdr = pyfits.Header()
+        scihdr = fits.Header()
+        prihdr = fits.Header()
         # Start by updating PRIMARY header keywords...
-        prihdr.set('EXTEND', value=pyfits.TRUE, after='NAXIS')
+        prihdr.set('EXTEND', value=True, after='NAXIS')
         prihdr['FILENAME'] = outname
 
     if outextname == '':
@@ -745,10 +744,10 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
         scihdr[card.key] = (card.value, card.comment)
 
     # Create PyFITS HDUList for all extensions
-    outhdu = pyfits.HDUList()
+    outhdu = fits.HDUList()
     # Setup primary header as an HDU ready for appending to output FITS file
-    prihdu = pyfits.PrimaryHDU(header=prihdr)
-    scihdu = pyfits.ImageHDU(header=scihdr,data=data)
+    prihdu = fits.PrimaryHDU(header=prihdr)
+    scihdu = fits.ImageHDU(header=scihdr,data=data)
 
     outhdu.append(prihdu)
     outhdu.append(scihdu)

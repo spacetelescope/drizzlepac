@@ -66,7 +66,7 @@
 from __future__ import division
 import os
 import numpy as np
-from stsci.tools import stpyfits as pyfits
+from stsci.tools import stpyfits as fits
 from stsci.tools import parseinput, logutil
 
 from . import util
@@ -125,7 +125,7 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
         # open input file in write mode to allow updating the DQ array in-place
-        p = pyfits.open(filename,mode='update')
+        p = fits.open(filename,mode='update')
 
         # Identify the DQ array to be updated
         # If no extver is specified, build a list of all DQ arrays in the file

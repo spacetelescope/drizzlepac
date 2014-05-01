@@ -55,14 +55,14 @@ class WCSMap:
         """
         # This matches WTRAXY results to better than 1e-4 pixels.
         skyx,skyy = self.input.all_pix2world(pixx,pixy,self.origin)
-        result= self.output.wcs_sky2pix(skyx,skyy,self.origin)
+        result= self.output.wcs_world2pix(skyx,skyy,self.origin)
         return result
 
     def backward(self,pixx,pixy):
         """ Transform pixx,pixy positions from the output frame back onto their
             original positions in the input frame.
         """
-        skyx,skyy = self.output.wcs_pix2sky(pixx,pixy,self.origin)
+        skyx,skyy = self.output.wcs_pix2world(pixx,pixy,self.origin)
         result = self.input.all_world2pix(skyx,skyy,self.origin)
         return result
 
@@ -79,7 +79,7 @@ class WCSMap:
     def rd2xy(self,wcs,ra,dec):
         """ Transform input sky positions into pixel positions in the WCS provided.
         """
-        return wcs.wcs_sky2pix(ra,dec,1)
+        return wcs.wcs_world2pix(ra,dec,1)
 
 def get_pix_ratio_from_WCS(input,output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""

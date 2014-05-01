@@ -73,8 +73,7 @@ __vdate__ = '16-Aug-2011'
 
 import os,sys,shutil
 
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import teal
@@ -175,7 +174,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         print 'Updating: ',f
         fdir = os.path.split(f)[0]
         # Open each file...
-        fimg = pyfits.open(f,mode='update')
+        fimg = fits.open(f, mode='update')
         phdr = fimg['PRIMARY'].header
         fdet = phdr['detector']
         # get header of DGEOFILE
@@ -183,7 +182,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         if dfile in ['N/A','',' ',None]:
             npolname = ''
         else:
-            dhdr = pyfits.getheader(fu.osfn(dfile))
+            dhdr = fits.getheader(fu.osfn(dfile))
             if not interactive:
                 # search all new NPOLFILEs for one that matches current DGEOFILE config
                 npol = find_npolfile(ngeofiles,fdet,[phdr['filter1'],phdr['filter2']])
@@ -207,7 +206,9 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                     npolname = refdir+npolname
                 else:
                     npolname = os.path.join(refdir,npolname)
-        phdr.update('NPOLFILE',npolname,comment="Non-polynomial corrections in Paper IV LUT",after='DGEOFILE')
+        phdr.set('NPOLFILE', value=npolname,
+                 comment="Non-polynomial corrections in Paper IV LUT",
+                 after='DGEOFILE')
 
         # Now find correct D2IFILE
         if not interactive:
@@ -236,7 +237,9 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                 else:
                     d2iname = os.path.join(refdir,d2iname)
 
-        phdr.update('D2IMFILE',d2iname,comment="Column correction table",after='DGEOFILE')
+        phdr.set('D2IMFILE', value=d2iname,
+                 comment="Column correction table",
+                 after='DGEOFILE')
 
         # Close this input file header and go on to the next
         fimg.close()
@@ -249,7 +252,7 @@ def find_d2ifile(flist,detector):
     """
     d2ifile = None
     for f in flist:
-        fdet = pyfits.getval(f,'detector')
+        fdet = fits.getval(f,'detector')
         if fdet == detector:
             d2ifile = f
     return d2ifile
@@ -260,11 +263,11 @@ def find_npolfile(flist,detector,filters):
     """
     npolfile = None
     for f in flist:
-        fdet = pyfits.getval(f,'detector')
+        fdet = fits.getval(f,'detector')
         if fdet == detector:
-            filt1 = pyfits.getval(f,'filter1')
-            filt2 = pyfits.getval(f,'filter2')
-            fdate = pyfits.getval(f,'date')
+            filt1 = fits.getval(f,'filter1')
+            filt2 = fits.getval(f,'filter2')
+            fdate = fits.getval(f,'date')
             if filt1 == 'ANY' or \
              (filt1 == filters[0] and filt2 == filters[1]):
                 npolfile = f

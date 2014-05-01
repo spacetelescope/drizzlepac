@@ -5,8 +5,7 @@ from __future__ import division # confidence medium
 
 import sys
 import numpy as np
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import os, math
 import imageObject
 from stsci.imagestats import ImageStats
@@ -396,7 +395,7 @@ def _median(imageObjectList, paramDict):
 
     # Write out the combined image
     # use the header from the first single drizzled image in the list
-    #header=pyfits.getheader(imageObjectList[0].outputNames["outSingle"])
+    #header=fits.getheader(imageObjectList[0].outputNames["outSingle"])
     _pf = _writeImage(medianImageArray, inputHeader=None, outputFilename=medianfile)
 
     if virtual:
@@ -450,18 +449,18 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
     """
 
     #_fname =inputFilename
-    #_file = pyfits.open(_fname, mode='readonly')
-    #_prihdu = pyfits.PrimaryHDU(header=_file[0].header,data=dataArray)
+    #_file = fits.open(_fname, mode='readonly')
+    #_prihdu = fits.PrimaryHDU(header=_file[0].header,data=dataArray)
 
     if (inputHeader == None):
         #use a general primary HDU
-        _prihdu=pyfits.PrimaryHDU(data=dataArray)
+        _prihdu = fits.PrimaryHDU(data=dataArray)
 
     else:
         _prihdu = inputHeader
         _prihdu.data=dataArray
 
-    _pf = pyfits.HDUList()
+    _pf = fits.HDUList()
     _pf.append(_prihdu)
 
     return _pf

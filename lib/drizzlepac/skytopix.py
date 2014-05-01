@@ -77,8 +77,7 @@ from __future__ import division # confidence medium
 import os,copy
 import numpy as np
 
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 from stsci.tools import fileutil, teal
 import util,wcs_functions,tweakutils
 import stwcs
@@ -153,10 +152,10 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     # parse column names from coords file and match to input values
     if coordfile is not None and fileutil.isFits(coordfile)[0]:
         # Open FITS file with table
-        ftab = pyfits.open(coordfile)
+        ftab = fits.open(coordfile)
         # determine which extension has the table
         for extn in ftab:
-            if isinstance(extn,pyfits.BinTableHDU):
+            if isinstance(extn, fits.BinTableHDU):
                 # parse column names from table and match to inputs
                 cnames = extn.columns.names
                 if colnames is not None:

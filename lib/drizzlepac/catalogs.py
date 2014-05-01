@@ -7,8 +7,7 @@ from stsci.tools import logutil, textutil
 
 import stwcs
 from stwcs import wcsutil
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import stsci.imagestats as imagestats
 
 #import idlphot
@@ -281,7 +280,7 @@ class ImageCatalog(Catalog):
         self.src_find_filters = src_find_filters
         Catalog.__init__(self,wcs,catalog_source,**kwargs)
         if self.wcs.extname == ('',None): self.wcs.extname = (0)
-        self.source = pyfits.getdata(self.wcs.filename,ext=self.wcs.extname)
+        self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
 
     def generateXY(self):
         """ Generate source catalog from input image using DAOFIND-style algorithm

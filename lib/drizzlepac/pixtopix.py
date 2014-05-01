@@ -95,8 +95,6 @@ from __future__ import division # confidence medium
 import os,copy
 import numpy as np
 
-#import pyfits
-from astropy.io import fits as pyfits
 from stsci.tools import fileutil, teal
 import wcs_functions
 import util

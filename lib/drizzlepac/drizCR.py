@@ -7,8 +7,7 @@ from __future__ import division # confidence medium
 
 import numpy as np
 import stsci.convolve as NC
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import os
 import quickDeriv
 import util
@@ -168,7 +167,7 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
                     raise # raise orig error
 
                 try:
-                    __blotImage=pyfits.open(blotImageName,mode="readonly") # !!! ,memmap=False) ?
+                    __blotImage = fits.open(blotImageName,mode="readonly") # !!! ,memmap=False) ?
                 except IOError:
                     print "Problem opening blot images"
                     raise
@@ -368,7 +367,7 @@ def createCorrFile(outfile, arrlist, template):
         os.remove(outfile)
         print "Removing old corr file:",outfile
 
-    ftemplate = pyfits.open(template)
+    ftemplate = fits.open(template)
     for arr in arrlist:
         ftemplate[arr['sciext']].data = arr['corrFile']
         if arr['dqext'][0] != arr['sciext'][0]:

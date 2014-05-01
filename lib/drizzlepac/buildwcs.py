@@ -1,15 +1,14 @@
 from __future__ import division # confidence medium
 
-import sys,types,os,copy
+import sys, types, os, copy
 import util
 import numpy as np
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 
 from stsci.tools import fileutil,teal
-import outputimage,wcs_functions,processInput,util
+import outputimage, wcs_functions, processInput,util
 import stwcs
-from stwcs import distortion,wcsutil
+from stwcs import distortion, wcsutil
 from stwcs.wcsutil import headerlet
 
 __taskname__ = 'buildwcs'
@@ -387,9 +386,9 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         hdrlet[extname].header['WCSNAME'] = wcsname
     else:
         print 'Creating headerlet from scratch...'
-        hdrlet = pyfits.HDUList()
-        hdrlet.append(pyfits.PrimaryHDU())
-        siphdr = pyfits.ImageHDU(header=outwcs_hdr)
+        hdrlet = fits.HDUList()
+        hdrlet.append(fits.PrimaryHDU())
+        siphdr = fits.ImageHDU(header=outwcs_hdr)
         siphdr.header['EXTNAME'] = 'SIPWCS'
         siphdr.header['WCSNAME'] = wcsname
         hdrlet.append(siphdr)
