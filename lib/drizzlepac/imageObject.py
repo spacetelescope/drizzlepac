@@ -1003,9 +1003,9 @@ class imageObject(baseImageObject):
             self._numchips=1
             self.scienceExt="PRIMARY"
             self.maskExt=None
-            self._image["PRIMARY"].header.update("EXTNAME","PRIMARY")
-            self._image["PRIMARY"].header.update("EXTVER",1)
-            self._image["PRIMARY"].extnum=0
+            self._image["PRIMARY"].header["EXTNAME"] = "PRIMARY"
+            self._image["PRIMARY"].header["EXTVER"] = 1
+            self._image["PRIMARY"].extnum = 0
 
         self._isSimpleFits = False
 

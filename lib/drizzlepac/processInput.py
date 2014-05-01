@@ -1079,13 +1079,13 @@ def update_wfpc2_d2geofile(filename, fhdu=None):
         log.info('Converting DGEOFILE %s into D2IMFILE...' % dgeofile)
         rootname = filename[:filename.find('.fits')]
         d2imfile = convert_dgeo_to_d2im(dgeofile,rootname)
-        fhdu['PRIMARY'].header.update('ODGEOFIL', dgeofile)
-        fhdu['PRIMARY'].header.update('DGEOFILE', 'N/A')
-        fhdu['PRIMARY'].header.update('D2IMFILE', d2imfile)
+        fhdu['PRIMARY'].header['ODGEOFIL'] = dgeofile
+        fhdu['PRIMARY'].header['DGEOFILE'] = 'N/A'
+        fhdu['PRIMARY'].header['D2IMFILE'] = d2imfile
     else:
         d2imfile = None
-        fhdu['PRIMARY'].header.update('DGEOFILE', 'N/A')
-        fhdu['PRIMARY'].header.update('D2IMFILE', 'N/A')
+        fhdu['PRIMARY'].header['DGEOFILE'] = 'N/A'
+        fhdu['PRIMARY'].header['D2IMFILE'] = 'N/A'
 
     # Only close the file handle if opened in this function
     if close_fhdu:
@@ -1108,21 +1108,21 @@ def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
     scihdu = pyfits.ImageHDU(data=dgeo['dy',1].data[:,0])
     dgeo.close()
     # add required keywords for D2IM header
-    scihdu.header.update('EXTNAME','DY',comment='Extension name')
-    scihdu.header.update('EXTVER',1,comment='Extension version')
+    scihdu.header['EXTNAME'] = ('DY', 'Extension name')
+    scihdu.header['EXTVER'] = (1, 'Extension version')
     pyfits_str = 'PYFITS Version '+str(pyfits.__version__)
-    scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
-    scihdu.header.update('INHERIT',False,comment='Inherits global header')
+    scihdu.header['ORIGIN'] = (pyfits_str, 'FITS file originator')
+    scihdu.header['INHERIT'] = (False, 'Inherits global header')
 
     dnow = datetime.datetime.now()
-    scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
+    scihdu.header['DATE'] = (str(dnow).replace(' ','T'), 'Date FITS file was generated')
 
-    scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT1',0,comment='Grid step size in first coordinate')
-    scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
-    scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
-    scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
+    scihdu.header['CRPIX1'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT1'] = (0, 'Grid step size in first coordinate')
+    scihdu.header['CRVAL1'] = (0, 'Image array pixel coordinate')
+    scihdu.header['CRPIX2'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT2'] = (0, 'Grid step size in second coordinate')
+    scihdu.header['CRVAL2'] = (0, 'Image array pixel coordinate')
 
     d2imhdu = pyfits.HDUList()
     d2imhdu.append(pyfits.PrimaryHDU())
@@ -1143,36 +1143,37 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
     scihdu = pyfits.ImageHDU(data=data)
     dgeo.close()
     # add required keywords for D2IM header
-    scihdu.header.update('EXTNAME','DY',comment='Extension name')
-    scihdu.header.update('EXTVER',1,comment='Extension version')
+    scihdu.header['EXTNAME'] = ('DY', 'Extension name')
+    scihdu.header['EXTVER'] = (1, 'Extension version')
     pyfits_str = 'PYFITS Version '+str(pyfits.__version__)
-    scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
-    scihdu.header.update('INHERIT',False,comment='Inherits global header')
+    scihdu.header['ORIGIN'] = (pyfits_str, 'FITS file originator')
+    scihdu.header['INHERIT'] = (False, 'Inherits global header')
 
     dnow = datetime.datetime.now()
-    scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
+    scihdu.header['DATE'] = (str(dnow).replace(' ','T'),
+                             'Date FITS file was generated')
 
-    scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT1',1,comment='Grid step size in first coordinate')
-    scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
-    scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT2',1,comment='Grid step size in second coordinate')
-    scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
+    scihdu.header['CRPIX1'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT1'] = (1, 'Grid step size in first coordinate')
+    scihdu.header['CRVAL1'] = (0, 'Image array pixel coordinate')
+    scihdu.header['CRPIX2'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT2'] = (1, 'Grid step size in second coordinate')
+    scihdu.header['CRVAL2'] = (0, 'Image array pixel coordinate')
 
     phdu = pyfits.PrimaryHDU()
-    phdu.header.update('INSTRUME', 'WFPC2')
+    phdu.header['INSTRUME'] = 'WFPC2'
     d2imhdu = pyfits.HDUList()
     d2imhdu.append(phdu)
-    scihdu.header.update('DETECTOR', 1, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['DETECTOR'] = (1, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
-    scihdu.header.update('EXTVER', 2, comment='Extension version')
-    scihdu.header.update('DETECTOR', 2, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['EXTVER'] = (2, 'Extension version')
+    scihdu.header['DETECTOR'] = (2, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
-    scihdu.header.update('EXTVER', 3, comment='Extension version')
-    scihdu.header.update('DETECTOR', 3, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['EXTVER'] = (3, 'Extension version')
+    scihdu.header['DETECTOR'] = (3, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
-    scihdu.header.update('EXTVER', 4, comment='Extension version')
-    scihdu.header.update('DETECTOR', 4, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['EXTVER'] = (4, 'Extension version')
+    scihdu.header['DETECTOR'] = (4, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
     d2imhdu.writeto(outname)
     d2imhdu.close()

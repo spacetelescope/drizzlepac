@@ -37,7 +37,7 @@ class _AuxSTWCS(object):
         ar = list(args[:])
         if 'origin' in kwargs:
             ar.append(kwargs['origin'])
-        return self._stwcs.all_pix2sky( *tuple(ar) )
+        return self._stwcs.all_pix2world( *tuple(ar) )
         #return self._stwcs.all_pix2sky( *args, **kwargs )
 
 

@@ -603,26 +603,26 @@ def createWcsHDU(wcs):
     """
 
     hdu = pyfits.ImageHDU()
-    hdu.header.update('EXTNAME','WCS')
-    hdu.header.update('EXTVER',1)
+    hdu.header['EXTNAME'] = 'WCS'
+    hdu.header['EXTVER'] = 1
     # Now, update original image size information
-    hdu.header.update('WCSAXES',2,comment="number of World Coordinate System axes")
-    hdu.header.update('NPIX1',wcs._naxis1,comment="Length of array axis 1")
-    hdu.header.update('NPIX2',wcs._naxis2,comment="Length of array axis 2")
-    hdu.header.update('PIXVALUE',0.0,comment="values of pixels in array")
+    hdu.header['WCSAXES'] = (2, "number of World Coordinate System axes")
+    hdu.header['NPIX1'] = (wcs._naxis1, "Length of array axis 1")
+    hdu.header['NPIX2'] = (wcs._naxis2, "Length of array axis 2")
+    hdu.header['PIXVALUE'] (0.0, "values of pixels in array")
 
     # Write out values to header...
-    hdu.header.update('CD1_1',wcs.wcs.cd[0,0],comment="partial of first axis coordinate w.r.t. x")
-    hdu.header.update('CD1_2',wcs.wcs.cd[0,1],comment="partial of first axis coordinate w.r.t. y")
-    hdu.header.update('CD2_1',wcs.wcs.cd[1,0],comment="partial of second axis coordinate w.r.t. x")
-    hdu.header.update('CD2_2',wcs.wcs.cd[1,1],comment="partial of second axis coordinate w.r.t. y")
-    hdu.header.update('ORIENTAT',wcs.orientat,comment="position angle of image y axis (deg. e of n)")
-    hdu.header.update('CRPIX1',wcs.wcs.crpix[0],comment="x-coordinate of reference pixel")
-    hdu.header.update('CRPIX2',wcs.wcs.crpix[1],comment="y-coordinate of reference pixel")
-    hdu.header.update('CRVAL1',wcs.wcs.crval[0],comment="first axis value at reference pixel")
-    hdu.header.update('CRVAL2',wcs.wcs.crval[1],comment="second axis value at reference pixel")
-    hdu.header.update('CTYPE1',wcs.wcs.ctype[0],comment="the coordinate type for the first axis")
-    hdu.header.update('CTYPE2',wcs.wcs.ctype[1],comment="the coordinate type for the second axis")
+    hdu.header['CD1_1'] = (wcs.wcs.cd[0,0], "partial of first axis coordinate w.r.t. x")
+    hdu.header['CD1_2'] = (wcs.wcs.cd[0,1], "partial of first axis coordinate w.r.t. y")
+    hdu.header['CD2_1'] = (wcs.wcs.cd[1,0], "partial of second axis coordinate w.r.t. x")
+    hdu.header['CD2_2'] = (wcs.wcs.cd[1,1], "partial of second axis coordinate w.r.t. y")
+    hdu.header['ORIENTAT'] = (wcs.orientat, "position angle of image y axis (deg. e of n)")
+    hdu.header['CRPIX1'] = (wcs.wcs.crpix[0], "x-coordinate of reference pixel")
+    hdu.header['CRPIX2'] = (wcs.wcs.crpix[1], "y-coordinate of reference pixel")
+    hdu.header['CRVAL1'] = (wcs.wcs.crval[0], "first axis value at reference pixel")
+    hdu.header['CRVAL2'] = (wcs.wcs.crval[1], "second axis value at reference pixel")
+    hdu.header['CTYPE1'] = (wcs.wcs.ctype[0], "the coordinate type for the first axis")
+    hdu.header['CTYPE2'] = (wcs.wcs.ctype[1], "the coordinate type for the second axis")
 
     return hdu
 

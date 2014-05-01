@@ -239,9 +239,9 @@ class OutputImage:
         prihdu = pyfits.PrimaryHDU(header=prihdr,data=None)
 
         # Start by updating PRIMARY header keywords...
-        prihdu.header.update('EXTEND', True ,after='NAXIS')
-        prihdu.header.update('NEXTEND',nextend)
-        prihdu.header.update('FILENAME', self.output)
+        prihdu.header.set('EXTEND', value=pyfits.TRUE, after='NAXIS')
+        prihdu.header['NEXTEND'] = nextend
+        prihdu.header['FILENAME'] = self.output
 
         # Update the ROOTNAME with the new value as well
         _indx = self.output.find('_drz')
@@ -249,21 +249,21 @@ class OutputImage:
             rootname_val = self.output
         else:
             rootname_val = self.output[:_indx]
-        prihdu.header.update('ROOTNAME', rootname_val)
+        prihdu.header['ROOTNAME'] = rootname_val
 
 
         # Get the total exposure time for the image
         # If not calculated by PyDrizzle and passed through
         # the pardict, then leave value from the template image.
         if self.texptime:
-            prihdu.header.update('EXPTIME', self.texptime)
-            prihdu.header.update('TEXPTIME', self.texptime,after='EXPTIME')
-            prihdu.header.update('EXPSTART', self.expstart)
-            prihdu.header.update('EXPEND', self.expend)
+            prihdu.header['EXPTIME'] = self.texptime
+            prihdu.header.set('TEXPTIME', value=self.texptime, after='EXPTIME')
+            prihdu.header['EXPSTART'] = self.expstart
+            prihdu.header['EXPEND'] = self.expend
 
         #Update ASN_MTYPE to reflect the fact that this is a product
         # Currently hard-wired to always output 'PROD-DTH' as MTYPE
-        prihdu.header.update('ASN_MTYP', 'PROD-DTH')
+        prihdu.header['ASN_MTYP'] = 'PROD-DTH'
 
         # Update DITHCORR calibration keyword if present
         # Remove when we can modify FITS headers in place...
@@ -272,8 +272,8 @@ class OutputImage:
         if 'DITHCORR' in prihdu.header:
             prihdu.header['DITHCORR'] = 'COMPLETE'
 
-        prihdu.header.update('NDRIZIM',len(self.parlist),
-            comment='Drizzle, No. images drizzled onto output')
+        prihdu.header['NDRIZIM'] =(len(self.parlist),
+                                   'Drizzle, No. images drizzled onto output')
 
         # Only a subset of these keywords makes sense for the new WCS based
         # transformations. They need to be reviewed to decide what to keep
@@ -283,9 +283,9 @@ class OutputImage:
 
         if scihdr:
             del scihdr['OBJECT']
-            if 'CCDCHIP' in scihdr: scihdr.update('CCDCHIP','-999')
+            if 'CCDCHIP' in scihdr: scihdr['CCDCHIP'] = '-999'
             if 'NCOMBINE' in scihdr:
-                scihdr.update('NCOMBINE', self.parlist[0]['nimages'])
+                scihdr['NCOMBINE'] = self.parlist[0]['nimages']
 
             # If BUNIT keyword was found and reset, then
             bunit_last_kw = self.find_kwupdate_location(scihdr,'bunit')
@@ -293,14 +293,16 @@ class OutputImage:
                 comment_str = "Units of science product"
                 if self.bunit.lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
-                scihdr.update('BUNIT',self.bunit,comment=comment_str,
-                              after=bunit_last_kw)
+                scihdr.set('BUNIT', value=self.bunit,
+                           comment=comment_str,
+                           after=bunit_last_kw)
             else:
                 # check to see whether to update already present BUNIT comment
                 if 'bunit' in scihdr and scihdr['bunit'].lower()[:5] == 'count':
                     comment_str = "counts * gain = electrons"
-                    scihdr.update('BUNIT',scihdr['bunit'],comment=comment_str,
-                              after=bunit_last_kw)
+                    scihdr.set('BUNIT', value=scihdr['bunit'],
+                               comment=comment_str,
+                               after=bunit_last_kw)
 
             # Add WCS keywords to SCI header
             if self.wcs:
@@ -322,18 +324,18 @@ class OutputImage:
 
             hdu = pyfits.ImageHDU(data=sciarr,header=scihdr,name=EXTLIST[0])
             last_kw = self.find_kwupdate_location(scihdr,'EXTNAME')
-            hdu.header.update('EXTNAME','SCI',after=last_kw)
-            hdu.header.update('EXTVER',1,after='EXTNAME')
+            hdu.header.set('EXTNAME', value='SCI', after=last_kw)
+            hdu.header.set('EXTVER', value=1, after='EXTNAME')
             fo.append(hdu)
 
             # Build WHT extension here, if requested...
             if errhdr:
-                errhdr.update('CCDCHIP','-999')
+                errhdr['CCDCHIP'] = '-999'
 
             hdu = pyfits.ImageHDU(data=whtarr,header=errhdr,name=EXTLIST[1])
             last_kw = self.find_kwupdate_location(errhdr,'EXTNAME')
-            hdu.header.update('EXTNAME','WHT',after=last_kw)
-            hdu.header.update('EXTVER',1,after='EXTNAME')
+            hdu.header.set('EXTNAME', value='WHT', after=last_kw)
+            hdu.header.set('EXTVER', value=1, after='EXTNAME')
             if self.wcs:
                 pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
                 # Update WCS Keywords based on PyDrizzle product's value
@@ -354,8 +356,8 @@ class OutputImage:
 
             hdu = pyfits.ImageHDU(data=_ctxarr,header=dqhdr,name=EXTLIST[2])
             last_kw = self.find_kwupdate_location(dqhdr,'EXTNAME')
-            hdu.header.update('EXTNAME','CTX',after=last_kw)
-            hdu.header.update('EXTVER',1,after='EXTNAME')
+            hdu.header.set('EXTNAME', value='CTX', after=last_kw)
+            hdu.header.set('EXTVER', value=1, after='EXTNAME')
 
             if self.wcs:
                 pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
@@ -390,7 +392,7 @@ class OutputImage:
             hdu = pyfits.PrimaryHDU(data=sciarr, header=prihdu.header)
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
-            hdu.header.update('extend', False, after='NAXIS%s'%dim)
+            hdu.header.set('extend', value=pyfits.FALSE, after='NAXIS%s'%dim)
             del hdu.header['nextend']
 
             # Append remaining unique header keywords from template DQ
@@ -401,7 +403,7 @@ class OutputImage:
                         hdu.header.ascard.append(_card)
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
-            hdu.header.update('filename',self.outdata)
+            hdu.header['filename'] = self.outdata
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -426,7 +428,7 @@ class OutputImage:
                 fwht = pyfits.HDUList()
 
                 if errhdr:
-                    errhdr.update('CCDCHIP','-999')
+                    errhdr['CCDCHIP'] = '-999'
 
                 hdu = pyfits.PrimaryHDU(data=whtarr, header=prihdu.header)
 
@@ -436,8 +438,8 @@ class OutputImage:
                     for _card in errhdr.ascard:
                         if _card.key not in RESERVED_KEYS and _card.key not in hdu.header:
                             hdu.header.ascard.append(_card)
-                hdu.header.update('filename',self.outweight)
-                hdu.header.update('CCDCHIP','-999')
+                hdu.header['filename'] = self.outweight
+                hdu.header['CCDCHIP'] = '-999'
                 if self.wcs:
                     pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
                     # Update WCS Keywords based on PyDrizzle product's value
@@ -478,7 +480,7 @@ class OutputImage:
                         if ( (_card.key not in RESERVED_KEYS) and
                                 _card.key not in hdu.header):
                             hdu.header.ascard.append(_card)
-                hdu.header.update('filename', self.outcontext)
+                hdu.header['filename'] = self.outcontext
                 if self.wcs:
                     pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
                     # Update WCS Keywords based on PyDrizzle product's value
@@ -651,25 +653,25 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
 
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
-    hdr.update('WCSNAME',wname)
-    hdr.update('VAFACTOR',1.0, after=after)
-    hdr.update('ORIENTAT',wcs.orientat, after=after)
+    hdr['WCSNAME'] = wname
+    hdr.set('VAFACTOR', value=1.0, after=after)
+    hdr.set('ORIENTAT', value=wcs.orientat, after=after)
 
     # Use of 'after' not needed if these keywords already exist in the header
     if after in WCS_KEYWORDS:
         after = None
 
     if 'CTYPE1' not in hdr:
-        hdr.update('CTYPE2',wcs.wcs.ctype[1], after=after)
-        hdr.update('CTYPE1',wcs.wcs.ctype[0], after=after)
-    hdr.update('CRPIX2',wcs.wcs.crpix[1], after=after)
-    hdr.update('CRPIX1',wcs.wcs.crpix[0], after=after)
-    hdr.update('CRVAL2',wcs.wcs.crval[1], after=after)
-    hdr.update('CRVAL1',wcs.wcs.crval[0], after=after)
-    hdr.update('CD2_2',wcs.wcs.cd[1][1], after=after)
-    hdr.update('CD2_1',wcs.wcs.cd[1][0], after=after)
-    hdr.update('CD1_2',wcs.wcs.cd[0][1], after=after)
-    hdr.update('CD1_1',wcs.wcs.cd[0][0], after=after)
+        hdr.set('CTYPE2', value=wcs.wcs.ctype[1], after=after)
+        hdr.set('CTYPE1', value=wcs.wcs.ctype[0], after=after)
+    hdr.set('CRPIX2', value=wcs.wcs.crpix[1], after=after)
+    hdr.set('CRPIX1', value=wcs.wcs.crpix[0], after=after)
+    hdr.set('CRVAL2', value=wcs.wcs.crval[1], after=after)
+    hdr.set('CRVAL1', value=wcs.wcs.crval[0], after=after)
+    hdr.set('CD2_2', value=wcs.wcs.cd[1][1], after=after)
+    hdr.set('CD2_1', value=wcs.wcs.cd[1][0], after=after)
+    hdr.set('CD1_2', value=wcs.wcs.cd[0][1], after=after)
+    hdr.set('CD1_1', value=wcs.wcs.cd[0][0], after=after)
 
     # delete distortion model related keywords
     deleteDistortionKeywords(hdr)
@@ -730,17 +732,17 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
         scihdr = pyfits.Header()
         prihdr = pyfits.Header()
         # Start by updating PRIMARY header keywords...
-        prihdr.update('EXTEND', True ,after='NAXIS')
-        prihdr.update('FILENAME', outname)
+        prihdr.set('EXTEND', value=pyfits.TRUE, after='NAXIS')
+        prihdr['FILENAME'] = outname
 
     if outextname == '':
         outextname = 'sci'
     if outextver == 0: outextver = 1
-    scihdr.update('EXTNAME',outextname.upper())
-    scihdr.update('EXTVER',outextver)
+    scihdr['EXTNAME'] = outextname.upper()
+    scihdr['EXTVER'] = outextver
 
     for card in wcshdr.ascard:
-        scihdr.update(card.key,card.value,comment=card.comment)
+        scihdr[card.key] = (card.value, card.comment)
 
     # Create PyFITS HDUList for all extensions
     outhdu = pyfits.HDUList()
@@ -769,4 +771,4 @@ def writeDrizKeywords(hdr,imgnum,drizdict):
         if val is None: val = ""
         comment = drizdict[key]['comment']
         if comment is None: comment = ""
-        hdr.update(_keyprefix+key,val,comment=drizdict[key]['comment'])
+        hdr[_keyprefix+key] = (val, drizdict[key]['comment'])

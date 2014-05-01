@@ -123,7 +123,7 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
     inwcs = wcsutil.HSTWCS(input)
 
     # Now, convert pixel coordinates into sky coordinates
-    dra,ddec = inwcs.all_pix2sky(xlist,ylist,1)
+    dra,ddec = inwcs.all_pix2world(xlist,ylist,1)
 
     # convert to HH:MM:SS.S format, if specified
     if hms:

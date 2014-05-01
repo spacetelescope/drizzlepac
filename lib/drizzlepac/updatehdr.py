@@ -247,6 +247,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
             extnum = fileutil.findExtname(fimg,ext[0],ext[1])
         else:
             extnum = ext
+
         update_wcs(fimg,extnum,chip_wcs,wcsname=wcsname,verbose=verbose)
 
 #    if numextn > 0:
@@ -292,8 +293,7 @@ def update_refchip_with_shift(chip_wcs, wcslin,
     Rc_i,Dc_i = chip_wcs.wcs_pix2sky(xpix,ypix,1)
 
     # step 2
-    #Xc_i,Yc_i = wcslin.wcs_sky2pix([Rc_i],[Dc_i],1)
-    Xc_i,Yc_i = wcslin.wcs_sky2pix(Rc_i,Dc_i,1)
+    Xc_i,Yc_i = wcslin.wcs_sky2pix([Rc_i],[Dc_i],1)
     Xc_i -= wcslin.wcs.crpix[0]
     Yc_i -= wcslin.wcs.crpix[1]
     # step 3
@@ -313,7 +313,7 @@ def update_refchip_with_shift(chip_wcs, wcslin,
     # step 6
     # compute new sky positions (with full model) based on new CRVAL
     Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(xpix,ypix,1)
-    Xc_iu,Yc_iu = wcslin.wcs_sky2pix(Rc_iu,Dc_iu,1)
+    Xc_iu,Yc_iu = wcslin.wcs_sky2pix([Rc_iu],[Dc_iu],1)
     # step 7
     # Perform rscale (linear orthogonal) fit between previously updated positions
     # and newly updated positions
@@ -321,8 +321,9 @@ def update_refchip_with_shift(chip_wcs, wcslin,
     XYcs_i = np.transpose([Xcs_i,Ycs_i])
     #rfit = linearfit.fit_all(XYcs_i,XYc_iu,mode=rmode,center=[new_crval1,new_crval2],verbose=False)
     #rmat = rfit['fit_matrix']
-    rfit = linearfit.fit_all(XYcs_i, XYc_iu, mode='rscale',center=[new_crval1,new_crval2],verbose=False)
+    rfit = linearfit.fit_all(XYcs_i,XYc_iu,mode='rscale',center=[new_crval1,new_crval2],verbose=False)
     rmat = fileutil.buildRotMatrix(rfit['rot'])*rfit['scale'][0]
+
     # Step 8
     # apply final fit to CD matrix
     chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd,rmat)
@@ -403,9 +404,9 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
 
         for key in wcs_hdr:
-            hdr.update(key,wcs_hdr[key])
-        hdr.update('ORIENTAT',new_wcs.orientat)
-        hdr.update('WCSNAME',wcsname)
+            hdr[key] = wcs_hdr[key]
+        hdr['ORIENTAT'] = new_wcs.orientat
+        hdr['WCSNAME'] = wcsname
         util.updateNEXTENDKw(fimg)
 
         # Only if this image was opened in update mode should this

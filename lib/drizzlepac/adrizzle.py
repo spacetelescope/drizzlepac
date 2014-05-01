@@ -217,7 +217,7 @@ def run(configObj, wcsmap=None):
     # if out_units is not counts, this will simply be a value of 1.0
     # the keyword 'exptime' will always contain the total exposure time
     # of all input image regardless of the output units
-    out_sci_handle[outextn].header.update('EXPTIME', outexptime)
+    out_sci_handle[outextn].header['EXPTIME'] = outexptime
 
     # create CTYPE strings
     ctype1 = input_wcs.wcs.ctype[0]
@@ -226,30 +226,30 @@ def run(configObj, wcsmap=None):
     if ctype2.find('-SIP'): ctype2 = ctype2.replace('-SIP','')
 
     # Update header with WCS keywords
-    out_sci_handle[outextn].header.update('ORIENTAT',output_wcs.orientat)
-    out_sci_handle[outextn].header.update('CD1_1',output_wcs.wcs.cd[0][0])
-    out_sci_handle[outextn].header.update('CD1_2',output_wcs.wcs.cd[0][1])
-    out_sci_handle[outextn].header.update('CD2_1',output_wcs.wcs.cd[1][0])
-    out_sci_handle[outextn].header.update('CD2_2',output_wcs.wcs.cd[1][1])
-    out_sci_handle[outextn].header.update('CRVAL1',output_wcs.wcs.crval[0])
-    out_sci_handle[outextn].header.update('CRVAL2',output_wcs.wcs.crval[1])
-    out_sci_handle[outextn].header.update('CRPIX1',output_wcs.wcs.crpix[0])
-    out_sci_handle[outextn].header.update('CRPIX2',output_wcs.wcs.crpix[1])
-    out_sci_handle[outextn].header.update('CTYPE1',ctype1)
-    out_sci_handle[outextn].header.update('CTYPE2',ctype2)
-    out_sci_handle[outextn].header.update('VAFACTOR',1.0)
+    out_sci_handle[outextn].header['ORIENTAT'] = output_wcs.orientat
+    out_sci_handle[outextn].header['CD1_1'] = output_wcs.wcs.cd[0][0]
+    out_sci_handle[outextn].header['CD1_2'] = output_wcs.wcs.cd[0][1]
+    out_sci_handle[outextn].header['CD2_1'] = output_wcs.wcs.cd[1][0]
+    out_sci_handle[outextn].header['CD2_2'] = output_wcs.wcs.cd[1][1]
+    out_sci_handle[outextn].header['CRVAL1'] = output_wcs.wcs.crval[0]
+    out_sci_handle[outextn].header['CRVAL2'] = output_wcs.wcs.crval[1]
+    out_sci_handle[outextn].header['CRPIX1'] = output_wcs.wcs.crpix[0]
+    out_sci_handle[outextn].header['CRPIX2'] = output_wcs.wcs.crpix[1]
+    out_sci_handle[outextn].header['CTYPE1'] = ctype1
+    out_sci_handle[outextn].header['CTYPE2'] = ctype2
+    out_sci_handle[outextn].header['VAFACTOR'] = 1.0
 
 
     if scale_pars['out_units'] == 'counts':
         np.multiply(outsci, outexptime, outsci)
-        out_sci_handle[outextn].header.update('DRIZEXPT', outexptime)
+        out_sci_handle[outextn].header['DRIZEXPT'] = outexptime
 
     else:
-        out_sci_handle[outextn].header.update('DRIZEXPT', 1.0)
+        out_sci_handle[outextn].header['DRIZEXPT'] = 1.0
 
     # Update header keyword NDRIZIM to keep track of how many images have
     # been combined in this product so far
-    out_sci_handle[outextn].header.update('NDRIZIM', uniqid)
+    out_sci_handle[outextn].header['NDRIZIM'] = uniqid
 
     #define keywords to be written out to product header
     drizdict = outputimage.DRIZ_KEYWORDS.copy()
@@ -1070,13 +1070,13 @@ def create_output(filename):
         # We need to create the new file
         pimg = pyfits.HDUList()
         phdu = pyfits.PrimaryHDU()
-        phdu.header.update('NDRIZIM',1)
+        phdu.header['NDRIZIM'] = 1
         pimg.append(phdu)
         if extn is not None:
             # Create a MEF file with the specified extname
             ehdu = pyfits.ImageHDU(data=arr)
-            ehdu.header.update('EXTNAME',extname[0])
-            ehdu.header.update('EXTVER',extname[1])
+            ehdu.header['EXTNAME'] = extname[0]
+            ehdu.header['EXTVER'] = extname[1]
             pimg.append(ehdu)
         log.info('Creating new output file: %s' % fileroot)
         pimg.writeto(fileroot)

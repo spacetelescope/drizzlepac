@@ -688,10 +688,11 @@ class Image(object):
         # Record values for the fit with both the PRIMARY WCS being updated
         # and the alternate WCS which will be created.
         for ext in extlist:
-            fimg[ext].header.update('FITNAME'+next_key,wcsname)
+            fimg[ext].header['FITNAME'+next_key] = wcsname
             for kw in self.fit['rms_keys']:
-                fimg[ext].header.update(kw+next_key,
-                        self.fit['rms_keys'][kw],after='FITNAME'+next_key)
+                fimg[ext].header.set(kw+next_key,
+                                     self.fit['rms_keys'][kw],
+                                     after='FITNAME'+next_key)
 
         if self.perform_update:
             log.info('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
@@ -905,7 +906,7 @@ class RefImage(object):
             # Convert RA/Dec positions of source from refimage into
             # X,Y positions based on WCS of refimage
             self.xy_catalog = [[],[],[],[]]
-            xypos = self.wcs.all_sky2pix(self.all_radec[0],self.all_radec[1],1)
+            xypos = self.wcs.all_world2pix(self.all_radec[0],self.all_radec[1],1)
             self.xy_catalog[0] = xypos[0]
             self.xy_catalog[1] = xypos[1]
             self.xy_catalog[2] = np.zeros(xypos[0].shape[0],dtype=np.float32)

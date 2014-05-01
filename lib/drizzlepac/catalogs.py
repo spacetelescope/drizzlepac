@@ -132,7 +132,7 @@ class Catalog(object):
         if self.radec is None or force:
             if self.wcs is not None:
                 print('    Number of objects in catalog: %d'%(len(self.xypos[0])))
-                self.radec = self.wcs.all_pix2sky(self.xypos[0],self.xypos[1],self.origin)
+                self.radec = self.wcs.all_pix2world(self.xypos[0],self.xypos[1],self.origin)
             else:
                 # If we have no WCS, simply pass along the XY input positions
                 # under the assumption they were already sky positions.
@@ -157,7 +157,7 @@ class Catalog(object):
                     regpos = reg['pos']
                     regdist = reg['distance']
                 else:
-                    regradec = self.wcs.all_pix2sky([reg['pos']],1)[0]
+                    regradec = self.wcs.all_pix2world([reg['pos']],1)[0]
                     regpos = (regradec[0],regradec[1])
                     regdist = reg['distance']*self.wcs.pscale
 
