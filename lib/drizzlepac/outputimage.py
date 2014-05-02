@@ -514,7 +514,8 @@ class OutputImage:
         last_kw = None
         for extn in self.fullhdrs:
             if keyword in extn:
-                indx = extn.ascard.index_of(keyword)
+                #indx = extn.ascard.index_of(keyword)
+                indx = extn.index(keyword)
                 kw_list = extn.keys()[:indx]
                 break
         if kw_list:
