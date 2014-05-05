@@ -264,7 +264,7 @@ def extract_input_filenames(drzfile):
     if len(data_kws) == 0:
         return None
     fnames = []
-    for kw in data_kws.ascard:
+    for kw in data_kws.cards:
         f = kw.value.split('[')[0]
         if f not in fnames:
             fnames.append(f)

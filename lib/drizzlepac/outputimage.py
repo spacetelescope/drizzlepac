@@ -397,14 +397,11 @@ class OutputImage:
             # Append remaining unique header keywords from template DQ
             # header to Primary header...
             if scihdr:
-                for _card in scihdr.cards:
-                    if _card.keyword not in RESERVED_KEYS and _card.keyword not in hdu.header:
-                        hdu.header.append(_card)
-            for kw in ['PCOUNT', 'GCOUNT']:
-                try:
-                    del kw
-                except KeyError:
-                    pass
+                for _card in scihdr.ascard:
+                    if _card.key not in RESERVED_KEYS and _card.key not in hdu.header:
+                        hdu.header.ascard.append(_card)
+            del hdu.header['PCOUNT']
+            del hdu.header['GCOUNT']
             hdu.header['filename'] = self.outdata
 
             # Add primary header to output file...
@@ -437,9 +434,9 @@ class OutputImage:
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
                 if errhdr:
-                    for _card in errhdr.cards:
-                        if _card.keyword not in RESERVED_KEYS and _card.keyword not in hdu.header:
-                            hdu.header.append(_card)
+                    for _card in errhdr.ascard:
+                        if _card.key not in RESERVED_KEYS and _card.key not in hdu.header:
+                            hdu.header.ascard.append(_card)
                 hdu.header['filename'] = self.outweight
                 hdu.header['CCDCHIP'] = '-999'
                 if self.wcs:
@@ -478,10 +475,10 @@ class OutputImage:
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
                 if dqhdr:
-                    for _card in dqhdr.cards:
-                        if ( (_card.keyword not in RESERVED_KEYS) and
-                                _card.keyword not in hdu.header):
-                            hdu.header.append(_card)
+                    for _card in dqhdr.ascard:
+                        if ( (_card.key not in RESERVED_KEYS) and
+                                _card.key not in hdu.header):
+                            hdu.header.ascard.append(_card)
                 hdu.header['filename'] = self.outcontext
                 if self.wcs:
                     pre_wcs_kw = self.find_kwupdate_location(hdu.header,'CD1_1')
@@ -517,8 +514,7 @@ class OutputImage:
         last_kw = None
         for extn in self.fullhdrs:
             if keyword in extn:
-                #indx = extn.ascard.index_of(keyword)
-                indx = extn.index(keyword)
+                indx = extn.ascard.index_of(keyword)
                 kw_list = extn.keys()[:indx]
                 break
         if kw_list:
@@ -609,19 +605,16 @@ class OutputImage:
 def cleanTemplates(scihdr,errhdr,dqhdr):
 
     # Now, safeguard against having BSCALE and BZERO
-    for kw in ['BSCALE', 'BZERO']:
-        try:
-            del scihdr[kw]
-        except KeyError:
-            pass
-        try:
-            del errhdr[kw]
-        except KeyError:
-            pass
-        try:
-            del dqhdr[kw]
-        except KeyError:
-            pass
+    try:
+        del scihdr['bscale']
+        del scihdr['bzero']
+        del errhdr['bscale']
+        del errhdr['bzero']
+        del dqhdr['bscale']
+        del dqhdr['bzero']
+    except:
+        # If these don't work, they didn't exist to start with...
+        pass
 
     # At this point, check errhdr and dqhdr to make sure they
     # have all the requisite keywords (as listed in updateDTHKeywords).
@@ -727,13 +720,13 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
         if scihdr is None:
             scihdr = fits.Header()
             indx = 0
-            for c in prihdr.cards:
-                if c.keyword not in ['INHERIT','EXPNAME']: indx += 1
+            for c in prihdr.ascard:
+                if c.key not in ['INHERIT','EXPNAME']: indx += 1
                 else: break
-            for i in range(indx,len(prihdr)):
-                scihdr.append(prihdr.cards[i])
-            for i in range(indx, len(prihdr)):
-                del prihdr[indx]
+            for i in range(indx,len(prihdr.ascard)):
+                scihdr.ascard.append(prihdr.ascard[i])
+            for i in range(indx,len(prihdr.ascard)):
+                del prihdr.ascard[indx]
     else:
         scihdr = fits.Header()
         prihdr = fits.Header()
@@ -747,8 +740,8 @@ def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=Tru
     scihdr['EXTNAME'] = outextname.upper()
     scihdr['EXTVER'] = outextver
 
-    for card in wcshdr.cards:
-        scihdr[card.keyword] = (card.value, card.comment)
+    for card in wcshdr.ascard:
+        scihdr[card.key] = (card.value, card.comment)
 
     # Create PyFITS HDUList for all extensions
     outhdu = fits.HDUList()
