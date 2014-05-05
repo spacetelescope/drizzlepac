@@ -14,9 +14,8 @@ import string
 import errno
 
 import numpy as np
-#import pyfits
 import astropy
-from astropy.io import fits as pyfits
+from astropy.io import fits
 from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
 from stsci.tools import check_files
 from stsci.tools import configobj
@@ -223,7 +222,7 @@ class WithLogging(object):
                     # Insure that any exception raised by the code gets passed on
                     # (hope that end_logging didn't change the last exception raised)
                     if errorobj:
-                        raise errorobj # checking fy14dev
+                        raise errorobj
 
         return wrapper
 
@@ -239,7 +238,7 @@ def print_pkg_versions(packages=None, svn=False, log=None):
         def output(msg):
             print msg
 
-    pkgs = ['numpy', 'pyfits', 'stwcs', 'pywcs']
+    pkgs = ['numpy', 'astropy', 'stwcs']
     if packages is not None:
         if not isinstance(packages, list):
             packages = [packages]
@@ -450,7 +449,7 @@ def verifyUpdatewcs(fname):
     updated = True
     numsci,extname = count_sci_extensions(fname)
     for n in range(1,numsci+1):
-        hdr = pyfits.getheader(fname,extname=extname,extver=n)
+        hdr = fits.getheader(fname, extname=extname, extver=n)
         if 'wcsname' not in hdr:
             updated = False
             break
@@ -972,10 +971,10 @@ def parse_colnames(colnames,coords=None):
     # parse column names from coords file and match to input values
     if coords is not None and fileutil.isFits(coords)[0]:
         # Open FITS file with table
-        ftab = pyfits.open(coords)
+        ftab = fits.open(coords)
         # determine which extension has the table
         for extn in ftab:
-            if isinstance(extn,pyfits.BinTableHDU):
+            if isinstance(extn, fits.BinTableHDU):
                 # parse column names from table and match to inputs
                 cnames = extn.columns.names
                 if colnames is not None:
@@ -1016,7 +1015,7 @@ def createFile(dataArray=None, outfile=None, header=None):
 
     try:
         # Create the output file
-        fitsobj = pyfits.HDUList()
+        fitsobj = fits.HDUList()
         if (header != None):
             del(header['NAXIS1'])
             del(header['NAXIS2'])
@@ -1030,12 +1029,12 @@ def createFile(dataArray=None, outfile=None, header=None):
             if 'NEXTEND' in header:
                 header['NEXTEND'] = 0
 
-            hdu = pyfits.PrimaryHDU(data=dataArray,header=header)
+            hdu = fits.PrimaryHDU(data=dataArray, header=header)
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
 
         else:
-            hdu = pyfits.PrimaryHDU(data=dataArray)
+            hdu = fits.PrimaryHDU(data=dataArray)
 
         fitsobj.append(hdu)
         if outfile:

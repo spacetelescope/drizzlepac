@@ -6,8 +6,7 @@ from __future__ import division # confidence high
 
 import string, os
 
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import numpy as np
 
 from stsci.tools import fileutil
@@ -43,7 +42,7 @@ def getMdriztabParameters(files):
 
     # Open MDRIZTAB file.
     try:
-        _mdriztab = pyfits.open(_tableName)
+        _mdriztab = fits.open(_tableName)
     except:
         raise IOError,"MDRIZTAB table '%s' not valid!" % _tableName
 

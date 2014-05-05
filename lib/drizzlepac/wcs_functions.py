@@ -54,16 +54,16 @@ class WCSMap:
             This method gets passed to the drizzle algorithm.
         """
         # This matches WTRAXY results to better than 1e-4 pixels.
-        skyx,skyy = self.input.all_pix2sky(pixx,pixy,self.origin)
-        result= self.output.wcs_sky2pix(skyx,skyy,self.origin)
+        skyx,skyy = self.input.all_pix2world(pixx,pixy,self.origin)
+        result= self.output.wcs_world2pix(skyx,skyy,self.origin)
         return result
 
     def backward(self,pixx,pixy):
         """ Transform pixx,pixy positions from the output frame back onto their
             original positions in the input frame.
         """
-        skyx,skyy = self.output.wcs_pix2sky(pixx,pixy,self.origin)
-        result = self.input.all_sky2pix(skyx,skyy,self.origin)
+        skyx,skyy = self.output.wcs_pix2world(pixx,pixy,self.origin)
+        result = self.input.all_world2pix(skyx,skyy,self.origin)
         return result
 
     def get_pix_ratio(self):
@@ -75,11 +75,11 @@ class WCSMap:
     def xy2rd(self,wcs,pixx,pixy):
         """ Transform input pixel positions into sky positions in the WCS provided.
         """
-        return wcs.all_pix2sky(pixx,pixy,1)
+        return wcs.all_pix2world(pixx,pixy,1)
     def rd2xy(self,wcs,ra,dec):
         """ Transform input sky positions into pixel positions in the WCS provided.
         """
-        return wcs.wcs_sky2pix(ra,dec,1)
+        return wcs.wcs_world2pix(ra,dec,1)
 
 def get_pix_ratio_from_WCS(input,output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""
@@ -415,7 +415,7 @@ def calcNewEdges(wcs, shape):
     border[_range0:_range1,0] = xmax
     border[_range0:_range1,1] = yside
 
-    edges = wcs.all_pix2sky(border[:,0],border[:,1],1)
+    edges = wcs.all_pix2world(border[:,0],border[:,1],1)
     return edges
 
 

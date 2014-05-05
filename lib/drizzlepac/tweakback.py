@@ -1,8 +1,7 @@
 import os
 
 import numpy as np
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 
 from stwcs import wcsutil
 from stsci.tools import parseinput
@@ -136,7 +135,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
         fltfiles = [fltfiles]
 
     sciext = determine_extnum(drzfile, extname='SCI')
-    scihdr = pyfits.getheader(drzfile,ext=sciext)
+    scihdr = fits.getheader(drzfile, ext=sciext)
 
     ### Step 1: Read in updated and original WCS solutions
     # determine keys for all alternate WCS solutions in drizzled image header
@@ -176,12 +175,12 @@ def tweakback(drzfile, input=None,  origwcs = None,
     crderr2kw = 'CRDER2'+wkeys[-1]
 
     if crderr1kw in scihdr:
-        crderr1 = pyfits.getval(drzfile,crderr1kw,ext=sciext)
+        crderr1 = fits.getval(drzfile, crderr1kw, ext=sciext)
     else:
         crderr1 = 0.0
 
     if crderr2kw in scihdr:
-        crderr2 = pyfits.getval(drzfile,crderr2kw,ext=sciext)
+        crderr2 = fits.getval(drzfile, crderr2kw, ext=sciext)
     else:
         crderr2 = 0.0
     del scihdr
@@ -190,8 +189,8 @@ def tweakback(drzfile, input=None,  origwcs = None,
     orig_fp = orig_wcs.calcFootprint()
 
     ### Step 3: Create pixel positions in final WCS for each footprint
-    final_xy_fp = final_wcs.wcs_sky2pix(final_fp,1)
-    orig_xy_fp = final_wcs.wcs_sky2pix(orig_fp,1)
+    final_xy_fp = final_wcs.wcs_world2pix(final_fp, 1)
+    orig_xy_fp = final_wcs.wcs_world2pix(orig_fp, 1)
 
     ### Step 4: Perform fit between footprint X,Y positions
     wfit = linearfit.iter_fit_all(orig_xy_fp,final_xy_fp,range(4),range(4),
@@ -261,7 +260,7 @@ def extract_input_filenames(drzfile):
     """
     Generate a list of filenames from a drizzled image's header
     """
-    data_kws = pyfits.getval(drzfile,'d*data',ext=0)
+    data_kws = fits.getval(drzfile, 'd*data', ext=0)
     if len(data_kws) == 0:
         return None
     fnames = []
@@ -274,7 +273,7 @@ def extract_input_filenames(drzfile):
 
 def determine_extnum(drzfile, extname='SCI'):
     # Determine what kind of drizzled file input has been provided: MEF or single
-    hdulist = pyfits.open(drzfile)
+    hdulist = fits.open(drzfile)
     numext = len(hdulist)
     sciext = 0
     for e,i in zip(hdulist,range(numext)):

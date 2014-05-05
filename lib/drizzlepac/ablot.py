@@ -238,7 +238,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
     # The keys will be used as the name reported in the header, as-is
     #
     _versions = {'AstroDrizzle':__version__,
-                 'PyFITS':util.__pyfits_version__,
+                 'PyFITS':util.__fits_version__,
                  'Numpy':util.__numpy_version__}
 
     _hdrlist = []

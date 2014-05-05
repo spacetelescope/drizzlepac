@@ -35,8 +35,7 @@ import string,os,types
 
 from stsci.tools import fileutil, readgeis
 
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import numpy as np
 
 import processInput,util
@@ -132,8 +131,8 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
         # Build mask array from DQ array
         maskarr = buildMask(dqarr,bitvalue)
         #Write out the mask file as simple FITS file
-        fmask = pyfits.open(maskname,'append')
-        maskhdu = pyfits.PrimaryHDU(data=maskarr)
+        fmask = fits.open(maskname, 'append')
+        maskhdu = fits.PrimaryHDU(data = maskarr)
         fmask.append(maskhdu)
 
         #Close files
@@ -234,8 +233,8 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
                     del bmaskarr
 
                 #Write out the mask file as simple FITS file
-                fmask = pyfits.open(_mask,'append')
-                maskhdu = pyfits.PrimaryHDU(data=maskarr)
+                fmask = fits.open(_mask,'append')
+                maskhdu = fits.PrimaryHDU(data=maskarr)
                 fmask.append(maskhdu)
 
                 #Close files
@@ -249,7 +248,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
         # Build full mask based on .c1h and shadow mask
         #
         fdq = fileutil.openImage(dqfile)
-        #fsmask = pyfits.open(_mask,memmap=1,mode='readonly')
+        #fsmask = fits.open(_mask,memmap=1,mode='readonly')
         try:
             # Read in DQ array from .c1h and from shadow mask files
             dqarr = fdq[int(extnum)].data
@@ -259,8 +258,8 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             dqmaskarr = buildMask(dqarr,bitvalue)
 
             #Write out the mask file as simple FITS file
-            fdqmask = pyfits.open(maskname,'append')
-            maskhdu = pyfits.PrimaryHDU(data=dqmaskarr)
+            fdqmask = fits.open(maskname,'append')
+            maskhdu = fits.PrimaryHDU(data=dqmaskarr)
             fdqmask.append(maskhdu)
 
             #Close files

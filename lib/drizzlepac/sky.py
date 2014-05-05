@@ -661,7 +661,7 @@ def _computeSky(image, skypars, memmap=0):
 
     """
     Compute the sky value for the data array passed to the function
-    image is a pyfits object which contains the data and the header
+    image is a fits object which contains the data and the header
     for one image extension
 
     skypars is passed in as paramDict
@@ -700,7 +700,7 @@ def _extractSkyValue(imstatObject,skystat):
 def _subtractSky(image,skyValue,memmap=0):
     """
     subtract the given sky value from each the data array
-    that has been passed. image is a pyfits object that
+    that has been passed. image is a fits object that
     contains the data and header for one image extension
     """
     try:
@@ -714,7 +714,7 @@ def _subtractSky(image,skyValue,memmap=0):
 def _updateKW(image, filename, exten, skyKW, Value):
     """update the header with the kw,value"""
     # Update the value in memory
-    image.header.update(skyKW,Value)
+    image.header[skyKW] = Value
 
     # Now update the value on disk
     if isinstance(exten,tuple):
@@ -723,8 +723,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
         strexten = '[%s]'%(exten)
     log.info('Updating keyword %s in %s' % (skyKW, filename + strexten))
     fobj = fileutil.openImage(filename, mode='update')
-    fobj[exten].header.update(skyKW, Value,
-                    comment='Sky value computed by AstroDrizzle')
+    fobj[exten].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
     fobj.close()
 
 def _addDefaultSkyKW(imageObjList):
@@ -744,8 +743,7 @@ def _addDefaultSkyKW(imageObjList):
                 # skip over extensions not used in processing
                 continue
             if skyKW not in fobj[ext].header:
-                fobj[ext].header.update(skyKW, Value,
-                                comment='Sky value computed by AstroDrizzle')
+                fobj[ext].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
                 log.info("MDRIZSKY keyword not found in the %s[%s,%d] header."%(
                             fname,sciExt,chip))
                 log.info("    Adding MDRIZSKY to header with default value of 0.")

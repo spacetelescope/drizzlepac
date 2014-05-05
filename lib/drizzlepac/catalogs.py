@@ -7,8 +7,7 @@ from stsci.tools import logutil, textutil
 
 import stwcs
 from stwcs import wcsutil
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import stsci.imagestats as imagestats
 
 #import idlphot
@@ -132,7 +131,7 @@ class Catalog(object):
         if self.radec is None or force:
             if self.wcs is not None:
                 print('    Number of objects in catalog: %d'%(len(self.xypos[0])))
-                self.radec = self.wcs.all_pix2sky(self.xypos[0],self.xypos[1],self.origin)
+                self.radec = self.wcs.all_pix2world(self.xypos[0],self.xypos[1],self.origin)
             else:
                 # If we have no WCS, simply pass along the XY input positions
                 # under the assumption they were already sky positions.
@@ -157,7 +156,7 @@ class Catalog(object):
                     regpos = reg['pos']
                     regdist = reg['distance']
                 else:
-                    regradec = self.wcs.all_pix2sky([reg['pos']],1)[0]
+                    regradec = self.wcs.all_pix2world([reg['pos']],1)[0]
                     regpos = (regradec[0],regradec[1])
                     regdist = reg['distance']*self.wcs.pscale
 
@@ -281,7 +280,7 @@ class ImageCatalog(Catalog):
         self.src_find_filters = src_find_filters
         Catalog.__init__(self,wcs,catalog_source,**kwargs)
         if self.wcs.extname == ('',None): self.wcs.extname = (0)
-        self.source = pyfits.getdata(self.wcs.filename,ext=self.wcs.extname)
+        self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
 
     def generateXY(self):
         """ Generate source catalog from input image using DAOFIND-style algorithm

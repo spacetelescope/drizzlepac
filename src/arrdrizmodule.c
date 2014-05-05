@@ -1198,7 +1198,7 @@ void initcdriz(void)
     return;
 
   import_array();
-  import_pywcs();
+  import_astropy_wcs();
 
   Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);

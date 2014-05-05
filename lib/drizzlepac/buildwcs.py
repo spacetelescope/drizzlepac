@@ -1,15 +1,14 @@
 from __future__ import division # confidence medium
 
-import sys,types,os,copy
+import sys, types, os, copy
 import util
 import numpy as np
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 
 from stsci.tools import fileutil,teal
-import outputimage,wcs_functions,processInput,util
+import outputimage, wcs_functions, processInput,util
 import stwcs
-from stwcs import distortion,wcsutil
+from stwcs import distortion, wcsutil
 from stwcs.wcsutil import headerlet
 
 __taskname__ = 'buildwcs'
@@ -371,8 +370,8 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
     if outwcs.sip is None:
         siphdr = False
     outwcs_hdr = outwcs.wcs2header(sip2hdr=siphdr)
-    outwcs_hdr.update('NPIX1',outwcs._naxis1)
-    outwcs_hdr.update('NPIX2',outwcs._naxis2)
+    outwcs_hdr['NPIX1'] = outwcs._naxis1
+    outwcs_hdr['NPIX2'] = outwcs._naxis2
 
     # create headerlet object in memory; either from a file or from scratch
     if template is not None and siphdr:
@@ -383,15 +382,15 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         hdrlet = headerlet.createHeaderlet(fname,wcsname)
         # update hdrlet with header values from outwcs
         for kw in outwcs_hdr.items():
-            hdrlet[extname].header.update(kw[0],kw[1])
-        hdrlet[extname].header.update('WCSNAME',wcsname)
+            hdrlet[extname].header[kw[0]] = kw[1]
+        hdrlet[extname].header['WCSNAME'] = wcsname
     else:
         print 'Creating headerlet from scratch...'
-        hdrlet = pyfits.HDUList()
-        hdrlet.append(pyfits.PrimaryHDU())
-        siphdr = pyfits.ImageHDU(header=outwcs_hdr)
-        siphdr.header.update('EXTNAME','SIPWCS')
-        siphdr.header.update('WCSNAME',wcsname)
+        hdrlet = fits.HDUList()
+        hdrlet.append(fits.PrimaryHDU())
+        siphdr = fits.ImageHDU(header=outwcs_hdr)
+        siphdr.header['EXTNAME'] = 'SIPWCS'
+        siphdr.header['WCSNAME'] = wcsname
         hdrlet.append(siphdr)
 
     # Write out header to a file as the final product

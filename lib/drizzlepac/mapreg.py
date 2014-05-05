@@ -1,5 +1,4 @@
-#import pyfits,
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import pyregion, stwcs
 from os import path, extsep #, remove
 from stsci.tools.fileutil import findExtname
@@ -30,14 +29,14 @@ class _AuxSTWCS(object):
         ar = list(args[:])
         if 'origin' in kwargs:
             ar.append(kwargs['origin'])
-        return self._stwcs.all_sky2pix( *tuple(ar) )
+        return self._stwcs.all_world2pix( *tuple(ar) )
         #return self._stwcs.all_sky2pix( *args, **kwargs )
 
     def wcs_pix2sky(self, *args, **kwargs):
         ar = list(args[:])
         if 'origin' in kwargs:
             ar.append(kwargs['origin'])
-        return self._stwcs.all_pix2sky( *tuple(ar) )
+        return self._stwcs.all_pix2world( *tuple(ar) )
         #return self._stwcs.all_pix2sky( *args, **kwargs )
 
 
@@ -161,7 +160,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
     # image extension from the input_reg and chip_reg regions
     for fname in imgfnames:
         imghdu = None
-        imghdu = pyfits.open(fname)
+        imghdu = fits.open(fname)
         catreg = []
         try:
             for extp in cregext:
@@ -544,7 +543,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
         # load headers containing WCS from the reference input FITS file:
         ref_wcs_headers = [ None if extn is None \
-                            else pyfits.getheader(refimg_fname, ext=extn) \
+                            else fits.getheader(refimg_fname, ext=extn) \
                             for extn in ref_wcs_exts ] #TODO: return WCS instead of header
 
     else:
@@ -602,7 +601,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
     # Get the HDU list of the first file in the list of images. This will be
     # re-used to check available extensions.
     try:
-        hdulist = pyfits.open(imgfnames[0])
+        hdulist = fits.open(imgfnames[0])
         hdulist.close()
     except IOError as e:
         cmsg = "Unable to open the image file \'%s\'." % imgfnames[0]
@@ -896,15 +895,15 @@ def parse_ext(extn, default_extver=None):
 
 def count_extensions(img, extname='SCI'):
     """ Return the number of 'extname' extensions. 'img' can be either a file
-    name, an HDU List object (from pyfits), or None (to get the number of all
+    name, an HDU List object (from fits), or None (to get the number of all
     HDU headers.
     """
     if isinstance(img, str):
-        img = pyfits.open(img)
+        img = fits.open(img)
         img.close()
-    elif not isinstance(img, pyfits.HDUList):
+    elif not isinstance(img, fits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) " \
-                        "or a pyfits.HDUList object.")
+                        "or a `astropy.io.fits.HDUList` object.")
 
     if extname is None:
         return len(img)
@@ -919,7 +918,7 @@ def count_extensions(img, extname='SCI'):
 
     n = 0
     for e in img:
-        #if isinstance(e, pyfits.ImageHDU): continue
+        #if isinstance(e, fits.ImageHDU): continue
         if 'EXTNAME' in map(str.upper, e.header.keys()) \
             and e.header['extname'].upper() == extname:
             n += 1
@@ -929,14 +928,14 @@ def count_extensions(img, extname='SCI'):
 
 def get_extver_list(img, extname='SCI'):
     """ Return a list of all extension versions of 'extname' extensions.
-    'img' can be either a file name or a HDU List object (from pyfits).
+    'img' can be either a file name or a HDU List object (from fits).
     """
     if isinstance(img, str):
-        img = pyfits.open(img)
+        img = fits.open(img)
         img.close()
-    elif not isinstance(img, pyfits.HDUList):
+    elif not isinstance(img, fits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) "  \
-                        "or a pyfits.HDUList object.")
+                        "or a fits.HDUList object.")
 
     # when extver is None - return the range of all FITS extensions
     if extname is None:
@@ -953,7 +952,7 @@ def get_extver_list(img, extname='SCI'):
 
     extver = []
     for e in img:
-        #if not isinstance(e, pyfits.ImageHDU): continue
+        #if not isinstance(e, fits.ImageHDU): continue
         hkeys = map(str.upper, e.header.keys())
         if 'EXTNAME' in hkeys and e.header['EXTNAME'].upper() == extname:
             extver.append(e.header['EXTVER'] if 'EXTVER' in hkeys else 1)
@@ -1027,11 +1026,11 @@ def _check_FITS_extensions(img, extensions):
 
     # if 'img' is a file name - open the FITS file:
     if isinstance(img, str):
-        img = pyfits.open(img)
+        img = fits.open(img)
         img.close()
-    elif not isinstance(img, pyfits.HDUList):
+    elif not isinstance(img, fits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) " \
-                        "or a pyfits.HDUList object.")
+                        "or a fits.HDUList object.")
 
     all_present = True
 

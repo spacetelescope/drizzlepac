@@ -3,8 +3,7 @@ from __future__ import division # confidence medium
 import sys,os,copy,time
 import util
 import numpy as np
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
 import outputimage,wcs_functions,processInput,util
 import stwcs
@@ -92,7 +91,7 @@ def run(configObj, wcsmap=None):
     # read file to get science array
     insci = get_data(configObj['input'])
     expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'])
-    in_sci_phdr = pyfits.getheader(fileutil.parseFilename(configObj['input'])[0])
+    in_sci_phdr = fits.getheader(fileutil.parseFilename(configObj['input'])[0])
 
     # we need to read in the input WCS
     input_wcs = stwcs.wcsutil.HSTWCS(configObj['input'],wcskey=_wcskey)
@@ -114,7 +113,7 @@ def run(configObj, wcsmap=None):
         # we also need to read in the output WCS from pre-existing output
         output_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
 
-        out_sci_hdr = pyfits.getheader(outname)
+        out_sci_hdr = fits.getheader(outname)
         outexptime = out_sci_hdr['DRIZEXPT']
         if 'ndrizim' in out_sci_hdr:
             uniqid = out_sci_hdr['ndrizim']+1
@@ -217,7 +216,7 @@ def run(configObj, wcsmap=None):
     # if out_units is not counts, this will simply be a value of 1.0
     # the keyword 'exptime' will always contain the total exposure time
     # of all input image regardless of the output units
-    out_sci_handle[outextn].header.update('EXPTIME', outexptime)
+    out_sci_handle[outextn].header['EXPTIME'] = outexptime
 
     # create CTYPE strings
     ctype1 = input_wcs.wcs.ctype[0]
@@ -226,30 +225,30 @@ def run(configObj, wcsmap=None):
     if ctype2.find('-SIP'): ctype2 = ctype2.replace('-SIP','')
 
     # Update header with WCS keywords
-    out_sci_handle[outextn].header.update('ORIENTAT',output_wcs.orientat)
-    out_sci_handle[outextn].header.update('CD1_1',output_wcs.wcs.cd[0][0])
-    out_sci_handle[outextn].header.update('CD1_2',output_wcs.wcs.cd[0][1])
-    out_sci_handle[outextn].header.update('CD2_1',output_wcs.wcs.cd[1][0])
-    out_sci_handle[outextn].header.update('CD2_2',output_wcs.wcs.cd[1][1])
-    out_sci_handle[outextn].header.update('CRVAL1',output_wcs.wcs.crval[0])
-    out_sci_handle[outextn].header.update('CRVAL2',output_wcs.wcs.crval[1])
-    out_sci_handle[outextn].header.update('CRPIX1',output_wcs.wcs.crpix[0])
-    out_sci_handle[outextn].header.update('CRPIX2',output_wcs.wcs.crpix[1])
-    out_sci_handle[outextn].header.update('CTYPE1',ctype1)
-    out_sci_handle[outextn].header.update('CTYPE2',ctype2)
-    out_sci_handle[outextn].header.update('VAFACTOR',1.0)
+    out_sci_handle[outextn].header['ORIENTAT'] = output_wcs.orientat
+    out_sci_handle[outextn].header['CD1_1'] = output_wcs.wcs.cd[0][0]
+    out_sci_handle[outextn].header['CD1_2'] = output_wcs.wcs.cd[0][1]
+    out_sci_handle[outextn].header['CD2_1'] = output_wcs.wcs.cd[1][0]
+    out_sci_handle[outextn].header['CD2_2'] = output_wcs.wcs.cd[1][1]
+    out_sci_handle[outextn].header['CRVAL1'] = output_wcs.wcs.crval[0]
+    out_sci_handle[outextn].header['CRVAL2'] = output_wcs.wcs.crval[1]
+    out_sci_handle[outextn].header['CRPIX1'] = output_wcs.wcs.crpix[0]
+    out_sci_handle[outextn].header['CRPIX2'] = output_wcs.wcs.crpix[1]
+    out_sci_handle[outextn].header['CTYPE1'] = ctype1
+    out_sci_handle[outextn].header['CTYPE2'] = ctype2
+    out_sci_handle[outextn].header['VAFACTOR'] = 1.0
 
 
     if scale_pars['out_units'] == 'counts':
         np.multiply(outsci, outexptime, outsci)
-        out_sci_handle[outextn].header.update('DRIZEXPT', outexptime)
+        out_sci_handle[outextn].header['DRIZEXPT'] = outexptime
 
     else:
-        out_sci_handle[outextn].header.update('DRIZEXPT', 1.0)
+        out_sci_handle[outextn].header['DRIZEXPT'] = 1.0
 
     # Update header keyword NDRIZIM to keep track of how many images have
     # been combined in this product so far
-    out_sci_handle[outextn].header.update('NDRIZIM', uniqid)
+    out_sci_handle[outextn].header['NDRIZIM'] = uniqid
 
     #define keywords to be written out to product header
     drizdict = outputimage.DRIZ_KEYWORDS.copy()
@@ -390,7 +389,7 @@ def mergeDQarray(maskname,dqarr):
                 maskarr = mask[0].data.astype(np.bool)
                 mask.close()
         else:
-            if isinstance(maskname, pyfits.HDUList):
+            if isinstance(maskname, fits.HDUList):
                 # working with a virtual input file
                 maskarr = maskname[0].data.astype(np.bool)
             else:
@@ -401,13 +400,13 @@ def mergeDQarray(maskname,dqarr):
             np.bitwise_and(dqarr,maskarr,dqarr)
 
 def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
-    if not isinstance(crmaskname, pyfits.HDUList) and not os.path.exists(crmaskname):
+    if not isinstance(crmaskname, fits.HDUList) and not os.path.exists(crmaskname):
         log.warning('No CR mask file found! Input DQ array not updated.')
         return
     if cr_bits_value == None:
         log.warning('Input DQ array not updated!')
         return
-    if isinstance(crmaskname, pyfits.HDUList):
+    if isinstance(crmaskname, fits.HDUList):
         # in_memory case
         crmask = crmaskname
     else:
@@ -508,7 +507,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # The keys will be used as the name reported in the header, as-is
     #
     _versions = {'AstroDrizzle':__version__,
-                 'PyFITS':util.__pyfits_version__,
+                 'PyFITS':util.__fits_version__,
                  'Numpy':util.__numpy_version__}
 
     # Set sub-sampling rate for drizzling
@@ -840,7 +839,7 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
 
         _outmaskname = chip.outputNames[step_mask]
         if os.path.exists(_outmaskname): os.remove(_outmaskname)
-        pimg = pyfits.PrimaryHDU(data=_inwht)
+        pimg = fits.PrimaryHDU(data=_inwht)
         img.saveVirtualOutputs({step_mask:pimg})
         # Only write out mask files if in_memory=False
         if not img.inmemory:
@@ -1068,15 +1067,15 @@ def create_output(filename):
 
     if not os.path.exists(fileroot):
         # We need to create the new file
-        pimg = pyfits.HDUList()
-        phdu = pyfits.PrimaryHDU()
-        phdu.header.update('NDRIZIM',1)
+        pimg = fits.HDUList()
+        phdu = fits.PrimaryHDU()
+        phdu.header['NDRIZIM'] = 1
         pimg.append(phdu)
         if extn is not None:
             # Create a MEF file with the specified extname
-            ehdu = pyfits.ImageHDU(data=arr)
-            ehdu.header.update('EXTNAME',extname[0])
-            ehdu.header.update('EXTVER',extname[1])
+            ehdu = fits.ImageHDU(data=arr)
+            ehdu.header['EXTNAME'] = extname[0]
+            ehdu.header['EXTVER'] = extname[1]
             pimg.append(ehdu)
         log.info('Creating new output file: %s' % fileroot)
         pimg.writeto(fileroot)
@@ -1084,6 +1083,6 @@ def create_output(filename):
     else:
         log.info('Updating existing output file: %s' % fileroot)
 
-    handle = pyfits.open(fileroot,mode='update')
+    handle = fits.open(fileroot, mode='update')
 
     return handle,extname

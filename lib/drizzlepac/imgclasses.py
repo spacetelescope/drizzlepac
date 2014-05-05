@@ -1,11 +1,9 @@
 import copy,os
 import numpy as np
 
-#import pywcs
 from astropy import wcs as pywcs
 import stwcs
-#import pyfits
-from astropy.io import fits as pyfits
+from astropy.io import fits
 
 from stwcs import distortion
 from stwcs.distortion import utils
@@ -139,7 +137,7 @@ class Image(object):
 
         # For each SCI extension, generate a catalog and WCS
         for sci_extn in range(1,num_sci+1):
-            extnum = fu.findExtname(pyfits.open(filename),extname,extver=sci_extn)
+            extnum = fu.findExtname(fits.open(filename),extname,extver=sci_extn)
             if extnum is None: extnum = 0
             chip_filename = filename+'[%d]'%(extnum)
             if use_wcs:
@@ -276,7 +274,7 @@ class Image(object):
             raise ValueError
         # Need to concatenate catalogs from each input
         if self.outxy is None or force:
-            outxy = ref_wcs.wcs_sky2pix(self.all_radec[0],self.all_radec[1],self.origin)
+            outxy = ref_wcs.wcs_world2pix(self.all_radec[0],self.all_radec[1],self.origin)
             # convert outxy list to a Nx2 array
             self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
             if self.pars['writecat']:
@@ -590,7 +588,7 @@ class Image(object):
         # start by interpreting the fit to get the RMS values
         if not self.identityfit and self.goodmatch:
             crpix = self.refWCS.wcs.crpix + self.fit['rms']
-            crval_rms = self.refWCS.wcs_pix2sky([crpix],1)[0]
+            crval_rms = self.refWCS.wcs_pix2world([crpix],1)[0]
             rms_ra,rms_dec = np.abs(crval_rms - self.refWCS.wcs.crval)
             nmatch = self.fit['resids'].shape[0]
         else:
@@ -625,7 +623,7 @@ class Image(object):
                     self.hdulist.fileinfo(0)['filemode'] == 'update'):
                     self.hdulist[self.ext_name,ext].header['wcsname'] = 'Default'
 
-        next_key = altwcs.next_wcskey(pyfits.getheader(self.name,extlist[0]))
+        next_key = altwcs.next_wcskey(fits.getheader(self.name,extlist[0]))
 
         if not self.identityfit and self.goodmatch and \
                 self.fit['offset'][0] != np.nan:
@@ -688,10 +686,11 @@ class Image(object):
         # Record values for the fit with both the PRIMARY WCS being updated
         # and the alternate WCS which will be created.
         for ext in extlist:
-            fimg[ext].header.update('FITNAME'+next_key,wcsname)
+            fimg[ext].header['FITNAME'+next_key] = wcsname
             for kw in self.fit['rms_keys']:
-                fimg[ext].header.update(kw+next_key,
-                        self.fit['rms_keys'][kw],after='FITNAME'+next_key)
+                fimg[ext].header.set(kw+next_key,
+                                     self.fit['rms_keys'][kw],
+                                     after='FITNAME'+next_key)
 
         if self.perform_update:
             log.info('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
@@ -905,7 +904,7 @@ class RefImage(object):
             # Convert RA/Dec positions of source from refimage into
             # X,Y positions based on WCS of refimage
             self.xy_catalog = [[],[],[],[]]
-            xypos = self.wcs.all_sky2pix(self.all_radec[0],self.all_radec[1],1)
+            xypos = self.wcs.all_world2pix(self.all_radec[0],self.all_radec[1],1)
             self.xy_catalog[0] = xypos[0]
             self.xy_catalog[1] = xypos[1]
             self.xy_catalog[2] = np.zeros(xypos[0].shape[0],dtype=np.float32)
@@ -937,13 +936,13 @@ class RefImage(object):
         if 'refxyunits' in self.pars and self.pars['refxyunits'] == 'pixels':
             log.info('Creating RA/Dec positions for reference sources...')
             self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
-            skypos = self.wcs.wcs_pix2sky(self.all_radec[0],self.all_radec[1],self.origin)
+            skypos = self.wcs.wcs_pix2world(self.all_radec[0],self.all_radec[1],self.origin)
             self.all_radec = np.column_stack([skypos[0][:,np.newaxis],skypos[1][:,np.newaxis]])
         else:
             log.info('Converting RA/Dec positions of reference sources from "%s" to '%self.name+
                         'X,Y positions in reference WCS...')
             self.refWCS = self.wcs
-            outxy = self.wcs.wcs_sky2pix(self.all_radec[0],self.all_radec[1],self.origin)
+            outxy = self.wcs.wcs_world2pix(self.all_radec[0],self.all_radec[1],self.origin)
             # convert outxy list to a Nx2 array
             self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
 
