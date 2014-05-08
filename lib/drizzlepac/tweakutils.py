@@ -608,7 +608,7 @@ def createWcsHDU(wcs):
     hdu.header['WCSAXES'] = (2, "number of World Coordinate System axes")
     hdu.header['NPIX1'] = (wcs._naxis1, "Length of array axis 1")
     hdu.header['NPIX2'] = (wcs._naxis2, "Length of array axis 2")
-    hdu.header['PIXVALUE'] (0.0, "values of pixels in array")
+    hdu.header['PIXVALUE'] = (0.0, "values of pixels in array")
 
     # Write out values to header...
     hdu.header['CD1_1'] = (wcs.wcs.cd[0,0], "partial of first axis coordinate w.r.t. x")
