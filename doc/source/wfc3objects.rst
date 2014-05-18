@@ -4,7 +4,11 @@
 WFC3 ImageObjects
 *****************
 
+.. moduleauthor:: Megan Sosey, Christopher Hanley <help@stsci.edu>
+
 .. currentmodule:: drizzlepac.wfc3Data
+
+.. automodule:: drizzlepac.wfc3Data
 
 .. autoclass:: WFC3InputImage
    :members:
