@@ -1,7 +1,12 @@
-#
-#   Authors: Megan Sosey, Christopher Hanley
-#   Program: wfc3Data.py
-#   Purpose: Class used to import WFC3 specific instrument data.
+"""
+`wfc3Data` module provides classes used to import WFC3 specific instrument data.
+
+:Authors: Megan Sosey, Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
+
 from __future__ import division # confidence high
 
 

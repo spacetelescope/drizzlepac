@@ -1,5 +1,11 @@
-# 'regfilter' provides functions for filtering out regions outside the image space.
+"""
+`regfilter` provides functions for filtering out regions outside the image space.
 
+:Authors: Mihai Cara
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
 __vdate__ = '17-Nov-2013'
@@ -69,12 +75,12 @@ def _get_bb_rect(shape):
 
 def _get_bb_box(shape, bpanda=False):
     from math import sin, cos, radians
-    
+
     # check if angle is provided:
     rem = len(shape.coord_list) % 2
     # check if bpanda:
     pnd = 1 if bpanda else 0
-    
+
     xc = shape.coord_list[0]
     yc = shape.coord_list[1]
     w  = shape.coord_list[-2-rem-pnd] / 2.0
@@ -90,7 +96,7 @@ def _get_bb_box(shape, bpanda=False):
 def _get_bb_circle(shape, panda=False):
     # check if panda:
     pnd = 1 if panda else 0
-    
+
     xc = shape.coord_list[0]
     yc = shape.coord_list[1]
     r  = shape.coord_list[-1-pnd]
@@ -99,7 +105,7 @@ def _get_bb_circle(shape, panda=False):
 
 def _get_bb_ellipse(shape, epanda=False):
     from math import sin, cos, radians, sqrt
-    
+
     # check if angle is provided:
     rem = len(shape.coord_list) % 2
     # check if epanda:

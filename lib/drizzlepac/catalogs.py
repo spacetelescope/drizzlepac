@@ -1,3 +1,9 @@
+"""
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 import os
 import numpy as np
 #import pywcs
@@ -11,7 +17,7 @@ from astropy.io import fits
 import stsci.imagestats as imagestats
 
 #import idlphot
-import tweakutils,util
+import tweakutils, util
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
@@ -193,7 +199,7 @@ class Catalog(object):
         Method which displays the original image and overlays the positions
         of the detected sources from this image's catalog.
 
-        Plotting `kwargs` that can be provided are::
+        Plotting `kwargs` that can be provided are:
 
             vmin, vmax, cmap, marker
 

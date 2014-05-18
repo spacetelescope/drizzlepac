@@ -1,9 +1,17 @@
 #!/usr/bin/env python
-from __future__ import division  # confidence high
+"""
+Main program for running MultiDrizzle from the command line.
 
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
+from __future__ import division  # confidence high
 import sys
 from drizzlepac import AstroDrizzle
 from drizzlepac.version import __version__
+import util
 
 
 #-------------------------------------------------------------------------------

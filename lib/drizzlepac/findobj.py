@@ -1,4 +1,11 @@
+"""
+A suite of functions for finding sources in images.
 
+:Authors: Warren Hack, Mihai Cara
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division
 import sys
 
@@ -95,9 +102,12 @@ def gaussian(height, center_x, center_y, width_x, width_y):
 
 
 def moments(data,cntr):
-    """Returns (height, x, y, width_x, width_y)
+    """
+    Returns (height, x, y, width_x, width_y)
     the gaussian parameters of a 2D distribution by calculating its
-    moments """
+    moments.
+    
+    """
     total = data.sum()
     #X, Y = np.indices(data.shape)
     #x = (X*data).sum()/total
@@ -480,12 +490,12 @@ def centroid(im):
     Computes the centroid of an image using the image moments:
 
     centroid = {m10/m00, m01/m00}
-    """
-    """
-    # These calls point to Python version of moments function
+
+    These calls point to Python version of moments function
     m00 = immoments(im,0,0)
     m10 = immoments(im, 1,0)
     m01 = immoments(im,0,1)
+    
     """
     # These calls point to Python version of moments function
     m00 = cdriz.arrmoments(im,0,0)

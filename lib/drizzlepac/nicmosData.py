@@ -1,7 +1,11 @@
-#
-#   Authors: Christopher Hanley, David Grumm, Megan Sosey
-#   Program: nicmos_input.py
-#   Purpose: Class used to model NICMOS specific instrument data.
+"""
+Class used to model NICMOS specific instrument data.
+
+:Authors: Christopher Hanley, David Grumm, Megan Sosey
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 
 from stsci.tools import fileutil

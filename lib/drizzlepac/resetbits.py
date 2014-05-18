@@ -5,8 +5,9 @@
     This module allows a user to reset the pixel values of any integer array,
     such as the DQ array from an HST image, to zero.
 
-    License::
-        http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
+    :Authors: Warren Hack
+
+    :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
     PARAMETERS
     ----------

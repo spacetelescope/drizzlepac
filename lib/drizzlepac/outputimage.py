@@ -1,3 +1,11 @@
+"""
+This module manages the creation of the output image FITS file.
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 
 from astropy.io import fits

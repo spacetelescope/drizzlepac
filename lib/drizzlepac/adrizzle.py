@@ -1,3 +1,11 @@
+"""
+Interfaces to main drizzle functions.
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 
 import sys,os,copy,time
@@ -5,7 +13,7 @@ import util
 import numpy as np
 from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
-import outputimage,wcs_functions,processInput,util
+import outputimage, wcs_functions, processInput, util
 import stwcs
 from stwcs import distortion
 
@@ -62,10 +70,10 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
 ####  User level interface to run drizzle tasks from TEAL
 #
 def run(configObj, wcsmap=None):
-    """ Interface for running 'wdrizzle' from TEAL or Python command-line.
+    """ Interface for running `wdrizzle` from TEAL or Python command-line.
 
-    This code performs all file I/O to set up the use of the drizzle code for
-    a single exposure to replicate the functionality of the original 'wdrizzle'.
+    This code performs all file ``I/O`` to set up the use of the drizzle code for
+    a single exposure to replicate the functionality of the original `wdrizzle`.
     """
 
     # Insure all output filenames specified have .fits extensions
@@ -285,22 +293,6 @@ def run(configObj, wcsmap=None):
         out_con_handle.close()
 
 
-def help():
-    print getHelpAsString()
-
-def getHelpAsString():
-    """
-    Return useful help from a file in the script directory called module.help
-    """
-    helpString = 'ADRIZZLE Version '+__version__+' Revision date: '+__vdate__
-    try:
-        helpString = teal.getHelpFileAsString(__taskname__,__file__)
-    except IndexError:
-        pass
-    return helpString
-
-
-
 #
 # drizzlepac based interfaces: relying on imageObject instances and drizzlepac internals
 #
@@ -453,10 +445,11 @@ def buildDrizParamDict(configObj,single=True):
 
 def _setDefaults(configObj={}):
     """set up the default parameters to run drizzle
-        build,single,units,wt_scl,pixfrac,kernel,fillval,
-        rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
+       build,single,units,wt_scl,pixfrac,kernel,fillval,
+       rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data
 
-        Used exclusively for unit-testing, if any are defined.
+       Used exclusively for unit-testing, if any are defined.
+
     """
 
     paramDict={"build":True,
@@ -489,10 +482,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     """ Perform drizzle operation on input to create output.
     The input parameters originally was a list
     of dictionaries, one for each input, that matches the
-    primary parameters for an IRAF drizzle task.
+    primary parameters for an ``IRAF`` `drizzle` task.
 
     This method would then loop over all the entries in the
-    list and run 'drizzle' for each entry.
+    list and run `drizzle` for each entry.
 
     Parameters required for input in paramDict:
         build,single,units,wt_scl,pixfrac,kernel,fillval,
@@ -647,9 +640,9 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
                  num_in_prod,build,_versions,_numctx,_nplanes,chipIdxCopy,
                  _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single image.
-    This is separated out from run_driz() so as to keep together
+    This is separated out from :py:func:`run_driz` so as to keep together
     the entirety of the code which is inside the loop over
-    images.  See the run_driz() code for more documentation.
+    images.  See the :py:func:`run_driz` code for more documentation.
     """
 
     # Check for unintialized inputs
@@ -702,9 +695,9 @@ def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
                   doWrite,build,_versions,_numctx,_nplanes,_numchips,
                   _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single chip.
-    This is separated out from run_driz_img() so as to keep together
+    This is separated out from `run_driz_img` so as to keep together
     the entirety of the code which is inside the loop over
-    chips.  See the run_driz() code for more documentation.
+    chips.  See the `run_driz` code for more documentation.
     """
     global time_pre_all, time_driz_all, time_post_all, time_write_all
 
@@ -957,9 +950,12 @@ def do_driz(insci, input_wcs, inwht,
             expin, in_units, wt_scl,
             wcslin_pscale=1.0,uniqid=1, pixfrac=1.0, kernel='square',
             fillval="INDEF", stepsize=10,wcsmap=None):
-    """ Core routine for performing 'drizzle' operation on a single input image
-        All input values will be Python objects such as ndarrays, instead of filenames
-        File handling (input and output) will be performed by calling routine.
+    """
+    Core routine for performing 'drizzle' operation on a single input image
+    All input values will be Python objects such as ndarrays, instead
+    of filenames.
+    File handling (input and output) will be performed by calling routine.
+
     """
     # Insure that the fillval parameter gets properly interpreted for use with tdriz
     if util.is_blank(fillval):
@@ -1086,3 +1082,57 @@ def create_output(filename):
     handle = fits.open(fileroot, mode='update')
 
     return handle,extname
+
+
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory
+    called ``__taskname__.help``
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, __package__)
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString
+
+
+drizzle.__doc__ = getHelpAsString(docstring = True, show_ver = False)

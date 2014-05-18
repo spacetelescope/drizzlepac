@@ -1,4 +1,9 @@
-""" ImageReg - A replacement for IRAF-based 'tweakshifts'
+""" `TweakReg` - A replacement for IRAF-based `tweakshifts`
+
+:Authors: Warren Hack, Mihai Cara
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
 """
 import os
 
@@ -33,25 +38,6 @@ PSET_SECTION_REFIMG = '_REF IMAGE SOURCE FINDING PARS_'
 
 log = logutil.create_logger(__name__)
 
-#
-# Interfaces used by TEAL
-#
-def getHelpAsString(docstring=False):
-    """
-    return useful help from a file in the script directory called __taskname__.help
-    """
-    install_dir = os.path.dirname(__file__)
-    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
-    helpfile = os.path.join(install_dir,__taskname__+'.help')
-    if docstring or (not docstring and not os.path.exists(htmlfile)):
-        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
-        if os.path.exists(helpfile):
-            helpString += teal.getHelpFileAsString(__taskname__,__file__)
-    else:
-        helpString = 'file://'+htmlfile
-
-    return helpString
-
 
 def _managePsets(configobj,iparsobj=None,rparsobj=None):
     """ Read in parameter values from PSET-like configobj tasks defined for
@@ -65,11 +51,11 @@ def _managePsets(configobj,iparsobj=None,rparsobj=None):
     if iparsobj is None:
         iparsobj = teal.load(imagefindpars.__taskname__)
         del iparsobj['_task_name_']
-    
+
     if rparsobj is None:
         rparsobj = teal.load(refimagefindpars.__taskname__)
         del rparsobj['_task_name_']
-    
+
     # merge these parameters into full set
     configobj[PSET_SECTION].merge(iparsobj)
     configobj[PSET_SECTION_REFIMG].merge(rparsobj)
@@ -107,7 +93,7 @@ def run(configobj):
         # Manage PSETs for source finding algorithms
         _managePsets(configobj)
     #print configobj[PSET_SECTION]
-        
+
     # print out user set input parameter values for running this task
     log.info("USER INPUT PARAMETERS common to all Processing Steps:")
     util.printParams(configobj, log=log)
@@ -423,15 +409,16 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
 
     if configObj is None:
         return
-    # If 'editpars' was set to True, util.getDefaultConfigObj() will have already
-    # called 'run()'.
+    # If 'editpars' was set to True, util.getDefaultConfigObj() will have
+    # already called 'run()'.
     if editpars == False:
         # Pass full set of parameters on to the task
         run(configObj)
 
+
 def help(file=None):
     """
-    Print out syntax help for running tweakreg
+    Print out syntax help for running astrodrizzle
 
     Parameters
     ----------
@@ -441,14 +428,43 @@ def help(file=None):
         writing out the help.
 
     """
-    helpstr = getHelpAsString(docstring=True)
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
     if file is None:
-        print helpstr
+        print(helpstr)
     else:
         if os.path.exists(file): os.remove(file)
-        f = open(file,mode='w')
+        f = open(file, mode = 'w')
         f.write(helpstr)
         f.close()
 
-# Append help file as docstring for use in Sphinx-generated documentation/web pages
-TweakReg.__doc__ = getHelpAsString(docstring=True)
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, '')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString
+
+
+TweakReg.__doc__ = getHelpAsString(docstring = True, show_ver = False)

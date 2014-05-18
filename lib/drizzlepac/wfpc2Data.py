@@ -1,7 +1,11 @@
-#
-#   Authors: Warren Hack, Ivo Busko, Christopher Hanley
-#   Program: wfpc2_input.py
-#   Purpose: Class used to model WFPC2 specific instrument data.
+"""
+`wfpc2Data` module provides classes used to import WFPC2 specific instrument data.
+
+:Authors: Warren Hack, Ivo Busko, Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 import os
 
