@@ -1,4 +1,4 @@
-.. _blot:
+.. _ablot:
 
 *********************************
 Step 6: Blotting the Median Image

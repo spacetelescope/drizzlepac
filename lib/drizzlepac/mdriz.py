@@ -7,8 +7,8 @@ Main program for running MultiDrizzle from the command line.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division  # confidence high
-import sys
+from __future__ import sdivision  # confidence high
+import sys, os
 from drizzlepac import AstroDrizzle
 from drizzlepac.version import __version__
 import util

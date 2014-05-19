@@ -428,7 +428,7 @@ def getHelpAsString(docstring = False, show_ver = True):
 
     """
     install_dir = os.path.dirname(__file__)
-    taskname = util.base_taskname(__taskname__)
+    taskname = util.base_taskname(__taskname__, '')
     htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
     helpfile = os.path.join(install_dir, taskname + '.help')
 

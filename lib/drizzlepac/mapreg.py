@@ -10,9 +10,10 @@ of multiple images using the WCS information from the images.
 """
 from astropy.io import fits
 import pyregion, stwcs
-from os import path, extsep #, remove
+import os
 from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
+import util
 from regfilter import fast_filter_outer_regions
 
 
@@ -127,8 +128,8 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                      iteractive=True, append=False, verbose=True):
     # Check that output directory exists:
     if outpath in [None, ""]:
-        outpath = path.curdir + path.sep
-    elif not path.isdir(outpath):
+        outpath = os.path.curdir + os.path.sep
+    elif not os.path.isdir(outpath):
         raise IOError("The output directory \'%s\' does not exist." % outpath)
 
     if filter is not None and filter.lower() not in ["fast","precise"]:
@@ -215,14 +216,14 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
 
                 # generate output region file name:
                 extsuffix = _ext2str_suffix(ext)
-                basefname, fext = path.splitext(path.basename(fname))
-                regfname = basefname + extsuffix + extsep + "reg"
-                fullregfname = path.join(outpath, regfname)
+                basefname, fext = os.path.splitext(os.path.basename(fname))
+                regfname = basefname + extsuffix + os.extsep + "reg"
+                fullregfname = os.path.join(outpath, regfname)
 
                 catreg.append(regfname)
 
                 # save regions to a file:
-                if append and path.isfile(fullregfname):
+                if append and os.path.isfile(fullregfname):
                     old_extreg = pyregion.open(fullregfname)
                     extreg = pyregion.ShapeList(old_extreg + extreg)
 
@@ -244,7 +245,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
 
     # create exclusions catalog file:
     if catfname:
-        catfh = open(path.join(outpath, catfname), 'w')
+        catfh = open(os.path.join(outpath, catfname), 'w')
         for catentry in cattb:
             catfh.write(catentry[0]) # image file name
             for reg in catentry[1]:
@@ -431,7 +432,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
     ireg = 0
     for fname in input_regfnames:
         # check region file existence:
-        if not path.isfile(fname):
+        if not os.path.isfile(fname):
             raise IOError("The input region file \'%s\' does not exist." % \
                 fname)
         # try to read regions:
@@ -471,7 +472,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
         (refimg_fname, frefext) = extension_from_filename(refimg)
 
-        if not path.isfile(refimg_fname):
+        if not os.path.isfile(refimg_fname):
             raise IOError("The reference FITS file \'%s\' does not exist." % \
                           refimg_fname)
 
@@ -602,7 +603,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
             raise RuntimeError("Argument 'images' must be either a string " \
                     "or a non-empty list of strings of valid file names.")
         (fn, ext) = extension_from_filename(fname)
-        if not path.isfile(fn):
+        if not os.path.isfile(fn):
             raise IOError("The image file \'%s\' does not exist." % fn)
         imgfnames.append(fn)
 
@@ -689,7 +690,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
             region_lists.append(None)
             continue
         # check region file existence:
-        if not path.isfile(fname):
+        if not os.path.isfile(fname):
             raise IOError("The input \"chip\" region file \'%s\' does not "    \
                           "exist." % fname)
         # try to read regions:
