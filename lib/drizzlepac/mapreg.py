@@ -234,7 +234,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                 # pyregion until these changes get to be implemented in the
                 # publicly available release of pyregion.
                 #
-                _regwrite(extreg, regfname)
+                _regwrite(extreg, fullregfname)
                 #extreg.write(fullregfname) # <- use this instead of _regwrite
                                             # once the pyregion bugs are fixed.
             cattb.append([fname, catreg])
