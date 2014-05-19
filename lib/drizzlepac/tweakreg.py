@@ -19,8 +19,8 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.3.0'
-__vdate__ = '23-Oct-2013'
+__version__ = '1.3.1'
+__vdate__ = '19-May-2014'
 
 import tweakutils
 import imgclasses
@@ -39,31 +39,26 @@ PSET_SECTION_REFIMG = '_REF IMAGE SOURCE FINDING PARS_'
 log = logutil.create_logger(__name__)
 
 
-def _managePsets(configobj,iparsobj=None,rparsobj=None):
+def _managePsets(configobj, section_name, task_name, iparsobj=None):
     """ Read in parameter values from PSET-like configobj tasks defined for
         source-finding algorithms, and any other PSET-like tasks under this task,
         and merge those values into the input configobj dictionary.
     """
     # Merge all configobj instances into a single object
-    configobj[PSET_SECTION] = {}
-    configobj[PSET_SECTION_REFIMG] = {}
+    configobj[section_name] = {}
 
-    if iparsobj is None:
-        iparsobj = teal.load(imagefindpars.__taskname__)
-        del iparsobj['_task_name_']
-
-    if rparsobj is None:
-        rparsobj = teal.load(refimagefindpars.__taskname__)
-        del rparsobj['_task_name_']
+    iparsobj_cfg = teal.load(task_name)
+    if iparsobj is not None:
+        iparsobj_cfg.update(iparsobj)
+    del iparsobj_cfg['_task_name_']
 
     # merge these parameters into full set
-    configobj[PSET_SECTION].merge(iparsobj)
-    configobj[PSET_SECTION_REFIMG].merge(rparsobj)
-
+    configobj[section_name].merge(iparsobj_cfg)
 
     # clean up configobj a little to make it easier for later...
 #   if '_RULES_' in configobj:
 #       del configobj['_RULES_']
+
 
 def edit_imagefindpars():
     """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
@@ -88,11 +83,16 @@ def run(configobj):
     util.print_pkg_versions()
 
     # Check to see whether or not the imagefindpars parameters have
-    # already been loaded, as done through the python interface
+    # already been loaded, as done through the python interface.
+    # Repeat for refimagefindpars
     if PSET_SECTION not in configobj:
         # Manage PSETs for source finding algorithms
-        _managePsets(configobj)
+        _managePsets(configobj, PSET_SECTION, imagefindpars.__taskname__)
     #print configobj[PSET_SECTION]
+    if PSET_SECTION_REFIMG not in configobj:
+        # Manage PSETs for source finding algorithms in reference image
+        _managePsets(configobj, PSET_SECTION_REFIMG,
+                     refimagefindpars.__taskname__)
 
     # print out user set input parameter values for running this task
     log.info("USER INPUT PARAMETERS common to all Processing Steps:")
@@ -206,7 +206,7 @@ def run(configobj):
         print '    ',f
     print '\n'
 
-    log.info("USER INPUT PARAMETERS for finding sources for each input:")
+    log.info("USER INPUT PARAMETERS for finding sources for each input image:")
     util.printParams(catfile_kwargs, log=log)
 
     try:
@@ -233,11 +233,16 @@ def run(configobj):
 
     # otherwise, extract the catalog from the first input image source list
     if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
-        # A hack to allow different source finding parameters for the reference image:
+        # A hack to allow different source finding parameters for
+        # the reference image:
         ref_sourcefind_pars = \
             tweakutils.get_configobj_root(configobj[PSET_SECTION_REFIMG])
-        ref_catfile_kwargs  = catfile_kwargs.copy()
+        ref_catfile_kwargs = catfile_kwargs.copy()
         ref_catfile_kwargs.update(ref_sourcefind_pars)
+
+        log.info("USER INPUT PARAMETERS for finding sources for "
+                 "the reference image:")
+        util.printParams(ref_catfile_kwargs, log=log)
 
         #refimg = imgclasses.Image(configobj['refimage'],**catfile_kwargs)
         # Check to see whether the user specified a separate catalog
@@ -379,7 +384,10 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         configobj = teal.load(__taskname__)
 
     # Merge PSET configobj with full task configobj
-    _managePsets(configobj,iparsobj=imagefindcfg,rparsobj=refimagefindcfg)
+    _managePsets(configobj, PSET_SECTION,
+                 imagefindpars.__taskname__, iparsobj=imagefindcfg)
+    _managePsets(configobj, PSET_SECTION_REFIMG,
+                 refimagefindpars.__taskname__, iparsobj=refimagefindcfg)
     # !! NOTE - the above line needs to be done so that getDefaultConfigObj()
     # can merge in input_dict, however the TEAL GUI is not going to understand
     # the extra section, (or use it), so work needs to be done here - some
@@ -393,6 +401,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
                      '='+str(input_dict[i])+'", for now please enter directly into TEAL.'
                 input_dict.pop(i)
         del configobj[PSET_SECTION] # force run() to pull it again after GUI use
+        del configobj[PSET_SECTION_REFIMG] # force run() to pull it again after GUI use
 
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
