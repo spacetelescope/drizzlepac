@@ -4,7 +4,7 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-import os
+import os, sys
 import numpy as np
 #import pywcs
 from astropy import wcs as pywcs
