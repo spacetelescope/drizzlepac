@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31806 (30-Dec-2013)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,8 +25,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
-    <link rel="next" title="Imagefindpars: Source finding parameters" href="imagefindpars.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation" href="index.html" />
+    <link rel="next" title="Imagefindpars: Source finding parameters" href="refimagefindpars.html" />
     <link rel="prev" title="DrizzlePac Release Notes" href="release_notes.html" /> 
   </head>
   <body>
@@ -40,12 +40,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
+          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -57,7 +57,7 @@
   <p class="topless"><a href="release_notes.html"
                         title="previous chapter">DrizzlePac Release Notes</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="imagefindpars.html"
+  <p class="topless"><a href="refimagefindpars.html"
                         title="next chapter">Imagefindpars: Source finding parameters</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
@@ -87,14 +87,28 @@
             
   <div class="section" id="tweakreg-alignment-of-images">
 <span id="tweakreg"></span><h1>TWEAKREG: Alignment of Images<a class="headerlink" href="#tweakreg-alignment-of-images" title="Permalink to this headline">¶</a></h1>
-<p>Combining images using astrodrizzle requires that the WCS information in the headers of each input image align to within sub-pixel accuracy.  The &#8216;tweakreg&#8217; task allows the user to align sets of images to each other and/or to and external astrometric reference frame or image.</p>
-<span class="target" id="module-drizzlepac.tweakreg"></span><p>ImageReg - A replacement for IRAF-based &#8216;tweakshifts&#8217;</p>
+<p>Combining images using astrodrizzle requires that the WCS information in
+the headers of each input image align to within sub-pixel accuracy.
+The <em class="xref py py-obj">tweakreg</em> task allows the user to align sets of images to each
+other and/or to and external astrometric reference frame or image.</p>
+<span class="target" id="module-drizzlepac.tweakreg"></span><p><a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> - A replacement for IRAF-based <em class="xref py py-obj">tweakshifts</em></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Mihai Cara</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
 <dl class="function">
 <dt id="drizzlepac.tweakreg.TweakReg">
-<tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files=None</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>imagefindcfg=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
-<dd><p>tweakreg Version 1.0.2 updated on 11-Apr-2012</p>
-<p><strong>Tweakreg</strong> provides an automated interface for computing residual shifts
-between input exposures being combined using AstroDrizzle. The offsets
+<tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">TweakReg</tt><big>(</big><em>files=None</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>imagefindcfg=None</em>, <em>refimagefindcfg=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.TweakReg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tweakreg provides an automated interface for computing residual shifts
+between input exposures being combined using <em class="xref py py-obj">AstroDrizzle</em>. The offsets
 computed by Tweakreg correspond to pointing differences after applying the WCS
 information from the input image&#8217;s headers.  Such errors would, for example,
 be due to errors in guide-star positions when combining observations from
@@ -105,366 +119,408 @@ the guide stars in a slightly different position.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str or list of str  (Default = <tt class="docutils literal"><span class="pre">'*flt.fits'</span></tt>)</p>
 <blockquote>
-<div><p>Input files (passed in from <em>files</em> parameter) 
+<div><p>Input files (passed in from <em>files</em> parameter)
 This paramater can be provided in any of several forms:</p>
 <blockquote>
 <div><ul class="simple">
 <li>filename of a single image</li>
 <li>filename of an association (ASN)table</li>
-<li>wild-card specification for files in directory (using *, ? etc)</li>
+<li>wild-card specification for files in directory (using <tt class="docutils literal"><span class="pre">\*</span></tt>, <tt class="docutils literal"><span class="pre">?</span></tt> etc.)</li>
 <li>comma-separated list of filenames</li>
-<li>&#8216;&#64;file&#8217; filelist containing list of desired input filenames
+<li><tt class="docutils literal"><span class="pre">&#64;file</span></tt> filelist containing list of desired input filenames
 (and optional inverse variance map filenames)</li>
 </ul>
 </div></blockquote>
-<p>The &#8216;&#64;file&#8217; filelist needs to be provided as an ASCII text file
+<p>The <tt class="docutils literal"><span class="pre">&#64;file</span></tt> filelist needs to be provided as an ASCII text file
 containing a list of filenames for all input images with one
 filename on each line of the file. If inverse variance maps have
 also been created by the user and are to be used (by specifying
-&#8216;IVM&#8217; to the parameter &#8216;final_wht_type&#8217; described further below),
+<tt class="docutils literal"><span class="pre">IVM</span></tt> to the parameter <em class="xref py py-obj">final_wht_type</em> described further below),
 then these are simply provided as a second column in the filelist,
-with each IVM filename listed on the same line as a second entry,
-after its corresponding exposure filename. [Default value: &#8216;*flt.fits&#8217;]</p>
+with each <tt class="docutils literal"><span class="pre">IVM</span></tt> filename listed on the same line as a second entry,
+after its corresponding exposure filename.</p>
 </div></blockquote>
-<p><strong id="refimage">refimage</strong> : str</p>
+<p><strong id="editpars">editpars</strong> : bool (Default = False)</p>
 <blockquote>
-<div><p>Filename of reference image. Sources derived from this image will be 
-used as the reference for matching with sources from all input images.
-[Default value: &#8216;&#8217;]</p>
+<div><p>A parameter that allows user to edit input parameters by hand in the GUI.
+True to use the GUI to edit parameters.</p>
 </div></blockquote>
-<p><strong id="exclusions: string">exclusions: string</strong> :</p>
+<p><strong id="configObj">configObj</strong> : configObject (Default = None)</p>
+<blockquote>
+<div><p>An instance of <em class="xref py py-obj">configObject</em> which overrides default parameter settings.</p>
+</div></blockquote>
+<p><strong id="imagefindcfg">imagefindcfg</strong> : dict, configObject (Default = None)</p>
+<blockquote>
+<div><p>An instance of <em class="xref py py-obj">dict</em> or <em class="xref py py-obj">configObject</em> which overrides default source
+finding (for input images) parameter settings. See help for
+<tt class="xref py py-obj docutils literal"><span class="pre">imagefindpars</span></tt> PSET for a list of available parameters. <strong>Only</strong> the
+parameters that are different from default values  <strong>need</strong> to be specified
+here.</p>
+</div></blockquote>
+<p><strong id="refimagefindcfg">refimagefindcfg</strong> : dict, configObject (Default = None)</p>
+<blockquote>
+<div><p>An instance of <em class="xref py py-obj">dict</em> or <em class="xref py py-obj">configObject</em> which overrides default source
+finding (for input reference image) parameter settings. See help for
+<tt class="xref py py-obj docutils literal"><span class="pre">refimagefindpars</span></tt> PSET for a list of available parameters. <strong>Only</strong> the
+parameters that are different from default values <strong>need</strong> to be specified
+here.</p>
+</div></blockquote>
+<p><strong id="inputDict">inputDict</strong> : dict, optional</p>
+<blockquote>
+<div><p>An optional list of parameters specified by the user, which can also
+be used to override the defaults.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This list of parameters <strong>can</strong> contain parameters specific
+to the <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> task itself described here in the &#8220;Other Parameters&#8221;
+section and <strong>may not</strong> contain parameters from the <tt class="xref py py-obj docutils literal"><span class="pre">imagefindpars</span></tt>
+and <tt class="xref py py-obj docutils literal"><span class="pre">refimagefindpars</span></tt> PSETs.</p>
+</div>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>refimage</strong> : str (Default = &#8216;&#8217;)</p>
+<blockquote>
+<div><p>Filename of reference image. Sources derived from this image will be
+used as the reference for matching with sources from all input images.</p>
+</div></blockquote>
+<p><strong>exclusions: string (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
 <div><p>This parameter allows the user to specify a set of files which contain
 regions in the image to ignore when finding sources.  This file MUST
 have 1 line for each input image with the name of the input file in the
 first column.  Subsequent columns would be used to specify an exclusion
-file for each chip in &#8216;SCI,&lt;n&gt;&#8217; index order. If a chip does not require
-an exclusion file, the string &#8216;None&#8217; or &#8216;INDEF&#8217; can be used as a
-placeholder for that chip.  Each chip&#8217;s exclusion file should conform
-to the &#8216;region&#8217; file format generated by DS9, and currently, only 
-&#8216;circle()&#8217; regions are interpreted and used and only with units for the 
-positions of the exclusion center of &#8216;fk[4|5]&#8217; and &#8216;image&#8217;. Support for
-additional region file options will be added at a later date. 
-[Default value: &#8216;&#8217;]</p>
+file for each chip in <tt class="docutils literal"><span class="pre">'SCI,&lt;n&gt;'</span></tt> index order. If a chip does not require
+an exclusion file, the string <em class="xref py py-obj">None</em> or <tt class="docutils literal"><span class="pre">INDEF</span></tt> can be used as a
+placeholder for that chip. The last <em>optional</em> column (after the last
+column with chip exclusion file name) can contain the string
+&#8216;[ConformDS9]&#8217; (without apostrophes). When present, this will indicate that
+region files can contain both regular and &#8220;exclude&#8221; regions and that they
+should be interpreted as such. If &#8216;[ConformDS9]&#8217; is not present then the
+normal regions will be interpreted as &#8220;exclude&#8221; regions and the
+DS9 exclude regions will be omitted.</p>
+<p>Each chip&#8217;s exclusion file should conform to the &#8216;region&#8217; file format
+generated by DS9. The region files can contain both regular regions
+as well as &#8220;exclude&#8221; regions. The &#8220;ruler&#8221;, &#8220;compass&#8221;, and &#8220;projection&#8221;
+regions are not supported (ignored). Currently these regions <strong>must</strong>
+be provided in <em>image</em> coordinates. The task <em class="xref py py-obj">MapReg</em> can be used for
+(semi-)automated generation of region files in &#8216;image&#8217; coordinates from a
+&#8220;master&#8221; region file provided in sky coordinates.
+<em>See notes below for more information.</em></p>
 </div></blockquote>
-<p><strong id="updatewcs">updatewcs</strong> : bool</p>
+<p><strong>updatewcs</strong> : bool (Default = No)</p>
 <blockquote>
-<div><p>Update WCS keywords of input images?  [Default value: No]</p>
+<div><p>Update WCS keywords of input images?</p>
 </div></blockquote>
-<p><strong id="writecat">writecat</strong> : bool</p>
+<p><strong>writecat</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Specify whether or not to write out the source catalogs generated for
-each input image by the built-in source extraction algorithm.
-[Default value: Yes]</p>
+each input image by the built-in source extraction algorithm.</p>
 </div></blockquote>
-<p><strong id="clean">clean</strong> : bool</p>
+<p><strong>clean</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Specify whether or not to remove the temporary files created by
-&#8216;tweakreg&#8217;, including any catalog files generated for the shift
-determination. [Default value = No]</p>
+<em class="xref py py-obj">tweakreg</em>, including any catalog files generated for the shift
+determination.</p>
 </div></blockquote>
-<p><strong id="verbose">verbose</strong> : bool</p>
+<p><strong>interactive</strong> : bool (Default = Yes)</p>
+<blockquote>
+<div><p>This switch controls whether the program stops and waits for the user to
+examine any generated plots before continuing on to the next image.  If
+turned off, plots will still be displayed, but they will also be saved to
+disk automatically as a PNG image with an autogenerated name without
+requiring any user input.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Specify whether or not to print extra messages during
-processing. [Default value = No]</p>
+processing.</p>
 </div></blockquote>
-<p><strong id="runfile">runfile</strong> : string</p>
+<p><strong>runfile</strong> : string (Default = &#8216;tweakreg.log&#8217;)</p>
 <blockquote>
-<div><p>Specify the filename of the processing log.
-[Default value = &#8216;tweakreg.log&#8217;]</p>
+<div><p>Specify the filename of the processing log.</p>
 </div></blockquote>
-<p><strong id="*UPDATE HEADER*">*UPDATE HEADER*</strong> :</p>
-<p><strong id="updatehdr">updatehdr</strong> : bool</p>
+<p><strong>*UPDATE HEADER*</strong> :</p>
+<p><strong>updatehdr</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Specify whether or not to update the headers of each input image
 directly with the shifts that were determined. This will allow the
-input images to be combined by AstroDrizzle without having to provide
-the shiftfile as well. [Default value = No]</p>
+input images to be combined by <em class="xref py py-obj">AstroDrizzle</em> without having to provide
+the shiftfile as well.</p>
 </div></blockquote>
-<p><strong id="wcsname">wcsname</strong> : str</p>
+<p><strong>wcsname</strong> : str (Default = &#8216;TWEAK&#8217;)</p>
 <blockquote>
-<div><p>Name of updated WCS. [Default value = &#8216;TWEAK&#8217;]</p>
+<div><p>Name of updated WCS.</p>
 </div></blockquote>
-<p><strong id="*HEADERLET CREATION*">*HEADERLET CREATION*</strong> :</p>
-<p><strong id="headerlet: bool">headerlet: bool</strong> :</p>
+<p><strong>*HEADERLET CREATION*</strong> :</p>
+<p><strong>headerlet: bool (Default = No)</strong> :</p>
 <blockquote>
 <div><p>Specify whether or not to generate a headerlet from the images at
 the end of the task? If turned on, this will create a headerlet
-from the images regardless of the value of the &#8216;updatehdr&#8217;
-parameter. [Default value = No]</p>
+from the images regardless of the value of the <em class="xref py py-obj">updatehdr</em>
+parameter.</p>
 </div></blockquote>
-<p><strong id="attach: bool">attach: bool</strong> :</p>
+<p><strong>attach: bool (Default = Yes)</strong> :</p>
 <blockquote>
-<div><p>If creating a headerlet, choose whether or not to attach the new 
-headerlet to the input image as a new extension.
-[Default value = Yes]</p>
+<div><p>If creating a headerlet, choose whether or not to attach the new
+headerlet to the input image as a new extension.</p>
 </div></blockquote>
-<p><strong id="hdrfile: string">hdrfile: string</strong> :</p>
+<p><strong>hdrfile: string (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
 <div><p>Filename to use for writing out headerlet to a separate file. If the name
-does not contain &#8216;.fits&#8217;, it will create a filename from the 
+does not contain <tt class="docutils literal"><span class="pre">.fits</span></tt>, it will create a filename from the
 rootname of the input image, the value of this string, and it will end
-in &#8216;_hlet.fits&#8217;. For example, if only &#8216;hdrlet1&#8217; is given, the full filename
-created will be &#8216;j99da1f2q_hdrlet1_hlet.fits&#8217; when creating a headerlet
-for image &#8216;j99da1f2q_flt.fits&#8217;. [Default value = &#8216;&#8217;]</p>
+in <tt class="docutils literal"><span class="pre">'_hlet.fits'</span></tt>. For example, if only <tt class="docutils literal"><span class="pre">'hdrlet1'</span></tt> is given, the
+full filename created will be <tt class="docutils literal"><span class="pre">'j99da1f2q_hdrlet1_hlet.fits'</span></tt> when
+creating a headerlet for image <tt class="docutils literal"><span class="pre">'j99da1f2q_flt.fits'</span></tt>.</p>
 </div></blockquote>
-<p><strong id="clobber: bool">clobber: bool</strong> :</p>
+<p><strong>clobber: bool (Default = No)</strong> :</p>
 <blockquote>
 <div><p>If a headerlet with &#8216;hdrfile&#8217; already exists on disk, specify
-whether or not to overwrite that previous file.
-[Default value = No]</p>
+whether or not to overwrite that previous file.</p>
 </div></blockquote>
-<p><strong id="hdrname: string">hdrname: string</strong> :</p>
+<p><strong>hdrname: string (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
-<div><p>Unique name to give to headerlet solution. This name will be used to 
-identify this specific WCS alignment solution contained in the headerlet.
-[Default value = &#8216;&#8217;]</p>
+<div><p>Unique name to give to headerlet solution. This name will be used to
+identify this specific WCS alignment solution contained in the headerlet.</p>
 </div></blockquote>
-<p><strong id="author: string, optional">author: string, optional</strong> :</p>
+<p><strong>author: string, optional (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
-<div><p>Name of the creator of the headerlet. [Default value = &#8216;&#8217;]</p>
+<div><p>Name of the creator of the headerlet.</p>
 </div></blockquote>
-<p><strong id="descrip: string, optional">descrip: string, optional</strong> :</p>
+<p><strong>descrip: string, optional (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
-<div><p>Short (1-line) description to be included in headerlet as &#8216;DESCRIP&#8217; keyword.
+<div><p>Short (1-line) description to be included in headerlet as <tt class="docutils literal"><span class="pre">DESCRIP</span></tt> keyword.
 This can be used to provide a quick look description of the WCS alignment
-contained in the headerlet. [Default value = &#8216;&#8217;]</p>
+contained in the headerlet.</p>
 </div></blockquote>
-<p><strong id="catalog: string, optional">catalog: string, optional</strong> :</p>
+<p><strong>catalog: string, optional (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
-<div><p>Name of reference catalog used as the basis for the image alignment.
-[Default value = &#8216;&#8217;]</p>
+<div><p>Name of reference catalog used as the basis for the image alignment.</p>
 </div></blockquote>
-<p><strong id="history: string, optional">history: string, optional</strong> :</p>
+<p><strong>history: string, optional (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
 <div><p>Filename of a file containing detailed information regarding the history
 of the WCS solution contained in the headerlet. This can include information
 on the catalog used for the alignment, or notes on processing that went
 into finalizing the WCS alignment stored in this headerlet. This information
-will be reformatted as 70-character wide FITS HISTORY keyword section.
-[Default value = &#8216;&#8217;]</p>
+will be reformatted as 70-character wide FITS HISTORY keyword section.</p>
 </div></blockquote>
-<p><strong id="*OPTIONAL SHIFTFILE OUTPUT*">*OPTIONAL SHIFTFILE OUTPUT*</strong> :</p>
-<p><strong id="shiftfile">shiftfile</strong> : bool</p>
+<p><strong>*OPTIONAL SHIFTFILE OUTPUT*</strong> :</p>
+<p><strong>shiftfile</strong> : bool (Default = No)</p>
 <blockquote>
-<div><p>Create output shiftfile? [Default value: No]</p>
+<div><p>Create output shiftfile?</p>
 </div></blockquote>
-<p><strong id="outshifts">outshifts</strong> : str</p>
+<p><strong>outshifts</strong> : str (Default = &#8216;shifts.txt&#8217;)</p>
 <blockquote>
-<div><p>The name for the output shift file created by &#8216;tweakreg&#8217;.  This
-shiftfile will be formatted for use as direct input to AstroDrizzle.
-[Default value: &#8216;shifts.txt&#8217;]</p>
+<div><p>The name for the output shift file created by <em class="xref py py-obj">tweakreg</em>.  This
+shiftfile will be formatted for use as direct input to <em class="xref py py-obj">AstroDrizzle</em>.</p>
 </div></blockquote>
-<p><strong id="outwcs">outwcs</strong> : str</p>
+<p><strong>outwcs</strong> : str  (Default = &#8216;shifts_wcs.fits&#8217;)</p>
 <blockquote>
 <div><p>Filename to be given to the OUTPUT reference WCS file created
-by &#8216;tweakreg&#8217;. This reference WCS defines the WCS from which the
-shifts get measured, and will be used by AstroDrizzle to interpret
+by <em class="xref py py-obj">tweakreg</em>. This reference WCS defines the WCS from which the
+shifts get measured, and will be used by <em class="xref py py-obj">AstroDrizzle</em> to interpret
 those shifts. This reference WCS file will be a FITS file that
 only contains the WCS keywords in a Primary header with no image
 data itself. The values will be derived from the FIRST input image
-specified. [Default value: &#8216;shifts_wcs.fits&#8217;]</p>
+specified.</p>
 </div></blockquote>
-<p><strong id="*COORDINATE FILE DESCRIPTION*">*COORDINATE FILE DESCRIPTION*</strong> :</p>
-<p><strong id="catfile">catfile</strong> : str</p>
+<p><strong>*COORDINATE FILE DESCRIPTION*</strong> :</p>
+<p><strong>catfile</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of file that contains a list of input images and associated
 catalog files generated by the user. Each line of this file will
 contain the name of an input image in the first column. The remaining
 columns will provide the names of the source catalogs for each chip
-in order of the science extension numbers ((SCI,1), (SCI,2), ...).
-[Default value: &#8216;&#8217;]</p>
+in order of the science extension numbers ((SCI,1), (SCI,2), ...).</p>
 <p>A sample catfile, with one line per image would look like:</p>
 <div class="highlight-python"><pre>image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
 image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo</pre>
 </div>
 </div></blockquote>
-<p><strong id="xcol">xcol</strong> : int</p>
+<p><strong>xcol</strong> : int (Default = 1)</p>
 <blockquote>
 <div><p>Column number of X position from the user-generated catalog files
-specified in the catfile. [Default value = 1]</p>
+specified in the catfile.</p>
 </div></blockquote>
-<p><strong id="ycol">ycol</strong> : int</p>
+<p><strong>ycol</strong> : int (Default = 2)</p>
 <blockquote>
 <div><p>Column number of Y position from the user-generated catalog files
-specified in the catfile. [Default value = 2]</p>
+specified in the catfile.</p>
 </div></blockquote>
-<p><strong id="fluxcol">fluxcol</strong> : int</p>
+<p><strong>fluxcol</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Column number for the flux values from the user-generated catalog
 files specified in the catfile. These values will only be used if
-a flux limit has been specified by the user using the &#8216;fluxmax&#8217; or
-&#8216;fluxmin&#8217; parameters. [Default value = None]</p>
+a flux limit has been specified by the user using the <em class="xref py py-obj">maxflux</em> or
+<em class="xref py py-obj">minflux</em> parameters.</p>
 </div></blockquote>
-<p><strong id="fluxmax">fluxmax</strong> : float</p>
+<p><strong>maxflux</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Limiting flux value for selecting valid objects in the input image&#8217;s
 catalog.  If specified, this flux will serve as the upper limit of a
-range for selecting objects to be used in matching with objects 
-identified in the reference image. If the value is set to None, all 
-objects with fluxes brighter than the minimum specified in &#8216;fluxmin&#8217; 
-will be used. If both values are set to None, all objects will be used. 
-[Default value = None]</p>
+range for selecting objects to be used in matching with objects
+identified in the reference image. If the value is set to <em class="xref py py-obj">None</em>, all
+objects with fluxes brighter than the minimum specified in <em class="xref py py-obj">minflux</em>
+will be used. If both values are set to <em class="xref py py-obj">None</em>, all objects will be used.</p>
 </div></blockquote>
-<p><strong id="fluxmin">fluxmin</strong> : float</p>
+<p><strong>minflux</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Limiting flux value for selecting valid objects in the input image&#8217;s
 catalog. If specified, this flux value will serve as the lower limit
 of a range for selecting objects to be used in matching with objects
-identified in the reference image. If the value is set to None, all 
-objects fainter than the limit specified by &#8216;fluxmax&#8217; will be used. 
-If both values are set to None, all objects will be used. 
-[Default value = None]</p>
+identified in the reference image. If the value is set to <em class="xref py py-obj">None</em>, all
+objects fainter than the limit specified by <em class="xref py py-obj">maxflux</em> will be used.
+If both values are set to <em class="xref py py-obj">None</em>, all objects will be used.</p>
 </div></blockquote>
-<p><strong id="fluxunits">fluxunits</strong> : str {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;}</p>
+<p><strong>fluxunits</strong> : str {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;} (Default = &#8216;counts&#8217;)</p>
 <blockquote>
 <div><p>This allows the task to correctly interpret the flux limits specified
-by &#8216;fluxmax&#8217; and &#8216;fluxmin&#8217; when sorting the object list for trimming
-of fainter objects. [Default value = &#8216;counts&#8217;]</p>
+by <em class="xref py py-obj">maxflux</em> and <em class="xref py py-obj">minflux</em> when sorting the object list for trimming
+of fainter objects.</p>
 </div></blockquote>
-<p><strong id="xyunits">xyunits</strong> : str {&#8216;pixels&#8217;, &#8216;degrees&#8217;}</p>
+<p><strong>xyunits</strong> : str {&#8216;pixels&#8217;, &#8216;degrees&#8217;} (Default = &#8216;pixels&#8217;)</p>
 <blockquote>
 <div><p>Specifies whether the positions in this catalog are already sky pixel
-positions, or whether they need to be transformed to the sky. 
-[Default value = &#8216;pixels&#8217;]</p>
+positions, or whether they need to be transformed to the sky.</p>
 </div></blockquote>
-<p><strong id="nbright">nbright</strong> : int</p>
+<p><strong>nbright</strong> : int (Default = None)</p>
 <blockquote>
-<div><p>The number of brightest objects to keep after sorting the full object 
-list. If nbright is set equal to None, all objects will be used. 
-[Default value = None]</p>
+<div><p>The number of brightest objects to keep after sorting the full object
+list. If nbright is set equal to <em class="xref py py-obj">None</em>, all objects will be used.</p>
 </div></blockquote>
-<p><strong id="*REFERENCE CATALOG DESCRIPTION*">*REFERENCE CATALOG DESCRIPTION*</strong> :</p>
-<p><strong id="refcat">refcat</strong> : str</p>
+<p><strong>*REFERENCE CATALOG DESCRIPTION*</strong> :</p>
+<p><strong>refcat</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
-<div><p>Name of the external reference catalog file to be used in place of the 
-catalog extracted from one of the input images. [Default value = &#8216;&#8217;]</p>
+<div><p>Name of the external reference catalog file to be used in place of the
+catalog extracted from one of the input images.</p>
 </div></blockquote>
-<p><strong id="refxcol">refxcol</strong> : int</p>
+<p><strong>refxcol</strong> : int (Default = 1)</p>
 <blockquote>
 <div><p>Column number of RA in the external catalog file specified by the
-refcat. [Default value = 1]</p>
+refcat.</p>
 </div></blockquote>
-<p><strong id="refycol">refycol</strong> : int</p>
+<p><strong>refycol</strong> : int (Default = 2)</p>
 <blockquote>
 <div><p>Column number of Dec in the external catalog file specified by the
-refcat. [Default value = 2]</p>
+refcat.</p>
 </div></blockquote>
-<p><strong id="refxyunits">refxyunits</strong> : str {&#8216;pixels&#8217;,&#8217;degrees&#8217;}</p>
+<p><strong>refxyunits</strong> : str {&#8216;pixels&#8217;,&#8217;degrees&#8217;} (Default = &#8216;degrees&#8217;)</p>
 <blockquote>
-<div><p>Units of sky positions. [Default value = &#8216;degrees&#8217;]</p>
+<div><p>Units of sky positions.</p>
 </div></blockquote>
-<p><strong id="rfluxcol">rfluxcol</strong> : int</p>
+<p><strong>rfluxcol</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Column number of flux/magnitude values in the external catalog file
-specified by the refcat. [Default value = None]</p>
+specified by the refcat.</p>
 </div></blockquote>
-<p><strong id="rfluxmax">rfluxmax</strong> : float</p>
+<p><strong>rmaxflux</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Limiting flux value used to select valid objects in the external
-catalog. If specified, the flux value will serve as the upper limit 
-of a range for selecting objects to be used in matching with objects 
-identified in the reference image. If the value is set to None, 
-all objects with fluxes brighter than the minimum specified in 
-&#8216;rfluxmin&#8217; will be used. If both values are set to None, all 
-objects will be used. [Default value = None]</p>
+catalog. If specified, the flux value will serve as the upper limit
+of a range for selecting objects to be used in matching with objects
+identified in the reference image. If the value is set to <em class="xref py py-obj">None</em>,
+all objects with fluxes brighter than the minimum specified in
+<em class="xref py py-obj">rminflux</em> will be used. If both values are set to <em class="xref py py-obj">None</em>, all
+objects will be used.</p>
 </div></blockquote>
-<p><strong id="rfluxmin">rfluxmin</strong> : float</p>
+<p><strong>rminflux</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Limiting flux value used to select valid objects in the external
 catalog. If specified, the flux will serve as the lower limit
 of a range for selecting objects to be used in matching with objects
-identified in the reference image. If the value is set to None, 
-all objects fainter than the limit specified by &#8216;rfluxmax&#8217; will be 
-used. If both values are set to None, all objects will be used. 
-[Default value = None]</p>
+identified in the reference image. If the value is set to <em class="xref py py-obj">None</em>,
+all objects fainter than the limit specified by <em class="xref py py-obj">rmaxflux</em> will be
+used. If both values are set to <em class="xref py py-obj">None</em>, all objects will be used.</p>
 </div></blockquote>
-<p><strong id="rfluxunits">rfluxunits</strong> : {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;}</p>
+<p><strong>rfluxunits</strong> : {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;} (Default = &#8216;mag&#8217;)</p>
 <blockquote>
 <div><p>This allows the task to correctly interpret the flux limits specified
-by &#8216;rfluxmax&#8217; and &#8216;rfluxmin&#8217; when sorting the object list for trimming
-of fainter objects. [Default value = &#8216;mag&#8217;]</p>
+by <em class="xref py py-obj">rmaxflux</em> and <em class="xref py py-obj">rminflux</em> when sorting the object list for trimming
+of fainter objects.</p>
 </div></blockquote>
-<p><strong id="refnbright">refnbright</strong> : int</p>
+<p><strong>refnbright</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Number of brightest objects to keep after sorting the full object
-list. If refnbright is set to None, all objects will be used. Used in 
-conjunction with refcat. [Default value = None]</p>
+list. If refnbright is set to <em class="xref py py-obj">None</em>, all objects will be used. Used in
+conjunction with refcat.</p>
 </div></blockquote>
-<p><strong id="*OBJECT MATCHING PARAMETERS*">*OBJECT MATCHING PARAMETERS*</strong> :</p>
-<p><strong id="minobj">minobj</strong> : int</p>
+<p><strong>*OBJECT MATCHING PARAMETERS*</strong> :</p>
+<p><strong>minobj</strong> : int (Default = 15)</p>
 <blockquote>
 <div><p>Minimum number of identified objects from each input image to use
-in matching objects from other images. [Default value = 15]</p>
+in matching objects from other images.</p>
 </div></blockquote>
-<p><strong id="searchrad">searchrad</strong> : float</p>
+<p><strong>searchrad</strong> : float (Default = 1.0)</p>
 <blockquote>
-<div><p>The search radius for a match. [Default value = 1.0]</p>
+<div><p>The search radius for a match.</p>
 </div></blockquote>
-<p><strong id="searchunits">searchunits</strong> : str</p>
+<p><strong>searchunits</strong> : str (Default = &#8216;arcseconds&#8217;)</p>
 <blockquote>
-<div><p>Units for search radius. [Default value = &#8216;arcseconds&#8217;]</p>
+<div><p>Units for search radius.</p>
 </div></blockquote>
-<p><strong id="use2dhist">use2dhist</strong> : bool</p>
+<p><strong>use2dhist</strong> : bool (Default = Yes)</p>
 <blockquote>
-<div><p>Use 2d histogram to find initial offset? [Default value = Yes]</p>
+<div><p>Use 2d histogram to find initial offset?</p>
 </div></blockquote>
-<p><strong id="see2dplot">see2dplot</strong> : bool</p>
+<p><strong>see2dplot</strong> : bool (Default = Yes)</p>
 <blockquote>
-<div><p>See 2d histogram for initial offset? [Default value = Yes]</p>
+<div><p>See 2d histogram for initial offset?</p>
 </div></blockquote>
-<p><strong id="tolerance">tolerance</strong> : float</p>
+<p><strong>tolerance</strong> : float (Default = 1.0)</p>
 <blockquote>
 <div><p>The matching tolerance in pixels after applying an initial solution
 derived from the &#8216;triangles&#8217; algorithm.  This parameter gets passed
 directly to <em class="xref py py-obj">xyxymatch</em> for use in matching the object lists from each
-image with the reference image&#8217;s object list. [Default value = 1.0]</p>
+image with the reference image&#8217;s object list.</p>
 </div></blockquote>
-<p><strong id="separation">separation</strong> : float</p>
+<p><strong>separation</strong> : float (Default = 0.0)</p>
 <blockquote>
 <div><p>The  minimum  separation for objects in the input and reference
 coordinate lists. Objects closer together than &#8216;separation&#8217; pixels
 are removed from the input and reference coordinate lists prior
 to matching. This parameter gets passed directly to <em class="xref py py-obj">xyxymatch</em> for
 use in matching the object lists from each image with the reference
-image&#8217;s object list. [Default value = 0.0]</p>
+image&#8217;s object list.</p>
 </div></blockquote>
-<p><strong id="xoffset">xoffset</strong> : float</p>
+<p><strong>xoffset</strong> : float (Default = 0.0)</p>
 <blockquote>
 <div><p>Initial estimate for the offset in X between the images and the
-reference frame. This offset will be used for all input images 
-provided. If the parameter value is set to None, no offset will 
-be assumed in matching sources in &#8216;xyxymatch&#8217;. [Default value = 0.0]</p>
+reference frame. This offset will be used for all input images
+provided. If the parameter value is set to <em class="xref py py-obj">None</em>, no offset will
+be assumed in matching sources in <em class="xref py py-obj">xyxymatch</em>.</p>
 </div></blockquote>
-<p><strong id="yoffset">yoffset</strong> : float</p>
+<p><strong>yoffset</strong> : float (Default = 0.0)</p>
 <blockquote>
 <div><p>Initial estimate for the offset in Y between the images and the
-reference frame. This offset will be used for all input images 
-provided.If the parameter value is set to None, no offset will 
-be assumed in matching sources in &#8216;xyxymatch&#8217;. [Default value = 0.0]</p>
+reference frame. This offset will be used for all input images
+provided.If the parameter value is set to None, no offset will
+be assumed in matching sources in <em class="xref py py-obj">xyxymatch</em>.</p>
 </div></blockquote>
-<p><strong id="*CATALOG FITTING PARAMETERS*">*CATALOG FITTING PARAMETERS*</strong> :</p>
-<p><strong id="fitgeometry">fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;}</p>
+<p><strong>*CATALOG FITTING PARAMETERS*</strong> :</p>
+<p><strong>fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;} (Default = &#8216;rscale&#8217;)</p>
 <blockquote>
 <div><p>The fitting geometry to be used in fitting the matched object lists.
 This parameter is used in fitting the offsets, rotations and/or scale
-changes from the matched object lists. [Default value = &#8216;rscale&#8217;]</p>
+changes from the matched object lists.</p>
 </div></blockquote>
-<p><strong id="residplot">residplot</strong> : str {&#8216;No plot&#8217;, &#8216;vector&#8217;, &#8216;residuals&#8217;, &#8216;both&#8217;}</p>
+<p><strong>residplot</strong> : str {&#8216;No plot&#8217;, &#8216;vector&#8217;, &#8216;residuals&#8217;, &#8216;both&#8217;}  (Default = &#8216;both&#8217;)</p>
 <blockquote>
-<div><p>Plot residuals from fit?  [Default value = &#8216;both&#8217;]
-If &#8216;both&#8217; is selected, the &#8216;vector&#8217; and &#8216;residuals&#8217; plots will be displayed
-in separate plotting windows at the same time.</p>
+<div><p>Plot residuals from fit? If &#8216;both&#8217; is selected, the &#8216;vector&#8217;
+and &#8216;residuals&#8217; plots will be displayed in separate plotting windows at
+the same time.</p>
 </div></blockquote>
-<p><strong id="nclip">nclip</strong> : int</p>
+<p><strong>nclip</strong> : int (Default = 3)</p>
 <blockquote>
-<div><p>Number of clipping iterations in fit. [Default value = 3]</p>
+<div><p>Number of clipping iterations in fit.</p>
 </div></blockquote>
-<p><strong id="sigma">sigma</strong> : float</p>
+<p><strong>sigma</strong> : float (Default = 3.0)</p>
 <blockquote class="last">
-<div><p>Clipping limit in sigma units. [Default value = 3.0]</p>
+<div><p>Clipping limit in sigma units.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -476,23 +532,23 @@ in separate plotting windows at the same time.</p>
 </div>
 <p class="rubric">Notes</p>
 <p>Tweakreg supports the use of calibrated, distorted images (such as FLT
-images for ACS and WFC3, or _c0m.fits images for WFPC2) as input images.
+images for ACS and WFC3, or <tt class="docutils literal"><span class="pre">_c0m.fits</span></tt> images for WFPC2) as input images.
 All coordinates for sources derived from these images (either by this task
 or as provided by the user directly) will be corrected for distortion using
-the distortion model information specified in each image&#8217;s header. This 
-eliminates the need to run &#8216;astrodrizzle&#8217; on the input images prior to 
-running <a class="reference internal" href="#tweakreg">tweakreg</a>.</p>
+the distortion model information specified in each image&#8217;s header. This
+eliminates the need to run &#8216;astrodrizzle&#8217; on the input images prior to
+running <em class="xref py py-obj">tweakreg</em>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">All calibrated input images must have been updated using 
-&#8216;updatewcs&#8217; from the STWCS package, or as run by &#8216;astrodrizzle&#8217;, 
+<p class="last">All calibrated input images must have been updated using
+<tt class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></tt> from the <em class="xref py py-obj">STWCS</em> package, or as run by <em class="xref py py-obj">astrodrizzle</em>,
 to include the full distortion model in the header.</p>
 </div>
-<p>This task will use catalogs, and catalog-matching, based on the &#8216;xyxymatch&#8217; 
+<p>This task will use catalogs, and catalog-matching, based on the <em class="xref py py-obj">xyxymatch</em>
 algorithm to determine the offset between the input images. The primary
-mode of operation will be to extract a catalog of source positions from 
-each input image using either a &#8216;DAOFIND-like&#8217; algorithm or SExtractor (if
-the user has SExtractor installed). Alternatively, the user can provide 
+mode of operation will be to extract a catalog of source positions from
+each input image using either a &#8216;DAOFIND-like&#8217; algorithm or <tt class="docutils literal"><span class="pre">SExtractor</span></tt> (if
+the user has <tt class="docutils literal"><span class="pre">SExtractor</span></tt> installed). Alternatively, the user can provide
 their catalogs of source positions derived from <strong>each input chip</strong>.</p>
 <p>The reference frame will be defined either by:</p>
 <blockquote>
@@ -502,7 +558,7 @@ their catalogs of source positions derived from <strong>each input chip</strong>
 <li><p class="first">a catalog derived from a reference image specified by the user, or</p>
 </li>
 <li><dl class="first docutils">
-<dt>a catalog of undistorted sky positions (RA/Dec) and fluxes </dt>
+<dt>a catalog of undistorted sky positions (RA/Dec) and fluxes</dt>
 <dd><p class="first last">provided by the user.</p>
 </dd>
 </dl>
@@ -512,21 +568,21 @@ their catalogs of source positions derived from <strong>each input chip</strong>
 <p>For a given observation, the distortion model is applied to all distorted
 input positions, and the sources from each chip are then combined into a
 single catalog of undistorted positions.</p>
-<p>The undistorted positions for each observation then get passed to 
-&#8216;xyxymatch&#8217; for matching to objects from the reference catalog.</p>
+<p>The undistorted positions for each observation then get passed to
+<em class="xref py py-obj">xyxymatch</em> for matching to objects from the reference catalog.</p>
 <p>The source lists from each image will generally include cosmic-rays as
-detected sources, which can at times significantly confuse object 
+detected sources, which can at times significantly confuse object
 identification between images. Observations that include long exposures
 often have more cosmic-ray events than source objects. As such, isolating
 the cosmic-ray events in those cases would significantly improve the
-efficiency of common source identification between images. One such method 
+efficiency of common source identification between images. One such method
 for trimming potential false detections from each source list would be
 to set a flux limit to exclude detections below that limit. As the fluxes
 reported in the default source object lists are provided as magnitude
-values, setting the <em>fluxmax</em> or <em>fluxmin</em> parameter value to a magnitude-
-based limit, and then setting the <em>ascend</em> parameter to <em>True</em>, will allow
-for the creations of catalogs trimmed of all sources fainter than the 
-provided limit. The trimmed source list can then be used in matching 
+values, setting the <em class="xref py py-obj">maxflux</em> or <em class="xref py py-obj">minflux</em> parameter value to a magnitude-
+based limit, and then setting the <em class="xref py py-obj">ascend</em> parameter to <em class="xref py py-obj">True</em>, will allow
+for the creations of catalogs trimmed of all sources fainter than the
+provided limit. The trimmed source list can then be used in matching
 sources between images and in establishing the final fitting for the shifts.</p>
 <p>A fit can then be performed on the matched set of positions between the
 input and the reference to produce the &#8216;shiftfile&#8217;. If the user is
@@ -534,109 +590,132 @@ confident that the solution will be correct, the header of each input image
 can be updated directly with the fit derived for that image. Otherwise,
 the &#8216;shiftfile&#8217; can be passed to AstroDrizzle for aligning the images.</p>
 <p><strong>Format of Exclusion Catalog</strong></p>
-<p>The format for the exclusions catalog requires 1 line in the file for 
-every input image, regardless of whether or not that image has 
+<p>The format for the exclusions catalog requires 1 line in the file for
+every input image, regardless of whether or not that image has
 any defined exclusion regions.  A sample file would look like:</p>
-<div class="highlight-python"><pre>j99da1emq_flt.fits  
+<div class="highlight-python"><pre>j99da1emq_flt.fits
 j99da1f2q_flt.fits test_exclusion.reg</pre>
 </div>
-<p>This file specifies no exclusion files for the first image, and only 
+<p>This file specifies no exclusion files for the first image, and only
 an regions file for SCI,1 of the second image.  Should an exclusion
-regions file only be needed for the second chip in the second image, 
+regions file only be needed for the second chip in the second image,
 the file would need to look like:</p>
-<div class="highlight-python"><pre>j99da1emq_flt.fits  
+<div class="highlight-python"><pre>j99da1emq_flt.fits
 j99da1f2q_flt.fits None test_sci2_exclusion.reg</pre>
 </div>
-<p>The value &#8216;None&#8217; could also be replaced by &#8216;INDEF&#8217; if desired, but either
-string needs to be present to signify no regions file for that chip while 
+<p>The value <em class="xref py py-obj">None</em> could also be replaced by <tt class="docutils literal"><span class="pre">INDEF</span></tt> if desired, but either
+string needs to be present to signify no regions file for that chip while
 the code continues parsing the line to find a file for the second chip.</p>
+<p>With the format described above, the &#8220;normal&#8221; (see below) DS9 regions
+in the regions files will be interpreted as regions/parts of the image that
+should <strong>not</strong> be used by the source finding algorithm. So, these regions
+in fact act as &#8220;exclude&#8221; regions. The <em>real</em> DS9 exclude regions (i.e., the ones
+that have &#8220;-&#8221; in front of their shape name: -circle(...), -box(...)) are being
+ignored. This is useful if one desires to exclude some parts of the image
+(e.g., vecinity of a very bright/saturated source, diffraction spikes, etc.)
+from being used for source finding. This will improve <em>both</em> the efficiency
+<em>and</em> reliability of the matching algorithm by eliminating unreliable sources
+from the produced catalogs that could &#8220;confuse&#8221; the matching algorithm.</p>
+<p>However, for many problems it is easier and better to specify not the regions
+that need to be excluded from source finding but rather the regions that <em>must</em>
+be used for source finding. In order instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> to interpret &#8220;normal&#8221;
+DS9 regions as &#8220;include&#8221; regions and the true exclude DS9 regions (with &#8220;-&#8221;)
+as &#8220;exclude&#8221; regions, after the last region file name in the exclusion catalog,
+users should add the string &#8216;[ConformDS9]&#8217; (without apostrophes). The previous
+example will then become:</p>
+<div class="highlight-python"><pre>j99da1emq_flt.fits
+j99da1f2q_flt.fits None test_sci2_inclusion_and_exclusion.reg [ConformDS9]
+j99da1f2r_flt.fits test_sci1_exclusion.reg test_sci2_exclusion.reg</pre>
+</div>
 <p><strong>Format of Region Files</strong></p>
 <p>The format of the exclusions catalogs referenced in the &#8216;exclusions&#8217;
 file defaults to the format written out by DS9 using the &#8216;DS9/Funtools&#8217;
 region file format.  A sample file with circle() regions will look like:</p>
 <div class="highlight-python"><pre># Region file format: DS9 version 4.1
 # Filename: j99da1f2q_flt.fits[SCI]
-global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman"
+select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
 image
 circle(3170,198,20)
-circle(3269,428,20)
-circle(3241.1146,219.78132,20.000014)</pre>
+ellipse(3269,428,30,10,45) # a rotated ellipse
+box(3241.1146,219.78132,20,20,15) # a rotated box
+circle(200,200,50)  # outer circle
+-circle(200,200,30) # inner circle</pre>
 </div>
-<p>This task can also work with regions files which have a much simpler
-format for each region with 2 values for the source center and a third
-value for the radius of the region.  The units of all the values can
-either pixels or sky coordinates (either sexagesimal RA/Dec or decimal
-degrees RA/Dec plus radius in arcseconds).  The values on each line can be
-separated either by spaces or commas.</p>
-<p>A sample file with free formatted regions would look like:</p>
-<div class="highlight-python"><pre>image
-3170,198,20
-3269 428 20
-3241.1146,219.78132,20.000014</pre>
+<p>This region file can function both as an exclusion or as an inclusion region
+file depending on the presence of the [ConformDS9] string after the region list
+in the exclusion catalog (see above). If [ConformDS9] <strong>is not</strong> present in the
+exclusions catalog file, then the above region file will instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a>
+to find all sources in the image that are <strong>not inside</strong> the following regions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">circle</span><span class="p">(</span><span class="mi">3170</span><span class="p">,</span><span class="mi">198</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">ellipse</span><span class="p">(</span><span class="mi">3269</span><span class="p">,</span><span class="mi">428</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">45</span><span class="p">)</span> <span class="c"># a rotated ellipse</span>
+<span class="n">box</span><span class="p">(</span><span class="mf">3241.1146</span><span class="p">,</span><span class="mf">219.78132</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">15</span><span class="p">)</span> <span class="c"># a rotated box</span>
+<span class="n">circle</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>  <span class="c"># outer circle</span>
+</pre></div>
 </div>
-<p>The first (non-comment) line in the file will specify what units were used
-for specifying the regions. Supported options are:</p>
-<ul class="simple">
-<li>&#8216;image&#8217;</li>
-<li>&#8216;physical&#8217;</li>
-<li>&#8216;pixel&#8217;</li>
-<li>&#8216;fk5&#8217;</li>
-<li>&#8216;fk4&#8217;</li>
-<li>&#8216;sky&#8217;</li>
-</ul>
-<p>The terms &#8216;image&#8217;, &#8216;physical&#8217;, and &#8216;pixel&#8217; all refer to values in
-<em>pixels</em>, while the remaining naturally refer to values specified in <em>sky
-coordinates</em>. A <strong>default units of &#8216;pixels&#8217;</strong> will be assumed should the
-units line not be found at the beginning of the regions file.</p>
-<p>The format of the regions can
-actually be different from one line to the next, in case multiple regions
-files written out in different formats need to be merged. So, regions from
-the second example could be included in the first examples file if needed.</p>
+<p>Notice that the &#8220;true&#8221; DS9 exclude region &#8216;-circle(200,200,30)&#8217; was ignored.
+On the other hand, if the [ConformDS9] string is present in the exclusions
+catalog file, then the original region file (first example in this section)
+will be interpreted as &#8220;find all sources in the image that <strong>are inside</strong>
+the four regions above but <strong>not inside</strong> the region -circle(200,200,30)&#8221;.
+Effectively we will instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> to find all the sources <em>inside</em> the
+following regions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">circle</span><span class="p">(</span><span class="mi">3170</span><span class="p">,</span><span class="mi">198</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">ellipse</span><span class="p">(</span><span class="mi">3269</span><span class="p">,</span><span class="mi">428</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">45</span><span class="p">)</span> <span class="c"># a rotated ellipse</span>
+<span class="n">box</span><span class="p">(</span><span class="mf">3241.1146</span><span class="p">,</span><span class="mf">219.78132</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">15</span><span class="p">)</span> <span class="c"># a rotated box</span>
+<span class="n">annulus</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>  <span class="c"># outer circle(r=50) - inner circle(r=30)</span>
+</pre></div>
+</div>
 <p class="rubric">Examples</p>
 <p>The tweakreg task can be run from either the TEAL GUI or from the command-line
 using PyRAF or Python.
 These examples illustrate the various syntax options available.</p>
-<p><strong>Example 1:</strong>  Align a set of calibrated (_flt.fits) images using IMAGEFIND, a built-in source
-finding algorithm based on DAOPHOT.   Auto-detect the sky sigma value and select sources &gt; 200
-sigma.   (Auto-sigma is computed from the first input exposure as: 1.5 * imstat(image,nclip=3,fields=&#8217;stddev&#8217;). )
-Set the convolution kernel width to ~2x the value of the PSF FWHM.
-Save the residual offsets (dx, dy, rot, scale, xfit_rms, yfit_rms) to a text file.</p>
+<p><strong>Example 1:</strong>  Align a set of calibrated (<tt class="docutils literal"><span class="pre">_flt.fits</span></tt>) images
+using <tt class="docutils literal"><span class="pre">IMAGEFIND</span></tt>, a built-in source
+finding algorithm based on <tt class="docutils literal"><span class="pre">DAOPHOT</span></tt>. Auto-detect the sky sigma value and select sources &gt; 200
+sigma.   (Auto-sigma is computed from the first input exposure
+as:  <tt class="docutils literal"><span class="pre">1.5*imstat(image,nclip=3,fields='stddev')</span></tt>. )
+Set the convolution kernel width to <tt class="docutils literal"><span class="pre">~2x</span></tt> the value of the PSF FWHM.
+Save the residual offsets (<tt class="docutils literal"><span class="pre">dx</span></tt>, <tt class="docutils literal"><span class="pre">dy</span></tt>, <tt class="docutils literal"><span class="pre">rot</span></tt>, <tt class="docutils literal"><span class="pre">scale</span></tt>, <tt class="docutils literal"><span class="pre">xfit_rms</span></tt>, <tt class="docutils literal"><span class="pre">yfit_rms</span></tt>) to a text file.</p>
 <ol class="arabic">
 <li><p class="first">Run the task from PyRAF using the TEAL GUI:</p>
-<div class="highlight-python"><pre>--&gt; import drizzlepac 
---&gt; epar tweakreg</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">epar</span> <span class="n">tweakreg</span>
+</pre></div>
 </div>
 </li>
-<li><p class="first">Run the task from PyRAF using the command line.</p>
-<div class="highlight-python"><pre>--&gt; import drizzlepac 
---&gt; from drizzlepac import tweakreg
---&gt; tweakreg.TweakReg('*flt.fits', updatehdr=False, fwhmpsf=3.5, threshold=200, \
-                      shiftfile=True, outshifts='shift.txt')</pre>
+<li><p class="first">Run the task from PyRAF using the command line while individually
+specifying source finding parameters for the reference image and
+input images:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakreg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span>
+<span class="gp">... </span>      <span class="n">imagefindcfg</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">fwhmpsf</span><span class="o">=</span><span class="mf">3.5</span><span class="p">),</span>
+<span class="gp">... </span>      <span class="n">refimagefindcfg</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;threshold&#39;</span> <span class="p">:</span> <span class="mi">400</span><span class="p">,</span> <span class="s">&#39;fwhmpsf&#39;</span> <span class="p">:</span> <span class="mf">2.5</span><span class="p">}</span>
+<span class="gp">... </span>      <span class="n">updatehdr</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">shiftfile</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">outshifts</span><span class="o">=</span><span class="s">&#39;shift.txt&#39;</span><span class="p">)</span>
+</pre></div>
 </div>
 <p>Or, run the same task from the PyRAF command line, but specify all parameters in
 a config file named &#8220;myparam.cfg&#8221;:</p>
-<div class="highlight-python"><pre>--&gt; tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')</pre>
-</div>
-</li>
-<li><p class="first">Run the task directly from Python:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakreg</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">updatehdr</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fwhmpsf</span><span class="o">=</span><span class="mf">3.5</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> \
-<span class="go">                      shiftfile=True, outshifts=&#39;shift.txt&#39;)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">configobj</span><span class="o">=</span><span class="s">&#39;myparam.cfg&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Alternately, edit the imagefind parameters in a TEAL GUI window prior to running the task:</p>
+<p>Alternately, edit the imagefind parameters in a TEAL GUI window
+prior to running the task:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">edit_imagefindpars</span><span class="p">()</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">Help can be accessed via the &#8220;Help&#8221; pulldown menu in the TEAL GUI.  It can also
 be accessed from the PyRAF command-line and saved to a text file:</p>
-<div class="highlight-python"><pre>--&gt; from drizzlepac import tweakreg
---&gt; tweakreg.help()</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakreg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">help</span><span class="p">()</span>
+</pre></div>
 </div>
-<p>or:</p>
-<div class="highlight-python"><pre>--&gt; tweakreg.help(file='help.txt')
---&gt; page help.txt</pre>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">help</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="s">&#39;help.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="n">help</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
 </div>
 </li>
 </ol>
@@ -645,7 +724,22 @@ be accessed from the PyRAF command-line and saved to a text file:</p>
 <dl class="function">
 <dt id="drizzlepac.tweakreg.help">
 <tt class="descclassname">drizzlepac.tweakreg.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakreg.help" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print out syntax help for running tweakreg</p>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -666,17 +760,17 @@ be accessed from the PyRAF command-line and saved to a text file:</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
+          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
              >next</a> |</li>
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

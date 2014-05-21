@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>WCS Utilities &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>WCS Utilities &mdash; DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31806 (30-Dec-2013)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="Output Image Generation" href="outimage.html" />
     <link rel="prev" title="Utility Functions" href="utilfuncs.html" /> 
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="utilfuncs.html" title="Utility Functions"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -89,8 +89,21 @@
             
   <div class="section" id="wcs-utilities">
 <h1>WCS Utilities<a class="headerlink" href="#wcs-utilities" title="Permalink to this headline">¶</a></h1>
-<p>These functions read and interpret the WCS information from input images and create the output WCS objects based on STWCS routines.</p>
-<span class="target" id="module-drizzlepac.wcs_functions"></span><dl class="class">
+<p>These functions read and interpret the WCS information from input
+images and create the output WCS objects based on STWCS routines.</p>
+<span class="target" id="module-drizzlepac.wcs_functions"></span><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
 <dt id="drizzlepac.wcs_functions.IdentityMap">
 <em class="property">class </em><tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">IdentityMap</tt><big>(</big><em>input</em>, <em>output</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.IdentityMap" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
@@ -182,7 +195,7 @@ the edge of an image AFTER applying the geometry model.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
 <blockquote>
 <div><p>HSTWCS object for image</p>
 </div></blockquote>
@@ -193,7 +206,7 @@ the edge of an image AFTER applying the geometry model.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>border</strong> : arr</p>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>border</strong> : arr</p>
 <blockquote class="last">
 <div><p>array which contains the new positions for
 all pixels around the border of the edges in alpha,dec</p>
@@ -338,7 +351,7 @@ return a distorted CD matrix.</p>
 <dt id="drizzlepac.wcs_functions.wcsfit">
 <tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">wcsfit</tt><big>(</big><em>img_wcs</em>, <em>ref_wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.wcsfit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a linear fit between 2 WCS for shift, rotation and scale.
-Based on &#8216;WCSLIN&#8217; from &#8216;drutil.f&#8217;(Drizzle V2.9) and modified to
+Based on the WCSLIN function from &#8216;drutil.f&#8217;(Drizzle V2.9) and modified to
 allow for differences in reference positions assumed by PyDrizzle&#8217;s
 distortion model and the coeffs used by &#8216;drizzle&#8217;.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -346,16 +359,13 @@ distortion model and the coeffs used by &#8216;drizzle&#8217;.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="img">img</strong> : obj</p>
-<blockquote class="last">
-<div><blockquote>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="img">img</strong> : obj</p>
+<blockquote>
 <div><p>ObsGeometry instance for input image</p>
 </div></blockquote>
-<dl class="docutils">
-<dt>ref_wcs <span class="classifier-delimiter">:</span> <span class="classifier">obj</span></dt>
-<dd><p class="first last">Undistorted WCSObject instance for output frame</p>
-</dd>
-</dl>
+<p><strong id="ref_wcs">ref_wcs</strong> : obj</p>
+<blockquote class="last">
+<div><p>Undistorted WCSObject instance for output frame</p>
 </div></blockquote>
 </td>
 </tr>
@@ -386,13 +396,13 @@ distortion model and the coeffs used by &#8216;drizzle&#8217;.</p>
         <li class="right" >
           <a href="utilfuncs.html" title="Utility Functions"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

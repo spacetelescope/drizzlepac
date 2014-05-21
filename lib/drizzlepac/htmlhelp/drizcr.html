@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 7: Cosmic-ray identification &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Step 7: Cosmic-ray identification &mdash; DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31806 (30-Dec-2013)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,9 +25,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation" href="index.html" />
     <link rel="next" title="Utilities" href="util.html" />
-    <link rel="prev" title="Step 6: Blotting the Median Image" href="blot.html" /> 
+    <link rel="prev" title="Step 6: Blotting the Median Image" href="ablot.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,9 +43,9 @@
           <a href="util.html" title="Utilities"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="blot.html" title="Step 6: Blotting the Median Image"
+          <a href="ablot.html" title="Step 6: Blotting the Median Image"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -54,7 +54,7 @@
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
             </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="blot.html"
+  <p class="topless"><a href="ablot.html"
                         title="previous chapter">Step 6: Blotting the Median Image</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="util.html"
@@ -88,7 +88,21 @@
   <div class="section" id="step-7-cosmic-ray-identification">
 <span id="drizcr"></span><h1>Step 7: Cosmic-ray identification<a class="headerlink" href="#step-7-cosmic-ray-identification" title="Permalink to this headline">¶</a></h1>
 <p>The cosmic rays and bad pixels are now identified by comparing the input images with the associated blotted,median-cleaned images created.</p>
-<span class="target" id="module-drizzlepac.drizCR"></span><dl class="function">
+<span class="target" id="module-drizzlepac.drizCR"></span><p>Mask blemishes in dithered data by comparison of an image with a model
+image and the derivative of the model image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
 <dt id="drizzlepac.drizCR.createCorrFile">
 <tt class="descclassname">drizzlepac.drizCR.</tt><tt class="descname">createCorrFile</tt><big>(</big><em>outfile</em>, <em>arrlist</em>, <em>template</em><big>)</big><a class="headerlink" href="#drizzlepac.drizCR.createCorrFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a _cor file with the same format as the original input image</p>
@@ -99,13 +113,129 @@ file.</p>
 <dl class="function">
 <dt id="drizzlepac.drizCR.drizCR">
 <tt class="descclassname">drizzlepac.drizCR.</tt><tt class="descname">drizCR</tt><big>(</big><em>input=None</em>, <em>configObj=None</em>, <em>editpars=False</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.drizCR.drizCR" title="Permalink to this definition">¶</a></dt>
-<dd><p>Look for cosmic rays.</p>
+<dd><p>The blotted median images that are now transformed back into the original
+reference frame, get compared to the original input images to detect any
+spurious pixels (which may include pixels impacted by cosmic rays) in
+each input. Those spurious pixels then get flagged as &#8216;bad&#8217; in the output
+cosmic ray mask files, which get used as input for the final combination
+so that they do not show up in the final product.
+The identified bad pixels get flagged by updating the input mask files.
+Optionally, copies of the original images with the bad pixels removed
+can be created through the use of the <em class="xref py py-obj">driz_cr_corr</em> parameter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = None)</p>
+<blockquote>
+<div><p>A python list of blotted median image filenames, or just a single
+filename.</p>
+</div></blockquote>
+<p><strong id="configObj">configObj</strong> : configObject (Default = None)</p>
+<blockquote>
+<div><p>An instance of <em class="xref py py-obj">configObject</em> which overrides default parameter settings.</p>
+</div></blockquote>
+<p><strong id="editpars">editpars</strong> : bool (Default = False)</p>
+<blockquote>
+<div><p>A parameter that allows user to edit input parameters by hand in the GUI.
+True to use the GUI to edit parameters.</p>
+</div></blockquote>
+<p><strong id="inputDict">inputDict</strong> : dict, optional</p>
+<blockquote>
+<div><p>An optional list of parameters specified by the user, which can also
+be used to override the defaults.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>driz_cr</strong> : bool (Default = False)</p>
+<blockquote>
+<div><p>Perform cosmic-ray detection? If set to <tt class="docutils literal"><span class="pre">True</span></tt>, cosmic-rays will be
+detected and used to create cosmic-ray masks based on the algorithms
+from <em class="xref py py-obj">deriv</em> and <em class="xref py py-obj">driz_cr</em>.</p>
+</div></blockquote>
+<p><strong>driz_cr_corr</strong> : bool (Default = False)</p>
+<blockquote>
+<div><p>Create a cosmic-ray cleaned input image? I set to <em class="xref py py-obj">True</em>, a cosmic-ray
+cleaned <tt class="docutils literal"><span class="pre">_cor</span></tt> image will be generated directly from the input image,
+and a corresponding <tt class="docutils literal"><span class="pre">_crmask</span></tt> file will be written to document detected
+pixels affected by cosmic-rays.</p>
+</div></blockquote>
+<p><strong>driz_cr_snr</strong> : list of floats (Default = &#8216;3.5 3.0&#8217;)</p>
+<blockquote>
+<div><p>The values for this parameter specify the signal-to-noise ratios for
+the <em class="xref py py-obj">driz_cr</em> task to be used in detecting cosmic rays.
+See the help file for <em class="xref py py-obj">driz_cr</em> for further discussion of this parameter.</p>
+</div></blockquote>
+<p><strong>driz_cr_grow</strong> : int (Default = 1)</p>
+<blockquote>
+<div><p>The radius, in pixels, around each detected cosmic-ray,
+in which more stringent detection criteria for additional cosmic
+rays will be used.</p>
+</div></blockquote>
+<p><strong>driz_cr_ctegrow</strong> : int (Default = 0)</p>
+<blockquote>
+<div><p>Length, in pixels, of the CTE tail that should be masked in
+the drizzled output.</p>
+</div></blockquote>
+<p><strong>driz_cr_scale</strong> : str (Default = &#8216;1.2 0.7&#8217;)</p>
+<blockquote class="last">
+<div><p>Scaling factor applied to the derivative in <em class="xref py py-obj">driz_cr</em> when detecting
+cosmic-rays. See the help file for <em class="xref py py-obj">driz_cr</em> for further discussion
+of this parameter.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>These tasks are designed to work together seemlessly when run in the
+full <em class="xref py py-obj">AstroDrizzle</em> interface. More advanced users may wish to create
+specialized scripts for their own datasets, making use of only a subset
+of the predefined AstroDrizzle tasks, or add additional processing,
+which may be usefull for their particular data. In these cases, individual
+access to the tasks is important.</p>
+<p>Something to keep in mind is that the full <em class="xref py py-obj">AstroDrizzle</em> interface will
+make backup copies of your original files and place them in
+the <tt class="docutils literal"><span class="pre">OrIg/</span></tt> directory of your current working directory. If you are
+working with the stand alone interfaces, it is assumed that the user
+has already taken care of backing up their original datafiles as the
+input file with be directly altered.</p>
+<p class="rubric">Examples</p>
+<p>Basic example of how to call drizCR yourself from a python command line using the default parameters for the task.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">drizCR</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">drizCR</span><span class="o">.</span><span class="n">drizCR</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.drizCR.getHelpAsString">
-<tt class="descclassname">drizzlepac.drizCR.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.drizCR.getHelpAsString" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return useful help from a file in the script directory called module.help</p>
+<tt class="descclassname">drizzlepac.drizCR.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.drizCR.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called
+__taskname__.help</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.drizCR.help">
+<tt class="descclassname">drizzlepac.drizCR.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.drizCR.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -115,7 +245,7 @@ file.</p>
 
 <dl class="function">
 <dt id="drizzlepac.drizCR.rundrizCR">
-<tt class="descclassname">drizzlepac.drizCR.</tt><tt class="descname">rundrizCR</tt><big>(</big><em>imgObjList</em>, <em>configObj</em>, <em>saveFile=True</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.drizCR.rundrizCR" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.drizCR.</tt><tt class="descname">rundrizCR</tt><big>(</big><em>imgObjList</em>, <em>configObj</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.drizCR.rundrizCR" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -146,14 +276,14 @@ which also been updated with the user overrides.</p>
           <a href="util.html" title="Utilities"
              >next</a> |</li>
         <li class="right" >
-          <a href="blot.html" title="Step 6: Blotting the Median Image"
+          <a href="ablot.html" title="Step 6: Blotting the Median Image"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

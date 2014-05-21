@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 1: Process Input &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Step 1: Process Input &mdash; DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31806 (30-Dec-2013)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation" href="index.html" />
     <link rel="next" title="Step 2: Generate a Static Mask" href="static.html" />
     <link rel="prev" title="WFPC2 ImageObjects" href="wfpc2objects.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -115,6 +115,18 @@
 </ul>
 </div></blockquote>
 <span class="target" id="module-drizzlepac.processInput"></span><p>Process input to MultiDrizzle/PyDrizzle.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
 <p>The input can be one of:</p>
 <blockquote>
 <div><ul class="simple">
@@ -128,10 +140,10 @@
 No mixture of association tables, &#64;files and regular fits files is allowed.
 Files can be in GEIS or MEF format (but not waiver fits).</p>
 <p>Runs some sanity checks on the input files.
-If necessary converts files to MEF format (this should not be left to makewcs
-because &#8216;updatewcs&#8217; may be False).
+If necessary converts files to MEF format (this should not be left to <em class="xref py py-obj">makewcs</em>
+because <em class="xref py py-obj">updatewcs</em> may be <em class="xref py py-obj">False</em>).
 Runs makewcs.
-The function &#8216;process_input&#8217; returns an association table, ivmlist, output name</p>
+The function <a class="reference internal" href="#drizzlepac.processInput.process_input" title="drizzlepac.processInput.process_input"><tt class="xref py py-obj docutils literal"><span class="pre">process_input</span></tt></a> returns an association table, ivmlist, output name</p>
 <p>The common interface interpreter for MultiDrizzle tasks, &#8216;processCommonInput()&#8217;,
 not only runs &#8216;process_input()&#8217; but &#8216;createImageObject()&#8217; and &#8216;defineOutput()&#8217;
 as well to fully setup all inputs for use with the rest of the MultiDrizzle
@@ -167,7 +179,7 @@ where all data has been excluded from processing.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str</p>
 <blockquote>
 <div><p>filename of the initial input to process_input</p>
 </div></blockquote>
@@ -183,9 +195,19 @@ where all data has been excluded from processing.</p>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.buildFileList">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">buildFileList</tt><big>(</big><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>**workinplace</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.buildFileList" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">buildFileList</tt><big>(</big><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>wcskey=None</em>, <em>updatewcs=True</em>, <em>**workinplace</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.buildFileList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a file list which has undergone various instrument-specific
 checks for input to MultiDrizzle, including splitting STIS associations.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.processInput.buildFileListOrig">
+<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">buildFileListOrig</tt><big>(</big><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>wcskey=None</em>, <em>updatewcs=True</em>, <em>**workinplace</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.buildFileListOrig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a file list which has undergone various instrument-specific
+checks for input to MultiDrizzle, including splitting STIS associations.
+Compared to buildFileList, this version returns the list of the
+original file names as specified by the user (e.g., before GEIS-&gt;MEF, or
+WAIVER FITS-&gt;MEF conversion).</p>
 </dd></dl>
 
 <dl class="function">
@@ -214,7 +236,7 @@ correction at runtime.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filenames">filenames</strong> : list of str</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filenames">filenames</strong> : list of str</p>
 <blockquote class="last">
 <div><p>file names of all images to be checked</p>
 </div></blockquote>
@@ -240,6 +262,12 @@ multiple valid suffixes (_flt and _flc, for example).</p>
 <dl class="function">
 <dt id="drizzlepac.processInput.convert_dgeo_to_d2im">
 <tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">convert_dgeo_to_d2im</tt><big>(</big><em>dgeofile</em>, <em>output</em>, <em>clobber=True</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.convert_dgeo_to_d2im" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.processInput.convert_dgeo_to_d2im_OLD">
+<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">convert_dgeo_to_d2im_OLD</tt><big>(</big><em>dgeofile</em>, <em>output</em>, <em>clobber=True</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.convert_dgeo_to_d2im_OLD" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.</p>
 </dd></dl>
 
@@ -302,14 +330,14 @@ usage (primarily memory) for this run.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
 <blockquote>
 <div><p>a list of files</p>
 </div></blockquote>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
 <div><p>returns a list of names of the modified files
 (For GEIS files returns the translated names.)</p>
@@ -332,7 +360,7 @@ as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="configObj">configObj</strong> : object</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="configObj">configObj</strong> : object</p>
 <blockquote>
 <div><p>configObj instance or simple dictionary of input parameters</p>
 </div></blockquote>
@@ -397,10 +425,18 @@ modifies the header to reflect the new usage.</p>
 <span class="target" id="module-drizzlepac.resetbits"></span><p>resetbits - A module to set the value of specified array pixels to zero</p>
 <p>This module allows a user to reset the pixel values of any integer array,
 such as the DQ array from an HST image, to zero.</p>
-<dl class="docutils">
-<dt>License:</dt>
-<dd><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
 <div class="section" id="parameters">
 <h3>PARAMETERS<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
@@ -458,9 +494,31 @@ second DQ array, specified as &#8216;dq,2&#8217;, in the file &#8216;input_flt.f
 </li>
 </ol>
 <dl class="function">
+<dt id="drizzlepac.resetbits.getHelpAsString">
+<tt class="descclassname">drizzlepac.resetbits.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.resetbits.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called
+__taskname__.help</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="drizzlepac.resetbits.help">
 <tt class="descclassname">drizzlepac.resetbits.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.resetbits.help" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print out syntax help for running resetbits</p>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -472,7 +530,7 @@ second DQ array, specified as &#8216;dq,2&#8217;, in the file &#8216;input_flt.f
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filename">filename</strong> : str</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filename">filename</strong> : str</p>
 <blockquote>
 <div><p>full filename with path</p>
 </div></blockquote>
@@ -546,12 +604,12 @@ specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

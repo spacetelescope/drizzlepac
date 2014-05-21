@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utility Functions &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Utility Functions &mdash; DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31806 (30-Dec-2013)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="WCS Utilities" href="wcsutils.html" />
     <link rel="prev" title="Utilities" href="util.html" /> 
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="util.html" title="Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -89,8 +89,20 @@
             
   <div class="section" id="utility-functions">
 <h1>Utility Functions<a class="headerlink" href="#utility-functions" title="Permalink to this headline">¶</a></h1>
-<p>These functions perform various small operations within Multidrizzle.</p>
+<p>These functions perform various small operations within <em class="xref py py-obj">Multidrizzle</em>.</p>
 <span class="target" id="module-drizzlepac.util"></span><p>A library of utility functions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
 <dl class="class">
 <dt id="drizzlepac.util.ProcSteps">
 <em class="property">class </em><tt class="descclassname">drizzlepac.util.</tt><tt class="descname">ProcSteps</tt><a class="headerlink" href="#drizzlepac.util.ProcSteps" title="Permalink to this definition">¶</a></dt>
@@ -147,6 +159,51 @@ in the atfile the user gave.</p>
 <dd><p>Return the filename of the science image
 which is assumed to be the first word
 in the atfile the user gave.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.util.base_taskname">
+<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">base_taskname</tt><big>(</big><em>taskname</em>, <em>packagename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.base_taskname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the base name of the task.</p>
+<p>Many tasks in the <tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac</span></tt> have &#8220;compound&#8221; names such as
+&#8216;drizzlepac.sky&#8217;. This function will search for the presence of a dot
+in the input <em class="xref py py-obj">taskname</em> and if found, it will return the string
+to the right of the right-most dot. If a dot is not found, it will return
+the input string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : str, None</p>
+<blockquote>
+<div><p>Full task name. If it is <em class="xref py py-obj">None</em>, <a class="reference internal" href="#drizzlepac.util.base_taskname" title="drizzlepac.util.base_taskname"><tt class="xref py py-func docutils literal"><span class="pre">base_taskname</span></tt></a> will
+return <em class="xref py py-obj">None</em>.</p>
+</div></blockquote>
+<p><strong id="packagename">packagename</strong> : str, None (Default = None)</p>
+<blockquote>
+<div><p>Package name. It is assumed that a compound task name is formed by
+concatenating <em class="xref py py-obj">packagename</em> + &#8216;.&#8217; + <em class="xref py py-obj">taskname</em>. If <em class="xref py py-obj">packagename</em>
+is not <em class="xref py py-obj">None</em>, <a class="reference internal" href="#drizzlepac.util.base_taskname" title="drizzlepac.util.base_taskname"><tt class="xref py py-func docutils literal"><span class="pre">base_taskname</span></tt></a> will check that the string
+to the left of the right-most dot matches <em class="xref py py-obj">packagename</em> and will
+raise an <em class="xref py py-obj">AssertionError</em> if the package name derived from the
+input <em class="xref py py-obj">taskname</em> does not match the supplied <em class="xref py py-obj">packagename</em>. This
+is intended as a check for discrepancies that may arise
+during the development of the tasks. If <em class="xref py py-obj">packagename</em> is <em class="xref py py-obj">None</em>,
+no such check will be performed.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises :</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>AssertionError</strong> :</p>
+<blockquote class="last">
+<div><p>Raised when package name derived from the input <em class="xref py py-obj">taskname</em> does not
+match the supplied <em class="xref py py-obj">packagename</em></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -235,7 +292,7 @@ with user-specified values from input_dict.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : string</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : string</p>
 <blockquote>
 <div><p>Name of task to load into TEAL</p>
 </div></blockquote>
@@ -296,12 +353,14 @@ regardless of which section the parameter was stored</p>
 <dl class="function">
 <dt id="drizzlepac.util.get_pool_size">
 <tt class="descclassname">drizzlepac.util.</tt><tt class="descname">get_pool_size</tt><big>(</big><em>usr_config_value=None</em>, <em>num_tasks=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.get_pool_size" title="Permalink to this definition">¶</a></dt>
-<dd><p>Examine the cpu_count to decide and return the right pool
+<dd><p>Determine size of thread/process-pool for parallel processing.
+This examines the cpu_count to decide and return the right pool
 size to use.  Also take into account the user&#8217;s wishes via the config
 object value, if specified.  On top of that, don&#8217;t allow the pool size
 returned to be any higher than the number of parallel tasks, if specified.
 Only use what we need (mp.Pool starts pool_size processes, needed or not).
 If number of tasks is unknown, call this with &#8220;num_tasks&#8221; set to None.
+Returns 1 when indicating that parallel processing should not be used.
 Consolidate all such logic here, not in the caller.</p>
 </dd></dl>
 
@@ -376,7 +435,7 @@ ivm filenames from the first two columns.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="infile">infile</strong> : str</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="infile">infile</strong> : str</p>
 <blockquote>
 <div><p>Filename of ASCII file with array data as columns.</p>
 </div></blockquote>
@@ -388,7 +447,7 @@ ivm filenames from the first two columns.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>outarr</strong> : list of numpy arrays</p>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>outarr</strong> : list of numpy arrays</p>
 <blockquote class="last">
 <div><p>Simple list of numpy arrays in the order as specifed in the &#8216;cols&#8217; parameter.</p>
 </div></blockquote>
@@ -413,14 +472,14 @@ ivm filenames from the first two columns.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : list of str</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : list of str</p>
 <blockquote>
 <div><p>A list of file names.</p>
 </div></blockquote>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
 <div><p>Returns a list of names of the modified files
 (For GEIS files returns the translated names).</p>
@@ -429,6 +488,13 @@ ivm filenames from the first two columns.</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.util.updateNEXTENDKw">
+<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">updateNEXTENDKw</tt><big>(</big><em>fobj</em><big>)</big><a class="headerlink" href="#drizzlepac.util.updateNEXTENDKw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update NEXTEND keyword in PRIMARY header (if present) to accurately
+reflect the number of extensions in the MEF file.</p>
 </dd></dl>
 
 <dl class="function">
@@ -503,13 +569,13 @@ was found in all SCI extensions.</p>
         <li class="right" >
           <a href="util.html" title="Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

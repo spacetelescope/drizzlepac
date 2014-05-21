@@ -26,8 +26,8 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation" href="index.html" />
-    <link rel="next" title="Image Class" href="image.html" />
-    <link rel="prev" title="Imagefindpars: Source finding parameters" href="refimagefindpars.html" /> 
+    <link rel="next" title="Imagefindpars: Source finding parameters" href="imagefindpars.html" />
+    <link rel="prev" title="TWEAKREG: Alignment of Images" href="tweakreg.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,10 +40,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="image.html" title="Image Class"
+          <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>
@@ -54,14 +54,14 @@
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
             </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="refimagefindpars.html"
-                        title="previous chapter">Imagefindpars: Source finding parameters</a></p>
+  <p class="topless"><a href="tweakreg.html"
+                        title="previous chapter">TWEAKREG: Alignment of Images</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="image.html"
-                        title="next chapter">Image Class</a></p>
+  <p class="topless"><a href="imagefindpars.html"
+                        title="next chapter">Imagefindpars: Source finding parameters</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="_sources/imagefindpars.txt"
+    <li><a href="_sources/refimagefindpars.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -86,12 +86,12 @@
           <div class="body">
             
   <div class="section" id="imagefindpars-source-finding-parameters">
-<span id="imagefindpars"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
+<span id="refimagefindpars"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
 <p>This interface provides a mechanism for setting the parameters used by the built-in source finding algorithm based on the published algorithms used by DAOFIND.</p>
-<span class="target" id="module-drizzlepac.imagefindpars"></span><p>These parameters control the operation of the algorithm that extracts
-sources from the image as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>.
-The algorithm implemented follows the concepts defined
-by <tt class="docutils literal"><span class="pre">DAOFIND</span></tt> (without actually using any <tt class="docutils literal"><span class="pre">DAOFIND</span></tt> code).</p>
+<span class="target" id="module-drizzlepac.refimagefindpars"></span><p>These parameters control the operation of the algorithm that extracts
+sources from the reference image (if specified) as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>.
+The algorithm implemented follows the concepts defined by <tt class="docutils literal"><span class="pre">DAOFIND</span></tt>
+(without actually using any <tt class="docutils literal"><span class="pre">DAOFIND</span></tt> code).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -176,7 +176,7 @@ selected.</p>
 <dt><strong>roundlo</strong>: float (Default = -1.0)</dt>
 <dd><p class="first last"><tt class="docutils literal"><span class="pre">roundlo</span></tt> and <tt class="docutils literal"><span class="pre">roundhi</span></tt> are designed to eliminate brightness
 maxima that are due to bad rows or columns, rather than to
-astronomical objects. Only sources with roundness above the
+astronomical objects. Only sources with roundness above the 
 <tt class="docutils literal"><span class="pre">roundlo</span></tt> value will be selected.</p>
 </dd>
 <dt><strong>roundhi</strong>: float (Default = 1.0)</dt>
@@ -191,15 +191,15 @@ astronomical objects. Only sources with roundness below the
 </tbody>
 </table>
 <dl class="function">
-<dt id="drizzlepac.imagefindpars.getHelpAsString">
-<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.refimagefindpars.getHelpAsString">
+<tt class="descclassname">drizzlepac.refimagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.refimagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>return useful help from a file in the script directory called
 __taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="drizzlepac.imagefindpars.help">
-<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.help" title="Permalink to this definition">¶</a></dt>
+<dt id="drizzlepac.refimagefindpars.help">
+<tt class="descclassname">drizzlepac.refimagefindpars.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.refimagefindpars.help" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out syntax help for running astrodrizzle</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -236,10 +236,10 @@ writing out the help.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="image.html" title="Image Class"
+          <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
              >next</a> |</li>
         <li class="right" >
-          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
+          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              >previous</a> |</li>
         <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
       </ul>

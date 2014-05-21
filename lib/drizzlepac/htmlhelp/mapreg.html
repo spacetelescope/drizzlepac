@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Region mapping for TweakReg &mdash; DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.2.0.dev31806 (30-Dec-2013)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation" href="index.html" />
+    <link rel="next" title="pixtopix: Coordinate transformation to/from drizzled images" href="pixtopix.html" />
+    <link rel="prev" title="UPDATEHDR: Functions for Updating WCS with New Solutions" href="updatehdr.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pixtopix.html" title="pixtopix: Coordinate transformation to/from drizzled images"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="updatehdr.html"
+                        title="previous chapter">UPDATEHDR: Functions for Updating WCS with New Solutions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pixtopix.html"
+                        title="next chapter">pixtopix: Coordinate transformation to/from drizzled images</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/mapreg.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-drizzlepac.mapreg">
+<span id="region-mapping-for-tweakreg"></span><h1>Region mapping for TweakReg<a class="headerlink" href="#module-drizzlepac.mapreg" title="Permalink to this headline">¶</a></h1>
+<p>This module provides functions for mapping DS9 region files given in sky
+coordinates to DS9 region files specified in image coordinates
+of multiple images using the WCS information from the images.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Mihai Cara</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="drizzlepac.mapreg.MapReg">
+<tt class="descclassname">drizzlepac.mapreg.</tt><tt class="descname">MapReg</tt><big>(</big><em>input_reg</em>, <em>images</em>, <em>img_wcs_ext='sci'</em>, <em>refimg=''</em>, <em>ref_wcs_ext='sci'</em>, <em>chip_reg=''</em>, <em>outpath='./regions'</em>, <em>filter=''</em>, <em>catfname=''</em>, <em>iteractive=True</em>, <em>append=False</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.mapreg.MapReg" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="xref py py-func docutils literal"><span class="pre">MapReg</span></tt> provides an automated interface for converting
+a region file to the image coordinate system (CS) of multiple images (and
+their extensions) using WCS information from the image(s) header(s).
+This conversion does not take into account pointing errors and, therefore,
+an examination and adjustment (if required) of output region files is highly
+recommended. This task is designed to simplify the creation of the exclusions
+and/or inclusions region files used with <tt class="xref py py-func docutils literal"><span class="pre">TweakReg</span></tt>
+task for sources finding.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input_reg">input_reg</strong> : string or list of strings (Default = &#8216;&#8217;)</p>
+<blockquote>
+<div><p>Input region files that need to be mapped to image CS using WCS information
+from <em class="xref py py-obj">images</em> (see below). Only region files saved in sky CS are allowed
+in this release. Regions specified in image-like coordinates (e.g., image,
+physical) will be ignored.</p>
+<p>This paramater can be provided in any of several forms:</p>
+<blockquote>
+<div><ul class="simple">
+<li>filename of a single image</li>
+<li>comma-separated list of filenames</li>
+<li><tt class="docutils literal"><span class="pre">&#64;-file</span></tt> filelist containing list of desired input region filenames</li>
+</ul>
+</div></blockquote>
+<p>The <tt class="docutils literal"><span class="pre">&#64;-file</span></tt> filelist needs to be provided as an ASCII text file
+containing a list of filenames for all input region files with one
+filename on each line of the file.</p>
+</div></blockquote>
+<p><strong id="images">images</strong> : string or list of strings (Default = <tt class="docutils literal"><span class="pre">*.fits</span></tt>)</p>
+<blockquote>
+<div><p>FITS images onto which the region files <em class="xref py py-obj">input_reg</em> will be mapped. These
+image files must contain WCS information in their headers in order to
+convert <em class="xref py py-obj">input_reg</em> from sky coordinates to correct image coordinates.
+This paramater can be provided in any of several forms:</p>
+<blockquote>
+<div><ul class="simple">
+<li>filename of a single image</li>
+<li>filename of an association (ASN)table</li>
+<li>wild-card specification for files in directory (using <tt class="docutils literal"><span class="pre">*</span></tt>, <tt class="docutils literal"><span class="pre">?</span></tt> etc.)</li>
+<li>comma-separated list of filenames</li>
+<li><tt class="docutils literal"><span class="pre">&#64;-file</span></tt> filelist containing list of desired input filenames
+(and optional inverse variance map filenames)</li>
+</ul>
+</div></blockquote>
+<p>The <tt class="docutils literal"><span class="pre">&#64;-file</span></tt> filelist needs to be provided as an ASCII text file
+containing a list of filenames for all input images (to which <em class="xref py py-obj">input_reg</em>
+regions should be mapped) with one filename on each line of the file.</p>
+</div></blockquote>
+<p><strong id="img_wcs_ext">img_wcs_ext</strong> : string or list of strings (Default = <tt class="docutils literal"><span class="pre">SCI</span></tt>)</p>
+<blockquote>
+<div><p>Extension name, extension name and version, or extension number of FITS
+extensions in the <em class="xref py py-obj">images</em> to which the input regions <em class="xref py py-obj">input_reg</em> should be
+mapped. The header of each extension must contain WCS information that will
+be used to convert <em class="xref py py-obj">input_reg</em> from sky CS to image-like CS. Multiple
+extensions must be separated by semicolon while extension name and version
+(if present) must be separated by comma, e.g., <tt class="docutils literal"><span class="pre">'SCI;DQ,1;0'</span></tt>.
+When specifying the extension name only, internally it will be expanded
+into a list of extension names and versions for each version of that
+extension name present in the input <tt class="docutils literal"><span class="pre">images</span></tt>. For example, if a FITS file
+has four SCI and four DQ extensions, then <tt class="docutils literal"><span class="pre">'SCI;DQ,1;0'</span></tt> will be expanded into
+<tt class="docutils literal"><span class="pre">'SCI,1;SCI,2;SCI,3;SCI,4;DQ,1;0'</span></tt>.</p>
+</div></blockquote>
+<p><strong id="refimg">refimg</strong> : string (Default = &#8216;&#8217;)</p>
+<blockquote>
+<div><p><strong>Reserved for future use.</strong>
+Filename of the reference image. May contain extension specifier:
+[extname,extver], [extname], or [extnumber].</p>
+</div></blockquote>
+<p><strong id="ref_wcs_ext">ref_wcs_ext</strong> : string (Default = <tt class="docutils literal"><span class="pre">SCI</span></tt>)</p>
+<blockquote>
+<div><p><strong>Reserved for future use.</strong>
+Extension name and/or version of FITS extensions
+in the <tt class="docutils literal"><span class="pre">refimg</span></tt> that contain WCS information that will be used to convert
+<em class="xref py py-obj">input_reg</em> from image-like CS to sky CS. NOTE: Only extension name is
+allowed when <em class="xref py py-obj">input_reg</em> is a list of region files that contain regions
+in image-like CS. In this case, the number of regions in <em class="xref py py-obj">input_reg</em> must
+agree with the number of extensions with name specified by <tt class="docutils literal"><span class="pre">ref_wcs_ext</span></tt>
+present in the <tt class="docutils literal"><span class="pre">refimg</span></tt> FITS image.</p>
+</div></blockquote>
+<p><strong id="chip_reg">chip_reg</strong> : string or list of strings (Default = &#8216;&#8217;)</p>
+<blockquote>
+<div><p>Input region files in image CS associated with each extension specified by
+the <tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt> parameter above. These regions will be added directly
+(without any transformation) to the <em class="xref py py-obj">input_reg</em> regions mapped to each
+extension of the input <tt class="docutils literal"><span class="pre">images</span></tt>. These regions must be specified in
+image-like coordinates. Typically, these regions should contain &#8220;exclude&#8221;
+regions to exclude parts of the image specific to the detector <strong>chip</strong>
+(e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
+images) from being used for source finding.
+This paramater can be provided in one of the following forms:</p>
+<blockquote>
+<div><ul class="simple">
+<li>filename of a single image (if <tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt> specifies a single FITS
+extension);</li>
+<li>comma-separated list of filenames (if <tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt> specifies more than
+one extension) or <em class="xref py py-obj">None</em> for extensions that do not need any
+chip-specific regions to be excluded/included;</li>
+<li>&#8216;&#8217; (empty string) or None if no chip-specific region files are provided.</li>
+</ul>
+<p>The number of regions ideally must be equal to the number of extensions
+specified by the <tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt> parameter. If the number of chip-specific
+regions is less than the number of <tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt> extensions then &#8216;chip_reg&#8217;
+regions will be assigned to the first extensions from <tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt>
+(after internal expansion described in help for the <tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt>
+parameter above). If the number of &#8216;chip_reg&#8217; is larger than the number of
+<tt class="docutils literal"><span class="pre">img_wcs_ext</span></tt> extensions then extra regions will be ignored.</p>
+</div></blockquote>
+</div></blockquote>
+<p><strong id="outpath">outpath</strong> : string (Default = <tt class="docutils literal"><span class="pre">./regions</span></tt>)</p>
+<blockquote>
+<div><p>The directory to which the transformed regions should be saved.</p>
+</div></blockquote>
+<p><strong id="filter">filter</strong> : string {&#8216;None&#8217;, &#8216;fast&#8217;, or &#8216;precise&#8217; } (Default = &#8216;None&#8217;)</p>
+<blockquote>
+<div><p>Specify whether or not to remove the regions in the transformed region files
+that are outside the image array. With the &#8216;fast&#8217; mehod only intersection
+of the bounding boxes is being checked. The &#8216;precise&#8217; method is not
+implemented in this release and, if specified, defaults to &#8216;fast&#8217;.</p>
+</div></blockquote>
+<p><strong id="catfname">catfname</strong> : string (Default = <tt class="docutils literal"><span class="pre">exclusions_cat.txt</span></tt>)</p>
+<blockquote>
+<div><p>The file name of the output exclusions catalog file to be created from the
+supplied image and region file names. This file can be passed as an input
+to TweakReg task. Verify that the created file is correct!</p>
+</div></blockquote>
+<p><strong id="append">append</strong> : bool (Default = False)</p>
+<blockquote>
+<div><p>Specify whether or not to append the transformed regions to the existing
+region files with the same name.</p>
+</div></blockquote>
+<p><strong id="interactive">interactive</strong> : bool (Default = True)</p>
+<blockquote>
+<div><p><strong>Reserved for future use.</strong> (This switch controls whether the program stops
+and waits for the user to examine any generated region files before
+continuing on to the next image.)</p>
+</div></blockquote>
+<p><strong id="verbose">verbose</strong> : bool (Default = False)</p>
+<blockquote class="last">
+<div><p>Specify whether or not to print extra messages during processing.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p><strong>NOTE 1:</strong> This task takes a region file (or multiple files) that describe(s)
+what regions of sky should be used for source finding (<em>include</em> regions) and
+what regions should be avoided (<em>exclude</em> regions) and transforms/maps
+this region file onto a number of image files that need to be alighned.</p>
+<p>The idea behind this task is automate the creation of region files that then can
+be passed to <em>exclusions</em> parameter of the <em class="xref py py-obj">TweakReg</em> task.</p>
+<p>The same thing can be achieved manually using, for example, external FITS
+viewers, e.g., SAO DS9. For example, based on some image <tt class="docutils literal"><span class="pre">refimg.fits</span></tt> we can
+select a few small regions of sky that contain several good (bright, not
+saturated) point-like sources that could be used for image alignment of other
+images (say <tt class="docutils literal"><span class="pre">img1.fits</span></tt>, <tt class="docutils literal"><span class="pre">img2.fits</span></tt>, etc.). We can save this region file in
+sky coordinates (e.g., <tt class="docutils literal"><span class="pre">fk5</span></tt>), e.g., under the name <tt class="docutils literal"><span class="pre">input_reg.reg</span></tt>. We can then
+load a specific extension of each of the images <tt class="docutils literal"><span class="pre">img1.fits</span></tt>, <tt class="docutils literal"><span class="pre">img2.fits</span></tt>, etc.
+one by one into DS9 and then load onto those images the previously created
+include/exclude region file <tt class="docutils literal"><span class="pre">input_reg.reg</span></tt>. Now we can save the regions using
+<em>image</em> coordinates. To do conversion from the sky coordinates to image
+coordinates, DS9 will use the WCS info from the image onto which the region file
+was loaded. The <tt class="xref py py-func docutils literal"><span class="pre">MapReg</span></tt> task tries to automate this process.</p>
+<p><strong>NOTE 2:</strong> <tt class="xref py py-func docutils literal"><span class="pre">MapReg</span></tt> relies on the <tt class="xref py py-class docutils literal"><span class="pre">pyregion</span></tt> package for region file
+parsing and coordinate transformation. Unfortunately, as of writing,
+<strong>pyregion</strong> does not consider distortion corrections when performing coordinate
+transformations. Therefore, there might be a slight discrepancy between the
+regions produced by <tt class="xref py py-func docutils literal"><span class="pre">MapReg</span></tt> and the DS9 regions obtained as described in
+the NOTE 1 above.</p>
+<p><strong>NOTE 3:</strong> <tt class="xref py py-func docutils literal"><span class="pre">MapReg</span></tt> does not take into account pointing errors and thus the
+produced region files can be somewhat misaligned compared to their intended
+position around the sources identified in the &#8220;reference&#8221; image. Threfore, it is
+highly recommended that the produced region files be loaded into DS9 and their
+position be adjusted manually to include the sources of interest (or to avoid
+the regions that need to be avoided).
+If possible, the <em>include</em> or <em>exclude</em> regions should be large enough as to
+allow for most pointing errors.</p>
+<p class="rubric">Examples</p>
+<p>Let&#8217;s say that based on some image <tt class="docutils literal"><span class="pre">refimg.fits</span></tt> we have produced a &#8220;master&#8221;
+reference image (<tt class="docutils literal"><span class="pre">master.reg</span></tt>) that includes regions around sources that we want
+to use for image alignment in task <tt class="xref py py-func docutils literal"><span class="pre">TweakReg</span></tt> and excludes regions that we
+want to avoid being used for image alignment (e.g, diffraction spikes, saturated
+quasars, stars, etc.). We save the file <tt class="docutils literal"><span class="pre">master.reg</span></tt> in sky CS (e.g., <tt class="docutils literal"><span class="pre">fk5</span></tt>).</p>
+<p>Also, let&#8217;s assume that we have a set of images <tt class="docutils literal"><span class="pre">img1.fits</span></tt>, <tt class="docutils literal"><span class="pre">img2.fits</span></tt>, etc.
+with four FITS extensions named &#8216;SCI&#8217; and &#8216;DQ&#8217;. For some of the extensions,
+after analizing the <tt class="docutils literal"><span class="pre">img*.fits</span></tt> images we have identified parts of the chips that
+cannot be used for image alighnment. We create region files for those extensions
+and save the files in image CS as, e.g., <tt class="docutils literal"><span class="pre">img1_chip_sci2.reg</span></tt> (in our example
+this will be the only chip that needs &#8220;special&#8221; treatment).</p>
+<p>Finally, let&#8217;s say we want to &#8220;replicate&#8221; the &#8220;master&#8221; region file to all SCI
+exctensions of the <tt class="docutils literal"><span class="pre">img*.fits</span></tt> images as well as to the 2nd DQ extension and to
+the 8th extension of the <tt class="docutils literal"><span class="pre">img*.fits</span></tt> images.</p>
+<p>To do this we run:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mapreg</span><span class="p">(</span><span class="n">input_reg</span> <span class="o">=</span> <span class="s">&#39;master.reg&#39;</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="s">&#39;img*.fits&#39;</span><span class="p">,</span>
+<span class="gp">... </span>       <span class="n">img_wcs_ext</span><span class="o">=</span><span class="s">&#39;sci;dq,2;8&#39;</span><span class="p">,</span> <span class="n">chip_reg</span><span class="o">=</span><span class="s">&#39;None,</span>
+<span class="gp">... </span>       <span class="n">img1_chip_sci2</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="s">&#39;)</span>
+</pre></div>
+</div>
+<p>This will produce six region files in the ./regions subdirectory for <em>each</em>
+input image:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="sb">``</span><span class="n">img1_sci1_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>    <span class="sb">``</span><span class="n">img1_sci2_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>    <span class="sb">``</span><span class="n">img1_sci3_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>
+<span class="sb">``</span><span class="n">img1_sci4_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>    <span class="sb">``</span><span class="n">img1_dq2_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>     <span class="sb">``</span><span class="n">img1_extn8_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="sb">``</span><span class="n">img2_sci1_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>    <span class="sb">``</span><span class="n">img2_sci2_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>    <span class="sb">``</span><span class="n">img2_sci3_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>
+<span class="sb">``</span><span class="n">img2_sci4_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>    <span class="sb">``</span><span class="n">img2_dq2_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span><span class="p">,</span>     <span class="sb">``</span><span class="n">img2_extn8_twreg</span><span class="o">.</span><span class="n">reg</span><span class="sb">``</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.mapreg.map_region_files">
+<tt class="descclassname">drizzlepac.mapreg.</tt><tt class="descname">map_region_files</tt><big>(</big><em>input_reg</em>, <em>images</em>, <em>img_wcs_ext='sci'</em>, <em>refimg=None</em>, <em>ref_wcs_ext='sci'</em>, <em>chip_reg=None</em>, <em>outpath='./regions'</em>, <em>filter=None</em>, <em>catfname=None</em>, <em>iteractive=True</em>, <em>append=False</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.mapreg.map_region_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.mapreg.help">
+<tt class="descclassname">drizzlepac.mapreg.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.mapreg.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pixtopix.html" title="pixtopix: Coordinate transformation to/from drizzled images"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31806 (30-Dec-2013) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
