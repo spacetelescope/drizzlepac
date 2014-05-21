@@ -18,8 +18,8 @@ from imageObject import imageObject
 from stsci.tools import fileutil, teal, logutil
 
 from stsci.skypac.skymatch import skymatch
-from stsci.skypac.utils import MultiFileLog, ResourceRefCount, \
-     ImageRef, file_name_components, temp_mask_file, openImageEx
+from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
+     file_name_components, in_memory_mask, temp_mask_file, openImageEx
 from stsci.skypac.parseat import FileExtMaskInfo, parse_at_file
 
 import processInput
@@ -76,7 +76,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     skyusigma	'Upper side clipping factor (in sigma)'
     skymask_cat 'Catalog file listing image masks'
     use_static  'Use static mask for skymatch computations?'
-    dqflags     'Bit flags for identifying bad pixels in DQ array'
+    sky_bits    'Integer mask bit values considered good pixels in DQ array'
     skyuser     'KEYWORD indicating a sky subtraction value if done by user'
     skyfile     'Name of file with user-computed sky values'
     in_memory   'Optimize for speed or for memory use'
@@ -279,9 +279,9 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
             else:
                 umask = fi.mask_images[k].hdu[fi.maskext[k]].data
             (mask, mext) = _buildStaticDQUserMask(imageList[i], extlist[k],
-                                            paramDict['dqflags'],
-                                            paramDict['use_static'],
-                                            fi.mask_images[k], fi.maskext[k])
+                               paramDict['sky_bits'], paramDict['use_static'],
+                               fi.mask_images[k], fi.maskext[k], in_memory)
+
             masklist.append(mask)
             mextlist.append(mext)
 
@@ -289,7 +289,14 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
         # newly computed combined static+DQ+user masks:
         fi.clear_masks()
         for k in range(fi.count):
-            fi.append_mask(masklist[k], mextlist[k])
+            if in_memory:
+                # os.stat() on the "original_fname" of the mask will fail
+                # since this is a "virtual" mask. Therefore we need to compute
+                # mask_stat ourselves. We will simply use id(data) for this:
+                mstat = os.stat_result((0,id(mask.hdu)) + 8*(0,))
+                fi.append_mask(masklist[k], mextlist[k], mask_stat=mstat)
+            else:
+                fi.append_mask(masklist[k], mextlist[k])
             if masklist[k]:
                 masklist[k].release()
         fi.finalize()
@@ -309,8 +316,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
              skyuser_kwd = skyKW,
              units_kwd   = 'BUNIT',
              readonly    = not paramDict['skysub'],
-             DQFlags     = None,
-             optimize    = 'speed' if in_memory else 'balanced',
+             dq_bits     = None,
+             optimize    = 'inmemory' if in_memory else 'balanced',
              clobber     = True,
              clean       = clean,
              verbose     = True,
@@ -338,7 +345,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
     for fi in new_fi:
         fi.release_all_images()
 
-def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
+def _buildStaticDQUserMask(img, ext, sky_bits, use_static, umask,
+                           umaskext, in_memory):
     # creates a temporary mask by combining 'static' mask,
     # DQ image, and user-supplied mask.
 
@@ -350,8 +358,8 @@ def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
     mask = None
 
     # build DQ mask
-    if dqflags is not None:
-        mask = img.buildMask(img[ext]._chip,bits=dqflags)
+    if sky_bits is not None:
+        mask = img.buildMask(img[ext]._chip,bits=sky_bits)
 
     # get correct static mask mask filenames/objects
     staticMaskName = img[ext].outputNames['staticMask']
@@ -393,16 +401,24 @@ def _buildStaticDQUserMask(img, ext, dqflags, use_static, umask, umaskext):
                     "static, and user masks!")
 
     # save mask to a temporary file:
-    (root,suffix,fext)  = file_name_components(img._filename)
-    (tmpfname, tmpmask) = temp_mask_file(root, 'skymatch_mask', ext, mask)
-    img[ext].outputNames['skyMatchMask'] = tmpfname
+    (root,suffix,fext) = file_name_components(img._filename)
+    if in_memory:
+        tmpmask = in_memory_mask(mask)
+        strext = ext2str(ext, compact=True, default_extver=None)
+        tmpmask.original_fname = "{1:s}{0:s}{2:s}{0:s}{3:s}" \
+            .format('_', root, suffix, 'in-memory_skymatch_mask')
+    else:
+        (tmpfname, tmpmask) = temp_mask_file(mask, root,
+            suffix='skymatch_mask', ext=ext, randomize_prefix=True)
+        img[ext].outputNames['skyMatchMask'] = tmpfname
 
     return (tmpmask, 0)
 
 # this function applies user supplied sky values from an input file
 def _skyUserFromFile(imageObjList,skyFile):
     """
-    Apply sky value as read in from a user-supplied input file
+    Apply sky value as read in from a user-supplied input file.
+
     """
     skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
 
@@ -649,7 +665,7 @@ def _computeSky(image, skypars, memmap=0):
     for one image extension
 
     skypars is passed in as paramDict
-    
+
     """
     #this object contains the returned values from the image stats routine
     _tmp = imagestats.ImageStats(image.data,
@@ -755,7 +771,7 @@ def help(file=None):
         If given, write out help to the filename specified by this parameter
         Any previously existing file with this name will be deleted before
         writing out the help.
-        
+
     """
     helpstr = getHelpAsString(docstring=True, show_ver = True)
     if file is None:
@@ -771,13 +787,13 @@ def getHelpAsString(docstring = False, show_ver = True):
     """
     return useful help from a file in the script directory called
     __taskname__.help
-    
+
     """
     install_dir = os.path.dirname(__file__)
     taskname = util.base_taskname(__taskname__, __package__)
     htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
     helpfile = os.path.join(install_dir, taskname + '.help')
-    
+
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
             helpString = os.linesep + \
@@ -791,7 +807,7 @@ def getHelpAsString(docstring = False, show_ver = True):
             if __doc__ is not None:
                 helpString += __doc__ + os.linesep
     else:
-        helpString = 'file://' + htmlfile        
+        helpString = 'file://' + htmlfile
 
     return helpString
 

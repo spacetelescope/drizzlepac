@@ -1222,7 +1222,7 @@ def _setDefaults(input_dict={}):
         'skyusigma':4.0,
         "skymask_cat":"",
         "use_static":True,
-        "dqflags":0,
+        "sky_bits":0,
         "skyuser":"",
         "skyfile":"",
         'driz_separate':True,

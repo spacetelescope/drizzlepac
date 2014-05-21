@@ -33,7 +33,7 @@ images : string or list of strings (Default = ``*.fits``)
 
      - filename of a single image
      - filename of an association (ASN)table
-     - wild-card specification for files in directory (using ``\*``, ``?`` etc.)
+     - wild-card specification for files in directory (using ``*``, ``?`` etc.)
      - comma-separated list of filenames
      - ``@-file`` filelist containing list of desired input filenames
        (and optional inverse variance map filenames)
