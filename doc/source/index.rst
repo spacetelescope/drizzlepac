@@ -18,7 +18,7 @@ from Python tasks.
 
 Full documentation of how to run the primary `AstroDrizzle` and `TweakReg`
 tasks, along with fully worked examples, can be found in the
-`DrizzlePac Handbook available at the <http://drizzlepac.stsci.edu>`_.
+`DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_.
 
 This package relies on the STWCS package in order to provide
 the support for the WCS-based distortion models and alignment
