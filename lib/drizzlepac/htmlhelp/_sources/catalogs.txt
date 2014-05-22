@@ -4,10 +4,16 @@
 Classes to manage Catalogs and WCS's
 ************************************
 
-This module provides the classes used to generate and manage source catalogs for each input chip. Those positions can be transformed to undistorted sky positions, written out to files, or plotted using various methods defined for these classes. 
+This module provides the classes used to generate and manage source catalogs
+for each input chip. Those positions can be transformed to undistorted sky
+positions, written out to files, or plotted using various methods defined
+for these classes.
 
+.. moduleauthor:: Warren Hack <help@stsci.edu>
 
 .. currentmodule:: drizzlepac.catalogs
+
+.. automodule:: drizzlepac.catalogs
 
 .. inheritance-diagram:: drizzlepac.catalogs
    :parts: 2
@@ -34,5 +40,5 @@ This module provides the classes used to generate and manage source catalogs for
    :undoc-members:
    :show-inheritance:
 
- 
- 
+
+

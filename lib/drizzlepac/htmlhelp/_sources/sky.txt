@@ -3,8 +3,9 @@
 ***************************
 Step 3: Subtracting the Sky
 ***************************
-This step measures and subtracts the sky from each input image while recording the subtracted value in the image header. 
+
+.. moduleauthor:: Christopher Hanley, Megan Sosey, Mihai Cara <help@stsci.edu>
 
 .. automodule:: drizzlepac.sky
-   :members:
+   :members: sky, help
    :undoc-members:
