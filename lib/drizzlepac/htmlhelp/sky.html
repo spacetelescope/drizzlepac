@@ -244,7 +244,7 @@ specified in <em class="xref py py-obj">inputDict</em>.</p>
 <td><p class="first last">&#8216;Use static mask for skymatch computations?&#8217;</p>
 </td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">dqflags</em></p>
+<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">sky_bits</em></p>
 </td>
 <td><p class="first last">&#8216;Bit flags for identifying bad pixels in DQ array&#8217;</p>
 </td>
@@ -370,14 +370,14 @@ covering significant parts of the image.</p>
 <blockquote>
 <div><p>Specifies whether or not to use static mask to exclude masked image pixels from sky computations.</p>
 </div></blockquote>
-<p><strong>DQFlags</strong> : int, None, optional (Default = 0)</p>
+<p><strong>sky_bits</strong> : int, None, optional (Default = 0)</p>
 <blockquote>
-<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8220;good&#8221; when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ &#8220;defects&#8221; having flags 2 and 4 as being acceptable for sky computations, then <em class="xref py py-obj">DQFlags</em> should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
+<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8220;good&#8221; when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ &#8220;defects&#8221; having flags 2 and 4 as being acceptable for sky computations, then <em class="xref py py-obj">sky_bits</em> should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
 <div class="line-block">
 <div class="line">Default value (0) will make <em>all</em> non-zero pixels in the DQ mask to be considered &#8220;bad&#8221; pixels, and the corresponding image pixels will not be used for sky computations.</div>
 </div>
 <div class="line-block">
-<div class="line">Set <em class="xref py py-obj">DQFlags</em> to <em class="xref py py-obj">None</em> to turn off the use of image&#8217;s DQ array for sky computations.</div>
+<div class="line">Set <em class="xref py py-obj">sky_bits</em> to <em class="xref py py-obj">None</em> to turn off the use of image&#8217;s DQ array for sky computations.</div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
