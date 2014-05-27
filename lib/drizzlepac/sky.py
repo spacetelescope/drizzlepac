@@ -289,7 +289,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
         # newly computed combined static+DQ+user masks:
         fi.clear_masks()
         for k in range(fi.count):
-            if in_memory:
+            if in_memory and mask is not None:
                 # os.stat() on the "original_fname" of the mask will fail
                 # since this is a "virtual" mask. Therefore we need to compute
                 # mask_stat ourselves. We will simply use id(data) for this:
