@@ -158,7 +158,7 @@ def run(configobj, wcsmap=None):
     stateObj = configobj['STATE OF INPUT FILES']
     procSteps = util.ProcSteps()
 
-    print ('AstroDrizzle (CDS fy14dev.CLEAN) Version %s(%s) started at: %s\n' %
+    print ('AstroDrizzle Version %s(%s) started at: %s\n' %
            (__version__, __vdate__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
@@ -211,7 +211,7 @@ def run(configobj, wcsmap=None):
                            procSteps=procSteps)
 
         print
-        print ' '.join(['AstroDrizzle (CDS fy14dev.CLEAN) Version', __version__,
+        print ' '.join(['AstroDrizzle Version', __version__,
                         'is finished processing at ',
                         util._ptime()[0]]) + '!\n'
     except:
