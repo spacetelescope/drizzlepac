@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31820 (22-May-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,9 +25,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
-    <link rel="prev" title="Welcome to drizzlepac’s documentation!" href="index.html" /> 
+    <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,9 +43,9 @@
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to drizzlepac’s documentation!"
+          <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -55,7 +55,7 @@
             </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to drizzlepac&#8217;s documentation!</a></p>
+                        title="previous chapter">Welcome to drizzlepac&#8217;s API documentation!</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="imageobject.html"
                         title="next chapter">imageObject Classes</a></p>
@@ -87,8 +87,8 @@
             
   <div class="section" id="module-drizzlepac.astrodrizzle">
 <span id="primary-user-interface-astrodrizzle"></span><span id="astrodrizzle"></span><h1>Primary User Interface: AstroDrizzle()<a class="headerlink" href="#module-drizzlepac.astrodrizzle" title="Permalink to this headline">¶</a></h1>
-<p>AstroDrizzle - Python implementation of MultiDrizzle</p>
-<p>AstroDrizzle automates the process of aligning images in an output frame,
+<p><a class="reference internal" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="drizzlepac.astrodrizzle.AstroDrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></tt></a> - Python implementation of <em class="xref py py-obj">MultiDrizzle</em></p>
+<p><a class="reference internal" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="drizzlepac.astrodrizzle.AstroDrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></tt></a> automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
 after removing the identified cosmic-rays.</p>
 <dl class="docutils">
@@ -105,188 +105,339 @@ after removing the identified cosmic-rays.</p>
 </ol>
 </dd>
 </dl>
-<p>A full description of this process can be found in the DrizzlePac Handbook
-available online at:</p>
-<p><a class="reference external" href="http://drizzlepac.stsci.edu">http://drizzlepac.stsci.edu</a></p>
-<p><strong>Output</strong>: The primary output from this task is the distortion-corrected,
-cosmic-ray cleaned, and combined image as a FITS file.</p>
-<p>This task requires numerous user-settable parameters to control the primary
-aspects of each of the processing steps.</p>
-<dl class="function">
-<dt id="drizzlepac.astrodrizzle.AstroDrizzle">
-<tt class="descclassname">drizzlepac.astrodrizzle.</tt><tt class="descname">AstroDrizzle</tt><big>(</big><em>input=None</em>, <em>mdriztab=False</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="Permalink to this definition">¶</a></dt>
-<dd><p>astrodrizzle Version 1.1.0dev  updated on  23-Aug-2012</p>
+<p>A full description of this process can be found
+in the <a class="reference external" href="http://drizzlepac.stsci.edu">DrizzlePac Handbook</a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Output:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">The primary output from this task is the distortion-corrected, cosmic-ray cleaned, and combined image as a FITS file.</td>
+</tr>
+</tbody>
+</table>
+<p>This task requires numerous user-settable parameters to control the primary
+aspects of each of the processing steps.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="drizzlepac.astrodrizzle.AstroDrizzle">
+<tt class="descclassname">drizzlepac.astrodrizzle.</tt><tt class="descname">AstroDrizzle</tt><big>(</big><em>input=None</em>, <em>mdriztab=False</em>, <em>editpars=False</em>, <em>configobj=None</em>, <em>wcsmap=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default Value = &#8216;*flt.fits&#8217;)</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = <tt class="docutils literal"><span class="pre">'*flt.fits'</span></tt>)</p>
 <blockquote>
-<div><blockquote>
-<div><p>The name or names of the input files to be processed, which can be provided in any of the following forms:</p>
+<div><p>The name or names of the input files to be processed, which can be
+provided in any of the following forms:</p>
 <blockquote>
 <div><ul class="simple">
 <li>filename of a single image</li>
-<li>filename of an association (ASN) table</li>
+<li>filename of an association (<tt class="docutils literal"><span class="pre">ASN</span></tt>) table</li>
 <li>wild-card specification for files in directory</li>
 <li>comma-separated list of filenames</li>
-<li>&#8216;&#64;file&#8217; filelist containing list of desired input filenames. The file list needs to be provided as an ASCII text file containing a list of filenames for all input images with one filename on each line of the file. If inverse variance maps (IVM maps) have also been created by the user and are to be used (by specifying &#8216;IVM&#8217; to the parameter final_wht_type), then these are simply provided as a second column in the filelist, with each IVM filename listed on the same line as a second entry, after its corresponding exposure filename.</li>
+<li><tt class="docutils literal"><span class="pre">&#64;file</span></tt> filelist containing list of desired input filenames.
+The file list needs to be provided as an ASCII text file containing a list of filenames for all input images with one filename on each line of the file. If inverse variance maps (IVM maps) have also been created by the user and are to be used (by specifying &#8216;IVM&#8217; to the parameter final_wht_type), then these are simply provided as a second column in the filelist, with each IVM filename listed on the same line as a second entry, after its corresponding exposure filename.</li>
 </ul>
-</div></blockquote>
 </div></blockquote>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">If the user specifies &#8216;IVM&#8217; for the &#8216;final_wht_type&#8217;, but does not provide the names of IVM files, AstroDrizzle will automatically generate the IVM files itself for each input exposure.</p>
+<p class="last">If the user specifies <tt class="docutils literal"><span class="pre">IVM</span></tt> for the <em class="xref py py-obj">final_wht_type</em>,
+but does not provide the names of <tt class="docutils literal"><span class="pre">IVM</span></tt> files, <a class="reference internal" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="drizzlepac.astrodrizzle.AstroDrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></tt></a> will automatically generate the IVM files itself for each input exposure.</p>
 </div>
 </div></blockquote>
-<p><strong id="Output">Output</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="Output">Output</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
-<div><p>The rootname for the output drizzled products. This step can result in the creation of several files, including:</p>
+<div><p>The rootname for the output drizzled products. This step can result
+in the creation of several files, including:</p>
 <blockquote>
 <div><ul class="simple">
-<li>copies of each input image as a FITS image, if workinplace=Yes and/or input images are in GEIS format.</li>
-<li>mask files and coeffs files created by PyDrizzle for use by &#8216;drizzle&#8217;.</li>
+<li>copies of each input image as a <tt class="docutils literal"><span class="pre">FITS</span></tt> image, if <em class="xref py py-obj">workinplace`=`Yes</em>
+and/or input images are in <tt class="docutils literal"><span class="pre">GEIS</span></tt> format.</li>
+<li>mask files and coeffs files created by <em class="xref py py-obj">PyDrizzle</em> for use by <em class="xref py py-obj">drizzle</em>.</li>
 </ul>
 </div></blockquote>
-<p>If an association file has been given as input, the specified filename will be used instead of the product name specified in the ASN file. Similarly, if a single exposure is provided, the rootname of the single exposure will be used for the output product instead of relying on the input rootname. If no value is provided when a filelist or wild-card specification is given as input, then a rootname of &#8216;final&#8217; will be used for the output file name.</p>
+<p>If an association file has been given as input, the specified filename
+will be used instead of the product name specified in the ASN file.
+Similarly, if a single exposure is provided, the rootname of the
+single exposure will be used for the output product instead of relying
+on the input rootname. If no value is provided when a filelist or
+wild-card specification is given as input, then a rootname of &#8216;final&#8217;
+will be used for the output file name.</p>
 </div></blockquote>
-<p><strong id="mdriztab :">mdriztab :</strong> :</p>
+<p><strong id="mdriztab">mdriztab</strong> : bool (Default = False)</p>
 <blockquote>
-<div><p>This button will immediately update the parameter values in the TEAL GUI based on those provided by the MDRIZTAB reference table referenced in the first input image. This requires that the MDRIZTAB reference file be available locally.</p>
+<div><p>This button will immediately update the parameter values in the TEAL
+GUI based on those provided by the <tt class="docutils literal"><span class="pre">MDRIZTAB</span></tt> reference table referenced in
+the first input image. This requires that the <tt class="docutils literal"><span class="pre">MDRIZTAB</span></tt> reference file
+be available locally.</p>
 </div></blockquote>
-<p><strong id="runfile">runfile</strong> : str (Default Value = &#8216;astrodrizzle.log&#8217;)</p>
+<p><strong id="runfile">runfile</strong> : str (Default = &#8216;astrodrizzle.log&#8217;)</p>
 <blockquote>
-<div><p>This log file will contain all the output messages generated during processing, including full details of any errors/exceptions. These messages will be a super-set of those reported to the screen during processing.</p>
+<div><p>This log file will contain all the output messages generated during
+processing, including full details of any errors/exceptions.
+These messages will be a super-set of those reported to the screen
+during processing.</p>
 </div></blockquote>
-<p><strong id="updatewcs">updatewcs</strong> : bool  (Default Value = No)</p>
+<p><strong id="updatewcs">updatewcs</strong> : bool  (Default = No)</p>
 <blockquote>
-<div><p>This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should be set to &#8216;No&#8217; (False) when the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written by this update.</p>
+<div><p>This parameter specifies whether the WCS keywords are to be updated by
+running makewcs on the input data, or left alone. The update performed
+by makewcs not only recomputes the WCS based on the currently
+used <tt class="docutils literal"><span class="pre">IDCTAB</span></tt>, but also populates the header with
+the <tt class="docutils literal"><span class="pre">SIP</span></tt> coefficients. For <tt class="docutils literal"><span class="pre">ACS/WFC</span></tt> images, the time-dependence
+correction will also be applied to the <tt class="docutils literal"><span class="pre">WCS</span></tt> and <tt class="docutils literal"><span class="pre">SIP</span></tt> keywords.
+This parameter should be set to &#8216;No&#8217; (<em class="xref py py-obj">False</em>) when the WCS keywords
+have been carefully set by some other method, and need to be passed
+through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written
+by this update.</p>
 </div></blockquote>
-<p><strong id="wcskey">wcskey</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="wcskey">wcskey</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
-<div><p>This parameter corresponds to the <em>key</em> for the WCS being selected by the user. It allows the user to select which WCS solution should be used for processing the images when multiple WCS&#8217;s have been updated in each input image header using the Paper I Multiple WCS FITS standard.</p>
+<div><p>This parameter corresponds to the <em>key</em> for the WCS being selected by
+the user. It allows the user to select which WCS solution should be used
+for processing the images when multiple WCS&#8217;s have been updated in each
+input image header using the Paper I Multiple WCS FITS standard.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">Use of this parameter should be done only when all input images have been updated using the Paper I FITS standard for specifying Multiple WCS&#8217;s in each image header. This parameter assumes that the same WCS letter corresponds to WCS&#8217;s that have been updated in a consistent manner. For example, all input images have been updated to be consistent with their distortion model in the WCS&#8217;s with key of <em>A</em>.</p>
+<p class="last">Use of this parameter should be done only when all input
+images have been updated using the Paper I FITS standard for
+specifying Multiple WCS&#8217;s in each image header. This parameter assumes
+that the same WCS letter corresponds to WCS&#8217;s that have been updated
+in a consistent manner. For example, all input images have been
+updated to be consistent with their distortion model in the WCS&#8217;s
+with key of <em>A</em>.</p>
 </div>
 </div></blockquote>
-<p><strong id="proc_unit">proc_unit</strong> : str (Default Value = &#8216;native&#8217;)</p>
+<p><strong id="proc_unit">proc_unit</strong> : str (Default = &#8216;native&#8217;)</p>
 <blockquote>
-<div><p>The units to be used for the final output drizzled product. Valid values and definitions are:</p>
-<div class="highlight-python"><pre>* **native**: Output DRZ product and input 'values' given in the native units of the input image.
-* **electrons**: Output DRZ product and input 'values' given in units of electrons. </pre>
-</div>
+<div><p>The units to be used for the final output drizzled product. Valid
+values and definitions are:</p>
+<ul class="simple">
+<li><strong>native</strong>: Output DRZ product and input &#8216;values&#8217; given in the native
+units of the input image.</li>
+<li><strong>electrons</strong>: Output DRZ product and input &#8216;values&#8217; given in units of
+electrons.</li>
+</ul>
 </div></blockquote>
-<p><strong id="coeffs">coeffs</strong> : bool (Default Value = Yes)</p>
+<p><strong id="coeffs">coeffs</strong> : bool (Default = Yes)</p>
 <blockquote>
-<div><p>This parameter determines whether or not to use the coefficients stored in the each input image header. If turned off, no distortion coefficients will be applied during the coordinate transformations.</p>
+<div><p>This parameter determines whether or not to use the coefficients stored
+in the each input image header. If turned off, no distortion coefficients
+will be applied during the coordinate transformations.</p>
 </div></blockquote>
-<p><strong id="context">context</strong> : bool (Default Value = Yes)</p>
+<p><strong id="context">context</strong> : bool (Default = Yes)</p>
 <blockquote>
-<div><p>This parameter specifies whether or not to create a context image during the final drizzle combination. The context image contains the information regarding which image(s) contributed to each pixel encoded as a bit-mask. More information on context images can be obtained from the ACS Data Handbook.</p>
+<div><p>This parameter specifies whether or not to create a context image during
+the final drizzle combination. The context image contains the information
+regarding which image(s) contributed to each pixel encoded as a bit-mask.
+More information on context images can be obtained from the
+ACS Data Handbook.</p>
 </div></blockquote>
-<p><strong id="group">group</strong> : int (Default Value = None)</p>
+<p><strong id="group">group</strong> : int (Default = None)</p>
 <blockquote>
-<div><p>This parameter establishes whether or not a single FITS extension, or group will be drizzled. If an extension is provided, then only that chip will be drizzled onto the output frame. Either a FITS extension number, a GEIS group number (such as &#8216;1&#8217;), or a FITS extension name (such as &#8216;sci,1&#8217;) may be specified.</p>
+<div><p>This parameter establishes whether or not a single FITS extension,
+or group will be drizzled. If an extension is provided, then only
+that chip will be drizzled onto the output frame. Either a FITS extension
+number, a GEIS group number (such as &#8216;1&#8217;), or a FITS extension name
+(such as &#8216;sci,1&#8217;) may be specified.</p>
 </div></blockquote>
-<p><strong id="build">build</strong> : bool (Default Value = No)</p>
+<p><strong id="build">build</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>When this parameter is set to &#8216;Yes&#8217; (True), AstroDrizzle will combine the separate &#8216;drizzle&#8217; output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to &#8216;No&#8217; (False), a separate simple FITS file will be created for each aforementioned extension.</p>
 </div></blockquote>
-<p><strong id="crbit">crbit</strong> : int (Default Value = 4096)</p>
+<p><strong id="crbit">crbit</strong> : int (Default = 4096)</p>
 <blockquote>
 <div><p>This parameter sets the bit value for CR identification in the DQ array.</p>
 </div></blockquote>
-<p><strong id="stepsize">stepsize</strong> : int (Default Value = 10)</p>
+<p><strong id="stepsize">stepsize</strong> : int (Default = 10)</p>
 <blockquote>
 <div><p>This parameter controls the internal grid of points used in the coordinate transformation from the input image to the output frame. The default value of 10 indicates that every 10th pixel will be transformed using the full WCS-based transformation. All remaining pixels will then be transformed using bilinear interpolation based on those pixels (i.e. every 10th pixel in the case of the default parameter setting) that were fully transformed.</p>
 </div></blockquote>
-<p><strong id="resetbits">resetbits</strong> : int (Default Value = 4096)</p>
+<p><strong id="resetbits">resetbits</strong> : int (Default = 4096)</p>
 <blockquote>
 <div><p>This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the &#8216;updatewcs&#8217; parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).</p>
 </div></blockquote>
-<p><strong id="num_cores">num_cores</strong> : int (Default Value = None)</p>
+<p><strong id="num_cores: int (Default = None)">num_cores: int (Default = None)</strong> :</p>
 <blockquote>
 <div><p>This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing.</p>
 </div></blockquote>
-<p><strong id="in_memory">in_memory</strong> : bool (Default Value = False)</p>
+<p><strong id="in_memory: bool (Default = False)">in_memory: bool (Default = False)</strong> :</p>
 <blockquote>
-<div><p>This parameter sets whether or not to keep all intermediate products in memory when processing. This includes all single drizzle products (single_sci and single_wht), median image, blot images, and crmask images.  The use of this option will therefore require significantly more memory than usual to process the data while reducing the overall processing time by eliminating most of the disk activity. <strong>Only</strong> the products of the final drizzle step will get written out when this parameter gets specified as &#8216;True&#8217;.</p>
+<div><p>This parameter sets whether or not to keep all intermediate products in memory when processing. This includes all single drizzle products (<em>single_sci and *single_wht), median image, blot images, and crmask images.  The use of this option will therefore require significantly more memory than usual to process the data while reducing the overall processing time by eliminating most of the disk activity. *Only</em> the products of the final drizzle step will get written out when this parameter gets specified as &#8216;True&#8217;.</p>
 </div></blockquote>
 <p><strong id="*STATE OF INPUT FILES*">*STATE OF INPUT FILES*</strong> :</p>
-<p><strong id="restore: bool (Default Value = No)">restore: bool (Default Value = No)</strong> :</p>
+<p><strong id="restore: bool (Default = No)">restore: bool (Default = No)</strong> :</p>
 <blockquote>
 <div><p>Setting this to &#8216;Yes&#8217; (True) directs AstroDrizzle to copy the input images from the &#8216;OrIg_files&#8217; sub-directory and use them for processing, if they had been archived by AstroDrizzle using the &#8216;preserve&#8217; or &#8216;overwrite&#8217; parameters already.  If set to &#8216;Yes&#8217; and the input files had not been archived already, it will simply ignore this and work with the current input images.</p>
 </div></blockquote>
-<p><strong id="preserve">preserve</strong> : bool (Default Value = Yes)</p>
+<p><strong id="preserve">preserve</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Copy input files to archive directory, if not already archived. This parameter determines whether or not astrodrizzle creates a copy of the input file in a sub-directory called &#8216;OrIg_files&#8217;. If a copy already exists in this directory, then the previously existing version will NOT be overwritten.</p>
 </div></blockquote>
-<p><strong id="overwrite">overwrite</strong> : bool (Default Value = No)</p>
+<p><strong id="overwrite">overwrite</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Copy input files into archive, overwriting older files if required? This parameter will cause astrodrizzle to make a copy of each input file in the &#8216;OrIg_files&#8217; directory regardless of whether a previous copy existed or not, and will overwrite any previous copy should it be present.</p>
 </div></blockquote>
-<p><strong id="clean">clean</strong> : bool (Default Value = No)</p>
+<p><strong id="clean">clean</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to &#8216;Yes&#8217; (True). The affected files include the coefficient and static mask files created by PyDrizzle, in addition to other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. However, when running AstroDrizzle routinely, or on a small disk drive, these files can be removed to conserve space.</p>
 </div></blockquote>
 <p><strong id="*STEP 1: STATIC MASK*">*STEP 1: STATIC MASK*</strong> :</p>
-<p><strong id="static">static</strong> : bool (Default Value = Yes)</p>
+<p><strong id="static">static</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Create a static bad-pixel mask from the data?  This mask flags all pixels that deviate by more than a value of &#8216;static_sig&#8217; sigma below the image median, since these pixels are typically the result of bad pixel oversubtraction in the dark image during calibration.</p>
 </div></blockquote>
-<p><strong id="static_sig">static_sig</strong> : float (Default Value = 4.0)</p>
+<p><strong id="static_sig">static_sig</strong> : float (Default = 4.0)</p>
 <blockquote>
 <div><p>The number of sigma below the RMS to use as the clipping limit for creating the static mask.</p>
 </div></blockquote>
 <p><strong id="*STEP 2: SKY SUBTRACTION*">*STEP 2: SKY SUBTRACTION*</strong> :</p>
-<p><strong id="skysub">skysub</strong> : bool (Default Value = Yes)</p>
+<p><strong id="skymethod">skymethod</strong> : {&#8216;localmin&#8217;, &#8216;globalmin+match&#8217;, &#8216;globalmin&#8217;, &#8216;match&#8217;} (Default = &#8216;localmin&#8217;)</p>
+<blockquote>
+<div><p>Select the algorithm for sky computation:</p>
+<ul>
+<li><p class="first"><strong>&#8216;localmin&#8217;</strong>: compute a common sky for all members of <em>an exposure</em>.
+For a typical use, it will compute
+sky values for each chip/image extension (marked for sky
+subtraction in the <a class="reference external" href="http://docs.python.org/library/functions.html#input" title="(in Python v2.7)"><tt class="xref py py-obj docutils literal"><span class="pre">input</span></tt></a> parameter) in an input image,
+and it will subtract the previously found minimum sky value
+from all chips (marked for sky subtraction) in that image.
+This process is repeated for each input image.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This setting is recommended when regions of overlap between images
+are dominated by &#8220;pure&#8221; sky (as opposite to extended, diffuse
+sources).</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is similar to the &#8220;skysub&#8221; algorithm used in previous
+versions of astrodrizzle.</p>
+</div>
+</li>
+<li><p class="first"><strong>&#8216;globalmin&#8217;</strong>: compute a common sky value for all members of
+<strong>all</strong> &#8220;skylines&#8221;. It will compute
+sky values for each chip/image extension (marked for sky
+subtraction in the <tt class="xref py py-attr docutils literal"><span class="pre">input</span></tt> parameter) in <strong>all</strong> input
+images, find the minimum sky value, and then it will
+subtract the <strong>same</strong> minimum sky value from <strong>all</strong> chips
+(marked for sky subtraction) in <strong>all</strong> images. This method <em>may</em>
+useful when input images already have matched background values.</p>
+</li>
+<li><p class="first"><strong>&#8216;match&#8217;</strong>: compute differences in sky values between images
+in common (pair-wise) sky regions. In this case computed sky values
+will be relative (delta) to the sky computed in one of the
+input images whose sky value will be set to (reported to be) 0.
+This setting will &#8220;equalize&#8221; sky values between the images in
+large mosaics. However, this method is not recommended when used
+in conjunction with <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a>
+because it computes relative sky values while <em class="xref py py-obj">astrodrizzle</em> needs
+&#8220;measured&#8221; sky values for median image generation and CR rejection.</p>
+</li>
+<li><p class="first"><strong>&#8216;globalmin+match&#8217;</strong>: first find a minimum &#8220;global&#8221; sky value
+in all input images and then use <strong>&#8216;match&#8217;</strong> method to
+equalize sky values between images.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is the <em>recommended</em> setting for images
+containing diffuse sources (e.g., galaxies, nebulae)
+covering significant parts of the image.</p>
+</div>
+</li>
+</ul>
+</div></blockquote>
+<p><strong id="skysub">skysub</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Turn on or off sky subtraction on the input data.</p>
 </div></blockquote>
-<p><strong id="skywidth">skywidth</strong> : float (Default Value = 0.3)</p>
+<p><strong id="skywidth">skywidth</strong> : float (Default = 0.3)</p>
 <blockquote>
 <div><p>Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.</p>
 </div></blockquote>
-<p><strong id="skystat">skystat</strong> : {&#8216;median&#8217;, &#8216;mode&#8217;, &#8216;mean&#8217;} (Default Value = &#8216;median&#8217;)</p>
+<p><strong id="skystat">skystat</strong> : {&#8216;median&#8217;, &#8216;mode&#8217;, &#8216;mean&#8217;} (Default = &#8216;median&#8217;)</p>
 <blockquote>
 <div><p>Statistical method for determining the sky value from the image pixel values.</p>
 </div></blockquote>
-<p><strong id="skylower">skylower</strong> : float (Default Value = None)</p>
+<p><strong id="skylower">skylower</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Lower limit of usable pixel values for computing the sky. This value should be specified in the units of the input image(s).</p>
 </div></blockquote>
-<p><strong id="skyupper">skyupper</strong> : float (Default Value = None)</p>
+<p><strong id="skyupper">skyupper</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Upper limit of usable pixel values for computing the sky. This value should be specified in the units of the input image(s).</p>
 </div></blockquote>
-<p><strong id="skyclip">skyclip</strong> : int (Default Value = 5)</p>
+<p><strong id="skyclip">skyclip</strong> : int (Default = 5)</p>
 <blockquote>
 <div><p>Number of clipping iterations to use when computing the sky value.</p>
 </div></blockquote>
-<p><strong id="skylsigma">skylsigma</strong> : float (Default Value = 4.0)</p>
+<p><strong id="skylsigma">skylsigma</strong> : float (Default = 4.0)</p>
 <blockquote>
 <div><p>Lower clipping limit, in sigma, used when computing the sky value.</p>
 </div></blockquote>
-<p><strong id="skyusigma">skyusigma</strong> : float (Default Value = 4.0)</p>
+<p><strong id="skyusigma">skyusigma</strong> : float (Default = 4.0)</p>
 <blockquote>
 <div><p>Upper clipping limit, in sigma, used when computing the sky value.</p>
 </div></blockquote>
-<p><strong id="skyuser">skyuser</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="skymask_cat">skymask_cat</strong> : str (Default = &#8216;&#8217;)</p>
+<blockquote>
+<div><p>File name of a catalog file listing user masks to be used with images.</p>
+</div></blockquote>
+<p><strong id="use_static">use_static</strong> : bool (Default = True)</p>
+<blockquote>
+<div><p>Specifies whether or not to use static mask to exclude masked image pixels from sky computations.</p>
+</div></blockquote>
+<p><strong id="sky_bits">sky_bits</strong> : int, None (Default = 0)</p>
+<blockquote>
+<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that
+should be considered &#8220;good&#8221; when building masks for sky computations.
+For example, if pixels in the DQ array can be combinations of 1, 2, 4,
+and 8 flags and one wants to consider DQ &#8220;defects&#8221; having flags 2 and 4
+as being acceptable for sky computations, then <em class="xref py py-obj">sky_bits</em> should be set
+to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a
+good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc.
+will be flagged as a &#8220;bad&#8221; pixel.</p>
+<div class="line-block">
+<div class="line">Default value (0) will make <em>all</em> non-zero pixels in the DQ mask to
+be considered &#8220;bad&#8221; pixels, and the corresponding image pixels will
+not be used for sky computations.</div>
+</div>
+<div class="line-block">
+<div class="line">Set <em class="xref py py-obj">sky_bits</em> to <em class="xref py py-obj">None</em> to turn off the use of image&#8217;s DQ array for sky
+computations.</div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">DQ masks (if used), <em>will be</em> combined with user masks specified
+in the input &#64;-file.</p>
+</div>
+</div></blockquote>
+<p><strong id="skyuser">skyuser</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of header keyword which records the sky value already subtracted from the image by the user.</p>
 </div></blockquote>
-<p><strong id="skyfile">skyfile</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="skyfile">skyfile</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.</p>
 </div></blockquote>
 <p><strong id="*STEP 3: DRIZZLE SEPARATE IMAGES*">*STEP 3: DRIZZLE SEPARATE IMAGES*</strong> :</p>
-<p><strong id="driz_separate">driz_separate</strong> : bool (Default Value = Yes)</p>
+<p><strong id="driz_separate">driz_separate</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.</p>
 </div></blockquote>
-<p><strong id="driz_sep_kernel">driz_sep_kernel</strong> : str {&#8216;square&#8217;,&#8217;point&#8217;,&#8217;gaussian&#8217;,&#8217;turbo&#8217;,&#8217;tophat&#8217;,&#8217;lanczos3&#8217;} (Default Value = &#8216;turbo&#8217;)</p>
+<p><strong id="driz_sep_kernel">driz_sep_kernel</strong> : str {&#8216;square&#8217;,&#8217;point&#8217;,&#8217;gaussian&#8217;,&#8217;turbo&#8217;,&#8217;tophat&#8217;,&#8217;lanczos3&#8217;} (Default = &#8216;turbo&#8217;)</p>
 <blockquote>
 <div><p>Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are:</p>
 <blockquote>
@@ -311,104 +462,104 @@ aspects of each of the processing steps.</p>
 </div></blockquote>
 <p>The default for this step is <strong>&#8220;turbo&#8221;</strong> since it is much faster than <strong>&#8220;square&#8221;</strong>, and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task.</p>
 </div></blockquote>
-<p><strong id="driz_sep_wt_scl">driz_sep_wt_scl</strong> : float (Default Value = exptime)</p>
+<p><strong id="driz_sep_wt_scl">driz_sep_wt_scl</strong> : float (Default = exptime)</p>
 <blockquote>
 <div><p>This parameter specifies the weighting factor for input image. If driz_sep_wt_scl=exptime, then the scaling value will be set equal to the exposure time found in the image header. The use of the Default Value is recommended for producing optimal behavior for most scenarious. It is possible to set wt_scl=expsq for weighting by the square of the exposure time, which is optimal for read-noise dominated images.</p>
 </div></blockquote>
-<p><strong id="driz_sep_pixfrac">driz_sep_pixfrac</strong> : float (Default Value = 1.0)</p>
+<p><strong id="driz_sep_pixfrac">driz_sep_pixfrac</strong> : float (Default = 1.0)</p>
 <blockquote>
 <div><p>Fraction by which input pixels are &#8220;shrunk&#8221; before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or &#8220;dropsize&#8221;, of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel parameter will be reset to &#8216;point&#8217; for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the &#8216;drizzle&#8217; task.</p>
 </div></blockquote>
-<p><strong id="driz_sep_fillval">driz_sep_fillval</strong> : int (Default Value = None)</p>
+<p><strong id="driz_sep_fillval">driz_sep_fillval</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the &#8216;fillval&#8217; parameter of the &#8216;drizzle&#8217; task. If the default of &#8216;None&#8217; is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.</p>
 </div></blockquote>
-<p><strong id="driz_sep_bits">driz_sep_bits</strong> : int (Default Value = 0)</p>
+<p><strong id="driz_sep_bits">driz_sep_bits</strong> : int (Default = 0)</p>
 <blockquote>
 <div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8216;good&#8217; when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.</p>
 </div></blockquote>
 <p><strong id="*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*">*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*</strong> :</p>
-<p><strong id="driz_sep_wcs">driz_sep_wcs</strong> : bool (Default Value = No)</p>
+<p><strong id="driz_sep_wcs">driz_sep_wcs</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Define custom WCS for seperate output images?</p>
 </div></blockquote>
-<p><strong id="driz_sep_refimage">driz_sep_refimage</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="driz_sep_refimage">driz_sep_refimage</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Reference image from which a WCS solution can be obtained.</p>
 </div></blockquote>
-<p><strong id="driz_sep_rot">driz_sep_rot</strong> : float (Default Value = None)</p>
+<p><strong id="driz_sep_rot">driz_sep_rot</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Position Angle of output image&#8217;s Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of None specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.</p>
 </div></blockquote>
-<p><strong id="driz_sep_scale">driz_sep_scale</strong> : float (Default Value = None)</p>
+<p><strong id="driz_sep_scale">driz_sep_scale</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of None specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.</p>
 </div></blockquote>
-<p><strong id="driz_sep_outnx">driz_sep_outnx</strong> : int (Default Value = None)</p>
+<p><strong id="driz_sep_outnx">driz_sep_outnx</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Size, in pixels, of the X axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.</p>
 </div></blockquote>
-<p><strong id="driz_sep_outny">driz_sep_outny</strong> : int (Default Value = None)</p>
+<p><strong id="driz_sep_outny">driz_sep_outny</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Size, in pixels, of the Y axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.</p>
 </div></blockquote>
-<p><strong id="driz_sep_ra">driz_sep_ra</strong> : float (Default Value = None)</p>
+<p><strong id="driz_sep_ra">driz_sep_ra</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Right ascension (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.</p>
 </div></blockquote>
-<p><strong id="driz_sep_dec">driz_sep_dec</strong> : float (Default Value = None)</p>
+<p><strong id="driz_sep_dec">driz_sep_dec</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.</p>
 </div></blockquote>
 <p><strong id="*STEP 4: CREATE MEDIAN IMAGE*">*STEP 4: CREATE MEDIAN IMAGE*</strong> :</p>
-<p><strong id="median">median</strong> : bool (Default Value = Yes)</p>
+<p><strong id="median">median</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not to create a median image. This median image will be used as the comparison &#8216;truth&#8217; image :in the cosmic ray rejection step.</p>
 </div></blockquote>
-<p><strong id="median_newmasks">median_newmasks</strong> : bool (Default Value = Yes)</p>
+<p><strong id="median_newmasks">median_newmasks</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not new mask files will be created when the median image is created. These masks are generated from weight files previously produced by the &#8220;driz_separate&#8221; step, and contain all bad pixel information used to exclude pixels when calculating the median. Generally this step should be set to &#8216;Yes&#8217; (True), unless for some reason, it is desirable to include bad pixel information when generating the median.</p>
 </div></blockquote>
-<p><strong id="combine_maskpt">combine_maskpt</strong> : float (Default Value = 0.3)</p>
+<p><strong id="combine_maskpt">combine_maskpt</strong> : float (Default = 0.3)</p>
 <blockquote>
 <div><p>Percentage of weight image values, below which the are flagged.</p>
 </div></blockquote>
-<p><strong id="combine_type">combine_type</strong> : str {&#8216;median&#8217;, &#8216;mean&#8217;, &#8216;minmed&#8217;, &#8216;imedian&#8217;, &#8216;imean&#8217;, &#8216;iminmed&#8217;} (Default Value = &#8216;minmed&#8217;)</p>
+<p><strong id="combine_type">combine_type</strong> : str {&#8216;median&#8217;, &#8216;mean&#8217;, &#8216;minmed&#8217;, &#8216;imedian&#8217;, &#8216;imean&#8217;, &#8216;iminmed&#8217;} (Default = &#8216;minmed&#8217;)</p>
 <blockquote>
 <div><p>This parameter defines the method that will be used to create the median image.  The &#8216;mean&#8217; and &#8216;median&#8217; options set the calculation type when running &#8216;numcombine&#8217;, a numpy method for median-combining arrays to create the median image. The &#8220;minmed&#8221; option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, &#8220;minmed&#8221; will choose the minimum value. The sigma thresholds for this decision are provided by the &#8220;combine_nsigma&#8221; parameter. However, as the &#8220;combine_nsigma&#8221; parameter does not adjust for the larger probability of a single &#8220;nsigma&#8221; event with a greater number of images, &#8220;minmed&#8221; will bias the comparison image low for a large number of images. &#8220;minmed&#8221; is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images.</p>
 <p>A value of &#8216;median&#8217; is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the &#8220;combine_nhigh&#8221; parameter to a value of 1 when using &#8220;median&#8221; with four images, and consider raising this parameter&#8217;s value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus &#8220;combine_nhigh&#8221; odd when using &#8220;median&#8221;.</p>
 <p>The options starting with &#8216;i&#8217;, such as &#8216;imedian&#8217;, works just like the normal median operation except when dealing with a pixel were all the values are flagged as &#8216;bad&#8217;.  In this case, the &#8216;i&#8217; functions return the last pixel in the stack as if it were good.  This will prevent saturated pixels in the image from leaving holes in the middle of the stars, for example.</p>
 </div></blockquote>
-<p><strong id="combine_nsigma">combine_nsigma</strong> : float (Default Value = &#8216;4 3&#8217;)</p>
+<p><strong id="combine_nsigma">combine_nsigma</strong> : float (Default = &#8216;4 3&#8217;)</p>
 <blockquote>
 <div><p>This parameter defines the sigmas used for accepting minimum values, rather than median values, when using the &#8216;minmed&#8217; combination method. If two values are specified the first value will be used in the initial choice between median and minimum, while the second value will be used in the &#8220;growing&#8221; step to reject additional pixels around those identified in the first step. If only one value is specified, then it is used in both steps.</p>
 </div></blockquote>
-<p><strong id="combine_nlow">combine_nlow</strong> : int (Default Value = 0)</p>
+<p><strong id="combine_nlow">combine_nlow</strong> : int (Default = 0)</p>
 <blockquote>
 <div><p>This parameter sets the number of low value pixels to reject automatically during image combination.</p>
 </div></blockquote>
-<p><strong id="combine_nhigh">combine_nhigh</strong> : int (Default Value = 0)</p>
+<p><strong id="combine_nhigh">combine_nhigh</strong> : int (Default = 0)</p>
 <blockquote>
 <div><p>This parameter sets the number of high value pixels to reject automatically during image combination.</p>
 </div></blockquote>
-<p><strong id="combine_lthresh">combine_lthresh</strong> : float (Default Value = None)</p>
+<p><strong id="combine_lthresh">combine_lthresh</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Sets the lower threshold for clipping input pixel values during image combination. This value gets passed directly to &#8216;imcombine&#8217; for use in creating the median image. If the parameter is set to &#8220;None&#8221;, no thresholds will be imposed.</p>
 </div></blockquote>
-<p><strong id="combine_hthresh">combine_hthresh</strong> : float (Default Value = None)</p>
+<p><strong id="combine_hthresh">combine_hthresh</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to &#8216;imcombine&#8217; for use in creating the median image. If the parameter is set to &#8220;None&#8221;, no thresholds will be imposed.</p>
 </div></blockquote>
-<p><strong id="combine_grow">combine_grow</strong> : int (Default Value = 1)</p>
+<p><strong id="combine_grow">combine_grow</strong> : int (Default = 1)</p>
 <blockquote>
 <div><p>Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the &#8216;grow&#8217; parameter in &#8216;imcombine&#8217; for use in creating the median image.</p>
 </div></blockquote>
 <p><strong id="*STEP 5: BLOT BACK THE MEDIAN IMAGE*">*STEP 5: BLOT BACK THE MEDIAN IMAGE*</strong> :</p>
-<p><strong id="blot">blot</strong> : bool (Default Value = Yes)</p>
+<p><strong id="blot">blot</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Perform the blot operation on the median image? If set to &#8216;Yes&#8217; (True), the output will be median smoothed images that match each input chips location, and will be used in the cosmic ray rejection step.</p>
 </div></blockquote>
-<p><strong id="blot_interp">blot_interp</strong> : str{&#8216;nearest&#8217;, &#8216;linear&#8217;, &#8216;poly3&#8217;, &#8216;poly5&#8217;, &#8216;sinc&#8217;} (Default Value = &#8216;poly5&#8217;)</p>
+<p><strong id="blot_interp">blot_interp</strong> : str{&#8216;nearest&#8217;, &#8216;linear&#8217;, &#8216;poly3&#8217;, &#8216;poly5&#8217;, &#8216;sinc&#8217;} (Default = &#8216;poly5&#8217;)</p>
 <blockquote>
 <div><p>This parameter defines the method of interpolation to be used when blotting drizzled images back to their original WCS solution. Valid options include:</p>
 <blockquote>
@@ -423,49 +574,49 @@ aspects of each of the processing steps.</p>
 <p>The &#8216;poly5&#8217; interpolation method has been chosen as the default because it is relatively fast and accurate.</p>
 <p>If &#8216;sinc&#8217; interpolation is selected, then the value of the parameter for &#8216;blot_sinscl&#8217; will be used to specify the size of the sinc interpolation kernel.</p>
 </div></blockquote>
-<p><strong id="blot_sinscl">blot_sinscl</strong> : float (Default Value = 1.0)</p>
+<p><strong id="blot_sinscl">blot_sinscl</strong> : float (Default = 1.0)</p>
 <blockquote>
 <div><p>Size of the sinc interpolation kernel in pixels.</p>
 </div></blockquote>
-<p><strong id="blot_addsky">blot_addsky</strong> : bool (Default Value = Yes)</p>
+<p><strong id="blot_addsky">blot_addsky</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Add back a sky value using the MDRIZSKY value from the header.  If &#8216;Yes&#8217; (True), the blot_skyval parameter is ignored.</p>
 </div></blockquote>
-<p><strong id="blot_skyval">blot_skyval</strong> : float (Default Value = 0.0)</p>
+<p><strong id="blot_skyval">blot_skyval</strong> : float (Default = 0.0)</p>
 <blockquote>
 <div><p>This is a user-specified custom sky value to be added to the blot image.  This is only used if blot_addsky is &#8216;No&#8217; (False).</p>
 </div></blockquote>
 <p><strong id="*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*">*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*</strong> :</p>
-<p><strong id="driz_cr">driz_cr</strong> : bool (Default Value = Yes)</p>
+<p><strong id="driz_cr">driz_cr</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Perform cosmic-ray detection? If set to &#8216;Yes&#8217; (True), cosmic-rays will be detected and used to create cosmic-ray masks based on the algorithms from &#8216;deriv&#8217; and &#8216;driz_cr&#8217;.</p>
 </div></blockquote>
-<p><strong id="driz_cr_corr">driz_cr_corr</strong> : bool (Default Value = No)</p>
+<p><strong id="driz_cr_corr">driz_cr_corr</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Create a cosmic-ray cleaned input image? If set to &#8216;Yes&#8217; (True), a cosmic-ray cleaned _crclean image will be generated directly from the input image, and a corresponding _crmask file will be written to document detected pixels affected by cosmic-rays.</p>
 </div></blockquote>
-<p><strong id="driz_cr_snr">driz_cr_snr</strong> : list of floats (Default Value = &#8216;3.5 3.0&#8217;)</p>
+<p><strong id="driz_cr_snr">driz_cr_snr</strong> : list of floats (Default = &#8216;3.5 3.0&#8217;)</p>
 <blockquote>
 <div><p>The values for this parameter specify the signal-to-noise ratios for the &#8216;driz_cr&#8217; task to be used in detecting cosmic rays. See the help file for &#8216;driz_cr&#8217; for further discussion of this parameter.</p>
 </div></blockquote>
-<p><strong id="driz_cr_grow">driz_cr_grow</strong> : int (Default Value = 1)</p>
+<p><strong id="driz_cr_grow">driz_cr_grow</strong> : int (Default = 1)</p>
 <blockquote>
 <div><p>The radius, in pixels, around each detected cosmic-ray, in which more stringent detection criteria for additional cosmic rays will be used.</p>
 </div></blockquote>
-<p><strong id="driz_cr_ctegrow">driz_cr_ctegrow</strong> : int (Default Value = 0)</p>
+<p><strong id="driz_cr_ctegrow">driz_cr_ctegrow</strong> : int (Default = 0)</p>
 <blockquote>
 <div><p>Length, in pixels, of the CTE tail that should be masked in the drizzled output.</p>
 </div></blockquote>
-<p><strong id="driz_cr_scale">driz_cr_scale</strong> : str (Default Value = &#8216;1.2 0.7&#8217;)</p>
+<p><strong id="driz_cr_scale">driz_cr_scale</strong> : str (Default = &#8216;1.2 0.7&#8217;)</p>
 <blockquote>
 <div><p>Scaling factor applied to the derivative in &#8216;driz_cr&#8217; when detecting cosmic-rays. See the help file for &#8216;driz_cr&#8217; for further discussion of this parameter.</p>
 </div></blockquote>
 <p><strong id="*STEP 7: DRIZZLE FINAL COMBINED IMAGE*">*STEP 7: DRIZZLE FINAL COMBINED IMAGE*</strong> :</p>
-<p><strong id="driz_combine">driz_combine</strong> : bool (Default Value = Yes)</p>
+<p><strong id="driz_combine">driz_combine</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not to drizzle each input image onto the final output image. This applies the generated cosmic-ray masks to the input images and creates a final, cleaned, distortion-corrected image.</p>
 </div></blockquote>
-<p><strong id="final_wht_type">final_wht_type</strong> : {&#8216;EXP&#8217;, &#8216;ERR&#8217;, &#8216;IVM&#8217;} (Default Value = &#8216;EXP&#8217;)</p>
+<p><strong id="final_wht_type">final_wht_type</strong> : {&#8216;EXP&#8217;, &#8216;ERR&#8217;, &#8216;IVM&#8217;} (Default = &#8216;EXP&#8217;)</p>
 <blockquote>
 <div><p>Specify the type of weighting image to apply with the bad pixel mask</p>
 </div></blockquote>
@@ -477,7 +628,7 @@ aspects of each of the processing steps.</p>
 <li><strong>IVM</strong>: Specifying &#8216;IVM&#8217; allows the user to either supply their own inverse-variance weighting map, or allow AstroDrizzle to generate one automatically on-the-fly during the final drizzle step. This parameter option may be necessary for specific purposes. For example, to create a drizzled weight file for software such as SExtractor, it is expected that a weight image containing all of the background noise sources (sky level, read-noise, dark current, etc), but not the Poisson noise from the objects themselves will be available. The user can create the inverse variance images and then specify their names using the &#8216;input&#8217; parameter for AstroDrizzle to specify an &#8216;&#64;file&#8217;. This would be a single ASCII file containing the list of input calibrated exposure filenames (one per line), with a second column containing the name of the IVM file corresponding to each calibrated exposure. Each IVM file must have the same file format as the input file, and if provided as multi-extension FITS files (e.g., ACS or STIS data) then the IVM extension must have the EXTNAME of &#8216;IVM&#8217;. If no IVM files are specified on input, then AstroDrizzle will rely on the flat-field reference file and computed dark value from the image header to automatically generate an IVM file specific to each exposure.</li>
 </ul>
 </div></blockquote>
-<p><strong id="final_kernel">final_kernel</strong> : {&#8216;square&#8217;,&#8217;point&#8217;,&#8217;gaussian&#8217;,&#8217;turbo&#8217;,&#8217;tophat&#8217;,&#8217;lanczos3&#8217;} (Default Value = &#8216;square&#8217;)</p>
+<p><strong id="final_kernel">final_kernel</strong> : {&#8216;square&#8217;,&#8217;point&#8217;,&#8217;gaussian&#8217;,&#8217;turbo&#8217;,&#8217;tophat&#8217;,&#8217;lanczos3&#8217;} (Default = &#8216;square&#8217;)</p>
 <blockquote>
 <div><p>This parameter specifies the form of the kernel function used to distribute flux onto the separate output images, for the initial separate drizzling operation only. The value options for this parameter include:</p>
 <blockquote>
@@ -501,48 +652,48 @@ aspects of each of the processing steps.</p>
 </div></blockquote>
 <p>The default for this step is <strong>&#8220;turbo&#8221;</strong> since it is much faster than <strong>&#8220;square&#8221;</strong>, and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task.</p>
 </div></blockquote>
-<p><strong id="final_wt_scl">final_wt_scl</strong> : float (Default Value = exptime)</p>
+<p><strong id="final_wt_scl">final_wt_scl</strong> : float (Default = exptime)</p>
 <blockquote>
 <div><p>This parameter specifies the weighting factor for input image. If final_wt_scl=exptime, then the scaling value will be set equal to the exposure time found in the image header. The use of the Default Value is recommended for producing optimal behavior for most scenarious. It is possible to set wt_scl=expsq for weighting by the square of the exposure time, which is optimal for read-noise dominated images.</p>
 </div></blockquote>
-<p><strong id="final_pixfrac">final_pixfrac</strong> : float (Default Value = 1.0)</p>
+<p><strong id="final_pixfrac">final_pixfrac</strong> : float (Default = 1.0)</p>
 <blockquote>
 <div><p>Fraction by which input pixels are &#8220;shrunk&#8221; before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or &#8220;dropsize&#8221;, of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel parameter will be reset to &#8216;point&#8217; for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the &#8216;drizzle&#8217; task.</p>
 </div></blockquote>
-<p><strong id="final_fillval">final_fillval</strong> : float (Default Value = None)</p>
+<p><strong id="final_fillval">final_fillval</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>The value for this parameter is to be assigned to the output pixels that have zero weight or which do not receive flux from any input pixels during drizzling. This parameter corresponds to the &#8216;fillval&#8217; parameter of the &#8216;drizzle&#8217; task. If the default of &#8216;None&#8217; is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that numerical value.</p>
 </div></blockquote>
-<p><strong id="final_bits">final_bits</strong> : int (Default Value = 0)</p>
+<p><strong id="final_bits">final_bits</strong> : int (Default = 0)</p>
 <blockquote>
 <div><p>Integer sum for all of the DQ bit values from the input image&#8217;s DQ array that should be considered &#8216;good&#8217; when building the weight mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.</p>
 </div></blockquote>
-<p><strong id="final_units">final_units</strong> : str (Default Value = &#8216;cps&#8217;)</p>
+<p><strong id="final_units">final_units</strong> : str (Default = &#8216;cps&#8217;)</p>
 <blockquote>
 <div><p>This parameter determines the units of the final drizzle-combined image, and can either be &#8216;counts&#8217; or &#8216;cps&#8217;. It is passed through to &#8216;drizzle&#8217; in the final drizzle step.</p>
 </div></blockquote>
 <p><strong id="*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*">*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*</strong> :</p>
-<p><strong id="final_wcs">final_wcs</strong> : bool (Default Value = No)</p>
+<p><strong id="final_wcs">final_wcs</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Obtain the WCS solution from a user-designated reference image?</p>
 </div></blockquote>
-<p><strong id="final_refimage">final_refimage</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="final_refimage">final_refimage</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Reference image from which a WCS solution can be obtained.</p>
 </div></blockquote>
-<p><strong id="final_rot">final_rot</strong> : float (Default Value = None)</p>
+<p><strong id="final_rot">final_rot</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Position Angle of output image&#8217;s Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of None specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.</p>
 </div></blockquote>
-<p><strong id="final_scale">final_scale</strong> : float (Default Value = None)</p>
+<p><strong id="final_scale">final_scale</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of None specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.</p>
 </div></blockquote>
-<p><strong id="final_outnx">final_outnx</strong> : int (Default Value = None)</p>
+<p><strong id="final_outnx">final_outnx</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Size, in pixels, of the X axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.</p>
 </div></blockquote>
-<p><strong id="final_outny">final_outny</strong> : int (Default Value = None)</p>
+<p><strong id="final_outny">final_outny</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Size, in pixels, of the Y axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.</p>
 </div></blockquote>
@@ -555,27 +706,27 @@ aspects of each of the processing steps.</p>
 <div><p>Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.</p>
 </div></blockquote>
 <p><strong id="*INSTRUMENT PARAMETERS*">*INSTRUMENT PARAMETERS*</strong> :</p>
-<p><strong id="gain">gain</strong> : float (Default Value = None)</p>
+<p><strong id="gain">gain</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count.  This parameter should not be populated if the &#8216;&#8217;gainkeyword&#8217;&#8217; parameter is in use.</p>
 </div></blockquote>
-<p><strong id="gainkeyword">gainkeyword</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="gainkeyword">gainkeyword</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Keyword used to specify a value, which is used to override the instrument specific default gain values. The value is assumed to be in units of electrons/count. This parameter should not be populated if the &#8216;&#8217;gain&#8217;&#8217; parameter is in use.</p>
 </div></blockquote>
-<p><strong id="rdnoise">rdnoise</strong> : float (Default Value = None)</p>
+<p><strong id="rdnoise">rdnoise</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Value used to override instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the &#8216;&#8217;rnkeyword&#8217;&#8217; parameter is in use.</p>
 </div></blockquote>
-<p><strong id="rnkeyword">rnkeyword</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="rnkeyword">rnkeyword</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Keyword used to specify a value, which is used to override the instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the &#8216;&#8217;rdnoise&#8217;&#8217; parameter is in use.</p>
 </div></blockquote>
-<p><strong id="exptime">exptime</strong> : float (Default Value = None)</p>
+<p><strong id="exptime">exptime</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Value used to override default exposure time image header values.  The value is assumed to be in units of seconds.  This parameter should not be populated if the &#8216;&#8217;expkeyword&#8217;&#8217; parameter is in use.</p>
 </div></blockquote>
-<p><strong id="expkeyword">expkeyword</strong> : str (Default Value = &#8216;&#8217;)</p>
+<p><strong id="expkeyword">expkeyword</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote class="last">
 <div><p>Keyword used to specify a value, which is used to override the default exposure time image header values.  The value is assumed to be in units of seconds. This parameter should not be populated if the &#8216;&#8217;exptime&#8217;&#8217; parameter is in use.</p>
 </div></blockquote>
@@ -586,12 +737,14 @@ aspects of each of the processing steps.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <dl class="last docutils">
-<dt><a class="reference internal" href="drizzle.html#module-drizzlepac.adrizzle" title="drizzlepac.adrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.adrizzle</span></tt></a></dt>
+<dt><a class="reference internal" href="adrizzle.html#module-drizzlepac.adrizzle" title="drizzlepac.adrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.adrizzle</span></tt></a></dt>
 <dd>Apply the &#8216;drizzle&#8217; algorithm to the images</dd>
-<dt><a class="reference internal" href="blot.html#module-drizzlepac.ablot" title="drizzlepac.ablot"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.ablot</span></tt></a></dt>
+<dt><a class="reference internal" href="ablot.html#module-drizzlepac.ablot" title="drizzlepac.ablot"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.ablot</span></tt></a></dt>
 <dd>Apply the &#8216;blot&#8217; algorithm to drizzled images</dd>
 <dt><a class="reference internal" href="sky.html#module-drizzlepac.sky" title="drizzlepac.sky"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.sky</span></tt></a></dt>
 <dd>Perform sky subtraction</dd>
+<dt><tt class="xref py py-obj docutils literal"><span class="pre">skypac.skymatch</span></tt></dt>
+<dd>Sky computation and equalization</dd>
 <dt><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.median</span></tt></dt>
 <dd>Create a median combined image from a set of drizzled images</dd>
 <dt><a class="reference internal" href="drizcr.html#module-drizzlepac.drizCR" title="drizzlepac.drizCR"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.drizCR</span></tt></a></dt>
@@ -599,47 +752,58 @@ aspects of each of the processing steps.</p>
 </dl>
 </div>
 <p class="rubric">Notes</p>
-<p>Something to keep in mind is that the full AstroDrizzle interface will make backup copies of your original files and place them in the <strong>OrIg_files/</strong> directory of you current working directory.</p>
+<p>Something to keep in mind is that the full AstroDrizzle interface will
+make backup copies of your original files and place them in the
+<tt class="docutils literal"><span class="pre">OrIg_files/</span></tt> directory of you current working directory.</p>
 <p class="rubric">Examples</p>
 <p>The astrodrizzle task can be run from either the TEAL GUI or from the command-line
 using PyRAF or Python. These examples illustrate the various syntax options available.</p>
-<p><strong>Example 1:</strong>  Drizzle a set of calibrated (_flt.fits) images using mostly default
-parameters.  Select the &#8216;World Coordinate System&#8217; keyword to the updated solution
-computed from &#8216;tweakreg&#8217;.  When combining images, ignore pixel flags of 64 and 32 in
-the DQ array of the (_flt.fits) images.  Align the final product such that North is
+<p><strong>Example 1:</strong>  Drizzle a set of calibrated (<tt class="docutils literal"><span class="pre">_flt.fits</span></tt>) images using
+mostly default parameters.  Select the &#8216;World Coordinate System&#8217; keyword
+to the updated solution computed from <em class="xref py py-obj">tweakreg</em>.  When combining images,
+ignore pixel flags of 64 and 32 in the DQ array of the (<tt class="docutils literal"><span class="pre">_flt.fits</span></tt>)
+images.  Align the final product such that North is
 up, and set the final pixel scale to 0.05 arcseconds/pixel.</p>
 <ol class="arabic">
 <li><p class="first">Run the task from PyRAF using the TEAL GUI:</p>
-<div class="highlight-python"><pre>--&gt; import drizzlepac
---&gt; epar astrodrizzle</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">epar</span> <span class="n">astrodrizzle</span>
+</pre></div>
 </div>
 </li>
 <li><p class="first">Run the task from PyRAF using the command line.</p>
-<div class="highlight-python"><pre>--&gt; import drizzlepac
---&gt; from drizzlepac import astrodrizzle
---&gt; astrodrizzle.AstroDrizzle('*flt.fits', output='final', wcskey='TWEAK', \
-    driz_sep_bits='64,32', final_wcs=True, final_scale=0.05, final_rot=0)</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">astrodrizzle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">AstroDrizzle</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&#39;final&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">wcskey</span><span class="o">=</span><span class="s">&#39;TWEAK&#39;</span><span class="p">,</span> <span class="n">driz_sep_bits</span><span class="o">=</span><span class="s">&#39;64,32&#39;</span><span class="p">,</span> <span class="n">final_wcs</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">final_scale</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">final_rot</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
 </div>
-<p>Or, run the same task from the PyRAF command line, but specify all parameters in
-a config file named &#8220;myparam.cfg&#8221;:</p>
-<div class="highlight-python"><pre>--&gt; astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')</pre>
+<p>Or, run the same task from the PyRAF command line, but specify all
+parameters in a config file named <tt class="docutils literal"><span class="pre">myparam.cfg</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">AstroDrizzle</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">configobj</span><span class="o">=</span><span class="s">&#39;myparam.cfg&#39;</span><span class="p">)</span>
+</pre></div>
 </div>
 </li>
 <li><p class="first">Run the task directly from Python:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">astrodrizzle</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">AstroDrizzle</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&#39;final&#39;</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="s">&#39;TWEAK&#39;</span><span class="p">,</span> \
-<span class="go">    driz_sep_bits=&#39;64,32&#39;, final_wcs=True, final_scale=0.05, final_rot=0)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">AstroDrizzle</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&#39;final&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">wcskey</span><span class="o">=</span><span class="s">&#39;TWEAK&#39;</span><span class="p">,</span> <span class="n">driz_sep_bits</span><span class="o">=</span><span class="s">&#39;64,32&#39;</span><span class="p">,</span> <span class="n">final_wcs</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">final_scale</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">final_rot</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Help can be accessed via the &#8220;Help&#8221; pulldown menu in the TEAL GUI.  It can also
-be accessed from the PyRAF command-line and saved to a text file:</p>
-<div class="highlight-python"><pre>--&gt; from drizzlepac import astrodrizzle
---&gt; astrodrizzle.help()</pre>
+<li><p class="first">Help can be accessed via the &#8220;Help&#8221; pulldown menu in the TEAL GUI.
+It can also be accessed from the PyRAF command-line and saved
+to a text file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">astrodrizzle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">help</span><span class="p">()</span>
+</pre></div>
 </div>
-<p>or:</p>
-<div class="highlight-python"><pre>--&gt; astrodrizzle.help(file='help.txt')
---&gt; page help.txt</pre>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">astrodrizzle</span><span class="o">.</span><span class="n">help</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="s">&#39;help.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="n">help</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
 </div>
 </li>
 </ol>
@@ -666,14 +830,14 @@ be accessed from the PyRAF command-line and saved to a text file:</p>
           <a href="imageobject.html" title="imageObject Classes"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to drizzlepac’s documentation!"
+          <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

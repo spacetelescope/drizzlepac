@@ -1,100 +1,145 @@
 
 Parameters
 ----------
-input : str or list of str (Default Value = '\*flt.fits')
-    The name or names of the input files to be processed, which can be provided in any of the following forms:
+input : str or list of str (Default = ``'*flt.fits'``)
+    The name or names of the input files to be processed, which can be
+    provided in any of the following forms:
 
       * filename of a single image
-      * filename of an association (ASN) table
+      * filename of an association (``ASN``) table
       * wild-card specification for files in directory
       * comma-separated list of filenames
-      * '\@file' filelist containing list of desired input filenames. The file list needs to be provided as an ASCII text file containing a list of filenames for all input images with one filename on each line of the file. If inverse variance maps (IVM maps) have also been created by the user and are to be used (by specifying 'IVM' to the parameter final_wht_type), then these are simply provided as a second column in the filelist, with each IVM filename listed on the same line as a second entry, after its corresponding exposure filename. 
+      * ``@file`` filelist containing list of desired input filenames.
+        The file list needs to be provided as an ASCII text file containing a list of filenames for all input images with one filename on each line of the file. If inverse variance maps (IVM maps) have also been created by the user and are to be used (by specifying 'IVM' to the parameter final_wht_type), then these are simply provided as a second column in the filelist, with each IVM filename listed on the same line as a second entry, after its corresponding exposure filename.
 
-   .. note:: If the user specifies 'IVM' for the 'final_wht_type', but does not provide the names of IVM files, AstroDrizzle will automatically generate the IVM files itself for each input exposure. 
+    .. note:: If the user specifies ``IVM`` for the `final_wht_type`,
+       but does not provide the names of ``IVM`` files, `AstroDrizzle` will automatically generate the IVM files itself for each input exposure.
 
-Output : str (Default Value = '')
-    The rootname for the output drizzled products. This step can result in the creation of several files, including:
+Output : str (Default = '')
+    The rootname for the output drizzled products. This step can result
+    in the creation of several files, including:
 
-      * copies of each input image as a FITS image, if workinplace=Yes and/or input images are in GEIS format.
-      * mask files and coeffs files created by PyDrizzle for use by 'drizzle'. 
+      * copies of each input image as a ``FITS`` image, if `workinplace`=`Yes`
+        and/or input images are in ``GEIS`` format.
+      * mask files and coeffs files created by `PyDrizzle` for use by `drizzle`.
 
-    If an association file has been given as input, the specified filename will be used instead of the product name specified in the ASN file. Similarly, if a single exposure is provided, the rootname of the single exposure will be used for the output product instead of relying on the input rootname. If no value is provided when a filelist or wild-card specification is given as input, then a rootname of 'final' will be used for the output file name. 
+    If an association file has been given as input, the specified filename
+    will be used instead of the product name specified in the ASN file.
+    Similarly, if a single exposure is provided, the rootname of the
+    single exposure will be used for the output product instead of relying
+    on the input rootname. If no value is provided when a filelist or
+    wild-card specification is given as input, then a rootname of 'final'
+    will be used for the output file name.
 
-mdriztab :
-    This button will immediately update the parameter values in the TEAL GUI based on those provided by the MDRIZTAB reference table referenced in the first input image. This requires that the MDRIZTAB reference file be available locally.
+mdriztab : bool (Default = False)
+    This button will immediately update the parameter values in the TEAL
+    GUI based on those provided by the ``MDRIZTAB`` reference table referenced in
+    the first input image. This requires that the ``MDRIZTAB`` reference file
+    be available locally.
 
-runfile : str (Default Value = 'astrodrizzle.log')
-   This log file will contain all the output messages generated during processing, including full details of any errors/exceptions. These messages will be a super-set of those reported to the screen during processing.
+runfile : str (Default = 'astrodrizzle.log')
+   This log file will contain all the output messages generated during
+   processing, including full details of any errors/exceptions.
+   These messages will be a super-set of those reported to the screen
+   during processing.
 
-updatewcs : bool  (Default Value = No)
-    This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. For ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should be set to 'No' (False) when the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is', otherwise those updates will be over-written by this update. 
+updatewcs : bool  (Default = No)
+    This parameter specifies whether the WCS keywords are to be updated by
+    running makewcs on the input data, or left alone. The update performed
+    by makewcs not only recomputes the WCS based on the currently
+    used ``IDCTAB``, but also populates the header with
+    the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
+    correction will also be applied to the ``WCS`` and ``SIP`` keywords.
+    This parameter should be set to 'No' (`False`) when the WCS keywords
+    have been carefully set by some other method, and need to be passed
+    through to drizzle 'as is', otherwise those updates will be over-written
+    by this update.
 
-wcskey : str (Default Value = '')
-    This parameter corresponds to the *key* for the WCS being selected by the user. It allows the user to select which WCS solution should be used for processing the images when multiple WCS's have been updated in each input image header using the Paper I Multiple WCS FITS standard.      
+wcskey : str (Default = '')
+    This parameter corresponds to the *key* for the WCS being selected by
+    the user. It allows the user to select which WCS solution should be used
+    for processing the images when multiple WCS's have been updated in each
+    input image header using the Paper I Multiple WCS FITS standard.
 
-    .. warning:: Use of this parameter should be done only when all input images have been updated using the Paper I FITS standard for specifying Multiple WCS's in each image header. This parameter assumes that the same WCS letter corresponds to WCS's that have been updated in a consistent manner. For example, all input images have been updated to be consistent with their distortion model in the WCS's with key of *A*. 
-    
-proc_unit : str (Default Value = 'native')
-    The units to be used for the final output drizzled product. Valid values and definitions are::
-     
-    * **native**: Output DRZ product and input 'values' given in the native units of the input image.
-    * **electrons**: Output DRZ product and input 'values' given in units of electrons. 
+    .. warning:: Use of this parameter should be done only when all input
+       images have been updated using the Paper I FITS standard for
+       specifying Multiple WCS's in each image header. This parameter assumes
+       that the same WCS letter corresponds to WCS's that have been updated
+       in a consistent manner. For example, all input images have been
+       updated to be consistent with their distortion model in the WCS's
+       with key of *A*.
+
+proc_unit : str (Default = 'native')
+    The units to be used for the final output drizzled product. Valid
+    values and definitions are:
+
+    * **native**: Output DRZ product and input 'values' given in the native
+      units of the input image.
+    * **electrons**: Output DRZ product and input 'values' given in units of
+      electrons.
+
+coeffs : bool (Default = Yes)
+    This parameter determines whether or not to use the coefficients stored
+    in the each input image header. If turned off, no distortion coefficients
+    will be applied during the coordinate transformations.
+
+context : bool (Default = Yes)
+    This parameter specifies whether or not to create a context image during
+    the final drizzle combination. The context image contains the information
+    regarding which image(s) contributed to each pixel encoded as a bit-mask.
+    More information on context images can be obtained from the
+    ACS Data Handbook.
+
+group : int (Default = None)
+    This parameter establishes whether or not a single FITS extension,
+    or group will be drizzled. If an extension is provided, then only
+    that chip will be drizzled onto the output frame. Either a FITS extension
+    number, a GEIS group number (such as '1'), or a FITS extension name
+    (such as 'sci,1') may be specified.
 
 
-coeffs : bool (Default Value = Yes)
-    This parameter determines whether or not to use the coefficients stored in the each input image header. If turned off, no distortion coefficients will be applied during the coordinate transformations.
-
-
-context : bool (Default Value = Yes)
-    This parameter specifies whether or not to create a context image during the final drizzle combination. The context image contains the information regarding which image(s) contributed to each pixel encoded as a bit-mask. More information on context images can be obtained from the ACS Data Handbook.
-
-
-group : int (Default Value = None)
-    This parameter establishes whether or not a single FITS extension, or group will be drizzled. If an extension is provided, then only that chip will be drizzled onto the output frame. Either a FITS extension number, a GEIS group number (such as '1'), or a FITS extension name (such as 'sci,1') may be specified.
-
-
-build : bool (Default Value = No)
+build : bool (Default = No)
     When this parameter is set to 'Yes' (True), AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'No' (False), a separate simple FITS file will be created for each aforementioned extension.
 
-crbit : int (Default Value = 4096)
+crbit : int (Default = 4096)
     This parameter sets the bit value for CR identification in the DQ array.
 
 
-stepsize : int (Default Value = 10)
+stepsize : int (Default = 10)
     This parameter controls the internal grid of points used in the coordinate transformation from the input image to the output frame. The default value of 10 indicates that every 10th pixel will be transformed using the full WCS-based transformation. All remaining pixels will then be transformed using bilinear interpolation based on those pixels (i.e. every 10th pixel in the case of the default parameter setting) that were fully transformed.
 
 
-resetbits : int (Default Value = 4096)
+resetbits : int (Default = 4096)
     This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the 'updatewcs' parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).
 
-num_cores: int (Default Value = None) 
-    This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing. 
+num_cores: int (Default = None)
+    This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing.
 
-in_memory: bool (Default Value = False)
+in_memory: bool (Default = False)
     This parameter sets whether or not to keep all intermediate products in memory when processing. This includes all single drizzle products (*single_sci and *single_wht), median image, blot images, and crmask images.  The use of this option will therefore require significantly more memory than usual to process the data while reducing the overall processing time by eliminating most of the disk activity. *Only* the products of the final drizzle step will get written out when this parameter gets specified as 'True'.
-       
+
 *STATE OF INPUT FILES*
 
-restore: bool (Default Value = No) 
+restore: bool (Default = No)
     Setting this to 'Yes' (True) directs AstroDrizzle to copy the input images from the 'OrIg_files' sub-directory and use them for processing, if they had been archived by AstroDrizzle using the 'preserve' or 'overwrite' parameters already.  If set to 'Yes' and the input files had not been archived already, it will simply ignore this and work with the current input images.
 
-preserve : bool (Default Value = Yes)
+preserve : bool (Default = Yes)
     Copy input files to archive directory, if not already archived. This parameter determines whether or not astrodrizzle creates a copy of the input file in a sub-directory called 'OrIg_files'. If a copy already exists in this directory, then the previously existing version will NOT be overwritten.
 
 
-overwrite : bool (Default Value = No)
-    Copy input files into archive, overwriting older files if required? This parameter will cause astrodrizzle to make a copy of each input file in the 'OrIg_files' directory regardless of whether a previous copy existed or not, and will overwrite any previous copy should it be present. 
+overwrite : bool (Default = No)
+    Copy input files into archive, overwriting older files if required? This parameter will cause astrodrizzle to make a copy of each input file in the 'OrIg_files' directory regardless of whether a previous copy existed or not, and will overwrite any previous copy should it be present.
 
 
-clean : bool (Default Value = No)
+clean : bool (Default = No)
     The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to 'Yes' (True). The affected files include the coefficient and static mask files created by PyDrizzle, in addition to other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. However, when running AstroDrizzle routinely, or on a small disk drive, these files can be removed to conserve space.
 
 
 *STEP 1: STATIC MASK*
-static : bool (Default Value = Yes)
+static : bool (Default = Yes)
     Create a static bad-pixel mask from the data?  This mask flags all pixels that deviate by more than a value of 'static_sig' sigma below the image median, since these pixels are typically the result of bad pixel oversubtraction in the dark image during calibration.
 
-static_sig : float (Default Value = 4.0)
+static_sig : float (Default = 4.0)
     The number of sigma below the RMS to use as the clipping limit for creating the static mask.
 
 
@@ -103,8 +148,8 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
 
     Select the algorithm for sky computation:
 
-    * **'localmin'**\ : compute a common sky for all members of *an exposure*
-      (see NOTES below). For a typical use, it will compute
+    * **'localmin'**\ : compute a common sky for all members of *an exposure*.
+      For a typical use, it will compute
       sky values for each chip/image extension (marked for sky
       subtraction in the :py:obj:`input` parameter) in an input image,
       and it will subtract the previously found minimum sky value
@@ -121,7 +166,7 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
         versions of astrodrizzle.
 
     * **'globalmin'**\ : compute a common sky value for all members of
-      **all** "skylines" (see NOTES below). It will compute
+      **all** "skylines". It will compute
       sky values for each chip/image extension (marked for sky
       subtraction in the :py:attr:`input` parameter) in **all** input
       images, find the minimum sky value, and then it will
@@ -135,7 +180,7 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
       input images whose sky value will be set to (reported to be) 0.
       This setting will "equalize" sky values between the images in
       large mosaics. However, this method is not recommended when used
-      in conjunction with `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_ 
+      in conjunction with `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
       because it computes relative sky values while `astrodrizzle` needs
       "measured" sky values for median image generation and CR rejection.
 
@@ -149,71 +194,82 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
         covering significant parts of the image.
 
 
-skysub : bool (Default Value = Yes)
+skysub : bool (Default = Yes)
     Turn on or off sky subtraction on the input data.
 
 
-skywidth : float (Default Value = 0.3)
+skywidth : float (Default = 0.3)
     Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.
 
 
-skystat : {'median', 'mode', 'mean'} (Default Value = 'median')
-    Statistical method for determining the sky value from the image pixel values. 
+skystat : {'median', 'mode', 'mean'} (Default = 'median')
+    Statistical method for determining the sky value from the image pixel values.
 
 
-skylower : float (Default Value = None)
+skylower : float (Default = None)
     Lower limit of usable pixel values for computing the sky. This value should be specified in the units of the input image(s).
 
 
-skyupper : float (Default Value = None)
+skyupper : float (Default = None)
     Upper limit of usable pixel values for computing the sky. This value should be specified in the units of the input image(s).
 
 
-skyclip : int (Default Value = 5)
+skyclip : int (Default = 5)
     Number of clipping iterations to use when computing the sky value.
 
 
-skylsigma : float (Default Value = 4.0)
+skylsigma : float (Default = 4.0)
     Lower clipping limit, in sigma, used when computing the sky value.
 
 
-skyusigma : float (Default Value = 4.0)
+skyusigma : float (Default = 4.0)
     Upper clipping limit, in sigma, used when computing the sky value.
 
 
-skymask_cat : str (Default Value = '')
+skymask_cat : str (Default = '')
     File name of a catalog file listing user masks to be used with images.
 
 
-use_static : bool (Default Value = True)
+use_static : bool (Default = True)
     Specifies whether or not to use static mask to exclude masked image pixels from sky computations.
 
 
-DQFlags : int, None (Default = 0)
-    Integer sum of all the DQ bit values from the input image's DQ array that should be considered "good" when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ "defects" having flags 2 and 4 as being acceptable for sky computations, then `DQFlags` should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
+sky_bits : int, None (Default = 0)
+    Integer sum of all the DQ bit values from the input image's DQ array that
+    should be considered "good" when building masks for sky computations.
+    For example, if pixels in the DQ array can be combinations of 1, 2, 4,
+    and 8 flags and one wants to consider DQ "defects" having flags 2 and 4
+    as being acceptable for sky computations, then `sky_bits` should be set
+    to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a
+    good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc.
+    will be flagged as a "bad" pixel.
 
-    | Default value (0) will make *all* non-zero pixels in the DQ mask to be considered "bad" pixels, and the corresponding image pixels will not be used for sky computations.
+    | Default value (0) will make *all* non-zero pixels in the DQ mask to
+      be considered "bad" pixels, and the corresponding image pixels will
+      not be used for sky computations.
 
-    | Set `DQFlags` to `None` to turn off the use of image's DQ array for sky computations.
+    | Set `sky_bits` to `None` to turn off the use of image's DQ array for sky
+      computations.
 
     .. note::
-        DQ masks (if used), *will be* combined with user masks specified in the input @-file.
+        DQ masks (if used), *will be* combined with user masks specified
+        in the input @-file.
 
 
-skyuser : str (Default Value = '')
+skyuser : str (Default = '')
     Name of header keyword which records the sky value already subtracted from the image by the user.
 
 
-skyfile : str (Default Value = '')
-    Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips. 
-    
-    
+skyfile : str (Default = '')
+    Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.
+
+
 *STEP 3: DRIZZLE SEPARATE IMAGES*
-driz_separate : bool (Default Value = Yes)
+driz_separate : bool (Default = Yes)
     This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
 
 
-driz_sep_kernel : str {'square','point','gaussian','turbo','tophat','lanczos3'} (Default Value = 'turbo')
+driz_sep_kernel : str {'square','point','gaussian','turbo','tophat','lanczos3'} (Default = 'turbo')
     Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are:
 
       * **square**: original classic drizzling kernel
@@ -221,167 +277,167 @@ driz_sep_kernel : str {'square','point','gaussian','turbo','tophat','lanczos3'} 
       * **gaussian**: this kernel is a circular gaussian with a FWHM equal to the value of pixfrac, measured in input pixels.
       * **turbo**: this is similar to kernel="square" but the box is always the same shape and size on the output grid, and is always aligned with the X and Y axes. This may result in a significant speed increase.
       * **tophat**: this kernel is a circular "top hat" shape of width pixfrac. It effects only output pixels within a radius of pixfrac/2 from the output position.
-      * **lanczos3**: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the "sinc" interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs. 
-        
-        .. warning:: The ''lanczos3'' kernel tends to result in much slower processing as compared to other kernel options. This option should never be used for pixfrac != 1.0, and is not recommended for scale != 1.0. 
+      * **lanczos3**: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the "sinc" interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs.
 
-    The default for this step is **"turbo"** since it is much faster than **"square"**, and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task. 
+        .. warning:: The ''lanczos3'' kernel tends to result in much slower processing as compared to other kernel options. This option should never be used for pixfrac != 1.0, and is not recommended for scale != 1.0.
+
+    The default for this step is **"turbo"** since it is much faster than **"square"**, and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task.
 
 
-driz_sep_wt_scl : float (Default Value = exptime)
+driz_sep_wt_scl : float (Default = exptime)
     This parameter specifies the weighting factor for input image. If driz_sep_wt_scl=exptime, then the scaling value will be set equal to the exposure time found in the image header. The use of the Default Value is recommended for producing optimal behavior for most scenarious. It is possible to set wt_scl=expsq for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
 
 
-driz_sep_pixfrac : float (Default Value = 1.0)
+driz_sep_pixfrac : float (Default = 1.0)
     Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel parameter will be reset to 'point' for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the 'drizzle' task.
 
 
-driz_sep_fillval : int (Default Value = None)
+driz_sep_fillval : int (Default = None)
     Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'None' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.
 
 
-driz_sep_bits : int (Default Value = 0)
+driz_sep_bits : int (Default = 0)
     Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.
 
 
 *STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*
-driz_sep_wcs : bool (Default Value = No)
+driz_sep_wcs : bool (Default = No)
     Define custom WCS for seperate output images?
 
 
-driz_sep_refimage : str (Default Value = '')
+driz_sep_refimage : str (Default = '')
     Reference image from which a WCS solution can be obtained.
 
 
-driz_sep_rot : float (Default Value = None)
+driz_sep_rot : float (Default = None)
     Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of None specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
 
 
-driz_sep_scale : float (Default Value = None)
+driz_sep_scale : float (Default = None)
     Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of None specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.
 
 
-driz_sep_outnx : int (Default Value = None)
+driz_sep_outnx : int (Default = None)
     Size, in pixels, of the X axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
-driz_sep_outny : int (Default Value = None)
+driz_sep_outny : int (Default = None)
     Size, in pixels, of the Y axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
-driz_sep_ra : float (Default Value = None)
+driz_sep_ra : float (Default = None)
     Right ascension (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
-driz_sep_dec : float (Default Value = None)
+driz_sep_dec : float (Default = None)
     Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 
 *STEP 4: CREATE MEDIAN IMAGE*
-median : bool (Default Value = Yes)
+median : bool (Default = Yes)
     This parameter specifies whether or not to create a median image. This median image will be used as the comparison 'truth' image :in the cosmic ray rejection step.
 
 
-median_newmasks : bool (Default Value = Yes)
+median_newmasks : bool (Default = Yes)
     This parameter specifies whether or not new mask files will be created when the median image is created. These masks are generated from weight files previously produced by the "driz_separate" step, and contain all bad pixel information used to exclude pixels when calculating the median. Generally this step should be set to 'Yes' (True), unless for some reason, it is desirable to include bad pixel information when generating the median.
 
 
-combine_maskpt : float (Default Value = 0.3)
+combine_maskpt : float (Default = 0.3)
     Percentage of weight image values, below which the are flagged.
 
 
-combine_type : str {'median', 'mean', 'minmed', 'imedian', 'imean', 'iminmed'} (Default Value = 'minmed')
-    This parameter defines the method that will be used to create the median image.  The 'mean' and 'median' options set the calculation type when running 'numcombine', a numpy method for median-combining arrays to create the median image. The "minmed" option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, "minmed" will choose the minimum value. The sigma thresholds for this decision are provided by the "combine_nsigma" parameter. However, as the "combine_nsigma" parameter does not adjust for the larger probability of a single "nsigma" event with a greater number of images, "minmed" will bias the comparison image low for a large number of images. "minmed" is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images. 
+combine_type : str {'median', 'mean', 'minmed', 'imedian', 'imean', 'iminmed'} (Default = 'minmed')
+    This parameter defines the method that will be used to create the median image.  The 'mean' and 'median' options set the calculation type when running 'numcombine', a numpy method for median-combining arrays to create the median image. The "minmed" option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, "minmed" will choose the minimum value. The sigma thresholds for this decision are provided by the "combine_nsigma" parameter. However, as the "combine_nsigma" parameter does not adjust for the larger probability of a single "nsigma" event with a greater number of images, "minmed" will bias the comparison image low for a large number of images. "minmed" is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images.
 
-    A value of 'median' is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the "combine_nhigh" parameter to a value of 1 when using "median" with four images, and consider raising this parameter's value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus "combine_nhigh" odd when using "median". 
+    A value of 'median' is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the "combine_nhigh" parameter to a value of 1 when using "median" with four images, and consider raising this parameter's value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus "combine_nhigh" odd when using "median".
 
     The options starting with 'i', such as 'imedian', works just like the normal median operation except when dealing with a pixel were all the values are flagged as 'bad'.  In this case, the 'i' functions return the last pixel in the stack as if it were good.  This will prevent saturated pixels in the image from leaving holes in the middle of the stars, for example.
- 
 
-combine_nsigma : float (Default Value = '4 3')
+
+combine_nsigma : float (Default = '4 3')
     This parameter defines the sigmas used for accepting minimum values, rather than median values, when using the 'minmed' combination method. If two values are specified the first value will be used in the initial choice between median and minimum, while the second value will be used in the "growing" step to reject additional pixels around those identified in the first step. If only one value is specified, then it is used in both steps.
 
 
-combine_nlow : int (Default Value = 0)
+combine_nlow : int (Default = 0)
     This parameter sets the number of low value pixels to reject automatically during image combination.
 
 
-combine_nhigh : int (Default Value = 0)
+combine_nhigh : int (Default = 0)
     This parameter sets the number of high value pixels to reject automatically during image combination.
 
 
-combine_lthresh : float (Default Value = None)
+combine_lthresh : float (Default = None)
     Sets the lower threshold for clipping input pixel values during image combination. This value gets passed directly to 'imcombine' for use in creating the median image. If the parameter is set to "None", no thresholds will be imposed.
 
 
-combine_hthresh : float (Default Value = None)
+combine_hthresh : float (Default = None)
     This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to 'imcombine' for use in creating the median image. If the parameter is set to "None", no thresholds will be imposed.
 
 
-combine_grow : int (Default Value = 1)
-    Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the 'grow' parameter in 'imcombine' for use in creating the median image. 
+combine_grow : int (Default = 1)
+    Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the 'grow' parameter in 'imcombine' for use in creating the median image.
 
 
 *STEP 5: BLOT BACK THE MEDIAN IMAGE*
-blot : bool (Default Value = Yes)
+blot : bool (Default = Yes)
     Perform the blot operation on the median image? If set to 'Yes' (True), the output will be median smoothed images that match each input chips location, and will be used in the cosmic ray rejection step.
 
 
-blot_interp : str{'nearest', 'linear', 'poly3', 'poly5', 'sinc'} (Default Value = 'poly5')
+blot_interp : str{'nearest', 'linear', 'poly3', 'poly5', 'sinc'} (Default = 'poly5')
     This parameter defines the method of interpolation to be used when blotting drizzled images back to their original WCS solution. Valid options include:
 
         * **nearest**: Nearest neighbor
         * **linear**: Bilinear interpolation in x and y
         * **poly3**: Third order interior polynomial in x and y
-        * **poly5**: Fifth order interior polynomial in x and y 
+        * **poly5**: Fifth order interior polynomial in x and y
         * **sinc**: Sinc interpolation (accurate but slow)
 
-    The 'poly5' interpolation method has been chosen as the default because it is relatively fast and accurate. 
-    
-    If 'sinc' interpolation is selected, then the value of the parameter for 'blot_sinscl' will be used to specify the size of the sinc interpolation kernel. 
+    The 'poly5' interpolation method has been chosen as the default because it is relatively fast and accurate.
+
+    If 'sinc' interpolation is selected, then the value of the parameter for 'blot_sinscl' will be used to specify the size of the sinc interpolation kernel.
 
 
-blot_sinscl : float (Default Value = 1.0)
-    Size of the sinc interpolation kernel in pixels. 
+blot_sinscl : float (Default = 1.0)
+    Size of the sinc interpolation kernel in pixels.
 
-blot_addsky : bool (Default Value = Yes)
+blot_addsky : bool (Default = Yes)
     Add back a sky value using the MDRIZSKY value from the header.  If 'Yes' (True), the blot_skyval parameter is ignored.
 
-blot_skyval : float (Default Value = 0.0)
+blot_skyval : float (Default = 0.0)
     This is a user-specified custom sky value to be added to the blot image.  This is only used if blot_addsky is 'No' (False).
 
 
 *STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*
-driz_cr : bool (Default Value = Yes)
+driz_cr : bool (Default = Yes)
     Perform cosmic-ray detection? If set to 'Yes' (True), cosmic-rays will be detected and used to create cosmic-ray masks based on the algorithms from 'deriv' and 'driz_cr'.
 
 
-driz_cr_corr : bool (Default Value = No)
+driz_cr_corr : bool (Default = No)
     Create a cosmic-ray cleaned input image? If set to 'Yes' (True), a cosmic-ray cleaned _crclean image will be generated directly from the input image, and a corresponding _crmask file will be written to document detected pixels affected by cosmic-rays.
 
 
-driz_cr_snr : list of floats (Default Value = '3.5 3.0')
+driz_cr_snr : list of floats (Default = '3.5 3.0')
     The values for this parameter specify the signal-to-noise ratios for the 'driz_cr' task to be used in detecting cosmic rays. See the help file for 'driz_cr' for further discussion of this parameter.
 
 
-driz_cr_grow : int (Default Value = 1)
+driz_cr_grow : int (Default = 1)
     The radius, in pixels, around each detected cosmic-ray, in which more stringent detection criteria for additional cosmic rays will be used.
 
 
-driz_cr_ctegrow : int (Default Value = 0)
+driz_cr_ctegrow : int (Default = 0)
     Length, in pixels, of the CTE tail that should be masked in the drizzled output.
 
 
-driz_cr_scale : str (Default Value = '1.2 0.7')
+driz_cr_scale : str (Default = '1.2 0.7')
     Scaling factor applied to the derivative in 'driz_cr' when detecting cosmic-rays. See the help file for 'driz_cr' for further discussion of this parameter.
 
 
 *STEP 7: DRIZZLE FINAL COMBINED IMAGE*
-driz_combine : bool (Default Value = Yes)
+driz_combine : bool (Default = Yes)
     This parameter specifies whether or not to drizzle each input image onto the final output image. This applies the generated cosmic-ray masks to the input images and creates a final, cleaned, distortion-corrected image.
 
 
-final_wht_type : {'EXP', 'ERR', 'IVM'} (Default Value = 'EXP')
+final_wht_type : {'EXP', 'ERR', 'IVM'} (Default = 'EXP')
     Specify the type of weighting image to apply with the bad pixel mask
 for the final drizzle step.  The options for this parameter include:
 
@@ -394,7 +450,7 @@ for the final drizzle step.  The options for this parameter include:
         * **IVM**: Specifying 'IVM' allows the user to either supply their own inverse-variance weighting map, or allow AstroDrizzle to generate one automatically on-the-fly during the final drizzle step. This parameter option may be necessary for specific purposes. For example, to create a drizzled weight file for software such as SExtractor, it is expected that a weight image containing all of the background noise sources (sky level, read-noise, dark current, etc), but not the Poisson noise from the objects themselves will be available. The user can create the inverse variance images and then specify their names using the 'input' parameter for AstroDrizzle to specify an '\@file'. This would be a single ASCII file containing the list of input calibrated exposure filenames (one per line), with a second column containing the name of the IVM file corresponding to each calibrated exposure. Each IVM file must have the same file format as the input file, and if provided as multi-extension FITS files (e.g., ACS or STIS data) then the IVM extension must have the EXTNAME of 'IVM'. If no IVM files are specified on input, then AstroDrizzle will rely on the flat-field reference file and computed dark value from the image header to automatically generate an IVM file specific to each exposure.
 
 
-final_kernel : {'square','point','gaussian','turbo','tophat','lanczos3'} (Default Value = 'square')
+final_kernel : {'square','point','gaussian','turbo','tophat','lanczos3'} (Default = 'square')
     This parameter specifies the form of the kernel function used to distribute flux onto the separate output images, for the initial separate drizzling operation only. The value options for this parameter include:
 
 
@@ -406,55 +462,55 @@ final_kernel : {'square','point','gaussian','turbo','tophat','lanczos3'} (Defaul
         * **tophat**: this kernel is a circular "top hat" shape of width pixfrac. It effects only output pixels within a radius of pixfrac/2 from the output position.
 
 
-      * **lanczos3**: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the "sinc" interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs. 
-        
-        .. warning:: The ''lanczos3'' kernel tends to result in much slower processing as compared to other kernel options. This option should never be used for pixfrac != 1.0, and is not recommended for scale != 1.0. 
+      * **lanczos3**: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the "sinc" interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs.
 
-    The default for this step is **"turbo"** since it is much faster than **"square"**, and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task. 
+        .. warning:: The ''lanczos3'' kernel tends to result in much slower processing as compared to other kernel options. This option should never be used for pixfrac != 1.0, and is not recommended for scale != 1.0.
+
+    The default for this step is **"turbo"** since it is much faster than **"square"**, and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task.
 
 
-final_wt_scl : float (Default Value = exptime)
+final_wt_scl : float (Default = exptime)
     This parameter specifies the weighting factor for input image. If final_wt_scl=exptime, then the scaling value will be set equal to the exposure time found in the image header. The use of the Default Value is recommended for producing optimal behavior for most scenarious. It is possible to set wt_scl=expsq for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
 
 
-final_pixfrac : float (Default Value = 1.0)
+final_pixfrac : float (Default = 1.0)
     Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel parameter will be reset to 'point' for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the 'drizzle' task.
 
 
-final_fillval : float (Default Value = None)
+final_fillval : float (Default = None)
     The value for this parameter is to be assigned to the output pixels that have zero weight or which do not receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'None' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that numerical value.
 
 
-final_bits : int (Default Value = 0)
+final_bits : int (Default = 0)
     Integer sum for all of the DQ bit values from the input image's DQ array that should be considered 'good' when building the weight mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.
 
 
-final_units : str (Default Value = 'cps')
+final_units : str (Default = 'cps')
     This parameter determines the units of the final drizzle-combined image, and can either be 'counts' or 'cps'. It is passed through to 'drizzle' in the final drizzle step.
 
 
 *STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*
-final_wcs : bool (Default Value = No)
+final_wcs : bool (Default = No)
     Obtain the WCS solution from a user-designated reference image?
 
 
-final_refimage : str (Default Value = '')
+final_refimage : str (Default = '')
     Reference image from which a WCS solution can be obtained.
 
 
-final_rot : float (Default Value = None)
+final_rot : float (Default = None)
     Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of None specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
 
 
-final_scale : float (Default Value = None)
+final_scale : float (Default = None)
     Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of None specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.
 
 
-final_outnx : int (Default Value = None)
+final_outnx : int (Default = None)
     Size, in pixels, of the X axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
-final_outny : int (Default Value = None)
+final_outny : int (Default = None)
     Size, in pixels, of the Y axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 
@@ -467,27 +523,27 @@ final_dec : float (Default Valut = None)
 
 
 *INSTRUMENT PARAMETERS*
-gain : float (Default Value = None)
+gain : float (Default = None)
     Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count.  This parameter should not be populated if the ''gainkeyword'' parameter is in use.
 
 
-gainkeyword : str (Default Value = '')
+gainkeyword : str (Default = '')
     Keyword used to specify a value, which is used to override the instrument specific default gain values. The value is assumed to be in units of electrons/count. This parameter should not be populated if the ''gain'' parameter is in use.
 
 
-rdnoise : float (Default Value = None)
+rdnoise : float (Default = None)
     Value used to override instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the ''rnkeyword'' parameter is in use.
 
 
-rnkeyword : str (Default Value = '')
+rnkeyword : str (Default = '')
     Keyword used to specify a value, which is used to override the instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the ''rdnoise'' parameter is in use.
 
 
-exptime : float (Default Value = None)
+exptime : float (Default = None)
     Value used to override default exposure time image header values.  The value is assumed to be in units of seconds.  This parameter should not be populated if the ''expkeyword'' parameter is in use.
 
 
-expkeyword : str (Default Value = '')
+expkeyword : str (Default = '')
     Keyword used to specify a value, which is used to override the default exposure time image header values.  The value is assumed to be in units of seconds. This parameter should not be populated if the ''exptime'' parameter is in use.
 
 
@@ -503,7 +559,9 @@ drizzlepac.drizCR: Identify cosmic-rays by comparing blotted, median images to t
 
 Notes
 ------
-Something to keep in mind is that the full AstroDrizzle interface will make backup copies of your original files and place them in the **OrIg_files/** directory of you current working directory.
+Something to keep in mind is that the full AstroDrizzle interface will
+make backup copies of your original files and place them in the
+``OrIg_files/`` directory of you current working directory.
 
 
 EXAMPLES
@@ -511,42 +569,46 @@ EXAMPLES
 The astrodrizzle task can be run from either the TEAL GUI or from the command-line
 using PyRAF or Python. These examples illustrate the various syntax options available.
 
-**Example 1:**  Drizzle a set of calibrated (\_flt.fits) images using mostly default
-parameters.  Select the 'World Coordinate System' keyword to the updated solution
-computed from 'tweakreg'.  When combining images, ignore pixel flags of 64 and 32 in
-the DQ array of the (\_flt.fits) images.  Align the final product such that North is
+**Example 1:**  Drizzle a set of calibrated (``_flt.fits``) images using
+mostly default parameters.  Select the 'World Coordinate System' keyword
+to the updated solution computed from `tweakreg`.  When combining images,
+ignore pixel flags of 64 and 32 in the DQ array of the (``_flt.fits``)
+images.  Align the final product such that North is
 up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
 1. Run the task from PyRAF using the TEAL GUI::
 
-    --> import drizzlepac
-    --> epar astrodrizzle
+   >>> import drizzlepac
+   >>> epar astrodrizzle
 
 2. Run the task from PyRAF using the command line. ::
 
-    --> import drizzlepac
-    --> from drizzlepac import astrodrizzle
-    --> astrodrizzle.AstroDrizzle('*flt.fits', output='final', wcskey='TWEAK', \
-        driz_sep_bits='64,32', final_wcs=True, final_scale=0.05, final_rot=0)
+    >>> import drizzlepac
+    >>> from drizzlepac import astrodrizzle
+    >>> astrodrizzle.AstroDrizzle('*flt.fits', output='final',
+    ...     wcskey='TWEAK', driz_sep_bits='64,32', final_wcs=True,
+    ...     final_scale=0.05, final_rot=0)
 
-   Or, run the same task from the PyRAF command line, but specify all parameters in
-   a config file named "myparam.cfg"::
+   Or, run the same task from the PyRAF command line, but specify all
+   parameters in a config file named ``myparam.cfg``:
 
-    --> astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')
+    >>> astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')
 
 3. Run the task directly from Python:
 
     >>> from drizzlepac import astrodrizzle
-    >>> astrodrizzle.AstroDrizzle('*flt.fits', output='final', wcskey='TWEAK', \
-        driz_sep_bits='64,32', final_wcs=True, final_scale=0.05, final_rot=0)
+    >>> astrodrizzle.AstroDrizzle('*flt.fits', output='final',
+    ...     wcskey='TWEAK', driz_sep_bits='64,32', final_wcs=True,
+    ...     final_scale=0.05, final_rot=0)
 
-4. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
-   be accessed from the PyRAF command-line and saved to a text file::
+4. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.
+   It can also be accessed from the PyRAF command-line and saved
+   to a text file:
 
-    --> from drizzlepac import astrodrizzle
-    --> astrodrizzle.help()
+    >>> from drizzlepac import astrodrizzle
+    >>> astrodrizzle.help()
 
-   or::
+   or
 
-    --> astrodrizzle.help(file='help.txt')
-    --> page help.txt
+    >>> astrodrizzle.help(file='help.txt')
+    >>> page help.txt

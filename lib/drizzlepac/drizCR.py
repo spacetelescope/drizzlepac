@@ -1,8 +1,12 @@
-# DRIZ_CR  -- mask blemishes in dithered data by comparison of an image
-#             with a model image and the derivative of the model image.
-#
-#
-# Import external packages
+"""
+Mask blemishes in dithered data by comparison of an image with a model
+image and the derivative of the model image.
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 
 import numpy as np
@@ -25,14 +29,6 @@ _step_num_ = 6  # this relates directly to the syntax in the cfg file
 
 log = logutil.create_logger(__name__)
 
-
-def getHelpAsString():
-    """
-    Return useful help from a file in the script directory called module.help
-    """
-    helpString = teal.getHelpFileAsString(__taskname__,__file__)
-
-    return helpString
 
 #this is the user access function
 def drizCR(input=None, configObj=None, editpars=False, **inputDict):
@@ -403,3 +399,57 @@ def setDefaults(configObj={}):
 
 
     return paramDict
+
+
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+        
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+    
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, __package__)
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+    
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile        
+
+    return helpString
+
+
+drizCR.__doc__ = getHelpAsString(docstring = True, show_ver = False)

@@ -1,6 +1,10 @@
 """
 Process input to MultiDrizzle/PyDrizzle.
 
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
 The input can be one of:
 
     * a python list of files
@@ -13,10 +17,10 @@ No mixture of association tables, @files and regular fits files is allowed.
 Files can be in GEIS or MEF format (but not waiver fits).
 
 Runs some sanity checks on the input files.
-If necessary converts files to MEF format (this should not be left to makewcs
-because 'updatewcs' may be False).
+If necessary converts files to MEF format (this should not be left to `makewcs`
+because `updatewcs` may be `False`\ ).
 Runs makewcs.
-The function 'process_input' returns an association table, ivmlist, output name
+The function `process_input` returns an association table, ivmlist, output name
 
 The common interface interpreter for MultiDrizzle tasks, 'processCommonInput()',
 not only runs 'process_input()' but 'createImageObject()' and 'defineOutput()'
@@ -1218,7 +1222,7 @@ def _setDefaults(input_dict={}):
         'skyusigma':4.0,
         "skymask_cat":"",
         "use_static":True,
-        "dqflags":0,
+        "sky_bits":0,
         "skyuser":"",
         "skyfile":"",
         'driz_separate':True,

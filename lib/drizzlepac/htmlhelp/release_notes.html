@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>DrizzlePac Release Notes &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>DrizzlePac Release Notes &mdash; DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31820 (22-May-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,9 +25,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation" href="index.html" />
     <link rel="next" title="TWEAKREG: Alignment of Images" href="tweakreg.html" />
-    <link rel="prev" title="MultiDrizzle Reference Table" href="mdztab.html" /> 
+    <link rel="prev" title="Tweakback" href="tweakback.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,9 +43,9 @@
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="mdztab.html" title="MultiDrizzle Reference Table"
+          <a href="tweakback.html" title="Tweakback"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -56,7 +56,24 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">DrizzlePac Release Notes</a><ul>
-<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-0-23-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.0(23-Aug-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-16">DrizzlePac(astrodrizzle) v1.1.16</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-15-30-dec-2013">DrizzlePac(astrodrizzle) v1.1.15(30-Dec-2013)</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-14dev-21-oct-2013-in-irafx">DrizzlePac(astrodrizzle) v1.1.14dev(21-Oct-2013) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-13dev-11-oct-2013-in-irafx">DrizzlePac(astrodrizzle) v1.1.13dev(11-Oct-2013) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-12dev-05-sep-2013-in-irafx">DrizzlePac(astrodrizzle) v1.1.12dev(05-Sep-2013) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-11dev-05-jul-2013-in-irafx">DrizzlePac(astrodrizzle) v1.1.11dev(05-Jul-2013) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-10dev-06-feb-2013-in-irafx">DrizzlePac(astrodrizzle) v1.1.10dev(06-Feb-2013) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-8dev-06-feb-2013-in-irafx">DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2013) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-7dev-18-dec-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#id1">DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-7dev-8-jan-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.7dev(8-Jan-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-6dev-5-dec-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.6dev(5-Dec-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-5dev-23-oct-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.5dev(23-Oct-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-1-31-aug-2012-in-hst-archive">DrizzlePac(astrodrizzle) v1.1.1(31-Aug-2012) in HST Archive</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-4dev-20-sep-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.4dev(20-Sep-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-3-7-sep-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.3(7-Sep-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-2-5-sep-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.2(5-Sep-2012) in IRAFX</a></li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-1-30-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.1.1(30-Aug-2012) in IRAFX</a></li>
 <li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-7-21-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.0.7(21-Aug-2012) in IRAFX</a></li>
 <li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-6-14-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.0.6(14-Aug-2012) in IRAFX</a></li>
 <li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-0-5-8-aug-2012-in-irafx">DrizzlePac(astrodrizzle) v1.0.5(8-Aug-2012) in IRAFX</a></li>
@@ -68,8 +85,8 @@
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="mdztab.html"
-                        title="previous chapter">MultiDrizzle Reference Table</a></p>
+  <p class="topless"><a href="tweakback.html"
+                        title="previous chapter">Tweakback</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="tweakreg.html"
                         title="next chapter">TWEAKREG: Alignment of Images</a></p>
@@ -105,17 +122,173 @@
 <dt>The code for this package gets released through a number of methods: namely,</dt>
 <dd><ul class="first last simple">
 <li>the use of the package for pipeline and archive processing of ACS and WFC3 data,</li>
-<li>SSB&#8217;s semi-annual public release of the stsci_python package, and</li>
-<li>a weekly beta release of the development version.</li>
+<li>SSB&#8217;s semi-annual <a class="reference external" href="http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/installation">public release of the stsci_python package</a>, and</li>
+<li>a weekly beta release of the development version as part of the <a class="reference external" href="http://stsdas.stsci.edu/irafx/">IRAFX download</a>.</li>
 </ul>
 </dd>
 </dl>
 <p>The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).</p>
-<div class="section" id="drizzlepac-astrodrizzle-v1-1-0-23-aug-2012-in-irafx">
-<h2>DrizzlePac(astrodrizzle) v1.1.0(23-Aug-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-0-23-aug-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-16">
+<h2>DrizzlePac(astrodrizzle) v1.1.16<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-16" title="Permalink to this headline">¶</a></h2>
+<p><strong>Publicly Released through PyPI:</strong> Mar 27, 2014</p>
+<p><strong>available under SSBX/IRAFX starting:</strong> Mar 13, 2014</p>
+<ul class="simple">
+<li>Support for WFPC2 GEIS input images improved to correctly find the associated DQ images.</li>
+<li>Static mask files created for all chips in an image now get deleted when using the &#8216;group&#8217; parameter to only drizzle a single chip or subset of chips.</li>
+<li>Fixed problem caused by changes to stsci.tools code so that drizzlepac will reference the correct extensions in input images.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-15-30-dec-2013">
+<h2>DrizzlePac(astrodrizzle) v1.1.15(30-Dec-2013)<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-15-30-dec-2013" title="Permalink to this headline">¶</a></h2>
+<p><strong>Publicly Released through PyPI:</strong> Jan 14, 2014</p>
+<p><strong>available under SSBX/IRAFX starting:</strong> Jan 6, 2014</p>
+<ul class="simple">
+<li>[Bug Fix] Files created or updated by drizzlepac, fitsblender, or STWCS tasks, e.g. tweakreg or apply_headerlet, will now ensure that the NEXTEND keyword value correctly reflects the number of extensions in the FITS file upon completion.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-14dev-21-oct-2013-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.14dev(21-Oct-2013) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-14dev-21-oct-2013-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>Installed in OPUS:</strong> Dec 11, 2013</p>
+<p><strong>available starting:</strong> Oct 28, 2013</p>
+<ul class="simple">
+<li>[Bug Fix] DQ arrays in input images now get updated with cosmic-ray masks computed by astrodrizzle when run with the parameter &#8216;in_memory=True&#8217;. This restored the cosmic-ray masks detected during pipeline processing.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-13dev-11-oct-2013-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.13dev(11-Oct-2013) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-13dev-11-oct-2013-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Oct 21, 2013</p>
+<ul class="simple">
+<li>Tweakreg can now be run in &#8216;batch&#8217; mode.  This allows the user to generate plots and have them saved to disk automatically without stopping processing and requiring any user input.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-12dev-05-sep-2013-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.12dev(05-Sep-2013) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-12dev-05-sep-2013-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Sept 9, 2013</p>
+<dl class="docutils">
+<dt>This version fixed a couple of bugs in astrodrizzle; namely,</dt>
+<dd><ul class="first last simple">
+<li>Logic was updated to support pixfrac = 0.0 without crashing. Ths code will now automatically reset the kernel to &#8216;point&#8217; in that case.</li>
+<li>Astrodrizzle now forcibly removes all OPUS WCS keywords from drizzle product headers.</li>
+<li>Default rules for generating drizzle product headers (as used in the archive) were modified to add definitions for &#8216;float_one&#8217;, &#8216;int_one&#8217;, &#8216;zero&#8217; that generate output values of 1.0, 1, and 0 (zero) respectively for use as keyword values. This allows the LTM* rules to replace &#8216;first&#8217; with &#8216;float_one&#8217; so that the physical and image coordinates for drizzle products are consistent.</li>
+</ul>
+</dd>
+<dt>Additionally, changes were made to STWCS for reprocessing use:</dt>
+<dd><ul class="first last simple">
+<li>Problems with using apply_headerlet_as_primary() from the STWCS package on WFPC2 data have been corrected in this revision.</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-11dev-05-jul-2013-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.11dev(05-Jul-2013) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-11dev-05-jul-2013-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> July 15, 2013</p>
+<ul class="simple">
+<li>AstroDrizzle now can process all STIS data without crashing.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-10dev-06-feb-2013-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.10dev(06-Feb-2013) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-10dev-06-feb-2013-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> May 6, 2013</p>
+<ul class="simple">
+<li>The output drizzle image header no longer contains references to D2IM arrays. This allows tweakreg to work with drizzled images as input where 2-D D2IM corrections were needed.</li>
+<li>Deprecated references to PyFITS .has_key() methods were also removed from the entire package, making it compatible with PyFITS 3.2.x and later.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-8dev-06-feb-2013-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.8dev(06-Feb-2013) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-8dev-06-feb-2013-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Feb 11, 2013</p>
+<ul class="simple">
+<li>Fixed a bug in astrodrizzle which caused blot to raise an exception when using &#8216;sinc&#8217; interpolation.</li>
+<li>Cleaned up the logic for writing out the results from the pixtopix, pixtosky, and skytopix tasks to avoid an Exception when a list of inputs are provided and no output file is specified.</li>
+<li>A new parameter was added to the tweakback task to allow a user to specify the value of WCSNAME when updating the FLT images with a new solution from a DRZ image header.</li>
+<li>Code in tweakback for updating the header with a new WCS will now automatically generate a unique WCSNAME if the there is a WCS solution in the FLT headers with the default or user-defined value of WCSNAME.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-7dev-18-dec-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-7dev-18-dec-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Feb 4, 2013</p>
+<ul class="simple">
+<li>Updated astrodrizzle to work with input images which do not have WCSNAME defined. This should make it easier to support non-HST input images in the future.</li>
+<li>cleared up confusion between flux parameters in imagefindpars and catalog inputs in tweakreg.</li>
+<li>turned of use of fluxes for trimming input source catalogs when no flux column can be found in input source catalogs</li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2>DrizzlePac(astrodrizzle) v1.1.7dev(18-Dec-2012) in IRAFX<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Dec 10, 2012</p>
+<ul class="simple">
+<li>Update tweakreg 2d histogram building mode to correctly find the peak when all the inputs match with the same offset (no spurious sources in either source catalog).</li>
+<li>Fixed a bug so that Ctrl-C does not cause an exception when used while tweakreg is running</li>
+<li>revised the source finding logic to ignore sources near the image edge, a change from how daofind works (daofind expands the image with blanks then fits anyway)</li>
+<li>created a new function to apply the nsigma separation criteria to (try to) eliminate duplicate entries for the same source from the source list. It turns out daofind does have problems with reporting some duplicate sources as well. This function does not work perfectly, but works to remove nearly all (if not all) duplicates in most cases.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-7dev-8-jan-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.7dev(8-Jan-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-7dev-8-jan-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Jan 14, 2013</p>
+<ul class="simple">
+<li>Bug fixed in updatehdr module to allow shiftfiles without RMS columns to work as inputs to manually apply shifts to headers of input images</li>
+<li>Revised astrodrizzle to update WCS of all input images BEFORE checking whether or not they are valid. This ensures that all files provided as input to astrodrizzle in the pipeline have the headers updated with the distortion model and new WCS.</li>
+<li>Images with NGOODPIX=0 now identified for WFC3 and WFPC2 inputs, so they can be ignored during astrodrizzle processing.</li>
+<li>Replaced 2d histogram building code originally written in Python with a C function that run about 4x faster.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-6dev-5-dec-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.6dev(5-Dec-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-6dev-5-dec-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Dec 10, 2012</p>
+<ul class="simple">
+<li>tweakreg v1.1.0 source finding algorithm now runs many times faster (no algorithmic changes). No changes have been made yet to speed up the 2d histogram source matching code.</li>
+<li>The &#8216;pixtopix&#8217; task was updated to make the &#8216;outimage&#8217; parameter optional by using the input image as the default. This required no API changes, but the help files were updated</li>
+<li>Very minor update to guard against MDRIZTAB being specified without any explicit path.</li>
+<li>Update astrodrizzle to correctly report the exposure time, exposure start, and exposure end for the single drizzle products, in addition to insuring the final drizzle values remain correct.</li>
+<li>astrodrizzle also includes initial changes to safeguard the C code from getting improperly cast values from the configObj(TEAL) input.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-5dev-23-oct-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.5dev(23-Oct-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-5dev-23-oct-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Oct 29, 2012</p>
+<ul class="simple">
+<li>Scaling of sky array for WFC3/IR IVM generation now correct</li>
+<li>template mask files for WFPC2 no longer generated so that WFPC2 data can now be processed using num_cores &gt; 1 (parallel processing)</li>
+<li>interpretation of the &#8216;group&#8217; parameter fixed to support a single integer, a comma-separated list of integers or a single &#8216;sci,&lt;n&gt;&#8217; value. The values correspond to the FITS extension number of the extensions that should be combined. This fix may also speed up the initialization step as more direct use of pyfits was implemented for the interpretation of the &#8216;group&#8217; parameter.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-1-31-aug-2012-in-hst-archive">
+<h2>DrizzlePac(astrodrizzle) v1.1.1(31-Aug-2012) in HST Archive<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-1-31-aug-2012-in-hst-archive" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Sept 26, 2012</p>
+<p>The HST Archive and operational calibration pipeline started using this version on Sept 26, 2012.</p>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-4dev-20-sep-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.4dev(20-Sep-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-4dev-20-sep-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Sept 24, 2012</p>
+<ul class="simple">
+<li>Bug fixed to allow use of final_wht_type=IVM for processing WFPC2 data</li>
+<li>Revised Initialization processing to speed it up by using more up-to-date, direct pyfits calls.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-3-7-sep-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.3(7-Sep-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-3-7-sep-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Sept 17, 2012</p>
+<ul class="simple">
+<li>Fixed the logic so that crclean images always get created regardless of the value of the &#8216;clean&#8217; parameter.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-2-5-sep-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.2(5-Sep-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-2-5-sep-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
+<p><strong>available starting:</strong> Sept 10, 2012</p>
+<ul class="simple">
+<li>Remove the restriction of only being able to process images which have WCSNAME keyword as imposed by r15631. The removal of this restriction will now allow for processing of non-updated input files with updatewcs=False for cases where no distortion model exists for the data (as required by CADC).</li>
+<li>Added log statements reporting what sky value was actually used in the drizzle and blot steps</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v1-1-1-30-aug-2012-in-irafx">
+<h2>DrizzlePac(astrodrizzle) v1.1.1(30-Aug-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-1-30-aug-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
 <p><strong>available starting:</strong> Sept 3, 2012</p>
-<p>Major revision to astrodrizzle allowing the option to process without writing out any intermediate products to disk. The intermediate products remain in memory requiring significantly more memory than usual. This improves the overall processing time by eliminating as much disk activity as possible as long as the OS does not start disk swapping due to lack of RAM.</p>
+<ul class="simple">
+<li>Major revision to astrodrizzle allowing the option to process without writing out any intermediate products to disk. The intermediate products remain in memory requiring significantly more memory than usual. This improves the overall processing time by eliminating as much disk activity as possible as long as the OS does not start disk swapping due to lack of RAM.</li>
+<li>revised to turn off &#8216;updatewcs&#8217; when coeffs=False(no) so that exposures with filter combinations not found in the IDCTAB will not cause an error</li>
+</ul>
 </div>
 <div class="section" id="drizzlepac-astrodrizzle-v1-0-7-21-aug-2012-in-irafx">
 <h2>DrizzlePac(astrodrizzle) v1.0.7(21-Aug-2012) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-0-7-21-aug-2012-in-irafx" title="Permalink to this headline">¶</a></h2>
@@ -178,14 +351,14 @@ reverse chronological order (most recent version at the top of the list).</p>
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              >next</a> |</li>
         <li class="right" >
-          <a href="mdztab.html" title="MultiDrizzle Reference Table"
+          <a href="tweakback.html" title="Tweakback"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

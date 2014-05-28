@@ -1,3 +1,12 @@
+"""
+Create an image combination algroithm that chooses between a minimum
+or median image based up bad pixel identification.
+
+:Authors: Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 #   PROGRAM: numcombine.py
 #   AUTOHOR: Christopher Hanley (based upon original code of Anton Koekemoer)
 #   DATE:    February 11, 2004

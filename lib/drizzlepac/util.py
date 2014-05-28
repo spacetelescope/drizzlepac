@@ -3,6 +3,10 @@
 """
 A library of utility functions
 
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
 """
 
 from __future__ import division  # confidence medium
@@ -1047,3 +1051,53 @@ def createFile(dataArray=None, outfile=None, header=None):
             del fitsobj
             fitsobj = None
     return fitsobj
+
+def base_taskname(taskname, packagename=None):
+    """
+    Extract the base name of the task.
+
+    Many tasks in the `drizzlepac` have "compound" names such as
+    'drizzlepac.sky'. This function will search for the presence of a dot
+    in the input `taskname` and if found, it will return the string
+    to the right of the right-most dot. If a dot is not found, it will return
+    the input string.
+
+    Parameters
+    ----------
+    taskname : str, None
+        Full task name. If it is `None`, :py:func:`base_taskname` will
+        return `None`\ .
+
+    packagename : str, None (Default = None)
+        Package name. It is assumed that a compound task name is formed by
+        concatenating `packagename` + '.' + `taskname`\ . If `packagename`
+        is not `None`, :py:func:`base_taskname` will check that the string
+        to the left of the right-most dot matches `packagename` and will
+        raise an `AssertionError` if the package name derived from the
+        input `taskname` does not match the supplied `packagename`\ . This
+        is intended as a check for discrepancies that may arise
+        during the development of the tasks. If `packagename` is `None`,
+        no such check will be performed.
+
+    Raises
+    ------
+    AssertionError
+        Raised when package name derived from the input `taskname` does not
+        match the supplied `packagename`
+
+    """
+    if not isinstance(taskname, str):
+        return taskname
+
+    indx = taskname.rfind('.')
+
+    if indx >= 0:
+        base_taskname = taskname[(indx+1):]
+        pkg_name      = taskname[:indx]
+    else:
+        base_taskname = taskname
+        pkg_name      = ''
+
+    assert(True if packagename is None else (packagename == pkg_name))
+
+    return base_taskname

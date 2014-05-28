@@ -1,18 +1,22 @@
-#
-#   Authors: Christopher Hanley
-#   Program: ir_input.py
-#   Purpose: Class used to model IR specific instrument data.
+"""
+Class used to model IR specific instrument data.
+
+:Authors: Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence high
 
 from imageObject import imageObject
 
 class IRInputImage(imageObject):
     """
-    
+
     IRInputImage
     ------------
-    
-    The IRInputImage class is the parent class for all of 
+
+    The IRInputImage class is the parent class for all of
     the IR based instrument classes.
 
     """
@@ -24,7 +28,7 @@ class IRInputImage(imageObject):
         Constructor for IRInputImage class object.
         """
         imageObject.__init__(self,filename)
-        
+
     def isCountRate(self):
         """
         isCountRate: Method or IRInputObject used to indicate if the
@@ -32,8 +36,8 @@ class IRInputImage(imageObject):
         assumes that the keyword 'BUNIT' is in the header of the input
         FITS file.
         """
-        
-        if 'BUNIT' in self.header:       
+
+        if 'BUNIT' in self.header:
             if self.header['BUINT'].find("/") != -1:
                 return True
         else:
@@ -41,12 +45,12 @@ class IRInputImage(imageObject):
 
     def getsampimg(self):
         """
-        
+
         Notes
         =====
         Return the samp image array.  This method will return
-        a ones for all detectors by default.  
-                
+        a ones for all detectors by default.
+
         """
         try:
             hdulist = fileutil.openImage(self.name,mode='readonly',memmap=0)

@@ -1,3 +1,12 @@
+"""
+Classes to keep track of all WCS and catalog information.
+Used by `TweakReg`\ .
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 import copy,os
 import numpy as np
 

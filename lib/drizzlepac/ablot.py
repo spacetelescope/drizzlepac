@@ -1,3 +1,13 @@
+"""
+In this step the median image now gets blotted back to create median-cleaned
+images which can be compared directly with each input image to identify
+cosmic-rays.
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division  # confidence medium
 
 import os
@@ -5,7 +15,7 @@ import sys
 import util
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
-import outputimage, wcs_functions, processInput, util
+import outputimage, wcs_functions, processInput
 import stwcs
 from stwcs import distortion
 
@@ -50,10 +60,10 @@ def blot(data, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
     if not editpars:
         run(configObj, wcsmap=wcsmap)
 
-
 def run(configObj,wcsmap=None):
     """
     Run the blot task based on parameters provided interactively by the user.
+
     """
 
     # Insure all output filenames specified have .fits extensions
@@ -141,27 +151,15 @@ def run(configObj,wcsmap=None):
     outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['data'],blot=True)
 
 
-def help():
-    print getHelpAsString()
-
-
-def getHelpAsString():
-    """
-    Return useful help from a file in the script directory called module.help
-    """
-    helpString = 'ABLOT Version '+__version__+' Revision date: '+__vdate__
-    try:
-        helpString += teal.getHelpFileAsString(__taskname__,__file__)
-    except IndexError:
-        pass
-    return helpString
-
-
 #
 #### Top-level interface from inside MultiDrizzle
 #
 def runBlot(imageObjectList, output_wcs, configObj={},
             wcsmap=wcs_functions.WCSMap, procSteps=None):
+    """
+    runBlot(imageObjectList, output_wcs, configObj={},
+            wcsmap=wcs_functions.WCSMap, procSteps=None)
+    """
     if procSteps is not None:
         procSteps.addStep('Blot')
 
@@ -228,7 +226,10 @@ def _setDefaults(configObj={}):
     return paramDict
 
 def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
-    """ Perform the blot operation on the list of images.
+    """
+    run_blot(imageObjectList, output_wcs, paramDict, wcsmap=wcs_functions.WCSMap)
+
+    Perform the blot operation on the list of images.
     """
     # Insure that input imageObject is a list
     if not isinstance(imageObjectList, list):
@@ -314,8 +315,9 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
         del _outimg
 
-def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5', sinscl=1.0,
-            stepsize=10, wcsmap=None):
+
+def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
+            interp='poly5', sinscl=1.0, stepsize=10, wcsmap=None):
     """ Core functionality of performing the 'blot' operation to create a single
         blotted image from a single source image.
         All distortion information is assumed to be included in the WCS specification
@@ -381,3 +383,57 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True, interp='poly5'
     del mapping
 
     return _outsci
+
+
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, __package__)
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString
+
+
+blot.__doc__ = getHelpAsString(docstring = True, show_ver = False)

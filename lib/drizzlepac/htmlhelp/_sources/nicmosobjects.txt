@@ -4,7 +4,11 @@
 NICMOS ImageObjects
 *******************
 
+.. moduleauthor:: Christopher Hanley, David Grumm, Megan Sosey <help@stsci.edu>
+
 .. currentmodule:: drizzlepac.nicmosData
+
+.. automodule:: drizzlepac.nicmosData
 
 .. autoclass:: NICMOSInputImage
    :members:

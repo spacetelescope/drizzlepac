@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Functions to Manage WCS Table Extension &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Functions to Manage WCS Table Extension &mdash; DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31820 (22-May-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation" href="index.html" />
     <link rel="next" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" />
     <link rel="prev" title="Classes to manage Catalogs and WCS’s" href="catalogs.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -93,7 +93,9 @@
             
   <div class="section" id="functions-to-manage-wcs-table-extension">
 <h1>Functions to Manage WCS Table Extension<a class="headerlink" href="#functions-to-manage-wcs-table-extension" title="Permalink to this headline">¶</a></h1>
-<p>These functions provide the basic support for initializing, creating and updating the WCS table extension which serves as the archive of updates made to the WCS information in the image headers.</p>
+<p>These functions provide the basic support for initializing,
+creating and updating the WCS table extension which serves as
+the archive of updates made to the WCS information in the image headers.</p>
 <span class="target" id="module-stwcs.wcsutil.wcscorr"></span><dl class="function">
 <dt id="stwcs.wcsutil.wcscorr.archive_wcs_file">
 <tt class="descclassname">stwcs.wcsutil.wcscorr.</tt><tt class="descname">archive_wcs_file</tt><big>(</big><em>image</em>, <em>wcs_id=None</em><big>)</big><a class="headerlink" href="#stwcs.wcsutil.wcscorr.archive_wcs_file" title="Permalink to this definition">¶</a></dt>
@@ -125,7 +127,7 @@ ability to update the table with new rows again without resizing the table.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
 <blockquote>
 <div><p>PyFITS binTable object for WCSCORR table</p>
 </div></blockquote>
@@ -185,7 +187,7 @@ keyed WCSs as per Paper I Multiple WCS standard).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="dest">dest</strong> : HDUList</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="dest">dest</strong> : HDUList</p>
 <blockquote>
 <div><p>The HDU list whose WCSCORR table should be appended to (the WCSCORR HDU
 must already exist)</p>
@@ -228,7 +230,7 @@ headerlet</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
 <blockquote>
 <div><p>PyFITS binTable object for WCSCORR table</p>
 </div></blockquote>
@@ -259,8 +261,19 @@ of the value of &#8216;selections&#8217;</p>
 </div>
 <div class="section" id="functions-to-manage-legacy-opus-wcs-keywords-in-the-wcs-table">
 <h1>Functions to Manage Legacy OPUS WCS Keywords in the WCS Table<a class="headerlink" href="#functions-to-manage-legacy-opus-wcs-keywords-in-the-wcs-table" title="Permalink to this headline">¶</a></h1>
-<p>The previously released versions of <tt class="docutils literal"><span class="pre">makewcs</span></tt> provided with MultiDrizzle <em class="xref py py-obj">archives</em> the original OPUS generated WCS keywords using header keywords which have a prefix of &#8220;O&#8221;, such as &#8220;OCRPIX1&#8221;.  In order to avoid overwriting or ignoring these original values, these functions can be used to convert the prefixed OPUS WCS keywords into WCS table entries compatible with the new code.</p>
-<p>Strictly to provide complete support for these OPUS keywords, the code will also create, if the user desires, prefix &#8220;O&#8221; WCS keywords from the alternate WCS FITS conventions OPUS keywords. This would allow images processed using the new code only can then be used with older versions of MultiDrizzle, if the user needs such compatibility.</p>
+<p>The previously released versions of <tt class="docutils literal"><span class="pre">makewcs</span></tt> provided
+with <em class="xref py py-obj">MultiDrizzle</em> <em>archives</em> the original OPUS generated WCS
+keywords using header keywords which have a prefix of &#8220;O&#8221;,
+such as &#8220;OCRPIX1&#8221;.  In order to avoid overwriting or ignoring
+these original values, these functions can be used to convert
+the prefixed OPUS WCS keywords into WCS table entries compatible
+with the new code.</p>
+<p>Strictly to provide complete support for these OPUS keywords,
+the code will also create, if the user desires, prefix &#8220;O&#8221; WCS
+keywords from the alternate WCS FITS conventions OPUS keywords.
+This would allow images processed using the new code only can
+then be used with older versions of <em class="xref py py-obj">MultiDrizzle</em>, if the user
+needs such compatibility.</p>
 <span class="target" id="module-stwcs.wcsutil.convertwcs"></span><dl class="function">
 <dt id="stwcs.wcsutil.convertwcs.archive_prefix_OPUS_WCS">
 <tt class="descclassname">stwcs.wcsutil.convertwcs.</tt><tt class="descname">archive_prefix_OPUS_WCS</tt><big>(</big><em>fobj</em>, <em>extname='SCI'</em><big>)</big><a class="headerlink" href="#stwcs.wcsutil.convertwcs.archive_prefix_OPUS_WCS" title="Permalink to this definition">¶</a></dt>
@@ -271,9 +284,9 @@ using a prefix of &#8216;O&#8217; for all &#8216;SCI&#8217; extensions in the fi
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj: string or pyfits.HDUList">fobj: string or pyfits.HDUList</strong> :</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <tt class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></tt></p>
 <blockquote class="last">
-<div><p>Filename or pyfits object of a file</p>
+<div><p>Filename or fits object of a file</p>
 </div></blockquote>
 </td>
 </tr>
@@ -291,16 +304,16 @@ to work with old MultiDrizzle.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj: string or pyfits.HDUList">fobj: string or pyfits.HDUList</strong> :</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <tt class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></tt></p>
 <blockquote>
-<div><p>Filename or pyfits object of a file</p>
+<div><p>Filename or fits object of a file</p>
 </div></blockquote>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Raises :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>IOError:</strong> :</p>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>IOError:</strong> :</p>
 <blockquote class="last">
-<div><p>if input PyFITS object was not opened in &#8216;update&#8217; mode</p>
+<div><p>if input FITS object was not opened in &#8216;update&#8217; mode</p>
 </div></blockquote>
 </td>
 </tr>
@@ -331,12 +344,12 @@ to work with old MultiDrizzle.</p>
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

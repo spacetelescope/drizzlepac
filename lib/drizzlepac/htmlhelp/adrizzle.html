@@ -1,0 +1,479 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Step 4 and 8: Drizzling the Images &mdash; DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.2.0.dev31820 (22-May-2014)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation" href="index.html" />
+    <link rel="next" title="Step 5: Create a Median Image" href="median.html" />
+    <link rel="prev" title="Step 3: Subtracting the Sky" href="sky.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="median.html" title="Step 5: Create a Median Image"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sky.html" title="Step 3: Subtracting the Sky"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="sky.html"
+                        title="previous chapter">Step 3: Subtracting the Sky</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="median.html"
+                        title="next chapter">Step 5: Create a Median Image</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/adrizzle.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="step-4-and-8-drizzling-the-images">
+<span id="drizzle"></span><h1>Step 4 and 8: Drizzling the Images<a class="headerlink" href="#step-4-and-8-drizzling-the-images" title="Permalink to this headline">¶</a></h1>
+<p>The operation of drizzling each input image needs to be performed
+twice during processing:</p>
+<ul class="simple">
+<li>single drizzle step: this initial step drizzles each image onto
+the final output WCS as separate images</li>
+<li>final drizzle step: this step produces the final combined image
+based on the cosmic-ray masks determined by <em class="xref py py-obj">MultiDrizzle</em></li>
+</ul>
+<span class="target" id="module-drizzlepac.adrizzle"></span><p>Interfaces to main drizzle functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="drizzlepac.adrizzle.buildDrizParamDict">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">buildDrizParamDict</tt><big>(</big><em>configObj</em>, <em>single=True</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.buildDrizParamDict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.create_output">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">create_output</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.create_output" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.do_driz">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">do_driz</tt><big>(</big><em>insci</em>, <em>input_wcs</em>, <em>inwht</em>, <em>output_wcs</em>, <em>outsci</em>, <em>outwht</em>, <em>outcon</em>, <em>expin</em>, <em>in_units</em>, <em>wt_scl</em>, <em>wcslin_pscale=1.0</em>, <em>uniqid=1</em>, <em>pixfrac=1.0</em>, <em>kernel='square'</em>, <em>fillval='INDEF'</em>, <em>stepsize=10</em>, <em>wcsmap=None</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.do_driz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Core routine for performing &#8216;drizzle&#8217; operation on a single input image
+All input values will be Python objects such as ndarrays, instead
+of filenames.
+File handling (input and output) will be performed by calling routine.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.drizFinal">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">drizFinal</tt><big>(</big><em>imageObjectList</em>, <em>output_wcs</em>, <em>configObj</em>, <em>build=None</em>, <em>wcsmap=None</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.drizFinal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.drizSeparate">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">drizSeparate</tt><big>(</big><em>imageObjectList</em>, <em>output_wcs</em>, <em>configObj</em>, <em>wcsmap=None</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.drizSeparate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.drizzle">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">drizzle</tt><big>(</big><em>input</em>, <em>outdata</em>, <em>wcsmap=None</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.drizzle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each input image gets drizzled onto a separate copy of the output frame.
+When stacked, these copies would correspond to the final combined product.
+As separate images, they allow for treatment of each input image separately
+in the undistorted, final WCS system. These images provide the information
+necessary for refining image registration for each of the input images.
+They also provide the images that will be succeedingly combined into
+a median image and then used for the subsequent blot and cosmic ray
+detection steps.</p>
+<p>Aside from the input parameters, this step requires:</p>
+<blockquote>
+<div><ul class="simple">
+<li>valid input images with SCI extensions</li>
+<li>valid distortion coefficients tables</li>
+<li>any optional secondary distortion correction images</li>
+<li>numpy object (in memory) for static mask</li>
+</ul>
+</div></blockquote>
+<p>This step produces:</p>
+<blockquote>
+<div><ul class="simple">
+<li>singly drizzled science image (simple FITS format)</li>
+<li>singly drizzled weight images (simple FITS format)</li>
+</ul>
+</div></blockquote>
+<p>These images all have the same WCS based on the original input parameters
+and those provided for this step; specifically, output shape, pixel size,
+and orientation, if any have been specified at all.</p>
+<p>For more information on the science applications of the drizzle task,
+see the <a class="reference external" href="http://documents.stsci.edu/hst/HST_overview/documents/DrizzlePac/DrizzlePac.cover.html">AstroDrizzle Handbook</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>driz_separate</strong> : bool (Default = No)</p>
+<blockquote>
+<div><p>This parameter specifies whether or not to drizzle each input image
+onto separate output images. The separate output images will all have
+the same WCS as the final combined output frame. These images are used
+to create the median image, needed for cosmic ray rejection.</p>
+</div></blockquote>
+<p><strong>driz_sep_kernel</strong> : {&#8216;square&#8217;, &#8216;point&#8217;, &#8216;gaussian&#8217;, &#8216;turbo&#8217;, &#8216;tophat&#8217;, &#8216;lanczos3&#8217;} (Default = &#8216;turbo&#8217;)</p>
+<blockquote>
+<div><p>Used for the initial separate drizzling operation only, this parameter
+specifies the form of the kernel function used to distribute flux onto
+the separate output images. The current options are:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><strong>square</strong>: original classic drizzling kernel</p>
+</li>
+<li><p class="first"><strong>point</strong>: this kernel is a point so each input pixel can only
+contribute to the single pixel that is closest to the output
+position. It is equivalent to the limit as <tt class="docutils literal"><span class="pre">pixfrac</span></tt> -&gt; 0,
+and is very fast.</p>
+</li>
+<li><p class="first"><strong>gaussian</strong>: this kernel is a circular gaussian with a FWHM equal
+to the value of <tt class="docutils literal"><span class="pre">pixfrac</span></tt>, measured in input pixels.</p>
+</li>
+<li><p class="first"><strong>turbo</strong>: this is similar to kernel=&#8221;square&#8221; but the box is always
+the same shape and size on the output grid, and is always aligned
+with the X and Y axes. This may result in a significant speed
+increase.</p>
+</li>
+<li><p class="first"><strong>tophat</strong>: this kernel is a circular &#8220;top hat&#8221; shape of
+width <tt class="docutils literal"><span class="pre">pixfrac</span></tt>. It effects only output pixels within a radius
+of <tt class="docutils literal"><span class="pre">pixfrac</span></tt>/2 from the output position.</p>
+</li>
+<li><p class="first"><strong>lanczos3</strong>: a Lanczos style kernel, extending a radius of 3
+pixels from the center of the detection. The Lanczos kernel
+is a damped and bounded form of the &#8220;sinc&#8221; interpolator,
+and is very effective for resampling single images
+when <tt class="docutils literal"><span class="pre">scale</span></tt>=<tt class="docutils literal"><span class="pre">pixfrac</span></tt>=1. It leads to less resolution loss
+than other kernels, and typically results in reduced correlated
+noise in outputs.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">'lanczos3'</span></tt> kernel tends to result in much slower
+processing as compared to other kernel options. This option
+should never be used for <tt class="docutils literal"><span class="pre">pixfrac</span></tt>!=1.0, and is not
+recommended for <tt class="docutils literal"><span class="pre">scale</span></tt> != 1.0.</p>
+</div>
+</li>
+</ul>
+</div></blockquote>
+<p>The default for this step is <strong>&#8220;turbo&#8221;</strong> since it is much faster
+than <strong>&#8220;square&#8221;</strong>, and it is quite satisfactory for the purposes of
+generating the median image. More information about the different
+kernels can be found in the help file for the drizzle task.</p>
+</div></blockquote>
+<p><strong>driz_sep_wt_scl</strong> : float (Default = exptime)</p>
+<blockquote>
+<div><p>This parameter specifies the weighting factor for input image.
+If <em class="xref py py-obj">driz_sep_wt_scl</em>=<tt class="docutils literal"><span class="pre">exptime</span></tt>, then the scaling value will be set
+equal to the exposure time found in the image header. The use of the
+default value is recommended for producing optimal behavior for most
+scenarious. It is possible to set <em class="xref py py-obj">wt_scl</em>=&#8217;expsq&#8217; for weighting by
+the square of the exposure time, which is optimal for read-noise
+dominated images.</p>
+</div></blockquote>
+<p><strong>driz_sep_pixfrac</strong> : float (Default = 1.0)</p>
+<blockquote>
+<div><p>Fraction by which input pixels are &#8220;shrunk&#8221; before being drizzled onto
+the output image grid, given as a real number between 0 and 1.
+This specifies the size of the footprint, or &#8220;dropsize&#8221;, of a pixel
+in units of the input pixel size. If <tt class="docutils literal"><span class="pre">pixfrac</span></tt> is set to
+less than 0.001, the kernel parameter will be reset to &#8216;point&#8217;
+for more efficient processing. In the step of drizzling each
+input image onto a separate output image, the default value of 1.0
+is best in order to ensure that each output drizzled image is fully
+populated with pixels from the input image. For more information,
+see the help for the <a class="reference internal" href="#drizzlepac.adrizzle.drizzle" title="drizzlepac.adrizzle.drizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzle</span></tt></a> task.</p>
+</div></blockquote>
+<p><strong>driz_sep_fillval</strong> : int or INDEF (Default = INDEF)</p>
+<blockquote>
+<div><p>Value to be assigned to output pixels that have zero weight,
+or that receive flux from any input pixels during drizzling.
+This parameter corresponds to the <em class="xref py py-obj">fillval</em> parameter of the <a class="reference internal" href="#drizzlepac.adrizzle.drizzle" title="drizzlepac.adrizzle.drizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzle</span></tt></a>
+task. If the default of <tt class="docutils literal"><span class="pre">INDEF</span></tt> is used, and if the weight in
+both the input and output images for a given pixel are zero,
+then the output pixel will be set to the value it would have had if
+the input had a non-zero weight. Otherwise, if a numerical value
+is provided (e.g. 0), then these pixels will be set to that value.</p>
+</div></blockquote>
+<p><strong>driz_sep_bits</strong> : int (Default = 0)</p>
+<blockquote>
+<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array
+that should be considered &#8216;good&#8217; when building the weighting mask.
+This can also be used to reset pixels to good if they had been
+flagged as cosmic rays during a previous run of <em class="xref py py-obj">AstroDrizzle</em>,
+by adding the value 4096 for ACS and WFPC2 data. Please see the section
+on Selecting the <em class="xref py py-obj">Bits</em> Parameter for a more detailed discussion.</p>
+</div></blockquote>
+<p><strong>driz_sep_wcs</strong> : bool (Default = No)</p>
+<blockquote>
+<div><p>Define custom WCS for seperate output images?</p>
+</div></blockquote>
+<p><strong>driz_sep_refimage</strong> : str (Default = &#8216;&#8217;)</p>
+<blockquote>
+<div><p>Reference image from which a WCS solution can be obtained.</p>
+</div></blockquote>
+<p><strong>driz_sep_rot</strong> : float (Default = INDEF)</p>
+<blockquote>
+<div><p>Position Angle of output image&#8217;s Y-axis relative to North.
+A value of 0.0 would orient the final output image to be North up.
+The default of <tt class="docutils literal"><span class="pre">INDEF</span></tt> specifies that the images will not be rotated,
+but will instead be drizzled in the default orientation for the camera
+with the x and y axes of the drizzled image corresponding approximately
+to the detector axes. This conserves disk space, as these single
+drizzled images are only used in the intermediate step of creating
+a median image.</p>
+</div></blockquote>
+<p><strong>driz_sep_scale</strong> : float (Default = INDEF)</p>
+<blockquote>
+<div><p>Linear size of the output pixels in arcseconds/pixel for each separate
+drizzled image (used in creating the median for cosmic ray rejection).
+The default value of <tt class="docutils literal"><span class="pre">INDEF</span></tt> specifies that the undistorted pixel
+scale for the first input image will be used as the pixel scale for
+all the output images.</p>
+</div></blockquote>
+<p><strong>driz_sep_outnx</strong> : int (Default = INDEF)</p>
+<blockquote>
+<div><p>Size, in pixels, of the X axis in the output images that each input
+will be drizzled onto. If no value is specified, the smallest size that
+can accommodate the full dithered field will be used.</p>
+</div></blockquote>
+<p><strong>driz_sep_outny</strong> : int (Default = INDEF)</p>
+<blockquote>
+<div><p>Size, in pixels, of the Y axis in the output images that each input
+will be drizzled onto. If no value is specified, the smallest size
+that can accommodate the full dithered field will be used.</p>
+</div></blockquote>
+<p><strong>driz_sep_ra</strong> : float (Default = INDEF)</p>
+<blockquote>
+<div><p>Right ascension (in decimal degrees) specifying the center of the output
+image. If this value is not designated, the center will automatically
+be calculated based on the distribution of image dither positions.</p>
+</div></blockquote>
+<p><strong>driz_sep_dec</strong> : float (Default = INDEF)</p>
+<blockquote class="last">
+<div><p>Declination (in decimal degrees) specifying the center of the output
+image. If this value is not designated, the center will automatically
+be calculated based on the distribution of image dither positions.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>These tasks are designed to work together seemlessly when run in the
+full <em class="xref py py-obj">AstroDrizzle</em> interface. More advanced users may wish to create
+specialized scripts for their own datasets, making use of only a subset
+of the predefined <em class="xref py py-obj">AstroDrizzle</em> tasks, or add additional processing,
+which may be usefull for their particular data. In these cases,
+individual access to the tasks is important.</p>
+<p>Something to keep in mind is that the full <em class="xref py py-obj">AstroDrizzle</em> interface
+will make backup copies of your original files and place them in
+the <tt class="docutils literal"><span class="pre">OrIg/</span></tt> directory of your current working directory. If you are
+working with the stand alone interfaces, it is assumed that the user has
+already taken care of backing up their original datafiles as the input
+file with be directly altered.</p>
+<p>There are two user interface function for this task, one to allow you to
+create seperately drizzled images of each image in your list and the other
+to create one single output drizzled image, which is the combination of all
+of them:</p>
+<div class="highlight-python"><pre>def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap)
+def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap)
+if configObj[single_step]['driz_separate']:
+    drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+else:
+    drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)</pre>
+</div>
+<p class="rubric">Examples</p>
+<p>Basic example of how to call static yourself from a python command line,
+using the default parameters for the task.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">adrizzle</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.getHelpAsString">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory
+called <tt class="docutils literal"><span class="pre">__taskname__.help</span></tt></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.get_data">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">get_data</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.get_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.help">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.mergeDQarray">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">mergeDQarray</tt><big>(</big><em>maskname</em>, <em>dqarr</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.mergeDQarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge static or CR mask with mask created from DQ array on-the-fly here.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.run">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">run</tt><big>(</big><em>configObj</em>, <em>wcsmap=None</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interface for running <em class="xref py py-obj">wdrizzle</em> from TEAL or Python command-line.</p>
+<p>This code performs all file <tt class="docutils literal"><span class="pre">I/O</span></tt> to set up the use of the drizzle code for
+a single exposure to replicate the functionality of the original <em class="xref py py-obj">wdrizzle</em>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.run_driz">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">run_driz</tt><big>(</big><em>imageObjectList</em>, <em>output_wcs</em>, <em>paramDict</em>, <em>single</em>, <em>build</em>, <em>wcsmap=None</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.run_driz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform drizzle operation on input to create output.
+The input parameters originally was a list
+of dictionaries, one for each input, that matches the
+primary parameters for an <tt class="docutils literal"><span class="pre">IRAF</span></tt> <a class="reference internal" href="#drizzlepac.adrizzle.drizzle" title="drizzlepac.adrizzle.drizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzle</span></tt></a> task.</p>
+<p>This method would then loop over all the entries in the
+list and run <a class="reference internal" href="#drizzlepac.adrizzle.drizzle" title="drizzlepac.adrizzle.drizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzle</span></tt></a> for each entry.</p>
+<dl class="docutils">
+<dt>Parameters required for input in paramDict:</dt>
+<dd>build,single,units,wt_scl,pixfrac,kernel,fillval,
+rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.run_driz_chip">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">run_driz_chip</tt><big>(</big><em>img</em>, <em>virtual_outputs</em>, <em>chip</em>, <em>output_wcs</em>, <em>outwcs</em>, <em>template</em>, <em>paramDict</em>, <em>single</em>, <em>doWrite</em>, <em>build</em>, <em>_versions</em>, <em>_numctx</em>, <em>_nplanes</em>, <em>_numchips</em>, <em>_outsci</em>, <em>_outwht</em>, <em>_outctx</em>, <em>_hdrlist</em>, <em>wcsmap</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.run_driz_chip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform the drizzle operation on a single chip.
+This is separated out from <a class="reference internal" href="#drizzlepac.adrizzle.run_driz_img" title="drizzlepac.adrizzle.run_driz_img"><tt class="xref py py-obj docutils literal"><span class="pre">run_driz_img</span></tt></a> so as to keep together
+the entirety of the code which is inside the loop over
+chips.  See the <a class="reference internal" href="#drizzlepac.adrizzle.run_driz" title="drizzlepac.adrizzle.run_driz"><tt class="xref py py-obj docutils literal"><span class="pre">run_driz</span></tt></a> code for more documentation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.run_driz_img">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">run_driz_img</tt><big>(</big><em>img</em>, <em>virtual_outputs</em>, <em>chiplist</em>, <em>output_wcs</em>, <em>outwcs</em>, <em>template</em>, <em>paramDict</em>, <em>single</em>, <em>num_in_prod</em>, <em>build</em>, <em>_versions</em>, <em>_numctx</em>, <em>_nplanes</em>, <em>chipIdxCopy</em>, <em>_outsci</em>, <em>_outwht</em>, <em>_outctx</em>, <em>_hdrlist</em>, <em>wcsmap</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.run_driz_img" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform the drizzle operation on a single image.
+This is separated out from <a class="reference internal" href="#drizzlepac.adrizzle.run_driz" title="drizzlepac.adrizzle.run_driz"><tt class="xref py py-func docutils literal"><span class="pre">run_driz</span></tt></a> so as to keep together
+the entirety of the code which is inside the loop over
+images.  See the <a class="reference internal" href="#drizzlepac.adrizzle.run_driz" title="drizzlepac.adrizzle.run_driz"><tt class="xref py py-func docutils literal"><span class="pre">run_driz</span></tt></a> code for more documentation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.adrizzle.updateInputDQArray">
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">updateInputDQArray</tt><big>(</big><em>dqfile</em>, <em>dq_extn</em>, <em>chip</em>, <em>crmaskname</em>, <em>cr_bits_value</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.updateInputDQArray" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="median.html" title="Step 5: Create a Median Image"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sky.html" title="Step 3: Subtracting the Sky"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

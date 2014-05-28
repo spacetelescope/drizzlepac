@@ -1,68 +1,97 @@
-
-These parameters control the operation of the algorithm that extracts sources from the reference image (if specified) as called by :ref:`tweakreg`. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code). 
-
-:Input: The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.
-
-:Output: The primary output, as used by :ref:`tweakreg`, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source. 
+These parameters control the operation of the algorithm that extracts
+sources from the reference image (if specified) as called by :ref:`tweakreg`.
+The algorithm implemented follows the concepts defined by ``DAOFIND``
+(without actually using any ``DAOFIND`` code).
 
 
-Parameters
-----------
-computesig : bool
-    This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter 'skysigma'. The automatic sigma value gets computed from each input exposure as:
+:Attributes:
     
-    ::
-
-      1.5 * imstatistics(image,nclip=3,fields='stddev')
-
-This single value will then be used for object identification for all input exposures. [Default: Yes] 
-
-skysigma : float
-    The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0] 
-
-conv_width : float
-    The convolution kernel width in pixels. Recommended values (~2x the PSF FWHM): ACS/WFC & WFC3/UVIS ~3.5 pix and WFC3/IR ~2.5 pix. [Default: 3.5] 
-
-peakmin : float
-    This parameter allows the user to select only those sources whose peak value (in the units of the input image) is greater than this value. [Default: None] 
-
-peakmax : float 
-    This parameter allows the user to select only those sources whose peak value (in the units of the input image) is less than this value. [Default: None]
-
-threshold : float
-    The object detection threshold above the local background in units of sigma. [Default: 4.0]
-
-nsigma : float
-    The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]
+    **computesig**: bool (Default = True)
+        This parameter controls whether or not to automatically compute a
+        sigma value to be used for object identification. If set to ``True``,
+        then the value computed will override any user input for
+        the parameter ``skysigma``. The automatic sigma value gets
+        computed from each input exposure as:
+        
+        ::
     
-ratio : float
-    The  ratio of the sigma of the Gaussian convolution kernel along
+          1.5 * imstatistics(image,nclip=3,fields='stddev')
+    
+        This single value will then be used for object identification
+        for all input exposures.
+    
+    **skysigma**: float (Default = 0.0)
+        The standard deviation of the sky pixels. This value will only be
+        used if computesig is ``False``.
+    
+    **conv_width**: float (Default = 3.5)
+        The convolution kernel width in pixels. Recommended values
+        (~2x the PSF FWHM): ACS/WFC & WFC3/UVIS ~3.5 pix and
+        WFC3/IR ~2.5 pix.
+    
+    **peakmin**: float, None (Default = None)
+        This parameter allows the user to select only those sources whose
+        peak value (in the units of the input image) is greater than this
+        value.
+    
+    **peakmax**: float, None  (Default = None)
+        This parameter allows the user to select only those sources
+        whose peak value (in the units of the input image) is less than
+        this value.
+    
+    **threshold**: float (Default = 4.0)
+        The object detection threshold above the local background in units
+        of sigma.
+    
+    **nsigma**: float (Default = 1.5)
+        The semi-major axis of the Gaussian convolution kernel used to
+        compute the density enhancement and mean density images in
+        Gaussian sigma.
+        
+    **ratio**: float (Default = 1.0)
+        The ratio of the sigma of the Gaussian convolution kernel along
         the minor axis direction to the sigma along the major axis direction.
-        For a circularly-symmetric kernel use ratio = 1.0. [Default: 1.0]
-
-theta : float
-    The position angle (degrees) of the major axis of the Gaussian convolution
-        kernel. Theta is measured counter-clockwise from the x axis.
-        [Default: 0.0]
-
-fluxmin : float
-    This parameter allows the user to select only those sources whose total flux (in the units of the input image) is greater than this value. [Default: None]
-
-fluxmax : float
-    This parameter allows the user to select only those sources whose total flux (in the units of the input image) is less than this value. [Default: None]
-
-use_sharp_round : bool
-    This parameter controls whether or not to enable selection of sources based on their sharpness and roundness statistics.
-
-sharplo : float
-    sharplo and sharphi are designed to eliminate brightness maxima that are due to bad pixels rather than to astronomical objects. Only sources with sharpness above the sharplo value will be selected. [Default:  0.2]
-        
-sharphi : float
-    sharplo and sharphi are designed to eliminate brightness maxima that are due to bad pixels rather than to astronomical objects. Only sources with sharpness below the sharphi value will be selected. [Default:  1.0]
+        For a circularly-symmetric kernel use ratio = 1.0.
     
-roundlo : float
-    roundlo and roundhi are designed to eliminate brightness maxima that are due to bad rows or columns, rather than to astronomical objects. Only sources with roundness above the roundlo value will be selected. [Default:  -1.0]
-        
-roundhi : float
-    roundlo and roundhi are designed to eliminate brightness maxima that are due to bad rows or columns, rather than to astronomical objects. Only sources with roundness below the roundhi value will be selected. [Default:  1.0]
+    **theta**: float (Default = 0.0)
+        The position angle (degrees) of the major axis of the Gaussian
+        convolution kernel. Theta is measured counter-clockwise from
+        the x axis.
     
+    **fluxmin**: float, None (Default = None)
+        This parameter allows the user to select only those sources whose
+        total flux (in the units of the input image) is greater than
+        this value.
+    
+    **fluxmax**: float, None (Default = None)
+        This parameter allows the user to select only those sources whose
+        total flux (in the units of the input image) is less than this value.
+    
+    **use_sharp_round**: bool (Default = False)
+        This parameter controls whether or not to enable selection of sources
+        based on their sharpness and roundness statistics.
+    
+    **sharplo**: float (Default = 0.2)
+        ``sharplo`` and ``sharphi`` are designed to eliminate brightness
+        maxima that are due to bad pixels rather than to astronomical objects.
+        Only sources with sharpness above the ``sharplo`` value will be
+        selected.
+            
+    **sharphi**: float (Default = 1.0)
+        ``sharplo`` and ``sharphi`` are designed to eliminate brightness
+        maxima that are due to bad pixels rather than to astronomical objects.
+        Only sources with sharpness below the ``sharphi`` value will be
+        selected.
+        
+    **roundlo**: float (Default = -1.0)
+        ``roundlo`` and ``roundhi`` are designed to eliminate brightness
+        maxima that are due to bad rows or columns, rather than to
+        astronomical objects. Only sources with roundness above the 
+        ``roundlo`` value will be selected.
+            
+    **roundhi**: float (Default = 1.0)
+        ``roundlo`` and ``roundhi`` are designed to eliminate brightness
+        maxima that are due to bad rows or columns, rather than to
+        astronomical objects. Only sources with roundness below the
+        ``roundhi`` value will be selected.
+        

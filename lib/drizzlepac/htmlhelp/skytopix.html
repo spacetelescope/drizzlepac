@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>skytopix: Coordinate transformation from sky coordinates &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>skytopix: Coordinate transformation from sky coordinates &mdash; DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        VERSION:     '1.2.0.dev31820 (22-May-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation" href="index.html" />
     <link rel="next" title="Updatenpol" href="updatenpol.html" />
     <link rel="prev" title="pixtosky: Coordinate transformation to sky coordinates" href="pixtosky.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -56,12 +56,12 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">skytopix: Coordinate transformation from sky coordinates</a><ul>
-<li><a class="reference internal" href="#parameters">PARAMETERS</a></li>
+<li><a class="reference internal" href="#parameters">Parameters</a></li>
 <li><a class="reference internal" href="#optional-parameters">Optional Parameters</a></li>
-<li><a class="reference internal" href="#returns">RETURNS</a></li>
-<li><a class="reference internal" href="#notes">NOTES</a></li>
-<li><a class="reference internal" href="#usage">Usage</a></li>
-<li><a class="reference internal" href="#examples">EXAMPLES</a></li>
+<li><a class="reference internal" href="#returns">Returns</a></li>
+<li><a class="reference internal" href="#notes">Notes</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
 </ul>
 </li>
 </ul>
@@ -103,51 +103,69 @@
 <p>This task allows a user to perform coordinate transformations
 with the full WCS and distortion model on source positions
 from sky coordinates to the WCS defined by an image.
-This task serves as a replacement for the IRAF.STSDAS task
-&#8216;rd2xy&#8217;, albeit with the
+This task serves as a replacement for
+the <tt class="docutils literal"><span class="pre">IRAF.STSDAS</span></tt> task <em class="xref py py-obj">rd2xy</em>, albeit with the
 added capability of understanding the full distortion model
 provided in the headers of images updated for use with astrodrizzle and
 tweakreg.</p>
-<span class="target" id="module-drizzlepac.skytopix"></span><p>skytopix - A module to perform coordinate transformation from sky to pixel coordinates.</p>
-<dl class="docutils">
-<dt>License:</dt>
-<dd><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></dd>
-</dl>
+<span class="target" id="module-drizzlepac.skytopix"></span><p><em class="xref py py-obj">skytopix</em> transforms source positions given as RA, Dec values into
+pixel positions on the image based on the WCS information and any recognized
+distortion keywords contained in the input image header.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
 <div class="section" id="parameters">
-<h2>PARAMETERS<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="docutils">
 <dt>input <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>full filename with path of input image, an extension name [&#8216;sci&#8217;,1] should be
-provided if input is a multi-extension FITS file</dd>
+<dd>full filename with path of input image, an extension name
+[&#8216;sci&#8217;,1] should be provided if input is a multi-extension
+FITS file.</dd>
 </dl>
+</div></blockquote>
 </div>
 <div class="section" id="optional-parameters">
 <h2>Optional Parameters<a class="headerlink" href="#optional-parameters" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
+<blockquote>
+<div><dl class="docutils">
 <dt>ra <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
-<dd>RA from input image</dd>
+<dd>RA position in either decimal degrees or HMS format
+(with or without <tt class="docutils literal"><span class="pre">':'</span></tt>)
+like <tt class="docutils literal"><span class="pre">'19:10:50.337406303'</span></tt> or <tt class="docutils literal"><span class="pre">'19</span> <span class="pre">10</span> <span class="pre">50.337406303'</span></tt></dd>
 <dt>dec <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
-<dd>Dec from input image</dd>
+<dd>Dec position in either decimal degrees or HMS format
+(with or without <tt class="docutils literal"><span class="pre">':'</span></tt>)
+like <tt class="docutils literal"><span class="pre">'-60:2:22.186557409'</span></tt> or <tt class="docutils literal"><span class="pre">'-60</span> <span class="pre">2</span> <span class="pre">22.186557409'</span></tt></dd>
 <dt>coordfile <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
 <dd>full filename with path of file with sky coordinates</dd>
 <dt>colnames <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>comma separated list of column names from &#8216;coordfile&#8217; files
-containing x,y coordinates, respectively. Will default to
+<dd>comma separated list of column names from &#8216;coordfile&#8217; file
+containing sky coordinates, respectively. Will default to
 first two columns if None are specified. Column names for ASCII
 files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
-<dt>separator <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>non-blank separator used as the column delimiter in the coords file</dd>
 <dt>precision <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
 <dd>Number of floating-point digits in output values</dd>
 <dt>output <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
 <dd>Name of output file with results, if desired</dd>
 <dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Print out full list of transformation results (default: False)</dd>
+<dd>Print out full list of transformation results (default: <em class="xref py py-obj">False</em>)</dd>
 </dl>
+</div></blockquote>
 </div>
 <div class="section" id="returns">
-<h2>RETURNS<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="docutils">
 <dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>X position of pixel. If more than 1 input value, then it will be a
 numpy array.</dd>
@@ -155,47 +173,63 @@ numpy array.</dd>
 <dd>Y position of pixel. If more than 1 input value, then it will be a
 numpy array.</dd>
 </dl>
+</div></blockquote>
 </div>
 <div class="section" id="notes">
-<h2>NOTES<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
-<p>This module performs a full distortion-corrected coordinate transformation
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<p>This task performs a full distortion-correction coordinate transformation
 based on all WCS keywords and any recognized distortion keywords from the
-input image header.</p>
+input image header. The transformation recognizes the conventions for
+describing distortion implemented as part of the SIP and Paper IV conventions
+used with <em class="xref py py-obj">AstroDrizzle</em>.  Input images can be updated to use these conventions
+through the use of the <em class="xref py py-obj">updatewcs</em> module the STWCS package.</p>
 </div>
-<div class="section" id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>It can be called from within Python using the syntax:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">skytopix</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span><span class="s">&quot;00:22:36.79&quot;</span><span class="p">,</span><span class="s">&quot;-72:4:9.0&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p>stwcs</p>
 </div>
 <div class="section" id="examples">
-<h2>EXAMPLES<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>This task can be run from either the TEAL GUI, or from the Python command-line.
+These examples illustrate the syntax that can be used to run the task in a
+couple of common modes.</p>
 <ol class="arabic">
-<li><dl class="first docutils">
-<dt>The following command will transform the position 00:22:36.79 -72:4:9.0 into a</dt>
-<dd><p class="first">position on the image &#8216;input_flt.fits[sci,1]&#8217; using:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">skytopix</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits[sci,1]&quot;</span><span class="p">,</span> <span class="s">&quot;00:22:36.79&quot;</span><span class="p">,</span><span class="s">&quot;-72:4:9.0&quot;</span><span class="p">)</span>
+<li><p class="first">Run the task using the TEAL GUI under PyRAF:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">epar</span> <span class="n">skytopix</span>
 </pre></div>
 </div>
-</dd>
-</dl>
 </li>
 <li><dl class="first docutils">
-<dt>The set of sky positions from &#8216;input_flt.fits[sci,1]&#8217; stored as</dt>
-<dd><p class="first">the 3rd and 4th columns from the ASCII file &#8216;radec_sci1.dat&#8217;
-will be transformed and written out to &#8216;xy_sci1.dat&#8217; using:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">skytopix</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span> <span class="n">coordfile</span><span class="o">=</span><span class="s">&#39;radec_sci1.dat&#39;</span><span class="p">,</span>
-<span class="go">    colnames=[&#39;c3&#39;,&#39;c4&#39;], output=&quot;xy_sci1.dat&quot;)</span>
-</pre></div>
-</div>
+<dt>Convert a single sky position (0:22:07.0088,-72:03:05.429)</dt>
+<dd><p class="first last">from a calibrated ACS image (j94f05bgq_flt.fits) into a
+pixel position (X,Y) without using the TEAL GUI:</p>
 </dd>
 </dl>
 </li>
 </ol>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">skytopix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="s">&#39;0:22:07.0088&#39;</span><span class="p">,</span> <span class="s">&#39;-72:03:05.429&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic" start="3">
+<li><dl class="first docutils">
+<dt>Convert a list of (undistorted) sky positions from the file,</dt>
+<dd><dl class="first last docutils">
+<dt>&#8216;radec.dat&#8217; for a calibrated ACS image (j8bt06nyq_flt.fits)</dt>
+<dd><p class="first last">into distorted pixel positions, and write out the result to
+the file &#8216;xypos.dat&#8217; without using the TEAL GUI:</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ol>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">coordfile</span><span class="o">=</span><span class="s">&quot;radec.dat&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&quot;xypos.dat&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <dl class="function">
 <dt id="drizzlepac.skytopix.rd2xy">
@@ -228,12 +262,12 @@ read from the input image header.</p>
         <li class="right" >
           <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

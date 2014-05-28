@@ -1,3 +1,10 @@
+"""
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 import re
 
 from astropy.io import fits

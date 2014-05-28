@@ -1,8 +1,19 @@
+"""
+This module provides functions for mapping DS9 region files given in sky
+coordinates to DS9 region files specified in image coordinates
+of multiple images using the WCS information from the images.
+
+:Authors: Mihai Cara
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from astropy.io import fits
 import pyregion, stwcs
-from os import path, extsep #, remove
+import os
 from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
+import util
 from regfilter import fast_filter_outer_regions
 
 
@@ -30,14 +41,12 @@ class _AuxSTWCS(object):
         if 'origin' in kwargs:
             ar.append(kwargs['origin'])
         return self._stwcs.all_world2pix( *tuple(ar) )
-        #return self._stwcs.all_sky2pix( *args, **kwargs )
 
     def wcs_pix2sky(self, *args, **kwargs):
         ar = list(args[:])
         if 'origin' in kwargs:
             ar.append(kwargs['origin'])
         return self._stwcs.all_pix2world( *tuple(ar) )
-        #return self._stwcs.all_pix2sky( *args, **kwargs )
 
 
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
@@ -119,8 +128,8 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                      iteractive=True, append=False, verbose=True):
     # Check that output directory exists:
     if outpath in [None, ""]:
-        outpath = path.curdir + path.sep
-    elif not path.isdir(outpath):
+        outpath = os.path.curdir + os.path.sep
+    elif not os.path.isdir(outpath):
         raise IOError("The output directory \'%s\' does not exist." % outpath)
 
     if filter is not None and filter.lower() not in ["fast","precise"]:
@@ -207,14 +216,14 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
 
                 # generate output region file name:
                 extsuffix = _ext2str_suffix(ext)
-                basefname, fext = path.splitext(path.basename(fname))
-                regfname = basefname + extsuffix + extsep + "reg"
-                fullregfname = path.join(outpath, regfname)
+                basefname, fext = os.path.splitext(os.path.basename(fname))
+                regfname = basefname + extsuffix + os.extsep + "reg"
+                fullregfname = os.path.join(outpath, regfname)
 
                 catreg.append(regfname)
 
                 # save regions to a file:
-                if append and path.isfile(fullregfname):
+                if append and os.path.isfile(fullregfname):
                     old_extreg = pyregion.open(fullregfname)
                     extreg = pyregion.ShapeList(old_extreg + extreg)
 
@@ -225,7 +234,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                 # pyregion until these changes get to be implemented in the
                 # publicly available release of pyregion.
                 #
-                _regwrite(extreg, regfname)
+                _regwrite(extreg, fullregfname)
                 #extreg.write(fullregfname) # <- use this instead of _regwrite
                                             # once the pyregion bugs are fixed.
             cattb.append([fname, catreg])
@@ -236,7 +245,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
 
     # create exclusions catalog file:
     if catfname:
-        catfh = open(path.join(outpath, catfname), 'w')
+        catfh = open(os.path.join(outpath, catfname), 'w')
         for catentry in cattb:
             catfh.write(catentry[0]) # image file name
             for reg in catentry[1]:
@@ -423,7 +432,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
     ireg = 0
     for fname in input_regfnames:
         # check region file existence:
-        if not path.isfile(fname):
+        if not os.path.isfile(fname):
             raise IOError("The input region file \'%s\' does not exist." % \
                 fname)
         # try to read regions:
@@ -463,7 +472,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
         (refimg_fname, frefext) = extension_from_filename(refimg)
 
-        if not path.isfile(refimg_fname):
+        if not os.path.isfile(refimg_fname):
             raise IOError("The reference FITS file \'%s\' does not exist." % \
                           refimg_fname)
 
@@ -594,7 +603,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
             raise RuntimeError("Argument 'images' must be either a string " \
                     "or a non-empty list of strings of valid file names.")
         (fn, ext) = extension_from_filename(fname)
-        if not path.isfile(fn):
+        if not os.path.isfile(fn):
             raise IOError("The image file \'%s\' does not exist." % fn)
         imgfnames.append(fn)
 
@@ -681,7 +690,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
             region_lists.append(None)
             continue
         # check region file existence:
-        if not path.isfile(fname):
+        if not os.path.isfile(fname):
             raise IOError("The input \"chip\" region file \'%s\' does not "    \
                           "exist." % fname)
         # try to read regions:
@@ -1063,13 +1072,56 @@ def run(configObj):
            append      = configObj['append'],
            verbose     = configObj['verbose'])
 
-def getHelpAsString():
-    helpString = ''
-    if teal:
-        helpString += teal.getHelpFileAsString(__taskname__,__file__)
 
-    if helpString.strip() == '':
-        helpString += __doc__+'\n'
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, '')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
 
     return helpString
 
+
+MapReg.__doc__ = getHelpAsString(docstring = True, show_ver = False)

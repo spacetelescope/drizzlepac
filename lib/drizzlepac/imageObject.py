@@ -1,13 +1,14 @@
 """
 A class which makes image objects for each input filename.
-"""
 
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division  # confidence medium
 
-import copy
-import os
-import re
-import sys
+import copy, os, re, sys
 
 import numpy as np
 from stwcs import distortion

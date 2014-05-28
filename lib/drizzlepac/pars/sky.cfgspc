@@ -14,7 +14,7 @@ skylsigma = float_kw(default=4., comment="Lower side clipping factor (in sigma)"
 skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)")
 skymask_cat = string_kw(default="", comment="Catalog file listing image masks")
 use_static = boolean_kw(default=True, comment= "Use static mask for skymatch computations?")
-dqflags = integer_or_none_kw(default=0, comment="Bit flags for identifying bad pixels in DQ array")
+sky_bits = integer_or_none_kw(default=0, comment="Bit flags for identifying bad pixels in DQ array")
 skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user")
 skyfile = string_kw(default="", comment="Name of file with user-computed sky values")
 in_memory = boolean_kw(default=False, comment= "Optimize for speed or for memory use?")

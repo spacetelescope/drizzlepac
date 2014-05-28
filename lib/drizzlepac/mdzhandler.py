@@ -1,7 +1,12 @@
-#
-#   Authors: Warren Hack, Ivo Busko, Christopher Hanley
-#   Program: mdzhandler.py
-#   Purpose: Module that handles the MDRIZTAB reference file.
+"""
+This module supports the interpretation of the ``MDRIZTAB`` for
+processing as used in the pipeline.
+
+:Authors: Warren Hack, Ivo Busko, Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence high
 
 import string, os
