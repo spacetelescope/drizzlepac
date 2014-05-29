@@ -107,19 +107,15 @@ def constructFilename(signature):
 
     The signature is in the image object.
     """
-    import tempfile
-    prefix='tmp'
     suffix = buildSignatureKey(signature)
-    filename = tempfile.mktemp(prefix=prefix,suffix=suffix,dir='.')
-    #fhandle,filename = tempfile.mkstemp(prefix=prefix,suffix=suffix,dir='.')
-    #os.remove(filename)
+    filename = os.path.join('.', suffix)
     return filename
 
 def buildSignatureKey(signature):
     """
     Build static file filename suffix used by mkstemp()
     """
-    return '_'+signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
+    return signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
 
 class staticMask(object):
     """
@@ -283,7 +279,7 @@ class staticMask(object):
             if not virtual:
                 if not(fileutil.checkFileExists(filename)):
                     try:
-                        newHDU.writeto(filename)
+                        newHDU.writeto(filename, clobber=True)
                         log.info("Saving static mask to disk: %s" % filename)
 
                     except IOError:
