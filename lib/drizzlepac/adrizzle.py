@@ -429,18 +429,20 @@ def buildDrizParamDict(configObj,single=True):
         stepnum = 7
     section_name = util.getSectionName(configObj,stepnum)
     # Copy values from configObj for the appropriate step to paramDict
-    for par in chip_pars:
-        if par == 'units':
-            if single:
-                # Hard-code single-drizzle to always returns 'cps'
-                paramDict[par] = 'cps'
+    for p in configObj[section_name].keys()+[driz_prefix+'units']:
+        if p.startswith(driz_prefix):
+            par = p[len(driz_prefix):]
+            if par == 'units':
+                if single:
+                    # Hard-code single-drizzle to always returns 'cps'
+                    paramDict[par] = 'cps'
+                else:
+                    paramDict[par] = configObj[section_name][driz_prefix+par]
             else:
-                paramDict[par] = configObj[section_name][driz_prefix+par]
-        else:
-            val = configObj[section_name][driz_prefix+par]
-            if par in cfunc_pars:
-                val = cfunc_pars[par](val)
-            paramDict[par] = val
+                val = configObj[section_name][driz_prefix+par]
+                if par in cfunc_pars:
+                    val = cfunc_pars[par](val)
+                paramDict[par] = val
     return paramDict
 
 def _setDefaults(configObj={}):
