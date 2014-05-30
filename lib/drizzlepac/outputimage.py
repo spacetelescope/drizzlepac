@@ -25,12 +25,9 @@ EXTLIST = ('SCI', 'WHT', 'CTX')
 WCS_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
 'CRPIX2','CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2','WCSNAME']
 
-try:
-    a = fits.CompImageHDU()
-    del a
-    PYFITS_COMPRESSION = True
-except:
-    PYFITS_COMPRESSION = False
+# fits.CompImageHDU() crashes with default arguments.
+# Instead check that fits module has *attribute* 'CompImageHDU':
+PYFITS_COMPRESSION = hasattr(fits, 'CompImageHDU')
 
 # Set up dictionary of default keywords to be written out to the header
 # of the output drizzle image using writeDrizKeywords()
