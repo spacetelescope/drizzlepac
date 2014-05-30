@@ -9,6 +9,7 @@ import os
 
 from stsci.tools import parseinput, teal
 from stsci.tools import logutil, textutil
+from stsci.tools.cfgpars import DuplicateKeyError
 from stwcs import updatewcs
 
 import util
@@ -20,7 +21,7 @@ import util
 #
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.3.1'
-__vdate__ = '19-May-2014'
+__vdate__ = '30-May-2014'
 
 import tweakutils
 import imgclasses
@@ -39,7 +40,7 @@ PSET_SECTION_REFIMG = '_REF IMAGE SOURCE FINDING PARS_'
 log = logutil.create_logger(__name__)
 
 
-def _managePsets(configobj, section_name, task_name, iparsobj=None):
+def _managePsets(configobj, section_name, task_name, iparsobj=None, input_dict=None):
     """ Read in parameter values from PSET-like configobj tasks defined for
         source-finding algorithms, and any other PSET-like tasks under this task,
         and merge those values into the input configobj dictionary.
@@ -47,9 +48,23 @@ def _managePsets(configobj, section_name, task_name, iparsobj=None):
     # Merge all configobj instances into a single object
     configobj[section_name] = {}
 
+    # Load the default full set of configuration parameters for the PSET:
     iparsobj_cfg = teal.load(task_name)
+
+    # Identify optional parameters in input_dicts that are from this
+    # PSET and add it to iparsobj:
+    if input_dict is not None:
+        for key in input_dict.keys():
+            if key in iparsobj_cfg:
+                if iparsobj is not None and key in iparsobj:
+                    raise DuplicateKeyError("Duplicate parameter '{:s}' "
+                        "provided for task {:s}".format(key, task_name))
+                iparsobj_cfg[key] = input_dict[key]
+                del input_dict[key]
+
     if iparsobj is not None:
         iparsobj_cfg.update(iparsobj)
+
     del iparsobj_cfg['_task_name_']
 
     # merge these parameters into full set
@@ -384,8 +399,8 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         configobj = teal.load(__taskname__)
 
     # Merge PSET configobj with full task configobj
-    _managePsets(configobj, PSET_SECTION,
-                 imagefindpars.__taskname__, iparsobj=imagefindcfg)
+    _managePsets(configobj, PSET_SECTION, imagefindpars.__taskname__,
+                 iparsobj=imagefindcfg, input_dict=input_dict)
     _managePsets(configobj, PSET_SECTION_REFIMG,
                  refimagefindpars.__taskname__, iparsobj=refimagefindcfg)
     # !! NOTE - the above line needs to be done so that getDefaultConfigObj()
