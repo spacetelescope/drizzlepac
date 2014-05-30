@@ -55,8 +55,14 @@ inputDict : dict, optional
 
     .. note:: This list of parameters **can** contain parameters specific
        to the `TweakReg` task itself described here in the "Other Parameters"
-       section and **may not** contain parameters from the `imagefindpars`
-       and `refimagefindpars` PSETs.
+       section and **may not** contain parameters from the `refimagefindpars`
+       PSET.
+
+    .. note:: For compatibility purpose with previous `TweakReg` versions,
+       `inputDict` may contain parameters from the the `imagefindpars`
+       PSET. However, if `imagefindcfg` is not `None`, then `imagefindpars`
+       parameters specified through `inputDict` may not duplicate
+       parameters specified through `imagefindcfg`.
 
 
 Other Parameters
@@ -527,8 +533,8 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
     >>> import drizzlepac
     >>> from drizzlepac import tweakreg
     >>> tweakreg.TweakReg('*flt.fits',
-    ...       imagefindcfg=dict(threshold=200, fwhmpsf=3.5),
-    ...       refimagefindcfg={'threshold' : 400, 'fwhmpsf' : 2.5}
+    ...       imagefindcfg=dict(threshold=200, conv_width=3.5),
+    ...       refimagefindcfg={'threshold' : 400, 'conv_width' : 2.5}
     ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
 
    Or, run the same task from the PyRAF command line, but specify all parameters in
