@@ -50,6 +50,7 @@ driz_sep_wt_scl = string_kw(default="exptime", comment= "Weighting factor for in
 driz_sep_pixfrac = float_kw(default=1., comment="Linear size of drop in input pixels")
 driz_sep_fillval = float_or_none_kw(default=None, comment="Value to be assigned to undefined output points")
 driz_sep_bits = string_kw(default="0", comment="Integer mask bit values considered good")
+driz_sep_compress = boolean_kw(default=False, comment= "Use compression when writing out product?")
 
 [STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS]
 driz_sep_wcs = boolean_kw(default=False, triggers='_section_switch_', is_disabled_by='_rule3a_', comment= "Define custom WCS for separate output images?")
@@ -74,7 +75,7 @@ combine_hthresh = float_or_none_kw(default=None, comment= "Upper threshold for c
 combine_grow = integer_kw(default=1, comment=" Radius (pixels) for neighbor rejection")
 
 [STEP 5: BLOT BACK THE MEDIAN IMAGE]
-blot = boolean_kw(default=true, triggers='_section_switch_', is_set_by='_rule1_', comment= "Blot the median back to the input frame?")
+blot = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment= "Blot the median back to the input frame?")
 blot_interp = option_kw("poly5","nearest","linear", "poly3", "sinc",default="poly5", comment="Interpolant (nearest,linear,poly3,poly5,sinc)")
 blot_sinscl = float_kw(default=1.0, comment="Scale for sinc interpolation kernel")
 blot_addsky = boolean_kw(default=True, triggers='_rule5_', comment= "Add sky using MDRIZSKY value from header?")

@@ -409,7 +409,8 @@ def _buildStaticDQUserMask(img, ext, sky_bits, use_static, umask,
             .format('_', root, suffix, 'in-memory_skymatch_mask')
     else:
         (tmpfname, tmpmask) = temp_mask_file(mask, root,
-            suffix='skymatch_mask', ext=ext, randomize_prefix=True)
+            prefix='', suffix='skymatch_mask', ext=ext,
+            randomize_prefix=False)
         img[ext].outputNames['skyMatchMask'] = tmpfname
 
     return (tmpmask, 0)

@@ -25,6 +25,10 @@ EXTLIST = ('SCI', 'WHT', 'CTX')
 WCS_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
 'CRPIX2','CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2','WCSNAME']
 
+# fits.CompImageHDU() crashes with default arguments.
+# Instead check that fits module has *attribute* 'CompImageHDU':
+PYFITS_COMPRESSION = hasattr(fits, 'CompImageHDU')
+
 # Set up dictionary of default keywords to be written out to the header
 # of the output drizzle image using writeDrizKeywords()
 DRIZ_KEYWORDS = {
@@ -100,6 +104,11 @@ class OutputImage:
         self.bunit = None
         self.units = 'cps'
         self.blot = blot
+
+        if PYFITS_COMPRESSION and 'compress' in input_pars:
+            self.compress = input_pars['compress'] # Control creation of compressed FITS files
+        else:
+            self.compress = False
 
         # Merge input_pars with each chip's outputNames object
         for p in self.parlist:
@@ -329,7 +338,10 @@ class OutputImage:
             # Add primary header to output file...
             fo.append(prihdu)
 
-            hdu = fits.ImageHDU(data=sciarr, header=scihdr, name=EXTLIST[0])
+            if self.single and self.compress:
+                hdu = fits.CompImageHDU(data=sciarr, header=scihdr, name=EXTLIST[0])
+            else:
+                hdu = fits.ImageHDU(data=sciarr, header=scihdr, name=EXTLIST[0])
             last_kw = self.find_kwupdate_location(scihdr,'EXTNAME')
             hdu.header.set('EXTNAME', value='SCI', after=last_kw)
             hdu.header.set('EXTVER', value=1, after='EXTNAME')
@@ -339,7 +351,10 @@ class OutputImage:
             if errhdr:
                 errhdr['CCDCHIP'] = '-999'
 
-            hdu = fits.ImageHDU(data=whtarr, header=errhdr, name=EXTLIST[1])
+            if self.single and self.compress:
+                hdu = fits.CompImageHDU(data=whtarr, header=errhdr, name=EXTLIST[1])
+            else:
+                hdu = fits.ImageHDU(data=whtarr, header=errhdr, name=EXTLIST[1])
             last_kw = self.find_kwupdate_location(errhdr,'EXTNAME')
             hdu.header.set('EXTNAME', value='WHT', after=last_kw)
             hdu.header.set('EXTVER', value=1, after='EXTNAME')
@@ -348,7 +363,7 @@ class OutputImage:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
-                                single=self.single, after=pre_wcs_kw)
+                               single=self.single, after=pre_wcs_kw)
             fo.append(hdu)
 
             # Build CTX extension here
@@ -361,7 +376,10 @@ class OutputImage:
             else:
                 _ctxarr = None
 
-            hdu = fits.ImageHDU(data=_ctxarr, header=dqhdr, name=EXTLIST[2])
+            if self.single and self.compress:
+                hdu = fits.CompImageHDU(data=_ctxarr, header=dqhdr, name=EXTLIST[2])
+            else:
+                hdu = fits.ImageHDU(data=_ctxarr, header=dqhdr, name=EXTLIST[2])
             last_kw = self.find_kwupdate_location(dqhdr,'EXTNAME')
             hdu.header.set('EXTNAME', value='CTX', after=last_kw)
             hdu.header.set('EXTVER', value=1, after='EXTNAME')
@@ -371,7 +389,7 @@ class OutputImage:
                 # Update WCS Keywords based on PyDrizzle product's value
                 # since 'drizzle' itself doesn't update that keyword.
                 addWCSKeywords(self.wcs,hdu.header,blot=self.blot,
-                                single=self.single, after=pre_wcs_kw)
+                               single=self.single, after=pre_wcs_kw)
             fo.append(hdu)
 
             # remove all alternate WCS solutions from headers of this product
@@ -396,7 +414,10 @@ class OutputImage:
 
             fo = fits.HDUList()
 
-            hdu = fits.PrimaryHDU(data=sciarr, header=prihdu.header)
+            if self.compress:
+                hdu = fits.CompImageHDU(data=sciarr, header=prihdu.header)
+            else:
+                hdu = fits.ImageHDU(data=sciarr, header=prihdu.header)
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
             hdu.header.set('extend', value=False, after='NAXIS%s'%dim)
@@ -440,8 +461,10 @@ class OutputImage:
                 if errhdr:
                     errhdr['CCDCHIP'] = '-999'
 
-                hdu = fits.PrimaryHDU(data=whtarr, header=prihdu.header)
-
+                if self.compress:
+                    hdu = fits.CompImageHDU(data=whtarr, header=prihdu.header)
+                else:
+                    hdu = fits.ImageHDU(data=whtarr, header=prihdu.header)
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
                 if errhdr:
@@ -455,7 +478,7 @@ class OutputImage:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
                     addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
-                                    single=self.single, after=pre_wcs_kw)
+                                   single=self.single, after=pre_wcs_kw)
 
                 # Add primary header to output file...
                 fwht.append(hdu)
@@ -481,14 +504,16 @@ class OutputImage:
                 else:
                     _ctxarr = ctxarr
 
-                hdu = fits.PrimaryHDU(data=_ctxarr, header=prihdu.header)
-
+                if self.compress:
+                    hdu = fits.CompImageHDU(data=_ctxarr, header=prihdu.header)
+                else:
+                    hdu = fits.ImageHDU(data=_ctxarr, header=prihdu.header)
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
                 if dqhdr:
                     for _card in dqhdr.cards:
                         if ( (_card.keyword not in RESERVED_KEYS) and
-                                _card.keyword not in hdu.header):
+                             _card.keyword not in hdu.header):
                             hdu.header.append(_card)
                 hdu.header['filename'] = self.outcontext
                 if self.wcs:
@@ -496,7 +521,7 @@ class OutputImage:
                     # Update WCS Keywords based on PyDrizzle product's value
                     # since 'drizzle' itself doesn't update that keyword.
                     addWCSKeywords(self.wcs,hdu.header, blot=self.blot,
-                                    single=self.single, after=pre_wcs_kw)
+                                   single=self.single, after=pre_wcs_kw)
 
                 fctx.append(hdu)
                 # remove all alternate WCS solutions from headers of this product

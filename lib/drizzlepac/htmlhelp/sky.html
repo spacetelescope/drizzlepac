@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 3: Subtracting the Sky &mdash; DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</title>
+    <title>Step 3: Subtracting the Sky &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.2.0.dev31820 (22-May-2014)',
+        VERSION:     '1.2.0.dev32232 (30-May-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
     <link rel="next" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" />
     <link rel="prev" title="Step 2: Generate a Static Mask" href="static.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -432,9 +432,21 @@ that intersects other images.</li>
 for &#8220;equalizing&#8221; sky values in large mosaics in which one may have
 only (at least) pair-wise intersection of images without having
 a common intersection region (on the sky) in all images.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Because this method computes relative sky values compared to a reference image (which will have its sky value set to 0), the sky values computed with this method usually are smaller than the &#8220;absolute&#8221; sky values computed, e.g., with the <tt class="docutils literal"><span class="pre">'localmin'</span></tt> algorithm. Since <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a> expects &#8220;true&#8221; (as opposite to <em>relative</em>) sky values in order to correctly compute the median image or to perform cosmic-ray detection, this algorithm in not recommended to be used <em>alone</em> for sky computations to be used with <em class="xref py py-obj">astrodrizzle</em>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>Because this method computes <em>relative sky values</em> compared to a
+reference image (which will have its sky value set to 0), the sky
+values computed with this method usually are smaller than the
+&#8220;absolute&#8221; sky values computed, e.g., with the <tt class="docutils literal"><span class="pre">'localmin'</span></tt>
+algorithm. Since <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a>
+expects &#8220;true&#8221; (as opposite to <em>relative</em>) sky values in order to
+correctly compute the median image or to perform cosmic-ray detection,
+this algorithm in not recommended to be used <em>alone</em> for sky computations
+to be used with <em class="xref py py-obj">astrodrizzle</em>.</p>
+<p class="last">For the same reason, IVM weighting in <em class="xref py py-obj">astrodrizzle</em> should <strong>not</strong>
+be used with <tt class="docutils literal"><span class="pre">'match'</span></tt> method: sky values reported in <tt class="docutils literal"><span class="pre">MDRIZSKY</span></tt>
+header keyword will be relative sky values (sky offsets) and derived
+weights will be incorrect.</p>
 </div>
 </li>
 <li><p class="first">The <tt class="docutils literal"><span class="pre">'globalmin+match'</span></tt> algorithm combines <tt class="docutils literal"><span class="pre">'match'</span></tt> and
@@ -634,7 +646,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev31820 (22-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
