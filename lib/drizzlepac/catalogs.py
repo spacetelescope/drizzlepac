@@ -306,29 +306,46 @@ class ImageCatalog(Catalog):
         else:
             hmin = sigma*self.pars['threshold']
 
-        x,y,flux,id = tweakutils.ndfind(self.source,hmin,self.pars['conv_width'],skymode,
-                            peakmin=self.pars['peakmin'],
-                            peakmax=self.pars['peakmax'],
-                            fluxmin=self.pars['fluxmin'],
-                            fluxmax=self.pars['fluxmax'],
-                            nsigma=self.pars['nsigma'],
-                            ratio=self.pars['ratio'],
-                            theta=self.pars['theta'],
-                            src_find_filters=self.src_find_filters)
+        x, y, flux, id, sharp, round1, round2 = tweakutils.ndfind(
+            self.source,
+            hmin,
+            self.pars['conv_width'],
+            skymode,
+            sharplim=[self.pars['sharplo'],self.pars['sharphi']],
+            roundlim=[self.pars['roundlo'],self.pars['roundhi']],
+            peakmin=self.pars['peakmin'],
+            peakmax=self.pars['peakmax'],
+            fluxmin=self.pars['fluxmin'],
+            fluxmax=self.pars['fluxmax'],
+            nsigma=self.pars['nsigma'],
+            ratio=self.pars['ratio'],
+            theta=self.pars['theta'],
+            src_find_filters=self.src_find_filters,
+            use_sharp_round = self.pars['use_sharp_round']
+        )
+
         if len(x) == 0:
             if  not self.pars['computesig']:
                 sigma = self._compute_sigma()
                 hmin = sigma * self.pars['threshold']
                 log.info('No sources found with original thresholds. Trying automatic settings.')
-                x,y,flux,id = tweakutils.ndfind(source,hmin,self.pars['conv_width'],skymode,
-                                        peakmin=self.pars['peakmin'],
-                                        peakmax=self.pars['peakmax'],
-                                        fluxmin=self.pars['fluxmin'],
-                                        fluxmax=self.pars['fluxmax'],
-                                        nsigma=self.pars['nsigma'],
-                                        ratio=self.pars['ratio'],
-                                        theta=self.pars['theta'],
-                                        src_find_filters=self.src_find_filters)
+                x, y, flux, id, sharp, round1, round2 = tweakutils.ndfind(
+                    source,
+                    hmin,
+                    self.pars['conv_width'],
+                    skymode,
+                    sharplim=[self.pars['sharplo'],self.pars['sharphi']],
+                    roundlim=[self.pars['roundlo'],self.pars['roundhi']],
+                    peakmin=self.pars['peakmin'],
+                    peakmax=self.pars['peakmax'],
+                    fluxmin=self.pars['fluxmin'],
+                    fluxmax=self.pars['fluxmax'],
+                    nsigma=self.pars['nsigma'],
+                    ratio=self.pars['ratio'],
+                    theta=self.pars['theta'],
+                    src_find_filters=self.src_find_filters,
+                    use_sharp_round = self.pars['use_sharp_round']
+                )
             else:
                 self.xypos = [[],[],[],[]]
                 warnstr = textutil.textbox('WARNING: \n'+
@@ -340,8 +357,8 @@ class ImageCatalog(Catalog):
         self.xypos = [x+1,y+1,flux,id+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
-        self.sharp = None # sharp
-        self.round = None # round
+        self.sharp = sharp # sharp
+        self.round = round1 # round
         self.numcols = 3  # 5
         self.num_objects = len(x)
 
