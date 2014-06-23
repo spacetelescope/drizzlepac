@@ -195,7 +195,11 @@ def _median(imageObjectList, paramDict):
                 _weight_file.inmemory = True
 
             singleWeightList.append(_weight_file)
-            tmp_mean_value = ImageStats(_weight_file.data,lower=1e-8,lsig=None,usig=None,fields="mean",nclip=0)
+            try:
+                tmp_mean_value = ImageStats(_weight_file.data, lower=1e-8,
+                    lsig=None, usig=None, fields="mean", nclip=0)
+            except ValueError:
+                tmp_mean_value = 0.0
             _wht_mean.append(tmp_mean_value.mean * maskpt)
 
             # Extract instrument specific parameters and place in lists
@@ -473,7 +477,7 @@ def help(file=None):
         If given, write out help to the filename specified by this parameter
         Any previously existing file with this name will be deleted before
         writing out the help.
-        
+
     """
     helpstr = getHelpAsString(docstring=True, show_ver = True)
     if file is None:
@@ -489,13 +493,13 @@ def getHelpAsString(docstring = False, show_ver = True):
     """
     return useful help from a file in the script directory called
     __taskname__.help
-    
+
     """
     install_dir = os.path.dirname(__file__)
     taskname = util.base_taskname(__taskname__, __package__)
     htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
     helpfile = os.path.join(install_dir, taskname + '.help')
-    
+
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
             helpString = os.linesep + \
@@ -509,7 +513,7 @@ def getHelpAsString(docstring = False, show_ver = True):
             if __doc__ is not None:
                 helpString += __doc__ + os.linesep
     else:
-        helpString = 'file://' + htmlfile        
+        helpString = 'file://' + htmlfile
 
     return helpString
 

@@ -98,20 +98,28 @@ def get_configobj_root(configobj):
     return kwargs
 
 
-def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,
-                peakmin=None,peakmax=None,fluxmin=None,fluxmax=None,nsigma=1.5,
-                ratio=1.0,theta=0.0,src_find_filters=None):
+def ndfind(array, hmin, fwhm, skymode,
+           sharplim=[0.2,1.0], roundlim=[-1,1], minpix=5,
+           peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
+           nsigma=1.5, ratio=1.0, theta=0.0,
+           src_find_filters=None, use_sharp_round=False):
     star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode,
                     peakmin=peakmin, peakmax=peakmax,
                     fluxmin=fluxmin, fluxmax=fluxmax,
                     ratio=ratio, nsigma=nsigma, theta=theta,
-                    src_find_filters=src_find_filters)
+                    src_find_filters=src_find_filters,
+                    use_sharp_round=use_sharp_round,
+                    sharplo=sharplim[0], sharphi=sharplim[1],
+                    roundlo=roundlim[0], roundhi=roundlim[1])
     if len(star_list) == 0:
         print 'No valid sources found...'
-        return [],[],[],[]
+        return [],[],[],[],[],[],[]
     star_arr = np.array(star_list)
     fluxes = np.array(fluxes,np.float32)
-    return star_arr[:,0],star_arr[:,1],fluxes,np.arange(star_arr.shape[0])
+    return (star_arr[:,0], star_arr[:,1], fluxes,
+            np.arange(star_arr.shape[0]),
+            star_arr[:,2], star_arr[:,3], star_arr[:,4])
+
 
 # Object finding algorithm based on NDIMAGE routines
 def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):

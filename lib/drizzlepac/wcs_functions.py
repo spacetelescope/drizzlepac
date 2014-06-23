@@ -466,7 +466,8 @@ def removeAllAltWCS(hdulist,extlist):
     """
     hdr = hdulist[extlist[0]].header
     wkeys = altwcs.wcskeys(hdr)
-    wkeys.remove(' ')
+    if ' ' in wkeys:
+        wkeys.remove(' ')
     for extn in extlist:
         for wkey in wkeys:
             altwcs.deleteWCS(hdulist,extn,wkey)
