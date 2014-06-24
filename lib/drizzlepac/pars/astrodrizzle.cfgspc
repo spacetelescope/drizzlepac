@@ -13,8 +13,8 @@ build = boolean_kw(default=False, comment="Create multi-extension output file fo
 crbit = integer_kw(default=4096, comment="Bit value for CR ident. in DQ array")
 stepsize = integer_kw(default=10, comment="Step size for drizzle coordinate computation")
 resetbits = string_kw(default="4096", comment="Bit values to reset in all input DQ arrays")
-num_cores = integer_or_none_kw(default=None, comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
-in_memory = boolean_kw(default=False, comment="Process everything in memory to minimize disk I/O?")
+num_cores = integer_or_none_kw(default=None, inactive_if='_rule_mem_', comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
+in_memory = boolean_kw(default=False, triggers='_rule_mem_', comment="Process everything in memory to minimize disk I/O?")
 
 [STATE OF INPUT FILES]
 restore = boolean_kw(default=False, comment="Copy input files FROM archive directory for processing?")
@@ -127,5 +127,6 @@ _rule2a_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = ty
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule4a_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT= util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')
 _rule4b_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT=util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')
-_rule5_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":False, "no":True}; OUT = tyfn[VAL]')
+_rule5_ = string_kw(default=True, when='defaults,entry', code='opposite={"yes":False, "no":True}; OUT = opposite[VAL]')
 _rule7a_ = string_kw(default='', code='OUT = VAL')
+_rule_mem_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')
