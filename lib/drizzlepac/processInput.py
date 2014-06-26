@@ -246,7 +246,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
         numchips += img._nmembers # account for group parameter set by user
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
-    pool_size = util.get_pool_size(num_cores)
+    pool_size = util.get_pool_size(num_cores, None)
     pool_size = pool_size if (numchips >= pool_size) else numchips
 
     inimg = 0
@@ -266,7 +266,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     print '*  Estimated memory usage:  up to %d Mb.'%(max_mem)
     print '*  Output image size:       %d X %d pixels. '%(owcs._naxis1,owcs._naxis2)
     print '*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024))
-    print '*  Cores used by task:      %d'%(pool_size)
+    print '*  Cores available:         %d'%(pool_size)
     print '*'
     print '*'*80
 

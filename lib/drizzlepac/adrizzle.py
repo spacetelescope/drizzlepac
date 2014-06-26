@@ -523,9 +523,14 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     output_wcs.printwcs()
 
     # Will we be running in parallel?
-    pool_size = util.get_pool_size(paramDict.get('num_cores'),
-                                   num_tasks = len(imageObjectList))
+    pool_size = util.get_pool_size(paramDict.get('num_cores'), len(imageObjectList))
     will_parallel = single and pool_size > 1
+    # But not (yet) if in_memory is on
+    if imageObjectList[0].inmemory:
+        pool_size = 1
+        if will_parallel:
+            will_parallel = False
+            log.info('Sorry, astrodrizzle can not execute in parallel with in_memory on.')
     if will_parallel:
         log.info('Executing %d parallel workers' % pool_size)
     else:
@@ -606,16 +611,19 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
         # Work each image, possibly in parallel
         if will_parallel:
-            manager = multiprocessing.Manager()
-            mgr = manager.dict(img.virtualOutputs)
-
+#           manager = multiprocessing.Manager()
+#           mgr = manager.dict(img.virtualOutputs)
+            mgr = None
+            # To save memory, do not use img.virtualOutputs when running
+            # in parallel (too many users don't have the needed resources)
+            # and thus do not allow parallelization when img.inmemory
             p = multiprocessing.Process(target=run_driz_img,
                 name='adrizzle.run_driz_img()', # for err msgs
                 args=(img,mgr,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
                       _chipIdx,None,None,None,_hdrlist,wcsmap))
             subprocs.append(p)
-            img.virtualOutputs = mgr
+#           img.virtualOutputs = mgr
         else:
             run_driz_img(img,img.virtualOutputs,chiplist,output_wcs,outwcs,template,paramDict,
                          single,num_in_prod,build,_versions,_numctx,_nplanes,
@@ -669,7 +677,7 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
 #                 str(doWrite)+', here='+str(here))
 
         # run_driz_chip
-        run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,
+        run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
                       single,doWrite,build,_versions,_numctx,_nplanes,
                       chipIdxCopy,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
 
@@ -693,7 +701,7 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
         virtual_outputs = img.virtualOutputs
 
 
-def run_driz_chip(img,virtual_outputs,chip,output_wcs,outwcs,template,paramDict,single,
+def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                   doWrite,build,_versions,_numctx,_nplanes,_numchips,
                   _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single chip.

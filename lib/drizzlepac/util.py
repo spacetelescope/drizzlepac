@@ -49,7 +49,7 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
         print '\nCould not import multiprocessing, will only take advantage of a single CPU core'
 
 
-def get_pool_size(usr_config_value=None, num_tasks=None):
+def get_pool_size(usr_config_value, num_tasks):
     """ Determine size of thread/process-pool for parallel processing.
     This examines the cpu_count to decide and return the right pool
     size to use.  Also take into account the user's wishes via the config
