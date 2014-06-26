@@ -13,6 +13,7 @@ import numpy as np
 from astropy import wcs as pywcs
 import stwcs
 from astropy.io import fits
+from stsci.sphere.polygon import SphericalPolygon
 
 from stwcs import distortion
 from stwcs.distortion import utils
@@ -28,6 +29,12 @@ import linearfit
 import updatehdr
 import util
 import tweakutils
+
+# DEBUG
+IMGCLASSES_DEBUG = True
+
+# use convex hull for images? (this is tighter than chip's bounding box)
+IMAGE_USE_CONVEX_HULL = True
 
 log = logutil.create_logger(__name__)
 
@@ -51,6 +58,11 @@ class Image(object):
             Parameters necessary for processing derived from input configObj object.
 
         """
+        if 'use_sharp_round' in kwargs:
+            self.use_sharp_round = kwargs['use_sharp_round']
+        else:
+            self.use_sharp_round = False
+
         self.perform_update = kwargs['updatehdr']
         if self.perform_update:
             self.open_mode = 'update'
@@ -89,29 +101,24 @@ class Image(object):
         self.verbose = kwargs['verbose']
         self.interactive = kwargs.get('interactive',True)
 
-        if input_catalogs is not None and kwargs['xyunits'] == 'degrees':
-            # Input was a catalog of sky positions, so no WCS or image needed
-            use_wcs = False
-            num_sci = 0
-        else:
-            # WCS required, so verify that we can get one
-            # Need to count number of SCI extensions
-            #  (assume a valid WCS with each SCI extension)
-            num_sci,extname = util.count_sci_extensions(filename)
-            if num_sci < 1:
-                print >> sys.stderr,textutil.textbox(
-                        'ERROR: No Valid WCS available for %s'%filename)
-                raise InputError
-            use_wcs = True
+        # WCS required, so verify that we can get one
+        # Need to count number of SCI extensions
+        #  (assume a valid WCS with each SCI extension)
+        num_sci,extname = util.count_sci_extensions(filename)
+
+        if num_sci < 1:
+            print >> sys.stderr,textutil.textbox(
+                    'ERROR: No Valid WCS available for %s'%filename)
+            raise InputError
+
         # Record this for use with methods
-        self.use_wcs = use_wcs
         self.num_sci = num_sci
         self.ext_name = extname
 
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
-        self.xy_catalog = [[],[],[],[]]
-        num_sources = 0
+        self.xy_catalog = [[] for i in range(8 if self.use_sharp_round else 5)]
+        self.num_sources = 0
 
         # Analyze exclusion file list:
         reg_mode = "exclude only"
@@ -145,12 +152,14 @@ class Image(object):
             exclusions = num_sci * [ None ]
 
         # For each SCI extension, generate a catalog and WCS
+        bounding_polygons = []
         for sci_extn in range(1,num_sci+1):
             extnum = fu.findExtname(fits.open(filename),extname,extver=sci_extn)
             if extnum is None: extnum = 0
             chip_filename = filename+'[%d]'%(extnum)
-            if use_wcs:
-                wcs = stwcs.wcsutil.HSTWCS(chip_filename)
+
+            wcs = stwcs.wcsutil.HSTWCS(chip_filename)
+
             if input_catalogs is None:
                 # if we already have a set of catalogs provided on input,
                 #  we only need the array to get original XY input positions
@@ -166,19 +175,48 @@ class Image(object):
             else:
                 excludefile = None
 
-            kwargs['start_id'] = num_sources
+            kwargs['start_id'] = self.num_sources
             catalog = catalogs.generateCatalog(wcs, mode=catalog_mode,
                         catalog=source, src_find_filters=excludefile, **kwargs)
 
             # read in and convert all catalog positions to RA/Dec
             catalog.buildCatalogs(exclusions=None) # (exclusions=excludefile)
-            num_sources += catalog.num_objects
+            self.num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
+
             # Merge input X,Y positions from all chips into a single catalog
             # This will be used for writing output matched source catalogs
-            for i,col in enumerate(self.xy_catalog):
-                if catalog.xypos is not None and len(catalog.xypos) > 0 and i < len(catalog.xypos):
-                    col = col.extend(catalog.xypos[i])
+            nxypos = 0 if catalog.xypos is None else min(len(self.xy_catalog),len(catalog.xypos))
+            if nxypos > 0:
+                nsrc = catalog.xypos[0].shape[0]
+                self.xy_catalog = [np.append(self.xy_catalog[i], catalog.xypos[i])
+                                   for i in xrange(nxypos)]
+                # add "source origin":
+                self.xy_catalog.append(np.asarray(nsrc*[source]))
+
+            # Compute bounding convex hull for the reference catalog:
+            if IMAGE_USE_CONVEX_HULL and self.xy_catalog is not None:
+                xy_vertices = np.asarray(convex_hull(
+                    map(tuple,np.asarray([self.xy_catalog[0],self.xy_catalog[1]]).transpose())),
+                                         dtype=np.float64)
+                rdv = wcs.all_pix2world(xy_vertices, 1)
+                bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
+                if IMGCLASSES_DEBUG:
+                    all_ra, all_dec = wcs.all_pix2world(
+                        self.xy_catalog[0], self.xy_catalog[1], 1)
+                    _debug_write_region_fk5(self.rootname+'_bounding_polygon.reg',
+                                            zip(*rdv.transpose()),
+                                            zip(*[all_ra, all_dec]))
+            else:
+                bounding_polygons.append(SphericalPolygon.from_wcs(wcs))
+
+        npoly = len(bounding_polygons)
+        if npoly > 1:
+            self.skyline = SphericalPolygon.multi_union(bounding_polygons)
+        elif npoly == 1:
+            self.skyline = bounding_polygons[0]
+        else:
+            self.skyline = SphericalPolygon([])
 
         self.catalog_names = {}
         # Build full list of all sky positions from all chips
@@ -242,6 +280,7 @@ class Image(object):
             the entire field-of-view of this image.
         """
         self.all_radec = None
+        self.all_radec_orig = None
         ralist = []
         declist = []
         fluxlist = []
@@ -371,7 +410,7 @@ class Image(object):
                 if all_radec is not None:
                     self.all_radec = copy.deepcopy(all_radec)
 
-    def match(self,refimage, **kwargs):
+    def match(self,refimage, quiet_identity, **kwargs):
         """ Uses xyxymatch to cross-match sources between this catalog and
             a reference catalog (refCatalog).
         """
@@ -380,7 +419,9 @@ class Image(object):
         refname = refimage.name
         ref_inxy = refimage.xy_catalog
 
-        print 'Matching sources from ',self.name,' with sources from reference image',refname
+        if not quiet_identity:
+            print("Matching sources from {} with sources from reference image {}"
+                  .format(self.name, refname))
         self.sortSkyCatalog() # apply any catalog sorting specified by the user
         self.transformToRef(refWCS)
         self.refWCS = refWCS
@@ -390,12 +431,15 @@ class Image(object):
         minobj = matchpars['minobj'] # needed for later
         del matchpars['minobj'] # not needed in xyxymatch
 
+        self.goodmatch = True
+
         # Check to see whether or not it is being matched to itself
         if (refname.strip() == self.name.strip()):# or (
 #                ref_outxy.shape == self.outxy.shape) and (
 #                ref_outxy == self.outxy).all():
             self.identityfit = True
-            log.info('NO fit performed for reference image: %s\n'%self.name)
+            if not quiet_identity:
+                log.info('NO fit performed for reference image: %s\n'%self.name)
         else:
             # convert tolerance from units of arcseconds to pixels, as needed
             radius = matchpars['searchrad']
@@ -456,6 +500,7 @@ class Image(object):
                                 np.newaxis],matches['ref_y'][:,np.newaxis]])
                 self.matches['ref_idx'] = matches['ref_idx']
                 self.matches['img_idx'] = self.all_radec[3][matches['input_idx']]
+                self.matches['input_idx'] = matches['input_idx']
                 self.matches['img_RA'] = self.all_radec[0][matches['input_idx']]
                 self.matches['img_DEC'] = self.all_radec[1][matches['input_idx']]
 
@@ -465,6 +510,7 @@ class Image(object):
                 self.matches['img_orig_xy'] = np.column_stack([
                     np.array(self.xy_catalog[0])[matches['input_idx']][:,np.newaxis],
                     np.array(self.xy_catalog[1])[matches['input_idx']][:,np.newaxis]])
+                self.matches['src_origin'] = ref_inxy[-1][matches['ref_idx']]
                 print 'Found %d matches for %s...'%(len(matches),self.name)
 
                 if self.pars['writecat']:
@@ -475,9 +521,10 @@ class Image(object):
                     title += 'Input_X    Input_Y        '
                     title += 'Ref_X0    Ref_Y0        '
                     title += 'Input_X0    Input_Y0        '
-                    title += 'Ref_ID    Input_ID\n'
+                    title += 'Ref_ID    Input_ID        '
+                    title += 'Ref_Source\n'
                     fmtstr = '%0.6f    %0.6f        '*4
-                    fmtstr += '%d    %d\n'
+                    fmtstr += '%d    %d    %s\n'
                     matchfile.write(title)
                     for i in xrange(len(matches['input_x'])):
                         linestr = fmtstr%\
@@ -487,7 +534,8 @@ class Image(object):
                             self.matches['ref_orig_xy'][:,1][i],
                             self.matches['img_orig_xy'][:,0][i],
                             self.matches['img_orig_xy'][:,1][i],
-                            matches['ref_idx'][i],matches['input_idx'][i])
+                            matches['ref_idx'][i],matches['input_idx'][i],
+                            self.matches['src_origin'][i])
                         matchfile.write(linestr)
                     matchfile.close()
             else:
@@ -512,12 +560,13 @@ class Image(object):
             This task still needs to implement (eventually) interactive iteration of
                    the fit to remove outliers.
         """
+        assert(self.refWCS is not None)
         pars = kwargs.copy()
         self.fit_pars = pars
 
         self.fit = {'offset':[0.0,0.0],'rot':0.0,'scale':[1.0],'rms':[0.0,0.0],
                     'rms_keys':{'RMS_RA':0.0,'RMS_DEC':0.0,'NMATCH':0},
-                    'fit_matrix':[[1.0,0.0],[0.0,1.0]]}
+                    'fit_matrix':[[1.0,0.0],[0.0,1.0]], 'src_origin':[None]}
 
         if not self.identityfit:
             if self.matches is not None and self.goodmatch:
@@ -532,10 +581,14 @@ class Image(object):
                     verbose=self.verbose)
 
                 self.fit['rms_keys'] = self.compute_fit_rms()
-                self.fit['img_RA'] = self.matches['img_RA']
-                self.fit['img_DEC'] = self.matches['img_DEC']
-                if pars['fitgeometry'] != 'general':
-                    self.fit['fit_matrix'] = None
+                xy_fit = self.fit['img_coords']+self.fit['resids']
+                self.fit['fit_xy'] = xy_fit
+                radec_fit = self.refWCS.all_pix2world(xy_fit, 1)
+                self.fit['fit_RA'] = radec_fit[:,0]
+                self.fit['fit_DEC'] = radec_fit[:,1]
+                self.fit['src_origin'] = self.matches['src_origin']
+                #if pars['fitgeometry'] != 'general':
+                    #self.fit['fit_matrix'] = None
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
                 print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
@@ -792,8 +845,9 @@ class Image(object):
             f.write('#     Column 13: Ref ID\n')
             f.write('#     Column 14: Input ID\n')
             f.write('#     Column 15: Input EXTVER ID \n')
-            f.write('#     Column 16: RA\n')
-            f.write('#     Column 17: Dec\n')
+            f.write('#     Column 16: RA (fit)\n')
+            f.write('#     Column 17: Dec (fit)\n')
+            f.write('#     Column 18: Ref source provenience\n')
             #
             # Need to add chip ID for each matched source to the fitmatch file
             # The chip information can be extracted from the following source:
@@ -810,20 +864,21 @@ class Image(object):
             #
             f.write('#\n')
             f.close()
-            fitvals = self.fit['img_coords']+self.fit['resids']
             xydata = [[self.fit['ref_coords'][:,0],self.fit['ref_coords'][:,1],
                       self.fit['img_coords'][:,0],self.fit['img_coords'][:,1],
-                      fitvals[:,0],fitvals[:,1],
+                      self.fit['fit_xy'][:,0],self.fit['fit_xy'][:,1],
                       self.fit['resids'][:,0],self.fit['resids'][:,1],
                       self.fit['ref_orig_xy'][:,0],
                       self.fit['ref_orig_xy'][:,1],
                       self.fit['img_orig_xy'][:,0],
                       self.fit['img_orig_xy'][:,1]],
                       [self.fit['ref_indx'],self.fit['img_indx'],img_chip_id],
-                      [self.fit['img_RA'],self.fit['img_DEC']]
+                      [self.fit['fit_RA'],self.fit['fit_DEC']],
+                      [self.fit['src_origin']]
                     ]
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
-                                        append=True,format=["%15.6f","%8d","%20.12f"])
+                append=True,format=["%15.6f","%8d","%20.12f","   %s"])
+
 
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file.
@@ -835,6 +890,7 @@ class Image(object):
         for i in xrange(self.all_radec[0].shape[0]):
             f.write('%f  %f\n'%(self.outxy[i,0],self.outxy[i,1]))
         f.close()
+
 
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
@@ -870,7 +926,7 @@ class RefImage(object):
     """ This class provides all the information needed by to define a reference
         tangent plane and list of source positions on the sky.
     """
-    def __init__(self,wcs_list,catalog,xycatalog=None,**kwargs):
+    def __init__(self, wcs_list, catalog, xycatalog=None, cat_origin=None, **kwargs):
         if isinstance(wcs_list,str):
             # Input was a filename for the reference image
             froot,fextn = fu.parseFilename(wcs_list)
@@ -884,40 +940,68 @@ class RefImage(object):
             else:
                 fname = wcs_list
             self.wcs = stwcs.wcsutil.HSTWCS(fname)
+            if _is_wcs_distorted(self.wcs):
+                log.warn("\nReference image contains a distorted WCS.\n"
+                         "Using the undistorted version of this WCS.\n")
+                self.wcs = utils.output_wcs([self.wcs], undistort=True)
+
         elif isinstance(wcs_list,list):
             # generate a reference tangent plane from a list of STWCS objects
-            undistort = True
-            if wcs_list[0].sip is None:
-                undistort=False
-            self.wcs = utils.output_wcs(wcs_list,undistort=undistort)
+            undistort = _is_wcs_distorted(wcs_list[0])
+            self.wcs = utils.output_wcs(wcs_list, undistort=undistort)
             self.wcs.filename = wcs_list[0].filename
+
         else:
             # only a single WCS provided, so use that as the definition
             if not isinstance(wcs_list,stwcs.wcsutil.HSTWCS): # User only provided a filename
                 self.wcs = stwcs.wcsutil.HSTWCS(wcs_list)
             else: # User provided full HSTWCS object
                 self.wcs = wcs_list
+            if _is_wcs_distorted(self.wcs):
+                log.warn("\nReference image contains a distorted WCS.\n"
+                         "Using the undistorted version of this WCS.\n")
+                self.wcs = utils.output_wcs([self.wcs], undistort=True)
+
+        self.dirty = False
+
+        if 'use_sharp_round' in kwargs:
+            self.use_sharp_round = kwargs['use_sharp_round']
+        else:
+            self.use_sharp_round = False
 
         self.name = self.wcs.filename
         self.refWCS = None
+
+        # See if computation of the bounding polygon for
+        # the reference catalog was requested:
+        find_bounding_polygon = kwargs.pop('find_bounding_polygon', True)
+
         # Interpret the provided catalog
-        self.catalog = catalogs.RefCatalog(None,catalog,**kwargs)
+        self.catalog = catalogs.RefCatalog(None, catalog,**kwargs)
         self.catalog.buildCatalogs()
         self.all_radec = self.catalog.radec
 
         # add input source positions to RefCatalog for reporting in final
         # matched output catalog files
         if xycatalog is not None:
-            self.xy_catalog = xycatalog
+            self.xy_catalog = map(np.asarray, xycatalog)
         else:
             # Convert RA/Dec positions of source from refimage into
             # X,Y positions based on WCS of refimage
-            self.xy_catalog = [[],[],[],[]]
-            xypos = self.wcs.all_world2pix(self.all_radec[0],self.all_radec[1],1)
-            self.xy_catalog[0] = xypos[0]
-            self.xy_catalog[1] = xypos[1]
-            self.xy_catalog[2] = np.zeros(xypos[0].shape[0],dtype=np.float32)
-            self.xy_catalog[3] = np.arange(xypos[0].shape[0],dtype=np.int32)
+            self.xy_catalog = []
+            xypos = self.wcs.wcs_world2pix(self.all_radec[0], self.all_radec[1],1)
+            nxypos = xypos[0].shape[0]
+            self.xy_catalog.append(xypos[0])
+            self.xy_catalog.append(xypos[1])
+            self.xy_catalog.append(np.zeros(nxypos, dtype=float))
+            self.xy_catalog.append(np.arange(nxypos, dtype=int))
+            if self.use_sharp_round:
+                for i in [4,5,6]:
+                    self.xy_catalog.append(np.zeros(nxypos, dtype=float))
+            if cat_origin is None:
+                self.xy_catalog.append(np.asarray(nxypos*[self.name], dtype=object))
+            else:
+                self.xy_catalog.append(np.asarray(cat_origin, dtype=object))
 
         self.outxy = None
         self.origin = 1
@@ -925,6 +1009,28 @@ class RefImage(object):
         if self.all_radec is not None:
             # convert sky positions to X,Y positions on reference tangent plane
             self.transformToRef()
+
+        # Compute bounding convex hull for the reference catalog:
+        if (find_bounding_polygon or IMAGE_USE_CONVEX_HULL) and \
+           self.outxy is not None:
+            xy_vertices = np.asarray(convex_hull(map(tuple,self.outxy)),
+                                     dtype=np.float64)
+            rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
+            self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+            if IMGCLASSES_DEBUG:
+                _debug_write_region_fk5('tweakreg_refcat_bounding_polygon.reg',
+                                        zip(*rdv.transpose()),
+                                        zip(*self.all_radec))
+        else:
+            self.skyline = SphericalPolygon([])
+
+
+    def clear_dirty_flag(self):
+        self.dirty = False
+
+
+    def set_dirty(self):
+        self.dirty = True
 
 
     def write_skycatalog(self,filename):
@@ -935,8 +1041,11 @@ class RefImage(object):
         f.write("#RA        Dec\n")
         f.write("#(deg)     (deg)\n")
         for i in xrange(self.all_radec[0].shape[0]):
-            f.write('%g  %g\n'%(self.all_radec[0][i],self.all_radec[1][i]))
+            f.write('{:g}  {:g} # origin: {:s}\n'
+                    .format(self.all_radec[0][i], self.all_radec[1][i],
+                            self.xy_catalog[-1][i]))
         f.close()
+
 
     def transformToRef(self):
         """ Transform reference catalog sky positions (self.all_radec)
@@ -956,6 +1065,64 @@ class RefImage(object):
             self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
 
 
+    def append_not_matched_sources(self, image):
+        assert(hasattr(image, 'fit') and hasattr(image, 'matches'))
+        if not image.goodmatch or image.identityfit:
+            return
+        matched_idx = image.matches['input_idx']
+
+        # append new sources to the reference catalog:
+        old_ref_nsources = self.outxy.shape[0]
+        adding_nsources = image.outxy.shape[0] - matched_idx.shape[0]
+        print("Adding {} new sources to the reference catalog "
+              "for a total of {} sources."
+              .format(adding_nsources, old_ref_nsources + adding_nsources))
+        not_matched_mask = np.ones(image.outxy.shape[0], dtype=np.bool)
+        not_matched_mask[matched_idx] = False
+        not_matched_outxy = image.outxy[not_matched_mask]
+
+        # apply corrections based on the fit:
+        new_outxy = np.dot(not_matched_outxy, image.fit['fit_matrix']) + \
+            image.fit['offset']
+
+        # convert to RA & DEC:
+        new_radec = self.wcs.wcs_pix2world(new_outxy, 1)
+
+        self.outxy = np.append(self.outxy, new_outxy, 0)
+        id1 = self.all_radec[3][-1] + 1
+        id2 = id1 + len(self.all_radec[3])
+        self.all_radec = [np.append(self.all_radec[0], new_radec[:,0], 0),
+                          np.append(self.all_radec[1], new_radec[:,1], 0),
+                          np.append(self.all_radec[2], image.all_radec[2][not_matched_mask], 0),
+                          np.append(self.all_radec[3], np.arange(id1,id2), 0)]
+
+        # Append original image coordinates:
+        self.xy_catalog[0] = np.append(self.xy_catalog[0],
+            np.asarray(image.xy_catalog[0])[not_matched_mask], 0)
+        self.xy_catalog[1] = np.append(self.xy_catalog[1],
+            np.asarray(image.xy_catalog[1])[not_matched_mask], 0)
+        ncol = len(self.xy_catalog)
+        self.use_sharp_round
+        for i,col in enumerate(image.xy_catalog[2:-1]):
+            i2 = i + 2
+            if i2 < ncol-1:
+                self.xy_catalog[i2] = np.append(self.xy_catalog[i2], col, 0)
+        self.xy_catalog[-1] = np.append(self.xy_catalog[-1],
+                                        np.asarray(image.xy_catalog[-1])[not_matched_mask], 0)
+
+        #self.skyline = self.skyline.union(skyline)
+        xy_vertices = np.asarray(convex_hull(map(tuple,self.outxy)),
+                                 dtype=np.float64)
+        rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
+        self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+        if IMGCLASSES_DEBUG:
+            _debug_write_region_fk5('tweakreg_refcat_bounding_polygon.reg',
+                                    zip(*rdv.transpose()),
+                                    zip(*self.all_radec))
+
+        self.set_dirty()
+
+
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
             compatability with the IRAF-based MultiDrizzle.
@@ -963,14 +1130,17 @@ class RefImage(object):
         rowstr = '%s    0.0  0.0    0.0     1.0    0.0 0.0\n'%(self.name)
         return rowstr
 
+
     def clean(self):
         """ Remove intermediate files created
         """
         if not util.is_blank(self.catalog.catname) and os.path.exists(self.catalog.catname):
             os.remove(self.catalog.catname)
 
+
     def close(self):
         pass
+
 
 def build_referenceWCS(catalog_list):
     """ Compute default reference WCS from list of Catalog objects.
@@ -980,6 +1150,7 @@ def build_referenceWCS(catalog_list):
         for scichip in catalog.catalogs:
             wcslist.append(catalog.catalogs[scichip]['wcs'])
     return utils.output_wcs(wcslist)
+
 
 def verify_hdrname(**pars):
     if not pars['headerlet']:
@@ -1001,3 +1172,76 @@ def verify_hdrname(**pars):
         warnstr += '        in your next run to write out headerlets.\n'
         print textutil.textbox(warnstr)
         return
+
+
+def _debug_write_region_fk5(fname, ivert, points):
+    fh = open(fname, 'w')
+    fh.write('# Region file format: DS9 version 4.1\n')
+    fh.write('global color=yellow dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n')
+    fh.write('fk5\n')
+    fh.write('polygon({}) # color=red width=2\n'
+             .format(','.join(map(str,[x for e in ivert for x in e]))))
+    for p in points:
+        fh.write('point({}) # point=x width=2\n'
+                 .format(','.join(map(str,[e for e in p[:2]]))))
+    fh.close()
+
+
+def convex_hull(points):
+    """Computes the convex hull of a set of 2D points.
+
+    Implements `Andrew's monotone chain algorithm <http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain>`_.
+    The algorithm has O(n log n) complexity.
+
+    Credit: `<http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain>`_
+
+    Parameters
+    ----------
+
+    points : list of tuples
+        An iterable sequence of (x, y) pairs representing the points.
+
+    Returns
+    -------
+    Output : list
+        A list of vertices of the convex hull in counter-clockwise order,
+        starting from the vertex with the lexicographically smallest
+        coordinates.
+    """
+
+    # Sort the points lexicographically (tuples are compared lexicographically).
+    # Remove duplicates to detect the case we have just one unique point.
+    points = sorted(set(points))
+
+    # Boring case: no points or a single point, possibly repeated multiple times.
+    if len(points) <= 1:
+        return points
+
+    # 2D cross product of OA and OB vectors, i.e. z-component of their 3D cross product.
+    # Returns a positive value, if OAB makes a counter-clockwise turn,
+    # negative for clockwise turn, and zero if the points are collinear.
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    # Build lower hull
+    lower = []
+    for p in points:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+
+    # Build upper hull
+    upper = []
+    for p in reversed(points):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+
+    # Concatenation of the lower and upper hulls gives the convex hull.
+    # Last point of each list is omitted because it is repeated at the beginning of the other list.
+    return lower[:-1] + upper
+
+def _is_wcs_distorted(wcs):
+    return not (wcs.sip is None and \
+                wcs.cpdis1 is None and wcs.cpdis2 is None and \
+                wcs.det2im1 is None and wcs.det2im2 is None)

@@ -73,8 +73,8 @@ class Catalog(object):
         ----------
         wcs : obj
             Input WCS object generated using STWCS or HSTWCS
-        catalog_source : str or ndarray
-            Catalog generated from this image(ndarray) or read from this file(str).
+        catalog_source : str
+            Name of the file from which to read the catalog.
         kwargs : dict
             Parameters for interpreting the catalog file or for performing the source
             extraction from the image. These will be set differently depending on
@@ -84,10 +84,15 @@ class Catalog(object):
         self.xypos = None
         self.in_units = 'pixels'
         self.sharp = None
-        self.round = None
+        self.round1 = None
+        self.round2 = None
         self.numcols = None
         self.origin = 1 # X,Y coords will ALWAYS be FITS 1-based, not numpy 0-based
         self.pars = kwargs
+        if 'use_sharp_round' in self.pars:
+            self.use_sharp_round = self.pars['use_sharp_round']
+        else:
+            self.use_sharp_round = False
 
         self.start_id = 0
         if 'start_id' in self.pars:
@@ -124,9 +129,8 @@ class Catalog(object):
             print >> sys.stderr,textutil.textbox(
             'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...')
             raise ValueError
-        if len(self.xypos[0]) == 0:
+        if self.xypos is None or len(self.xypos[0]) == 0:
             self.xypos = None
-        if self.xypos is None:
             warnstr = textutil.textbox('WARNING: \n'+
                         'No objects found for this image...')
             for line in warnstr.split('\n'):
@@ -172,7 +176,7 @@ class Catalog(object):
                     break
         # create a list of all 'good' sources outside all exclusion regions
         for e in excluded_list: radec_indx.remove(e)
-        radec_indx = np.array(radec_indx,dtype=np.int64)
+        radec_indx = np.array(radec_indx,dtype=int)
         num_excluded = len(excluded_list)
         if num_excluded > 0:
             radec_trimmed = []
@@ -249,7 +253,10 @@ class Catalog(object):
         f = open(filename,'w')
         f.write("# Source catalog derived for %s\n"%self.wcs.filename)
         f.write("# Columns: \n")
-        f.write('#    X      Y         Flux       ID\n')
+        if self.use_sharp_round:
+            f.write('#    X      Y         Flux       ID      Sharp       Round1       Round2\n')
+        else:
+            f.write('#    X      Y         Flux       ID\n')
         f.write('#   (%s)   (%s)\n'%(self.in_units,self.in_units))
 
         for row in range(len(self.xypos[0])):
@@ -258,7 +265,6 @@ class Catalog(object):
             f.write("\n")
 
         f.close()
-
 
 
 class ImageCatalog(Catalog):
@@ -306,7 +312,7 @@ class ImageCatalog(Catalog):
         else:
             hmin = sigma*self.pars['threshold']
 
-        x, y, flux, id, sharp, round1, round2 = tweakutils.ndfind(
+        x, y, flux, src_id, sharp, round1, round2 = tweakutils.ndfind(
             self.source,
             hmin,
             self.pars['conv_width'],
@@ -321,7 +327,7 @@ class ImageCatalog(Catalog):
             ratio=self.pars['ratio'],
             theta=self.pars['theta'],
             src_find_filters=self.src_find_filters,
-            use_sharp_round = self.pars['use_sharp_round']
+            use_sharp_round = self.use_sharp_round
         )
 
         if len(x) == 0:
@@ -329,7 +335,7 @@ class ImageCatalog(Catalog):
                 sigma = self._compute_sigma()
                 hmin = sigma * self.pars['threshold']
                 log.info('No sources found with original thresholds. Trying automatic settings.')
-                x, y, flux, id, sharp, round1, round2 = tweakutils.ndfind(
+                x, y, flux, src_id, sharp, round1, round2 = tweakutils.ndfind(
                     source,
                     hmin,
                     self.pars['conv_width'],
@@ -344,22 +350,30 @@ class ImageCatalog(Catalog):
                     ratio=self.pars['ratio'],
                     theta=self.pars['theta'],
                     src_find_filters=self.src_find_filters,
-                    use_sharp_round = self.pars['use_sharp_round']
+                    use_sharp_round = self.use_sharp_round
                 )
+        if len(x) == 0:
+            xypostypes = 3*[float]+[int]+(3 if self.use_sharp_round else 0)*[float]
+            self.xypos = [np.empty(0, dtype=i) for i in xypostypes]
+            warnstr = textutil.textbox('WARNING: \n'+
+                'No valid sources found with the current parameter values!')
+            for line in warnstr.split('\n'):
+                log.warning(line)
+            print(warnstr)
+        else:
+            # convert the positions from numpy 0-based to FITS 1-based
+            if self.use_sharp_round:
+                self.xypos = [x+1, y+1, flux, src_id+self.start_id, sharp, round1, round2]
             else:
-                self.xypos = [[],[],[],[]]
-                warnstr = textutil.textbox('WARNING: \n'+
-                    'No valid sources found with the current parameter values!')
-                for line in warnstr.split('\n'):
-                    log.warning(line)
-                print(warnstr)
+                self.xypos = [x+1, y+1, flux, src_id+self.start_id]
+
         log.info('###Source finding finished at: %s'%(util._ptime()[0]))
-        self.xypos = [x+1,y+1,flux,id+self.start_id] # convert the positions from numpy 0-based to FITS 1-based
 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
-        self.sharp = sharp # sharp
-        self.round = round1 # round
-        self.numcols = 3  # 5
+        self.sharp = sharp
+        self.round1 = round1
+        self.round2 = round2
+        self.numcols = 7 if self.use_sharp_round else 4
         self.num_objects = len(x)
 
     def _compute_sigma(self):
@@ -426,7 +440,9 @@ class UserCatalog(Catalog):
             if self.numcols > 3:
                 self.sharp = xycols[3]
             if self.numcols > 4:
-                self.round = xycols[4]
+                self.round1 = xycols[4]
+            if self.numcols > 5:
+                self.round2 = xycols[5]
 
         self.num_objects = 0
         if xycols is not None:
