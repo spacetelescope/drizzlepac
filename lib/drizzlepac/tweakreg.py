@@ -545,9 +545,6 @@ def _max_overlap_pair(images):
     for k in xrange(images_arr.shape[0]):
         images.append(images_arr[k])
 
-    imgs = [f.name for f in images]
-    print imgs
-
     return (im1, im2)
 
 

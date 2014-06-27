@@ -140,7 +140,7 @@ class Catalog(object):
 
         if self.radec is None or force:
             if self.wcs is not None:
-                print('    Number of objects in catalog: %d'%(len(self.xypos[0])))
+                print('     Found {:d} objects.'.format(len(self.xypos[0])))
                 self.radec = self.wcs.all_pix2world(self.xypos[0],self.xypos[1],self.origin)
             else:
                 # If we have no WCS, simply pass along the XY input positions
@@ -291,6 +291,8 @@ class ImageCatalog(Catalog):
         #   of the regions will be applied.
         self.src_find_filters = src_find_filters
         Catalog.__init__(self,wcs,catalog_source,**kwargs)
+        extind = self.fname.rfind('[')
+        self.fnamenoext = self.fname if extind < 0 else self.fname[:extind]
         if self.wcs.extname == ('',None): self.wcs.extname = (0)
         self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
 
@@ -299,7 +301,8 @@ class ImageCatalog(Catalog):
         """
         #x,y,flux,sharp,round = idlphot.find(array,self.pars['hmin'],self.pars['fwhm'],
         #                    roundlim=self.pars['roundlim'], sharplim=self.pars['sharplim'])
-        print '###Source finding for EXT=',self.wcs.extname,' started at: ',util._ptime()[0]
+        print("###  Source finding for '{}', EXT={} started at: {}"
+              .format(self.fnamenoext, self.wcs.extname, util._ptime()[0]))
         if self.pars['computesig']:
             # compute sigma for this image
             sigma = self._compute_sigma()

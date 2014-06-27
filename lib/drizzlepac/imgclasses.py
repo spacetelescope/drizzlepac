@@ -14,6 +14,8 @@ from astropy import wcs as pywcs
 import stwcs
 from astropy.io import fits
 from stsci.sphere.polygon import SphericalPolygon
+from stsci.skypac.utils import get_extver_list
+
 
 from stwcs import distortion
 from stwcs.distortion import utils
@@ -117,7 +119,9 @@ class Image(object):
 
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
-        self.xy_catalog = [[] for i in range(8 if self.use_sharp_round else 5)]
+        xypostypes = 3*[float]+[int]+(3 if self.use_sharp_round else 0)*[float]
+        self.xy_catalog = [np.empty(0, dtype=i) for i in xypostypes]
+
         self.num_sources = 0
 
         # Analyze exclusion file list:
@@ -152,12 +156,20 @@ class Image(object):
             exclusions = num_sci * [ None ]
 
         # For each SCI extension, generate a catalog and WCS
-        bounding_polygons = []
-        for sci_extn in range(1,num_sci+1):
-            extnum = fu.findExtname(fits.open(filename),extname,extver=sci_extn)
-            if extnum is None: extnum = 0
-            chip_filename = filename+'[%d]'%(extnum)
+        print("\n===  Source finding for image '{}':  ===".format(filename))
 
+        bounding_polygons = []
+
+        chip_filenames = {}
+        hdulist = fits.open(filename)
+        for sci_extn in xrange(1,num_sci+1):
+            extnum = fu.findExtname(hdulist, extname, extver=sci_extn)
+            if extnum is None: extnum = 0
+            chip_filenames[sci_extn] = "{:s}[{:d}]".format(filename, extnum)
+        hdulist.close()
+
+        for sci_extn in xrange(1,num_sci+1):
+            chip_filename = chip_filenames[sci_extn]
             wcs = stwcs.wcsutil.HSTWCS(chip_filename)
 
             if input_catalogs is None:
@@ -192,21 +204,23 @@ class Image(object):
                 self.xy_catalog = [np.append(self.xy_catalog[i], catalog.xypos[i])
                                    for i in xrange(nxypos)]
                 # add "source origin":
-                self.xy_catalog.append(np.asarray(nsrc*[source]))
+                self.xy_catalog[-1] = np.append(self.xy_catalog[-1],
+                                                np.asarray(nsrc*[source]))
 
             # Compute bounding convex hull for the reference catalog:
             if IMAGE_USE_CONVEX_HULL and self.xy_catalog is not None:
                 xy_vertices = np.asarray(convex_hull(
-                    map(tuple,np.asarray([self.xy_catalog[0],self.xy_catalog[1]]).transpose())),
+                    map(tuple,np.asarray([catalog.xypos[0],catalog.xypos[1]]).transpose())),
                                          dtype=np.float64)
                 rdv = wcs.all_pix2world(xy_vertices, 1)
                 bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
                 if IMGCLASSES_DEBUG:
                     all_ra, all_dec = wcs.all_pix2world(
-                        self.xy_catalog[0], self.xy_catalog[1], 1)
+                        catalog.xypos[0], catalog.xypos[1], 1)
                     _debug_write_region_fk5(self.rootname+'_bounding_polygon.reg',
                                             zip(*rdv.transpose()),
-                                            zip(*[all_ra, all_dec]))
+                                            zip(*[catalog.radec[0], catalog.radec[1]]),
+                                            sci_extn > 1)
             else:
                 bounding_polygons.append(SphericalPolygon.from_wcs(wcs))
 
@@ -221,6 +235,10 @@ class Image(object):
         self.catalog_names = {}
         # Build full list of all sky positions from all chips
         self.buildSkyCatalog()
+        tsrc = 0 if self.all_radec is None else len(self.all_radec[0])
+        print("===  Found a TOTAL of {:d} objects in image '{:s}'  ==="
+              .format(tsrc, filename))
+
         if self.pars['writecat']:
             catname = self.rootname+"_sky_catalog.coo"
             self.catalog_names['match'] = self.rootname+"_xy_catalog.match"
@@ -1174,11 +1192,14 @@ def verify_hdrname(**pars):
         return
 
 
-def _debug_write_region_fk5(fname, ivert, points):
-    fh = open(fname, 'w')
-    fh.write('# Region file format: DS9 version 4.1\n')
-    fh.write('global color=yellow dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n')
-    fh.write('fk5\n')
+def _debug_write_region_fk5(fname, ivert, points, append=False):
+    if append:
+        fh = open(fname, 'a')
+    else:
+        fh = open(fname, 'w')
+        fh.write('# Region file format: DS9 version 4.1\n')
+        fh.write('global color=yellow dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n')
+        fh.write('fk5\n')
     fh.write('polygon({}) # color=red width=2\n'
              .format(','.join(map(str,[x for e in ivert for x in e]))))
     for p in points:

@@ -122,7 +122,7 @@ def ndfind(array, hmin, fwhm, skymode,
                 star_arr[:,2], star_arr[:,3], star_arr[:,4])
     else:
         return (star_arr[:,0], star_arr[:,1], fluxes,
-                np.arange(star_arr.shape[0]))
+                np.arange(star_arr.shape[0]), None, None, None)
 
 
 # Object finding algorithm based on NDIMAGE routines
