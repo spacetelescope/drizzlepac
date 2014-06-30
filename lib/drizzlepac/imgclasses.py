@@ -980,6 +980,8 @@ class RefImage(object):
                          "Using the undistorted version of this WCS.\n")
                 self.wcs = utils.output_wcs([self.wcs], undistort=True)
 
+        assert(not _is_wcs_distorted(self.wcs))
+
         self.dirty = False
 
         if 'use_sharp_round' in kwargs:
@@ -1100,8 +1102,8 @@ class RefImage(object):
         not_matched_outxy = image.outxy[not_matched_mask]
 
         # apply corrections based on the fit:
-        new_outxy = np.dot(not_matched_outxy, image.fit['fit_matrix']) + \
-            image.fit['offset']
+        new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
+                           image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
 
         # convert to RA & DEC:
         new_radec = self.wcs.wcs_pix2world(new_outxy, 1)

@@ -410,9 +410,9 @@ def run(configobj):
                     image.close()
                     break
 
-                # add unmatched sources to the reference catalog
-                # (to expand it):
-                refimage.append_not_matched_sources(image)
+                ## add unmatched sources to the reference catalog
+                ## (to expand it):
+                #refimage.append_not_matched_sources(image)
 
                 image.updateHeader(wcsname=uphdr_par['wcsname'])
                 if hdrlet_par['headerlet']:
@@ -420,6 +420,10 @@ def run(configobj):
                 if configobj['clean']:
                     image.clean()
                 image.close()
+
+                # add unmatched sources to the reference catalog
+                # (to expand it):
+                refimage.append_not_matched_sources(image)
 
                 if refimage.dirty and len(input_images) > 0:
                     # The reference catalog has been updated with new sources.
