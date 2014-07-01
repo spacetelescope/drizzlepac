@@ -78,6 +78,10 @@ combine_grow : int (Default = 1)
     Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the 'grow' parameter in 'imcombine' for use in creating the median image.
 
 
+combine_bufsize : float (Default = None)
+    Size of buffer, in Mb, to use when reading in each section of each input image.  The default buffer size is 1Mb.  The larger the buffer size, the fewer times the code needs to open each input image and the more memory will be required to create the median image.  A larger buffer can be helpful when using compression, since slower copies need to be made of each set of rows from each input image instead of using memory-mapping.
+
+
 Examples
 --------
 For `createMedian`, the user interface function is `median`:

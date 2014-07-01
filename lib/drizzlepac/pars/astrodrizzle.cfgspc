@@ -73,6 +73,7 @@ combine_nhigh = integer_kw(default=0, comment= "minmax: Number of high pixels to
 combine_lthresh = float_or_none_kw(default=None, comment="Lower threshold for clipping input pixel values")
 combine_hthresh = float_or_none_kw(default=None, comment= "Upper threshold for clipping input pixel values")
 combine_grow = integer_kw(default=1, comment=" Radius (pixels) for neighbor rejection")
+combine_bufsize = float_or_none_kw(default=None, comment= "Size of buffer(in Mb) for each input image")
 
 [STEP 5: BLOT BACK THE MEDIAN IMAGE]
 blot = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment= "Blot the median back to the input frame?")

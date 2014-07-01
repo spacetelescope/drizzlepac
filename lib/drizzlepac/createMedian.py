@@ -21,6 +21,8 @@ from stsci.image import numcombine
 from stsci.tools import iterfile, nimageiter, teal, logutil
 from minmed import minmed
 import processInput
+from .adrizzle import _single_step_num_
+
 
 from .version import *
 
@@ -80,9 +82,13 @@ def createMedian(imgObjList,configObj,procSteps=None):
         log.info('Median combination step not performed.')
         return
 
-    step_name=util.getSectionName(configObj,_step_num_)
     paramDict=configObj[step_name]
     paramDict['proc_unit'] = configObj['proc_unit']
+
+    # include whether or not compression was performed
+    driz_sep_name = util.getSectionName(configObj,_single_step_num_)
+    driz_sep_paramDict = configObj[driz_sep_name]
+    paramDict['compress'] = driz_sep_paramDict['driz_sep_compress']
 
     log.info('USER INPUT PARAMETERS for Create Median Step:')
     util.printParams(paramDict, log=log)
@@ -106,6 +112,8 @@ def _median(imageObjectList, paramDict):
     grow = paramDict['combine_grow']
     maskpt = paramDict['combine_maskpt']
     proc_units = paramDict['proc_unit']
+    compress = paramDict['compress']
+    bufsizeMb = paramDict['combine_bufsize']
 
     sigma=paramDict["combine_nsigma"]
     sigmaSplit=sigma.split()
@@ -174,11 +182,27 @@ def _median(imageObjectList, paramDict):
         #singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         #singleWeight=image.outputNames["outSWeight"]
 
-        if not virtual:
-            #this returns the handles for the image
-            _singleImage=iterfile.IterFitsFile(singleDriz)
+        # If compression was used, reference ext=1 as CompImageHDU only writes
+        # out MEF files, not simple FITS.
+        if compress:
+            wcs_ext = '[1]'
+            wcs_extnum = 1
         else:
-            _singleImage=iterfile.IterFitsFile(singleDriz_name)
+            wcs_ext = '[0]'
+            wcs_extnum = 0
+        if not virtual:
+            if isinstance(singleDriz,str):
+                iter_singleDriz = singleDriz + wcs_ext
+                iter_singleWeight = singleWeight + wcs_ext
+            else:
+                iter_singleDriz = singleDriz[wcs_extnum]
+                iter_singleWeight = singleWeight[wcs_extnum]
+        else:
+            iter_singleDriz = singleDriz_name + wcs_ext
+            iter_singleWeight = singleWeight_name + wcs_ext
+
+        _singleImage=iterfile.IterFitsFile(iter_singleDriz)
+        if virtual:
             _singleImage.handle = singleDriz
             _singleImage.inmemory = True
 
@@ -187,10 +211,8 @@ def _median(imageObjectList, paramDict):
         # If it exists, extract the corresponding weight images
         if (not virtual and os.access(singleWeight,os.F_OK)) or (
                 virtual and singleWeight):
-            if not virtual:
-                _weight_file=iterfile.IterFitsFile(singleWeight)
-            else:
-                _weight_file=iterfile.IterFitsFile(singleWeight_name)
+            _weight_file=iterfile.IterFitsFile(iter_singleWeight)
+            if virtual:
                 _weight_file.handle = singleWeight
                 _weight_file.inmemory = True
 
@@ -293,6 +315,8 @@ def _median(imageObjectList, paramDict):
     #Start by computing the buffer size for the iterator
     _imgarr = masterList[0].data
     _bufsize = nimageiter.BUFSIZE
+    if bufsizeMb is not None:
+        _bufsize *= bufsizeMb
     _imgrows = _imgarr.shape[0]
     _nrows = nimageiter.computeBuffRows(_imgarr)
 #        _overlaprows = _nrows - (_overlap+1)
