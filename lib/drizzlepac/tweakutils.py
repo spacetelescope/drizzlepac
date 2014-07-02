@@ -113,12 +113,16 @@ def ndfind(array, hmin, fwhm, skymode,
                     roundlo=roundlim[0], roundhi=roundlim[1])
     if len(star_list) == 0:
         print 'No valid sources found...'
-        return [],[],[],[],[],[],[]
+        return tuple([[] for i in range(7 if use_sharp_round else 4)])
     star_arr = np.array(star_list)
     fluxes = np.array(fluxes,np.float32)
-    return (star_arr[:,0], star_arr[:,1], fluxes,
-            np.arange(star_arr.shape[0]),
-            star_arr[:,2], star_arr[:,3], star_arr[:,4])
+    if use_sharp_round:
+        return (star_arr[:,0], star_arr[:,1], fluxes,
+                np.arange(star_arr.shape[0]),
+                star_arr[:,2], star_arr[:,3], star_arr[:,4])
+    else:
+        return (star_arr[:,0], star_arr[:,1], fluxes,
+                np.arange(star_arr.shape[0]), None, None, None)
 
 
 # Object finding algorithm based on NDIMAGE routines
@@ -951,6 +955,7 @@ def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
         xy1x = xy1[:,0] + xsh
         xy1y = xy1[:,1] + ysh
     return xy1x,xy1y
+
 
 def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
     if not isinstance(xydata,list):

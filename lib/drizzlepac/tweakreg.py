@@ -6,6 +6,9 @@
 
 """
 import os
+import sys
+import numpy as np
+from copy import copy
 
 from stsci.tools import parseinput, teal
 from stsci.tools import logutil, textutil
@@ -20,8 +23,8 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.3.1'
-__vdate__ = '30-May-2014'
+__version__ = '1.3.2'
+__vdate__ = '2-Jul-2014'
 
 import tweakutils
 import imgclasses
@@ -117,6 +120,7 @@ def run(configobj):
     input = configobj['input']
     # Start by interpreting the inputs
     use_catfile = True
+    expand_refcat = True
     filenames,catnames = tweakutils.parse_input(input)
 
     if not filenames:
@@ -225,12 +229,24 @@ def run(configobj):
     util.printParams(catfile_kwargs, log=log)
 
     try:
+        minsources = max(1, catfit_pars['minobj'])
+        omitted_images = []
         for imgnum in xrange(len(filenames)):
             # Create Image instances for all input images
-            input_images.append(imgclasses.Image(filenames[imgnum],
-                                input_catalogs=catnames[imgnum],
-                                exclusions=exclusion_files[imgnum],
-                                **catfile_kwargs))
+            img = imgclasses.Image(filenames[imgnum],
+                                   input_catalogs=catnames[imgnum],
+                                   exclusions=exclusion_files[imgnum],
+                                   **catfile_kwargs)
+            if img.num_sources < minsources:
+                warn_str = "Image '{}' will not be aligned " \
+                           "since it contains fewer than {} sources." \
+                           .format(img.name, minsources)
+                print('\nWARNING: {}\n'.format(warn_str))
+                log.warning(warn_str)
+                omitted_images.append(img)
+                continue
+            input_images.append(img)
+
     except KeyboardInterrupt:
         for img in input_images:
             img.close()
@@ -245,6 +261,12 @@ def run(configobj):
     if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
+        expand_refcat = refcat_par['expand_refcat']
+
+    # input_images list can be modified below.
+    # So, make a copy of the original:
+    input_images_orig_copy = copy(input_images)
+    do_match_refimg = False
 
     # otherwise, extract the catalog from the first input image source list
     if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
@@ -264,14 +286,21 @@ def run(configobj):
         #    of reference source positions and replace default source list with it
         if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
             ref_source = refcat_par['refcat']
+            cat_src = ref_source
+            xycat = None
         else:
             refimg = imgclasses.Image(configobj['refimage'],
                                       **ref_catfile_kwargs)
             ref_source = refimg.all_radec
+            cat_src = None
+            xycat = refimg.xy_catalog
 
         try:
+            if 'use_sharp_round' in ref_catfile_kwargs:
+                kwargs['use_sharp_round'] = ref_catfile_kwargs['use_sharp_round']
             refimage = imgclasses.RefImage(configobj['refimage'],
-                                           ref_source, **kwargs)
+                            ref_source, xycatalog=xycat,
+                            cat_origin=cat_src, **kwargs)
             refwcs = refimage.wcs
             ref_source = refimage.all_radec
             refwcs_fname = refwcs.filename
@@ -281,16 +310,44 @@ def run(configobj):
                 img.close()
             print 'Quitting as a result of user request (Ctrl-C)...'
             return
+
+        if len(input_images) < 1:
+            warn_str = "Fewer than two images are available for alignment. " \
+                       "Quitting..."
+            print('\nWARNING: {}\n'.format(warn_str))
+            log.warning(warn_str)
+            for img in input_images:
+                img.close()
+            return
+
+        image = _max_overlap_image(refimage, input_images)
+
     else:
+        if len(input_images) < 2:
+            warn_str = "Fewer than two images are available for alignment. " \
+                       "Quitting..."
+            print('\nWARNING: {}\n'.format(warn_str))
+            log.warning(warn_str)
+            for img in input_images:
+                img.close()
+            return
+
+        cat_src = None
+
+        refimg, image = _max_overlap_pair(input_images)
+
         refwcs = []
+        refwcs.extend(refimg.get_wcs())
+        refwcs.extend(image.get_wcs())
         for i in input_images:
             refwcs.extend(i.get_wcs())
+
         try:
-            refimg = input_images[0]
             ref_source = refimg.all_radec
             refimage = imgclasses.RefImage(refwcs,ref_source,
                                         xycatalog=refimg.xy_catalog,**kwargs)
             refwcs_fname = refimg.name
+
         except KeyboardInterrupt:
             refimage.close()
             for img in input_images:
@@ -298,11 +355,17 @@ def run(configobj):
             print 'Quitting as a result of user request (Ctrl-C)...'
             return
 
+        omitted_images.insert(0, refimg) # refimage *must* be first
+        do_match_refimg = True
+
     print '\n'+'='*20+'\n'
     print 'Aligning all input images to WCS defined by ',refwcs_fname
     print '\n'+'='*20+'\n'
 
     if refimage.outxy is not None:
+        if cat_src is None:
+            cat_src = refimage.name
+
         try:
             log.info("USER INPUT PARAMETERS for matching sources:")
             util.printParams(objmatch_par, log=log)
@@ -325,44 +388,128 @@ def run(configobj):
             quit_immediately = False
             xycat_lines = ''
             xycat_filename = None
-            for img in input_images:
+
+            for img in input_images_orig_copy:
                 if xycat_filename is None:
                     xycat_filename = img.rootname+'_xy_catfile.list'
                 # Keep a record of all the generated input_xy catalogs
                 xycat_lines += img.get_xy_catnames()
 
+            retry_flags = len(input_images)*[0]
+            while image is not None:
                 print '\n'+'='*20
-                print 'Performing fit for: ',img.name,'\n'
-                img.match(refimage, **objmatch_par)
+                print 'Performing fit for: ',image.name,'\n'
+                image.match(refimage, quiet_identity=False, **objmatch_par)
 
-                img.performFit(**catfit_pars)
-                if img.quit_immediately:
+                if not image.goodmatch:
+                    # we will try to match it again once reference catalog
+                    # has expanded with new sources:
+                    input_images.append(image)
+                    retry_flags.append(1)
+                    if retry_flags[0] == 0:
+                        retry_flags.pop(0)
+                        image = input_images.pop(0)
+                        # try to match next image in the list
+                        continue
+                    else:
+                        # no new sources have been added to the reference
+                        # catalog and we have already tried to match
+                        # images to the existing reference catalog
+                        input_images.append(image) # <- add it back for later
+                        break
+
+                image.performFit(**catfit_pars)
+                if image.quit_immediately:
                     quit_immediately = True
-                    img.close()
+                    image.close()
                     break
-                img.updateHeader(wcsname=uphdr_par['wcsname'])
+
+                # add unmatched sources to the reference catalog
+                # (to expand it):
+                if image.perform_update and expand_refcat:
+                    refimage.append_not_matched_sources(image)
+
+                image.updateHeader(wcsname=uphdr_par['wcsname'])
                 if hdrlet_par['headerlet']:
-                    img.writeHeaderlet(**hdrlet_par)
+                    image.writeHeaderlet(**hdrlet_par)
                 if configobj['clean']:
-                    img.clean()
-                img.close()
+                    image.clean()
+                image.close()
+
+                if refimage.dirty and len(input_images) > 0:
+                    # The reference catalog has been updated with new sources.
+                    # Clear retry flags and get next image:
+                    image = _max_overlap_image(refimage, input_images)
+                    retry_flags = len(input_images)*[0]
+                    refimage.clear_dirty_flag()
+                elif len(input_images) > 0 and retry_flags[0] == 0:
+                    retry_flags.pop(0)
+                    image = input_images.pop(0)
+                else:
+                    break
+
+            # process images that have not been matched in order to
+            # update their headers:
+            if do_match_refimg:
+                image = omitted_images.pop(0)
+                image.match(refimage, quiet_identity=True, **objmatch_par)
+
+            # process omitted (from start) images separately:
+            for image in omitted_images:
+                image.match(refimage, quiet_identity=False, **objmatch_par)
+
+            # add to the list of omitted images, images that could not
+            # be matched:
+            omitted_images.extend(input_images)
+
+            if len(input_images) > 0:
+                print("\nUnable to match the following images:")
+                print("-------------------------------------")
+                for image in input_images:
+                    print(image.name)
+                print("")
+
+            # update headers:
+            for image in omitted_images:
+                image.performFit(**catfit_pars)
+                if image.quit_immediately:
+                    quit_immediately = True
+                    image.close()
+                    break
+                image.updateHeader(wcsname=uphdr_par['wcsname'])
+                if hdrlet_par['headerlet']:
+                    image.writeHeaderlet(**hdrlet_par)
+                if configobj['clean']:
+                    image.clean()
+                image.close()
 
             if not quit_immediately:
                 if configobj['writecat'] and not configobj['clean']:
                     # Write out catalog file recording input XY catalogs used
                     # This file will be suitable for use as input to 'tweakreg'
                     # as the 'catfile' parameter
-                    if os.path.exists(xycat_filename): os.remove(xycat_filename)
-                    f=open(xycat_filename,mode='w')
+                    if os.path.exists(xycat_filename):
+                        os.remove(xycat_filename)
+                    f = open(xycat_filename, mode='w')
                     f.writelines(xycat_lines)
                     f.close()
 
                 # write out shiftfile (if specified)
                 if shiftpars['shiftfile']:
-                    tweakutils.write_shiftfile(input_images,shiftpars['outshifts'],outwcs=shiftpars['outwcs'])
+                    tweakutils.write_shiftfile(input_images_orig_copy,
+                                               shiftpars['outshifts'],
+                                               outwcs=shiftpars['outwcs'])
+
+                if expand_refcat:
+                    base_reg_name = os.path.splitext(os.path.basename(cat_src))[0]
+                    refimage.write_skycatalog(
+                        'cumulative_sky_refcat_{:s}.coo'.format(base_reg_name),
+                        show_flux=True, show_id=True
+                    )
+
         except KeyboardInterrupt:
             refimage.close()
-            for img in input_images:
+            for img in input_images_orig_copy:
                 img.close()
                 del img
             print 'Quitting as a result of user request (Ctrl-C)...'
@@ -370,6 +517,75 @@ def run(configobj):
     else:
         print 'No valid sources in reference frame. Quitting...'
         return
+
+
+def _overlap_matrix(images):
+    nimg = len(images)
+    m = np.zeros((nimg,nimg), dtype=np.float)
+    for i in xrange(nimg):
+        for j in xrange(i+1,nimg):
+            p = images[i].skyline.intersection(images[j].skyline)
+            area = p.area()
+            m[j,i] = area
+            m[i,j] = area
+    return m
+
+
+def _max_overlap_pair(images):
+    assert(len(images) > 1)
+
+    m = _overlap_matrix(images)
+    imgs = [f.name for f in images]
+    n = m.shape[0]
+    index = m.argmax()
+    i = index / n
+    j = index % n
+    si = np.sum(m[i])
+    sj = np.sum(m[:,j])
+
+    if si < sj:
+        c = j
+        j = i
+        i = c
+    if i < j:
+        j -= 1
+
+    im1 = images.pop(i) # reference image
+    im2 = images.pop(j)
+
+    # Sort the remaining of the input list of images by overlap area
+    # with the reference image (in decreasing order):
+    row = m[i]
+    row = np.delete(row, i)
+    row = np.delete(row, j)
+    sorting_indices = np.argsort(row)[::-1]
+    images_arr = np.asarray(images)[sorting_indices]
+    while len(images) > 0:
+        del images[0]
+    for k in xrange(images_arr.shape[0]):
+        images.append(images_arr[k])
+
+    return (im1, im2)
+
+
+def _max_overlap_image(refimage, images):
+    nimg = len(images)
+    assert(nimg > 0)
+    area = np.zeros(nimg, dtype=np.float)
+    for i in xrange(nimg):
+        area[i] = refimage.skyline.intersection(images[i].skyline).area()
+
+    # Sort the remaining of the input list of images by overlap area
+    # with the reference image (in decreasing order):
+    sorting_indices = np.argsort(area)[::-1]
+    images_arr = np.asarray(images)[sorting_indices]
+    while len(images) > 0:
+        del images[0]
+    for k in xrange(images_arr.shape[0]):
+        images.append(images_arr[k])
+
+    return images.pop(0)
+
 
 #
 # Primary interface for running this task from Python

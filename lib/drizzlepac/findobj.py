@@ -29,7 +29,7 @@ def gaussian1(height, x0, y0, a, b, c):
     x0, y0, - center of the gaussian
     a, b, c - ellipse parameters (coefficients in the quadratic form)
     """
-    
+
     return lambda x, y: height * np.exp(-0.5* (a*(x-x0)**2 + b*(x-x0)*(y-y0) + c*(y-y0)**2))
 
 
@@ -42,23 +42,23 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
         ratio = ratio of xsigma/ysigma
         theta - angle of position angle of the major axis measured
         counter-clockwise from the x axis
-        
+
         Returns dimensions nx and ny of the elliptical kernel as well as the
         ellipse parameters a, b, c, and f when defining an ellipse through the
         quadratic form: a*(x-x0)^2+b(x-x0)*(y-y0)+c*(y-y0)^2 <= 2*f
     """
-    
+
     xsigma = fwhm/fwhm2sig
     ysigma = ratio * xsigma
-    
+
     f = nsigma**2/2.
-    
+
     theta = np.deg2rad(theta)
     cost  = np.cos(theta)
     sint  = np.sin(theta)
-    
+
     if ratio == 0: # 1D Gaussian
-        
+
         if theta == 0 or theta == 180:
             a = 1/xsigma**2
             b = 0.0
@@ -75,21 +75,21 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
         ny = 2 * int(max(2, (xsigma*nsigma*np.abs(sint))))+1
 
     else: #2D gaussian
-        
+
         xsigma2 = xsigma * xsigma
         ysigma2 = ysigma * ysigma
-        
+
         a = cost**2/xsigma2 + sint**2/ysigma2
         b = 2 * cost * sint *(1.0/xsigma2-1.0/ysigma2)
         c = sint**2/xsigma2 + cost**2/ysigma2
-        
+
         d = b**2 - 4*a*c # discriminant
-        
+
         #        nx = int(2*max(2, math.sqrt(-8*c*f/d)))+1
         #        ny = int(2*max(2, math.sqrt(-8*a*f/d)))+1
         nx = 2 * int(2*max(1, nsigma*math.sqrt(-c/d)))+1
         ny = 2 * int(2*max(1, nsigma*math.sqrt(-a/d)))+1
-    
+
     return nx, ny, a, b, c, f
 
 
@@ -106,7 +106,7 @@ def moments(data,cntr):
     Returns (height, x, y, width_x, width_y)
     the gaussian parameters of a 2D distribution by calculating its
     moments.
-    
+
     """
     total = data.sum()
     #X, Y = np.indices(data.shape)
@@ -140,43 +140,43 @@ def findstars(jdata, fwhm, threshold, skymode,
     import matplotlib.pyplot as plt
     # store input image size:
     (img_ny, img_nx) = jdata.shape
-    
+
     # Define convolution inputs
     nx, ny, a, b, c, f = gausspars(fwhm, nsigma=nsigma, ratio= ratio, theta=theta)
-    
+
     xc = nx//2
     yc = ny//2
-    
+
     yin, xin = np.mgrid[0:ny, 0:nx]
     kernel = gaussian1(1.0, xc, yc, a, b, c)(xin,yin)  #+np.random.random(xin.shape)
     # define size of extraction box for each source based on kernel size
     grx = xc
     gry = yc
-    
-    # DAOFIND STYLE KERNEL "SHAPE" 
+
+    # DAOFIND STYLE KERNEL "SHAPE"
     rmat    = np.sqrt((xin-xc)**2 + (yin-yc)**2)
     rmatell = a*(xin-xc)**2 + b*(xin-xc)*(yin-yc) + c*(yin-yc)**2
     xyrmask = np.where((rmatell <= 2*f) | (rmat <= 2.001),1,0).astype(np.int16)
     # Previous *style* computation for kernel "shape":
     #xyrmask = np.where(rmat <= max(grx,gry),1,0).astype(np.int16)
-    
+
     npts = xyrmask.sum()
-    
+
     rmask = kernel*xyrmask
     denom = (rmask*rmask).sum() - rmask.sum()**2/npts
     nkern = (rmask - (rmask.sum()/npts))/denom # normalize kernel to preserve
                                                # fluxes for thresholds
     nkern *= xyrmask
-        
+
     # initialize values used for getting source centers
     relerr = 1./((rmask**2).sum() - (rmask.sum()**2/xyrmask.sum()))
-    
+
     xsigsq = (fwhm/fwhm2sig)**2
     ysigsq = (ratio**2) * xsigsq
-    
+
     # convolve image with gaussian kernel
     convdata = convolve.convolve2d(jdata, nkern).astype(np.float32)
-    
+
     # create masks from exclude/include regions:
     if src_find_filters is not None and 'region_file' in src_find_filters and \
                                    'region_file_mode' in src_find_filters:
@@ -185,7 +185,7 @@ def findstars(jdata, fwhm, threshold, skymode,
                           src_find_filters['region_file'])
         reglist = pyregion.open(src_find_filters['region_file'])
         #TODO: Add checking that regions are in image-like coordinates???
-        
+
         # depending on the region file interpretation mode, remove "exclude"
         # regions (to have the same behavior as the previous release of the code):
         if src_find_filters['region_file_mode'].lower() == 'exclude only':
@@ -207,59 +207,59 @@ def findstars(jdata, fwhm, threshold, skymode,
         # clip image to create regions around each source for segmentation
         #tdata=np.where(convdata > skymode*2.0, convdata, 0)
         tdata=np.where(convdata > threshold, convdata, 0)
-        
+
     # segment image and find sources
     s = ndim.generate_binary_structure(2,2)
     ldata,nobj=ndim.label(tdata,structure=s)
     fobjects = ndim.find_objects(ldata)
     #print 'Number of potential sources: ',nobj
-    
+
     fluxes = []
     fitind = []
     if nobj < 2:
         print 'No objects found for this image. Please check value of "threshold".'
         return fitind,fluxes
-    
+
     # determine center of each source, while removing spurious sources or
     # applying limits defined by the user
     ninit  = 0
     ninit2 = 0
     #minxx  = grx * 2 + 1
     #minxy  = gry * 2 + 1
-    
+
     s2m, s4m = precompute_sharp_round(nx, ny, xc, yc)
-    
+
     satur  = False # Default assumption if use_sharp_round=False
     sharp  = None
     round1 = None
     round2 = None
-    
+
     for ss,n in zip(fobjects,range(len(fobjects))):
         ssx = ss[1].stop - ss[1].start
         ssy = ss[0].stop - ss[0].start
         if ssx >= tdata.shape[1]-1 or ssy >= tdata.shape[0]-1:
             continue
-    
+
         yr0 = ss[0].start - gry
         yr1 = ss[0].stop  + gry + 1
         if yr0 <= 0 or yr1 >= img_ny: continue # ignore sources within ny//2 of edge
         #if yr0 <= 0: yr0 = 0
         #if yr1 >= jdata.shape[0]: yr1 = jdata.shape[0]
-    
+
         xr0 = ss[1].start - grx
         xr1 = ss[1].stop  + grx + 1
         if xr0 <= 0 or xr1 >= img_nx: continue # ignore sources within nx//2 of edge
         #if xr0 <= 0: xr0 = 0
         #if xr1 >= jdata.shape[1]: xr1 = jdata.shape[1]
-        
+
         ssnew = (slice(yr0,yr1),slice(xr0,xr1))
         region = tdata[ssnew]
-        
+
         #if region.shape[0] < minxy or region.shape[1] < minxy:
         #    continue
-        
+
         cntr = centroid(region)
-        
+
         # Define region centered on max value in object (slice)
         # This region will be bounds-checked to insure that it only accesses
         # a valid section of the image (not off the edge)
@@ -272,13 +272,13 @@ def findstars(jdata, fwhm, threshold, skymode,
         xr1 = maxpos[1] + grx + 1
         if xr0 < 0 or xr1 > img_nx:
             continue
-    
+
         #ninit += 1
         # Simple Centroid on the region from the input image
         jregion = jdata[yr0:yr1,xr0:xr1]
         src_flux = jregion.sum()
         src_peak = jregion.max()
-        
+
         if (peakmax is not None and src_peak >= peakmax):
             continue
         if (peakmin is not None and src_peak <= peakmin):
@@ -307,7 +307,7 @@ def findstars(jdata, fwhm, threshold, skymode,
 
         px,py,round2 = xy_round(jregion, grx, gry, skymode,
                                 kernel, xsigsq, ysigsq, datamin, datamax)
-        
+
         # Filter sources:
         if px is None:
             continue
@@ -321,7 +321,7 @@ def findstars(jdata, fwhm, threshold, skymode,
         fluxes.append(src_flux)
 
     fitindc,fluxesc = apply_nsigma_separation(fitind,fluxes,fwhm*nsigma/2)
-    
+
     #print 'ninit: ',ninit,'   ninit2: ',ninit2,' final n: ',len(fitind)
     return fitindc, fluxesc
 
@@ -337,6 +337,8 @@ def apply_nsigma_separation(fitind,fluxes,separation,niter=10):
     same positions as much as possible.
     """
     for n in range(niter):
+        if len(fitind) < 1:
+            break
         fitarr = np.array(fitind,np.float32)
         fluxarr = np.array(fluxes,np.float32)
         inpind = np.argsort(fitarr[:,1])
@@ -386,16 +388,16 @@ def precompute_sharp_round(nxk, nyk, xc, yc):
     Pre-computes mask arrays to be used by the 'sharp_round' function
     for roundness computations based on two- and four-fold symmetries.
     """
-    
+
     # Create arrays for the two- and four-fold symmetry computations:
     s4m = np.ones((nyk,nxk),dtype=np.int16)
     s4m[yc, xc] = 0
-    
+
     s2m = np.ones((nyk,nxk),dtype=np.int16)
     s2m[yc, xc] = 0
     s2m[yc:nyk, 0:xc]     = -1;
     s2m[0:yc+1, xc+1:nxk] = -1;
-    
+
     return s2m, s4m
 
 
@@ -404,10 +406,10 @@ def sharp_round(data, density, kskip, xc, yc, s2m, s4m, nxk, nyk,
     """
     sharp_round -- Compute first estimate of the roundness and sharpness of the
     detected objects.
-    
+
     A Python translation of the AP_SHARP_ROUND IRAF/DAOFIND function.
     """
-    
+
     # Compute the first estimate of roundness:
     sum2 = np.sum(s2m*density)
     sum4 = np.sum(s4m*abs(density))
@@ -417,7 +419,7 @@ def sharp_round(data, density, kskip, xc, yc, s2m, s4m, nxk, nyk,
         round = None
     else:
         round = 2.0 * sum2 / sum4
-    
+
     # Eliminate the sharpness test if the central pixel is bad:
     mid_data_pix = data[yc, xc]
     mid_dens_pix = density[yc, xc]
@@ -425,23 +427,23 @@ def sharp_round(data, density, kskip, xc, yc, s2m, s4m, nxk, nyk,
         return True, round, None
     if mid_data_pix < datamin:
         return False, round, None
-    
+
     ########################
     # Sharpness statistics:
-    
+
     satur = np.max(kskip*data) > datamax
-    
+
     # Exclude pixels (create a mask) outside the [datamin, datamax] range:
     uskip = np.where((data >= datamin) & (data <= datamax), 1, 0)
     # Update the mask with the "skipped" values from the convolution kernel:
     uskip *= kskip
     # Also, exclude central pixel:
     uskip[yc, xc] = 0
-    
+
     npixels = np.sum(uskip)
     if (npixels < 1 or mid_dens_pix <= 0.0):
         return satur, round, None
-        
+
     sharp = (mid_data_pix - np.sum(uskip*data)/npixels) / mid_dens_pix
     #sharp = (mid_data_pix - np.mean(uskip*data)) / mid_dens_pix
 
@@ -495,7 +497,7 @@ def centroid(im):
     m00 = immoments(im,0,0)
     m10 = immoments(im, 1,0)
     m01 = immoments(im,0,1)
-    
+
     """
     # These calls point to Python version of moments function
     m00 = cdriz.arrmoments(im,0,0)

@@ -196,7 +196,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         # Return the shift, rotation, and scale changes
         result = build_fit(P,Q)
         result['fit_matrix'] = np.array([[P[0],Q[0]],[P[1],Q[1]]])
-        resids = guv - np.dot((gxy),result['fit_matrix']) - result['offset']
+        resids = gxy - np.dot((guv),result['fit_matrix']) - result['offset']
         rms = [resids[:,0].std(),resids[:,1].std()]
         result['rms'] = rms
         result['resids'] = resids
