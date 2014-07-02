@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Functions to Manage WCS Table Extension &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
+    <title>Functions to Manage WCS Table Extension &mdash; DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.0.dev32232 (30-May-2014)',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0.dev32956 (2-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" />
     <link rel="prev" title="Classes to manage Catalogs and WCS’s" href="catalogs.html" /> 
   </head>
@@ -45,7 +43,7 @@
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -126,7 +124,7 @@ ability to update the table with new rows again without resizing the table.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
 <blockquote>
 <div><p>PyFITS binTable object for WCSCORR table</p>
@@ -186,7 +184,7 @@ keyed WCSs as per Paper I Multiple WCS standard).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="dest">dest</strong> : HDUList</p>
 <blockquote>
 <div><p>The HDU list whose WCSCORR table should be appended to (the WCSCORR HDU
@@ -229,7 +227,7 @@ headerlet</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
 <blockquote>
 <div><p>PyFITS binTable object for WCSCORR table</p>
@@ -283,10 +281,10 @@ using a prefix of &#8216;O&#8217; for all &#8216;SCI&#8217; extensions in the fi
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj: string or pyfits.HDUList">fobj: string or pyfits.HDUList</strong> :</p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <tt class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></tt></p>
 <blockquote class="last">
-<div><p>Filename or pyfits object of a file</p>
+<div><p>Filename or fits object of a file</p>
 </div></blockquote>
 </td>
 </tr>
@@ -303,17 +301,17 @@ to work with old MultiDrizzle.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj: string or pyfits.HDUList">fobj: string or pyfits.HDUList</strong> :</p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <tt class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></tt></p>
 <blockquote>
-<div><p>Filename or pyfits object of a file</p>
+<div><p>Filename or fits object of a file</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Raises :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>IOError:</strong> :</p>
 <blockquote class="last">
-<div><p>if input PyFITS object was not opened in &#8216;update&#8217; mode</p>
+<div><p>if input FITS object was not opened in &#8216;update&#8217; mode</p>
 </div></blockquote>
 </td>
 </tr>
@@ -344,12 +342,12 @@ to work with old MultiDrizzle.</p>
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

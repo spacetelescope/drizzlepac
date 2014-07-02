@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utility Functions &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
+    <title>Utility Functions &mdash; DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.0.dev32232 (30-May-2014)',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0.dev32956 (2-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="WCS Utilities" href="wcsutils.html" />
     <link rel="prev" title="Utilities" href="util.html" /> 
@@ -46,7 +44,7 @@
         <li class="right" >
           <a href="util.html" title="Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -174,7 +172,7 @@ the input string.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : str, None</p>
 <blockquote>
 <div><p>Full task name. If it is <em class="xref py py-obj">None</em>, <a class="reference internal" href="#drizzlepac.util.base_taskname" title="drizzlepac.util.base_taskname"><tt class="xref py py-func docutils literal"><span class="pre">base_taskname</span></tt></a> will
@@ -194,7 +192,7 @@ no such check will be performed.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Raises :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>AssertionError</strong> :</p>
 <blockquote class="last">
 <div><p>Raised when package name derived from the input <em class="xref py py-obj">taskname</em> does not
@@ -291,7 +289,7 @@ with user-specified values from input_dict.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : string</p>
 <blockquote>
 <div><p>Name of task to load into TEAL</p>
@@ -299,9 +297,10 @@ with user-specified values from input_dict.</p>
 <p><strong id="configObj">configObj</strong> : string</p>
 <blockquote>
 <div><p>The valid values for &#8216;configObj&#8217; would be:</p>
-<div class="highlight-python"><pre>None                      - loads last saved user .cfg file
-'defaults'                - loads task default .cfg file
-name of .cfg file (string)- loads user-specified .cfg file</pre>
+<div class="highlight-python"><div class="highlight"><pre>None                      - loads last saved user .cfg file
+&#39;defaults&#39;                - loads task default .cfg file
+name of .cfg file (string)- loads user-specified .cfg file
+</pre></div>
 </div>
 </div></blockquote>
 <p><strong id="input_dict">input_dict</strong> : dict</p>
@@ -352,7 +351,7 @@ regardless of which section the parameter was stored</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.get_pool_size">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">get_pool_size</tt><big>(</big><em>usr_config_value=None</em>, <em>num_tasks=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.get_pool_size" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">get_pool_size</tt><big>(</big><em>usr_config_value</em>, <em>num_tasks</em><big>)</big><a class="headerlink" href="#drizzlepac.util.get_pool_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine size of thread/process-pool for parallel processing.
 This examines the cpu_count to decide and return the right pool
 size to use.  Also take into account the user&#8217;s wishes via the config
@@ -434,7 +433,7 @@ ivm filenames from the first two columns.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="infile">infile</strong> : str</p>
 <blockquote>
 <div><p>Filename of ASCII file with array data as columns.</p>
@@ -446,7 +445,7 @@ ivm filenames from the first two columns.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>outarr</strong> : list of numpy arrays</p>
 <blockquote class="last">
 <div><p>Simple list of numpy arrays in the order as specifed in the &#8216;cols&#8217; parameter.</p>
@@ -471,14 +470,14 @@ ivm filenames from the first two columns.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : list of str</p>
 <blockquote>
 <div><p>A list of file names.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
 <div><p>Returns a list of names of the modified files
@@ -569,13 +568,13 @@ was found in all SCI extensions.</p>
         <li class="right" >
           <a href="util.html" title="Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

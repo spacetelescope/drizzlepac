@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.0.dev32232 (30-May-2014)',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0.dev32956 (2-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="Imagefindpars: Source finding parameters" href="refimagefindpars.html" />
     <link rel="prev" title="DrizzlePac Release Notes" href="release_notes.html" /> 
   </head>
@@ -45,7 +43,7 @@
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -118,7 +116,7 @@ the guide stars in a slightly different position.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str or list of str  (Default = <tt class="docutils literal"><span class="pre">'*flt.fits'</span></tt>)</p>
 <blockquote>
 <div><p>Input files (passed in from <em>files</em> parameter)
@@ -193,7 +191,14 @@ parameters specified through <em class="xref py py-obj">imagefindcfg</em>.</p>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>refimage</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Filename of reference image. Sources derived from this image will be
-used as the reference for matching with sources from all input images.</p>
+used as the reference for matching with sources from all input images
+unless a separate catalog is provided through the <em class="xref py py-obj">refcat</em> parameter.</p>
+</div></blockquote>
+<p><strong>expand_refcat</strong> : bool (Default = True)</p>
+<blockquote>
+<div><p>Specifies whether to add new sources from just matched images to
+the reference catalog to allow next image to be matched against an
+expanded reference catalog.</p>
 </div></blockquote>
 <p><strong>exclusions: string (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
@@ -346,8 +351,9 @@ contain the name of an input image in the first column. The remaining
 columns will provide the names of the source catalogs for each chip
 in order of the science extension numbers ((SCI,1), (SCI,2), ...).</p>
 <p>A sample catfile, with one line per image would look like:</p>
-<div class="highlight-python"><pre>image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
-image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo</pre>
+<div class="highlight-python"><div class="highlight"><pre>image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
+image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo
+</pre></div>
 </div>
 </div></blockquote>
 <p><strong>xcol</strong> : int (Default = 1)</p>
@@ -534,7 +540,7 @@ the same time.</p>
 </tr>
 </tbody>
 </table>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><tt class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></tt></p>
 </div>
@@ -560,17 +566,12 @@ the user has <tt class="docutils literal"><span class="pre">SExtractor</span></t
 their catalogs of source positions derived from <strong>each input chip</strong>.</p>
 <p>The reference frame will be defined either by:</p>
 <blockquote>
-<div><ul>
-<li><p class="first">the first input image (and associated catalog),</p>
-</li>
-<li><p class="first">a catalog derived from a reference image specified by the user, or</p>
-</li>
-<li><dl class="first docutils">
-<dt>a catalog of undistorted sky positions (RA/Dec) and fluxes</dt>
-<dd><p class="first last">provided by the user.</p>
-</dd>
-</dl>
-</li>
+<div><ul class="simple">
+<li>the image with the largest overlap with another input image AND
+with the largest total overlap with the rest of the input images,</li>
+<li>a catalog derived from a reference image specified by the user, or</li>
+<li>a catalog of undistorted sky positions (RA/Dec) and fluxes
+provided by the user.</li>
 </ul>
 </div></blockquote>
 <p>For a given observation, the distortion model is applied to all distorted
@@ -597,19 +598,37 @@ input and the reference to produce the &#8216;shiftfile&#8217;. If the user is
 confident that the solution will be correct, the header of each input image
 can be updated directly with the fit derived for that image. Otherwise,
 the &#8216;shiftfile&#8217; can be passed to AstroDrizzle for aligning the images.</p>
+<p>New sources (that are not in the reference catalog) from the matched images
+are added to the reference catalog in order to allow next image to be
+matched to use a larger reference catalog. This allows alignment of images
+that do not overlap directly with the reference image and/or catalog and
+it is particularly useful in image registration of large mosaics. Addition
+of new sources to the reference catalog can be turned off by
+setting <em class="xref py py-obj">expand_refcat</em> to <em class="xref py py-obj">False</em> when using an external reference catalog.
+When an external catalog is not provided (<em class="xref py py-obj">refcat`=&#8217;&#8216;) or when
+using an external reference catalog with `expand_refcat</em> set to <em class="xref py py-obj">True</em>,
+the list of all sources in the expanded reference catalog is saved
+in a catalog file named <tt class="docutils literal"><span class="pre">cumulative_sky_refcat_###.coo</span></tt> where ### is the
+base file name derived from either the external catalog (if provided) or
+the name of the image used as the reference image.</p>
+<p>Image catalogs are matched to the reference catalog in order of decreasing
+overlap area with the reference catalog (regardless of the <em class="xref py py-obj">expand_refcat</em>
+setting).</p>
 <p><strong>Format of Exclusion Catalog</strong></p>
 <p>The format for the exclusions catalog requires 1 line in the file for
 every input image, regardless of whether or not that image has
 any defined exclusion regions.  A sample file would look like:</p>
-<div class="highlight-python"><pre>j99da1emq_flt.fits
-j99da1f2q_flt.fits test_exclusion.reg</pre>
+<div class="highlight-python"><div class="highlight"><pre>j99da1emq_flt.fits
+j99da1f2q_flt.fits test_exclusion.reg
+</pre></div>
 </div>
 <p>This file specifies no exclusion files for the first image, and only
 an regions file for SCI,1 of the second image.  Should an exclusion
 regions file only be needed for the second chip in the second image,
 the file would need to look like:</p>
-<div class="highlight-python"><pre>j99da1emq_flt.fits
-j99da1f2q_flt.fits None test_sci2_exclusion.reg</pre>
+<div class="highlight-python"><div class="highlight"><pre>j99da1emq_flt.fits
+j99da1f2q_flt.fits None test_sci2_exclusion.reg
+</pre></div>
 </div>
 <p>The value <em class="xref py py-obj">None</em> could also be replaced by <tt class="docutils literal"><span class="pre">INDEF</span></tt> if desired, but either
 string needs to be present to signify no regions file for that chip while
@@ -631,24 +650,26 @@ DS9 regions as &#8220;include&#8221; regions and the true exclude DS9 regions (w
 as &#8220;exclude&#8221; regions, after the last region file name in the exclusion catalog,
 users should add the string &#8216;[ConformDS9]&#8217; (without apostrophes). The previous
 example will then become:</p>
-<div class="highlight-python"><pre>j99da1emq_flt.fits
+<div class="highlight-python"><div class="highlight"><pre>j99da1emq_flt.fits
 j99da1f2q_flt.fits None test_sci2_inclusion_and_exclusion.reg [ConformDS9]
-j99da1f2r_flt.fits test_sci1_exclusion.reg test_sci2_exclusion.reg</pre>
+j99da1f2r_flt.fits test_sci1_exclusion.reg test_sci2_exclusion.reg
+</pre></div>
 </div>
 <p><strong>Format of Region Files</strong></p>
 <p>The format of the exclusions catalogs referenced in the &#8216;exclusions&#8217;
 file defaults to the format written out by DS9 using the &#8216;DS9/Funtools&#8217;
 region file format.  A sample file with circle() regions will look like:</p>
-<div class="highlight-python"><pre># Region file format: DS9 version 4.1
+<div class="highlight-python"><div class="highlight"><pre># Region file format: DS9 version 4.1
 # Filename: j99da1f2q_flt.fits[SCI]
-global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman"
+global color=green dashlist=8 3 width=1 font=&quot;helvetica 10 normal roman&quot;
 select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
 image
 circle(3170,198,20)
 ellipse(3269,428,30,10,45) # a rotated ellipse
 box(3241.1146,219.78132,20,20,15) # a rotated box
 circle(200,200,50)  # outer circle
--circle(200,200,30) # inner circle</pre>
+-circle(200,200,30) # inner circle
+</pre></div>
 </div>
 <p>This region file can function both as an exclusion or as an inclusion region
 file depending on the presence of the [ConformDS9] string after the region list
@@ -737,7 +758,7 @@ be accessed from the PyRAF command-line and saved to a text file:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
@@ -773,12 +794,12 @@ writing out the help.</p>
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>
