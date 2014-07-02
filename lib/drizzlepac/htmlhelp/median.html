@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,15 +8,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 5: Create a Median Image &mdash; DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</title>
+    <title>Step 5: Create a Median Image &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.0.dev32956 (2-Jul-2014)',
+        URL_ROOT:    '',
+        VERSION:     '1.2.0.dev32232 (30-May-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
     <link rel="next" title="Step 6: Blotting the Median Image" href="ablot.html" />
     <link rel="prev" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" /> 
   </head>
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -123,7 +125,7 @@ __taskname__.help</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
@@ -156,7 +158,7 @@ see the <a class="reference external" href="http://drizzlepac.stsci.edu">Drizzle
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = None)</p>
 <blockquote>
 <div><p>A python list of drizzled image filenames, or just a single filename.</p>
@@ -216,12 +218,8 @@ be used to override the defaults.</p>
 <div><p>This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to &#8216;imcombine&#8217; for use in creating the median image. If the parameter is set to &#8220;None&#8221;, no thresholds will be imposed.</p>
 </div></blockquote>
 <p><strong>combine_grow</strong> : int (Default = 1)</p>
-<blockquote>
-<div><p>Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the &#8216;grow&#8217; parameter in &#8216;imcombine&#8217; for use in creating the median image.</p>
-</div></blockquote>
-<p><strong>combine_bufsize</strong> : float (Default = None)</p>
 <blockquote class="last">
-<div><p>Size of buffer, in Mb, to use when reading in each section of each input image.  The default buffer size is 1Mb.  The larger the buffer size, the fewer times the code needs to open each input image and the more memory will be required to create the median image.  A larger buffer can be helpful when using compression, since slower copies need to be made of each set of rows from each input image instead of using memory-mapping.</p>
+<div><p>Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the &#8216;grow&#8217; parameter in &#8216;imcombine&#8217; for use in creating the median image.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -263,12 +261,12 @@ be used to override the defaults.</p>
         <li class="right" >
           <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

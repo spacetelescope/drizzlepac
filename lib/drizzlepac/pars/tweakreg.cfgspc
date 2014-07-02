@@ -44,7 +44,6 @@ nbright = integer_or_none_kw(default=None,comment="Number of brightest objects t
 
 [REFERENCE CATALOG DESCRIPTION]
 refcat = string_kw(default="", triggers="_section_switch_", comment="Filename of reference coordinate catalog")
-expand_refcat = boolean_kw(default=True, comment="Expand reference catalog with new sources?")
 refxcol = string_kw(default="1", comment= "Column name(s) for RA")
 refycol = string_kw(default="2", comment= "Column name(s) for Dec")
 refxyunits = option_kw("degrees","pixels",default="degrees",comment="Units of sky positions")

@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,15 +8,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Output Image Generation &mdash; DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</title>
+    <title>Output Image Generation &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.0.dev32956 (2-Jul-2014)',
+        URL_ROOT:    '',
+        VERSION:     '1.2.0.dev32232 (30-May-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="MultiDrizzle Reference Table" href="mdztab.html" />
     <link rel="prev" title="WCS Utilities" href="wcsutils.html" /> 
@@ -44,7 +46,7 @@
         <li class="right" >
           <a href="wcsutils.html" title="WCS Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -109,10 +111,9 @@ will be setup either as extensions in a
 single multi-extension FITS file, or as separate FITS
 files.</p>
 <p>The object &#8216;plist&#8217; must contain at least the following members:</p>
-<div class="highlight-python"><div class="highlight"><pre>plist[&#39;output&#39;]   - name of output FITS image (for SCI)
-plist[&#39;outnx&#39;]    - size of X axis for output array
-plist[&#39;outny&#39;]    - size of Y axis for output array
-</pre></div>
+<div class="highlight-python"><pre>plist['output']   - name of output FITS image (for SCI)
+plist['outnx']    - size of X axis for output array
+plist['outny']    - size of Y axis for output array</pre>
 </div>
 <p>If &#8216;single=yes&#8217;, then &#8216;plist&#8217; also needs to contain:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">plist</span><span class="p">[</span><span class="s">&#39;outsingle&#39;</span><span class="p">]</span>
@@ -128,16 +129,14 @@ plist[&#39;outny&#39;]    - size of Y axis for output array
 </div>
 <p>If &#8216;build&#8217; is set to &#8216;no&#8217;, then each extension/array must be
 in separate FITS objects.  This would also require:</p>
-<div class="highlight-python"><div class="highlight"><pre>plist[&#39;outdata&#39;]    - name of output SCI FITS image
-plist[&#39;outweight&#39;]  - name of output WHT FITS image
-plist[&#39;outcontext&#39;] - name of output CTX FITS image
-</pre></div>
+<div class="highlight-python"><pre>plist['outdata']    - name of output SCI FITS image
+plist['outweight']  - name of output WHT FITS image
+plist['outcontext'] - name of output CTX FITS image</pre>
 </div>
 <p>Optionally, the overall exposure time information can be passed as:</p>
-<div class="highlight-python"><div class="highlight"><pre>plist[&#39;texptime&#39;] - total exptime for output
-plist[&#39;expstart&#39;] - start time of combined exposure
-plist[&#39;expend&#39;]   - end time of combined exposure
-</pre></div>
+<div class="highlight-python"><pre>plist['texptime'] - total exptime for output
+plist['expstart'] - start time of combined exposure
+plist['expend']   - end time of combined exposure</pre>
 </div>
 <dl class="method">
 <dt id="drizzlepac.outputimage.OutputImage.addDrizKeywords">
@@ -201,13 +200,13 @@ headers.</p>
         <li class="right" >
           <a href="wcsutils.html" title="WCS Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev32956 (2-Jul-2014) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>
