@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 4 and 8: Drizzling the Images &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
+    <title>Step 4 and 8: Drizzling the Images &mdash; DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.0.dev32232 (30-May-2014)',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0.dev32957 (2-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="Step 5: Create a Median Image" href="median.html" />
     <link rel="prev" title="Step 3: Subtracting the Sky" href="sky.html" /> 
   </head>
@@ -45,7 +43,7 @@
         <li class="right" >
           <a href="sky.html" title="Step 3: Subtracting the Sky"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -344,12 +342,13 @@ file with be directly altered.</p>
 create seperately drizzled images of each image in your list and the other
 to create one single output drizzled image, which is the combination of all
 of them:</p>
-<div class="highlight-python"><pre>def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap)
+<div class="highlight-python"><div class="highlight"><pre>def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap)
 def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap)
-if configObj[single_step]['driz_separate']:
+if configObj[single_step][&#39;driz_separate&#39;]:
     drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
 else:
-    drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)</pre>
+    drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+</pre></div>
 </div>
 <p class="rubric">Examples</p>
 <p>Basic example of how to call static yourself from a python command line,
@@ -379,7 +378,7 @@ called <tt class="docutils literal"><span class="pre">__taskname__.help</span></
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
@@ -424,7 +423,7 @@ rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data</dd>
 
 <dl class="function">
 <dt id="drizzlepac.adrizzle.run_driz_chip">
-<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">run_driz_chip</tt><big>(</big><em>img</em>, <em>virtual_outputs</em>, <em>chip</em>, <em>output_wcs</em>, <em>outwcs</em>, <em>template</em>, <em>paramDict</em>, <em>single</em>, <em>doWrite</em>, <em>build</em>, <em>_versions</em>, <em>_numctx</em>, <em>_nplanes</em>, <em>_numchips</em>, <em>_outsci</em>, <em>_outwht</em>, <em>_outctx</em>, <em>_hdrlist</em>, <em>wcsmap</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.run_driz_chip" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.adrizzle.</tt><tt class="descname">run_driz_chip</tt><big>(</big><em>img</em>, <em>chip</em>, <em>output_wcs</em>, <em>outwcs</em>, <em>template</em>, <em>paramDict</em>, <em>single</em>, <em>doWrite</em>, <em>build</em>, <em>_versions</em>, <em>_numctx</em>, <em>_nplanes</em>, <em>_numchips</em>, <em>_outsci</em>, <em>_outwht</em>, <em>_outctx</em>, <em>_hdrlist</em>, <em>wcsmap</em><big>)</big><a class="headerlink" href="#drizzlepac.adrizzle.run_driz_chip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform the drizzle operation on a single chip.
 This is separated out from <a class="reference internal" href="#drizzlepac.adrizzle.run_driz_img" title="drizzlepac.adrizzle.run_driz_img"><tt class="xref py py-obj docutils literal"><span class="pre">run_driz_img</span></tt></a> so as to keep together
 the entirety of the code which is inside the loop over
@@ -468,12 +467,12 @@ images.  See the <a class="reference internal" href="#drizzlepac.adrizzle.run_dr
         <li class="right" >
           <a href="sky.html" title="Step 3: Subtracting the Sky"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

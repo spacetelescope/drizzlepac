@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 1: Process Input &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
+    <title>Step 1: Process Input &mdash; DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.0.dev32232 (30-May-2014)',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0.dev32957 (2-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="Step 2: Generate a Static Mask" href="static.html" />
     <link rel="prev" title="WFPC2 ImageObjects" href="wfpc2objects.html" /> 
   </head>
@@ -45,7 +43,7 @@
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -178,7 +176,7 @@ where all data has been excluded from processing.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str</p>
 <blockquote>
 <div><p>filename of the initial input to process_input</p>
@@ -235,7 +233,7 @@ correction at runtime.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filenames">filenames</strong> : list of str</p>
 <blockquote class="last">
 <div><p>file names of all images to be checked</p>
@@ -329,14 +327,14 @@ usage (primarily memory) for this run.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
 <blockquote>
 <div><p>a list of files</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns :</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
 <div><p>returns a list of names of the modified files
@@ -359,7 +357,7 @@ as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="configObj">configObj</strong> : object</p>
 <blockquote>
 <div><p>configObj instance or simple dictionary of input parameters</p>
@@ -466,7 +464,8 @@ array and the integer value provided as input using the operation (array &amp; ~
 <h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
 <p>It can be called not only from within Python, but also from the host-level
 operating system command line using the syntax:</p>
-<div class="highlight-python"><pre>resetbits filename bits [extver [extname]]</pre>
+<div class="highlight-python"><div class="highlight"><pre>resetbits filename bits [extver [extname]]
+</pre></div>
 </div>
 </div>
 <div class="section" id="examples">
@@ -474,7 +473,8 @@ operating system command line using the syntax:</p>
 <ol class="arabic">
 <li><p class="first">The following command will reset the 4096 bits in all
 the DQ arrays of the file &#8216;input_flt.fits&#8217;:</p>
-<div class="highlight-python"><pre>resetbits input_flt.fits 4096</pre>
+<div class="highlight-python"><div class="highlight"><pre>resetbits input_flt.fits 4096
+</pre></div>
 </div>
 <p>or from the Python command line:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">resetbits</span>
@@ -484,7 +484,8 @@ the DQ arrays of the file &#8216;input_flt.fits&#8217;:</p>
 </li>
 <li><p class="first">To reset the 2,32,64 and 4096 (sum of 4194) bits in the
 second DQ array, specified as &#8216;dq,2&#8217;, in the file &#8216;input_flt.fits&#8217;:</p>
-<div class="highlight-python"><pre>resetbits input_flt.fits 4194 2</pre>
+<div class="highlight-python"><div class="highlight"><pre>resetbits input_flt.fits 4194 2
+</pre></div>
 </div>
 <p>or from the Python command line:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">resetbits</span>
@@ -508,7 +509,7 @@ __taskname__.help</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
@@ -529,7 +530,7 @@ writing out the help.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filename">filename</strong> : str</p>
 <blockquote>
 <div><p>full filename with path</p>
@@ -604,12 +605,12 @@ specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev32957 (2-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>
