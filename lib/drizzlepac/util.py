@@ -420,9 +420,7 @@ def count_sci_extensions(filename):
     """
     num_sci = 0
     extname = 'SCI'
-    num_ext = 0
     for extn in fileutil.openImage(filename):
-        num_ext += 1
         if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
     if num_sci == 0:

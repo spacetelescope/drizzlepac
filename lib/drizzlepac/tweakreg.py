@@ -23,8 +23,8 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.3.2'
-__vdate__ = '2-Jul-2014'
+__version__ = '1.3.3'
+__vdate__ = '4-Jul-2014'
 
 import tweakutils
 import imgclasses
@@ -331,6 +331,8 @@ def run(configobj):
             for img in input_images:
                 img.close()
             return
+
+        kwargs['use_sharp_round'] = catfile_kwargs['use_sharp_round']
 
         cat_src = None
 

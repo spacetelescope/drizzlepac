@@ -49,7 +49,7 @@ if sys.platform != 'win32':
 else:
     EXTRA_LINK_ARGS = ['/NODEFAULTLIB:MSVCRT' ] # , pywcslib+'/_pywcs.dll']
     EXTRA_LINK_ARGS = []
-    
+
 
 def getNumpyExtensions():
     define_macros = [('PYDRIZZLE', None)]
@@ -100,18 +100,19 @@ pkg = "drizzlepac"
 
 setupargs = {
 
-    'version' :         '1.1.0dev',
+    'version' :         '1.1.1dev',
     'description' :     "C-based MultiDrizzle",
-    'author' :          "Megan Sosey, Warren Hack, Christopher Hanley, Chris Sontag",
+    'author' :          "Megan Sosey, Warren Hack, Christopher Hanley, Chris Sontag, Mihai Cara",
     'author_email' :    "help@stsci.edu",
     'license' :         "http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE",
     'platforms' :       ["Linux","Solaris","Mac OS X","Win"],
     'data_files' :        [( pkg+"/pars", ['lib/drizzlepac/pars/*']),
-                            ( pkg+"/htmlhelp/_images", ['lib/drizzlepac/htmlhelp/_images/*']),
-                            ( pkg+"/htmlhelp/_sources", ['lib/drizzlepac/htmlhelp/_sources/*']),
-                            ( pkg+"/htmlhelp/_static", ['lib/drizzlepac/htmlhelp/_static/*']),
-                            ( pkg+"/htmlhelp", ['lib/drizzlepac/htmlhelp/*.html']),
-                            ( pkg, ['lib/drizzlepac/*.help'])],
+                           ( pkg+"/htmlhelp/_images/math", ['lib/drizzlepac/htmlhelp/_images/math/*']),
+                           ( pkg+"/htmlhelp/_images", ['lib/drizzlepac/htmlhelp/_images/*.*']),
+                           ( pkg+"/htmlhelp/_sources", ['lib/drizzlepac/htmlhelp/_sources/*']),
+                           ( pkg+"/htmlhelp/_static", ['lib/drizzlepac/htmlhelp/_static/*']),
+                           ( pkg+"/htmlhelp", ['lib/drizzlepac/htmlhelp/*.html']),
+                           ( pkg, ['lib/drizzlepac/*.help'])],
     'scripts' :         ["scripts/mdriz","scripts/resetbits","scripts/updatenpol"] ,
     'ext_modules' :     getNumpyExtensions(),
     'package_dir' :     { 'drizzlepac' : 'lib/drizzlepac', },

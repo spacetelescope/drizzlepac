@@ -133,7 +133,7 @@ def errfunc(p, *args):
 def findstars(jdata, fwhm, threshold, skymode,
               peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
               nsigma=1.5, ratio=1.0, theta=0.0, src_find_filters=None,
-              use_sharp_round=False,
+              use_sharp_round=False,mask=None,
               sharplo=0.2,sharphi=1.0,roundlo=-1.0,roundhi=1.0):
     import pyregion
     from os import path
@@ -178,6 +178,7 @@ def findstars(jdata, fwhm, threshold, skymode,
     convdata = convolve.convolve2d(jdata, nkern).astype(np.float32)
 
     # create masks from exclude/include regions:
+    regmask = None
     if src_find_filters is not None and 'region_file' in src_find_filters and \
                                    'region_file_mode' in src_find_filters:
         if not path.isfile(src_find_filters['region_file']):
@@ -193,20 +194,29 @@ def findstars(jdata, fwhm, threshold, skymode,
             reglist = pyregion.ShapeList([ reg for reg in reglist
                                            if not reg.exclude ])
             # create a mask from regions:
-            regmask = np.invert( reglist.get_mask( shape=(img_ny,img_nx) ) )
+            regmask = np.invert(np.asarray(
+                reglist.get_mask(shape=(img_ny,img_nx)), dtype=bool))
         elif src_find_filters['region_file_mode'].lower() == 'normal':
             # create a mask from regions:
-            regmask = reglist.get_mask( shape=(img_ny,img_nx) )
+            regmask = np.asarray(reglist.get_mask(shape=(img_ny,img_nx)), dtype=bool)
         else:
             raise TypeError("The value of 'region_file_mode' in the "     \
                             "'src_find_filters' argument must be either " \
                             "'normal' or 'exclude only'.")
-        # clip image to create regions around each source for segmentation
-        tdata=np.where((convdata > threshold) & regmask, convdata, 0)
-    else:
-        # clip image to create regions around each source for segmentation
+
+        # combine regmask with mask (if any)
+        if mask is not None:
+            regmask = np.logical_and(regmask, mask)
+    elif mask is not None:
+        # use mask (if any) instead of regmask:
+        regmask = np.asarray(mask, dtype=bool)
+
+    # clip image to create regions around each source for segmentation
+    if regmask is None:
         #tdata=np.where(convdata > skymode*2.0, convdata, 0)
         tdata=np.where(convdata > threshold, convdata, 0)
+    else:
+        tdata=np.where((convdata > threshold) & regmask, convdata, 0)
 
     # segment image and find sources
     s = ndim.generate_binary_structure(2,2)

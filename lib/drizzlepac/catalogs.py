@@ -110,7 +110,7 @@ class Catalog(object):
         self.set_colnames()
 
 
-    def generateXY(self):
+    def generateXY(self, **kwargs):
         """ Method to generate source catalog in XY positions
             Implemented by each subclass
         """
@@ -198,16 +198,16 @@ class Catalog(object):
             log.info('Excluded %d sources from catalog.'%num_excluded)
 
 
-    def buildCatalogs(self,exclusions=None):
+    def buildCatalogs(self,exclusions=None,**kwargs):
         """ Primary interface to build catalogs based on user inputs.
         """
-        self.generateXY()
+        self.generateXY(**kwargs)
         self.generateRaDec()
         if exclusions:
             self.apply_exclusions(exclusions)
 
 
-    def plotXYCatalog(self,**kwargs):
+    def plotXYCatalog(self, **kwargs):
         """
         Method which displays the original image and overlays the positions
         of the detected sources from this image's catalog.
@@ -307,7 +307,7 @@ class ImageCatalog(Catalog):
         self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
 
 
-    def generateXY(self):
+    def generateXY(self, **kwargs):
         """ Generate source catalog from input image using DAOFIND-style algorithm
         """
         #x,y,flux,sharp,round = idlphot.find(array,self.pars['hmin'],self.pars['fwhm'],
@@ -326,6 +326,11 @@ class ImageCatalog(Catalog):
         else:
             hmin = sigma*self.pars['threshold']
 
+        if 'mask' in kwargs:
+            mask = kwargs['mask']
+        else:
+            mask = None
+
         x, y, flux, src_id, sharp, round1, round2 = tweakutils.ndfind(
             self.source,
             hmin,
@@ -341,6 +346,7 @@ class ImageCatalog(Catalog):
             ratio=self.pars['ratio'],
             theta=self.pars['theta'],
             src_find_filters=self.src_find_filters,
+            mask = mask,
             use_sharp_round = self.use_sharp_round
         )
 
@@ -364,6 +370,7 @@ class ImageCatalog(Catalog):
                     ratio=self.pars['ratio'],
                     theta=self.pars['theta'],
                     src_find_filters=self.src_find_filters,
+                    mask = mask,
                     use_sharp_round = self.use_sharp_round
                 )
         if len(x) == 0:
@@ -445,7 +452,7 @@ class UserCatalog(Catalog):
         return catcols
 
 
-    def generateXY(self):
+    def generateXY(self, **kwargs):
         """
         Method to interpret input catalog file as columns of positions and fluxes.
         """
@@ -510,7 +517,7 @@ class RefCatalog(UserCatalog):
     COLNAMES = REFCOL_PARS
     IN_UNITS = 'degrees'
 
-    def generateXY(self):
+    def generateXY(self, **kwargs):
         pass
 
 
