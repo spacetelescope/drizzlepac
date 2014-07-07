@@ -267,6 +267,7 @@ def run(configobj):
     # So, make a copy of the original:
     input_images_orig_copy = copy(input_images)
     do_match_refimg = False
+    save_cumulative_refcat = expand_refcat
 
     # otherwise, extract the catalog from the first input image source list
     if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
@@ -337,6 +338,7 @@ def run(configobj):
         cat_src = None
 
         refimg, image = _max_overlap_pair(input_images)
+        save_cumulative_refcat = True
 
         refwcs = []
         refwcs.extend(refimg.get_wcs())
@@ -359,6 +361,7 @@ def run(configobj):
 
         omitted_images.insert(0, refimg) # refimage *must* be first
         do_match_refimg = True
+
 
     print '\n'+'='*20+'\n'
     print 'Aligning all input images to WCS defined by ',refwcs_fname
@@ -450,42 +453,42 @@ def run(configobj):
                 else:
                     break
 
-            # process images that have not been matched in order to
-            # update their headers:
-            if do_match_refimg:
-                image = omitted_images.pop(0)
-                image.match(refimage, quiet_identity=True, **objmatch_par)
-
-            # process omitted (from start) images separately:
-            for image in omitted_images:
-                image.match(refimage, quiet_identity=False, **objmatch_par)
-
-            # add to the list of omitted images, images that could not
-            # be matched:
-            omitted_images.extend(input_images)
-
-            if len(input_images) > 0:
-                print("\nUnable to match the following images:")
-                print("-------------------------------------")
-                for image in input_images:
-                    print(image.name)
-                print("")
-
-            # update headers:
-            for image in omitted_images:
-                image.performFit(**catfit_pars)
-                if image.quit_immediately:
-                    quit_immediately = True
-                    image.close()
-                    break
-                image.updateHeader(wcsname=uphdr_par['wcsname'])
-                if hdrlet_par['headerlet']:
-                    image.writeHeaderlet(**hdrlet_par)
-                if configobj['clean']:
-                    image.clean()
-                image.close()
-
             if not quit_immediately:
+                # process images that have not been matched in order to
+                # update their headers:
+                if do_match_refimg:
+                    image = omitted_images[0]
+                    image.match(refimage, quiet_identity=True, **objmatch_par)
+
+                # process omitted (from start) images separately:
+                for image in omitted_images[1:]:
+                    image.match(refimage, quiet_identity=False, **objmatch_par)
+
+                # add to the list of omitted images, images that could not
+                # be matched:
+                omitted_images.extend(input_images)
+
+                if len(input_images) > 0:
+                    print("\nUnable to match the following images:")
+                    print("-------------------------------------")
+                    for image in input_images:
+                        print(image.name)
+                    print("")
+
+                # update headers:
+                for image in omitted_images:
+                    image.performFit(**catfit_pars)
+                    if image.quit_immediately:
+                        quit_immediately = True
+                        image.close()
+                        break
+                    image.updateHeader(wcsname=uphdr_par['wcsname'])
+                    if hdrlet_par['headerlet']:
+                        image.writeHeaderlet(**hdrlet_par)
+                    if configobj['clean']:
+                        image.clean()
+                    image.close()
+
                 if configobj['writecat'] and not configobj['clean']:
                     # Write out catalog file recording input XY catalogs used
                     # This file will be suitable for use as input to 'tweakreg'
@@ -496,18 +499,20 @@ def run(configobj):
                     f.writelines(xycat_lines)
                     f.close()
 
+                    if save_cumulative_refcat:
+                        base_reg_name = os.path.splitext(
+                            os.path.basename(cat_src))[0]
+                        refimage.write_skycatalog(
+                            'cumulative_sky_refcat_{:s}.coo' \
+                            .format(base_reg_name),
+                            show_flux=True, show_id=True
+                        )
+
                 # write out shiftfile (if specified)
                 if shiftpars['shiftfile']:
                     tweakutils.write_shiftfile(input_images_orig_copy,
                                                shiftpars['outshifts'],
                                                outwcs=shiftpars['outwcs'])
-
-                if expand_refcat:
-                    base_reg_name = os.path.splitext(os.path.basename(cat_src))[0]
-                    refimage.write_skycatalog(
-                        'cumulative_sky_refcat_{:s}.coo'.format(base_reg_name),
-                        show_flux=True, show_id=True
-                    )
 
         except KeyboardInterrupt:
             refimage.close()

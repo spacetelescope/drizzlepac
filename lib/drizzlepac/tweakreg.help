@@ -434,7 +434,8 @@ it is particularly useful in image registration of large mosaics. Addition
 of new sources to the reference catalog can be turned off by
 setting `expand_refcat` to `False` when using an external reference catalog.
 When an external catalog is not provided (`refcat`='') or when
-using an external reference catalog with `expand_refcat` set to `True`,
+using an external reference catalog with `expand_refcat` set to `True`
+(assuming `writecat` = `True` and `clean` = `False`),
 the list of all sources in the expanded reference catalog is saved
 in a catalog file named ``cumulative_sky_refcat_###.coo`` where ### is the
 base file name derived from either the external catalog (if provided) or
