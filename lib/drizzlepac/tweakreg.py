@@ -269,7 +269,6 @@ def run(configobj):
     # So, make a copy of the original:
     input_images_orig_copy = copy(input_images)
     do_match_refimg = False
-    save_cumulative_refcat = expand_refcat
 
     # otherwise, extract the catalog from the first input image source list
     if configobj['refimage'] not in [None, '',' ','INDEF']: # User specified an image to use
@@ -323,7 +322,7 @@ def run(configobj):
                 img.close()
             return
 
-        image = _max_overlap_image(refimage, input_images)
+        image = _max_overlap_image(refimage, input_images, expand_refcat)
 
     else:
         if len(input_images) < 2:
@@ -339,14 +338,15 @@ def run(configobj):
 
         cat_src = None
 
-        refimg, image = _max_overlap_pair(input_images)
-        save_cumulative_refcat = True
+        refimg, image = _max_overlap_pair(input_images, expand_refcat)
 
         refwcs = []
         #refwcs.extend(refimg.get_wcs())
         #refwcs.extend(image.get_wcs())
         #for i in input_images:
             #refwcs.extend(i.get_wcs())
+        # Workaround the defect described in ticket:
+        # http://redink.stsci.edu/trac/ssb/stsci_python/ticket/1151
         for i in all_input_images:
             refwcs.extend(i.get_wcs())
         kwargs['ref_wcs_name'] = refimg.get_wcs()[0].filename
@@ -448,7 +448,7 @@ def run(configobj):
                 if refimage.dirty and len(input_images) > 0:
                     # The reference catalog has been updated with new sources.
                     # Clear retry flags and get next image:
-                    image = _max_overlap_image(refimage, input_images)
+                    image = _max_overlap_image(refimage, input_images, expand_refcat)
                     retry_flags = len(input_images)*[0]
                     refimage.clear_dirty_flag()
                 elif len(input_images) > 0 and retry_flags[0] == 0:
@@ -503,7 +503,7 @@ def run(configobj):
                     f.writelines(xycat_lines)
                     f.close()
 
-                    if save_cumulative_refcat:
+                    if expand_refcat:
                         base_reg_name = os.path.splitext(
                             os.path.basename(cat_src))[0]
                         refimage.write_skycatalog(
@@ -542,11 +542,12 @@ def _overlap_matrix(images):
     return m
 
 
-def _max_overlap_pair(images):
+def _max_overlap_pair(images, expand_refcat):
     assert(len(images) > 1)
-    if len(images) == 2:
+    if len(images) == 2 or not expand_refcat:
         # for the special case when only two images are provided
-        # return (refimage, image) in the same order as provided in 'images'
+        # return (refimage, image) in the same order as provided in 'images'.
+        # Also, when ref. catalog is static - revert to old tweakreg behavior
         im1 = images.pop(0) # reference image
         im2 = images.pop(0)
         return (im1, im2)
@@ -585,9 +586,13 @@ def _max_overlap_pair(images):
     return (im1, im2)
 
 
-def _max_overlap_image(refimage, images):
+def _max_overlap_image(refimage, images, expand_refcat):
     nimg = len(images)
     assert(nimg > 0)
+    if not expand_refcat:
+        # revert to old tweakreg behavior
+        return images.pop(0)
+
     area = np.zeros(nimg, dtype=np.float)
     for i in xrange(nimg):
         area[i] = refimage.skyline.intersection(images[i].skyline).area()
