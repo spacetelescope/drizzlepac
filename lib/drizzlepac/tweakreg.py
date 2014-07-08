@@ -231,12 +231,14 @@ def run(configobj):
     try:
         minsources = max(1, catfit_pars['minobj'])
         omitted_images = []
+        all_input_images = []
         for imgnum in xrange(len(filenames)):
             # Create Image instances for all input images
             img = imgclasses.Image(filenames[imgnum],
                                    input_catalogs=catnames[imgnum],
                                    exclusions=exclusion_files[imgnum],
                                    **catfile_kwargs)
+            all_input_images.append(img)
             if img.num_sources < minsources:
                 warn_str = "Image '{}' will not be aligned " \
                            "since it contains fewer than {} sources." \
@@ -341,15 +343,18 @@ def run(configobj):
         save_cumulative_refcat = True
 
         refwcs = []
-        refwcs.extend(refimg.get_wcs())
-        refwcs.extend(image.get_wcs())
-        for i in input_images:
+        #refwcs.extend(refimg.get_wcs())
+        #refwcs.extend(image.get_wcs())
+        #for i in input_images:
+            #refwcs.extend(i.get_wcs())
+        for i in all_input_images:
             refwcs.extend(i.get_wcs())
+        kwargs['ref_wcs_name'] = refimg.get_wcs()[0].filename
 
         try:
             ref_source = refimg.all_radec
-            refimage = imgclasses.RefImage(refwcs,ref_source,
-                                        xycatalog=refimg.xy_catalog,**kwargs)
+            refimage = imgclasses.RefImage(refwcs, ref_source,
+                                        xycatalog=refimg.xy_catalog, **kwargs)
             refwcs_fname = refimg.name
 
         except KeyboardInterrupt:
@@ -361,7 +366,6 @@ def run(configobj):
 
         omitted_images.insert(0, refimg) # refimage *must* be first
         do_match_refimg = True
-
 
     print '\n'+'='*20+'\n'
     print 'Aligning all input images to WCS defined by ',refwcs_fname
@@ -431,7 +435,7 @@ def run(configobj):
 
                 # add unmatched sources to the reference catalog
                 # (to expand it):
-                if image.perform_update and expand_refcat:
+                if expand_refcat:
                     refimage.append_not_matched_sources(image)
 
                 image.updateHeader(wcsname=uphdr_par['wcsname'])
@@ -540,6 +544,12 @@ def _overlap_matrix(images):
 
 def _max_overlap_pair(images):
     assert(len(images) > 1)
+    if len(images) == 2:
+        # for the special case when only two images are provided
+        # return (refimage, image) in the same order as provided in 'images'
+        im1 = images.pop(0) # reference image
+        im2 = images.pop(0)
+        return (im1, im2)
 
     m = _overlap_matrix(images)
     imgs = [f.name for f in images]

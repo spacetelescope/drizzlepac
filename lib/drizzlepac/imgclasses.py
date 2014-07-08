@@ -1021,7 +1021,10 @@ class RefImage(object):
             # generate a reference tangent plane from a list of STWCS objects
             undistort = _is_wcs_distorted(wcs_list[0])
             self.wcs = utils.output_wcs(wcs_list, undistort=undistort)
-            self.wcs.filename = wcs_list[0].filename
+            if 'ref_wcs_name' in kwargs:
+                self.wcs.filename = kwargs['ref_wcs_name']
+            else:
+                self.wcs.filename = wcs_list[0].filename
 
         else:
             # only a single WCS provided, so use that as the definition
