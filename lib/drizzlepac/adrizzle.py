@@ -525,12 +525,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Will we be running in parallel?
     pool_size = util.get_pool_size(paramDict.get('num_cores'), len(imageObjectList))
     will_parallel = single and pool_size > 1
-    # But not (yet) if in_memory is on
-    if imageObjectList[0].inmemory:
-        pool_size = 1
-        if will_parallel:
-            will_parallel = False
-            log.info('Sorry, astrodrizzle can not execute in parallel with in_memory on.')
     if will_parallel:
         log.info('Executing %d parallel workers' % pool_size)
     else:
@@ -580,7 +574,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # For single case, this will determine when to close
     # one product and open the next.
     _chipIdx = 0
-    _hdrlist = []
+
     # Remember the name of the 1st image that goes into this particular product
     # Insure that the header reports the proper values for the start of the
     # exposure time used to make this; in particular, TIME-OBS and DATE-OBS.
@@ -611,9 +605,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
         # Work each image, possibly in parallel
         if will_parallel:
-#           manager = multiprocessing.Manager()
-#           mgr = manager.dict(img.virtualOutputs)
-            mgr = None
+            manager = multiprocessing.Manager()
+            mgr = manager.dict(img.virtualOutputs)
+
             # To save memory, do not use img.virtualOutputs when running
             # in parallel (too many users don't have the needed resources)
             # and thus do not allow parallelization when img.inmemory
@@ -621,13 +615,13 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 name='adrizzle.run_driz_img()', # for err msgs
                 args=(img,mgr,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
-                      _chipIdx,None,None,None,_hdrlist,wcsmap))
+                      _chipIdx,None,None,None,wcsmap))
             subprocs.append(p)
-#           img.virtualOutputs = mgr
+            img.virtualOutputs = mgr
         else:
             run_driz_img(img,img.virtualOutputs,chiplist,output_wcs,outwcs,template,paramDict,
                          single,num_in_prod,build,_versions,_numctx,_nplanes,
-                         _chipIdx,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
+                         _chipIdx,_outsci,_outwht,_outctx,wcsmap)
 
         # Increment/reset master chip counter
         _chipIdx += len(chiplist)
@@ -638,7 +632,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if will_parallel:
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
 
-    del _outsci,_outwht,_outctx,_hdrlist
+    del _outsci,_outwht,_outctx
     # have looped over each img/chip
 
 
@@ -648,7 +642,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
 def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDict,single,
                  num_in_prod,build,_versions,_numctx,_nplanes,chipIdxCopy,
-                 _outsci,_outwht,_outctx,_hdrlist,wcsmap):
+                 _outsci,_outwht,_outctx,wcsmap):
     """ Perform the drizzle operation on a single image.
     This is separated out from :py:func:`run_driz` so as to keep together
     the entirety of the code which is inside the loop over
@@ -656,15 +650,14 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
     """
 
     # Check for unintialized inputs
-    here = _outsci==None and _outwht==None and _outctx==None and _hdrlist==None
+    here = _outsci==None and _outwht==None and _outctx==None
     if _outsci is None:
         _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outwht is None:
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outctx is None:
         _outctx = np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
-    if _hdrlist is None:
-        _hdrlist = []
+    _hdrlist = []
 
     # Work on each chip - note that they share access to the arrays above
     for chip in chiplist:
@@ -688,17 +681,16 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
     # Reset for next output image...
     #
     if here:
-        del _outsci,_outwht,_outctx,_hdrlist
+        del _outsci,_outwht,_outctx
     elif single:
         np.multiply(_outsci,0.,_outsci)
         np.multiply(_outwht,0.,_outwht)
         np.multiply(_outctx,0,_outctx)
-        # this was "_hdrlist=[]", but we need to preserve the var ptr itself
-        while len(_hdrlist)>0: _hdrlist.pop()
     # else, these were intended to live and be used beyond this function call
 
     if img.inmemory:
         virtual_outputs = img.virtualOutputs
+        # img.saveVirtualOutputs() prev'ly done in run_driz_chip (but only if single and doWrite)
 
 
 def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
