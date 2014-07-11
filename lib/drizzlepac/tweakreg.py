@@ -231,12 +231,14 @@ def run(configobj):
     try:
         minsources = max(1, catfit_pars['minobj'])
         omitted_images = []
+        all_input_images = []
         for imgnum in xrange(len(filenames)):
             # Create Image instances for all input images
             img = imgclasses.Image(filenames[imgnum],
                                    input_catalogs=catnames[imgnum],
                                    exclusions=exclusion_files[imgnum],
                                    **catfile_kwargs)
+            all_input_images.append(img)
             if img.num_sources < minsources:
                 warn_str = "Image '{}' will not be aligned " \
                            "since it contains fewer than {} sources." \
@@ -320,7 +322,7 @@ def run(configobj):
                 img.close()
             return
 
-        image = _max_overlap_image(refimage, input_images)
+        image = _max_overlap_image(refimage, input_images, expand_refcat)
 
     else:
         if len(input_images) < 2:
@@ -332,13 +334,22 @@ def run(configobj):
                 img.close()
             return
 
-        refimg, image = _max_overlap_pair(input_images)
+        kwargs['use_sharp_round'] = catfile_kwargs['use_sharp_round']
+
+        cat_src = None
+
+        refimg, image = _max_overlap_pair(input_images, expand_refcat)
 
         refwcs = []
-        refwcs.extend(refimg.get_wcs())
-        refwcs.extend(image.get_wcs())
-        for i in input_images:
+        #refwcs.extend(refimg.get_wcs())
+        #refwcs.extend(image.get_wcs())
+        #for i in input_images:
+            #refwcs.extend(i.get_wcs())
+        # Workaround the defect described in ticket:
+        # http://redink.stsci.edu/trac/ssb/stsci_python/ticket/1151
+        for i in all_input_images:
             refwcs.extend(i.get_wcs())
+        kwargs['ref_wcs_name'] = refimg.get_wcs()[0].filename
 
         try:
             ref_source = refimg.all_radec
@@ -422,9 +433,10 @@ def run(configobj):
                     image.close()
                     break
 
-                ## add unmatched sources to the reference catalog
-                ## (to expand it):
-                refimage.append_not_matched_sources(image)
+                # add unmatched sources to the reference catalog
+                # (to expand it):
+                if expand_refcat:
+                    refimage.append_not_matched_sources(image)
 
                 image.updateHeader(wcsname=uphdr_par['wcsname'])
                 if hdrlet_par['headerlet']:
@@ -436,7 +448,7 @@ def run(configobj):
                 if refimage.dirty and len(input_images) > 0:
                     # The reference catalog has been updated with new sources.
                     # Clear retry flags and get next image:
-                    image = _max_overlap_image(refimage, input_images)
+                    image = _max_overlap_image(refimage, input_images, expand_refcat)
                     retry_flags = len(input_images)*[0]
                     refimage.clear_dirty_flag()
                 elif len(input_images) > 0 and retry_flags[0] == 0:
@@ -444,41 +456,6 @@ def run(configobj):
                     image = input_images.pop(0)
                 else:
                     break
-
-            # process images that have not been matched in order to
-            # update their headers:
-            if do_match_refimg:
-                image = omitted_images.pop(0)
-                image.match(refimage, quiet_identity=True, **objmatch_par)
-
-            # process omitted (from start) images separately:
-            for image in omitted_images:
-                image.match(refimage, quiet_identity=False, **objmatch_par)
-
-            # add to the list of omitted images, images that could not
-            # be matched:
-            omitted_images.extend(input_images)
-
-            if len(input_images) > 0:
-                print("\nUnable to match the following images:")
-                print("-------------------------------------")
-                for image in input_images:
-                    print(image.name)
-                print("")
-
-            # update headers:
-            for image in omitted_images:
-                image.performFit(**catfit_pars)
-                if image.quit_immediately:
-                    quit_immediately = True
-                    image.close()
-                    break
-                image.updateHeader(wcsname=uphdr_par['wcsname'])
-                if hdrlet_par['headerlet']:
-                    image.writeHeaderlet(**hdrlet_par)
-                if configobj['clean']:
-                    image.clean()
-                image.close()
 
             if not quit_immediately:
                 # process images that have not been matched in order to
@@ -541,8 +518,6 @@ def run(configobj):
                                                shiftpars['outshifts'],
                                                outwcs=shiftpars['outwcs'])
 
-                refimage.write_skycatalog('tweakreg_cumulative_sky_refcat.coo')
-
         except KeyboardInterrupt:
             refimage.close()
             for img in input_images_orig_copy:
@@ -567,8 +542,15 @@ def _overlap_matrix(images):
     return m
 
 
-def _max_overlap_pair(images):
+def _max_overlap_pair(images, expand_refcat):
     assert(len(images) > 1)
+    if len(images) == 2 or not expand_refcat:
+        # for the special case when only two images are provided
+        # return (refimage, image) in the same order as provided in 'images'.
+        # Also, when ref. catalog is static - revert to old tweakreg behavior
+        im1 = images.pop(0) # reference image
+        im2 = images.pop(0)
+        return (im1, im2)
 
     m = _overlap_matrix(images)
     imgs = [f.name for f in images]
@@ -604,9 +586,13 @@ def _max_overlap_pair(images):
     return (im1, im2)
 
 
-def _max_overlap_image(refimage, images):
+def _max_overlap_image(refimage, images, expand_refcat):
     nimg = len(images)
     assert(nimg > 0)
+    if not expand_refcat:
+        # revert to old tweakreg behavior
+        return images.pop(0)
+
     area = np.zeros(nimg, dtype=np.float)
     for i in xrange(nimg):
         area[i] = refimage.skyline.intersection(images[i].skyline).area()

@@ -27,6 +27,7 @@ REFCAT_ARGS = ['rmaxflux','rminflux','rfluxunits','refnbright']+REFCOL_PARS
 
 log = logutil.create_logger(__name__)
 
+
 def generateCatalog(wcs, mode='automatic', catalog=None,
                     src_find_filters=None, **kwargs):
     """ Function which determines what type of catalog object needs to be
@@ -56,6 +57,7 @@ def generateCatalog(wcs, mode='automatic', catalog=None,
         else: # a catalog file was provided as the catalog source
             catalog = UserCatalog(wcs,catalog,**kwargs)
     return catalog
+
 
 class Catalog(object):
     """ Base class for keeping track of a source catalog for an input WCS
@@ -107,11 +109,13 @@ class Catalog(object):
         self.radec = None # catalog of sky positions for all sources on this chip/image
         self.set_colnames()
 
-    def generateXY(self):
+
+    def generateXY(self, **kwargs):
         """ Method to generate source catalog in XY positions
             Implemented by each subclass
         """
         pass
+
 
     def set_colnames(self):
         """ Method to define how to interpret a catalog file
@@ -119,8 +123,10 @@ class Catalog(object):
         """
         pass
 
+
     def _readCatalog(self):
         pass
+
 
     def generateRaDec(self):
         """ Convert XY positions into sky coordinates using STWCS methods
@@ -146,6 +152,7 @@ class Catalog(object):
                 # If we have no WCS, simply pass along the XY input positions
                 # under the assumption they were already sky positions.
                 self.radec = self.xypos
+
 
     def apply_exclusions(self,exclusions):
         """ Trim sky catalog to remove any sources within regions specified by
@@ -190,15 +197,17 @@ class Catalog(object):
             self.xypos = xypos_trimmed
             log.info('Excluded %d sources from catalog.'%num_excluded)
 
-    def buildCatalogs(self,exclusions=None):
+
+    def buildCatalogs(self,exclusions=None,**kwargs):
         """ Primary interface to build catalogs based on user inputs.
         """
-        self.generateXY()
+        self.generateXY(**kwargs)
         self.generateRaDec()
         if exclusions:
             self.apply_exclusions(exclusions)
 
-    def plotXYCatalog(self,**kwargs):
+
+    def plotXYCatalog(self, **kwargs):
         """
         Method which displays the original image and overlays the positions
         of the detected sources from this image's catalog.
@@ -238,6 +247,7 @@ class Catalog(object):
 
             pl.imshow(self.source,cmap=pl_cmap,vmin=pl_vmin,vmax=pl_vmax)
             pl.plot(self.xypos[0]-1,self.xypos[1]-1,pars['marker'])
+
 
     def writeXYCatalog(self,filename):
         """ Write out the X,Y catalog to a file
@@ -296,12 +306,13 @@ class ImageCatalog(Catalog):
         if self.wcs.extname == ('',None): self.wcs.extname = (0)
         self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
 
-    def generateXY(self):
+
+    def generateXY(self, **kwargs):
         """ Generate source catalog from input image using DAOFIND-style algorithm
         """
         #x,y,flux,sharp,round = idlphot.find(array,self.pars['hmin'],self.pars['fwhm'],
         #                    roundlim=self.pars['roundlim'], sharplim=self.pars['sharplim'])
-        print("###  Source finding for '{}', EXT={} started at: {}"
+        print("  #  Source finding for '{}', EXT={} started at: {}"
               .format(self.fnamenoext, self.wcs.extname, util._ptime()[0]))
         if self.pars['computesig']:
             # compute sigma for this image
@@ -314,6 +325,11 @@ class ImageCatalog(Catalog):
             hmin = skymode
         else:
             hmin = sigma*self.pars['threshold']
+
+        if 'mask' in kwargs:
+            mask = kwargs['mask']
+        else:
+            mask = None
 
         x, y, flux, src_id, sharp, round1, round2 = tweakutils.ndfind(
             self.source,
@@ -330,6 +346,7 @@ class ImageCatalog(Catalog):
             ratio=self.pars['ratio'],
             theta=self.pars['theta'],
             src_find_filters=self.src_find_filters,
+            mask = mask,
             use_sharp_round = self.use_sharp_round
         )
 
@@ -353,6 +370,7 @@ class ImageCatalog(Catalog):
                     ratio=self.pars['ratio'],
                     theta=self.pars['theta'],
                     src_find_filters=self.src_find_filters,
+                    mask = mask,
                     use_sharp_round = self.use_sharp_round
                 )
         if len(x) == 0:
@@ -379,11 +397,13 @@ class ImageCatalog(Catalog):
         self.numcols = 7 if self.use_sharp_round else 4
         self.num_objects = len(x)
 
+
     def _compute_sigma(self):
         istats = imagestats.ImageStats(self.source,nclip=3,
                                         fields='mode,stddev',binwidth=0.01)
         sigma = np.sqrt(2.0 * np.abs(istats.mode))
         return sigma
+
 
 class UserCatalog(Catalog):
     """ Class to manage user-supplied catalogs as inputs.
@@ -417,6 +437,7 @@ class UserCatalog(Catalog):
         else:
             self.in_units = self.pars['xyunits']
 
+
     def _readCatalog(self):
         # define what columns will be read
         # The following loops
@@ -430,31 +451,37 @@ class UserCatalog(Catalog):
             catcols = None
         return catcols
 
-    def generateXY(self):
+
+    def generateXY(self, **kwargs):
         """
         Method to interpret input catalog file as columns of positions and fluxes.
         """
-
+        self.num_objects = 0
         xycols = self._readCatalog()
         if xycols is not None:
             # convert the catalog into attribute
             self.xypos = xycols[:3]
             # convert optional columns if they are present
             if self.numcols > 3:
-                self.sharp = xycols[3]
+                self.xypos.append(np.asarray(xycols[3], dtype=int)) # source ID
             if self.numcols > 4:
-                self.round1 = xycols[4]
+                self.sharp = xycols[4]
             if self.numcols > 5:
-                self.round2 = xycols[5]
-
-        self.num_objects = 0
-        if xycols is not None:
+                self.round1 = xycols[5]
+            if self.numcols > 6:
+                self.round2 = xycols[6]
             self.num_objects = len(xycols[0])
 
         if self.numcols < 3: # account for flux column
-            self.xypos.append(np.zeros(self.num_objects))
-        # add source ID column
-        self.xypos.append(np.arange(self.num_objects)+self.start_id)
+            self.xypos.append(np.zeros(self.num_objects, dtype=float))
+
+        if self.numcols < 4: # add source ID column
+            self.xypos.append(np.arange(self.num_objects)+self.start_id)
+
+        if self.use_sharp_round:
+            for i in xrange(len(self.xypos), 7):
+                self.xypos.append(np.zeros(self.num_objects, dtype=float))
+
 
     def plotXYCatalog(self,**kwargs):
         """
@@ -490,13 +517,17 @@ class RefCatalog(UserCatalog):
     COLNAMES = REFCOL_PARS
     IN_UNITS = 'degrees'
 
-    def generateXY(self):
+    def generateXY(self, **kwargs):
         pass
+
+
     def generateRaDec(self):
         if isinstance(self.source,list):
             self.radec = self.source
         else:
             self.radec = self._readCatalog()
+
+
     def buildXY(self,catalogs):
         if instance(catalogs,dict):
             # we have chip_catalogs from an ImageClass instance

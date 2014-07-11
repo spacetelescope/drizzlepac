@@ -428,7 +428,7 @@ the 'shiftfile' can be passed to AstroDrizzle for aligning the images.
 
 New sources (that are not in the reference catalog) from the matched images
 are added to the reference catalog in order to allow next image to be
-matched to use a larger reference catalog. This allows alignment of images
+matched to a larger reference catalog. This allows alignment of images
 that do not overlap directly with the reference image and/or catalog and
 it is particularly useful in image registration of large mosaics. Addition
 of new sources to the reference catalog can be turned off by

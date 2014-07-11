@@ -215,6 +215,8 @@ def findstars(jdata, fwhm, threshold, skymode,
     if regmask is None:
         #tdata=np.where(convdata > skymode*2.0, convdata, 0)
         tdata=np.where(convdata > threshold, convdata, 0)
+    else:
+        tdata=np.where((convdata > threshold) & regmask, convdata, 0)
 
     # segment image and find sources
     s = ndim.generate_binary_structure(2,2)
