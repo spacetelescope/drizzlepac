@@ -420,9 +420,7 @@ def count_sci_extensions(filename):
     """
     num_sci = 0
     extname = 'SCI'
-    num_ext = 0
     for extn in fileutil.openImage(filename):
-        num_ext += 1
         if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
     if num_sci == 0:
@@ -1009,11 +1007,11 @@ def parse_colnames(colnames,coords=None):
 
 
 def createFile(dataArray=None, outfile=None, header=None):
-    """Create a simple fits file for the given data array and header.
-        Returns either the FITS object in-membory when outfile==None or
-            None when the FITS file was written out to a file.
     """
-
+    Create a simple fits file for the given data array and header.
+    Returns either the FITS object in-membory when outfile==None or
+    None when the FITS file was written out to a file.
+    """
     # Insure that at least a data-array has been provided to create the file
     assert(dataArray != None), "Please supply a data array for createFiles"
 

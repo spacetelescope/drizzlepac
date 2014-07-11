@@ -23,8 +23,8 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.3.1'
-__vdate__ = '30-May-2014'
+__version__ = '1.3.3'
+__vdate__ = '4-Jul-2014'
 
 import tweakutils
 import imgclasses
@@ -120,6 +120,7 @@ def run(configobj):
     input = configobj['input']
     # Start by interpreting the inputs
     use_catfile = True
+    expand_refcat = True
     filenames,catnames = tweakutils.parse_input(input)
 
     if not filenames:
@@ -260,6 +261,7 @@ def run(configobj):
     if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
+        expand_refcat = refcat_par['expand_refcat']
 
     # input_images list can be modified below.
     # So, make a copy of the original:
@@ -284,14 +286,21 @@ def run(configobj):
         #    of reference source positions and replace default source list with it
         if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
             ref_source = refcat_par['refcat']
+            cat_src = ref_source
+            xycat = None
         else:
             refimg = imgclasses.Image(configobj['refimage'],
                                       **ref_catfile_kwargs)
             ref_source = refimg.all_radec
+            cat_src = None
+            xycat = refimg.xy_catalog
 
         try:
+            if 'use_sharp_round' in ref_catfile_kwargs:
+                kwargs['use_sharp_round'] = ref_catfile_kwargs['use_sharp_round']
             refimage = imgclasses.RefImage(configobj['refimage'],
-                                           ref_source, **kwargs)
+                            ref_source, xycatalog=xycat,
+                            cat_origin=cat_src, **kwargs)
             refwcs = refimage.wcs
             ref_source = refimage.all_radec
             refwcs_fname = refwcs.filename
@@ -333,8 +342,8 @@ def run(configobj):
 
         try:
             ref_source = refimg.all_radec
-            refimage = imgclasses.RefImage(refwcs,ref_source,
-                                        xycatalog=refimg.xy_catalog,**kwargs)
+            refimage = imgclasses.RefImage(refwcs, ref_source,
+                                        xycatalog=refimg.xy_catalog, **kwargs)
             refwcs_fname = refimg.name
 
         except KeyboardInterrupt:
@@ -352,6 +361,9 @@ def run(configobj):
     print '\n'+'='*20+'\n'
 
     if refimage.outxy is not None:
+        if cat_src is None:
+            cat_src = refimage.name
+
         try:
             log.info("USER INPUT PARAMETERS for matching sources:")
             util.printParams(objmatch_par, log=log)
@@ -469,6 +481,41 @@ def run(configobj):
                 image.close()
 
             if not quit_immediately:
+                # process images that have not been matched in order to
+                # update their headers:
+                if do_match_refimg:
+                    image = omitted_images[0]
+                    image.match(refimage, quiet_identity=True, **objmatch_par)
+
+                # process omitted (from start) images separately:
+                for image in omitted_images[1:]:
+                    image.match(refimage, quiet_identity=False, **objmatch_par)
+
+                # add to the list of omitted images, images that could not
+                # be matched:
+                omitted_images.extend(input_images)
+
+                if len(input_images) > 0:
+                    print("\nUnable to match the following images:")
+                    print("-------------------------------------")
+                    for image in input_images:
+                        print(image.name)
+                    print("")
+
+                # update headers:
+                for image in omitted_images:
+                    image.performFit(**catfit_pars)
+                    if image.quit_immediately:
+                        quit_immediately = True
+                        image.close()
+                        break
+                    image.updateHeader(wcsname=uphdr_par['wcsname'])
+                    if hdrlet_par['headerlet']:
+                        image.writeHeaderlet(**hdrlet_par)
+                    if configobj['clean']:
+                        image.clean()
+                    image.close()
+
                 if configobj['writecat'] and not configobj['clean']:
                     # Write out catalog file recording input XY catalogs used
                     # This file will be suitable for use as input to 'tweakreg'
@@ -478,6 +525,15 @@ def run(configobj):
                     f = open(xycat_filename, mode='w')
                     f.writelines(xycat_lines)
                     f.close()
+
+                    if expand_refcat:
+                        base_reg_name = os.path.splitext(
+                            os.path.basename(cat_src))[0]
+                        refimage.write_skycatalog(
+                            'cumulative_sky_refcat_{:s}.coo' \
+                            .format(base_reg_name),
+                            show_flux=True, show_id=True
+                        )
 
                 # write out shiftfile (if specified)
                 if shiftpars['shiftfile']:

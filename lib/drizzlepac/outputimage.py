@@ -413,33 +413,37 @@ class OutputImage:
             print('-Generating simple FITS output: %s' % self.outdata)
 
             fo = fits.HDUList()
-
-            if self.compress:
-                hdu = fits.CompImageHDU(data=sciarr, header=prihdu.header)
-            else:
-                hdu = fits.ImageHDU(data=sciarr, header=prihdu.header)
-            # explicitly set EXTEND to FALSE for simple FITS files.
-            dim = len(sciarr.shape)
-            hdu.header.set('extend', value=False, after='NAXIS%s'%dim)
-            del hdu.header['nextend']
+            hdu_header = prihdu.header.copy()
+            del hdu_header['nextend']
 
             # Append remaining unique header keywords from template DQ
             # header to Primary header...
             if scihdr:
                 for _card in scihdr.cards:
-                    if _card.keyword not in RESERVED_KEYS and _card.keyword not in hdu.header:
-                        hdu.header.append(_card)
+                    if _card.keyword not in RESERVED_KEYS and _card.keyword not in hdu_header:
+                        hdu_header.append(_card)
             for kw in ['PCOUNT', 'GCOUNT']:
                 try:
                     del kw
                 except KeyError:
                     pass
-            hdu.header['filename'] = self.outdata
+            hdu_header['filename'] = self.outdata
+
+            if self.compress:
+                hdu = fits.CompImageHDU(data=sciarr, header=hdu_header)
+                wcs_ext = [1]
+            else:
+                hdu = fits.ImageHDU(data=sciarr, header=hdu_header)
+                wcs_ext = [0]
+
+            # explicitly set EXTEND to FALSE for simple FITS files.
+            dim = len(sciarr.shape)
+            hdu.header.set('extend', value=False, after='NAXIS%s'%dim)
 
             # Add primary header to output file...
             fo.append(hdu)
             # remove all alternate WCS solutions from headers of this product
-            wcs_functions.removeAllAltWCS(fo,[0])
+            wcs_functions.removeAllAltWCS(fo,wcs_ext)
 
             # add table of combined header keyword values to FITS file
             if newtab is not None:
@@ -483,7 +487,7 @@ class OutputImage:
                 # Add primary header to output file...
                 fwht.append(hdu)
                 # remove all alternate WCS solutions from headers of this product
-                wcs_functions.removeAllAltWCS(fwht,[0])
+                wcs_functions.removeAllAltWCS(fwht,wcs_ext)
 
                 if not virtual:
                     print 'Writing out image to disk:',self.outweight
@@ -525,7 +529,7 @@ class OutputImage:
 
                 fctx.append(hdu)
                 # remove all alternate WCS solutions from headers of this product
-                wcs_functions.removeAllAltWCS(fctx,[0])
+                wcs_functions.removeAllAltWCS(fctx,wcs_ext)
                 if not virtual:
                     print 'Writing out image to disk:',self.outcontext
                     fctx.writeto(self.outcontext)

@@ -70,7 +70,13 @@ Other Parameters
 
 refimage : str (Default = '')
     Filename of reference image. Sources derived from this image will be
-    used as the reference for matching with sources from all input images.
+    used as the reference for matching with sources from all input images
+    unless a separate catalog is provided through the `refcat` parameter.
+
+expand_refcat : bool (Default = True)
+    Specifies whether to add new sources from just matched images to
+    the reference catalog to allow next image to be matched against an
+    expanded reference catalog.
 
 exclusions: string (Default = '')
     This parameter allows the user to specify a set of files which contain
@@ -386,10 +392,11 @@ their catalogs of source positions derived from **each input chip**.
 
 The reference frame will be defined either by:
 
-    * the first input image (and associated catalog),
+    * the image with the largest overlap with another input image AND
+      with the largest total overlap with the rest of the input images,
     * a catalog derived from a reference image specified by the user, or
     * a catalog of undistorted sky positions (RA/Dec) and fluxes
-        provided by the user.
+      provided by the user.
 
 For a given observation, the distortion model is applied to all distorted
 input positions, and the sources from each chip are then combined into a
@@ -418,6 +425,25 @@ input and the reference to produce the 'shiftfile'. If the user is
 confident that the solution will be correct, the header of each input image
 can be updated directly with the fit derived for that image. Otherwise,
 the 'shiftfile' can be passed to AstroDrizzle for aligning the images.
+
+New sources (that are not in the reference catalog) from the matched images
+are added to the reference catalog in order to allow next image to be
+matched to use a larger reference catalog. This allows alignment of images
+that do not overlap directly with the reference image and/or catalog and
+it is particularly useful in image registration of large mosaics. Addition
+of new sources to the reference catalog can be turned off by
+setting `expand_refcat` to `False` when using an external reference catalog.
+When an external catalog is not provided (`refcat`='') or when
+using an external reference catalog with `expand_refcat` set to `True`
+(assuming `writecat` = `True` and `clean` = `False`),
+the list of all sources in the expanded reference catalog is saved
+in a catalog file named ``cumulative_sky_refcat_###.coo`` where ### is the
+base file name derived from either the external catalog (if provided) or
+the name of the image used as the reference image.
+
+Image catalogs are matched to the reference catalog in order of decreasing
+overlap area with the reference catalog (regardless of the `expand_refcat`
+setting).
 
 
 **Format of Exclusion Catalog**

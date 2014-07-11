@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.0.dev32232 (30-May-2014)',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0.dev33060 (4-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
@@ -45,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -137,7 +135,7 @@ aspects of each of the processing steps.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = <tt class="docutils literal"><span class="pre">'*flt.fits'</span></tt>)</p>
 <blockquote>
 <div><p>The name or names of the input files to be processed, which can be
@@ -554,6 +552,10 @@ in the input &#64;-file.</p>
 <blockquote>
 <div><p>Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the &#8216;grow&#8217; parameter in &#8216;imcombine&#8217; for use in creating the median image.</p>
 </div></blockquote>
+<p><strong id="combine_bufsize">combine_bufsize</strong> : float (Default = None)</p>
+<blockquote>
+<div><p>Size of buffer, in Mb, to use when reading in each section of each input image.  The default buffer size is 1Mb.  The larger the buffer size, the fewer times the code needs to open each input image and the more memory will be required to create the median image.  A larger buffer can be helpful when using compression, since slower copies need to be made of each set of rows from each input image instead of using memory-mapping.</p>
+</div></blockquote>
 <p><strong id="*STEP 5: BLOT BACK THE MEDIAN IMAGE*">*STEP 5: BLOT BACK THE MEDIAN IMAGE*</strong> :</p>
 <p><strong id="blot">blot</strong> : bool (Default = Yes)</p>
 <blockquote>
@@ -734,7 +736,7 @@ in the input &#64;-file.</p>
 </tr>
 </tbody>
 </table>
-<div class="admonition-see-also admonition seealso">
+<div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <dl class="last docutils">
 <dt><a class="reference internal" href="adrizzle.html#module-drizzlepac.adrizzle" title="drizzlepac.adrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.adrizzle</span></tt></a></dt>
@@ -832,12 +834,12 @@ to a text file:</p>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.2.0.dev32232 (30-May-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>
