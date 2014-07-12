@@ -193,7 +193,6 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
         containing diffuse sources (e.g., galaxies, nebulae)
         covering significant parts of the image.
 
-
 skysub : bool (Default = Yes)
     Turn on or off sky subtraction on the input data.
 

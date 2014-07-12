@@ -73,11 +73,6 @@ refimage : str (Default = '')
     used as the reference for matching with sources from all input images
     unless a separate catalog is provided through the `refcat` parameter.
 
-expand_refcat : bool (Default = True)
-    Specifies whether to add new sources from just matched images to
-    the reference catalog to allow next image to be matched against an
-    expanded reference catalog.
-
 exclusions: string (Default = '')
     This parameter allows the user to specify a set of files which contain
     regions in the image to ignore when finding sources.  This file MUST
@@ -308,6 +303,11 @@ refnbright : int (Default = None)
     list. If refnbright is set to `None`, all objects will be used. Used in
     conjunction with refcat.
 
+expand_refcat : bool (Default = True)
+    Specifies whether to add new sources from just matched images to
+    the reference catalog to allow next image to be matched against an
+    expanded reference catalog.
+
 *OBJECT MATCHING PARAMETERS*
 minobj : int (Default = 15)
     Minimum number of identified objects from each input image to use
@@ -428,7 +428,7 @@ the 'shiftfile' can be passed to AstroDrizzle for aligning the images.
 
 New sources (that are not in the reference catalog) from the matched images
 are added to the reference catalog in order to allow next image to be
-matched to use a larger reference catalog. This allows alignment of images
+matched to a larger reference catalog. This allows alignment of images
 that do not overlap directly with the reference image and/or catalog and
 it is particularly useful in image registration of large mosaics. Addition
 of new sources to the reference catalog can be turned off by
@@ -559,8 +559,17 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
     >>> import drizzlepac
     >>> from drizzlepac import tweakreg
     >>> tweakreg.TweakReg('*flt.fits',
+    ...       imagefindcfg={'threshold' : 200, 'conv_width' : 3.5},
+    ...       refimagefindcfg={'threshold' : 400, 'conv_width' : 2.5},
+    ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
+
+   or, using `dict` constructor,
+
+    >>> import drizzlepac
+    >>> from drizzlepac import tweakreg
+    >>> tweakreg.TweakReg('*flt.fits',
     ...       imagefindcfg=dict(threshold=200, conv_width=3.5),
-    ...       refimagefindcfg={'threshold' : 400, 'conv_width' : 2.5}
+    ...       refimagefindcfg=dict(threshold=400, conv_width=2.5),
     ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
 
    Or, run the same task from the PyRAF command line, but specify all parameters in
