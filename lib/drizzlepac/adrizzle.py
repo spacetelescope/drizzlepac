@@ -574,6 +574,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # For single case, this will determine when to close
     # one product and open the next.
     _chipIdx = 0
+    _hdrlist = []
 
     # Remember the name of the 1st image that goes into this particular product
     # Insure that the header reports the proper values for the start of the
@@ -605,6 +606,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
         # Work each image, possibly in parallel
         if will_parallel:
+            # parallelize run_driz_img (currently for separate drizzle only)
             manager = multiprocessing.Manager()
             mgr = manager.dict(img.virtualOutputs)
 
@@ -615,13 +617,14 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
                 name='adrizzle.run_driz_img()', # for err msgs
                 args=(img,mgr,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
-                      _chipIdx,None,None,None,wcsmap))
+                      _chipIdx,None,None,None,None,wcsmap))
             subprocs.append(p)
             img.virtualOutputs = mgr
         else:
+            # serial run_driz_img run (either separate drizzle or final drizzle)
             run_driz_img(img,img.virtualOutputs,chiplist,output_wcs,outwcs,template,paramDict,
                          single,num_in_prod,build,_versions,_numctx,_nplanes,
-                         _chipIdx,_outsci,_outwht,_outctx,wcsmap)
+                         _chipIdx,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
 
         # Increment/reset master chip counter
         _chipIdx += len(chiplist)
@@ -632,7 +635,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if will_parallel:
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
 
-    del _outsci,_outwht,_outctx
+    del _outsci,_outwht,_outctx,_hdrlist
     # have looped over each img/chip
 
 
@@ -642,7 +645,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
 def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDict,single,
                  num_in_prod,build,_versions,_numctx,_nplanes,chipIdxCopy,
-                 _outsci,_outwht,_outctx,wcsmap):
+                 _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single image.
     This is separated out from :py:func:`run_driz` so as to keep together
     the entirety of the code which is inside the loop over
@@ -657,13 +660,13 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outctx is None:
         _outctx = np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
-    _hdrlist = []
+    if _hdrlist is None:
+        _hdrlist = []
 
     # Work on each chip - note that they share access to the arrays above
     for chip in chiplist:
         # See if we will be writing out data
         doWrite = chipIdxCopy == num_in_prod-1
-
 
 #       debuglog('#chips='+str(chipIdxCopy)+', num_in_prod='+\
 #                 str(num_in_prod)+', single='+str(single)+', write='+\
@@ -686,6 +689,8 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
         np.multiply(_outsci,0.,_outsci)
         np.multiply(_outwht,0.,_outwht)
         np.multiply(_outctx,0,_outctx)
+        # this was "_hdrlist=[]", but we need to preserve the var ptr itself
+        while len(_hdrlist)>0: _hdrlist.pop()
     # else, these were intended to live and be used beyond this function call
 
     if img.inmemory:
@@ -944,7 +949,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
             log.info('chip total drizzling:      %6.3f (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
             log.info('chip total post-drizzling: %6.3f (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
             log.info('chip total writing output: %6.3f (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
-
 
 
 def do_driz(insci, input_wcs, inwht,
