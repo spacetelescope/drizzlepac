@@ -68,6 +68,8 @@ yoffset = float_kw(default=0.0,inactive_if='_rule3_',comment="Initial guess for 
 [CATALOG FITTING PARAMETERS]
 fitgeometry = option_kw("shift","rscale",default="rscale",comment="Fitting geometry")
 residplot= option_kw("No plot","vector","residuals","both", default="both",comment="Plot residuals from fit?")
+ylimit = float_or_none_kw(default=None,comment="Upper/Lower limit (in pixels) for residplot")
+labelsize = integer_kw(default=8,comment="Font size (in points) for plot labels")
 nclip = integer_kw(default=3,comment="Number of clipping iterations in fit")
 sigma = float_or_none_kw(default=3.0,comment="Clipping limit in sigma units")
 
