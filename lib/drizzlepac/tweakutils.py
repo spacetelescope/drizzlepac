@@ -861,7 +861,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         write_xy_file(output,[xy1x,xy1y,dx,dy])
 
     if figure_id is not None:
-    plt.figure(num=figure_id)
+        plt.figure(num=figure_id)
     if not append:
         plt.clf()
     #plt.ioff()
@@ -882,8 +882,8 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         maxvec = max_vector/2.
         key_len = round((maxvec+0.005),2)
 
-        plt.text(minx+key_dx, miny-key_dy,'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
-        plt.text(minx+key_dx, miny-key_dy*2,'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
+        plt.text(minx+key_dx, miny-key_dy,'DX: %.4f to %.4f +/- %.4f'%(dxs.min,dxs.max,dxs.stddev))
+        plt.text(minx+key_dx, miny-key_dy*2,'DY: %.4f to %.4f +/- %.4f'%(dys.min,dys.max,dys.stddev))
         plt.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(
                 xy1x.shape[0],numpts,title))
         plt.quiverkey(qplot,minx+key_dx,miny+key_dy,key_len,"%0.2f pixels"%(key_len),
@@ -920,10 +920,10 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         fig, axs = plt.subplots(2,2,sharex=True,sharey=True)
         fig.subplots_adjust(top=0.95)
         rms_labelled=False
-                if title is None:
+        if title is None:
             fig.suptitle("Residuals [%d/%d]"%(xy1x.shape[0],numpts),ha='center',fontsize=labelsize+6)
-                else:
-                    # This definition of the title supports math symbols in the title
+        else:
+            # This definition of the title supports math symbols in the title
             fig.suptitle(r"$"+title+"$",ha='center', fontsize=labelsize+6)
 
         #fig.axes([minx,maxx,miny,maxy])
