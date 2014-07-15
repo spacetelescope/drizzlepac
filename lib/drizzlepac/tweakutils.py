@@ -860,8 +860,8 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
 
-    if figure_id is not None:
-        plt.figure(num=figure_id)
+    #if figure_id is not None:
+    #    plt.figure(num=figure_id)
     if not append:
         plt.clf()
     #plt.ioff()

@@ -23,8 +23,8 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.3.3'
-__vdate__ = '4-Jul-2014'
+__version__ = '1.4.0'
+__vdate__ = '15-Jul-2014'
 
 import tweakutils
 import imgclasses
