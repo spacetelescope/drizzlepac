@@ -748,7 +748,7 @@ def gauss(x,sigma):
 
 #### Plotting Utilities for drizzlepac
 def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
-                    title=None, axes=None, every=1,
+                    title=None, axes=None, every=1,labelsize=8, ylimit=None,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,
                     append=False,linfit=False,rms=True, plotname=None):
@@ -775,6 +775,11 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             Slice value for the data to be plotted
         limit : float
             Radial offset limit for selecting which sources are included in the plot
+        labelsize : int [Default: 8] or str
+            Font size to use for tick labels, either in font points or as a string
+            understood by tick_params().
+        ylimit : float
+            Limit to use for Y range of plots.
         xlower : float
         ylower : float
             Limit in X and/or Y offset for selecting which sources are included in the plot
@@ -855,10 +860,11 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
 
-    plt.figure(num=figure_id)
+    #if figure_id is not None:
+    #    plt.figure(num=figure_id)
     if not append:
         plt.clf()
-    plt.ioff()
+    #plt.ioff()
     if vector:
         dxs = imagestats.ImageStats(dx.astype(np.float32))
         dys = imagestats.ImageStats(dy.astype(np.float32))
@@ -876,8 +882,8 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         maxvec = max_vector/2.
         key_len = round((maxvec+0.005),2)
 
-        plt.text(minx+key_dx, miny-key_dy,'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
-        plt.text(minx+key_dx, miny-key_dy*2,'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
+        plt.text(minx+key_dx, miny-key_dy,'DX: %.4f to %.4f +/- %.4f'%(dxs.min,dxs.max,dxs.stddev))
+        plt.text(minx+key_dx, miny-key_dy*2,'DY: %.4f to %.4f +/- %.4f'%(dys.min,dys.max,dys.stddev))
         plt.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(
                 xy1x.shape[0],numpts,title))
         plt.quiverkey(qplot,minx+key_dx,miny+key_dy,key_len,"%0.2f pixels"%(key_len),
@@ -903,34 +909,51 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             maxx = axes[0][1]
             miny = axes[1][0]
             maxy = axes[1][1]
+
+        if ylimit is not None:
+            miny = -1*ylimit
+            maxy = ylimit
+
         xrange = maxx - minx
         yrange = maxy - miny
 
+        fig, axs = plt.subplots(2,2,sharex=True,sharey=True)
+        fig.subplots_adjust(top=0.95)
+        rms_labelled=False
+        if title is None:
+            fig.suptitle("Residuals [%d/%d]"%(xy1x.shape[0],numpts),ha='center',fontsize=labelsize+6)
+        else:
+            # This definition of the title supports math symbols in the title
+            fig.suptitle(r"$"+title+"$",ha='center', fontsize=labelsize+6)
 
-        for pnum,plot in zip(range(1,5),plot_defs):
-            ax = plt.subplot(2,2,pnum)
-            if pnum == 1:
-                if title is None:
-                    ax.set_title("Residuals [%d/%d]: No FIT applied"%(xy1x.shape[0],numpts),ha='left')
-                else:
-                    # This definition of the title supports math symbols in the title
-                    ax.set_title(r"$"+title+"$",ha='left')
-            ax.plot(plot[0],plot[1],'.')
-            plt.xlabel(plot[2])
-            plt.ylabel(plot[3])
-            lx=[ int((plot[0].min()-500)/500) * 500,int((plot[0].max()+500)/500) * 500]
-            plt.plot([lx[0],lx[1]],[0.0,0.0],'k')
-            plt.axis([minx,maxx,miny,maxy])
-            if rms:
-                plt.text(minx+xrange*0.01, maxy-yrange*(0.01*textscale),'RMS(X) = %f, RMS(Y) = %f'%(dx.std(),dy.std()))
+        #fig.axes([minx,maxx,miny,maxy])
+        plt.xlim(minx,maxx)
+        plt.ylim(miny,maxy)
+
+        for pnum, p,ax in zip(range(4), plot_defs,axs.flat):
+            ax.plot(p[0],p[1],'b.',label='RMS(X) = %.4f, RMS(Y) = %.4f'%(dx.std(),dy.std()))
+            lx=[ int((p[0].min()-500)/500) * 500,int((p[0].max()+500)/500) * 500]
+            ax.plot([lx[0],lx[1]],[0.0,0.0],'k',linewidth=3)
+            #plt.axis([minx,maxx,miny,maxy])
+            if rms and not rms_labelled:
+                leg_handles, leg_labels = ax.get_legend_handles_labels()
+                fig.legend(leg_handles, leg_labels, loc='center left',
+                           fontsize='small', frameon=False,
+                           bbox_to_anchor=(0.33, 0.51), borderaxespad=0)
+                rms_labelled = True
+
+            ax.set_xlabel(plot_defs[pnum][2])
+            ax.set_ylabel(plot_defs[pnum][3])
+            ax.tick_params(labelsize=labelsize)
+
             if linfit:
                 lxr = int((lx[-1] - lx[0])/100)
-                lyr = int((plot[1].max() - plot[1].min())/100)
-                A = np.vstack([plot[0],np.ones(len(plot[0]))]).T
-                m,c = np.linalg.lstsq(A,plot[1])[0]
+                lyr = int((p[1].max() - p[1].min())/100)
+                A = np.vstack([p[0],np.ones(len(p[0]))]).T
+                m,c = np.linalg.lstsq(A,p[1])[0]
                 yr = [m*lx[0]+c,lx[-1]*m+c]
-                plt.plot([lx[0],lx[-1]],yr,'r')
-                plt.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
+                ax.plot([lx[0],lx[-1]],yr,'r')
+                ax.text(lx[0]+lxr,p[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
 
     plt.draw()
     if plotname:
@@ -942,7 +965,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             if suffix[1:] in ['png','pdf','ps','eps','svg']:
                 format=suffix[1:]
         plt.savefig(plotname,format=format)
-    plt.ion()
+    #plt.ion()
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]

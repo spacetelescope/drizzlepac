@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.0.dev33060 (4-Jul-2014)',
+        VERSION:     '1.3.0.dev33367 (11-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="Imagefindpars: Source finding parameters" href="refimagefindpars.html" />
     <link rel="prev" title="DrizzlePac Release Notes" href="release_notes.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -193,12 +193,6 @@ parameters specified through <em class="xref py py-obj">imagefindcfg</em>.</p>
 <div><p>Filename of reference image. Sources derived from this image will be
 used as the reference for matching with sources from all input images
 unless a separate catalog is provided through the <em class="xref py py-obj">refcat</em> parameter.</p>
-</div></blockquote>
-<p><strong>expand_refcat</strong> : bool (Default = True)</p>
-<blockquote>
-<div><p>Specifies whether to add new sources from just matched images to
-the reference catalog to allow next image to be matched against an
-expanded reference catalog.</p>
 </div></blockquote>
 <p><strong>exclusions: string (Default = &#8216;&#8217;)</strong> :</p>
 <blockquote>
@@ -463,6 +457,12 @@ of fainter objects.</p>
 list. If refnbright is set to <em class="xref py py-obj">None</em>, all objects will be used. Used in
 conjunction with refcat.</p>
 </div></blockquote>
+<p><strong>expand_refcat</strong> : bool (Default = True)</p>
+<blockquote>
+<div><p>Specifies whether to add new sources from just matched images to
+the reference catalog to allow next image to be matched against an
+expanded reference catalog.</p>
+</div></blockquote>
 <p><strong>*OBJECT MATCHING PARAMETERS*</strong> :</p>
 <p><strong>minobj</strong> : int (Default = 15)</p>
 <blockquote>
@@ -600,7 +600,7 @@ can be updated directly with the fit derived for that image. Otherwise,
 the &#8216;shiftfile&#8217; can be passed to AstroDrizzle for aligning the images.</p>
 <p>New sources (that are not in the reference catalog) from the matched images
 are added to the reference catalog in order to allow next image to be
-matched to use a larger reference catalog. This allows alignment of images
+matched to a larger reference catalog. This allows alignment of images
 that do not overlap directly with the reference image and/or catalog and
 it is particularly useful in image registration of large mosaics. Addition
 of new sources to the reference catalog can be turned off by
@@ -720,8 +720,17 @@ input images:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakreg</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span>
+<span class="gp">... </span>      <span class="n">imagefindcfg</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;threshold&#39;</span> <span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s">&#39;conv_width&#39;</span> <span class="p">:</span> <span class="mf">3.5</span><span class="p">},</span>
+<span class="gp">... </span>      <span class="n">refimagefindcfg</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;threshold&#39;</span> <span class="p">:</span> <span class="mi">400</span><span class="p">,</span> <span class="s">&#39;conv_width&#39;</span> <span class="p">:</span> <span class="mf">2.5</span><span class="p">},</span>
+<span class="gp">... </span>      <span class="n">updatehdr</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">shiftfile</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">outshifts</span><span class="o">=</span><span class="s">&#39;shift.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or, using <em class="xref py py-obj">dict</em> constructor,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakreg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span>
 <span class="gp">... </span>      <span class="n">imagefindcfg</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">conv_width</span><span class="o">=</span><span class="mf">3.5</span><span class="p">),</span>
-<span class="gp">... </span>      <span class="n">refimagefindcfg</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;threshold&#39;</span> <span class="p">:</span> <span class="mi">400</span><span class="p">,</span> <span class="s">&#39;conv_width&#39;</span> <span class="p">:</span> <span class="mf">2.5</span><span class="p">}</span>
+<span class="gp">... </span>      <span class="n">refimagefindcfg</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">conv_width</span><span class="o">=</span><span class="mf">2.5</span><span class="p">),</span>
 <span class="gp">... </span>      <span class="n">updatehdr</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">shiftfile</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">outshifts</span><span class="o">=</span><span class="s">&#39;shift.txt&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -795,7 +804,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev33060 (4-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

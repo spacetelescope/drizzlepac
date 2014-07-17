@@ -689,6 +689,7 @@ class Image(object):
                         tweakutils.make_vector_plot(None,
                             data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
                             figure_id=self.figure_id, vector=True,
+                            labelsize=pars['labelsize'],
                             plotname=vector_name, title=title_str)
                         ptype=False # Setup
                         self.figure_id += 1
@@ -701,6 +702,7 @@ class Image(object):
                     tweakutils.make_vector_plot(None,
                         data=[xy[:,0],xy[:,1],xy_fit[:,0],xy_fit[:,1]],
                         figure_id=self.figure_id, vector=ptype,
+                        ylimit=pars['ylimit'], labelsize=pars['labelsize'],
                         plotname=resid_name, title=title_str)
                     if self.interactive:
                         a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
