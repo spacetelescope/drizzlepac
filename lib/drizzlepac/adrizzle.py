@@ -556,23 +556,26 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         _nplanes = 1
 
     #
-    # A image buffer needs to be setup for converting the input
+    # An image buffer needs to be setup for converting the input
     # arrays (sci and wht) from FITS format to native format
     # with respect to byteorder and byteswapping.
     # This buffer should be reused for each input if possible.
     #
-    _outsci = _outwht = _outctx = None
-    if not will_parallel:
+    _outsci = _outwht = _outctx = _hdrlist = None
+    if (not single) or \
+       ( (single) and (not will_parallel) and (not imageObjectList[0].inmemory) ):
+        # Note there are four cases/combinations for single drizzle alone here:
+        # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
         _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         # initialize context to 3-D array but only pass appropriate plane to drizzle as needed
         _outctx=np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
+        _hdrlist = []
 
     # Keep track of how many chips have been processed
     # For single case, this will determine when to close
     # one product and open the next.
     _chipIdx = 0
-    _hdrlist = []
 
     # Remember the name of the 1st image that goes into this particular product
     # Insure that the header reports the proper values for the start of the
@@ -649,7 +652,6 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
 
     # Check for unintialized inputs
     here = _outsci==None and _outwht==None and _outctx==None
-#   log.info('\n\nHERE IS: '+str(here)+'\n\n') # !!!
     if _outsci is None:
         _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outwht is None:
@@ -680,7 +682,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     # Reset for next output image...
     #
     if here:
-        del _outsci,_outwht,_outctx
+        del _outsci,_outwht,_outctx,_hdrlist
     elif single:
         np.multiply(_outsci,0.,_outsci)
         np.multiply(_outwht,0.,_outwht)
