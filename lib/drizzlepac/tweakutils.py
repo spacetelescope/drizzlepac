@@ -860,11 +860,10 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
 
-    #if figure_id is not None:
-    #    plt.figure(num=figure_id)
+    fig = plt.figure(num=figure_id)
     if not append:
         plt.clf()
-    #plt.ioff()
+
     if vector:
         dxs = imagestats.ImageStats(dx.astype(np.float32))
         dys = imagestats.ImageStats(dy.astype(np.float32))
@@ -917,8 +916,6 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         xrange = maxx - minx
         yrange = maxy - miny
 
-        fig, axs = plt.subplots(2,2,sharex=True,sharey=True)
-        fig.subplots_adjust(top=0.95)
         rms_labelled=False
         if title is None:
             fig.suptitle("Residuals [%d/%d]"%(xy1x.shape[0],numpts),ha='center',fontsize=labelsize+6)
@@ -926,15 +923,13 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             # This definition of the title supports math symbols in the title
             fig.suptitle(r"$"+title+"$",ha='center', fontsize=labelsize+6)
 
-        #fig.axes([minx,maxx,miny,maxy])
-        plt.xlim(minx,maxx)
-        plt.ylim(miny,maxy)
-
-        for pnum, p,ax in zip(range(4), plot_defs,axs.flat):
-            ax.plot(p[0],p[1],'b.',label='RMS(X) = %.4f, RMS(Y) = %.4f'%(dx.std(),dy.std()))
+        for pnum, p in enumerate(plot_defs):
+            pn = pnum+1
+            ax = fig.add_subplot(2,2,pn)
+            plt.plot(p[0],p[1],'b.',label='RMS(X) = %.4f, RMS(Y) = %.4f'%(dx.std(),dy.std()))
             lx=[ int((p[0].min()-500)/500) * 500,int((p[0].max()+500)/500) * 500]
-            ax.plot([lx[0],lx[1]],[0.0,0.0],'k',linewidth=3)
-            #plt.axis([minx,maxx,miny,maxy])
+            plt.plot([lx[0],lx[1]],[0.0,0.0],'k',linewidth=3)
+            plt.axis([minx,maxx,miny,maxy])
             if rms and not rms_labelled:
                 leg_handles, leg_labels = ax.get_legend_handles_labels()
                 fig.legend(leg_handles, leg_labels, loc='center left',
@@ -942,9 +937,18 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                            bbox_to_anchor=(0.33, 0.51), borderaxespad=0)
                 rms_labelled = True
 
-            ax.set_xlabel(plot_defs[pnum][2])
-            ax.set_ylabel(plot_defs[pnum][3])
             ax.tick_params(labelsize=labelsize)
+
+            # Fine-tune figure; hide x ticks for top plots and y ticks for right plots
+            if pn <= 2:
+                plt.setp(ax.get_xticklabels(), visible=False)
+            else:
+                ax.set_xlabel(plot_defs[pnum][2])
+
+            if pn%2 == 0:
+                plt.setp(ax.get_yticklabels(), visible=False)
+            else:
+                ax.set_ylabel(plot_defs[pnum][3])
 
             if linfit:
                 lxr = int((lx[-1] - lx[0])/100)
@@ -952,10 +956,11 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                 A = np.vstack([p[0],np.ones(len(p[0]))]).T
                 m,c = np.linalg.lstsq(A,p[1])[0]
                 yr = [m*lx[0]+c,lx[-1]*m+c]
-                ax.plot([lx[0],lx[-1]],yr,'r')
-                ax.text(lx[0]+lxr,p[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
+                plt.plot([lx[0],lx[-1]],yr,'r')
+                plt.text(lx[0]+lxr,p[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
 
     plt.draw()
+
     if plotname:
         suffix = plotname[-4:]
         if '.' not in suffix:
@@ -965,7 +970,6 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             if suffix[1:] in ['png','pdf','ps','eps','svg']:
                 format=suffix[1:]
         plt.savefig(plotname,format=format)
-    #plt.ion()
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
