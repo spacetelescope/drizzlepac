@@ -547,16 +547,6 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             plsingle = chip.outputNames['outSingle']
             if plsingle in _numctx: _numctx[plsingle] += 1
             else: _numctx[plsingle] = 1
-    #
-    # A image buffer needs to be setup for converting the input
-    # arrays (sci and wht) from FITS format to native format
-    # with respect to byteorder and byteswapping.
-    # This buffer should be reused for each input.
-    #
-    _outsci = _outwht = _outctx = None
-    if not will_parallel:
-        _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
-        _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
 
     # Compute how many planes will be needed for the context image.
     _nplanes = int((_numctx['all']-1) / 32) + 1
@@ -565,10 +555,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if single or imageObjectList[0][1].outputNames['outContext'] in [None,'',' ']:
         _nplanes = 1
 
-    # Always initialize context images to a 3-D array
-    # and only pass the appropriate plane to drizzle as needed
+    #
+    # A image buffer needs to be setup for converting the input
+    # arrays (sci and wht) from FITS format to native format
+    # with respect to byteorder and byteswapping.
+    # This buffer should be reused for each input if possible.
+    #
+    _outsci = _outwht = _outctx = None
     if not will_parallel:
-        _outctx = np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
+        _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        # initialize context to 3-D array but only pass appropriate plane to drizzle as needed
+        _outctx=np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
 
     # Keep track of how many chips have been processed
     # For single case, this will determine when to close
@@ -608,21 +606,18 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         if will_parallel:
             # parallelize run_driz_img (currently for separate drizzle only)
             manager = multiprocessing.Manager()
-            mgr = manager.dict(img.virtualOutputs)
+            dproxy = manager.dict(img.virtualOutputs)
+            img.virtualOutputs = dproxy
 
-            # To save memory, do not use img.virtualOutputs when running
-            # in parallel (too many users don't have the needed resources)
-            # and thus do not allow parallelization when img.inmemory
             p = multiprocessing.Process(target=run_driz_img,
                 name='adrizzle.run_driz_img()', # for err msgs
-                args=(img,mgr,chiplist,output_wcs,outwcs,template,paramDict,
+                args=(img,chiplist,output_wcs,outwcs,template,paramDict,
                       single,num_in_prod,build,_versions,_numctx,_nplanes,
                       _chipIdx,None,None,None,None,wcsmap))
             subprocs.append(p)
-            img.virtualOutputs = mgr
         else:
             # serial run_driz_img run (either separate drizzle or final drizzle)
-            run_driz_img(img,img.virtualOutputs,chiplist,output_wcs,outwcs,template,paramDict,
+            run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,
                          single,num_in_prod,build,_versions,_numctx,_nplanes,
                          _chipIdx,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
 
@@ -643,7 +638,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 # Still to check:
 #    - why have both output_wcs and outwcs?
 
-def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDict,single,
+def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
                  num_in_prod,build,_versions,_numctx,_nplanes,chipIdxCopy,
                  _outsci,_outwht,_outctx,_hdrlist,wcsmap):
     """ Perform the drizzle operation on a single image.
@@ -654,6 +649,7 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
 
     # Check for unintialized inputs
     here = _outsci==None and _outwht==None and _outctx==None
+#   log.info('\n\nHERE IS: '+str(here)+'\n\n') # !!!
     if _outsci is None:
         _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outwht is None:
@@ -693,9 +689,8 @@ def run_driz_img(img,virtual_outputs,chiplist,output_wcs,outwcs,template,paramDi
         while len(_hdrlist)>0: _hdrlist.pop()
     # else, these were intended to live and be used beyond this function call
 
-    if img.inmemory:
-        virtual_outputs = img.virtualOutputs
-        # img.saveVirtualOutputs() prev'ly done in run_driz_chip (but only if single and doWrite)
+    # img.saveVirtualOutputs() has already been done in run_driz_chip (but
+    # only if single and doWrite)
 
 
 def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
