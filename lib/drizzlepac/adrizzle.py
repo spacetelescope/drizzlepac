@@ -607,11 +607,13 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
         # Work each image, possibly in parallel
         if will_parallel:
-            # parallelize run_driz_img (currently for separate drizzle only)
-            manager = multiprocessing.Manager()
-            dproxy = manager.dict(img.virtualOutputs)
-            img.virtualOutputs = dproxy
+            # use multiprocessing.Manager only if in parallel and in memory
+            if img.inmemory:
+                manager = multiprocessing.Manager()
+                dproxy = manager.dict(img.virtualOutputs) # copy & wrap it in proxy
+                img.virtualOutputs = dproxy
 
+            # parallelize run_driz_img (currently for separate drizzle only)
             p = multiprocessing.Process(target=run_driz_img,
                 name='adrizzle.run_driz_img()', # for err msgs
                 args=(img,chiplist,output_wcs,outwcs,template,paramDict,
