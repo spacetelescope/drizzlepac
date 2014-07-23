@@ -422,6 +422,7 @@ class baseImageObject(object):
         if not self.inmemory:
             return
         for outname in outdict:
+#           log.info('saveVirtualOutputs: writing key '+outname+' for id: '+str(id(self)))
             self.virtualOutputs[outname] = outdict[outname]
 
     def getOutputName(self,name):

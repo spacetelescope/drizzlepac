@@ -190,9 +190,13 @@ def run(configobj, wcsmap=None):
         #subtract the sky
         sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
+#       _dbg_dump_virtual_outputs(imgObjList)
+
         #drizzle to separate images
         adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                               procSteps=procSteps)
+
+#       _dbg_dump_virtual_outputs(imgObjList)
 
         #create the median images from the driz sep images
         createMedian.createMedian(imgObjList, configobj,
@@ -294,5 +298,42 @@ def getHelpAsString(docstring = False, show_ver = True):
 
     return helpString
 
+
+_fidx = 0
+def _dbg_dump_virtual_outputs(imgObjList):
+    """ dump some helpful information.  strictly for debugging """
+    global _fidx
+    tag = 'virtual'
+    log.info((tag+'  ')*7)
+    for iii in imgObjList:
+        log.info('-'*80)
+        log.info(tag+'  orig nm: '+iii._original_file_name)
+        log.info(tag+'  names.data: '+str(iii.outputNames["data"]))
+        log.info(tag+'  names.orig: '+str(iii.outputNames["origFilename"]))
+        log.info(tag+'  id: '+str(id(iii)))
+        log.info(tag+'  in.mem: '+str(iii.inmemory))
+        log.info(tag+'  vo items...')
+        for vok in sorted(iii.virtualOutputs.keys()):
+            FITSOBJ = iii.virtualOutputs[vok]
+            log.info(tag+': '+str(vok)+' = '+str(FITSOBJ))
+            if vok.endswith('.fits'):
+              if not hasattr(FITSOBJ, 'data'):  FITSOBJ = FITSOBJ[0] # list of PrimaryHDU ?
+              if not hasattr(FITSOBJ, 'data'):  FITSOBJ = FITSOBJ[0] # was list of HDUList ?
+              dbgname = 'DEBUG_%02d_'%(_fidx,); dbgname+=os.path.basename(vok); _fidx+=1
+              FITSOBJ.writeto(dbgname)
+              log.info(tag+'  wrote: '+dbgname)
+              log.info('\n'+vok)
+              if hasattr(FITSOBJ, 'data'):
+                log.info(str(FITSOBJ._summary()))
+                log.info('min and max are: '+str( (FITSOBJ.data.min(),
+                                                   FITSOBJ.data.max()) ))
+                log.info('avg and sum are: '+str( (FITSOBJ.data.mean(),
+                                                   FITSOBJ.data.sum()) ))
+#               log.info(str(FITSOBJ.data)[:75])
+              else:
+                log.info(vok+' has no .data attr')
+                log.info(str(type(FITSOBJ)))
+              log.info(vok+'\n')
+    log.info('-'*80)
 
 AstroDrizzle.__doc__ = getHelpAsString(docstring = True, show_ver = False)

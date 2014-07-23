@@ -120,10 +120,17 @@ class Image(object):
         #  (assume a valid WCS with each SCI extension)
         #TODO: current check for a valid WCS may need a revision to
         # implement a more robust/rigurous check.
-        if 'WCSAXES' not in self._im.hdu[(self.ext_name,1)].header:
-            print >> sys.stderr,textutil.textbox(
-                    'ERROR: No Valid WCS available for %s'%filename)
-            raise InputError
+        try:
+            ctypes = self._im.hdu[(self.ext_name,1)].header['CTYPE*']
+            if len(ctypes) > 0:
+                del ctypes
+            else:
+                raise KeyError()
+        except KeyError:
+            err_msg = "ERROR: No Valid WCS available for {:s}" \
+                .format(filename)
+            print >> sys.stderr,textutil.textbox(err_msg)
+            raise ValueError(err_msg)
 
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
