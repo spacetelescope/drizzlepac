@@ -120,7 +120,7 @@ expkeyword = string_kw(default="")
 #mode,s,h,"al",,,
 
 [ _RULES_ ]
-_rule1_ = string_kw(default='', when='entry', code='from stsci.tools import check_files; from drizzlepac import util; ans={ True:"yes",False:"no"};numfiles = check_files.countInput(VAL); OUT =  util.displayEmptyInputWarningBox(VAL,PARENT) if numfiles == 0 else ans[(numfiles > 1)]')
+_rule1_ = string_kw(default='', when='entry', code='from stsci.tools import check_files; from drizzlepac import util; ans={ True:"yes",False:"no"};numfiles = check_files.countInput(VAL); OUT =  util.displayEmptyInputWarningBox(VAL,PARENT) if numfiles == 0 else ans[(numfiles > 1)]; TEAL.freshenFocus()')
 _rule1a_ = string_kw(default='', when='defaults,entry', code='from drizzlepac import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
 _rule2_ = string_kw(default='', code='from drizzlepac import processInput; odict=TEAL.getDict(); newdict = processInput.getMdriztabPars(odict["input"]); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
 _rule2a_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')
