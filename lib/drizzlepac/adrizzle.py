@@ -953,8 +953,8 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
             expin, in_units, wt_scl,
-            wcslin_pscale=1.0,uniqid=1, pixfrac=1.0, kernel='square',
-            fillval="INDEF", stepsize=10,wcsmap=None):
+            wcslin_pscale=1.0, uniqid=1, pixfrac=1.0, kernel='square',
+            fillval="INDEF", stepsize=10, wcsmap=None):
     """
     Core routine for performing 'drizzle' operation on a single input image
     All input values will be Python objects such as ndarrays, instead
@@ -1009,7 +1009,9 @@ def do_driz(insci, input_wcs, inwht,
     if wcsmap is None and cdriz is not None:
         log.info('Using WCSLIB-based coordinate transformation...')
         log.info('stepsize = %s' % stepsize)
-        mapping = cdriz.DefaultWCSMapping(input_wcs,output_wcs,int(input_wcs._naxis1),int(input_wcs._naxis2),stepsize)
+        mapping = cdriz.DefaultWCSMapping(
+            input_wcs, output_wcs, int(input_wcs._naxis1), int(input_wcs._naxis2),
+            stepsize)
     else:
         #
         ##Using the Python class for the WCS-based transformation
@@ -1018,8 +1020,9 @@ def do_driz(insci, input_wcs, inwht,
         log.info('Using coordinate transformation defined by user...')
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
-        wmap = wcsmap(input_wcs,output_wcs)
-        mapping = wmap.forward
+        wmap = wcsmap(input_wcs, output_wcs)
+        mapping = cdriz.generate_mapping(
+            wmap.forward, int(input_wcs._naxis1), int(input_wcs._naxis2), stepsize)
 
     _shift_fr = 'output'
     _shift_un = 'output'
@@ -1035,11 +1038,35 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
-        outctx, uniqid, ystart, 1, 1, _dny,
-        pix_ratio, 1.0, 1.0, 'center', pixfrac,
-        kernel, in_units, expscale, wt_scl,
-        fillval, nmiss, nskip, 1, mapping)
+    if 'ASTRODRIZ_TRY_TILING' in os.environ:
+        tilex = int(outsci.shape[0] / 5)
+        tiley = int(outsci.shape[0] / 5)
+        for i in range(0, 5):
+            tilesci = outsci[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
+            tilewht = outwht[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
+            tilectx = outctx[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
+            _vers,nmiss,nskip = cdriz.tdriz(
+                insci, inwht, tilesci, tilewht,
+                tilectx, uniqid, ystart,
+                # These two arguments are the "logical" offset of the
+                # output image, i.e. the origin of the tile within the
+                # larger output frame.  As they have to do with WCS, they
+                # are 1-based
+                tilex * i, tiley * i,
+                _dny,
+                pix_ratio, 1.0, 1.0, 'center', pixfrac,
+                kernel, in_units, expscale, wt_scl,
+                fillval, nmiss, nskip, 1, mapping)
+            outsci[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)] = tilesci
+            outwht[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)] = tilewht
+            outctx[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)] = tilectx
+    else:
+        _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
+            outctx, uniqid, ystart, 1, 1, _dny,
+            pix_ratio, 1.0, 1.0, 'center', pixfrac,
+            kernel, in_units, expscale, wt_scl,
+            fillval, nmiss, nskip, 1, mapping)
+
 
     if nmiss > 0:
         log.warning('! %s points were outside the output image.' % nmiss)

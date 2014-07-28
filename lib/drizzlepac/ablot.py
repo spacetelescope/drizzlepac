@@ -361,7 +361,9 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         Use default C mapping function.
         """
         print 'Using default C-based coordinate transformation...'
-        mapping = cdriz.DefaultWCSMapping(blot_wcs,source_wcs,int(blot_wcs._naxis1),int(blot_wcs._naxis2),stepsize)
+        mapping = cdriz.DefaultWCSMapping(
+            blot_wcs, source_wcs, int(blot_wcs._naxis1), int(blot_wcs._naxis2),
+            stepsize)
         pix_ratio = source_wcs.pscale/wcslin.pscale
     else:
         #
@@ -371,9 +373,9 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         print 'Using coordinate transformation defined by user...'
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
-        wmap = wcsmap(blot_wcs,source_wcs)
-        mapping = wmap.forward
-        pix_ratio = source_wcs.pscale/wcslin.pscale
+        wmap = wcsmap(blot_wcs, source_wcs)
+        mapping = crdiz.generate_mapping(wmap.forward, int(blot_wcs._naxis1), int(blot_wcs._naxis2), stepsize)
+        pix_ratio = source_wcs.pscale / wcslin.pscale
 
     t = cdriz.tblot(
         source, _outsci,xmin,xmax,ymin,ymax,

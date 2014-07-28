@@ -21,101 +21,6 @@
 
 static PyObject *gl_Error;
 
-
-/*
- A mapping callback that delegates to a Python-based drizzle
- callback.
-
- The Python mapping callback must have the following signature:
-
-    def mapping(xin, yin):
-        return xout, yout
-
- xin, yin are the input coordinates, and xout and yout are the output
- coordinates.  All are 1-dimensional Numpy DOUBLE arrays of the same
- length.
-*/
-static int
-py_mapping_callback(void* state,
-                    const double xd, const double yd,
-                    const integer_t n,
-                    double* xin /*[n]*/, double* yin /*[n]*/,
-                    /* Output parameters */
-                    double* xout, double* yout,
-                    struct driz_error_t* error) {
-  PyObject* callback = (PyObject*)state;
-  npy_intp dims = n;
-  PyArrayObject* py_xin = NULL;
-  PyArrayObject* py_yin = NULL;
-  PyObject* py_xout_obj = NULL;
-  PyObject* py_yout_obj = NULL;
-  PyArrayObject* py_xout = NULL;
-  PyArrayObject* py_yout = NULL;
-  PyObject* callback_result = NULL;
-  PyObject* callback_tuple = NULL;
-  int result = TRUE;
-
-  py_xin = (PyArrayObject*)PyArray_SimpleNewFromData(1, &dims, PyArray_DOUBLE, (double*)xin);
-  if (py_xin == NULL)
-    goto _py_mapping_callback_exit;
-
-  py_yin = (PyArrayObject*)PyArray_SimpleNewFromData(1, &dims, PyArray_DOUBLE, (double*)yin);
-  if (py_yin == NULL)
-    goto _py_mapping_callback_exit;
-
-  callback_result = PyObject_CallFunctionObjArgs(callback, py_xin, py_yin, NULL);
-
-  if (callback_result == NULL)
-    goto _py_mapping_callback_exit;
-
-  callback_tuple = PySequence_Tuple(callback_result);
-  if (callback_tuple == NULL)
-    goto _py_mapping_callback_exit;
-
-  if (!PyArg_UnpackTuple(callback_tuple, "result", 2, 2, &py_xout_obj, &py_yout_obj))
-    goto _py_mapping_callback_exit;
-
-  py_xout = (PyArrayObject*)PyArray_ContiguousFromAny(py_xout_obj, PyArray_DOUBLE, 1, 1);
-  if (py_xout == NULL)
-    goto _py_mapping_callback_exit;
-
-  py_yout = (PyArrayObject*)PyArray_ContiguousFromAny(py_yout_obj, PyArray_DOUBLE, 1, 1);
-  if (py_yout == NULL)
-    goto _py_mapping_callback_exit;
-
-  if (PyArray_DIM(py_xout, 0) != n) {
-    PyErr_Format(PyExc_ValueError,
-                 "Returned arrays must be same dimension as passed-in arrays.  Expected '%d', got '%d'",
-                 (int)n, (int)PyArray_DIM(py_xout, 0));
-    goto _py_mapping_callback_exit;
-  }
-
-  if (PyArray_DIM(py_yout, 0) != n) {
-    PyErr_Format(PyExc_ValueError,
-                 "Returned arrays must be same dimension as passed-in arrays.  Expected '%d', got '%d'",
-                 (int)n, (int)PyArray_DIM(py_yout, 0));
-    goto _py_mapping_callback_exit;
-  }
-
-  memcpy(xout, PyArray_DATA(py_xout), n*sizeof(double));
-  memcpy(yout, PyArray_DATA(py_yout), n*sizeof(double));
-
-  result = FALSE;
-
- _py_mapping_callback_exit:
-  Py_XDECREF(py_xin);
-  Py_XDECREF(py_yin);
-  Py_XDECREF(callback_result);
-  Py_XDECREF(callback_tuple);
-  Py_XDECREF(py_xout);
-  Py_XDECREF(py_yout);
-
-  if (result)
-    driz_error_set_message(error, "<PYTHON>");
-
-  return result;
-}
-
 /**
 
 Code to implement the WCS-based C interface for the mapping.
@@ -132,6 +37,8 @@ typedef struct {
   PyObject* py_input;
   PyObject* py_output;
 } PyWCSMap;
+
+static PyTypeObject WCSMapType;
 
 static void
 PyWCSMap_dealloc(PyWCSMap* self)
@@ -205,6 +112,143 @@ PyWCSMap_init(PyWCSMap *self, PyObject *args, PyObject *kwds)
 
   return status;
 }
+
+static PyObject*
+PyWCSMap_generate_mapping(PyObject *_, PyObject *args, PyObject *kwds)
+{
+  /* Arguments in the order they appear */
+  PyObject *callback = NULL;
+  int nx, ny;
+  int snx, sny;
+  int i, j;
+  double factor;
+  PyWCSMap *mapping = NULL;
+  npy_intp dims[1];
+  PyArrayObject *inx = NULL;
+  PyArrayObject *iny = NULL;
+  PyObject *callback_result = NULL;
+  PyObject *outx_obj = NULL;
+  PyObject *outy_obj = NULL;
+  PyArrayObject *outx = NULL;
+  PyArrayObject *outy = NULL;
+  PyObject *result = NULL;
+  int table_size;
+  double *px, *py, *pt;
+
+  printf("generate_mapping\n");
+
+  /* TODO: Make factor a kwarg */
+  if (! PyArg_ParseTuple(args, "Oiid:generate_mapping",
+                         &callback, &nx, &ny, &factor)){
+    goto exit;
+  }
+
+  if (factor < 1) {
+    factor = 1;
+  }
+
+  snx = (int)((double)nx / factor) + 2;
+  sny = (int)((double)ny / factor) + 2;
+
+  mapping = (PyWCSMap *)PyWCSMap_new(&WCSMapType, NULL, NULL);
+  if (mapping == NULL) {
+    goto exit;
+  }
+
+  wcsmap_param_init(&mapping->m);
+
+  mapping->m.nx = nx;
+  mapping->m.ny = ny;
+  mapping->m.snx = snx;
+  mapping->m.sny = sny;
+  mapping->m.factor = factor;
+
+  table_size = snx * sny * 2;
+  mapping->m.table = malloc(table_size * sizeof(double));
+  if (mapping->m.table == NULL) {
+    PyErr_SetString(PyExc_MemoryError, "Couldn't allocate coordinate table");
+    goto exit;
+  }
+
+  dims[0] = snx * sny;
+
+  inx = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+  if (inx == NULL) {
+    goto exit;
+  }
+
+  iny = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+  if (iny == NULL) {
+    goto exit;
+  }
+
+  px = PyArray_DATA(inx);
+  py = PyArray_DATA(iny);
+  for (j = 0; j < sny; ++j) {
+    for (i = 0; i < snx; ++i) {
+      *px++ = (double)i * factor;
+      *py++ = (double)j * factor;
+    }
+  }
+
+  callback_result = PyObject_CallFunctionObjArgs(
+      callback, (PyObject *)inx, (PyObject *)iny, NULL);
+  if (callback_result == NULL) {
+    goto exit;
+  }
+
+  if (!PySequence_Check(callback_result) || PySequence_Size(callback_result) != 2) {
+    PyErr_SetString(PyExc_ValueError, "Invalid return value from callback");
+    goto exit;
+  }
+
+  outx_obj = PySequence_GetItem(callback_result, 0);
+  if (outx_obj == NULL) {
+    goto exit;
+  }
+
+  outy_obj = PySequence_GetItem(callback_result, 1);
+  if (outy_obj == NULL) {
+    goto exit;
+  }
+
+  outx = (PyArrayObject *)PyArray_ContiguousFromAny(
+      outx_obj, NPY_DOUBLE, 1, 1);
+  if (outx == NULL) {
+    goto exit;
+  }
+
+  outy = (PyArrayObject *)PyArray_ContiguousFromAny(
+      outy_obj, NPY_DOUBLE, 1, 1);
+  if (outy == NULL) {
+    goto exit;
+  }
+
+  px = PyArray_DATA(outx);
+  py = PyArray_DATA(outy);
+  pt = mapping->m.table;
+  for (j = 0; j < sny; ++j) {
+    for (i = 0; i < snx; ++i) {
+      *pt++ = *px++;
+      *pt++ = *py++;
+    }
+  }
+
+  result = (PyObject *)mapping;
+  Py_INCREF(result);
+
+ exit:
+  Py_XDECREF(mapping);
+  Py_XDECREF(inx);
+  Py_XDECREF(iny);
+  Py_XDECREF(outx_obj);
+  Py_XDECREF(outy_obj);
+  Py_XDECREF(outx);
+  Py_XDECREF(outy);
+
+  return result;
+}
+
 
 static PyObject*
 PyWCSMap_call(PyWCSMap* self, PyObject* args, PyObject* kwargs)
@@ -350,7 +394,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   float fill_value;
   mapping_callback_t callback = NULL;
   void* callback_state = NULL;
-  int istat = 0;
+  int istat = 1;
   struct driz_error_t error;
   struct driz_param_t p;
 
@@ -366,7 +410,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
                         &align_str, &pfract, &kernel_str, &inun_str,
                         &expin, &wtscl, &fillstr, &nmiss,&nskip, &vflag,
                         &callback_obj)) {
-    return PyErr_Format(gl_Error, "cdriz.tdriz: Invalid Parameters.");
+      return NULL;
   }
 
   /* Check for invalid scale */
@@ -375,8 +419,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     goto _exit;
   }
 
-  if (pfract < 0.0) {
-    driz_error_format_message(&error, "Invalid pfract %f (must be greater than or equal to 0.0)", scale);
+  if (pfract <= 0.0) {
+    driz_error_format_message(&error, "Invalid pfract %f (must be greater than 0.0)", scale);
     goto _exit;
   }
 
@@ -392,8 +436,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     callback_state = (void *)&(((PyWCSMap *)callback_obj)->m);
     /*scale = ((PyWCSMap *)callback_obj)->m.scale; */
   } else {
-    callback = py_mapping_callback;
-    callback_state = (void *)callback_obj;
+    goto _exit;
   }
 
   /* Get raw C-array data */
@@ -432,10 +475,6 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
       kernel_str2enum(kernel_str, &kernel, &error) ||
       unit_str2enum(inun_str, &inun, &error)) {
     goto _exit;
-  }
-  if (pfract <= 0.001){
-    printf("kernel reset to POINT due to pfract being set to 0.0...\n");
-    kernel_str2enum("point", &kernel, &error);
   }
 
   /* Convert the fill value string */
@@ -481,8 +520,10 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   p.dnx = nx;
   p.dny = ny;
   p.ny = dny;
-  p.onx = p.xmax = onx;
-  p.ony = p.ymax = ony;
+  p.onx = onx;
+  p.ony = ony;
+  p.xmax = xmin + onx - 1;
+  p.ymax = ymin + ony - 1;
   p.scale = scale;
   p.x_scale = xscale;
   p.y_scale = yscale;
@@ -522,6 +563,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     printf("==> Coordinate transformation times: total=%0.3f sec, d2im= %0.3f, sip= %0.3f.\n",m->dtime_coord,m->dtime_d2im,m->dtime_dgeosip);
   }
   */
+
+  istat = 0;
 
  _exit:
   Py_XDECREF(con);
@@ -644,7 +687,7 @@ tblot(PyObject *obj, PyObject *args)
   mapping_callback_t callback = NULL;
   void *callback_state = NULL;
   long nx,ny,onx,ony;
-  int istat = 0;
+  int istat = 1;
   struct driz_error_t error;
   struct driz_param_t p;
 
@@ -654,7 +697,7 @@ tblot(PyObject *obj, PyObject *args)
                         &xmax, &ymin, &ymax, &scale, &kscale, &xscale,
                         &yscale, &align_str, &interp_str, &ef, &misval,
                         &sinscl, &vflag, &callback_obj)){
-    return PyErr_Format(gl_Error, "cdriz.tblot: Invalid Parameters.");
+    return NULL;
   }
 
   /* Check for invalid scale */
@@ -668,8 +711,15 @@ tblot(PyObject *obj, PyObject *args)
     goto _exit;
   }
 
-  callback = py_mapping_callback;
-  callback_state = (void *)callback_obj;
+  if (PyObject_TypeCheck(callback_obj, &WCSMapType)) {
+    /* If we're using the default mapping, we can set things up to avoid
+       the Python/C bridge */
+    callback = default_wcsmap;
+    callback_state = (void *)&(((PyWCSMap *)callback_obj)->m);
+    /*scale = ((PyWCSMap *)callback_obj)->m.scale; */
+  } else {
+    goto _exit;
+  }
 
   img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
   if (!img) {
@@ -796,7 +846,7 @@ arrmoments(PyObject *obj, PyObject *args)
   double val;
 
   if (!PyArg_ParseTuple(args,"Oll:arrmoments", &oimg, &p, &q)){
-    return PyErr_Format(gl_Error, "cdriz.arrmoments: Invalid Parameters.");
+    return NULL;
   }
 
   img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
@@ -1125,7 +1175,7 @@ arrxyzero(PyObject *obj, PyObject *args)
   long nsource = 0;
 
   if (!PyArg_ParseTuple(args,"OOd:arrxyzero", &oimgxy, &orefxy, &searchrad)){
-    return PyErr_Format(gl_Error, "cdriz.arrxyzero: Invalid Parameters.");
+    return NULL;
   }
 
   imgxy = (PyArrayObject *)PyArray_ContiguousFromAny(oimgxy, PyArray_FLOAT, 2, 2);
@@ -1181,6 +1231,7 @@ static PyMethodDef cdriz_methods[] =
     {"arrmoments", arrmoments, METH_VARARGS, "arrmoments(image, p, q)"},
     {"arrxyround", arrxyround, METH_VARARGS, "arrxyround(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin,datamax)"},
     {"arrxyzero", arrxyzero, METH_VARARGS, "arrxyzero(imgxy,refxy,searchrad,zpmat)"},
+    {"generate_mapping", PyWCSMap_generate_mapping, METH_VARARGS, "generate_mapping(callback, nx, ny, factor)"},
     {0, 0, 0, 0}                             /* sentinel */
   };
 
