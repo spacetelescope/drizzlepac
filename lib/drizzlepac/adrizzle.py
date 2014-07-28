@@ -853,7 +853,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                 wcslin_pscale=chip.wcslin_pscale, uniqid=_uniqid,
                 pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
                 fillval=paramDict['fillval'], stepsize=paramDict['stepsize'],
-                wcsmap=wcsmap)
+                wcsmap=wcsmap, for_final=(not single))
     time_driz = time.time() - epoch; epoch = time.time()
 
     # Set up information for generating output FITS image
@@ -954,7 +954,7 @@ def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
             expin, in_units, wt_scl,
             wcslin_pscale=1.0, uniqid=1, pixfrac=1.0, kernel='square',
-            fillval="INDEF", stepsize=10, wcsmap=None):
+            fillval="INDEF", stepsize=10, wcsmap=None, for_final=False):
     """
     Core routine for performing 'drizzle' operation on a single input image
     All input values will be Python objects such as ndarrays, instead
@@ -1038,7 +1038,7 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    if 'ASTRODRIZ_TRY_TILING' in os.environ:
+    if for_final and 'ASTRODRIZ_TRY_TILING' in os.environ:
         tilex = int(outsci.shape[0] / 5)
         tiley = int(outsci.shape[0] / 5)
         for i in range(0, 5):
