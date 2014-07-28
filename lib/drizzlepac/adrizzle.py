@@ -1042,6 +1042,7 @@ def do_driz(insci, input_wcs, inwht,
         tilex = int(outsci.shape[0] / 5)
         tiley = int(outsci.shape[0] / 5)
         for i in range(0, 5):
+            log.info('drizzling tile: %d'%i)
             tilesci = outsci[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
             tilewht = outwht[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
             tilectx = outctx[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
