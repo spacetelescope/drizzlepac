@@ -477,7 +477,8 @@ def removeAllAltWCS(hdulist,extlist):
         if hwcs is None:
             continue
         for k in hwcs.keys():
-            del hdr[k]
+            if k in hdr:
+                del hdr[k]
 
 def updateImageWCS(imageObjectList, output_wcs):
 
