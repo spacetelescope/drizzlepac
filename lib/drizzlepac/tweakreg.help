@@ -73,6 +73,20 @@ refimage : str (Default = '')
     used as the reference for matching with sources from all input images
     unless a separate catalog is provided through the `refcat` parameter.
 
+expand_refcat : bool (Default = False)
+    Specifies whether to add new sources from just matched images to
+    the reference catalog to allow next image to be matched against an
+    expanded reference catalog.
+
+enforce_user_order : bool (Default = True)
+    Specifies whether images should be aligned in the order specified in
+    the `file` input parameter or `TweakReg` should optimize the order
+    of alignment by intersection area of the images. Default value (`True`)
+    will align images in the user specified order, except when some images
+    cannot be aligned in which case `TweakReg` will optimize the image
+    alignment order. Alignment order optimization is available *only*
+    when `expand_refcat` = `True`.
+
 exclusions: string (Default = '')
     This parameter allows the user to specify a set of files which contain
     regions in the image to ignore when finding sources.  This file MUST
@@ -303,11 +317,6 @@ refnbright : int (Default = None)
     list. If refnbright is set to `None`, all objects will be used. Used in
     conjunction with refcat.
 
-expand_refcat : bool (Default = True)
-    Specifies whether to add new sources from just matched images to
-    the reference catalog to allow next image to be matched against an
-    expanded reference catalog.
-
 *OBJECT MATCHING PARAMETERS*
 minobj : int (Default = 15)
     Minimum number of identified objects from each input image to use
@@ -441,9 +450,10 @@ in a catalog file named ``cumulative_sky_refcat_###.coo`` where ### is the
 base file name derived from either the external catalog (if provided) or
 the name of the image used as the reference image.
 
-Image catalogs are matched to the reference catalog in order of decreasing
-overlap area with the reference catalog (regardless of the `expand_refcat`
-setting).
+When `enforce_user_order` is `False`, image catalogs are matched to the
+reference catalog in order of decreasing overlap area with the reference
+catalog, otherwise user order of files specified in the `file` parameter
+is used.
 
 
 **Format of Exclusion Catalog**

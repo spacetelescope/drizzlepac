@@ -19,7 +19,7 @@ import stsci.imagestats as imagestats
 from . import findobj
 from . import cdriz
 
-def parse_input(input, prodonly=False):
+def parse_input(input, prodonly=False, sort_wildcards=True):
     catlist = None
 
     if (isinstance(input, list) == False) and \
@@ -49,14 +49,16 @@ def parse_input(input, prodonly=False):
         filelist = []
         for fn in input:
             flist, output = parse_input(fn, prodonly=prodonly)
-            if fn.find('*') > -1: # if wild-cards are given, sort for uniform usage
+            # if wild-cards are given, sort for uniform usage:
+            if fn.find('*') > -1 and sort_wildcards:
                 flist.sort()
             filelist += flist
     else:
         # input is either a string or something unrecognizable, so give it a try:
         try:
             filelist, output = parseinput.parseinput(input)
-            if input.find('*') > -1: # if wild-cards are given, sort for uniform usage
+            # if wild-cards are given, sort for uniform usage:
+            if input.find('*') > -1 and sort_wildcards:
                 filelist.sort()
         except IOError: raise
 

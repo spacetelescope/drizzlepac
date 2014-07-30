@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKUTILS: Utility Functions for Tweakreg &mdash; DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation</title>
+    <title>TWEAKUTILS: Utility Functions for Tweakreg &mdash; DrizzlePac 1.3.1.dev33586 (11-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.0.dev33367 (11-Jul-2014)',
+        VERSION:     '1.3.1.dev33586 (11-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 1.3.1.dev33586 (11-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="UPDATEHDR: Functions for Updating WCS with New Solutions" href="updatehdr.html" />
     <link rel="prev" title="Functions to Manage WCS Table Extension" href="wcscorr.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.1.dev33586 (11-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -183,7 +183,7 @@ output will be an array nx X nx pixels.</p>
 
 <dl class="function">
 <dt id="drizzlepac.tweakutils.make_vector_plot">
-<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">make_vector_plot</tt><big>(</big><em>coordfile, columns=[1, 2, 3, 4], data=None, figure_id=None, title=None, axes=None, every=1, limit=None, xlower=None, ylower=None, output=None, headl=4, headw=3, xsh=0.0, ysh=0.0, fit=None, scale=1.0, vector=True, textscale=5, append=False, linfit=False, rms=True, plotname=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.make_vector_plot" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.tweakutils.</tt><tt class="descname">make_vector_plot</tt><big>(</big><em>coordfile, columns=[1, 2, 3, 4], data=None, figure_id=None, title=None, axes=None, every=1, labelsize=8, ylimit=None, limit=None, xlower=None, ylower=None, output=None, headl=4, headw=3, xsh=0.0, ysh=0.0, fit=None, scale=1.0, vector=True, textscale=5, append=False, linfit=False, rms=True, plotname=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakutils.make_vector_plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a XYXYMATCH file into a vector plot or set of residuals plots.</p>
 <p>This function provides a single interface for generating either a vector
 plot of residuals or a set of 4 plots showing residuals.  The data being
@@ -221,6 +221,15 @@ be a file compatible for use with IRAF&#8217;s geomap.</p>
 <p><strong id="limit">limit</strong> : float</p>
 <blockquote>
 <div><p>Radial offset limit for selecting which sources are included in the plot</p>
+</div></blockquote>
+<p><strong id="labelsize">labelsize</strong> : int [Default: 8] or str</p>
+<blockquote>
+<div><p>Font size to use for tick labels, either in font points or as a string
+understood by tick_params().</p>
+</div></blockquote>
+<p><strong id="ylimit">ylimit</strong> : float</p>
+<blockquote>
+<div><p>Limit to use for Y range of plots.</p>
 </div></blockquote>
 <p><strong id="xlower">xlower</strong> : float</p>
 <p><strong id="ylower">ylower</strong> : float</p>
@@ -568,7 +577,7 @@ regardless of the format of the input table (ASCII or FITS table).</p>
         <li class="right" >
           <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 1.3.0.dev33367 (11-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 1.3.1.dev33586 (11-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

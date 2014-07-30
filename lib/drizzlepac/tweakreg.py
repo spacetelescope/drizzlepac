@@ -120,8 +120,12 @@ def run(configobj):
     input = configobj['input']
     # Start by interpreting the inputs
     use_catfile = True
-    expand_refcat = True
-    filenames,catnames = tweakutils.parse_input(input)
+    expand_refcat = configobj['expand_refcat']
+    enforce_user_order = configobj['enforce_user_order']
+
+    filenames,catnames = tweakutils.parse_input(
+        input, sort_wildcards=not enforce_user_order
+    )
 
     if not filenames:
         print 'No filenames matching input %r were found.' % input
@@ -263,7 +267,6 @@ def run(configobj):
     if refcat_par['refcat'] not in [None,'',' ','INDEF']: # User specified a catalog to use
         # Update kwargs with reference catalog parameters
         kwargs.update(refcat_par)
-        expand_refcat = refcat_par['expand_refcat']
 
     # input_images list can be modified below.
     # So, make a copy of the original:
@@ -322,7 +325,8 @@ def run(configobj):
                 img.close()
             return
 
-        image = _max_overlap_image(refimage, input_images, expand_refcat)
+        image = _max_overlap_image(refimage, input_images, expand_refcat,
+                                   enforce_user_order)
 
     else:
         if len(input_images) < 2:
@@ -338,7 +342,8 @@ def run(configobj):
 
         cat_src = None
 
-        refimg, image = _max_overlap_pair(input_images, expand_refcat)
+        refimg, image = _max_overlap_pair(input_images, expand_refcat,
+                                          enforce_user_order)
 
         refwcs = []
         #refwcs.extend(refimg.get_wcs())
@@ -409,13 +414,15 @@ def run(configobj):
                 print '\n'+'='*20
                 print 'Performing fit for: ',image.name,'\n'
                 image.match(refimage, quiet_identity=False, **objmatch_par)
+                assert(len(retry_flags) == len(input_images))
 
                 if not image.goodmatch:
                     # we will try to match it again once reference catalog
                     # has expanded with new sources:
+                    #if expand_refcat:
                     input_images.append(image)
                     retry_flags.append(1)
-                    if retry_flags[0] == 0:
+                    if len(retry_flags) > 0 and retry_flags[0] == 0:
                         retry_flags.pop(0)
                         image = input_images.pop(0)
                         # try to match next image in the list
@@ -424,7 +431,8 @@ def run(configobj):
                         # no new sources have been added to the reference
                         # catalog and we have already tried to match
                         # images to the existing reference catalog
-                        input_images.append(image) # <- add it back for later
+                        input_images.append(image) # <- add it back for later reporting
+                        retry_flags.append(1)
                         break
 
                 image.performFit(**catfit_pars)
@@ -448,7 +456,10 @@ def run(configobj):
                 if refimage.dirty and len(input_images) > 0:
                     # The reference catalog has been updated with new sources.
                     # Clear retry flags and get next image:
-                    image = _max_overlap_image(refimage, input_images, expand_refcat)
+                    image = _max_overlap_image(
+                        refimage, input_images, expand_refcat,
+                        enforce_user_order
+                    )
                     retry_flags = len(input_images)*[0]
                     refimage.clear_dirty_flag()
                 elif len(input_images) > 0 and retry_flags[0] == 0:
@@ -457,15 +468,19 @@ def run(configobj):
                 else:
                     break
 
+            assert(len(retry_flags) == len(input_images))
+
             if not quit_immediately:
                 # process images that have not been matched in order to
                 # update their headers:
+                si = 0
                 if do_match_refimg:
                     image = omitted_images[0]
                     image.match(refimage, quiet_identity=True, **objmatch_par)
+                    si = 1
 
                 # process omitted (from start) images separately:
-                for image in omitted_images[1:]:
+                for image in omitted_images[si:]:
                     image.match(refimage, quiet_identity=False, **objmatch_par)
 
                 # add to the list of omitted images, images that could not
@@ -542,9 +557,9 @@ def _overlap_matrix(images):
     return m
 
 
-def _max_overlap_pair(images, expand_refcat):
+def _max_overlap_pair(images, expand_refcat, enforce_user_order):
     assert(len(images) > 1)
-    if len(images) == 2 or not expand_refcat:
+    if len(images) == 2 or not expand_refcat or enforce_user_order:
         # for the special case when only two images are provided
         # return (refimage, image) in the same order as provided in 'images'.
         # Also, when ref. catalog is static - revert to old tweakreg behavior
@@ -586,10 +601,10 @@ def _max_overlap_pair(images, expand_refcat):
     return (im1, im2)
 
 
-def _max_overlap_image(refimage, images, expand_refcat):
+def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
     nimg = len(images)
     assert(nimg > 0)
-    if not expand_refcat:
+    if not expand_refcat or enforce_user_order:
         # revert to old tweakreg behavior
         return images.pop(0)
 
