@@ -60,6 +60,10 @@ refimg : string (Default = '')
     Filename of the reference image. May contain extension specifier:
     [extname,extver], [extname], or [extnumber].
 
+    .. note::
+       This parameter is reserved for future use and it is not
+       available through ``TEAL`` interface.
+
 ref_wcs_ext : string (Default = ``SCI``)
     **Reserved for future use.**
     Extension name and/or version of FITS extensions
@@ -69,6 +73,10 @@ ref_wcs_ext : string (Default = ``SCI``)
     in image-like CS. In this case, the number of regions in `input_reg` must
     agree with the number of extensions with name specified by ``ref_wcs_ext``
     present in the ``refimg`` FITS image.
+
+    .. note::
+       This parameter is reserved for future use and it is not
+       available through ``TEAL`` interface.
 
 chip_reg : string or list of strings (Default = '')
     Input region files in image CS associated with each extension specified by
@@ -102,8 +110,13 @@ outpath : string (Default = ``./regions``)
 filter : string {'None', 'fast', or 'precise' } (Default = 'None')
     Specify whether or not to remove the regions in the transformed region files
     that are outside the image array. With the 'fast' mehod only intersection
-    of the bounding boxes is being checked. The 'precise' method is not
-    implemented in this release and, if specified, defaults to 'fast'.
+    of the bounding boxes is being checked.
+
+    .. note::
+       The ``'precise'`` method is not
+       implemented in this release and, if specified, defaults to 'fast'.
+       The ``'precise'`` option is not available through the ``TEAL``
+       interface.
 
 catfname : string (Default = ``exclusions_cat.txt``)
     The file name of the output exclusions catalog file to be created from the
@@ -114,10 +127,14 @@ append : bool (Default = False)
     Specify whether or not to append the transformed regions to the existing
     region files with the same name.
 
-interactive : bool (Default = True)
+interactive : bool (Default = False)
     **Reserved for future use.** (This switch controls whether the program stops
     and waits for the user to examine any generated region files before
     continuing on to the next image.)
+
+    .. note::
+       This parameter is reserved for future use and it is not
+       available through ``TEAL`` interface.
 
 verbose : bool (Default = False)
     Specify whether or not to print extra messages during processing.

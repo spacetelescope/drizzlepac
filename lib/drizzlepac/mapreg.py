@@ -50,7 +50,7 @@ class _AuxSTWCS(object):
 
 
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
-           chip_reg='', outpath='./regions', filter='', catfname='', iteractive=True,
+           chip_reg='', outpath='./regions', filter='', catfname='', iteractive=False,
            append=False, verbose=True):
     from util import check_blank
     from tweakutils import parse_input
@@ -125,7 +125,7 @@ def _simple_parse_teal_extn(extnstr):
 def map_region_files(input_reg, images, img_wcs_ext='sci',
                      refimg=None, ref_wcs_ext='sci', chip_reg=None,
                      outpath='./regions', filter=None, catfname=None,
-                     iteractive=True, append=False, verbose=True):
+                     iteractive=False, append=False, verbose=True):
     # Check that output directory exists:
     if outpath in [None, ""]:
         outpath = os.path.curdir + os.path.sep
