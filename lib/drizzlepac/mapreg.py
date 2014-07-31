@@ -1062,13 +1062,13 @@ def run(configObj):
     MapReg(input_reg   = configObj['input_reg'],
            images      = configObj['images'],
            img_wcs_ext = configObj['img_wcs_ext'],
-           refimg      = configObj['refimg'],
-           ref_wcs_ext = configObj['ref_wcs_ext'],
+           refimg      = '', #configObj['refimg'],
+           ref_wcs_ext = 'sci', #configObj['ref_wcs_ext'],
            chip_reg    = configObj['chip_reg'],
            outpath     = configObj['outpath'],
            filter      = configObj['filter'],
            catfname    = configObj['catfname'],
-           iteractive  = configObj['iteractive'],
+           iteractive  = False, #configObj['iteractive'],
            append      = configObj['append'],
            verbose     = configObj['verbose'])
 
