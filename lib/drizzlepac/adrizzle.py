@@ -1038,9 +1038,10 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    if for_final and 'ASTRODRIZ_TRY_TILING' in os.environ:
+#   if for_final and 'ASTRODRIZ_TRY_TILING' in os.environ:
+    if for_final:
         # TODO: Parameterize the number of tiles?
-        NTILES = 5
+        NTILES = 3
         tilex = int(outsci.shape[1] / NTILES)
         tiley = int(outsci.shape[0] / NTILES)
         for i in range(0, NTILES + 1):
