@@ -11,6 +11,17 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v1.1.16
+---------------------------------
+**Publicly Released through PyPI:** Mar 27, 2014
+
+**available under SSBX/IRAFX starting:** Mar 13, 2014
+
+- Support for WFPC2 GEIS input images improved to correctly find the associated DQ images.
+- Static mask files created for all chips in an image now get deleted when using the 'group' parameter to only drizzle a single chip or subset of chips.
+- Fixed problem caused by changes to stsci.tools code so that drizzlepac will reference the correct extensions in input images. 
+
+
 DrizzlePac(astrodrizzle) v1.1.15(30-Dec-2013)
 -------------------------------------------------
 **Publicly Released through PyPI:** Jan 14, 2014

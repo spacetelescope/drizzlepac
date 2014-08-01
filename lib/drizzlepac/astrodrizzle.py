@@ -1,6 +1,7 @@
-""" AstroDrizzle - Python implementation of MultiDrizzle
+"""
+`AstroDrizzle` - Python implementation of `MultiDrizzle`
 
-AstroDrizzle automates the process of aligning images in an output frame,
+`AstroDrizzle` automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
 after removing the identified cosmic-rays.
 
@@ -14,19 +15,20 @@ This process involves a number of steps, namely:
   7.  Identifying and flagging cosmic-rays
   8.  Final combination
 
-A full description of this process can be found in the DrizzlePac Handbook
-available online at:
+A full description of this process can be found
+in the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_\ .
 
-http://drizzlepac.stsci.edu
-
-**Output**: The primary output from this task is the distortion-corrected,
+:Output: The primary output from this task is the distortion-corrected, \
 cosmic-ray cleaned, and combined image as a FITS file.
 
 This task requires numerous user-settable parameters to control the primary
 aspects of each of the processing steps.
 
-"""
+:Authors: Warren Hack
 
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division  # confidence high
 
 
@@ -112,29 +114,6 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
 #
 
 
-def getHelpAsString(docstring=False):
-    """
-    return useful help from a file in the script directory called
-    __taskname__.help
-    """
-
-    install_dir = os.path.dirname(__file__)
-    htmlfile = os.path.join(install_dir, 'htmlhelp', __taskname__ + '.html')
-    helpfile = os.path.join(install_dir, __taskname__ + '.help')
-    if docstring or (not docstring and not os.path.exists(htmlfile)):
-        helpString = ' '.join([__taskname__, 'Version', __version__,
-                               ' updated on ', __vdate__]) + '\n\n'
-        if os.path.exists(helpfile):
-            helpString += teal.getHelpFileAsString(__taskname__, __file__)
-    else:
-        helpString = 'file://' + htmlfile
-
-    return helpString
-
-
-AstroDrizzle.__doc__ = getHelpAsString(docstring=True)
-
-
 @util.with_logging
 def run(configobj, wcsmap=None):
     """
@@ -211,9 +190,13 @@ def run(configobj, wcsmap=None):
         #subtract the sky
         sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
+#       _dbg_dump_virtual_outputs(imgObjList)
+
         #drizzle to separate images
         adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                               procSteps=procSteps)
+
+#       _dbg_dump_virtual_outputs(imgObjList)
 
         #create the median images from the driz sep images
         createMedian.createMedian(imgObjList, configobj,
@@ -275,12 +258,82 @@ def help(file=None):
         If given, write out help to the filename specified by this parameter
         Any previously existing file with this name will be deleted before
         writing out the help.
+
     """
-    helpstr = getHelpAsString(docstring=True)
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
     if file is None:
-        print helpstr
+        print(helpstr)
     else:
         if os.path.exists(file): os.remove(file)
-        f = open(file,mode='w')
+        f = open(file, mode = 'w')
         f.write(helpstr)
         f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, '')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString
+
+
+_fidx = 0
+def _dbg_dump_virtual_outputs(imgObjList):
+    """ dump some helpful information.  strictly for debugging """
+    global _fidx
+    tag = 'virtual'
+    log.info((tag+'  ')*7)
+    for iii in imgObjList:
+        log.info('-'*80)
+        log.info(tag+'  orig nm: '+iii._original_file_name)
+        log.info(tag+'  names.data: '+str(iii.outputNames["data"]))
+        log.info(tag+'  names.orig: '+str(iii.outputNames["origFilename"]))
+        log.info(tag+'  id: '+str(id(iii)))
+        log.info(tag+'  in.mem: '+str(iii.inmemory))
+        log.info(tag+'  vo items...')
+        for vok in sorted(iii.virtualOutputs.keys()):
+            FITSOBJ = iii.virtualOutputs[vok]
+            log.info(tag+': '+str(vok)+' = '+str(FITSOBJ))
+            if vok.endswith('.fits'):
+              if not hasattr(FITSOBJ, 'data'):  FITSOBJ = FITSOBJ[0] # list of PrimaryHDU ?
+              if not hasattr(FITSOBJ, 'data'):  FITSOBJ = FITSOBJ[0] # was list of HDUList ?
+              dbgname = 'DEBUG_%02d_'%(_fidx,); dbgname+=os.path.basename(vok); _fidx+=1
+              FITSOBJ.writeto(dbgname)
+              log.info(tag+'  wrote: '+dbgname)
+              log.info('\n'+vok)
+              if hasattr(FITSOBJ, 'data'):
+                log.info(str(FITSOBJ._summary()))
+                log.info('min and max are: '+str( (FITSOBJ.data.min(),
+                                                   FITSOBJ.data.max()) ))
+                log.info('avg and sum are: '+str( (FITSOBJ.data.mean(),
+                                                   FITSOBJ.data.sum()) ))
+#               log.info(str(FITSOBJ.data)[:75])
+              else:
+                log.info(vok+' has no .data attr')
+                log.info(str(type(FITSOBJ)))
+              log.info(vok+'\n')
+    log.info('-'*80)
+
+AstroDrizzle.__doc__ = getHelpAsString(docstring = True, show_ver = False)

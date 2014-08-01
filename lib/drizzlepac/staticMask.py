@@ -1,18 +1,13 @@
 """
-This class manages the creation of the global static mask which
-masks pixels which are negative in the SCI array.
-A static mask numpy object gets created for each global
-mask needed, one for each chip from each instrument/detector.
-Each static mask array has type Int16, and resides in memory.
+This module provides functions and classes that manage the creation
+of the global static masks.
 
-:Authors:
-    Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
-:Program:
-    staticMask.py
-:Notes:
-    Class that manages the creation of a global static
-    mask which is used to mask pixels that are some
-    sigma BELOW the mode computed for the image.
+For `staticMask`, the user interface function is :py:func:`createMask`.
+
+:Authors: Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
 """
 
 from __future__ import division  # confidence high
@@ -22,7 +17,7 @@ import sys
 
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
-import pyfits
+from astropy.io import fits
 from stsci.imagestats import ImageStats
 import util
 import processInput
@@ -33,20 +28,6 @@ _step_num_ = 1
 
 
 log = logutil.create_logger(__name__)
-
-
-def help():
-    print getHelpAsString()
-
-
-#help information that TEAL will look for
-def getHelpAsString():
-    """
-    Return useful help from a file in the script directory called module.help
-    """
-    helpString = teal.getHelpFileAsString(__taskname__,__file__)
-
-    return helpString
 
 
 #this is called by the user
@@ -126,19 +107,15 @@ def constructFilename(signature):
 
     The signature is in the image object.
     """
-    import tempfile
-    prefix='tmp'
     suffix = buildSignatureKey(signature)
-    filename = tempfile.mktemp(prefix=prefix,suffix=suffix,dir='.')
-    #fhandle,filename = tempfile.mkstemp(prefix=prefix,suffix=suffix,dir='.')
-    #os.remove(filename)
+    filename = os.path.join('.', suffix)
     return filename
 
 def buildSignatureKey(signature):
     """
     Build static file filename suffix used by mkstemp()
     """
-    return '_'+signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
+    return signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
 
 class staticMask(object):
     """
@@ -147,6 +124,11 @@ class staticMask(object):
     A static mask  object gets created for each global
     mask needed, one for each chip from each instrument/detector.
     Each static mask array has type Int16, and resides in memory.
+
+    :Notes:
+        Class that manages the creation of a global static
+        mask which is used to mask pixels that are some
+        sigma BELOW the mode computed for the image.
 
     """
 
@@ -187,11 +169,11 @@ class staticMask(object):
         numchips=imagePtr._numchips
 
         log.info("Computing static mask:\n")
-        
+
         chips = imagePtr.group
         if chips is None:
             chips = imagePtr.getExtensions()
-        
+
         #for chip in range(1,numchips+1,1):
         for chip in chips:
             chipid=imagePtr.scienceExt + ','+ str(chip)
@@ -291,13 +273,13 @@ class staticMask(object):
             filename=self.masknames[key]
             #create a new fits image with the mask array and a standard header
             #open a new header and data unit
-            newHDU = pyfits.PrimaryHDU()
+            newHDU = fits.PrimaryHDU()
             newHDU.data = self.masklist[key]
 
             if not virtual:
                 if not(fileutil.checkFileExists(filename)):
                     try:
-                        newHDU.writeto(filename)
+                        newHDU.writeto(filename, clobber=True)
                         log.info("Saving static mask to disk: %s" % filename)
 
                     except IOError:
@@ -307,3 +289,57 @@ class staticMask(object):
             else:
                 for img in imageObjectList:
                     img.saveVirtualOutputs({filename:newHDU})
+
+
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, __package__)
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString
+
+
+createMask.__doc__ = getHelpAsString(docstring = True, show_ver = False)

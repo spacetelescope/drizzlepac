@@ -1,13 +1,10 @@
-.. _astrodrizzle:
+.. _astrodrizzle_:
 
 **************************************
-Primary User Interface: AstroDrizzle() 
+Primary User Interface: AstroDrizzle()
 **************************************
- 
-.. currentmodule:: drizzlepac.astrodrizzle
+
+.. moduleauthor:: Warren Hack <help@stsci.edu>
 
 .. automodule:: drizzlepac.astrodrizzle
-   
-.. autofunction:: AstroDrizzle 
- 
- 
+   :members: AstroDrizzle

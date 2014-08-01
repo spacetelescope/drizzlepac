@@ -1,13 +1,16 @@
-""" skytopix - A module to perform coordinate transformation from sky to pixel coordinates.
+""" skytopix - A module to perform coordinate transformation from sky
+    to pixel coordinates.
 
-    License:
-        http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
+    :Authors: Warren Hack
+
+    :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
     PARAMETERS
     ----------
     input : str
-        full filename with path of input image, an extension name ['sci',1] should be
-        provided if input is a multi-extension FITS file
+        full filename with path of input image, an extension name
+        ['sci',1] should be provided if input is a multi-extension
+        FITS file
 
     Optional Parameters
     -------------------
@@ -40,32 +43,26 @@
         Y position of pixel. If more than 1 input value, then it will be a
         numpy array.
 
+
     NOTES
     -----
-    This module performs a full distortion-corrected coordinate transformation
-    based on all WCS keywords and any recognized distortion keywords from the
-    input image header.
+    This module performs a full distortion-corrected coordinate
+    transformation based on all WCS keywords and any recognized
+    distortion keywords from the input image header.
 
-    Usage
-    -----
-    It can be called from within Python using the syntax::
-
-        >>> from drizzlepac import skytopix
-        >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]","00:22:36.79","-72:4:9.0")
 
     EXAMPLES
     --------
-
     1. The following command will transform the position 00:22:36.79 -72:4:9.0 into a
-        position on the image 'input_flt.fits[sci,1]' using::
+       position on the image 'input_flt.fits[sci,1]' using::
 
             >>> from drizzlepac import skytopix
             >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79","-72:4:9.0")
 
 
     2. The set of sky positions from 'input_flt.fits[sci,1]' stored as
-        the 3rd and 4th columns from the ASCII file 'radec_sci1.dat'
-        will be transformed and written out to 'xy_sci1.dat' using::
+       the 3rd and 4th columns from the ASCII file 'radec_sci1.dat'
+       will be transformed and written out to 'xy_sci1.dat' using::
 
             >>> from drizzlepac import skytopix
             >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
@@ -77,7 +74,7 @@ from __future__ import division # confidence medium
 import os,copy
 import numpy as np
 
-import pyfits
+from astropy.io import fits
 from stsci.tools import fileutil, teal
 import util,wcs_functions,tweakutils
 import stwcs
@@ -114,9 +111,9 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     inwcs = wcsutil.HSTWCS(input)
     # Now, convert pixel coordinates into sky coordinates
     try:
-        outx,outy = inwcs.all_sky2pix(xlist,ylist,1)
+        outx,outy = inwcs.all_world2pix(xlist,ylist,1)
     except RuntimeError:
-        outx,outy = inwcs.wcs_sky2pix(xlist,ylist,1)
+        outx,outy = inwcs.wcs_world2pix(xlist,ylist,1)
 
     # add formatting based on precision here...
     xstr = []
@@ -152,10 +149,10 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     # parse column names from coords file and match to input values
     if coordfile is not None and fileutil.isFits(coordfile)[0]:
         # Open FITS file with table
-        ftab = pyfits.open(coordfile)
+        ftab = fits.open(coordfile)
         # determine which extension has the table
         for extn in ftab:
-            if isinstance(extn,pyfits.BinTableHDU):
+            if isinstance(extn, fits.BinTableHDU):
                 # parse column names from table and match to inputs
                 cnames = extn.columns.names
                 if colnames is not None:
@@ -200,12 +197,55 @@ def run(configObj):
             precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
 
-def getHelpAsString():
-    helpString = ''
-    if teal:
-        helpString += teal.getHelpFileAsString(__taskname__,__file__)
 
-    if helpString.strip() == '':
-        helpString += __doc__+'\n'
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, '')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
 
     return helpString
+
+__doc__ = getHelpAsString(docstring = True, show_ver = False)

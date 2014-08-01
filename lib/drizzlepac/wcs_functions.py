@@ -1,3 +1,10 @@
+"""
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 
 import os,copy
@@ -8,7 +15,8 @@ from stsci.tools import fileutil, asnutil, logutil
 import util
 import imageObject
 import stwcs
-import pywcs
+#import pywcs
+from astropy import wcs as pywcs
 from stwcs import distortion, wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs
@@ -53,16 +61,16 @@ class WCSMap:
             This method gets passed to the drizzle algorithm.
         """
         # This matches WTRAXY results to better than 1e-4 pixels.
-        skyx,skyy = self.input.all_pix2sky(pixx,pixy,self.origin)
-        result= self.output.wcs_sky2pix(skyx,skyy,self.origin)
+        skyx,skyy = self.input.all_pix2world(pixx,pixy,self.origin)
+        result= self.output.wcs_world2pix(skyx,skyy,self.origin)
         return result
 
     def backward(self,pixx,pixy):
         """ Transform pixx,pixy positions from the output frame back onto their
             original positions in the input frame.
         """
-        skyx,skyy = self.output.wcs_pix2sky(pixx,pixy,self.origin)
-        result = self.input.all_sky2pix(skyx,skyy,self.origin)
+        skyx,skyy = self.output.wcs_pix2world(pixx,pixy,self.origin)
+        result = self.input.all_world2pix(skyx,skyy,self.origin)
         return result
 
     def get_pix_ratio(self):
@@ -74,11 +82,11 @@ class WCSMap:
     def xy2rd(self,wcs,pixx,pixy):
         """ Transform input pixel positions into sky positions in the WCS provided.
         """
-        return wcs.all_pix2sky(pixx,pixy,1)
+        return wcs.all_pix2world(pixx,pixy,1)
     def rd2xy(self,wcs,ra,dec):
         """ Transform input sky positions into pixel positions in the WCS provided.
         """
-        return wcs.wcs_sky2pix(ra,dec,1)
+        return wcs.wcs_world2pix(ra,dec,1)
 
 def get_pix_ratio_from_WCS(input,output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""
@@ -414,7 +422,7 @@ def calcNewEdges(wcs, shape):
     border[_range0:_range1,0] = xmax
     border[_range0:_range1,1] = yside
 
-    edges = wcs.all_pix2sky(border[:,0],border[:,1],1)
+    edges = wcs.all_pix2world(border[:,0],border[:,1],1)
     return edges
 
 
@@ -458,7 +466,8 @@ def removeAllAltWCS(hdulist,extlist):
     """
     hdr = hdulist[extlist[0]].header
     wkeys = altwcs.wcskeys(hdr)
-    wkeys.remove(' ')
+    if ' ' in wkeys:
+        wkeys.remove(' ')
     for extn in extlist:
         for wkey in wkeys:
             altwcs.deleteWCS(hdulist,extn,wkey)
@@ -468,7 +477,8 @@ def removeAllAltWCS(hdulist,extlist):
         if hwcs is None:
             continue
         for k in hwcs.keys():
-            del hdr[k]
+            if k in hdr:
+                del hdr[k]
 
 def updateImageWCS(imageObjectList, output_wcs):
 
@@ -537,11 +547,11 @@ def mergeWCS(default_wcs,user_pars):
     _mrot = fileutil.buildRotMatrix(_delta_rot)
 
     if ('outnx' not in user_pars) or user_pars['outnx'] == None:
-        _corners = np.array([[0.,0.],[outwcs.naxis1,0.],[0.,outwcs.naxis2],[outwcs.naxis1,outwcs.naxis2]])
-        _corners -= (outwcs.naxis1/2.,outwcs.naxis2/2.)
+        _corners = np.array([[0.,0.],[outwcs._naxis1,0.],[0.,outwcs._naxis2],[outwcs._naxis1,outwcs._naxis2]])
+        _corners -= (outwcs._naxis1/2.,outwcs._naxis2/2.)
         _range = util.getRotatedSize(_corners,_delta_rot)
         shape = ((_range[0][1] - _range[0][0])*_ratio,(_range[1][1]-_range[1][0])*_ratio)
-        old_shape = (outwcs.naxis1*_ratio,outwcs.naxis2*_ratio)
+        old_shape = (outwcs._naxis1*_ratio,outwcs._naxis2*_ratio)
 
         _crpix = (shape[0]/2., shape[1]/2.)
 
@@ -560,8 +570,8 @@ def mergeWCS(default_wcs,user_pars):
     outwcs.rotateCD(_delta_rot)
     outwcs.orientat += -_delta_rot
     # Update size
-    outwcs.naxis1 =  int(shape[0])
-    outwcs.naxis2 =  int(shape[1])
+    outwcs._naxis1 =  int(shape[0])
+    outwcs._naxis2 =  int(shape[1])
     # Update reference position
     outwcs.wcs.crpix = np.array(_crpix,dtype=np.float64)
     if _crval is not None:

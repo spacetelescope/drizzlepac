@@ -1,12 +1,17 @@
-#
-#   Authors: Warren Hack, Ivo Busko, Christopher Hanley
-#   Program: mdzhandler.py
-#   Purpose: Module that handles the MDRIZTAB reference file.
+"""
+This module supports the interpretation of the ``MDRIZTAB`` for
+processing as used in the pipeline.
+
+:Authors: Warren Hack, Ivo Busko, Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence high
 
 import string, os
 
-import pyfits
+from astropy.io import fits
 import numpy as np
 
 from stsci.tools import fileutil
@@ -42,7 +47,7 @@ def getMdriztabParameters(files):
 
     # Open MDRIZTAB file.
     try:
-        _mdriztab = pyfits.open(_tableName)
+        _mdriztab = fits.open(_tableName)
     except:
         raise IOError,"MDRIZTAB table '%s' not valid!" % _tableName
 

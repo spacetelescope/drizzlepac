@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>NICMOS ImageObjects &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>NICMOS ImageObjects &mdash; DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev33593 (29-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation" href="index.html" />
     <link rel="up" title="imageObject Classes" href="imageobject.html" />
     <link rel="next" title="WFPC2 ImageObjects" href="wfpc2objects.html" />
     <link rel="prev" title="STIS ImageObjects" href="stisobjects.html" /> 
@@ -46,7 +44,7 @@
         <li class="right" >
           <a href="stisobjects.html" title="STIS ImageObjects"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li>
           <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
       </ul>
     </div>
@@ -87,8 +85,21 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="nicmos-imageobjects">
-<span id="nicmosdata"></span><h1>NICMOS ImageObjects<a class="headerlink" href="#nicmos-imageobjects" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-drizzlepac.nicmosData">
+<span id="nicmos-imageobjects"></span><span id="nicmosdata"></span><h1>NICMOS ImageObjects<a class="headerlink" href="#module-drizzlepac.nicmosData" title="Permalink to this headline">¶</a></h1>
+<p>Class used to model NICMOS specific instrument data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Christopher Hanley, David Grumm, Megan Sosey</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
 <dl class="class">
 <dt id="drizzlepac.nicmosData.NICMOSInputImage">
 <em class="property">class </em><tt class="descclassname">drizzlepac.nicmosData.</tt><tt class="descname">NICMOSInputImage</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.nicmosData.NICMOSInputImage" title="Permalink to this definition">¶</a></dt>
@@ -110,8 +121,8 @@ the data inside the chips already in memory is altered as well.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
 <blockquote class="last">
 <div><p>Dark current value with <strong>units of cps</strong>.</p>
 </div></blockquote>
@@ -129,8 +140,8 @@ the data inside the chips already in memory is altered as well.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark</strong> : array</p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark</strong> : array</p>
 <blockquote class="last">
 <div><p>The dark array in the same shape as the image with <strong>units of cps</strong>.</p>
 </div></blockquote>
@@ -148,8 +159,8 @@ the data inside the chips already in memory is altered as well.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark: array</strong> :</p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark: array</strong> :</p>
 <blockquote class="last">
 <div><p>Exposure time array in the same shape as the input image</p>
 </div></blockquote>
@@ -167,8 +178,8 @@ the data inside the chips already in memory is altered as well.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong>flat</strong> : array</p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>flat</strong> : array</p>
 <blockquote class="last">
 <div><p>The flat field array in the same shape as the input image with <strong>units of cps</strong>.</p>
 </div></blockquote>
@@ -262,13 +273,13 @@ the parameter dictionary, in case empty entries are provided.</p>
         <li class="right" >
           <a href="stisobjects.html" title="STIS ImageObjects"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li>
           <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

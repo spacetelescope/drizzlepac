@@ -3,12 +3,14 @@
 # $Id: updatenpol.py 8609 2010-01-19 16:22:48Z hack $
 
 """
-**updatenpol**: Update the header of ACS file(s) with the names of new
-NPOLFILE and D2IMFILE reference files for use with the
+`updatenpol`: Update the header of ACS file(s) with the names of new
+``NPOLFILE`` and ``D2IMFILE`` reference files for use with the
 C version of MultiDrizzle (astrodrizzle).
 
-:License:
-    http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
 
 :Usage:
     This task can be run from the operating system command line with::
@@ -22,7 +24,7 @@ C version of MultiDrizzle (astrodrizzle).
         of a list of files.
     `refdir`
         The name of the directory containing all the new reference files
-        (`\*_npl.fits` and `\*_d2i.fits` files).
+        (``*_npl.fits`` and ``*_d2i.fits`` files).
         If no directory is given, it will look in `jref$` by default.
 
     ``-h``
@@ -34,30 +36,30 @@ C version of MultiDrizzle (astrodrizzle).
 
     ``-i``
         If specified, the program will interactively request the exact
-        names of the NPOLFILE and D2IMFILE reference files to be used
+        names of the ``NPOLFILE`` and ``D2IMFILE`` reference files to be used
         for updating the header of each file. The value of 'refdir'
         will be ignored in interactive mode.
 
 
-.. warning:: It will ask for the names of the NPOLFILE and D2IMFILE for
+.. warning:: It will ask for the names of the ``NPOLFILE`` and ``D2IMFILE`` for
              EACH separate INPUT file when the option `-i` has been specified.
 
 :Example:
     1. This command will update all the FLT files in the current directory
-    with the new NPOLFILE and D2IMFILE reference files found in the 'myjref'
+    with the new ``NPOLFILE`` and ``D2IMFILE`` reference files found in the 'myjref'
     directory as defined in the environment::
 
         updatenpol *flt.fits myjref$
 
 
 :Compatability with MultiDrizzle:
-    The new version of MultiDrizzle (`astrodrizzle`) and `updatewcs`
-    only work with the new NPOLFILE reference file for the DGEO correction
+    The new version of ``MultiDrizzle`` (`astrodrizzle) and `updatewcs`
+    only work with the new ``NPOLFILE`` reference file for the ``DGEO`` correction
     (to replace the use of DGEOFILE).
-    In fact, astrodrizzle has been extensively modified to
+    In fact, `astrodrizzle` has been extensively modified to
     prompt the user with a very lengthy explanation on whether it should
     stop and allow the user to update the header or continue without
-    applying the DGEO correction under circumstances when the NPOLFILE
+    applying the ``DGEO`` correction under circumstances when the ``NPOLFILE``
     keyword can not be found for ACS.
 
 """
@@ -73,12 +75,13 @@ __vdate__ = '16-Aug-2011'
 
 import os,sys,shutil
 
-import pyfits
+from astropy.io import fits
 from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import teal
 
 from stwcs import updatewcs
+import util
 
 
 def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
@@ -174,7 +177,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         print 'Updating: ',f
         fdir = os.path.split(f)[0]
         # Open each file...
-        fimg = pyfits.open(f,mode='update')
+        fimg = fits.open(f, mode='update')
         phdr = fimg['PRIMARY'].header
         fdet = phdr['detector']
         # get header of DGEOFILE
@@ -182,7 +185,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         if dfile in ['N/A','',' ',None]:
             npolname = ''
         else:
-            dhdr = pyfits.getheader(fu.osfn(dfile))
+            dhdr = fits.getheader(fu.osfn(dfile))
             if not interactive:
                 # search all new NPOLFILEs for one that matches current DGEOFILE config
                 npol = find_npolfile(ngeofiles,fdet,[phdr['filter1'],phdr['filter2']])
@@ -206,7 +209,9 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                     npolname = refdir+npolname
                 else:
                     npolname = os.path.join(refdir,npolname)
-        phdr.update('NPOLFILE',npolname,comment="Non-polynomial corrections in Paper IV LUT",after='DGEOFILE')
+        phdr.set('NPOLFILE', value=npolname,
+                 comment="Non-polynomial corrections in Paper IV LUT",
+                 after='DGEOFILE')
 
         # Now find correct D2IFILE
         if not interactive:
@@ -235,7 +240,9 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                 else:
                     d2iname = os.path.join(refdir,d2iname)
 
-        phdr.update('D2IMFILE',d2iname,comment="Column correction table",after='DGEOFILE')
+        phdr.set('D2IMFILE', value=d2iname,
+                 comment="Column correction table",
+                 after='DGEOFILE')
 
         # Close this input file header and go on to the next
         fimg.close()
@@ -248,7 +255,7 @@ def find_d2ifile(flist,detector):
     """
     d2ifile = None
     for f in flist:
-        fdet = pyfits.getval(f,'detector')
+        fdet = fits.getval(f,'detector')
         if fdet == detector:
             d2ifile = f
     return d2ifile
@@ -259,11 +266,11 @@ def find_npolfile(flist,detector,filters):
     """
     npolfile = None
     for f in flist:
-        fdet = pyfits.getval(f,'detector')
+        fdet = fits.getval(f,'detector')
         if fdet == detector:
-            filt1 = pyfits.getval(f,'filter1')
-            filt2 = pyfits.getval(f,'filter2')
-            fdate = pyfits.getval(f,'date')
+            filt1 = fits.getval(f,'filter1')
+            filt2 = fits.getval(f,'filter2')
+            fdate = fits.getval(f,'date')
             if filt1 == 'ANY' or \
              (filt1 == filters[0] and filt2 == filters[1]):
                 npolfile = f
@@ -283,41 +290,6 @@ def run(configobj=None,editpars=False):
         local=configobj['local'],interactive=configobj['interactive'],
         wcsupdate=configobj['wcsupdate'])
 
-def getHelpAsString(docstring=False):
-#    helpString = 'updatenpol Version '+__version__+__vdate__+'\n'
-#    helpString += update.__doc__+'\n'
-
-    install_dir = os.path.dirname(__file__)
-    htmlfile = os.path.join(install_dir,'htmlhelp',__taskname__+'.html')
-    helpfile = os.path.join(install_dir,__taskname__+'.help')
-    if docstring or (not docstring and not os.path.exists(htmlfile)):
-        helpString = __taskname__+' Version '+__version__+' updated on '+__vdate__+'\n\n'
-        if os.path.exists(helpfile):
-            helpString += teal.getHelpFileAsString(__taskname__,__file__)
-    else:
-        helpString = 'file://'+htmlfile
-
-    return helpString
-
-def help(file=None):
-    """
-    Print out syntax help for running updatenpol
-
-    Parameters
-    ----------
-    file : str (Default = None)
-        If given, write out help to the filename specified by this parameter
-        Any previously existing file with this name will be deleted before
-        writing out the help.
-    """
-    helpstr = getHelpAsString(docstring=True)
-    if file is None:
-        print helpstr
-    else:
-        if os.path.exists(file): os.remove(file)
-        f = open(file,mode='w')
-        f.write(helpstr)
-        f.close()
 
 def main():
 
@@ -383,3 +355,53 @@ if __name__ == "__main__":
     USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
     DAMAGE.
 """
+
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, '')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString

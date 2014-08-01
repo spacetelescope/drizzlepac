@@ -1,7 +1,11 @@
-#
-#   Authors: Megan Sosey, Christopher Hanley
-#   Program: stisData.py
-#   Purpose: Class used to import STIS specific instrument data.
+"""
+`stisData` module provides classes used to import STIS specific instrument data.
+
+:Authors: Megan Sosey, Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 
 from stsci.tools import fileutil

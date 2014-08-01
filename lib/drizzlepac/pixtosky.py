@@ -1,7 +1,8 @@
 """ pixtosky - A module to perform coordinate transformation from pixel to sky coordinates.
 
-    License:
-        http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE
+    :Authors: Warren Hack
+
+    :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
     PARAMETERS
     ----------
@@ -48,30 +49,26 @@
     based on all WCS keywords and any recognized distortion keywords from the
     input image header.
 
-    Usage
-    -----
-    It can be called from within Python using the syntax::
-
-        >>> from drizzlepac import pixtosky
-        >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]",100,100)
+    See Also
+    --------
+    `stwcs`
 
     EXAMPLES
     --------
-
     1. The following command will transform the position 256,256 into a
-        position on the sky for the image 'input_flt.fits[sci,1]' using::
+       position on the sky for the image 'input_flt.fits[sci,1]' using::
 
-            >>> from drizzlepac import pixtosky
-            >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
+       >>> from drizzlepac import pixtosky
+       >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
 
 
     2. The set of X,Y positions from 'input_flt.fits[sci,1]' stored as
-        the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
-        will be transformed and written out to 'radec_sci1.dat' using::
+       the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
+       will be transformed and written out to 'radec_sci1.dat' using::
 
-            >>> from drizzlepac import pixtosky
-            >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coords='xy_sci1.dat',
-                colnames=['c3','c4'], output="radec_sci1.dat")
+       >>> from drizzlepac import pixtosky
+       >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coords='xy_sci1.dat',
+       ...                      colnames=['c3','c4'], output="radec_sci1.dat")
 
 """
 from __future__ import division # confidence medium
@@ -79,7 +76,6 @@ from __future__ import division # confidence medium
 import os,copy
 import numpy as np
 
-import pyfits
 from stsci.tools import fileutil, teal
 import util
 import wcs_functions
@@ -122,7 +118,7 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
     inwcs = wcsutil.HSTWCS(input)
 
     # Now, convert pixel coordinates into sky coordinates
-    dra,ddec = inwcs.all_pix2sky(xlist,ylist,1)
+    dra,ddec = inwcs.all_pix2world(xlist,ylist,1)
 
     # convert to HH:MM:SS.S format, if specified
     if hms:
@@ -174,12 +170,56 @@ def run(configObj):
             separator= sep, hms = configObj['hms'], precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
 
-def getHelpAsString():
-    helpString = ''
-    if teal:
-        helpString += teal.getHelpFileAsString(__taskname__,__file__)
 
-    if helpString.strip() == '':
-        helpString += __doc__+'\n'
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, '')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
 
     return helpString
+
+
+__doc__ = getHelpAsString(docstring = True, show_ver = False)

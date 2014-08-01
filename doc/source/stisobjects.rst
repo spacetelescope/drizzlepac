@@ -4,7 +4,11 @@
 STIS ImageObjects
 *****************
 
+.. moduleauthor:: Megan Sosey, Christopher Hanley <help@stsci.edu>
+
 .. currentmodule:: drizzlepac.stisData
+
+.. automodule:: drizzlepac.stisData
 
 .. autoclass:: STISInputImage
    :members:

@@ -1,10 +1,16 @@
+"""
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 import string,os
 
 import numpy as np
 import stsci.ndimage as ndimage
 
 from stsci.tools import asnutil, irafglob, parseinput, fileutil
-import pyfits
+from astropy.io import fits
 import astrolib.coords as coords
 
 
@@ -13,7 +19,7 @@ import stsci.imagestats as imagestats
 from . import findobj
 from . import cdriz
 
-def parse_input(input, prodonly=False):
+def parse_input(input, prodonly=False, sort_wildcards=True):
     catlist = None
 
     if (isinstance(input, list) == False) and \
@@ -38,11 +44,21 @@ def parse_input(input, prodonly=False):
         if len(line.split()) > 1:
             # ...parse out the names of the catalog files as well
             catlist = parse_atfile_cat(input)
+    elif (isinstance(input, list)):
+        # input a python list
+        filelist = []
+        for fn in input:
+            flist, output = parse_input(fn, prodonly=prodonly)
+            # if wild-cards are given, sort for uniform usage:
+            if fn.find('*') > -1 and sort_wildcards:
+                flist.sort()
+            filelist += flist
     else:
-        #input is a string or a python list
+        # input is either a string or something unrecognizable, so give it a try:
         try:
             filelist, output = parseinput.parseinput(input)
-            if input.find('*') > -1: # if wild-cards are given, sort for uniform usage
+            # if wild-cards are given, sort for uniform usage:
+            if input.find('*') > -1 and sort_wildcards:
                 filelist.sort()
         except IOError: raise
 
@@ -84,18 +100,33 @@ def get_configobj_root(configobj):
     return kwargs
 
 
-def ndfind(array,hmin,fwhm,skymode,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,
-                peakmin=None,peakmax=None,fluxmin=None,fluxmax=None,nsigma=1.5):
+def ndfind(array, hmin, fwhm, skymode,
+           sharplim=[0.2,1.0], roundlim=[-1,1], minpix=5,
+           peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
+           nsigma=1.5, ratio=1.0, theta=0.0,
+           src_find_filters=None, mask=None, use_sharp_round=False):
     star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode,
                     peakmin=peakmin, peakmax=peakmax,
                     fluxmin=fluxmin, fluxmax=fluxmax,
-                    ratio=1, nsigma=nsigma, theta=0.)
+                    ratio=ratio, nsigma=nsigma, theta=theta,
+                    src_find_filters=src_find_filters,
+                    use_sharp_round=use_sharp_round,
+                    mask=mask,
+                    sharplo=sharplim[0], sharphi=sharplim[1],
+                    roundlo=roundlim[0], roundhi=roundlim[1])
     if len(star_list) == 0:
         print 'No valid sources found...'
-        return [],[],[],[]
+        return tuple([[] for i in range(7 if use_sharp_round else 4)])
     star_arr = np.array(star_list)
     fluxes = np.array(fluxes,np.float32)
-    return star_arr[:,0],star_arr[:,1],fluxes,np.arange(star_arr.shape[0])
+    if use_sharp_round:
+        return (star_arr[:,0], star_arr[:,1], fluxes,
+                np.arange(star_arr.shape[0]),
+                star_arr[:,2], star_arr[:,3], star_arr[:,4])
+    else:
+        return (star_arr[:,0], star_arr[:,1], fluxes,
+                np.arange(star_arr.shape[0]), None, None, None)
+
 
 # Object finding algorithm based on NDIMAGE routines
 def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
@@ -426,7 +457,7 @@ def readcols(infile, cols=None):
 def read_FITS_cols(infile,cols=None):
     """ Read columns from FITS table
     """
-    ftab = pyfits.open(infile)
+    ftab = fits.open(infile)
     extnum = 0
     extfound = False
     for extn in ftab:
@@ -567,8 +598,8 @@ def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     # write out reference WCS now
     if os.path.exists(outwcs):
         os.remove(outwcs)
-    p = pyfits.HDUList()
-    p.append(pyfits.PrimaryHDU())
+    p = fits.HDUList()
+    p.append(fits.PrimaryHDU())
     p.append(createWcsHDU(image_list[0].refWCS))
     p.writeto(outwcs)
 
@@ -591,27 +622,27 @@ def createWcsHDU(wcs):
         will work just as well.
     """
 
-    hdu = pyfits.ImageHDU()
-    hdu.header.update('EXTNAME','WCS')
-    hdu.header.update('EXTVER',1)
+    hdu = fits.ImageHDU()
+    hdu.header['EXTNAME'] = 'WCS'
+    hdu.header['EXTVER'] = 1
     # Now, update original image size information
-    hdu.header.update('WCSAXES',2,comment="number of World Coordinate System axes")
-    hdu.header.update('NPIX1',wcs.naxis1,comment="Length of array axis 1")
-    hdu.header.update('NPIX2',wcs.naxis2,comment="Length of array axis 2")
-    hdu.header.update('PIXVALUE',0.0,comment="values of pixels in array")
+    hdu.header['WCSAXES'] = (2, "number of World Coordinate System axes")
+    hdu.header['NPIX1'] = (wcs._naxis1, "Length of array axis 1")
+    hdu.header['NPIX2'] = (wcs._naxis2, "Length of array axis 2")
+    hdu.header['PIXVALUE'] = (0.0, "values of pixels in array")
 
     # Write out values to header...
-    hdu.header.update('CD1_1',wcs.wcs.cd[0,0],comment="partial of first axis coordinate w.r.t. x")
-    hdu.header.update('CD1_2',wcs.wcs.cd[0,1],comment="partial of first axis coordinate w.r.t. y")
-    hdu.header.update('CD2_1',wcs.wcs.cd[1,0],comment="partial of second axis coordinate w.r.t. x")
-    hdu.header.update('CD2_2',wcs.wcs.cd[1,1],comment="partial of second axis coordinate w.r.t. y")
-    hdu.header.update('ORIENTAT',wcs.orientat,comment="position angle of image y axis (deg. e of n)")
-    hdu.header.update('CRPIX1',wcs.wcs.crpix[0],comment="x-coordinate of reference pixel")
-    hdu.header.update('CRPIX2',wcs.wcs.crpix[1],comment="y-coordinate of reference pixel")
-    hdu.header.update('CRVAL1',wcs.wcs.crval[0],comment="first axis value at reference pixel")
-    hdu.header.update('CRVAL2',wcs.wcs.crval[1],comment="second axis value at reference pixel")
-    hdu.header.update('CTYPE1',wcs.wcs.ctype[0],comment="the coordinate type for the first axis")
-    hdu.header.update('CTYPE2',wcs.wcs.ctype[1],comment="the coordinate type for the second axis")
+    hdu.header['CD1_1'] = (wcs.wcs.cd[0,0], "partial of first axis coordinate w.r.t. x")
+    hdu.header['CD1_2'] = (wcs.wcs.cd[0,1], "partial of first axis coordinate w.r.t. y")
+    hdu.header['CD2_1'] = (wcs.wcs.cd[1,0], "partial of second axis coordinate w.r.t. x")
+    hdu.header['CD2_2'] = (wcs.wcs.cd[1,1], "partial of second axis coordinate w.r.t. y")
+    hdu.header['ORIENTAT'] = (wcs.orientat, "position angle of image y axis (deg. e of n)")
+    hdu.header['CRPIX1'] = (wcs.wcs.crpix[0], "x-coordinate of reference pixel")
+    hdu.header['CRPIX2'] = (wcs.wcs.crpix[1], "y-coordinate of reference pixel")
+    hdu.header['CRVAL1'] = (wcs.wcs.crval[0], "first axis value at reference pixel")
+    hdu.header['CRVAL2'] = (wcs.wcs.crval[1], "second axis value at reference pixel")
+    hdu.header['CTYPE1'] = (wcs.wcs.ctype[0], "the coordinate type for the first axis")
+    hdu.header['CTYPE2'] = (wcs.wcs.ctype[1], "the coordinate type for the second axis")
 
     return hdu
 
@@ -719,7 +750,7 @@ def gauss(x,sigma):
 
 #### Plotting Utilities for drizzlepac
 def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
-                    title=None, axes=None, every=1,
+                    title=None, axes=None, every=1,labelsize=8, ylimit=None,
                     limit=None, xlower=None, ylower=None, output=None, headl=4,headw=3,
                     xsh=0.0,ysh=0.0,fit=None,scale=1.0,vector=True,textscale=5,
                     append=False,linfit=False,rms=True, plotname=None):
@@ -746,6 +777,11 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             Slice value for the data to be plotted
         limit : float
             Radial offset limit for selecting which sources are included in the plot
+        labelsize : int [Default: 8] or str
+            Font size to use for tick labels, either in font points or as a string
+            understood by tick_params().
+        ylimit : float
+            Limit to use for Y range of plots.
         xlower : float
         ylower : float
             Limit in X and/or Y offset for selecting which sources are included in the plot
@@ -826,10 +862,10 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
     if output is not None:
         write_xy_file(output,[xy1x,xy1y,dx,dy])
 
-    plt.figure(num=figure_id)
+    fig = plt.figure(num=figure_id)
     if not append:
         plt.clf()
-    plt.ioff()
+
     if vector:
         dxs = imagestats.ImageStats(dx.astype(np.float32))
         dys = imagestats.ImageStats(dy.astype(np.float32))
@@ -847,8 +883,8 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         maxvec = max_vector/2.
         key_len = round((maxvec+0.005),2)
 
-        plt.text(minx+key_dx, miny-key_dy,'DX: %f to %f +/- %f'%(dxs.min,dxs.max,dxs.stddev))
-        plt.text(minx+key_dx, miny-key_dy*2,'DY: %f to %f +/- %f'%(dys.min,dys.max,dys.stddev))
+        plt.text(minx+key_dx, miny-key_dy,'DX: %.4f to %.4f +/- %.4f'%(dxs.min,dxs.max,dxs.stddev))
+        plt.text(minx+key_dx, miny-key_dy*2,'DY: %.4f to %.4f +/- %.4f'%(dys.min,dys.max,dys.stddev))
         plt.title(r"$Vector\ plot\ of\ %d/%d\ residuals:\ %s$"%(
                 xy1x.shape[0],numpts,title))
         plt.quiverkey(qplot,minx+key_dx,miny+key_dy,key_len,"%0.2f pixels"%(key_len),
@@ -874,36 +910,59 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             maxx = axes[0][1]
             miny = axes[1][0]
             maxy = axes[1][1]
+
+        if ylimit is not None:
+            miny = -1*ylimit
+            maxy = ylimit
+
         xrange = maxx - minx
         yrange = maxy - miny
 
+        rms_labelled=False
+        if title is None:
+            fig.suptitle("Residuals [%d/%d]"%(xy1x.shape[0],numpts),ha='center',fontsize=labelsize+6)
+        else:
+            # This definition of the title supports math symbols in the title
+            fig.suptitle(r"$"+title+"$",ha='center', fontsize=labelsize+6)
 
-        for pnum,plot in zip(range(1,5),plot_defs):
-            ax = plt.subplot(2,2,pnum)
-            if pnum == 1:
-                if title is None:
-                    ax.set_title("Residuals [%d/%d]: No FIT applied"%(xy1x.shape[0],numpts),ha='left')
-                else:
-                    # This definition of the title supports math symbols in the title
-                    ax.set_title(r"$"+title+"$",ha='left')
-            ax.plot(plot[0],plot[1],'.')
-            plt.xlabel(plot[2])
-            plt.ylabel(plot[3])
-            lx=[ int((plot[0].min()-500)/500) * 500,int((plot[0].max()+500)/500) * 500]
-            plt.plot([lx[0],lx[1]],[0.0,0.0],'k')
+        for pnum, p in enumerate(plot_defs):
+            pn = pnum+1
+            ax = fig.add_subplot(2,2,pn)
+            plt.plot(p[0],p[1],'b.',label='RMS(X) = %.4f, RMS(Y) = %.4f'%(dx.std(),dy.std()))
+            lx=[ int((p[0].min()-500)/500) * 500,int((p[0].max()+500)/500) * 500]
+            plt.plot([lx[0],lx[1]],[0.0,0.0],'k',linewidth=3)
             plt.axis([minx,maxx,miny,maxy])
-            if rms:
-                plt.text(minx+xrange*0.01, maxy-yrange*(0.01*textscale),'RMS(X) = %f, RMS(Y) = %f'%(dx.std(),dy.std()))
+            if rms and not rms_labelled:
+                leg_handles, leg_labels = ax.get_legend_handles_labels()
+                fig.legend(leg_handles, leg_labels, loc='center left',
+                           fontsize='small', frameon=False,
+                           bbox_to_anchor=(0.33, 0.51), borderaxespad=0)
+                rms_labelled = True
+
+            ax.tick_params(labelsize=labelsize)
+
+            # Fine-tune figure; hide x ticks for top plots and y ticks for right plots
+            if pn <= 2:
+                plt.setp(ax.get_xticklabels(), visible=False)
+            else:
+                ax.set_xlabel(plot_defs[pnum][2])
+
+            if pn%2 == 0:
+                plt.setp(ax.get_yticklabels(), visible=False)
+            else:
+                ax.set_ylabel(plot_defs[pnum][3])
+
             if linfit:
                 lxr = int((lx[-1] - lx[0])/100)
-                lyr = int((plot[1].max() - plot[1].min())/100)
-                A = np.vstack([plot[0],np.ones(len(plot[0]))]).T
-                m,c = np.linalg.lstsq(A,plot[1])[0]
+                lyr = int((p[1].max() - p[1].min())/100)
+                A = np.vstack([p[0],np.ones(len(p[0]))]).T
+                m,c = np.linalg.lstsq(A,p[1])[0]
                 yr = [m*lx[0]+c,lx[-1]*m+c]
                 plt.plot([lx[0],lx[-1]],yr,'r')
-                plt.text(lx[0]+lxr,plot[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
+                plt.text(lx[0]+lxr,p[1].max()+lyr,"%0.5g*x + %0.5g [%0.5g,%0.5g]"%(m,c,yr[0],yr[1]),color='r')
 
     plt.draw()
+
     if plotname:
         suffix = plotname[-4:]
         if '.' not in suffix:
@@ -913,7 +972,6 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             if suffix[1:] in ['png','pdf','ps','eps','svg']:
                 format=suffix[1:]
         plt.savefig(plotname,format=format)
-    plt.ion()
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
@@ -927,6 +985,7 @@ def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
         xy1x = xy1[:,0] + xsh
         xy1y = xy1[:,1] + ysh
     return xy1x,xy1y
+
 
 def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
     if not isinstance(xydata,list):

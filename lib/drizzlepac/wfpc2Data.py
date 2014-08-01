@@ -1,11 +1,15 @@
-#
-#   Authors: Warren Hack, Ivo Busko, Christopher Hanley
-#   Program: wfpc2_input.py
-#   Purpose: Class used to model WFPC2 specific instrument data.
+"""
+`wfpc2Data` module provides classes used to import WFPC2 specific instrument data.
+
+:Authors: Warren Hack, Ivo Busko, Christopher Hanley
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 import os
 
-import pyfits
+from astropy.io import fits
 import numpy as np
 
 from stsci.tools import fileutil, readgeis
@@ -89,7 +93,7 @@ class WFPC2InputImage (imageObject):
 
         #dq_suffix = DQ_EXTNS[suffix[1:]]
         if os.path.exists(dqfile):
-            dq_suffix = pyfits.getval(dqfile, "EXTNAME", ext=1)
+            dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1)
         else:
             dq_suffix = "SCI"
 
@@ -302,7 +306,7 @@ class WFPC2InputImage (imageObject):
         sci_chip.dqmaskname = dqmask_name
         sci_chip.outputNames['dqmask'] = dqmask_name
         sci_chip.outputNames['tmpmask'] = 'wfpc2_inmask%d.fits'%(sci_chip.detnum)
-        dqmask = pyfits.getdata(dqmask_name,0)
+        dqmask = fits.getdata(dqmask_name, 0)
         return dqmask
 
     def _assignSignature(self, chip):

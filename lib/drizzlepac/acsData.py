@@ -1,7 +1,11 @@
-#
-#   Authors: Christopher Hanley, Warren Hack, Ivo Busko, David Grumm
-#   Program: acs_input.py
-#   Purpose: Class used to model ACS specific instrument data.
+"""
+Class used to model ACS specific instrument data.
+
+:Authors: Christopher Hanley, Warren Hack, Ivo Busko, David Grumm
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence high
 
 from stsci.tools import fileutil

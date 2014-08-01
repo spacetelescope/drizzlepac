@@ -7,6 +7,7 @@ Functions to build mask files for PyDrizzle.
     - buildShadowMaskImage(rootname,detnum,replace=no):
         This function builds a weighting image for use with drizzle from
         the WFPC2 shadow mask functions derived from 'wmosaic'.
+        
 """
 
 #
@@ -35,7 +36,7 @@ import string,os,types
 
 from stsci.tools import fileutil, readgeis
 
-import pyfits
+from astropy.io import fits
 import numpy as np
 
 import processInput,util
@@ -78,11 +79,15 @@ def buildDQMasks(imageObjectList,configObj):
 
 def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
-    if bitvalue == None:
-        return ((dqarr * 0.0) + 1.0).astype(np.uint8)
-    _maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
-    return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
 
+    #if bitvalue == None:
+        #return ((dqarr * 0.0) + 1.0).astype(np.uint8)
+    #_maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
+    #return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
+
+    if bitvalue is None:
+        return (np.ones(dqarr.shape,dtype=np.uint8))
+    return np.logical_not(np.bitwise_and(dqarr,~bitvalue)).astype(np.uint8)
 
 def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
     """ Builds mask image from rootname's DQ array
@@ -127,8 +132,8 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
         # Build mask array from DQ array
         maskarr = buildMask(dqarr,bitvalue)
         #Write out the mask file as simple FITS file
-        fmask = pyfits.open(maskname,'append')
-        maskhdu = pyfits.PrimaryHDU(data=maskarr)
+        fmask = fits.open(maskname, 'append')
+        maskhdu = fits.PrimaryHDU(data = maskarr)
         fmask.append(maskhdu)
 
         #Close files
@@ -229,8 +234,8 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
                     del bmaskarr
 
                 #Write out the mask file as simple FITS file
-                fmask = pyfits.open(_mask,'append')
-                maskhdu = pyfits.PrimaryHDU(data=maskarr)
+                fmask = fits.open(_mask,'append')
+                maskhdu = fits.PrimaryHDU(data=maskarr)
                 fmask.append(maskhdu)
 
                 #Close files
@@ -244,7 +249,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
         # Build full mask based on .c1h and shadow mask
         #
         fdq = fileutil.openImage(dqfile)
-        #fsmask = pyfits.open(_mask,memmap=1,mode='readonly')
+        #fsmask = fits.open(_mask,memmap=1,mode='readonly')
         try:
             # Read in DQ array from .c1h and from shadow mask files
             dqarr = fdq[int(extnum)].data
@@ -254,8 +259,8 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             dqmaskarr = buildMask(dqarr,bitvalue)
 
             #Write out the mask file as simple FITS file
-            fdqmask = pyfits.open(maskname,'append')
-            maskhdu = pyfits.PrimaryHDU(data=dqmaskarr)
+            fdqmask = fits.open(maskname,'append')
+            maskhdu = fits.PrimaryHDU(data=dqmaskarr)
             fdqmask.append(maskhdu)
 
             #Close files

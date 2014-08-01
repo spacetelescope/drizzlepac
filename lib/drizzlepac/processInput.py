@@ -1,6 +1,10 @@
 """
 Process input to MultiDrizzle/PyDrizzle.
 
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
 The input can be one of:
 
     * a python list of files
@@ -13,10 +17,10 @@ No mixture of association tables, @files and regular fits files is allowed.
 Files can be in GEIS or MEF format (but not waiver fits).
 
 Runs some sanity checks on the input files.
-If necessary converts files to MEF format (this should not be left to makewcs
-because 'updatewcs' may be False).
+If necessary converts files to MEF format (this should not be left to `makewcs`
+because `updatewcs` may be `False`\ ).
 Runs makewcs.
-The function 'process_input' returns an association table, ivmlist, output name
+The function `process_input` returns an association table, ivmlist, output name
 
 The common interface interpreter for MultiDrizzle tasks, 'processCommonInput()',
 not only runs 'process_input()' but 'createImageObject()' and 'defineOutput()'
@@ -33,7 +37,8 @@ import string
 import sys
 
 import numpy as np
-import pyfits
+import astropy
+from astropy.io import fits
 
 from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
                          check_files, logutil, mputil, textutil)
@@ -111,6 +116,7 @@ def setCommonInput(configObj, createOutwcs=True):
         return None, None
     # convert the filenames from asndict into a list of full filenames
     files = [fileutil.buildRootname(f) for f in asndict['order']]
+    original_files = asndict['original_file_names']
 
     # interpret MDRIZTAB, if specified, and update configObj accordingly
     # This can be done here because MDRIZTAB does not include values for
@@ -177,10 +183,16 @@ def setCommonInput(configObj, createOutwcs=True):
         virtual = configObj['in_memory']
     else:
         virtual = False
+
     imageObjectList = createImageObjectList(files, instrpars,
                                             group=configObj['group'],
                                             undistort=undistort,
                                             inmemory=virtual)
+
+    # Add original file names as "hidden" attributes of imageObject
+    assert(len(original_files) == len(imageObjectList)) #TODO: remove after extensive testing
+    for i in range(len(imageObjectList)):
+        imageObjectList[i]._original_file_name = original_files[i]
 
     # apply context parameter
     applyContextPar(imageObjectList, configObj['context'])
@@ -226,7 +238,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
             owcs = outwcs.final_wcs
         else:
             owcs = outwcs
-        output_mem = owcs.naxis1*owcs.naxis2*4*3 # bytes used for output arrays
+        output_mem = owcs._naxis1*owcs._naxis2*4*3 # bytes used for output arrays
     img1 = imageObjectList[0]
     numchips = 0
     input_mem = 0
@@ -234,7 +246,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
         numchips += img._nmembers # account for group parameter set by user
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
-    pool_size = util.get_pool_size(num_cores)
+    pool_size = util.get_pool_size(num_cores, None)
     pool_size = pool_size if (numchips >= pool_size) else numchips
 
     inimg = 0
@@ -252,9 +264,9 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     print '*'*80
     print '*'
     print '*  Estimated memory usage:  up to %d Mb.'%(max_mem)
-    print '*  Output image size:       %d X %d pixels. '%(owcs.naxis1,owcs.naxis2)
+    print '*  Output image size:       %d X %d pixels. '%(owcs._naxis1,owcs._naxis2)
     print '*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024))
-    print '*  Cores used by task:      %d'%(pool_size)
+    print '*  Cores available:         %d'%(pool_size)
     print '*'
     print '*'*80
 
@@ -343,9 +355,9 @@ def _getInputImage (input,group=None):
     sci_ext = 'SCI'
     if group in [None,'']:
         exten = '[sci,1]'
-        phdu = pyfits.getheader(input)
+        phdu = fits.getheader(input)
     else:
-        # change to use pyfits more directly here?
+        # change to use fits more directly here?
         if group.find(',') > 0:
             grp = group.split(',')
             if grp[0].isalpha():
@@ -354,8 +366,8 @@ def _getInputImage (input,group=None):
                 grp = int(grp[0])
         else:
             grp = int(group)
-        phdu = pyfits.getheader(input)
-        phdu.extend(pyfits.getheader(input,ext=grp))
+        phdu = fits.getheader(input)
+        phdu.extend(fits.getheader(input, ext=grp))
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
     _instrument = phdu['INSTRUME']
@@ -369,7 +381,7 @@ def _getInputImage (input,group=None):
         try:
             _detector = phdu['DETECTOR']
         except KeyError:
-            # using the phdu as set above (pyfits.getheader) is MUCH faster and
+            # using the phdu as set above (fits.getheader) is MUCH faster and
             # works for the majority of data; but fileutil handles waivered fits
             phdu = fileutil.getHeader(input+exten)
             _detector = phdu['DETECTOR'] # if this fails, let it throw
@@ -491,7 +503,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     files as needed.
     """
 
-    newfilelist, ivmlist, output, oldasndict = buildFileList(
+    newfilelist, ivmlist, output, oldasndict, origflist = buildFileListOrig(
             input, output=output, ivmlist=ivmlist, wcskey=wcskey,
             updatewcs=updatewcs, **workinplace)
 
@@ -509,6 +521,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         oldasndict.create()
 
     asndict = update_member_names(oldasndict, pydr_input)
+    asndict['original_file_names'] = origflist
 
     # Build output filename
     drz_extn = '_drz.fits'
@@ -606,6 +619,25 @@ def buildFileList(input, output=None, ivmlist=None,
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
     """
+    newfilelist, ivmlist, output, oldasndict, filelist = \
+        buildFileListOrig(input=input, output=output, ivmlist=ivmlist,
+                    wcskey=wcskey, updatewcs=updatewcs, **workinplace)
+    return newfilelist,ivmlist,output,oldasndict
+
+
+def buildFileListOrig(input, output=None, ivmlist=None,
+                wcskey=None, updatewcs=True, **workinplace):
+    """
+    Builds a file list which has undergone various instrument-specific
+    checks for input to MultiDrizzle, including splitting STIS associations.
+    Compared to buildFileList, this version returns the list of the
+    original file names as specified by the user (e.g., before GEIS->MEF, or
+    WAIVER FITS->MEF conversion).
+    """
+    # NOTE: original file name is required in order to correctly associate
+    # user catalog files (e.g., user masks to be used with 'skymatch') with
+    # corresponding imageObjects.
+
     filelist,output,ivmlist,oldasndict=processFilenames(input,output)
 
     # verify that all input images specified can be updated as needed
@@ -614,6 +646,17 @@ def buildFileList(input, output=None, ivmlist=None,
         return None, None, None, None
 
     manageInputCopies(filelist,**workinplace)
+
+    # to keep track of the original file names we do the following trick:
+    # pack filelist with the ivmlist using zip and later unpack the zipped list.
+    #
+    # NOTE: this required a small modification of the checkStisFiles function
+    # in stsci.tools.check_files to be able to handle ivmlists that are tuples.
+    if ivmlist is None:
+        ivmlist = len(filelist)*[None]
+    else:
+        assert(len(filelist) == len(ivmlist)) #TODO: remove after debugging
+    ivmlist = zip(ivmlist,filelist)
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
@@ -626,7 +669,9 @@ def buildFileList(input, output=None, ivmlist=None,
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
-    return newfilelist,ivmlist,output,oldasndict
+    ivmlist, filelist = zip(*ivmlist)
+
+    return newfilelist, ivmlist, output, oldasndict, filelist
 
 
 def buildASNList(rootnames, asnname):
@@ -675,7 +720,7 @@ def changeSuffixinASN(asnfile, suffix):
     shutil.copy(asnfile,_new_asn)
 
     # Open up the new copy and convert all MEMNAME's to lower-case
-    fasn = pyfits.open(_new_asn,'update')
+    fasn = fits.open(_new_asn,'update')
     for i in xrange(len(fasn[1].data)):
         if "prod" not in fasn[1].data[i].field('MEMTYPE').lower():
             fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME')+'_'+suffix)
@@ -872,12 +917,12 @@ def buildEmptyDRZ(input, output):
     # the DRZ file.
     try :
         log.info('Building empty DRZ file from %s' % inputfile[0])
-        img = pyfits.open(inputfile[0])
+        img = fits.open(inputfile[0])
     except:
         raise IOError('Unable to open file %s \n' % inputfile)
 
     # Create the fitsobject
-    fitsobj = pyfits.HDUList()
+    fitsobj = fits.HDUList()
     # Copy the primary header
     hdu = img[0].copy()
     fitsobj.append(hdu)
@@ -887,17 +932,17 @@ def buildEmptyDRZ(input, output):
     fitsobj[0].header['NEXTEND'] = 3
 
     # Create the 'SCI' extension
-    hdu = pyfits.ImageHDU(header=img['sci', 1].header.copy())
+    hdu = fits.ImageHDU(header=img['sci', 1].header.copy())
     hdu.header['EXTNAME'] = 'SCI'
     fitsobj.append(hdu)
 
     # Create the 'WHT' extension
-    hdu = pyfits.ImageHDU(header=img['sci', 1].header.copy())
+    hdu = fits.ImageHDU(header=img['sci', 1].header.copy())
     hdu.header['EXTNAME'] = 'WHT'
     fitsobj.append(hdu)
 
     # Create the 'CTX' extension
-    hdu = pyfits.ImageHDU(header=img['sci', 1].header.copy())
+    hdu = fits.ImageHDU(header=img['sci', 1].header.copy())
     hdu.header['EXTNAME'] = 'CTX'
     fitsobj.append(hdu)
 
@@ -991,17 +1036,17 @@ def checkDGEOFile(filenames):
             """
 
     for inputfile in filenames:
-        if pyfits.getval(inputfile, 'INSTRUME') == 'WFPC2':
+        if fits.getval(inputfile, 'INSTRUME') == 'WFPC2':
             update_wfpc2_d2geofile(inputfile)
         else:
             try:
-                dgeofile = pyfits.getval(inputfile, 'DGEOFILE')
+                dgeofile = fits.getval(inputfile, 'DGEOFILE')
             except KeyError:
                 continue
             if dgeofile not in ["N/A", "n/a", ""]:
                 message = msg % (inputfile, inputfile, inputfile)
                 try:
-                    npolfile = pyfits.getval(inputfile, 'NPOLFILE')
+                    npolfile = fits.getval(inputfile, 'NPOLFILE')
                 except KeyError:
                     ustop = userStop(message)
                     while ustop == None:
@@ -1038,13 +1083,13 @@ def update_wfpc2_d2geofile(filename, fhdu=None):
         log.info('Converting DGEOFILE %s into D2IMFILE...' % dgeofile)
         rootname = filename[:filename.find('.fits')]
         d2imfile = convert_dgeo_to_d2im(dgeofile,rootname)
-        fhdu['PRIMARY'].header.update('ODGEOFIL', dgeofile)
-        fhdu['PRIMARY'].header.update('DGEOFILE', 'N/A')
-        fhdu['PRIMARY'].header.update('D2IMFILE', d2imfile)
+        fhdu['PRIMARY'].header['ODGEOFIL'] = dgeofile
+        fhdu['PRIMARY'].header['DGEOFILE'] = 'N/A'
+        fhdu['PRIMARY'].header['D2IMFILE'] = d2imfile
     else:
         d2imfile = None
-        fhdu['PRIMARY'].header.update('DGEOFILE', 'N/A')
-        fhdu['PRIMARY'].header.update('D2IMFILE', 'N/A')
+        fhdu['PRIMARY'].header['DGEOFILE'] = 'N/A'
+        fhdu['PRIMARY'].header['D2IMFILE'] = 'N/A'
 
     # Only close the file handle if opened in this function
     if close_fhdu:
@@ -1064,27 +1109,27 @@ def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
 
     util.removeFileSafely(outname)
 
-    scihdu = pyfits.ImageHDU(data=dgeo['dy',1].data[:,0])
+    scihdu = fits.ImageHDU(data=dgeo['dy',1].data[:,0])
     dgeo.close()
     # add required keywords for D2IM header
-    scihdu.header.update('EXTNAME','DY',comment='Extension name')
-    scihdu.header.update('EXTVER',1,comment='Extension version')
-    pyfits_str = 'PYFITS Version '+str(pyfits.__version__)
-    scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
-    scihdu.header.update('INHERIT',False,comment='Inherits global header')
+    scihdu.header['EXTNAME'] = ('DY', 'Extension name')
+    scihdu.header['EXTVER'] = (1, 'Extension version')
+    fits_str = 'PYFITS Version '+str(astropy.__version__)
+    scihdu.header['ORIGIN'] = (fits_str, 'FITS file originator')
+    scihdu.header['INHERIT'] = (False, 'Inherits global header')
 
     dnow = datetime.datetime.now()
-    scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
+    scihdu.header['DATE'] = (str(dnow).replace(' ','T'), 'Date FITS file was generated')
 
-    scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT1',0,comment='Grid step size in first coordinate')
-    scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
-    scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT2',0,comment='Grid step size in second coordinate')
-    scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
+    scihdu.header['CRPIX1'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT1'] = (0, 'Grid step size in first coordinate')
+    scihdu.header['CRVAL1'] = (0, 'Image array pixel coordinate')
+    scihdu.header['CRPIX2'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT2'] = (0, 'Grid step size in second coordinate')
+    scihdu.header['CRVAL2'] = (0, 'Image array pixel coordinate')
 
-    d2imhdu = pyfits.HDUList()
-    d2imhdu.append(pyfits.PrimaryHDU())
+    d2imhdu = fits.HDUList()
+    d2imhdu.append(fits.PrimaryHDU())
     d2imhdu.append(scihdu)
     d2imhdu.writeto(outname)
     d2imhdu.close()
@@ -1099,39 +1144,40 @@ def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
 
     util.removeFileSafely(outname)
     data = np.array([dgeo['dy',1].data[:,0]])
-    scihdu = pyfits.ImageHDU(data=data)
+    scihdu = fits.ImageHDU(data=data)
     dgeo.close()
     # add required keywords for D2IM header
-    scihdu.header.update('EXTNAME','DY',comment='Extension name')
-    scihdu.header.update('EXTVER',1,comment='Extension version')
-    pyfits_str = 'PYFITS Version '+str(pyfits.__version__)
-    scihdu.header.update('ORIGIN',pyfits_str,comment='FITS file originator')
-    scihdu.header.update('INHERIT',False,comment='Inherits global header')
+    scihdu.header['EXTNAME'] = ('DY', 'Extension name')
+    scihdu.header['EXTVER'] = (1, 'Extension version')
+    fits_str = 'PYFITS Version '+str(astropy.__version__)
+    scihdu.header['ORIGIN'] = (fits_str, 'FITS file originator')
+    scihdu.header['INHERIT'] = (False, 'Inherits global header')
 
     dnow = datetime.datetime.now()
-    scihdu.header.update('DATE',str(dnow).replace(' ','T'),comment='Date FITS file was generated')
+    scihdu.header['DATE'] = (str(dnow).replace(' ','T'),
+                             'Date FITS file was generated')
 
-    scihdu.header.update('CRPIX1',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT1',1,comment='Grid step size in first coordinate')
-    scihdu.header.update('CRVAL1',0,comment='Image array pixel coordinate')
-    scihdu.header.update('CRPIX2',0,comment='Distortion array reference pixel')
-    scihdu.header.update('CDELT2',1,comment='Grid step size in second coordinate')
-    scihdu.header.update('CRVAL2',0,comment='Image array pixel coordinate')
+    scihdu.header['CRPIX1'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT1'] = (1, 'Grid step size in first coordinate')
+    scihdu.header['CRVAL1'] = (0, 'Image array pixel coordinate')
+    scihdu.header['CRPIX2'] = (0, 'Distortion array reference pixel')
+    scihdu.header['CDELT2'] = (1, 'Grid step size in second coordinate')
+    scihdu.header['CRVAL2'] = (0, 'Image array pixel coordinate')
 
-    phdu = pyfits.PrimaryHDU()
-    phdu.header.update('INSTRUME', 'WFPC2')
-    d2imhdu = pyfits.HDUList()
+    phdu = fits.PrimaryHDU()
+    phdu.header['INSTRUME'] = 'WFPC2'
+    d2imhdu = fits.HDUList()
     d2imhdu.append(phdu)
-    scihdu.header.update('DETECTOR', 1, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['DETECTOR'] = (1, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
-    scihdu.header.update('EXTVER', 2, comment='Extension version')
-    scihdu.header.update('DETECTOR', 2, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['EXTVER'] = (2, 'Extension version')
+    scihdu.header['DETECTOR'] = (2, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
-    scihdu.header.update('EXTVER', 3, comment='Extension version')
-    scihdu.header.update('DETECTOR', 3, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['EXTVER'] = (3, 'Extension version')
+    scihdu.header['DETECTOR'] = (3, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
-    scihdu.header.update('EXTVER', 4, comment='Extension version')
-    scihdu.header.update('DETECTOR', 4, comment='CCD number of the detector: PC 1, WFC 2-4 ')
+    scihdu.header['EXTVER'] = (4, 'Extension version')
+    scihdu.header['DETECTOR'] = (4, 'CCD number of the detector: PC 1, WFC 2-4 ')
     d2imhdu.append(scihdu.copy())
     d2imhdu.writeto(outname)
     d2imhdu.close()
@@ -1166,13 +1212,19 @@ def _setDefaults(input_dict={}):
         'static':True,
         'static_sig':4.0,
         'skysub':True,
-        'skywidth':0.1,
+        'skymethod':"globalmin+match",
         'skystat':"median",
+        'skywidth':0.1,
         'skylower':None,
         'skyupper':None,
         'skyclip':5,
         'skylsigma':4.0,
         'skyusigma':4.0,
+        "skymask_cat":"",
+        "use_static":True,
+        "sky_bits":0,
+        "skyuser":"",
+        "skyfile":"",
         'driz_separate':True,
         'driz_sep_outnx':None,
         'driz_sep_outny':None,

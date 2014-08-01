@@ -3,6 +3,10 @@
 """
 A library of utility functions
 
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
 """
 
 from __future__ import division  # confidence medium
@@ -14,7 +18,8 @@ import string
 import errno
 
 import numpy as np
-import pyfits
+import astropy
+from astropy.io import fits
 from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
 from stsci.tools import check_files
 from stsci.tools import configobj
@@ -24,7 +29,7 @@ from stwcs.wcsutil import altwcs
 
 from .version import *
 
-__pyfits_version__ = pyfits.__version__
+__fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
 
 
@@ -44,7 +49,7 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
         print '\nCould not import multiprocessing, will only take advantage of a single CPU core'
 
 
-def get_pool_size(usr_config_value=None, num_tasks=None):
+def get_pool_size(usr_config_value, num_tasks):
     """ Determine size of thread/process-pool for parallel processing.
     This examines the cpu_count to decide and return the right pool
     size to use.  Also take into account the user's wishes via the config
@@ -221,7 +226,7 @@ class WithLogging(object):
                     # Insure that any exception raised by the code gets passed on
                     # (hope that end_logging didn't change the last exception raised)
                     if errorobj:
-                        raise
+                        raise errorobj
 
         return wrapper
 
@@ -237,7 +242,7 @@ def print_pkg_versions(packages=None, svn=False, log=None):
         def output(msg):
             print msg
 
-    pkgs = ['numpy', 'pyfits', 'stwcs', 'pywcs']
+    pkgs = ['numpy', 'astropy', 'stwcs']
     if packages is not None:
         if not isinstance(packages, list):
             packages = [packages]
@@ -415,9 +420,7 @@ def count_sci_extensions(filename):
     """
     num_sci = 0
     extname = 'SCI'
-    num_ext = 0
     for extn in fileutil.openImage(filename):
-        num_ext += 1
         if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
     if num_sci == 0:
@@ -448,7 +451,7 @@ def verifyUpdatewcs(fname):
     updated = True
     numsci,extname = count_sci_extensions(fname)
     for n in range(1,numsci+1):
-        hdr = pyfits.getheader(fname,extname=extname,extver=n)
+        hdr = fits.getheader(fname, extname=extname, extver=n)
         if 'wcsname' not in hdr:
             updated = False
             break
@@ -970,10 +973,10 @@ def parse_colnames(colnames,coords=None):
     # parse column names from coords file and match to input values
     if coords is not None and fileutil.isFits(coords)[0]:
         # Open FITS file with table
-        ftab = pyfits.open(coords)
+        ftab = fits.open(coords)
         # determine which extension has the table
         for extn in ftab:
-            if isinstance(extn,pyfits.BinTableHDU):
+            if isinstance(extn, fits.BinTableHDU):
                 # parse column names from table and match to inputs
                 cnames = extn.columns.names
                 if colnames is not None:
@@ -1004,17 +1007,17 @@ def parse_colnames(colnames,coords=None):
 
 
 def createFile(dataArray=None, outfile=None, header=None):
-    """Create a simple fits file for the given data array and header.
-        Returns either the FITS object in-membory when outfile==None or
-            None when the FITS file was written out to a file.
     """
-
+    Create a simple fits file for the given data array and header.
+    Returns either the FITS object in-membory when outfile==None or
+    None when the FITS file was written out to a file.
+    """
     # Insure that at least a data-array has been provided to create the file
     assert(dataArray != None), "Please supply a data array for createFiles"
 
     try:
         # Create the output file
-        fitsobj = pyfits.HDUList()
+        fitsobj = fits.HDUList()
         if (header != None):
             del(header['NAXIS1'])
             del(header['NAXIS2'])
@@ -1028,12 +1031,12 @@ def createFile(dataArray=None, outfile=None, header=None):
             if 'NEXTEND' in header:
                 header['NEXTEND'] = 0
 
-            hdu = pyfits.PrimaryHDU(data=dataArray,header=header)
+            hdu = fits.PrimaryHDU(data=dataArray, header=header)
             del hdu.header['PCOUNT']
             del hdu.header['GCOUNT']
 
         else:
-            hdu = pyfits.PrimaryHDU(data=dataArray)
+            hdu = fits.PrimaryHDU(data=dataArray)
 
         fitsobj.append(hdu)
         if outfile:
@@ -1046,3 +1049,53 @@ def createFile(dataArray=None, outfile=None, header=None):
             del fitsobj
             fitsobj = None
     return fitsobj
+
+def base_taskname(taskname, packagename=None):
+    """
+    Extract the base name of the task.
+
+    Many tasks in the `drizzlepac` have "compound" names such as
+    'drizzlepac.sky'. This function will search for the presence of a dot
+    in the input `taskname` and if found, it will return the string
+    to the right of the right-most dot. If a dot is not found, it will return
+    the input string.
+
+    Parameters
+    ----------
+    taskname : str, None
+        Full task name. If it is `None`, :py:func:`base_taskname` will
+        return `None`\ .
+
+    packagename : str, None (Default = None)
+        Package name. It is assumed that a compound task name is formed by
+        concatenating `packagename` + '.' + `taskname`\ . If `packagename`
+        is not `None`, :py:func:`base_taskname` will check that the string
+        to the left of the right-most dot matches `packagename` and will
+        raise an `AssertionError` if the package name derived from the
+        input `taskname` does not match the supplied `packagename`\ . This
+        is intended as a check for discrepancies that may arise
+        during the development of the tasks. If `packagename` is `None`,
+        no such check will be performed.
+
+    Raises
+    ------
+    AssertionError
+        Raised when package name derived from the input `taskname` does not
+        match the supplied `packagename`
+
+    """
+    if not isinstance(taskname, str):
+        return taskname
+
+    indx = taskname.rfind('.')
+
+    if indx >= 0:
+        base_taskname = taskname[(indx+1):]
+        pkg_name      = taskname[:indx]
+    else:
+        base_taskname = taskname
+        pkg_name      = ''
+
+    assert(True if packagename is None else (packagename == pkg_name))
+
+    return base_taskname

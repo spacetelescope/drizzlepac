@@ -6,6 +6,8 @@ ACS ImageObjects
 
 .. currentmodule:: drizzlepac.acsData
 
+.. automodule:: drizzlepac.acsData
+
 .. autoclass:: ACSInputImage
    :members:
    :undoc-members:

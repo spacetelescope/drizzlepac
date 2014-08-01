@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 5: Create a Median Image &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Step 5: Create a Median Image &mdash; DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev33593 (29-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,9 +23,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
-    <link rel="next" title="Step 6: Blotting the Median Image" href="blot.html" />
-    <link rel="prev" title="Step 4 and 8: Drizzling the Images" href="drizzle.html" /> 
+    <link rel="top" title="DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation" href="index.html" />
+    <link rel="next" title="Step 6: Blotting the Median Image" href="ablot.html" />
+    <link rel="prev" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,12 +38,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="blot.html" title="Step 6: Blotting the Median Image"
+          <a href="ablot.html" title="Step 6: Blotting the Median Image"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="drizzle.html" title="Step 4 and 8: Drizzling the Images"
+          <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -54,10 +52,10 @@
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
             </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="drizzle.html"
+  <p class="topless"><a href="adrizzle.html"
                         title="previous chapter">Step 4 and 8: Drizzling the Images</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="blot.html"
+  <p class="topless"><a href="ablot.html"
                         title="next chapter">Step 6: Blotting the Median Image</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
@@ -87,8 +85,22 @@
             
   <div class="section" id="step-5-create-a-median-image">
 <span id="median"></span><h1>Step 5: Create a Median Image<a class="headerlink" href="#step-5-create-a-median-image" title="Permalink to this headline">¶</a></h1>
-<p>A median image gets generated from the stack of undistorted single drizzle images.</p>
-<span class="target" id="module-drizzlepac.createMedian"></span><dl class="function">
+<p>A median image gets generated from the stack of undistorted single
+drizzle images.</p>
+<span class="target" id="module-drizzlepac.createMedian"></span><p>Create a median image from the singly drizzled images.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
 <dt id="drizzlepac.createMedian.createMedian">
 <tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">createMedian</tt><big>(</big><em>imgObjList</em>, <em>configObj</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.createMedian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Top-level interface to createMedian step called from top-level MultiDrizzle.</p>
@@ -98,14 +110,129 @@ to median-combine the input images into a single image.</p>
 
 <dl class="function">
 <dt id="drizzlepac.createMedian.getHelpAsString">
-<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.getHelpAsString" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return useful help from a file in the script directory called module.help</p>
+<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called
+__taskname__.help</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.createMedian.help">
+<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.createMedian.median">
 <tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">median</tt><big>(</big><em>input=None</em>, <em>configObj=None</em>, <em>editpars=False</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.median" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a median image from the seperately drizzled images.</p>
+<dd><p>The singly drizzled science images are combined to create a single median
+image. This median combination gets performed section-by-section from the
+input single drizzled images. Each section corresponds to a contiguous set
+of lines from each image taking up no more than 1Mb in memory, such that
+combining 10 input images would only require 10Mb for these sections.
+The goal of this step is to establish an estimate for what the fully
+cleaned image should look like in order to enable better bad pixel detection,
+in addition to improving the alignment of the image stack. Creating a median
+image from the aligned and undistorted input images allows for a statistical
+rejection of bad pixels.</p>
+<p>The final median image serves as the only output from this step.</p>
+<p>For more information on the science applications of the <a class="reference internal" href="#drizzlepac.createMedian.createMedian" title="drizzlepac.createMedian.createMedian"><tt class="xref py py-obj docutils literal"><span class="pre">createMedian</span></tt></a> task,
+see the <a class="reference external" href="http://drizzlepac.stsci.edu">DrizzlePac Handbook</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = None)</p>
+<blockquote>
+<div><p>A python list of drizzled image filenames, or just a single filename.</p>
+</div></blockquote>
+<p><strong id="configObj">configObj</strong> : configObject (Default = None)</p>
+<blockquote>
+<div><p>An instance of <em class="xref py py-obj">configObject</em> which overrides default parameter settings.</p>
+</div></blockquote>
+<p><strong id="editpars">editpars</strong> : bool (Default = False)</p>
+<blockquote>
+<div><p>A parameter that allows user to edit input parameters by hand in the GUI.
+True to use the GUI to edit parameters.</p>
+</div></blockquote>
+<p><strong id="inputDict">inputDict</strong> : dict, optional</p>
+<blockquote>
+<div><p>An optional list of parameters specified by the user, which can also
+be used to override the defaults.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>median</strong> : bool (Default = No)</p>
+<blockquote>
+<div><p>This parameter specifies whether or not to create a median image. This median image will be used as the comparison &#8216;truth&#8217; image :in the cosmic ray rejection step.</p>
+</div></blockquote>
+<p><strong>median_newmasks</strong> : bool (Default = Yes)</p>
+<blockquote>
+<div><p>This parameter specifies whether or not new mask files will be created when the median image is created. These masks are generated from weight files previously produced by the &#8220;driz_separate&#8221; step, and contain all bad pixel information used to exclude pixels when calculating the median. Generally this step should be set to &#8220;Yes&#8221;, unless for some reason, it is desirable to include bad pixel information when generating the median.</p>
+</div></blockquote>
+<p><strong>combine_maskpt</strong> : float (Default = 0.7)</p>
+<blockquote>
+<div><p>Percentage of weight image values, below which the are flagged.</p>
+</div></blockquote>
+<p><strong>combine_type</strong> : str {&#8216;average&#8217;, &#8216;median&#8217;, &#8216;sum&#8217;, &#8216;minmed&#8217;} (Default = &#8216;minmed&#8217;)</p>
+<blockquote>
+<div><p>This parameter defines the method that will be used to create the median image.  The &#8216;average&#8217;, &#8216;median&#8217;, and &#8216;sum&#8217; options set the calculation type when running &#8216;numcombine&#8217;, a numpy method for median-combining arrays to create the median image. The &#8220;minmed&#8221; option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, &#8220;minmed&#8221; will choose the minimum value. The sigma thresholds for this decision are provided by the &#8220;combine_nsigma&#8221; parameter. However, as the &#8220;combine_nsigma&#8221; parameter does not adjust for the larger probability of a single &#8220;nsigma&#8221; event with a greater number of images, &#8220;minmed&#8221; will bias the comparison image low for a large number of images. &#8220;minmed&#8221; is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images.</p>
+<p>A value of &#8216;median&#8217; is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the &#8220;combine_nhigh&#8221; parameter to a value of 1 when using &#8220;median&#8221; with four images, and consider raising this parameter&#8217;s value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus &#8220;combine_nhigh&#8221; odd when using &#8220;median&#8221;.</p>
+</div></blockquote>
+<p><strong>combine_nsigma</strong> : float (Default = &#8216;4 3&#8217;)</p>
+<blockquote>
+<div><p>This parameter defines the sigmas used for accepting minimum values, rather than median values, when using the &#8216;minmed&#8217; combination method. If two values are specified the first value will be used in the initial choice between median and minimum, while the second value will be used in the &#8220;growing&#8221; step to reject additional pixels around those identified in the first step. If only one value is specified, then it is used in both steps.</p>
+</div></blockquote>
+<p><strong>combine_nlow</strong> : int (Default = 0)</p>
+<blockquote>
+<div><p>This parameter sets the number of low value pixels to reject automatically during image combination.</p>
+</div></blockquote>
+<p><strong>combine_nhigh</strong> : int (Default = 0)</p>
+<blockquote>
+<div><p>This parameter sets the number of high value pixels to reject automatically during image combination.</p>
+</div></blockquote>
+<p><strong>combine_lthresh</strong> : float (Default = INDEF)</p>
+<blockquote>
+<div><p>Sets the lower threshold for clipping input pixel values during image combination. This value gets passed directly to &#8216;imcombine&#8217; for use in creating the median image. If the parameter is set to &#8220;None&#8221;, no thresholds will be imposed.</p>
+</div></blockquote>
+<p><strong>combine_hthresh</strong> : float (Default = INDEF)</p>
+<blockquote>
+<div><p>This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to &#8216;imcombine&#8217; for use in creating the median image. If the parameter is set to &#8220;None&#8221;, no thresholds will be imposed.</p>
+</div></blockquote>
+<p><strong>combine_grow</strong> : int (Default = 1)</p>
+<blockquote>
+<div><p>Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the &#8216;grow&#8217; parameter in &#8216;imcombine&#8217; for use in creating the median image.</p>
+</div></blockquote>
+<p><strong>combine_bufsize</strong> : float (Default = None)</p>
+<blockquote class="last">
+<div><p>Size of buffer, in Mb, to use when reading in each section of each input image.  The default buffer size is 1Mb.  The larger the buffer size, the fewer times the code needs to open each input image and the more memory will be required to create the median image.  A larger buffer can be helpful when using compression, since slower copies need to be made of each set of rows from each input image instead of using memory-mapping.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>For <a class="reference internal" href="#drizzlepac.createMedian.createMedian" title="drizzlepac.createMedian.createMedian"><tt class="xref py py-obj docutils literal"><span class="pre">createMedian</span></tt></a>, the user interface function is <a class="reference internal" href="#drizzlepac.createMedian.median" title="drizzlepac.createMedian.median"><tt class="xref py py-obj docutils literal"><span class="pre">median</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">createMedian</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">createMedian</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="function">
@@ -131,17 +258,17 @@ to median-combine the input images into a single image.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="blot.html" title="Step 6: Blotting the Median Image"
+          <a href="ablot.html" title="Step 6: Blotting the Median Image"
              >next</a> |</li>
         <li class="right" >
-          <a href="drizzle.html" title="Step 4 and 8: Drizzling the Images"
+          <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

@@ -4,9 +4,11 @@
 Output Image Generation
 ***********************
 
-This module manages the creation of the output image FITS file.
+.. moduleauthor:: Warren Hack <help@stsci.edu>
 
 .. currentmodule:: drizzlepac.outputimage
+
+.. automodule:: drizzlepac.outputimage
 
 .. autoclass:: OutputImage
    :members:

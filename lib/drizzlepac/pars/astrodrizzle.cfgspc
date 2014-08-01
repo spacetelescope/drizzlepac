@@ -13,8 +13,8 @@ build = boolean_kw(default=False, comment="Create multi-extension output file fo
 crbit = integer_kw(default=4096, comment="Bit value for CR ident. in DQ array")
 stepsize = integer_kw(default=10, comment="Step size for drizzle coordinate computation")
 resetbits = string_kw(default="4096", comment="Bit values to reset in all input DQ arrays")
-num_cores = integer_or_none_kw(default=None, comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
-in_memory = boolean_kw(default=False, comment="Process everything in memory to minimize disk I/O?")
+num_cores = integer_or_none_kw(default=None, inactive_if='_rule_mem_', comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
+in_memory = boolean_kw(default=False, triggers='_rule_mem_', comment="Process everything in memory to minimize disk I/O?")
 
 [STATE OF INPUT FILES]
 restore = boolean_kw(default=False, comment="Copy input files FROM archive directory for processing?")
@@ -24,20 +24,24 @@ clean = boolean_kw(default=False, comment="Delete temporary files after completi
 
 
 [STEP 1: STATIC MASK ]
-static = boolean_kw(default=True, triggers='_section_switch_', comment="Create static bad-pixel mask from the data?")
+static = boolean_kw(default=True, triggers='_section_switch_',triggers='_rule2a_', comment="Create static bad-pixel mask from the data?")
 static_sig = float_kw(default=4.0, comment= "Sigma*rms below mode to clip for static mask")
 
 [STEP 2: SKY SUBTRACTION ]
 skysub = boolean_kw(default=True, triggers='_section_switch_', comment= "Perform sky subtraction?")
-skywidth = float_or_none_kw(default=0.3, comment= "Bin width for sampling sky statistics (in sigma)")
+skymethod = option_kw("globalmin+match","localmin", "globalmin", "match", default="localmin", comment="Sky computation method")
 skystat = option_kw("median","mode","mean", default="median", comment= "Sky correction statistics parameter")
+skywidth = float_or_none_kw(default=0.1, comment= "Bin width of histogram for sampling sky statistics (in sigma)")
 skylower = float_or_none_kw(default=None, comment= "Lower limit of usable data for sky (always in electrons)")
 skyupper = float_or_none_kw(default=None, comment= "Upper limit of usable data for sky (always in electrons)")
 skyclip = integer_kw(default=5, comment= "Number of clipping iterations")
 skylsigma = float_kw(default=4., comment="Lower side clipping factor (in sigma)")
 skyusigma = float_kw(default=4., comment="Upper side clipping factor (in sigma)")
-skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user.")
-skyfile = string_kw(default="", comment="Name of file with user-computed sky values.")
+skymask_cat = string_kw(default="", comment="Catalog file listing image masks")
+use_static = boolean_kw(default=True, active_if='_rule2a_', comment= "Use static mask for skymatch computations?")
+sky_bits = integer_or_none_kw(default=0, comment="Integer mask bit values considered good pixels in DQ array")
+skyuser = string_kw(default="", comment="KEYWORD indicating a sky subtraction value if done by user")
+skyfile = string_kw(default="", comment="Name of file with user-computed sky values")
 
 [STEP 3: DRIZZLE SEPARATE IMAGES]
 driz_separate = boolean_kw(default=True, triggers='_section_switch_', triggers='_rule3a_', is_set_by='_rule1_', comment= "Drizzle onto separate output images?")
@@ -46,6 +50,7 @@ driz_sep_wt_scl = string_kw(default="exptime", comment= "Weighting factor for in
 driz_sep_pixfrac = float_kw(default=1., comment="Linear size of drop in input pixels")
 driz_sep_fillval = float_or_none_kw(default=None, comment="Value to be assigned to undefined output points")
 driz_sep_bits = string_kw(default="0", comment="Integer mask bit values considered good")
+driz_sep_compress = boolean_kw(default=False, comment= "Use compression when writing out product?")
 
 [STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS]
 driz_sep_wcs = boolean_kw(default=False, triggers='_section_switch_', is_disabled_by='_rule3a_', comment= "Define custom WCS for separate output images?")
@@ -68,9 +73,10 @@ combine_nhigh = integer_kw(default=0, comment= "minmax: Number of high pixels to
 combine_lthresh = float_or_none_kw(default=None, comment="Lower threshold for clipping input pixel values")
 combine_hthresh = float_or_none_kw(default=None, comment= "Upper threshold for clipping input pixel values")
 combine_grow = integer_kw(default=1, comment=" Radius (pixels) for neighbor rejection")
+combine_bufsize = float_or_none_kw(default=None, comment= "Size of buffer(in Mb) for each input image")
 
 [STEP 5: BLOT BACK THE MEDIAN IMAGE]
-blot = boolean_kw(default=true, triggers='_section_switch_', is_set_by='_rule1_', comment= "Blot the median back to the input frame?")
+blot = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment= "Blot the median back to the input frame?")
 blot_interp = option_kw("poly5","nearest","linear", "poly3", "sinc",default="poly5", comment="Interpolant (nearest,linear,poly3,poly5,sinc)")
 blot_sinscl = float_kw(default=1.0, comment="Scale for sinc interpolation kernel")
 blot_addsky = boolean_kw(default=True, triggers='_rule5_', comment= "Add sky using MDRIZSKY value from header?")
@@ -114,11 +120,14 @@ expkeyword = string_kw(default="")
 #mode,s,h,"al",,,
 
 [ _RULES_ ]
-_rule1_ = string_kw(default='', when='entry', code='from stsci.tools import check_files; from drizzlepac import util; ans={ True:"yes",False:"no"};numfiles = check_files.countInput(VAL); OUT =  util.displayEmptyInputWarningBox(VAL,PARENT) if numfiles == 0 else ans[(numfiles > 1)]')
+_rule1_ = string_kw(default='', when='entry', code='from stsci.tools import check_files; from drizzlepac import util; ans={ True:"yes",False:"no"};numfiles = check_files.countInput(VAL); OUT =  util.displayEmptyInputWarningBox(VAL,PARENT) if numfiles == 0 else ans[(numfiles > 1)]; TEAL.freshenFocus()')
 _rule1a_ = string_kw(default='', when='defaults,entry', code='from drizzlepac import util; ans={ True:"yes",False:"no"}; OUT = ans[util.displayMakewcsWarningBox(VAL, PARENT)]')
 _rule2_ = string_kw(default='', code='from drizzlepac import processInput; odict=TEAL.getDict(); newdict = processInput.getMdriztabPars(odict["input"]); TEAL.loadDict(newdict); TEAL.showStatus("Loaded MDRIZTAB values",keep=1) ')
+_rule2a_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')
+#_rule2a_ = string_kw(default=True, code='from drizzlepac import util; OUT = util.useStaticRule(NAME, VAL)')
 _rule3a_ = string_kw(default='', code='OUT = VAL')
 _rule4a_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT= util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')
 _rule4b_ = string_kw(default='',code='from drizzlepac import util; validref = util.verifyRefimage(VAL); ans={True:"yes",False:"no"}; OUT=util.displayBadRefimageWarningBox(True,PARENT) if validref == False else ans[validref]')
-_rule5_ = string_kw(default=True, when='defaults,entry', code='tyfn={"yes":False, "no":True}; OUT = tyfn[VAL]')
+_rule5_ = string_kw(default=True, when='defaults,entry', code='opposite={"yes":False, "no":True}; OUT = opposite[VAL]')
 _rule7a_ = string_kw(default='', code='OUT = VAL')
+_rule_mem_ = string_kw(default=True, code='tyfn={"yes":True, "no":False}; OUT = tyfn[VAL]')

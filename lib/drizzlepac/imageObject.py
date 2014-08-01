@@ -1,19 +1,20 @@
 """
 A class which makes image objects for each input filename.
-"""
 
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division  # confidence medium
 
-import copy
-import os
-import re
-import sys
+import copy, os, re, sys
 
 import numpy as np
 from stwcs import distortion
 
 from stsci.tools import fileutil, logutil, textutil
-import pyfits
+from astropy.io import fits
 import util
 import wcs_functions
 import buildmask
@@ -36,6 +37,7 @@ class baseImageObject(object):
         self.maskExt="DQ" #the extension with the mask image in it
         self.errExt = "ERR"  # the extension the ERR array can be found in
         self._filename = filename
+        self._original_file_name = filename
         self.native_units='ELECTRONS'
 
         self.flatkey = None  # keyword which points to flat-field reference file
@@ -86,7 +88,7 @@ class baseImageObject(object):
         """ Return fits information on the _image.
         """
         #if the file hasn't been closed yet then we can
-        #use the pyfits info which looks at the extensions
+        #use the fits info which looks at the extensions
         #if(self._isSimpleFits):
         #    print self._filename," is a simple fits image"
         #else:
@@ -99,7 +101,7 @@ class baseImageObject(object):
             the data array returned for future use. You can use
             putData to reattach a new data array to the imageObject.
         """
-        self._image.close()  #calls pyfits.close()
+        self._image.close()  #calls fits.close()
 
         #we actuallly want to make sure that all the
         #data extensions have been closed and deleted
@@ -121,7 +123,8 @@ class baseImageObject(object):
         clean_files = ['blotImage','crmaskImage','finalMask',
                         'staticMask','singleDrizMask','outSky',
                         'outSContext','outSWeight','outSingle',
-                        'outMedian','d2imfile','dqmask','tmpmask']
+                        'outMedian','d2imfile','dqmask','tmpmask',
+                        'skyMatchMask']
 
         log.info('Removing intermediate files for %s' % self._filename)
         # We need to remove the combined products first; namely, median image
@@ -134,8 +137,8 @@ class baseImageObject(object):
 
     def getData(self,exten=None):
         """ Return just the data array from the specified extension
-            fileutil is used instead of pyfits to account for non-
-            FITS input images. openImage returns a pyfits object.
+            fileutil is used instead of fits to account for non-
+            FITS input images. openImage returns a fits object.
         """
         if exten.lower().find('sci') > -1:
             # For SCI extensions, the current file will have the data
@@ -166,8 +169,8 @@ class baseImageObject(object):
 
     def getHeader(self,exten=None):
         """ Return just the specified header extension fileutil
-            is used instead of pyfits to account for non-FITS
-            input images. openImage returns a pyfits object.
+            is used instead of fits to account for non-FITS
+            input images. openImage returns a fits object.
         """
         _image=fileutil.openImage(self._filename,clobber=False,memmap=0)
         _header=fileutil.getExtn(_image,extn=exten).header
@@ -209,7 +212,7 @@ class baseImageObject(object):
         """ Now that we are removing the data from the object to save memory,
             we need something that cleanly puts the data array back into
             the object so that we can write out everything together  using
-            something like pyfits.writeto....this method is an attempt to
+            something like fits.writeto....this method is an attempt to
             make sure that when you add an array back to the .data section
             of the hdu it still matches the header information for that
             section ( ie. update the bitpix to reflect the datatype of the
@@ -419,6 +422,7 @@ class baseImageObject(object):
         if not self.inmemory:
             return
         for outname in outdict:
+#           log.info('saveVirtualOutputs: writing key '+outname+' for id: '+str(id(self)))
             self.virtualOutputs[outname] = outdict[outname]
 
     def getOutputName(self,name):
@@ -442,8 +446,8 @@ class baseImageObject(object):
         outputvals = self.outputValues
 
         outputvals['output'] = output_wcs.outputNames['outFinal']
-        outputvals['outnx'] = output_wcs.wcs.naxis1
-        outputvals['outny'] = output_wcs.wcs.naxis2
+        outputvals['outnx'] = output_wcs.wcs._naxis1
+        outputvals['outny'] = output_wcs.wcs._naxis2
         outputvals['texptime'] = output_wcs._exptime
         outputvals['texpstart'] = output_wcs._expstart
         outputvals['texpend'] = output_wcs._expend
@@ -702,7 +706,7 @@ class baseImageObject(object):
         dqmask = buildmask.buildMask(dqarr,bits)
 
         if write:
-            phdu = pyfits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
+            phdu = fits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
             log.info('Writing out DQ/weight mask: %s' % dqmask_name)
             if os.path.exists(dqmask_name): os.remove(dqmask_name)
@@ -961,7 +965,7 @@ class imageObject(baseImageObject):
     def __init__(self,filename,group=None,inmemory=False):
         baseImageObject.__init__(self,filename)
 
-        #filutil open returns a pyfits object
+        #filutil open returns a fits object
         try:
             self._image=fileutil.openImage(filename,clobber=False,memmap=0)
 
@@ -1000,9 +1004,9 @@ class imageObject(baseImageObject):
             self._numchips=1
             self.scienceExt="PRIMARY"
             self.maskExt=None
-            self._image["PRIMARY"].header.update("EXTNAME","PRIMARY")
-            self._image["PRIMARY"].header.update("EXTVER",1)
-            self._image["PRIMARY"].extnum=0
+            self._image["PRIMARY"].header["EXTNAME"] = "PRIMARY"
+            self._image["PRIMARY"].header["EXTVER"] = 1
+            self._image["PRIMARY"].extnum = 0
 
         self._isSimpleFits = False
 
@@ -1185,8 +1189,8 @@ class WCSObject(baseImageObject):
     def __init__(self,filename,suffix='_drz'):
         baseImageObject.__init__(self,filename)
 
-        self._image = pyfits.HDUList()
-        self._image.append(pyfits.PrimaryHDU())
+        self._image = fits.HDUList()
+        self._image.append(fits.PrimaryHDU())
 
         # Build rootname, but guard against the rootname being given without
         # the '_drz.fits' suffix

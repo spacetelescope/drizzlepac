@@ -1,12 +1,19 @@
-#Create a median image from the singly drizzled images
+"""
+Create a median image from the singly drizzled images.
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 
 # Import external packages
 from __future__ import division # confidence medium
 
 import sys
 import numpy as np
-import pyfits
-import os
+from astropy.io import fits
+import os, math
 import imageObject
 from stsci.imagestats import ImageStats
 import util
@@ -14,24 +21,16 @@ from stsci.image import numcombine
 from stsci.tools import iterfile, nimageiter, teal, logutil
 from minmed import minmed
 import processInput
+from .adrizzle import _single_step_num_
+
 
 from .version import *
 
 __taskname__= "drizzlepac.createMedian" #looks in drizzlepac for createMedian.cfg
 _step_num_ = 4  #this relates directly to the syntax in the cfg file
 
-
 log = logutil.create_logger(__name__)
 
-
-def getHelpAsString():
-    """
-    Return useful help from a file in the script directory called module.help
-    """
-
-    helpString = teal.getHelpFileAsString(__taskname__, __file__)
-
-    return helpString
 
 #this is the user access function
 def median(input=None, configObj=None, editpars=False, **inputDict):
@@ -83,9 +82,13 @@ def createMedian(imgObjList,configObj,procSteps=None):
         log.info('Median combination step not performed.')
         return
 
-    step_name=util.getSectionName(configObj,_step_num_)
     paramDict=configObj[step_name]
     paramDict['proc_unit'] = configObj['proc_unit']
+
+    # include whether or not compression was performed
+    driz_sep_name = util.getSectionName(configObj,_single_step_num_)
+    driz_sep_paramDict = configObj[driz_sep_name]
+    paramDict['compress'] = driz_sep_paramDict['driz_sep_compress']
 
     log.info('USER INPUT PARAMETERS for Create Median Step:')
     util.printParams(paramDict, log=log)
@@ -109,6 +112,8 @@ def _median(imageObjectList, paramDict):
     grow = paramDict['combine_grow']
     maskpt = paramDict['combine_maskpt']
     proc_units = paramDict['proc_unit']
+    compress = paramDict['compress']
+    bufsizeMb = paramDict['combine_bufsize']
 
     sigma=paramDict["combine_nsigma"]
     sigmaSplit=sigma.split()
@@ -177,11 +182,27 @@ def _median(imageObjectList, paramDict):
         #singleDriz=image.outputNames["outSingle"] #all chips are drizzled to a single output image
         #singleWeight=image.outputNames["outSWeight"]
 
-        if not virtual:
-            #this returns the handles for the image
-            _singleImage=iterfile.IterFitsFile(singleDriz)
+        # If compression was used, reference ext=1 as CompImageHDU only writes
+        # out MEF files, not simple FITS.
+        if compress:
+            wcs_ext = '[1]'
+            wcs_extnum = 1
         else:
-            _singleImage=iterfile.IterFitsFile(singleDriz_name)
+            wcs_ext = '[0]'
+            wcs_extnum = 0
+        if not virtual:
+            if isinstance(singleDriz,str):
+                iter_singleDriz = singleDriz + wcs_ext
+                iter_singleWeight = singleWeight + wcs_ext
+            else:
+                iter_singleDriz = singleDriz[wcs_extnum]
+                iter_singleWeight = singleWeight[wcs_extnum]
+        else:
+            iter_singleDriz = singleDriz_name + wcs_ext
+            iter_singleWeight = singleWeight_name + wcs_ext
+
+        _singleImage=iterfile.IterFitsFile(iter_singleDriz)
+        if virtual:
             _singleImage.handle = singleDriz
             _singleImage.inmemory = True
 
@@ -190,16 +211,18 @@ def _median(imageObjectList, paramDict):
         # If it exists, extract the corresponding weight images
         if (not virtual and os.access(singleWeight,os.F_OK)) or (
                 virtual and singleWeight):
-            if not virtual:
-                _weight_file=iterfile.IterFitsFile(singleWeight)
-            else:
-                _weight_file=iterfile.IterFitsFile(singleWeight_name)
+            _weight_file=iterfile.IterFitsFile(iter_singleWeight)
+            if virtual:
                 _weight_file.handle = singleWeight
                 _weight_file.inmemory = True
 
             singleWeightList.append(_weight_file)
-            tmp_mean_value = ImageStats(_weight_file.data,lower=1e-8,lsig=None,usig=None,fields="mean",nclip=0)
-            _wht_mean.append(tmp_mean_value.mean * maskpt)
+            try:
+                tmp_mean_value = ImageStats(_weight_file.data, lower=1e-8,
+                    lsig=None, usig=None, fields="mean", nclip=0).mean
+            except ValueError:
+                tmp_mean_value = 0.0
+            _wht_mean.append(tmp_mean_value * maskpt)
 
             # Extract instrument specific parameters and place in lists
 
@@ -221,13 +244,36 @@ def _median(imageObjectList, paramDict):
             #
             exposureTimeList.append(img_exptime)
 
-           # compute sky value as sky/pixel using the single_drz pixel scale
-            bsky = image._image[image.scienceExt,1].subtractedSky# * (image.outputValues['scale']**2)
-            backgroundValueList.append(bsky)
+            # Use only "commanded" chips to extract subtractedSky and rdnoise:
+            rdnoise = 0.0
+            nchips  = 0
+            bsky    = None # minimum sky across **used** chips
 
-            # Extract the readnoise value for the chip
-            sci_chip = image._image[image.scienceExt,1]
-            readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
+            for chip in image.returnAllChips(extname=image.scienceExt):
+                # compute sky value as sky/pixel using the single_drz pixel scale
+                if bsky is None or bsky > chip.subtractedSky:
+                    bsky = chip.subtractedSky
+
+                # Extract the readnoise value for the chip
+                rdnoise += (chip._rdnoise)**2
+                nchips  += 1
+
+            if bsky is None:
+                bsky = 0.0
+
+            if nchips > 0:
+                rdnoise = math.sqrt(rdnoise/nchips)
+
+            backgroundValueList.append(bsky)
+            readnoiseList.append(rdnoise)
+
+            ## compute sky value as sky/pixel using the single_drz pixel scale
+            #bsky = image._image[image.scienceExt,1].subtractedSky# * (image.outputValues['scale']**2)
+            #backgroundValueList.append(bsky)
+
+            ## Extract the readnoise value for the chip
+            #sci_chip = image._image[image.scienceExt,1]
+            #readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
 
             print "reference sky value for image ",image._filename," is ", backgroundValueList[-1]
         #
@@ -269,6 +315,8 @@ def _median(imageObjectList, paramDict):
     #Start by computing the buffer size for the iterator
     _imgarr = masterList[0].data
     _bufsize = nimageiter.BUFSIZE
+    if bufsizeMb is not None:
+        _bufsize *= bufsizeMb
     _imgrows = _imgarr.shape[0]
     _nrows = nimageiter.computeBuffRows(_imgarr)
 #        _overlaprows = _nrows - (_overlap+1)
@@ -372,7 +420,7 @@ def _median(imageObjectList, paramDict):
 
     # Write out the combined image
     # use the header from the first single drizzled image in the list
-    #header=pyfits.getheader(imageObjectList[0].outputNames["outSingle"])
+    #header=fits.getheader(imageObjectList[0].outputNames["outSingle"])
     _pf = _writeImage(medianImageArray, inputHeader=None, outputFilename=medianfile)
 
     if virtual:
@@ -426,18 +474,72 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
     """
 
     #_fname =inputFilename
-    #_file = pyfits.open(_fname, mode='readonly')
-    #_prihdu = pyfits.PrimaryHDU(header=_file[0].header,data=dataArray)
+    #_file = fits.open(_fname, mode='readonly')
+    #_prihdu = fits.PrimaryHDU(header=_file[0].header,data=dataArray)
 
     if (inputHeader == None):
         #use a general primary HDU
-        _prihdu=pyfits.PrimaryHDU(data=dataArray)
+        _prihdu = fits.PrimaryHDU(data=dataArray)
 
     else:
         _prihdu = inputHeader
         _prihdu.data=dataArray
 
-    _pf = pyfits.HDUList()
+    _pf = fits.HDUList()
     _pf.append(_prihdu)
 
     return _pf
+
+
+def help(file=None):
+    """
+    Print out syntax help for running astrodrizzle
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, __package__)
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString
+
+
+median.__doc__ = getHelpAsString(docstring = True, show_ver = False)

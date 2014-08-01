@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 2: Generate a Static Mask &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Step 2: Generate a Static Mask &mdash; DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev33593 (29-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="Step 3: Subtracting the Sky" href="sky.html" />
     <link rel="prev" title="Step 1: Process Input" href="process.html" /> 
   </head>
@@ -45,7 +43,7 @@
         <li class="right" >
           <a href="process.html" title="Step 1: Process Input"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -87,26 +85,20 @@
             
   <div class="section" id="step-2-generate-a-static-mask">
 <span id="staticmask"></span><h1>Step 2: Generate a Static Mask<a class="headerlink" href="#step-2-generate-a-static-mask" title="Permalink to this headline">¶</a></h1>
-<p>This step focuses entirely on creating a static mask for each detector used in the input images of all negative (presumably bad) pixel values.</p>
-<span class="target" id="module-drizzlepac.staticMask"></span><p>This class manages the creation of the global static mask which
-masks pixels which are negative in the SCI array.
-A static mask numpy object gets created for each global
-mask needed, one for each chip from each instrument/detector.
-Each static mask array has type Int16, and resides in memory.</p>
+<p>This step focuses entirely on creating a static mask for each detector
+used in the input images of all negative (presumably bad) pixel values.</p>
+<span class="target" id="module-drizzlepac.staticMask"></span><p>This module provides functions and classes that manage the creation
+of the global static masks.</p>
+<p>For <a class="reference internal" href="#drizzlepac.staticMask.staticMask" title="drizzlepac.staticMask.staticMask"><tt class="xref py py-obj docutils literal"><span class="pre">staticMask</span></tt></a>, the user interface function is <a class="reference internal" href="#drizzlepac.staticMask.createMask" title="drizzlepac.staticMask.createMask"><tt class="xref py py-func docutils literal"><span class="pre">createMask</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey</td>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Program:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">staticMask.py</td>
-</tr>
-<tr class="field-odd field"><th class="field-name" colspan="2">Notes:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">Class that manages the creation of a global static
-mask which is used to mask pixels that are some
-sigma BELOW the mode computed for the image.</td>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
@@ -118,6 +110,17 @@ masks pixels that are unwanted in the SCI array.
 A static mask  object gets created for each global
 mask needed, one for each chip from each instrument/detector.
 Each static mask array has type Int16, and resides in memory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Notes:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Class that manages the creation of a global static
+mask which is used to mask pixels that are some
+sigma BELOW the mode computed for the image.</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="drizzlepac.staticMask.staticMask.addMember">
 <tt class="descname">addMember</tt><big>(</big><em>imagePtr=None</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.staticMask.addMember" title="Permalink to this definition">¶</a></dt>
@@ -127,8 +130,8 @@ has the same signature.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters :</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="imagePtr">imagePtr</strong> : object</p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="imagePtr">imagePtr</strong> : object</p>
 <blockquote class="last">
 <div><p>An imageObject reference</p>
 </div></blockquote>
@@ -209,27 +212,116 @@ mask to contruct the filename for the output mask image.</p>
 <dl class="function">
 <dt id="drizzlepac.staticMask.createMask">
 <tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">createMask</tt><big>(</big><em>input=None</em>, <em>static_sig=4.0</em>, <em>group=None</em>, <em>editpars=False</em>, <em>configObj=None</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.createMask" title="Permalink to this definition">¶</a></dt>
-<dd><p>The user can input a list of images if they like to create static masks
-as well as optional values for static_sig and inputDict.</p>
-<p>The configObj.cfg file will set the defaults and then override them
-with the user options.</p>
+<dd><p>Create a static mask for all input images. The mask contains pixels that fall
+more than <em class="xref py py-obj">static_sig</em> RMS below the mode for a given chip or extension.
+Those severely negative, or low pixels, might result from oversubtraction
+of bad pixels in the dark image, or high sky levels during calibration.
+For example, each ACS WFC image contains a separate image for each of 2 CCDs,
+and seperate masks will be generated for each chip accordingly.</p>
+<p>The final static mask for each chip contains all of the bad pixels that meet
+this criteria from all of the input images along with any bad pixels that
+satisfy the final_bits value specified by the user, and found in the images
+DQ mask.</p>
+<p>Users should consider the details of their science image and decide whether
+or not creating this mask is appropriate for their resulting science.
+For example, if your field is very crowded, or contains mostly nebulous
+or extended objects, then the statistcs could be heavily skewed and the mask
+could end up containing sources.</p>
+<p>The generated static masks are saved to disk for use in later steps with
+the following naming convention:</p>
+<blockquote>
+<div>[Instrument][Detector]_[xsize]x[ysize]_[detector number]_staticMask.fits</div></blockquote>
+<p>so an ACS image would produce a static mask with the name:</p>
+<blockquote>
+<div>ACSWFC_2048x4096_1_staticMask.fits</div></blockquote>
+<p>and this would be the only file saved to disk, storing the logic and of all
+the badpixel masks created for each acs image in the set.</p>
+<p>For more information on the science applications of the static mask task,
+see the <a class="reference external" href="http://drizzlepac.stsci.edu">DrizzlePac Handbook</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str, None (Default = None)</p>
+<blockquote>
+<div><p>A list of images or associations you would like to use to compute
+the mask.</p>
+</div></blockquote>
+<p><strong id="static">static</strong> : bool (Default = True)</p>
+<blockquote>
+<div><p>Create a static bad-pixel mask from the data?  This mask flags all pixels
+that deviate by more than a value of <em class="xref py py-obj">static_sig</em> sigma below the image
+median, since these pixels are typically the result of bad pixel
+oversubtraction in the dark image during calibration.</p>
+</div></blockquote>
+<p><strong id="static_sig">static_sig</strong> : float (Default = 4.0)</p>
+<blockquote>
+<div><p>The number of sigma below the RMS to use as the clipping limit for
+creating the static mask.</p>
+</div></blockquote>
+<p><strong id="editpars">editpars</strong> : bool (Default = False)</p>
+<blockquote class="last">
+<div><p>Set to <em class="xref py py-obj">True</em> if you would like to edit the parameters using the GUI
+interface.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>These tasks are designed to work together seemlessly when run in the full
+<em class="xref py py-obj">AstroDrizzle</em> interface. More advanced users may wish to create specialized
+scripts for their own datasets, making use of only a subset of the predefined
+<em class="xref py py-obj">AstroDrizzle</em> tasks, or add additional processing, which may be usefull for
+their particular data. In these cases, individual access to the tasks is
+important.</p>
+<p>Something to keep in mind is that the full <em class="xref py py-obj">AstroDrizzle</em> interface will
+make backup copies of your original files and place them in
+the <tt class="docutils literal"><span class="pre">OrIg/</span></tt> directory of your current working directory. If you are working
+with the stand alone interfaces, it is assumed that the user has already
+taken care of backing up their original datafiles as the input file with
+be directly altered.</p>
+<p>Basic example of how to call static yourself from a python command line,
+using the default parameters for the task.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">staticMask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">staticMask</span><span class="o">.</span><span class="n">createMask</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.staticMask.createStaticMask">
-<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">createStaticMask</tt><big>(</big><em>imageObjectList=</em><span class="optional">[</span><span class="optional">]</span>, <em>configObj=None</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.createStaticMask" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">createStaticMask</tt><big>(</big><em>imageObjectList=</em>, <span class="optional">[</span><span class="optional">]</span><em>configObj=None</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.createStaticMask" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.staticMask.getHelpAsString">
-<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">getHelpAsString</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.getHelpAsString" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return useful help from a file in the script directory called module.help</p>
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called
+__taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.staticMask.help">
-<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.help" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descclassname">drizzlepac.staticMask.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.staticMask.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.staticMask.run">
@@ -259,12 +351,12 @@ with the user options.</p>
         <li class="right" >
           <a href="process.html" title="Step 1: Process Input"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

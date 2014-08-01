@@ -1,14 +1,22 @@
+"""
+Provides function for manipulating WCS in images.
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 from __future__ import division # confidence medium
 
-import sys,types,os,copy
+import sys, types, os, copy
 import util
 import numpy as np
-import pyfits
+from astropy.io import fits
 
 from stsci.tools import fileutil,teal
-import outputimage,wcs_functions,processInput,util
+import outputimage, wcs_functions, processInput,util
 import stwcs
-from stwcs import distortion,wcsutil
+from stwcs import distortion, wcsutil
 from stwcs.wcsutil import headerlet
 
 __taskname__ = 'buildwcs'
@@ -37,8 +45,8 @@ def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     if input_dict is None:
         input_dict = {}
     input_dict['outwcs'] = outwcs
-    
-    # If called from interactive user-interface, configObj will not be 
+
+    # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
@@ -46,49 +54,36 @@ def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     if configObj is None:
         return
-    
+
     if not editpars:
         run(configObj,wcsmap=wcsmap)
 
 def run(configObj,wcsmap=None):
-    """ Interpret parameters from TEAL/configObj interface as set interactively 
+    """ Interpret parameters from TEAL/configObj interface as set interactively
         by the user and build the new WCS instance
-    """ 
+    """
 
     distortion_pars = configObj['Distortion Model']
-    
-    outwcs = build(configObj['outwcs'], configObj['wcsname'], 
+
+    outwcs = build(configObj['outwcs'], configObj['wcsname'],
             configObj['refimage'], undistort = configObj['undistort'],
             usecoeffs=distortion_pars['applycoeffs'], coeffsfile=distortion_pars['coeffsfile'],
             **configObj['User WCS Parameters'])
-                
-def help():
-    print getHelpAsString()
-    
-def getHelpAsString():
-    """ 
-    return useful help from a file in the script directory called module.help
-    """
-    helpString = 'buildwcs Version '+__version__+__vdate__+'\n'
-    helpString += build.__doc__
-
-    return helpString
 
 
-#
 #### Low-level interface using Python objects only
 #
 
-def build(outname, wcsname, refimage, undistort=False, 
+def build(outname, wcsname, refimage, undistort=False,
                 applycoeffs=False, coeffsfile=None, **wcspars):
     """ Core functionality to create a WCS instance from a reference image WCS,
         user supplied parameters or user adjusted reference WCS.
         The distortion information can either be read in as part of the reference
         image WCS or given in 'coeffsfile'.
-            
+
         Parameters
         ----------
-        outname   : string 
+        outname   : string
             filename of output WCS
         wcsname   : string
             WCSNAME ID for generated WCS
@@ -100,22 +95,22 @@ def build(outname, wcsname, refimage, undistort=False,
             Apply coefficients from refimage to generate undistorted WCS?
         coeffsfile  : string
             If specified, read distortion coeffs from separate file
-        
-        
+
+
     """
-   
-    # Insure that the User WCS parameters have values for all the parameters, 
+
+    # Insure that the User WCS parameters have values for all the parameters,
     # even if that value is 'None'
     user_wcs_pars = convert_user_pars(wcspars)
     userwcs = wcspars['userwcs']
-    
+
     """
     Use cases to document the logic required to interpret the parameters
 
     WCS generation based on refimage/userwcs parameters
     -------------------------------------------------------------
     refimage == None, userwcs == False:
-        *NO WCS specified* 
+        *NO WCS specified*
         => print a WARNING message and return without doing anything
     refimage == None, userwcs == True:
         => Create WCS without a distortion model entirely from user parameters*
@@ -128,9 +123,9 @@ def build(outname, wcsname, refimage, undistort=False,
     Apply distortion and generate final headerlet using processed WCS
     -----------------------------------------------------------------
     refimage == None, userwcs == True:
-        *Output WCS generated entirely from user supplied parameters* 
+        *Output WCS generated entirely from user supplied parameters*
         Case 1: applycoeffs == False, undistort == True/False (ignored)
-            => no distortion model to interpret 
+            => no distortion model to interpret
             => generate undistorted headerlet with no distortion model
         Case 2: applycoeffs == True/False, undistort == True
             => ignore any user specified distortion model
@@ -152,7 +147,7 @@ def build(outname, wcsname, refimage, undistort=False,
             => generate a headerlet with a distortion model
         Case 7: applycoeffs == True, undistort == True
             => ignore user specified distortion model and undistort WCS
-            => generate a headerlet without a distortion model        
+            => generate a headerlet without a distortion model
     """
     ### Build WCS from refimage and/or user pars
     if util.is_blank(refimage) and not userwcs:
@@ -163,7 +158,7 @@ def build(outname, wcsname, refimage, undistort=False,
         # create HSTWCS object from user parameters
         complete_wcs = True
         for key in user_wcs_pars:
-            if util.is_blank(user_wcs_pars[key]): 
+            if util.is_blank(user_wcs_pars[key]):
                 complete_wcs = False
                 break
         if complete_wcs:
@@ -174,12 +169,12 @@ def build(outname, wcsname, refimage, undistort=False,
         else:
             print 'WARNING: Not enough WCS information provided by user!'
             raise ValueError
-        
+
     if not util.is_blank(refimage):
         refwcs = stwcs.wcsutil.HSTWCS(refimage)
     else:
         refwcs = customwcs
-    
+
     ### Apply distortion model (if any) to update WCS
     if applycoeffs and not util.is_blank(coeffsfile):
         if not util.is_blank(refimage):
@@ -190,7 +185,7 @@ def build(outname, wcsname, refimage, undistort=False,
                 # Only working with custom WCS from user, no distortion
                 # so apply model to WCS, including modifying the CD matrix
                 apply_model(refwcs)
-    
+
     ### Create undistorted WCS, if requested
     if undistort:
         outwcs = undistortWCS(refwcs)
@@ -210,7 +205,7 @@ def build(outname, wcsname, refimage, undistort=False,
         template = coeffsfile
     else:
         template = None
-    
+
 
     # create default WCSNAME if None was given
     wcsname = create_WCSname(wcsname)
@@ -222,11 +217,11 @@ def build(outname, wcsname, refimage, undistort=False,
         if 'extname' in ext.header and ext.header['extname'] == 'SIPWCS':
             ext_wcs = wcsutil.HSTWCS(ext)
             stwcs.updatewcs.makewcs.MakeWCS.updateWCS(ext_wcs,outwcs)
-    
+
     return outwcs
 
 def create_WCSname(wcsname):
-    """ Verify that a valid WCSNAME has been provided, and if not, create a 
+    """ Verify that a valid WCSNAME has been provided, and if not, create a
         default WCSNAME based on current date.
     """
     if util.is_blank(wcsname):
@@ -246,8 +241,8 @@ def convert_user_pars(wcspars):
 
 def mergewcs(outwcs, customwcs, wcspars):
     """ Merge the WCS keywords from user specified values into a full HSTWCS object
-        This function will essentially follow the same algorithm as used by 
-        updatehdr only it will use direct calls to updatewcs.Makewcs methods 
+        This function will essentially follow the same algorithm as used by
+        updatehdr only it will use direct calls to updatewcs.Makewcs methods
         instead of using 'updatewcs' as a whole
     """
     # start by working on a copy of the refwcs
@@ -266,9 +261,9 @@ def mergewcs(outwcs, customwcs, wcspars):
         if wcspars['crpix1'] is not None:
             outwcs.wcs.crpix = np.array([wcspars['crpix1'],wcspars['crpix2']])
         if wcspars['naxis1'] is not None:
-            outwcs.naxis1 = wcspars['naxis1']
-            outwcs.naxis2 = wcspars['naxis2']
-            outwcs.wcs.crpix = np.array([outwcs.naxis1/2.,outwcs.naxis2/2.])
+            outwcs._naxis1 = wcspars['naxis1']
+            outwcs._naxis2 = wcspars['naxis2']
+            outwcs.wcs.crpix = np.array([outwcs._naxis1/2.,outwcs._naxis2/2.])
 
         pscale = wcspars['pscale']
         orient = wcspars['orientat']
@@ -286,10 +281,10 @@ def mergewcs(outwcs, customwcs, wcspars):
         outwcs.wcs.cd = customwcs.wcs.cd
         outwcs.wcs.crval = customwcs.wcs.crval
         outwcs.wcs.crpix = customwcs.wcs.crpix
-        outwcs.naxis1 = customwcs.naxis1
-        outwcs.naxis2 = customwcs.naxis2
+        outwcs._naxis1 = customwcs._naxis1
+        outwcs._naxis2 = customwcs._naxis2
     return outwcs
-    
+
 def add_model(refwcs, newcoeffs):
     """ Add (new?) distortion model to existing HSTWCS object
     """
@@ -297,25 +292,25 @@ def add_model(refwcs, newcoeffs):
     for kw in model_attrs:
         if newcoeffs.__dict__[key] is not None:
             refwcs.__dict__[key] = newcoeffs.__dict__[key]
-    
+
 def apply_model(refwcs):
-    """ Apply distortion model to WCS, including modifying 
+    """ Apply distortion model to WCS, including modifying
         CD with linear distortion terms
-        
+
     """
     # apply distortion model to CD matrix
     if 'ocx10' in refwcs.__dict__ and refwcs.ocx10 is not None:
         linmat = np.array([[refwcs.ocx11,refwcs.ocx10],[refwcs.ocy11,refwcs.ocy10]])/refwcs.idcscale
         refwcs.wcs.cd = np.dot(refwcs.wcs.cd,linmat)
-        
+
         refwcs.wcs.set()
-        refwcs.setOrient() 
+        refwcs.setOrient()
         refwcs.setPscale()
-    
+
 def replace_model(refwcs, newcoeffs):
     """ Replace the distortion model in a current WCS with a new model
-        Start by creating linear WCS, then run 
-    """ 
+        Start by creating linear WCS, then run
+    """
     print 'WARNING:'
     print '    Replacing existing distortion model with one'
     print '    not necessarily matched to the observation!'
@@ -326,52 +321,52 @@ def replace_model(refwcs, newcoeffs):
     outwcs.wcs.set()
     outwcs.setOrient()
     outwcs.setPscale()
-    # add new model to updated WCS object 
+    # add new model to updated WCS object
     add_model(outwcs,newcoeffs)
     # Update CD matrix with new model
     apply_model(outwcs)
-    
+
     # replace original input WCS with newly updated WCS
     refwcs = outwcs.deepcopy()
-  
+
 def undistortWCS(refwcs):
     """ Generate an undistorted HSTWCS from an HSTWCS object with a distortion model
-    """  
+    """
     wcslin = stwcs.distortion.utils.output_wcs([refwcs])
-    
+
     outwcs = stwcs.wcsutil.HSTWCS()
     outwcs.wcs = wcslin.wcs
     outwcs.wcs.set()
     outwcs.setPscale()
     outwcs.setOrient()
     outwcs.sip = None
-    
+
     # Update instrument specific keywords
     outwcs.inst_kw = refwcs.inst_kw
     for kw in refwcs.inst_kw:
         outwcs.__dict__[kw] = refwcs.__dict__[kw]
-    outwcs.naxis1 = wcslin.naxis1
-    outwcs.naxis2 = wcslin.naxis2
-        
+    outwcs._naxis1 = wcslin._naxis1
+    outwcs._naxis2 = wcslin._naxis2
+
     return outwcs
 
 def generate_headerlet(outwcs,template,wcsname,outname=None):
     """ Create a headerlet based on the updated HSTWCS object
-        
-        This function uses 'template' as the basis for the headerlet. 
-        This file can either be the original wcspars['refimage'] or 
+
+        This function uses 'template' as the basis for the headerlet.
+        This file can either be the original wcspars['refimage'] or
         wcspars['coeffsfile'], in this order of preference.
-        
-        If 'template' is None, then a simple Headerlet will be 
-        generated with a single SIPWCS extension and no distortion 
+
+        If 'template' is None, then a simple Headerlet will be
+        generated with a single SIPWCS extension and no distortion
     """
     # Create header object from HSTWCS object
     siphdr = True
     if outwcs.sip is None:
         siphdr = False
     outwcs_hdr = outwcs.wcs2header(sip2hdr=siphdr)
-    outwcs_hdr.update('NPIX1',outwcs.naxis1)
-    outwcs_hdr.update('NPIX2',outwcs.naxis2)
+    outwcs_hdr['NPIX1'] = outwcs._naxis1
+    outwcs_hdr['NPIX2'] = outwcs._naxis2
 
     # create headerlet object in memory; either from a file or from scratch
     if template is not None and siphdr:
@@ -382,24 +377,74 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         hdrlet = headerlet.createHeaderlet(fname,wcsname)
         # update hdrlet with header values from outwcs
         for kw in outwcs_hdr.items():
-            hdrlet[extname].header.update(kw[0],kw[1])
-        hdrlet[extname].header.update('WCSNAME',wcsname)
+            hdrlet[extname].header[kw[0]] = kw[1]
+        hdrlet[extname].header['WCSNAME'] = wcsname
     else:
         print 'Creating headerlet from scratch...'
-        hdrlet = pyfits.HDUList()
-        hdrlet.append(pyfits.PrimaryHDU())
-        siphdr = pyfits.ImageHDU(header=outwcs_hdr)
-        siphdr.header.update('EXTNAME','SIPWCS')
-        siphdr.header.update('WCSNAME',wcsname)
+        hdrlet = fits.HDUList()
+        hdrlet.append(fits.PrimaryHDU())
+        siphdr = fits.ImageHDU(header=outwcs_hdr)
+        siphdr.header['EXTNAME'] = 'SIPWCS'
+        siphdr.header['WCSNAME'] = wcsname
         hdrlet.append(siphdr)
 
     # Write out header to a file as the final product
     if outname is not None:
         if outname.find('_hdr.fits') < 0:
             outname += '_hdr.fits'
-        if os.path.exists(outname): 
+        if os.path.exists(outname):
             print 'Overwrite existing file "%s"'%outname
             os.remove(outname)
         hdrlet.writeto(outname)
         print 'Wrote out headerlet :',outname
-    
+
+
+def help(file=None):
+    """
+    Print out syntax help for running a drizzlepac task.
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+
+    """
+    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    if file is None:
+        print(helpstr)
+    else:
+        if os.path.exists(file): os.remove(file)
+        f = open(file, mode = 'w')
+        f.write(helpstr)
+        f.close()
+
+
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
+
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, '')
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString

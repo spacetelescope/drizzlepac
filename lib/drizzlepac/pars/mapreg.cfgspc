@@ -1,0 +1,14 @@
+_task_name_ = string_kw(default="mapreg")
+input_reg = string_kw(default='', triggers="_future_", comment="A region file (in sky CS) to be mapped to 'images'")
+images = string_kw(default='', comment="Images containing WCS to which to map 'imput_reg'")
+img_wcs_ext = string_kw(default='SCI',comment="Extensions in 'images' that provide WCS for region mapping")
+chip_reg = string_kw(default='', comment="Region files to be applied to each chip of the 'images'")
+outpath = string_kw(default='./regions', comment="Path where to store output regions")
+filter = option_kw("None","fast",default="None", comment= "Filter out regions outside image array")
+catfname = string_kw(default='exclusions_cat.txt', comment="File name of the output exclusion catalog")
+append = boolean_kw(default=False, comment="Append results to existing region files?")
+verbose = boolean_kw(default=True, comment="Print extra messages during processing?")
+
+[ _RULES_ ]
+_future_ = string_kw(default = True, code='OUT = True')
+

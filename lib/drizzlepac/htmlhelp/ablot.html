@@ -1,0 +1,306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Step 6: Blotting the Median Image &mdash; DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev33593 (29-Jul-2014)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation" href="index.html" />
+    <link rel="next" title="Step 7: Cosmic-ray identification" href="drizcr.html" />
+    <link rel="prev" title="Step 5: Create a Median Image" href="median.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="drizcr.html" title="Step 7: Cosmic-ray identification"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="median.html" title="Step 5: Create a Median Image"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="median.html"
+                        title="previous chapter">Step 5: Create a Median Image</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="drizcr.html"
+                        title="next chapter">Step 7: Cosmic-ray identification</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/ablot.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-drizzlepac.ablot">
+<span id="step-6-blotting-the-median-image"></span><span id="ablot"></span><h1>Step 6: Blotting the Median Image<a class="headerlink" href="#module-drizzlepac.ablot" title="Permalink to this headline">¶</a></h1>
+<p>In this step the median image now gets blotted back to create median-cleaned
+images which can be compared directly with each input image to identify
+cosmic-rays.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="drizzlepac.ablot.blot">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">blot</tt><big>(</big><em>data</em>, <em>outdata</em>, <em>configObj=None</em>, <em>wcsmap=wcs_functions.WCSMap</em>, <em>editpars=False</em>, <em>**input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.blot" title="Permalink to this definition">¶</a></dt>
+<dd><p>The median image is the combination of the WCS aligned input images
+that have already had the distortion model applied. Taking the median
+of the aligned images allows for a statistical rejection of bad pixels
+from the image stack. The resulting median image can then be input for
+the blot task with the goal of creating &#8216;cleaned&#8217; versions of the input
+images at each of their respective dither locations. These &#8220;blotted&#8221; images
+can then be directly compared to the original distorted input images for
+detection of image artifacts (i.e. bad-pixels, hot pixels, and cosmic-rays)
+whose locations will be saved to the output badpixel masks.</p>
+<p>Aside from the input parameters, this step only requires
+opening the single median image created from all the input images.
+A distorted version of the median image corresponding
+to each input &#8216;chip&#8217; (extension) is written as output from this
+step as separate simple FITS images.</p>
+<p>For more information on the science applications of the blot task,
+see the <a class="reference external" href="http://drizzlepac.stsci.edu">DrizzlePac Handbook</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="blot">blot</strong> : bool (Default = Yes)</p>
+<blockquote>
+<div><p>Perform the blot operation on the median image?
+If set to &#8216;Yes&#8217; (<em class="xref py py-obj">True</em>), the output will be median smoothed images
+that match each input chips location, and will be used in the cosmic
+ray rejection step.</p>
+</div></blockquote>
+<p><strong id="blot_interp">blot_interp</strong> : str{&#8216;nearest&#8217;, &#8216;linear&#8217;, &#8216;poly3&#8217;, &#8216;poly5&#8217;, &#8216;sinc&#8217;} (Default = &#8216;poly5&#8217;)</p>
+<blockquote>
+<div><p>This parameter defines the method of interpolation to be used when
+blotting drizzled images back to their original WCS solution.
+Valid options include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>nearest</strong>: Nearest neighbor</li>
+<li><strong>linear</strong>: Bilinear interpolation in x and y</li>
+<li><strong>poly3</strong>: Third order interior polynomial in x and y</li>
+<li><strong>poly5</strong>: Fifth order interior polynomial in x and y</li>
+<li><strong>sinc</strong>: Sinc interpolation (accurate but slow)</li>
+</ul>
+</div></blockquote>
+<p>The &#8216;poly5&#8217; interpolation method has been chosen as the default because
+it is relatively fast and accurate.</p>
+<p>If &#8216;sinc&#8217; interpolation is selected, then the value of the parameter
+for <em class="xref py py-obj">blot_sinscl</em> will be used to specify the size of the sinc
+interpolation kernel.</p>
+</div></blockquote>
+<p><strong id="blot_sinscl">blot_sinscl</strong> : float (Default Value = 1.0)</p>
+<blockquote>
+<div><p>Size of the sinc interpolation kernel in pixels.</p>
+</div></blockquote>
+<p><strong id="blot_addsky">blot_addsky</strong> : bool (Default Value = Yes)</p>
+<blockquote>
+<div><p>Add back a sky value using the <tt class="docutils literal"><span class="pre">MDRIZSKY</span></tt> value from the header.
+If &#8216;Yes&#8217; (<em class="xref py py-obj">True</em>), the <em class="xref py py-obj">blot_skyval</em> parameter is ignored.</p>
+</div></blockquote>
+<p><strong id="blot_skyval">blot_skyval</strong> : float (Default Value = 0.0)</p>
+<blockquote class="last">
+<div><p>This is a user-specified custom sky value to be added to the blot image.
+This is only used if <em class="xref py py-obj">blot_addsky</em> is &#8216;No&#8217; (<em class="xref py py-obj">False</em>).</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>These tasks are designed to work together seemlessly when run in the full
+<em class="xref py py-obj">AstroDrizzle</em> interface. More advanced users may wish to create specialized
+scripts for their own datasets, making use of only a subset of the
+predefined <em class="xref py py-obj">AstroDrizzle</em> tasks, or add additional processing, which may
+be usefull for their particular data. In these cases, individual access to
+the tasks is important.</p>
+<p>Something to keep in mind is that the full <em class="xref py py-obj">AstroDrizzle</em> interface will
+make backup copies of your original files and place them in the <tt class="docutils literal"><span class="pre">OrIg/</span></tt>
+directory of your current working directory. If you are working with
+the stand alone interfaces, it is assumed that the user has already
+taken care of backing up their original datafiles as the input file
+with be directly altered.</p>
+<p class="rubric">Examples</p>
+<p>Basic example of how to call <a class="reference internal" href="#drizzlepac.ablot.blot" title="drizzlepac.ablot.blot"><tt class="xref py py-func docutils literal"><span class="pre">blot</span></tt></a> yourself from a python
+command line, using the default parameter settings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">ablot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ablot</span><span class="o">.</span><span class="n">blot</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.ablot.buildBlotParamDict">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">buildBlotParamDict</tt><big>(</big><em>configObj</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.buildBlotParamDict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.ablot.do_blot">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">do_blot</tt><big>(</big><em>source</em>, <em>source_wcs</em>, <em>blot_wcs</em>, <em>exptime</em>, <em>coeffs=True</em>, <em>interp='poly5'</em>, <em>sinscl=1.0</em>, <em>stepsize=10</em>, <em>wcsmap=None</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.do_blot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Core functionality of performing the &#8216;blot&#8217; operation to create a single
+blotted image from a single source image.
+All distortion information is assumed to be included in the WCS specification
+of the &#8216;output&#8217; blotted image given in &#8216;blot_wcs&#8217;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="source">source</strong> :</p>
+<blockquote>
+<div><p>Input numpy array of undistorted source image in units of &#8216;cps&#8217;.</p>
+</div></blockquote>
+<p><strong id="source_wcs">source_wcs</strong> :</p>
+<blockquote>
+<div><p>HSTWCS object representing source image WCS.</p>
+</div></blockquote>
+<p><strong id="blot_wcs">blot_wcs</strong> :</p>
+<blockquote>
+<div><p>(py)wcs.WCS object representing the blotted image WCS.</p>
+</div></blockquote>
+<p class="last"><strong id="exptime">exptime</strong> :</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.ablot.getHelpAsString">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called
+__taskname__.help</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.ablot.help">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.ablot.run">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">run</tt><big>(</big><em>configObj</em>, <em>wcsmap=None</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the blot task based on parameters provided interactively by the user.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.ablot.runBlot">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">runBlot</tt><big>(</big><em>imageObjectList</em>, <em>output_wcs</em>, <em>configObj={}</em>, <em>wcsmap=wcs_functions.WCSMap</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.runBlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.ablot.run_blot">
+<tt class="descclassname">drizzlepac.ablot.</tt><tt class="descname">run_blot</tt><big>(</big><em>imageObjectList</em>, <em>output_wcs</em>, <em>paramDict</em>, <em>wcsmap=wcs_functions.WCSMap</em><big>)</big><a class="headerlink" href="#drizzlepac.ablot.run_blot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform the blot operation on the list of images.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="drizcr.html" title="Step 7: Cosmic-ray identification"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="median.html" title="Step 5: Create a Median Image"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

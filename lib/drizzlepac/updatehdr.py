@@ -1,9 +1,16 @@
+"""
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+"""
 import re
 
-import pyfits
+from astropy.io import fits
 import numpy as np
 
-import pywcs
+from astropy import wcs as pywcs
 
 from stsci.tools import fileutil, logutil
 from stwcs import wcsutil, updatewcs
@@ -170,7 +177,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
     if isinstance(reference, wcsutil.HSTWCS) or isinstance(reference, pywcs.WCS):
         wref = reference
     else:
-        refimg = pyfits.open(reference)
+        refimg = fits.open(reference)
         wref = None
         for extn in refimg:
             if 'extname' in extn.header and extn.header['extname'] == 'WCS':
@@ -182,7 +189,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         if wref is None:
             wref = wcsutil.HSTWCS(reference)
 
-    if isinstance(image,pyfits.HDUList):
+    if isinstance(image, fits.HDUList):
         open_image = False
         filename = image.filename()
         if image.fileinfo(0)['filemode'] is 'update':
@@ -218,7 +225,7 @@ def updatewcs_with_shift(image,reference,wcsname=None,
     # insure that input PRIMARY WCS has been archived before overwriting
     # with new solution
     if open_image:
-        fimg = pyfits.open(image,mode='update')
+        fimg = fits.open(image, mode='update')
         image_update = True
     else:
         fimg = image
@@ -288,20 +295,21 @@ def update_refchip_with_shift(chip_wcs, wcslin,
     ypix = [chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1]+1]
 
     # This full transformation includes all parts of model, excluding DGEO/NPOL
-    Rc_i,Dc_i = chip_wcs.wcs_pix2sky(xpix,ypix,1)
+    Rc_i,Dc_i = chip_wcs.wcs_pix2world(xpix,ypix,1)
 
     # step 2
-    Xc_i,Yc_i = wcslin.wcs_sky2pix([Rc_i],[Dc_i],1)
+    Xc_i,Yc_i = wcslin.wcs_world2pix(Rc_i,Dc_i,1)
     Xc_i -= wcslin.wcs.crpix[0]
     Yc_i -= wcslin.wcs.crpix[1]
     # step 3
+
     Xcs_i,Ycs_i = apply_db_fit([Xc_i,Yc_i],fit,xsh=-1*xsh,ysh=-1*ysh)
     Xcs_i += wcslin.wcs.crpix[0]
     Ycs_i += wcslin.wcs.crpix[1]
 
     chip_fit = fit
     # step 4
-    Rcs_i,Dcs_i = wcslin.wcs_pix2sky(Xcs_i,Ycs_i,1)
+    Rcs_i,Dcs_i = wcslin.wcs_pix2world(Xcs_i,Ycs_i,1)
     # step 5
     # new crval should be first member
     new_crval1 = Rcs_i[0]
@@ -310,8 +318,8 @@ def update_refchip_with_shift(chip_wcs, wcslin,
     chip_wcs.wcs.set()
     # step 6
     # compute new sky positions (with full model) based on new CRVAL
-    Rc_iu,Dc_iu = chip_wcs.wcs_pix2sky(xpix,ypix,1)
-    Xc_iu,Yc_iu = wcslin.wcs_sky2pix([Rc_iu],[Dc_iu],1)
+    Rc_iu,Dc_iu = chip_wcs.wcs_pix2world(xpix, ypix, 1)
+    Xc_iu,Yc_iu = wcslin.wcs_world2pix(Rc_iu,Dc_iu, 1)
     # step 7
     # Perform rscale (linear orthogonal) fit between previously updated positions
     # and newly updated positions
@@ -363,8 +371,8 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     new_wcs.setOrient()
 
     fimg_open=False
-    if not isinstance(image,pyfits.HDUList):
-        fimg = pyfits.open(image,mode='update')
+    if not isinstance(image, fits.HDUList):
+        fimg = fits.open(image, mode='update')
         fimg_open = True
         fimg_update = True
     else:
@@ -402,9 +410,9 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
 
         for key in wcs_hdr:
-            hdr.update(key,wcs_hdr[key])
-        hdr.update('ORIENTAT',new_wcs.orientat)
-        hdr.update('WCSNAME',wcsname)
+            hdr[key] = wcs_hdr[key]
+        hdr['ORIENTAT'] = new_wcs.orientat
+        hdr['WCSNAME'] = wcsname
         util.updateNEXTENDKw(fimg)
 
         # Only if this image was opened in update mode should this

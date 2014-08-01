@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Imagefindpars: Source finding parameters &mdash; drizzlepac 1.0.6 (14-Aug-2012) documentation</title>
+    <title>Imagefindpars: Source finding parameters &mdash; DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0.6 (14-Aug-2012)',
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev33593 (29-Jul-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,9 +23,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="drizzlepac 1.0.6 (14-Aug-2012) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation" href="index.html" />
     <link rel="next" title="Image Class" href="image.html" />
-    <link rel="prev" title="TWEAKREG: Alignment of Images" href="tweakreg.html" /> 
+    <link rel="prev" title="Imagefindpars: Source finding parameters" href="refimagefindpars.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,9 +41,9 @@
           <a href="image.html" title="Image Class"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -53,17 +51,9 @@
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
             </a></p>
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Imagefindpars: Source finding parameters</a><ul>
-<li><a class="reference internal" href="#parameters">Parameters</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
-  <p class="topless"><a href="tweakreg.html"
-                        title="previous chapter">TWEAKREG: Alignment of Images</a></p>
+  <p class="topless"><a href="refimagefindpars.html"
+                        title="previous chapter">Imagefindpars: Source finding parameters</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="image.html"
                         title="next chapter">Image Class</a></p>
@@ -96,62 +86,154 @@
   <div class="section" id="imagefindpars-source-finding-parameters">
 <span id="imagefindpars"></span><h1>Imagefindpars: Source finding parameters<a class="headerlink" href="#imagefindpars-source-finding-parameters" title="Permalink to this headline">¶</a></h1>
 <p>This interface provides a mechanism for setting the parameters used by the built-in source finding algorithm based on the published algorithms used by DAOFIND.</p>
-<span class="target" id="module-drizzlepac.imagefindpars"></span><p>imagefindpars Version 1.0.2 updated on 11-Apr-2012</p>
-<p>These parameters control the operation of the algorithm that extracts sources from the image as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>. The algorithm implemented follows the concepts defined by DAOFIND (without actually using any DAOFIND code).</p>
+<span class="target" id="module-drizzlepac.imagefindpars"></span><p>These parameters control the operation of the algorithm that extracts
+sources from the image as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>.
+The algorithm implemented follows the concepts defined
+by <tt class="docutils literal"><span class="pre">DAOFIND</span></tt> (without actually using any <tt class="docutils literal"><span class="pre">DAOFIND</span></tt> code).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Input:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">The algorithm simply requires the image to be read in as a numpy array, along with the user specified parameters given here.</td>
-</tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Output:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">The primary output, as used by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>, is a list of numpy arrays representing the X and Y positions of detected sources along with flux for each source.</td>
+<tr class="field-odd field"><th class="field-name" colspan="2">Attributes:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><dl class="first last docutils">
+<dt><strong>computesig</strong>: bool (Default = True)</dt>
+<dd><p class="first">This parameter controls whether or not to automatically compute a
+sigma value to be used for object identification. If set to <tt class="docutils literal"><span class="pre">True</span></tt>,
+then the value computed will override any user input for
+the parameter <tt class="docutils literal"><span class="pre">skysigma</span></tt>. The automatic sigma value gets
+computed from each input exposure as:</p>
+<div class="math">
+<p><img src="_images/math/f0ebd49833d51f8188e949e95f365f405deb1a98.png" alt="\sigma = \sqrt{2\left|mode\right|}"/></p>
+</div><p class="last">This single value will then be used for object identification
+for all input exposures.</p>
+</dd>
+<dt><strong>skysigma</strong>: float (Default = 0.0)</dt>
+<dd><p class="first last">The standard deviation of the sky pixels. This value will only be
+used if computesig is <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
+</dd>
+<dt><strong>conv_width</strong>: float (Default = 3.5)</dt>
+<dd><p class="first last">The convolution kernel width in pixels. Recommended values
+(~2x the PSF FWHM): ACS/WFC &amp; WFC3/UVIS ~3.5 pix and
+WFC3/IR ~2.5 pix.</p>
+</dd>
+<dt><strong>peakmin</strong>: float, None (Default = None)</dt>
+<dd><p class="first last">This parameter allows the user to select only those sources whose
+peak value (in the units of the input image) is greater than this
+value.</p>
+</dd>
+<dt><strong>peakmax</strong>: float, None  (Default = None)</dt>
+<dd><p class="first last">This parameter allows the user to select only those sources
+whose peak value (in the units of the input image) is less than
+this value.</p>
+</dd>
+<dt><strong>threshold</strong>: float (Default = 4.0)</dt>
+<dd><p class="first last">The object detection threshold above the local background in units
+of sigma.</p>
+</dd>
+<dt><strong>nsigma</strong>: float (Default = 1.5)</dt>
+<dd><p class="first last">The semi-major axis of the Gaussian convolution kernel used to
+compute the density enhancement and mean density images in
+Gaussian sigma.</p>
+</dd>
+<dt><strong>ratio</strong>: float (Default = 1.0)</dt>
+<dd><p class="first last">The ratio of the sigma of the Gaussian convolution kernel along
+the minor axis direction to the sigma along the major axis direction.
+For a circularly-symmetric kernel use ratio = 1.0.</p>
+</dd>
+<dt><strong>theta</strong>: float (Default = 0.0)</dt>
+<dd><p class="first last">The position angle (degrees) of the major axis of the Gaussian
+convolution kernel. Theta is measured counter-clockwise from
+the x axis.</p>
+</dd>
+<dt><strong>fluxmin</strong>: float, None (Default = None)</dt>
+<dd><p class="first last">This parameter allows the user to select only those sources whose
+total flux (in the units of the input image) is greater than
+this value.</p>
+</dd>
+<dt><strong>fluxmax</strong>: float, None (Default = None)</dt>
+<dd><p class="first last">This parameter allows the user to select only those sources whose
+total flux (in the units of the input image) is less than this value.</p>
+</dd>
+<dt><strong>dqbits</strong>: int, None, optional (Default = None)</dt>
+<dd><p class="first">Integer sum of all the DQ bit values from the input image&#8217;s DQ array
+that should be considered &#8220;good&#8221; when building masks for source
+finding. For example, if pixels in the DQ array can be combinations
+of 1, 2, 4, and 8 flags and one wants to consider DQ &#8220;defects&#8221;
+having flags 2 and 4 as being acceptable for source finding,
+then <em class="xref py py-obj">dqbits</em> should be set to 2+4=6. Then a DQ pixel having values
+2,4, or 6 will be considered a good pixel, while a DQ pixel with
+a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
+<div class="line-block">
+<div class="line">Setting <em class="xref py py-obj">dqbits</em> to 0 will make <em>all</em> non-zero pixels in the DQ
+mask to be considered &#8220;bad&#8221; pixels, and the corresponding image
+pixels will not be used for source finding.</div>
+</div>
+<div class="last line-block">
+<div class="line">The default value of <em class="xref py py-obj">None</em> will turn off the use of image&#8217;s DQ
+array for source finding.</div>
+</div>
+</dd>
+<dt><strong>use_sharp_round</strong>: bool (Default = False)</dt>
+<dd><p class="first last">This parameter controls whether or not to enable selection of sources
+based on their sharpness and roundness statistics.</p>
+</dd>
+<dt><strong>sharplo</strong>: float (Default = 0.2)</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">sharplo</span></tt> and <tt class="docutils literal"><span class="pre">sharphi</span></tt> are designed to eliminate brightness
+maxima that are due to bad pixels rather than to astronomical objects.
+Only sources with sharpness above the <tt class="docutils literal"><span class="pre">sharplo</span></tt> value will be
+selected.</p>
+</dd>
+<dt><strong>sharphi</strong>: float (Default = 1.0)</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">sharplo</span></tt> and <tt class="docutils literal"><span class="pre">sharphi</span></tt> are designed to eliminate brightness
+maxima that are due to bad pixels rather than to astronomical objects.
+Only sources with sharpness below the <tt class="docutils literal"><span class="pre">sharphi</span></tt> value will be
+selected.</p>
+</dd>
+<dt><strong>roundlo</strong>: float (Default = -1.0)</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">roundlo</span></tt> and <tt class="docutils literal"><span class="pre">roundhi</span></tt> are designed to eliminate brightness
+maxima that are due to bad rows or columns, rather than to
+astronomical objects. Only sources with roundness above the
+<tt class="docutils literal"><span class="pre">roundlo</span></tt> value will be selected.</p>
+</dd>
+<dt><strong>roundhi</strong>: float (Default = 1.0)</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">roundlo</span></tt> and <tt class="docutils literal"><span class="pre">roundhi</span></tt> are designed to eliminate brightness
+maxima that are due to bad rows or columns, rather than to
+astronomical objects. Only sources with roundness below the
+<tt class="docutils literal"><span class="pre">roundhi</span></tt> value will be selected.</p>
+</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
-<div class="section" id="parameters">
-<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
-<dt>computesig <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd><p class="first">This parameter controls whether or not to automatically compute a sigma value to be used for object identification. If set to True, then the value computed will override any user input for the parameter &#8216;skysigma&#8217;. The automatic sigma value gets computed from each input exposure as:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="mf">1.5</span> <span class="o">*</span> <span class="n">imstatistics</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">fields</span><span class="o">=</span><span class="s">&#39;stddev&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd>
-</dl>
-<p>This single value will then be used for object identification for all input exposures. [Default: Yes]</p>
-<dl class="docutils">
-<dt>skysigma <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>The standard deviation of the sky pixels. This value will only be used if computesig is False. [Default: 0.0]</dd>
-<dt>conv_width <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>The convolution kernel width in pixels. Recommended values (~2x the PSF FWHM): ACS/WFC &amp; WFC3/UVIS ~3.5 pix and WFC3/IR ~2.5 pix. [Default: 3.5]</dd>
-<dt>peakmin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>This parameter allows the user to select only those sources whose peak value (in the units of the input image) is greater than this value. [Default: None]</dd>
-<dt>peakmax <span class="classifier-delimiter">:</span> <span class="classifier">float </span></dt>
-<dd>This parameter allows the user to select only those sources whose peak value (in the units of the input image) is less than this value. [Default: None]</dd>
-<dt>threshold <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>The object detection threshold above the local background in units of sigma. [Default: 4.0]</dd>
-<dt>nsigma <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>The semi-major axis of the Gaussian convolution kernel used to compute the density enhancement and mean density images in Gaussian sigma. [Default: 1.5]</dd>
-<dt>fluxmin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>This parameter allows the user to select only those sources whose total flux (in the units of the input image) is greater than this value. [Default: None]</dd>
-<dt>fluxmax <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>This parameter allows the user to select only those sources whose total flux (in the units of the input image) is less than this value. [Default: None]</dd>
-</dl>
 <dl class="function">
 <dt id="drizzlepac.imagefindpars.getHelpAsString">
-<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
-<dd><p>Teal help function to describe the parameters being set
-Descriptions of parameters come from .help file</p>
+<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<dd><p>return useful help from a file in the script directory called
+__taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.imagefindpars.help">
-<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">help</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.help" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descclassname">drizzlepac.imagefindpars.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imagefindpars.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print out syntax help for running astrodrizzle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<blockquote class="last">
+<div><p>If given, write out help to the filename specified by this parameter
+Any previously existing file with this name will be deleted before
+writing out the help.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
-</div>
 </div>
 
 
@@ -173,14 +255,14 @@ Descriptions of parameters come from .help file</p>
           <a href="image.html" title="Image Class"
              >next</a> |</li>
         <li class="right" >
-          <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
+          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
              >previous</a> |</li>
-        <li><a href="index.html">drizzlepac 1.0.6 (14-Aug-2012) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>
