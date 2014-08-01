@@ -1039,28 +1039,31 @@ def do_driz(insci, input_wcs, inwht,
         insci = insci.astype(np.float32)
 
     if for_final and 'ASTRODRIZ_TRY_TILING' in os.environ:
-        tilex = int(outsci.shape[0] / 5)
-        tiley = int(outsci.shape[0] / 5)
-        for i in range(0, 5):
-            log.info('drizzling tile: %d'%i)
-            tilesci = outsci[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
-            tilewht = outwht[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
-            tilectx = outctx[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)].copy()
-            _vers,nmiss,nskip = cdriz.tdriz(
-                insci, inwht, tilesci, tilewht,
-                tilectx, uniqid, ystart,
-                # These two arguments are the "logical" offset of the
-                # output image, i.e. the origin of the tile within the
-                # larger output frame.  As they have to do with WCS, they
-                # are 1-based
-                tilex * i, tiley * i,
-                _dny,
-                pix_ratio, 1.0, 1.0, 'center', pixfrac,
-                kernel, in_units, expscale, wt_scl,
-                fillval, nmiss, nskip, 1, mapping)
-            outsci[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)] = tilesci
-            outwht[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)] = tilewht
-            outctx[tiley * i:tiley * (i+1), tilex * i:tilex * (i+1)] = tilectx
+        # TODO: Parameterize the number of tiles?
+        NTILES = 5
+        tilex = int(outsci.shape[1] / NTILES)
+        tiley = int(outsci.shape[0] / NTILES)
+        for i in range(0, NTILES + 1):
+            for j in range(0, NTILES + 1):
+                log.info('drizzling tile: %d' % (i * (NTILES + 1) + j))
+                tilesci = outsci[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
+                tilewht = outwht[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
+                tilectx = outctx[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
+                _vers,nmiss,nskip = cdriz.tdriz(
+                    insci, inwht, tilesci, tilewht,
+                    tilectx, uniqid, ystart,
+                    # These two arguments are the "logical" offset of the
+                    # output image, i.e. the origin of the tile within the
+                    # larger output frame.  As they have to do with WCS, they
+                    # are 1-based
+                    tilex * j + 1, tiley * i + 1,
+                    _dny,
+                    pix_ratio, 1.0, 1.0, 'center', pixfrac,
+                    kernel, in_units, expscale, wt_scl,
+                    fillval, nmiss, nskip, 1, mapping)
+                outsci[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)] = tilesci
+                outwht[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)] = tilewht
+                outctx[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)] = tilectx
     else:
         _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
             outctx, uniqid, ystart, 1, 1, _dny,

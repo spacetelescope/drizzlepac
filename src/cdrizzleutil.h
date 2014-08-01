@@ -156,6 +156,7 @@ struct driz_param_t {
 
   /* Exposure time */
   float exposure_time; /* was: EXPIN */
+  float inv_exposure_time;
 
   /* Weight scale */
   float weight_scale; /* was: WTSCL */
@@ -172,8 +173,8 @@ struct driz_param_t {
   integer_t dny;
   integer_t dnx;
   integer_t ny;
-  float* data; /* [dny][dnx] */
-  float* weights; /* [dny][dnx] */
+  const float* data; /* [dny][dnx] */
+  const float* weights; /* [dny][dnx] */
 
   /* Output data */
   integer_t onx;
@@ -246,7 +247,7 @@ driz_param_dump(struct driz_param_t* p);
 
 /****************************************************************************/
 /* ARRAY ACCESSORS */
-static inline_macro float*
+static inline_macro const float*
 data_ptr(struct driz_param_t* p, integer_t x, integer_t y) {
   assert(p);
   assert(p->data);

@@ -547,7 +547,7 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
       yarr = j-1;
 
       /* Allow for stretching because of scale change */
-      d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
+      d = *data_ptr(p, xarr, yarr) * (float)p->scale2 * p->inv_exposure_time;
 
       /* Scale the weighting mask by the scale factor.  Note that we
          DON'T scale by the Jacobian as it hasn't been calculated */
@@ -610,7 +610,7 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
     yarr = j-1;
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2 * p->inv_exposure_time;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
@@ -693,7 +693,7 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
 
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2 * p->inv_exposure_time;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
@@ -775,7 +775,7 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
 
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2 * p->inv_exposure_time;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
@@ -863,7 +863,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
     yarr = j-1;
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, xarr, yarr) * (float)p->scale2;
+    d = *data_ptr(p, xarr, yarr) * (float)p->scale2 * p->inv_exposure_time;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output. */
@@ -986,7 +986,7 @@ do_kernel_square(struct driz_param_t* p,
     nhit = 0;
 
     /* Allow for stretching because of scale change */
-    d = *data_ptr(p, i-1, j) * (float)p->scale2;
+    d = *data_ptr(p, i-1, j) * (float)p->scale2 * p->inv_exposure_time;
 
     /* Scale the weighting mask by the scale factor and inversely by
        the Jacobian to ensure conservation of weight in the output */
@@ -1076,8 +1076,6 @@ dobox(struct driz_param_t* p, const integer_t ystart,
   double* ytmp = NULL;
   double* xo = NULL;
   double* yo = NULL;
-  float inv_exposure_time;
-  float* data_begin, *data_end;
   int kernel_order;
   size_t new_buffer_size;
   size_t bit_no;
@@ -1224,21 +1222,14 @@ dobox(struct driz_param_t* p, const integer_t ystart,
 
   /* If the input image is not in CPS we need to divide by the
      exposure */
+  p->inv_exposure_time = 1.0f;
   if (p->in_units != unit_cps) {
     if (p->exposure_time == 0.0) {
       driz_error_set_message(error, "Invalid exposure time");
       goto dobox_exit_;
     }
     assert(p->exposure_time != 0.0);
-    inv_exposure_time = 1.0f / p->exposure_time;
-    /* TODO: Removing this printf causes the results to be
-       less accurate.  Frustrating Heisenbug */
-    /*printf("%f\n", inv_exposure_time); */
-    data_begin = p->data;
-    data_end = data_begin + (p->ny * p->dnx);
-    for (; data_begin != data_end; ++data_begin) {
-      *data_begin *= inv_exposure_time;
-    }
+    p->inv_exposure_time = 1.0f / p->exposure_time;
   }
 
   DRIZLOG("-Drizzling using kernel = %s\n",kernel_enum2str(p->kernel));
