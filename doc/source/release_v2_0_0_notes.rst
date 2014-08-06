@@ -16,6 +16,7 @@ The most significant updates to the DrizzlePac code include:
   - Added option to select sources based on sharpness/roundness when tweakreg searches for sources
   - Added support for exclusion and inclusion regions arbitrary shape/size when tweakreg searches for sources
   - Added a full set of source detection parameters for reference image to support multi-instrument alignment in tweakreg
+  - Added support for new (simpler, more robust) ACS calibration of time-dependent distortion
   
 In addition to these major updates/changes, numerous smaller bugs were fixed and other revisions were implemented which affected a small portion of the use cases, such as:
   - headerlet code now accepts lists of files to be updated
