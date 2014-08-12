@@ -11,6 +11,19 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+DrizzlePac(astrodrizzle) v2.0.0
+---------------------------------
+**Publicly Released through PyPI:** [TBD]
+
+**available under SSBX/IRAFX starting:** Aug 4, 2014
+
+This major release includes a large number of revisions and bug fixes, including the addition of new tasks and parameters. The full description of all the changes included in this new release:
+
+.. toctree::
+    :maxdepth: 1
+
+    release_v2_0_0_notes
+    
 DrizzlePac(astrodrizzle) v1.1.16
 ---------------------------------
 **Publicly Released through PyPI:** Mar 27, 2014

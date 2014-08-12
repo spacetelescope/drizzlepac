@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 3: Subtracting the Sky &mdash; DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</title>
+    <title>Step 3: Subtracting the Sky &mdash; DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev33593 (29-Jul-2014)',
+        VERSION:     '2.0.0.dev33830 (11-Aug-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation" href="index.html" />
     <link rel="next" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" />
     <link rel="prev" title="Step 2: Generate a Static Mask" href="static.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -413,7 +413,7 @@ used for sky statistics computations.</p>
 chips in <em>all</em> input images. That sky value is then considered to be
 the background in all input images.</p>
 </li>
-<li><p class="first">The <tt class="docutils literal"><span class="pre">'match'</span></tt> algorithm (described in more details below) is somewhat
+<li><p class="first">The <tt class="docutils literal"><span class="pre">'match'</span></tt> algorithm is somewhat
 similar to the traditional sky subtraction method (<em class="xref py py-obj">skymethod</em>=<tt class="docutils literal"><span class="pre">'localmin'</span></tt>) in the sense that it measures the sky indipendently
 in input images (or detector chips). The major differences are that,
 unlike the traditional method,</p>
@@ -422,7 +422,7 @@ unlike the traditional method,</p>
 <li><tt class="docutils literal"><span class="pre">'match'</span></tt> algorithm computes <em>relative</em> sky values with regard
 to the sky in a reference image chosen from the input list
 of images; <em>and</em></li>
-<li>sky statistics is computed only in the part of the image
+<li>Sky statistics is computed only in the part of the image
 that intersects other images.</li>
 </ol>
 </div></blockquote>
@@ -430,17 +430,35 @@ that intersects other images.</li>
 for &#8220;equalizing&#8221; sky values in large mosaics in which one may have
 only (at least) pair-wise intersection of images without having
 a common intersection region (on the sky) in all images.</p>
+<p>The <em class="xref py py-obj">&#8216;match&#8217;</em> method works in the following way: for each pair
+of intersecting images, an equation is written that
+requires that average surface brightness in the overlapping part of
+the sky be equal in both images. The final system of equations is then
+solved for unknown background levels.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>Current algorithm is not capable of detecting cases when some groups of
+intersecting images (from the input list of images) do not intersect
+at all other groups of intersecting images (except for the simple
+case when <em>single</em> images do not intersect any other images). In these
+cases the algorithm will find equalizing sky values for each group.
+However since these groups of images do not intersect each other,
+sky will be matched only within each group and the &#8220;inter-group&#8221;
+sky mismatch could be significant.</p>
+<p class="last">Users are responsible for detecting such cases and adjusting processing
+accordingly.</p>
+</div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p>Because this method computes <em>relative sky values</em> compared to a
 reference image (which will have its sky value set to 0), the sky
 values computed with this method usually are smaller than the
 &#8220;absolute&#8221; sky values computed, e.g., with the <tt class="docutils literal"><span class="pre">'localmin'</span></tt>
-algorithm. Since <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a>
-expects &#8220;true&#8221; (as opposite to <em>relative</em>) sky values in order to
-correctly compute the median image or to perform cosmic-ray detection,
-this algorithm in not recommended to be used <em>alone</em> for sky computations
-to be used with <em class="xref py py-obj">astrodrizzle</em>.</p>
+algorithm. Since <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a> expects
+&#8220;true&#8221; (as opposite to <em>relative</em>) sky values in order to
+correctly compute the median image or to perform cosmic-ray
+detection, this algorithm in not recommended to be used <em>alone</em>
+for sky computations to be used with <em class="xref py py-obj">astrodrizzle</em>.</p>
 <p class="last">For the same reason, IVM weighting in <em class="xref py py-obj">astrodrizzle</em> should <strong>not</strong>
 be used with <tt class="docutils literal"><span class="pre">'match'</span></tt> method: sky values reported in <tt class="docutils literal"><span class="pre">MDRIZSKY</span></tt>
 header keyword will be relative sky values (sky offsets) and derived
@@ -459,31 +477,6 @@ making this method acceptable for use in conjunction with
 </li>
 </ul>
 <dl class="docutils">
-<dt><strong>Outline of the Sky Match (Equalization) Algorithm:</strong></dt>
-<dd><ol class="first last arabic simple">
-<li>Among all input images, find two <em>exposures</em> with the greatest
-overlap <em>on the sky</em>. The <em>footprint</em> of each
-exposure is the union of the footprints
-of selected chips (FITS extensions) from those exposures.</li>
-<li>Compute sky in both exposures but only in the region of the
-overlap of the two exposures.</li>
-<li>Compute the difference in the sky values.</li>
-<li>Record this difference in the &#8216;SCI&#8217; headers of the exposure
-with the highest sky value as the value of the header
-keyword specified by the <em class="xref py py-obj">skyuser_kwd</em> parameter.
-(Optionally, subtract computed sky value from image data.)</li>
-<li>Combine the two exposures into a single
-exposure (<em>mosaic</em>). The footprint of the &#8220;mosaic&#8221; exposure
-is formed by computing the union of the
-footprints of each chip in the two exposures.</li>
-<li>Repeat the above steps for all remaining exposures
-using the newly created mosaic footprint as one of
-the exposures and using the sky value for this newly
-created footprint as one of the values. There is no need to
-recompute its sky value &#8211; it is the same as the sky value of the
-first (<em>reference</em>) image.</li>
-</ol>
-</dd>
 <dt><strong>Glossary:</strong></dt>
 <dd><p class="first"><strong>Exposure</strong> &#8211; a <em>subset</em> of FITS image extensions in an input image
 that correspond to different chips in the detector used to acquire
@@ -510,15 +503,6 @@ both footprints <em>and</em> associated <em>chip</em> data that form an exposure
 </dd>
 <dt><strong>Remarks:</strong></dt>
 <dd><ul class="first last">
-<li><p class="first">The computation of the sky is performed using weighted mean
-of the (clipped) mode, mean, or median <em>from all chips</em>
-(selected by the user by specifying desired FITS extensions that
-need to be processed) in the
-exposure (but only in the region of the overlap of the two exposures
-whose sky values are to be compared).
-For mosaiced exposures, all chips that belong to the &#8220;elementary&#8221;
-exposures that formed the mosaic are used to compute the sky value.</p>
-</li>
 <li><p class="first"><a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><tt class="xref py py-func docutils literal"><span class="pre">sky</span></tt></a> works directly on <em>geometrically distorted</em>
 flat-fielded images thus avoiding the need to perform an additional
 drizzle step to perform distortion correction of input images.</p>
@@ -644,7 +628,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33593 (29-Jul-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
