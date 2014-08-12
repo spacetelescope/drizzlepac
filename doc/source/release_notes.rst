@@ -11,6 +11,51 @@ The code for this package gets released through a number of methods: namely,
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
 
+<<<<<<< .working
+=======
+DrizzlePac(astrodrizzle) v2.0.0
+---------------------------------
+**Publicly Released through PyPI:** [TBD]
+
+**available under SSBX/IRAFX starting:** Aug 4, 2014
+
+This major release includes a large number of revisions and bug fixes, including the addition of new tasks and parameters. The full description of all the changes included in this new release:
+
+.. toctree::
+    :maxdepth: 1
+
+    release_v2_0_0_notes
+    
+DrizzlePac(astrodrizzle) v1.1.16
+---------------------------------
+**Publicly Released through PyPI:** Mar 27, 2014
+
+**available under SSBX/IRAFX starting:** Mar 13, 2014
+
+- Support for WFPC2 GEIS input images improved to correctly find the associated DQ images.
+- Static mask files created for all chips in an image now get deleted when using the 'group' parameter to only drizzle a single chip or subset of chips.
+- Fixed problem caused by changes to stsci.tools code so that drizzlepac will reference the correct extensions in input images. 
+
+
+DrizzlePac(astrodrizzle) v1.1.15(30-Dec-2013)
+-------------------------------------------------
+**Publicly Released through PyPI:** Jan 14, 2014
+
+**available under SSBX/IRAFX starting:** Jan 6, 2014
+
+- [Bug Fix] Files created or updated by drizzlepac, fitsblender, or STWCS tasks, e.g. tweakreg or apply_headerlet, will now ensure that the NEXTEND keyword value correctly reflects the number of extensions in the FITS file upon completion.
+
+
+DrizzlePac(astrodrizzle) v1.1.14dev(21-Oct-2013) in IRAFX
+---------------------------------------------------------
+**Installed in OPUS:** Dec 11, 2013
+
+**available starting:** Oct 28, 2013
+
+- [Bug Fix] DQ arrays in input images now get updated with cosmic-ray masks computed by astrodrizzle when run with the parameter 'in_memory=True'. This restored the cosmic-ray masks detected during pipeline processing.
+
+
+>>>>>>> .merge-right.r33831
 DrizzlePac(astrodrizzle) v1.1.13dev(11-Oct-2013) in IRAFX
 ---------------------------------------------------------
 **available starting:** Oct 21, 2013
