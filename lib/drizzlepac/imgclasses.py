@@ -1025,6 +1025,7 @@ class RefImage(object):
                 log.warn("\nReference image contains a distorted WCS.\n"
                          "Using the undistorted version of this WCS.\n")
                 self.wcs = utils.output_wcs([self.wcs], undistort=True)
+                self.wcs.filename = froot
 
         elif isinstance(wcs_list,list):
             # generate a reference tangent plane from a list of STWCS objects
@@ -1041,10 +1042,12 @@ class RefImage(object):
                 self.wcs = stwcs.wcsutil.HSTWCS(wcs_list)
             else: # User provided full HSTWCS object
                 self.wcs = wcs_list
+            froot = self.wcs.filename
             if _is_wcs_distorted(self.wcs):
                 log.warn("\nReference image contains a distorted WCS.\n"
                          "Using the undistorted version of this WCS.\n")
                 self.wcs = utils.output_wcs([self.wcs], undistort=True)
+                self.wcs.filename = froot
 
         assert(not _is_wcs_distorted(self.wcs))
 
