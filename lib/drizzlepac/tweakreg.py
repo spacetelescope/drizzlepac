@@ -293,12 +293,14 @@ def run(configobj):
             ref_source = refcat_par['refcat']
             cat_src = ref_source
             xycat = None
+            cat_src_type = 'catalog'
         else:
             refimg = imgclasses.Image(configobj['refimage'],
                                       **ref_catfile_kwargs)
             ref_source = refimg.all_radec
             cat_src = None
             xycat = refimg.xy_catalog
+            cat_src_type = 'image'
 
         try:
             if 'use_sharp_round' in ref_catfile_kwargs:
@@ -306,9 +308,7 @@ def run(configobj):
             refimage = imgclasses.RefImage(configobj['refimage'],
                             ref_source, xycatalog=xycat,
                             cat_origin=cat_src, **kwargs)
-            refwcs = refimage.wcs
-            ref_source = refimage.all_radec
-            refwcs_fname = refwcs.filename
+            refwcs_fname = refimage.wcs.filename
         except KeyboardInterrupt:
             refimage.close()
             for img in input_images:
@@ -328,10 +328,64 @@ def run(configobj):
         image = _max_overlap_image(refimage, input_images, expand_refcat,
                                    enforce_user_order)
 
+    elif refcat_par['refcat'] not in [None,'',' ','INDEF']:
+        # a reference catalog is provided but not the reference image/wcs
+        if len(input_images) < 1:
+            warn_str = "No images available for alignment. Quitting..."
+            print('\nWARNING: {}\n'.format(warn_str))
+            log.warning(warn_str)
+            for img in input_images:
+                img.close()
+            return
+
+        image1, image2 = _max_overlap_pair(input_images, expand_refcat,
+                                           enforce_user_order)
+        input_images.insert(0, image2)
+        image = image1
+
+        # Workaround the defect described in ticket:
+        # http://redink.stsci.edu/trac/ssb/stsci_python/ticket/1151
+        refwcs = []
+        for i in all_input_images:
+            refwcs.extend(i.get_wcs())
+        kwargs['ref_wcs_name'] = image1.get_wcs()[0].filename
+
+        # A hack to allow different source finding parameters for
+        # the reference image:
+        ref_sourcefind_pars = \
+            tweakutils.get_configobj_root(configobj[PSET_SECTION_REFIMG])
+        ref_catfile_kwargs = catfile_kwargs.copy()
+        ref_catfile_kwargs.update(ref_sourcefind_pars)
+
+        log.info("USER INPUT PARAMETERS for finding sources for "
+                 "the reference image (not used):")
+        util.printParams(ref_catfile_kwargs, log=log)
+
+        ref_source = refcat_par['refcat']
+        cat_src = ref_source
+        xycat = None
+
+        try:
+            if 'use_sharp_round' in ref_catfile_kwargs:
+                kwargs['use_sharp_round'] = ref_catfile_kwargs['use_sharp_round']
+            kwargs['find_bounding_polygon'] = True
+            refimage = imgclasses.RefImage(refwcs,
+                                           ref_source, xycatalog=xycat,
+                                           cat_origin=cat_src, **kwargs)
+            refwcs_fname = refimage.wcs.filename
+            refimage.name = cat_src
+            cat_src_type = 'catalog'
+        except KeyboardInterrupt:
+            refimage.close()
+            for img in input_images:
+                img.close()
+            print 'Quitting as a result of user request (Ctrl-C)...'
+            return
+
     else:
         if len(input_images) < 2:
-            warn_str = "Fewer than two images are available for alignment. " \
-                       "Quitting..."
+            warn_str = "Fewer than two images available for alignment. " \
+                "Quitting..."
             print('\nWARNING: {}\n'.format(warn_str))
             log.warning(warn_str)
             for img in input_images:
@@ -361,7 +415,7 @@ def run(configobj):
             refimage = imgclasses.RefImage(refwcs, ref_source,
                                         xycatalog=refimg.xy_catalog, **kwargs)
             refwcs_fname = refimg.name
-
+            cat_src_type = 'image'
         except KeyboardInterrupt:
             refimage.close()
             for img in input_images:
@@ -410,6 +464,7 @@ def run(configobj):
                 xycat_lines += img.get_xy_catnames()
 
             retry_flags = len(input_images)*[0]
+            objmatch_par['cat_src_type'] = cat_src_type
             while image is not None:
                 print '\n'+'='*20
                 print 'Performing fit for: ',image.name,'\n'
@@ -580,6 +635,7 @@ def _max_overlap_pair(images, expand_refcat, enforce_user_order):
         c = j
         j = i
         i = c
+
     if i < j:
         j -= 1
 

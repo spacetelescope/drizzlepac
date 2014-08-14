@@ -273,7 +273,9 @@ nbright : int (Default = None)
 *REFERENCE CATALOG DESCRIPTION*
 refcat : str (Default = '')
     Name of the external reference catalog file to be used in place of the
-    catalog extracted from one of the input images.
+    catalog extracted from one of the input images. When `refimage` is not
+    specified, reference WCS to be used with reference catalog will be
+    derived from input images.
 
 refxcol : int (Default = 1)
     Column number of RA in the external catalog file specified by the
