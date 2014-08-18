@@ -8,7 +8,7 @@ Interfaces to main drizzle functions.
 """
 from __future__ import division # confidence medium
 
-import sys,os,copy,time
+import copy, math, os, sys, time
 import util
 import numpy as np
 from astropy.io import fits
@@ -1042,10 +1042,10 @@ def do_driz(insci, input_wcs, inwht,
     if for_final:
         # TODO: Parameterize the number of tiles?
         NTILES = 3
-        tilex = int(outsci.shape[1] / NTILES)
-        tiley = int(outsci.shape[0] / NTILES)
-        for i in range(0, NTILES + 1):
-            for j in range(0, NTILES + 1):
+        tilex = int(math.ceil(outsci.shape[1]/NTILES))
+        tiley = int(math.ceil(outsci.shape[0]/NTILES))
+        for i in range(NTILES):
+            for j in range(NTILES):
                 log.info('drizzling tile: %d' % (i * (NTILES + 1) + j))
                 tilesci = outsci[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
                 tilewht = outwht[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
