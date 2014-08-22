@@ -1069,7 +1069,12 @@ def plot_zeropoint(pars):
 
     plt.figure(num=pars['figure_id'])
     plt.clf()
-    plt.ioff()
+
+    if pars['interactive'] is True:
+        plt.ion()
+    else:
+        plt.ioff()
+
     a=plt.imshow(pars['data'],vmin=0,vmax=pars['vmax'],interpolation='nearest')
     plt.jet()#gray()
     plt.colorbar()
@@ -1080,8 +1085,7 @@ def plot_zeropoint(pars):
             verticalalignment='bottom',color='yellow')
     plt.xlabel("Offset in X (pixels)")
     plt.ylabel("Offset in Y (pixels)")
-    plt.draw()
-    plt.ion()
+
     if pars['plotname']:
         suffix = pars['plotname'][-4:]
         if '.' not in suffix:
@@ -1093,7 +1097,7 @@ def plot_zeropoint(pars):
         plt.savefig(pars['plotname'],format=format)
 
 def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
-                        plotname=None):
+                        plotname=None, interactive=True):
     """ Create a matrix which contains the delta between each XY position and
         each UV position.
     """
@@ -1134,7 +1138,7 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
 
         plot_pars = {'data':zpmat,'figure_id':figure_id,'vmax':zpstd,
                     'xp':xp,'yp':yp,'searchrad':searchrad,'title_str':title_str,
-                    'plotname':plotname}
+                    'plotname':plotname, 'interactive':interactive}
 
         plot_zeropoint(plot_pars)
     del zpmat
