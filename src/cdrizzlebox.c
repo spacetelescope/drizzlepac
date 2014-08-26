@@ -74,7 +74,7 @@ check_over(struct driz_param_t* p, const integer_t y, const integer_t margin,
   assert(np < npoint);
 
   /* Check end point */
-  if (xval[np - 1] < (double)p->dnx) {
+  if (p->dnx >= 1 && xval[np - 1] < (double)p->dnx) {
     xval[np] = (double)p->dnx;
     yval[np] = (double)y;
     ++np;
@@ -210,6 +210,8 @@ update_context_image(struct driz_param_t* p, const integer_t ii, const integer_t
   assert(error);
   assert(ii >= 0 && ii < p->nsx);
   assert(jj >= 0 && jj < p->nsy);
+
+  memset(newma, 0, sizeof(integer_t) * 100);
 
   /* Look up the current context value */
   icon = *output_context_ptr(p, ii, jj);
@@ -834,8 +836,6 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 
   dx = (double)(p->xmin);
   dy = (double)(p->ymin);
-
-  nhit = 0;
 
   for (i = x1; i <= x2; ++i) {
     /* Offset within the subset */

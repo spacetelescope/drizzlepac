@@ -770,8 +770,8 @@ tblot(PyObject *obj, PyObject *args)
   istat = doblot(&p, &error);
 
  _exit:
-  Py_DECREF(img);
-  Py_DECREF(out);
+  Py_XDECREF(img);
+  Py_XDECREF(out);
 
   if (istat || driz_error_is_set(&error)) {
     if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
@@ -787,8 +787,8 @@ tblot(PyObject *obj, PyObject *args)
 void cdriz_log_func(const char *format, ...) {
   static PyObject *logging = NULL;
   va_list args;
-  PyObject *logger;
-  PyObject *string;
+  PyObject *logger = NULL;
+  PyObject *string = NULL;
   char msg[256];
   int n;
 
@@ -867,7 +867,11 @@ arrmoments(PyObject *obj, PyObject *args)
   }
 
  _exit:
-  Py_DECREF(img);
+  Py_XDECREF(img);
+
+  if (!img) {
+    return NULL;
+  }
 
   return Py_BuildValue("d",moment);
 }
@@ -908,11 +912,13 @@ arrxyround(PyObject *obj, PyObject *args)
 
   img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
   if (!img) {
+    return_val = -1;
     goto _exit;
   }
 
   ker2d = (PyArrayObject *)PyArray_ContiguousFromAny(oker2d, PyArray_DOUBLE, 2, 2);
   if (!ker2d) {
+    return_val = -1;
     goto _exit;
   }
 
@@ -938,6 +944,7 @@ arrxyround(PyObject *obj, PyObject *args)
   sgdgdx = 0.0;
   p = 0.0;
   n = 0;
+  sg = 0.0;
 
   /* Compute the sums required for the x fit. */
   for (k=0; k < nxk; k++){
@@ -1110,8 +1117,12 @@ arrxyround(PyObject *obj, PyObject *args)
   round = 2.0 * (hx - hy) / (hx + hy);
 
  _exit:
-  Py_DECREF(img);
-  Py_DECREF(ker2d);
+  Py_XDECREF(img);
+  Py_XDECREF(ker2d);
+
+  if (!img || !ker2d) {
+      return NULL;
+  }
 
   if (return_val < 0){
       return Py_BuildValue("");
@@ -1164,7 +1175,7 @@ arrxyzero(PyObject *obj, PyObject *args)
   PyArrayObject *imgxy = NULL;
   PyArrayObject *refxy = NULL;
   PyArrayObject *ozpmat = NULL;
-  double **zpmat;
+  double **zpmat = NULL;
   long *a;
 
   long imgnum, refnum;
@@ -1216,8 +1227,8 @@ arrxyzero(PyObject *obj, PyObject *args)
   }
 
  _exit:
-  Py_DECREF(imgxy);
-  Py_DECREF(refxy);
+  Py_XDECREF(imgxy);
+  Py_XDECREF(refxy);
   free_Carrayptrs(zpmat);
 
   return PyArray_Return(ozpmat);

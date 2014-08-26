@@ -687,7 +687,6 @@ interpolate_sinc_(const float* data, const integer_t firstt,
   integer_t nx, ny;
   integer_t i, j, k, m, index;
   integer_t indices[3][4];
-  integer_t dnx,dny;
 
   assert(x);
   assert(y);
@@ -795,9 +794,6 @@ interpolate_sinc_(const float* data, const integer_t firstt,
     indices[2][1] = ny + nsinc;
     indices[2][2] = firstt + (lenary - 1) * len_coeff;
     indices[2][3] = 0;
-
-    dnx = len_coeff;
-    dny = lenary;
 
     for (m = 0; m < 3; ++m) {
       for (j = indices[m][0]; j <= indices[m][1]; ++j) {
@@ -989,7 +985,6 @@ doblot(struct driz_param_t* p,
   double dx, dy;
   double yv;
   float xo, yo, v;
-  float nx, ny;
   integer_t i, j;
   interp_function* interpolate;
   struct sinc_param_t sinc;
@@ -1082,10 +1077,6 @@ doblot(struct driz_param_t* p,
      This section applies in WBLOT mode and now contains the addition
      correction to separate the distortion-induced scale change.
   */
-
-  /* Image subset size */
-  nx = (float)(p->xmax - p->xmin + 1);
-  ny = (float)(p->ymax - p->ymin + 1);
 
   /* Offsets */
   dx = (double)(p->xmin);
