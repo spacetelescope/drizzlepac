@@ -536,6 +536,7 @@ class Image(object):
                 zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
                                     ref_outxy,searchrad=radius,
                                     histplot=matchpars['see2dplot'],
+                                    interactive=self.interactive,
                                     figure_id = self.figure_id, plotname=hist_name)
                 if matchpars['see2dplot'] and ('residplot' in matchpars and
                                                'No' in matchpars['residplot']):
