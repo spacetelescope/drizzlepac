@@ -495,9 +495,13 @@ class Image(object):
         refname = refimage.name
         ref_inxy = refimage.xy_catalog
 
+        cat_src_type = kwargs['cat_src_type']
+        del kwargs['cat_src_type']
+
         if not quiet_identity:
-            print("Matching sources from {} with sources from reference image {}"
-                  .format(self.name, refname))
+            print("Matching sources from \'{}\' with sources from "
+                  "reference {} \'{}\'"
+                  .format(self.name, cat_src_type, refname))
         self.sortSkyCatalog() # apply any catalog sorting specified by the user
         self.transformToRef(refWCS)
         self.refWCS = refWCS
@@ -532,6 +536,7 @@ class Image(object):
                 zpxoff,zpyoff,flux,zpqual = tweakutils.build_xy_zeropoint(self.outxy,
                                     ref_outxy,searchrad=radius,
                                     histplot=matchpars['see2dplot'],
+                                    interactive=self.interactive,
                                     figure_id = self.figure_id, plotname=hist_name)
                 if matchpars['see2dplot'] and ('residplot' in matchpars and
                                                'No' in matchpars['residplot']):
@@ -1025,6 +1030,7 @@ class RefImage(object):
                 log.warn("\nReference image contains a distorted WCS.\n"
                          "Using the undistorted version of this WCS.\n")
                 self.wcs = utils.output_wcs([self.wcs], undistort=True)
+                self.wcs.filename = froot
 
         elif isinstance(wcs_list,list):
             # generate a reference tangent plane from a list of STWCS objects
@@ -1041,10 +1047,12 @@ class RefImage(object):
                 self.wcs = stwcs.wcsutil.HSTWCS(wcs_list)
             else: # User provided full HSTWCS object
                 self.wcs = wcs_list
+            froot = self.wcs.filename
             if _is_wcs_distorted(self.wcs):
                 log.warn("\nReference image contains a distorted WCS.\n"
                          "Using the undistorted version of this WCS.\n")
                 self.wcs = utils.output_wcs([self.wcs], undistort=True)
+                self.wcs.filename = froot
 
         assert(not _is_wcs_distorted(self.wcs))
 
