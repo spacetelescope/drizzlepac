@@ -1038,18 +1038,21 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-#   if for_final and 'ASTRODRIZ_TRY_TILING' in os.environ:
-    NTILES = 3
-    if for_final and NTILES>1:
-        # TODO: Parameterize the number of tiles?
-        tilex = int(math.ceil(outsci.shape[1]/NTILES))
-        tiley = int(math.ceil(outsci.shape[0]/NTILES))
-        for i in range(NTILES):
-            for j in range(NTILES):
-                log.info('drizzling tile: %d' % (i * (NTILES + 1) + j))
-                tilesci = outsci[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
-                tilewht = outwht[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
-                tilectx = outctx[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)].copy()
+#   pool_size = util.get_pool_size(paramDict.get('num_cores')) # !!!
+    pool_size = 5 # fix !!!
+    will_parallel = for_final and pool_size > 1
+    if will_parallel:
+        NTILES_X, NTILES_Y = mputil.best_tile_layout(pool_size)
+        log.info('Drizzling %d tiles in parallel [OK NOT just YET], from a %dx%d grid.' % \
+                 ((NTILES_X*NTILES_Y),NTILES_X,NTILES_Y)) # !! get rid of JUST YET
+        tilexsz = int(math.ceil(outsci.shape[1]/NTILES_X))
+        tileysz = int(math.ceil(outsci.shape[0]/NTILES_Y))
+        for i in range(NTILES_Y):
+            for j in range(NTILES_X):
+                log.debug('drizzling tile: %d' % ((i*NTILES_X) + j + 1))
+                tilesci = outsci[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)].copy()
+                tilewht = outwht[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)].copy()
+                tilectx = outctx[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)].copy()
                 _vers,nmiss,nskip = cdriz.tdriz(
                     insci, inwht, tilesci, tilewht,
                     tilectx, uniqid, ystart,
@@ -1057,21 +1060,21 @@ def do_driz(insci, input_wcs, inwht,
                     # output image, i.e. the origin of the tile within the
                     # larger output frame.  As they have to do with WCS, they
                     # are 1-based
-                    tilex * j + 1, tiley * i + 1,
+                    tilexsz * j + 1, tileysz * i + 1,
                     _dny,
                     pix_ratio, 1.0, 1.0, 'center', pixfrac,
                     kernel, in_units, expscale, wt_scl,
                     fillval, nmiss, nskip, 1, mapping)
-                outsci[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)] = tilesci
-                outwht[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)] = tilewht
-                outctx[tiley * i:tiley * (i+1), tilex * j:tilex * (j+1)] = tilectx
+                outsci[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilesci
+                outwht[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilewht
+                outctx[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilectx
     else:
+        log.info('Executing serially')
         _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
             outctx, uniqid, ystart, 1, 1, _dny,
             pix_ratio, 1.0, 1.0, 'center', pixfrac,
             kernel, in_units, expscale, wt_scl,
             fillval, nmiss, nskip, 1, mapping)
-
 
     if nmiss > 0:
         log.warning('! %s points were outside the output image.' % nmiss)
