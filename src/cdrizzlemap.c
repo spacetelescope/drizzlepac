@@ -578,10 +578,7 @@ default_wcsmap_init(struct wcsmap_param_t* m,
       driz_error_set_message(error, wcslib_get_error_message(istat));
       goto exit;
     }
-  } else {      /* End if_then for factor > 0 */
-    snx = nx;
-    sny = ny;
-  }
+  } /* End if_then for factor > 0 */
 
   m->input_wcs = input;
   m->output_wcs = output;
