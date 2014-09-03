@@ -14,6 +14,7 @@ libraries = wcs m
 
 import os
 import os.path
+from distutils import log
 
 def wcs_include(command_obj) :
 
@@ -54,7 +55,7 @@ def pdk_fctx(command_obj) :
     try :
         import pandokia.runners as x
     except ImportError :
-        log_warn('pandokia import failed - no fctx include files')
+        log.warn('pandokia import failed - no fctx include files')
         return
 
     # knowledge about internals of pandokia - bummer, but pandokia does
