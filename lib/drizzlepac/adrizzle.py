@@ -528,7 +528,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if will_parallel:
         log.info('Executing %d parallel workers' % pool_size)
     else:
-        if single: # not yet an option for final drizzle, msg would confuse
+        if single: # note only for single driz; final uses different scheme
             log.info('Executing serially')
 
     # Set parameters for each input and run drizzle on it here.
@@ -1038,38 +1038,104 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-#   pool_size = util.get_pool_size(paramDict.get('num_cores')) # !!!
-    pool_size = 5 # fix !!!
+    pool_size = 8 # fix !!! =? util.get_pool_size(paramDict.get('num_cores'))
+    # !!! ALSO add code to make sure tiles aren't too SMALL
+
     will_parallel = for_final and pool_size > 1
     if will_parallel:
+        # debug the whole parallelization setup?
+        mode_str = 'in parallel'
+        run_sequentially_to_debug = True
+        if run_sequentially_to_debug:
+            mode_str = 'SEQUENTIALLY in MOCK-parallel (DEBUG)'
+
+        # set tile geometry
         NTILES_X, NTILES_Y = mputil.best_tile_layout(pool_size)
-        log.info('Drizzling %d tiles in parallel [OK NOT just YET], from a %dx%d grid.' % \
-                 ((NTILES_X*NTILES_Y),NTILES_X,NTILES_Y)) # !! get rid of JUST YET
+        log.info('Drizzling %d tiles %s, using a %dx%d grid.' % \
+                 ((NTILES_X*NTILES_Y), mode_str, NTILES_X, NTILES_Y))
         tilexsz = int(math.ceil(outsci.shape[1]/NTILES_X))
         tileysz = int(math.ceil(outsci.shape[0]/NTILES_Y))
+
+        # Start Manager server to keep track of I/O numpy arrays.  In the future
+        # we might consider using multiprocessing.sharedctypes instead of a
+        # manager server, as they may be faster in IPC.
+        manager = multiprocessing.Manager()
+
+        # We also personally keep track of each lproxy we create - need them at end
+        all_lproxies = {}
+        subprocs = []
+
         for i in range(NTILES_Y):
             for j in range(NTILES_X):
+
                 log.debug('drizzling tile: %d' % ((i*NTILES_X) + j + 1))
                 tilesci = outsci[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)].copy()
                 tilewht = outwht[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)].copy()
                 tilectx = outctx[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)].copy()
-                _vers,nmiss,nskip = cdriz.tdriz(
-                    insci, inwht, tilesci, tilewht,
-                    tilectx, uniqid, ystart,
-                    # These two arguments are the "logical" offset of the
-                    # output image, i.e. the origin of the tile within the
-                    # larger output frame.  As they have to do with WCS, they
-                    # are 1-based
-                    tilexsz * j + 1, tileysz * i + 1,
-                    _dny,
+
+                # lproxy: carrier list object used by Manager to sync data between processes
+                lproxy = manager.list()
+                lproxy.append(tilesci)
+                lproxy.append(tilewht)
+                lproxy.append(tilectx)
+                lproxy.append('') # _vers
+                lproxy.append(0)  # nmiss
+                lproxy.append(0)  # nskip
+                all_lproxies[(i,j)] = lproxy
+
+                p = multiprocessing.Process(target=parallel_tdriz,
+                    name='adrizzle.parallel_tdriz()', # for err msgs
+                    args=(insci, inwht, lproxy, uniqid, ystart,
+                    # These two arguments are the "logical" offset of the output
+                    # image, i.e. the origin of the tile within the larger output
+                    # frame.  As they have to do with WCS, they are 1-based.
+                    tilexsz * j + 1, tileysz * i + 1, _dny,
                     pix_ratio, 1.0, 1.0, 'center', pixfrac,
                     kernel, in_units, expscale, wt_scl,
-                    fillval, nmiss, nskip, 1, mapping)
-                outsci[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilesci
-                outwht[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilewht
-                outctx[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilectx
+                    fillval, 0, 0, 1, mapping)) # nmiss & nskip are output only here
+                subprocs.append(p)
+                if not run_sequentially_to_debug:
+                    p.start()
+
+        # The Join: wait until all parallel computations are finished
+        if run_sequentially_to_debug:
+            # The following loop defeats the entire purpose of parallelizing the
+            # call to tdriz(), and would indeed be slower than if will_parallel were
+            # False (due just to overhead), but should be useful if one wishes to
+            # debug all the multiprocessing mechanisms in place, since this incurs
+            # no potential concurrency conflicts.  Run _only_ if debugging.
+            for p in subprocs:
+                p.start()
+                p.join()
+        else:
+            # All tasks are now running in parallel; wait for them to finish
+            for p in subprocs:
+                p.join()
+
+        # Collect all our results back out of the individual lproxy objects.
+        # Apply all the tile array data back onto outsci, outwht, and outctx.
+        for key in all_lproxies:
+            i,j = key
+            # tiles
+            tilesci = all_lproxies[key][0]
+            tilewht = all_lproxies[key][1]
+            tilectx = all_lproxies[key][2]
+            # update full image
+            outsci[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilesci
+            outwht[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilewht
+            outctx[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilectx
+            # _vers (note: each tile's ver string overwrites previous tiles'. eez ok.)
+            _vers = all_lproxies[key][3]
+            # accumulations to nmiss, nskip
+            nmiss += all_lproxies[key][4]
+            nskip += all_lproxies[key][5]
+
     else:
-        log.info('Executing serially')
+        if for_final:
+            # note only if final; single uses different scheme & notes elsewhere
+            log.info('Executing serially')
+
+        # run serially
         _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
             outctx, uniqid, ystart, 1, 1, _dny,
             pix_ratio, 1.0, 1.0, 'center', pixfrac,
@@ -1082,6 +1148,39 @@ def do_driz(insci, input_wcs, inwht,
         log.debug('! Note, %s input lines were skipped completely.' % nskip)
 
     return _vers
+
+
+def parallel_tdriz(insci, inwht, lproxy,
+                   uniqid, ystart, xmin, ymin, dny,
+                   pix_ratio, xscale, yscale,
+                   align_str, pixfrac, kernel, in_units,
+                   expscale, wt_scl, fillval,
+                   nmiss, nskip, vflag, mapping):
+
+    """ Wrap direct call to tdriz.cdriz() for parallel processing of it.
+        See docs in do_driz and cdriz for more info on tdriz() itself.
+        Try to keep as little logic in here as possible.
+    """
+    # get the tile arrays from the proxy
+    tilesci = lproxy[0]
+    tilewht = lproxy[1]
+    tilectx = lproxy[2]
+    # call tdriz
+    _vers,nmiss,nskip = cdriz.tdriz(insci, inwht,
+        tilesci, tilewht, tilectx,
+        uniqid, ystart, xmin, ymin, dny,
+        pix_ratio, xscale, yscale,
+        align_str, pixfrac, kernel, in_units,
+        expscale, wt_scl, fillval,
+        nmiss, nskip, vflag, mapping)
+    # re-assign lproxy values in sub-process; gets them communicated to the parent
+    # every other arg is an input to tdriz so we need not communicate it
+    lproxy[0] = tilesci
+    lproxy[1] = tilewht
+    lproxy[2] = tilectx
+    lproxy[3] = _vers
+    lproxy[4] = nmiss
+    lproxy[5] = nskip
 
 
 def get_data(filename):
