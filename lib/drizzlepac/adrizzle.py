@@ -1143,7 +1143,10 @@ def do_driz(insci, input_wcs, inwht,
             fillval, nmiss, nskip, 1, mapping)
 
     if nmiss > 0:
-        log.warning('! %s points were outside the output image.' % nmiss)
+        if will_parallel: # this is expected because of the tiling
+            log.debug('%s points were outside the output image.' % nmiss)
+        else:
+            log.warning('! %s points were outside the output image.' % nmiss)
     if nskip > 0:
         log.debug('! Note, %s input lines were skipped completely.' % nskip)
 
