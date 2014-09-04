@@ -1045,7 +1045,7 @@ def do_driz(insci, input_wcs, inwht,
     if will_parallel:
         # debug the whole parallelization setup?
         mode_str = 'in parallel'
-        run_sequentially_to_debug = True
+        run_sequentially_to_debug = False
         if run_sequentially_to_debug:
             mode_str = 'SEQUENTIALLY in MOCK-parallel (DEBUG)'
 
