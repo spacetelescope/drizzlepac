@@ -1041,7 +1041,7 @@ def do_driz(insci, input_wcs, inwht,
     pool_size = 8 # fix !!! =? util.get_pool_size(paramDict.get('num_cores'))
     # !!! ALSO add code to make sure tiles aren't too SMALL
 
-    will_parallel = for_final and pool_size > 1
+    will_parallel = util.can_parallel and for_final and pool_size > 1
     if will_parallel:
         # debug the whole parallelization setup?
         mode_str = 'in parallel'
