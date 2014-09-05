@@ -1147,7 +1147,7 @@ def do_driz(insci, input_wcs, inwht,
 #       log.info('Time spent calculating: %.2f secs' % (total_t_wait-total_io_inside) )
 #       log.info('Time spent inside the sub-processes moving data: %.2f secs' % total_io_inside)
 #       log.info('Time spent collecting results: %.2f secs' % total_t_collect)
-        log.info('Time spent ALTOGETHER on this image: %.2f secs' % (total_t_launch+total_t_wait+total_t_collect) )
+        log.info('Time spent altogether on this chip: %.2f secs' % (total_t_launch+total_t_wait+total_t_collect) )
     else:
         if for_final:
             # note only if final; single uses different scheme & notes elsewhere
