@@ -213,7 +213,7 @@ def run(configObj, wcsmap=None):
             wt_scl, wcslin_pscale=wcslin.pscale ,uniqid=uniqid,
             pixfrac=configObj['pixfrac'], kernel=configObj['kernel'],
             fillval=scale_pars['fillval'], stepsize=configObj['stepsize'],
-            wcsmap=None)
+            wcsmap=None, rqstd_num_cores=configObj.get('num_cores'))
 
     out_sci_handle,outextn = create_output(configObj['outdata'])
     if not output_exists:
@@ -853,7 +853,8 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                 wcslin_pscale=chip.wcslin_pscale, uniqid=_uniqid,
                 pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
                 fillval=paramDict['fillval'], stepsize=paramDict['stepsize'],
-                wcsmap=wcsmap, for_final=(not single))
+                wcsmap=wcsmap, rqstd_num_cores=paramDict.get('num_cores'),
+                for_final=(not single))
     time_driz = time.time() - epoch; epoch = time.time()
 
     # Set up information for generating output FITS image
@@ -917,8 +918,9 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                                           wcs=output_wcs, single=single)
         _outimg.set_bunit(_bunit)
         _outimg.set_units(paramDict['units'])
+        # performance-wise, this next line takes 99% of the file-writing time
         outimgs = _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,
-                                        versions=_versions,virtual=img.inmemory)
+                                    versions=_versions,virtual=img.inmemory)
         del _outimg
 
         # update imageObject with product in memory
@@ -927,16 +929,17 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     # this is after the doWrite
     time_write = time.time() - epoch; epoch = time.time()
-    if False and not single: # turn off all this perf reporting for now
+#   if False and not single: # turn off all this perf reporting for now
+    if not single: # !!!
         time_pre_all.append(time_pre)
         time_driz_all.append(time_driz)
         time_post_all.append(time_post)
         time_write_all.append(time_write)
 
-        log.info('chip time pre-drizzling:  %6.3f' % time_pre)
-        log.info('chip time drizzling:      %6.3f' % time_driz)
-        log.info('chip time post-drizzling: %6.3f' % time_post)
-        log.info('chip time writing output: %6.3f' % time_write)
+#       log.info('chip time pre-drizzling:  %6.3f' % time_pre)
+#       log.info('chip time drizzling:      %6.3f' % time_driz)
+#       log.info('chip time post-drizzling: %6.3f' % time_post)
+#       log.info('chip time writing output: %6.3f' % time_write)
 
         if doWrite:
             tot_pre = sum(time_pre_all)
@@ -954,7 +957,8 @@ def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
             expin, in_units, wt_scl,
             wcslin_pscale=1.0, uniqid=1, pixfrac=1.0, kernel='square',
-            fillval="INDEF", stepsize=10, wcsmap=None, for_final=False):
+            fillval="INDEF", stepsize=10, wcsmap=None,
+            rqstd_num_cores=None, for_final=False):
     """
     Core routine for performing 'drizzle' operation on a single input image
     All input values will be Python objects such as ndarrays, instead
@@ -1038,14 +1042,12 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    pool_size = 8 # fix !!! =? util.get_pool_size(paramDict.get('num_cores'))
-    # !!! ALSO add code to make sure tiles aren't too SMALL
-
-    will_parallel = util.can_parallel and for_final and pool_size > 1
+    pool_size = util.get_pool_size(rqstd_num_cores, None)
+    will_parallel = for_final and pool_size > 1
     if will_parallel:
         # debug the whole parallelization setup?
         mode_str = 'in parallel'
-        run_sequentially_to_debug = False
+        run_sequentially_to_debug = 'ASTRODRIZ_SQTL_DBG' in os.environ # False
         if run_sequentially_to_debug:
             mode_str = 'SEQUENTIALLY in MOCK-parallel (DEBUG)'
 
@@ -1065,6 +1067,7 @@ def do_driz(insci, input_wcs, inwht,
         all_lproxies = {}
         subprocs = []
 
+        total_t_launch = time.time()
         for i in range(NTILES_Y):
             for j in range(NTILES_X):
 
@@ -1081,6 +1084,7 @@ def do_driz(insci, input_wcs, inwht,
                 lproxy.append('') # _vers
                 lproxy.append(0)  # nmiss
                 lproxy.append(0)  # nskip
+                lproxy.append(0)  # iotime
                 all_lproxies[(i,j)] = lproxy
 
                 p = multiprocessing.Process(target=parallel_tdriz,
@@ -1097,6 +1101,9 @@ def do_driz(insci, input_wcs, inwht,
                 if not run_sequentially_to_debug:
                     p.start()
 
+        t = total_t_wait = time.time()
+        total_t_launch = t - total_t_launch
+
         # The Join: wait until all parallel computations are finished
         if run_sequentially_to_debug:
             # The following loop defeats the entire purpose of parallelizing the
@@ -1112,8 +1119,12 @@ def do_driz(insci, input_wcs, inwht,
             for p in subprocs:
                 p.join()
 
+        total_t_wait = time.time() - total_t_wait
+
         # Collect all our results back out of the individual lproxy objects.
         # Apply all the tile array data back onto outsci, outwht, and outctx.
+        total_io_inside = 0
+        total_t_collect = time.time()
         for key in all_lproxies:
             i,j = key
             # tiles
@@ -1129,7 +1140,14 @@ def do_driz(insci, input_wcs, inwht,
             # accumulations to nmiss, nskip
             nmiss += all_lproxies[key][4]
             nskip += all_lproxies[key][5]
+            total_io_inside += all_lproxies[key][6]
 
+        total_t_collect = time.time() - total_t_collect
+#       log.info('Time spent launching: %.2f secs' % total_t_launch)
+#       log.info('Time spent calculating: %.2f secs' % (total_t_wait-total_io_inside) )
+#       log.info('Time spent inside the sub-processes moving data: %.2f secs' % total_io_inside)
+#       log.info('Time spent collecting results: %.2f secs' % total_t_collect)
+        log.info('Time spent ALTOGETHER on this image: %.2f secs' % (total_t_launch+total_t_wait+total_t_collect) )
     else:
         if for_final:
             # note only if final; single uses different scheme & notes elsewhere
@@ -1164,10 +1182,16 @@ def parallel_tdriz(insci, inwht, lproxy,
         See docs in do_driz and cdriz for more info on tdriz() itself.
         Try to keep as little logic in here as possible.
     """
+    # check timing
+    iotime = 0.0; t = time.time()
+
     # get the tile arrays from the proxy
     tilesci = lproxy[0]
     tilewht = lproxy[1]
     tilectx = lproxy[2]
+
+    iotime += time.time() - t
+
     # call tdriz
     _vers,nmiss,nskip = cdriz.tdriz(insci, inwht,
         tilesci, tilewht, tilectx,
@@ -1176,6 +1200,9 @@ def parallel_tdriz(insci, inwht, lproxy,
         align_str, pixfrac, kernel, in_units,
         expscale, wt_scl, fillval,
         nmiss, nskip, vflag, mapping)
+
+    t = time.time()
+
     # re-assign lproxy values in sub-process; gets them communicated to the parent
     # every other arg is an input to tdriz so we need not communicate it
     lproxy[0] = tilesci
@@ -1184,6 +1211,8 @@ def parallel_tdriz(insci, inwht, lproxy,
     lproxy[3] = _vers
     lproxy[4] = nmiss
     lproxy[5] = nskip
+    iotime += time.time() - t
+    lproxy[6] = iotime
 
 
 def get_data(filename):
