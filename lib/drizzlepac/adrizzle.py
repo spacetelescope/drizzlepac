@@ -347,6 +347,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
         paramDict['crbit'] = configObj['crbit']
         paramDict['proc_unit'] = configObj['proc_unit']
         paramDict['wht_type'] = configObj[final_step]['final_wht_type']
+        paramDict['num_cores'] = configObj.get('num_cores')
 
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
