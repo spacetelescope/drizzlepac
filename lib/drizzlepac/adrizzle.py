@@ -949,10 +949,10 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
             tot_write = sum(time_write_all)
             tot = tot_pre+tot_driz+tot_post+tot_write
             log.info('time:')
-            log.info('step total pre-drizzling:  %7.3fs (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
-            log.info('step total drizzling:      %7.3fs (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
-            log.info('step total header edits:   %7.3fs (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
-            log.info('step total writing output: %7.3fs (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
+            log.info('step total pre-drizzling:  %7.2fs (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
+            log.info('step total drizzling:      %7.2fs (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
+            log.info('step total header edits:   %7.2fs (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
+            log.info('step total writing output: %7.2fs (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
 
 
 def do_driz(insci, input_wcs, inwht,
