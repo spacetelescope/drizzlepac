@@ -948,10 +948,11 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
             tot_post = sum(time_post_all)
             tot_write = sum(time_write_all)
             tot = tot_pre+tot_driz+tot_post+tot_write
-            log.info('chip total pre-drizzling:  %6.3f (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
-            log.info('chip total drizzling:      %6.3f (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
-            log.info('chip total post-drizzling: %6.3f (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
-            log.info('chip total writing output: %6.3f (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
+            log.info('time:')
+            log.info('chip total pre-drizzling:  %7.3fs (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
+            log.info('chip total drizzling:      %7.3fs (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
+            log.info('chip total post-drizzling: %7.3fs (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
+            log.info('chip total writing output: %7.3fs (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
 
 
 def do_driz(insci, input_wcs, inwht,
@@ -1079,9 +1080,9 @@ def do_driz(insci, input_wcs, inwht,
 
                 # lproxy: carrier list object used by Manager to sync data between processes
                 lproxy = manager.list()
-                lproxy.append(tilesci)
-                lproxy.append(tilewht)
-                lproxy.append(tilectx)
+                lproxy.append(None) # tilesci
+                lproxy.append(None) # tilewht
+                lproxy.append(None) # tilectx
                 lproxy.append('') # _vers
                 lproxy.append(0)  # nmiss
                 lproxy.append(0)  # nskip
@@ -1090,7 +1091,8 @@ def do_driz(insci, input_wcs, inwht,
 
                 p = multiprocessing.Process(target=parallel_tdriz,
                     name='adrizzle.parallel_tdriz()', # for err msgs
-                    args=(insci, inwht, lproxy, uniqid, ystart,
+                    args=(insci, inwht, tilesci, tilewht, tilectx, lproxy,
+                    uniqid, ystart,
                     # These two arguments are the "logical" offset of the output
                     # image, i.e. the origin of the tile within the larger output
                     # frame.  As they have to do with WCS, they are 1-based.
@@ -1172,7 +1174,7 @@ def do_driz(insci, input_wcs, inwht,
     return _vers
 
 
-def parallel_tdriz(insci, inwht, lproxy,
+def parallel_tdriz(insci, inwht, tilesci, tilewht, tilectx, lproxy,
                    uniqid, ystart, xmin, ymin, dny,
                    pix_ratio, xscale, yscale,
                    align_str, pixfrac, kernel, in_units,
@@ -1183,16 +1185,6 @@ def parallel_tdriz(insci, inwht, lproxy,
         See docs in do_driz and cdriz for more info on tdriz() itself.
         Try to keep as little logic in here as possible.
     """
-    # check timing
-    iotime = 0.0; t = time.time()
-
-    # get the tile arrays from the proxy
-    tilesci = lproxy[0]
-    tilewht = lproxy[1]
-    tilectx = lproxy[2]
-
-    iotime += time.time() - t
-
     # call tdriz
     _vers,nmiss,nskip = cdriz.tdriz(insci, inwht,
         tilesci, tilewht, tilectx,
@@ -1212,7 +1204,7 @@ def parallel_tdriz(insci, inwht, lproxy,
     lproxy[3] = _vers
     lproxy[4] = nmiss
     lproxy[5] = nskip
-    iotime += time.time() - t
+    iotime = time.time() - t
     lproxy[6] = iotime
 
 
