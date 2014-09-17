@@ -219,7 +219,7 @@ def _median(imageObjectList, paramDict):
             singleWeightList.append(_weight_file)
             try:
                 tmp_mean_value = ImageStats(_weight_file.data, lower=1e-8,
-                    lsig=None, usig=None, fields="mean", nclip=0).mean
+                    fields="mean", nclip=0).mean
             except ValueError:
                 tmp_mean_value = 0.0
             _wht_mean.append(tmp_mean_value * maskpt)
