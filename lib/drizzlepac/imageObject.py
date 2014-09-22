@@ -1152,7 +1152,7 @@ class imageObject(baseImageObject):
             sci_chip = self._image[self.scienceExt,chip]
             chip_wcs = sci_chip.wcs.copy()
 
-            if chip_wcs.sip is None or not undistort:
+            if chip_wcs.sip is None or not undistort or chip_wcs.instrument=='DEFAULT':
                 chip_wcs.sip = None
                 chip_wcs.cpdis1 = None
                 chip_wcs.cpdis2 = None

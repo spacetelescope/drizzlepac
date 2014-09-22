@@ -142,7 +142,7 @@ def run(configObj, wcsmap=None):
             else:
                 # Define default WCS based on input image
                 applydist = True
-                if input_wcs.sip is None:
+                if input_wcs.sip is None or input_wcs.instrument=='DEFAULT':
                     applydist = False
                 output_wcs = stwcs.distortion.utils.output_wcs([input_wcs],undistort=applydist)
         else:
@@ -195,7 +195,7 @@ def run(configObj, wcsmap=None):
 
     # Interpret coeffs parameter to determine whether to apply coeffs or not
     undistort = True
-    if not configObj['coeffs'] or input_wcs.sip is None:
+    if not configObj['coeffs'] or input_wcs.sip is None or input_wcs.instrument == 'DEFAULT':
         undistort = False
     # turn off use of coefficients if undistort is False (coeffs == False)
     if not undistort:
