@@ -1046,7 +1046,7 @@ class RefImage(object):
             try:
                 self.wcs = stwcs.wcsutil.HSTWCS(hdulist, fextn)
                 if _is_wcs_distorted(self.wcs):
-                    if wcs.instrument != 'DEFAULT':
+                    if wcs.instrument == 'DEFAULT':
                         raise ValueError("Distorted non-HST reference images "
                                          "are not supported.")
                     log.warn("\nReference image contains a distorted WCS.\n"
@@ -1069,7 +1069,7 @@ class RefImage(object):
         elif isinstance(wcs_list, list):
             # generate a reference tangent plane from a list of STWCS objects
             undistort = _is_wcs_distorted(wcs_list[0])
-            if undistort and wcs.instrument != 'DEFAULT':
+            if undistort and wcs.instrument == 'DEFAULT':
                 raise ValueError("Distorted non-HST reference images "
                                  "are not supported.")
 
@@ -1086,7 +1086,7 @@ class RefImage(object):
                 self.wcs = wcs_list
                 froot = self.wcs.filename
                 if _is_wcs_distorted(self.wcs):
-                    if wcs.instrument != 'DEFAULT':
+                    if wcs.instrument == 'DEFAULT':
                         raise ValueError("Distorted non-HST reference images "
                                          "are not supported.")
                     log.warn("\nReference image contains a distorted WCS.\n"
