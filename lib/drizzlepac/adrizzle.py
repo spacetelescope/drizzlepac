@@ -1047,6 +1047,7 @@ def do_driz(insci, input_wcs, inwht,
     pool_size = util.get_pool_size(rqstd_num_cores, None)
     will_parallel = for_final and pool_size > 1
     if will_parallel:
+        total_t_launch = time.time()
         # debug the whole parallelization setup?
         mode_str = 'in parallel'
         run_sequentially_to_debug = 'ASTRODRIZ_SQTL_DBG' in os.environ # False
@@ -1069,7 +1070,6 @@ def do_driz(insci, input_wcs, inwht,
         all_lproxies = {}
         subprocs = []
 
-        total_t_launch = time.time()
         for i in range(NTILES_Y):
             for j in range(NTILES_X):
 
@@ -1086,6 +1086,7 @@ def do_driz(insci, input_wcs, inwht,
                 lproxy.append('') # _vers
                 lproxy.append(0)  # nmiss
                 lproxy.append(0)  # nskip
+                lproxy.append(0)  # calctime
                 lproxy.append(0)  # iotime
                 all_lproxies[(i,j)] = lproxy
 
@@ -1104,8 +1105,7 @@ def do_driz(insci, input_wcs, inwht,
                 if not run_sequentially_to_debug:
                     p.start()
 
-        t = total_t_wait = time.time()
-        total_t_launch = t - total_t_launch
+        now = total_t_wait = time.time(); total_t_launch = now - total_t_launch
 
         # The Join: wait until all parallel computations are finished
         if run_sequentially_to_debug:
@@ -1122,12 +1122,11 @@ def do_driz(insci, input_wcs, inwht,
             for p in subprocs:
                 p.join()
 
-        total_t_wait = time.time() - total_t_wait
+        now = total_t_collect = time.time(); total_t_wait = now - total_t_wait
 
-        # Collect all our results back out of the individual lproxy objects.
+        # Collect all our results back out of the individual proxy objects.
         # Apply all the tile array data back onto outsci, outwht, and outctx.
-        total_io_inside = 0
-        total_t_collect = time.time()
+        all_inside_t = ""
         for key in all_lproxies:
             i,j = key
             # tiles
@@ -1143,14 +1142,16 @@ def do_driz(insci, input_wcs, inwht,
             # accumulations to nmiss, nskip
             nmiss += all_lproxies[key][4]
             nskip += all_lproxies[key][5]
-            total_io_inside += all_lproxies[key][6]
+            all_inside_t += '\nc: %.3f, io: %.3f' % \
+                (all_lproxies[key][6], all_lproxies[key][7])
 
         total_t_collect = time.time() - total_t_collect
-#       log.info('Time spent launching: %.2f secs' % total_t_launch)
-#       log.info('Time spent calculating: %.2f secs' % (total_t_wait-total_io_inside) )
-#       log.info('Time spent inside the sub-processes moving data: %.2f secs' % total_io_inside)
-#       log.info('Time spent collecting results: %.2f secs' % total_t_collect)
-        log.info('Time spent altogether on this chip: %.2f secs' % (total_t_launch+total_t_wait+total_t_collect) )
+        log.info('Time spent launching: %.2f secs' % total_t_launch)
+        log.info('Time spent joining: %.2f secs' % total_t_wait)
+        log.info('Time spent inside the subprocs: %s' % all_inside_t)
+        log.info('Time spent collecting results: %.2f secs' % total_t_collect)
+        log.info('Time spent altogether on this chip: %.2f secs' % \
+                 (total_t_launch+total_t_wait+total_t_collect) )
     else:
         if for_final:
             # note only if final; single uses different scheme & notes elsewhere
@@ -1185,6 +1186,8 @@ def parallel_tdriz(insci, inwht, tilesci, tilewht, tilectx, lproxy,
         See docs in do_driz and cdriz for more info on tdriz() itself.
         Try to keep as little logic in here as possible.
     """
+    calctime = time.time()
+
     # call tdriz
     _vers,nmiss,nskip = cdriz.tdriz(insci, inwht,
         tilesci, tilewht, tilectx,
@@ -1194,18 +1197,18 @@ def parallel_tdriz(insci, inwht, tilesci, tilewht, tilectx, lproxy,
         expscale, wt_scl, fillval,
         nmiss, nskip, vflag, mapping)
 
-    t = time.time()
+    now = iotime = time.time(); calctime = now - calctime
 
-    # re-assign lproxy values in sub-process; gets them communicated to the parent
-    # every other arg is an input to tdriz so we need not communicate it
+    # leaving subprocess; write results back out to parent
+    # via the lproxy values; gets them communicated through the manager
     lproxy[0] = tilesci
     lproxy[1] = tilewht
     lproxy[2] = tilectx
     lproxy[3] = _vers
     lproxy[4] = nmiss
     lproxy[5] = nskip
-    iotime = time.time() - t
-    lproxy[6] = iotime
+    lproxy[6] = calctime
+    lproxy[7] = time.time() - iotime
 
 
 def get_data(filename):
