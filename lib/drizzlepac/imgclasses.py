@@ -16,7 +16,7 @@ from astropy import wcs as pywcs
 import stwcs
 from astropy.io import fits
 from stsci.sphere.polygon import SphericalPolygon
-from stsci.skypac.parseat import FileExtMaskInfo
+from stsci.skypac.parseat import FileExtMaskInfo, parse_cs_line
 from stsci.skypac import utils as spu
 
 from stwcs import distortion
@@ -1013,28 +1013,66 @@ class Image(object):
 class RefImage(object):
     """ This class provides all the information needed by to define a reference
         tangent plane and list of source positions on the sky.
+
+        .. warning::
+          When `wcs_list` is a Python list of `WCS` objects,
+          each element must be an instance of `stwcs.wcsutil.HSTWCS`.
+
     """
     def __init__(self, wcs_list, catalog, xycatalog=None, cat_origin=None, **kwargs):
         assert(isinstance(xycatalog, list) if xycatalog is not None else True)
-        if isinstance(wcs_list,str):
-            # Input was a filename for the reference image
-            froot, fextn = fu.parseFilename(wcs_list)
-            if fextn is None:
-                num_sci = spu.count_extensions(froot)
-                fextn = '[SCI,1]' if num_sci > 0 else '[0]'
-                fname = froot + fextn
-            else:
-                fname = wcs_list
-            self.wcs = stwcs.wcsutil.HSTWCS(fname)
-            if _is_wcs_distorted(self.wcs):
-                log.warn("\nReference image contains a distorted WCS.\n"
-                         "Using the undistorted version of this WCS.\n")
-                self.wcs = utils.output_wcs([self.wcs], undistort=True)
-                self.wcs.filename = froot
+        hdulist = None
 
-        elif isinstance(wcs_list,list):
+        if isinstance(wcs_list, str):
+            # Input was a filename for the reference image
+            #froot, fextn = fu.parseFilename(wcs_list)
+            fi = parse_cs_line(wcs_list, fnamesOnly=False, doNotOpenDQ=True,
+                               im_fmode='readonly')
+            fi[0].release_all_images()
+            if len(fi) != 1:
+                ValueError('Reference image file name must contain a single '
+                           'file name specification.')
+            froot = fi[0].image
+            if len(fi[0].fext) == 0:
+                # there are no 'SCI' extensions in the input file -> use
+                # primary HDU:
+                fextn = 0
+            else:
+                fextn = fi[0].fext[0] # <- we assume that only one
+                                      # extension is specified or that the
+                                      # first one should be used
+
+            hdulist = fits.open(froot, mode='readonly', memmap=False)
+            try:
+                self.wcs = stwcs.wcsutil.HSTWCS(hdulist, fextn)
+                if _is_wcs_distorted(self.wcs):
+                    if self.wcs.instrument == 'DEFAULT':
+                        raise ValueError("Distorted non-HST reference images "
+                                         "are not supported.")
+                    log.warn("\nReference image contains a distorted WCS.\n"
+                             "Using the undistorted version of this WCS.\n")
+                    self.wcs = utils.output_wcs([self.wcs], undistort=True)
+            except KeyError as e:
+                if not e.args[0].startswith('Unsupported instrument'):
+                    raise e
+                # try using astropy.wcs:
+                self.wcs = pywcs.WCS(hdulist[fextn].header, hdulist)
+                if _is_wcs_distorted(self.wcs):
+                    raise ValueError("Distorted non-HST reference images "
+                                     "are not supported.")
+            finally:
+                if hdulist is not None:
+                    hdulist.close()
+
+            self.wcs.filename = froot
+
+        elif isinstance(wcs_list, list):
             # generate a reference tangent plane from a list of STWCS objects
             undistort = _is_wcs_distorted(wcs_list[0])
+            if undistort and wcs_list[0].instrument == 'DEFAULT':
+                raise ValueError("Distorted non-HST reference images "
+                                 "are not supported.")
+
             self.wcs = utils.output_wcs(wcs_list, undistort=undistort)
             if 'ref_wcs_name' in kwargs:
                 self.wcs.filename = kwargs['ref_wcs_name']
@@ -1043,16 +1081,21 @@ class RefImage(object):
 
         else:
             # only a single WCS provided, so use that as the definition
-            if not isinstance(wcs_list,stwcs.wcsutil.HSTWCS): # User only provided a filename
-                self.wcs = stwcs.wcsutil.HSTWCS(wcs_list)
-            else: # User provided full HSTWCS object
+            if isinstance(wcs_list, stwcs.wcsutil.HSTWCS):
+                 # User provided full HSTWCS object
                 self.wcs = wcs_list
-            froot = self.wcs.filename
-            if _is_wcs_distorted(self.wcs):
-                log.warn("\nReference image contains a distorted WCS.\n"
-                         "Using the undistorted version of this WCS.\n")
-                self.wcs = utils.output_wcs([self.wcs], undistort=True)
-                self.wcs.filename = froot
+                froot = self.wcs.filename
+                if _is_wcs_distorted(self.wcs):
+                    if self.wcs.instrument == 'DEFAULT':
+                        raise ValueError("Distorted non-HST reference images "
+                                         "are not supported.")
+                    log.warn("\nReference image contains a distorted WCS.\n"
+                             "Using the undistorted version of this WCS.\n")
+                    self.wcs = utils.output_wcs([self.wcs], undistort=True)
+                    self.wcs.filename = froot
+
+            else:
+                raise TypeError("Unsupported 'wcs_list' type.")
 
         assert(not _is_wcs_distorted(self.wcs))
 
@@ -1438,6 +1481,34 @@ def convex_hull(points):
     return lower[:-1] + upper
 
 def _is_wcs_distorted(wcs):
-    return not (wcs.sip is None and \
+    return not (_is_cd_unitary(wcs) and wcs.sip is None and \
                 wcs.cpdis1 is None and wcs.cpdis2 is None and \
                 wcs.det2im1 is None and wcs.det2im2 is None)
+
+def _is_cd_unitary(wcs):
+    # set maximum acceptable deviation of matrix elements from zero -
+    # a measure of closeness to matrix being unitary:
+    maxerr = 10.0 * np.finfo(np.float32).eps
+
+    cd = None
+    if hasattr(wcs.wcs, 'cd'):
+        cd = wcs.wcs.cd.copy()
+    elif hasattr(wcs.wcs, 'pc'):
+        cd = wcs.wcs.pc.copy()
+
+    if cd is None:
+        return False
+
+    shape = cd.shape
+    assert(len(shape) == 2 and shape[0] == shape[1])
+
+    scale = np.sqrt(np.abs(np.linalg.det(cd)))
+    assert(scale > 0.0)
+    cd /= scale
+
+    # NOTE: Technically, below we should use np.dot(cd, np.conjugate(cd.T))
+    # However, I am not aware of complex CD/PC matrices...
+    I = 0.5*(np.dot(cd, cd.T)+np.dot(cd, cd.T))
+    cd_unitary_err = np.amax(np.abs(I-np.eye(shape[0])))
+
+    return (cd_unitary_err < maxerr)

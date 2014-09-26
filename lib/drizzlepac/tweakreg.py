@@ -23,8 +23,8 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.4.0'
-__vdate__ = '21-Jul-2014'
+__version__ = '1.4.2'
+__vdate__ = '22-Sep-2014'
 
 import tweakutils
 import imgclasses
@@ -309,6 +309,9 @@ def run(configobj):
                             ref_source, xycatalog=xycat,
                             cat_origin=cat_src, **kwargs)
             refwcs_fname = refimage.wcs.filename
+            if cat_src is not None:
+                refimage.name = cat_src
+
         except KeyboardInterrupt:
             refimage.close()
             for img in input_images:
@@ -486,8 +489,9 @@ def run(configobj):
                         # no new sources have been added to the reference
                         # catalog and we have already tried to match
                         # images to the existing reference catalog
-                        input_images.append(image) # <- add it back for later reporting
-                        retry_flags.append(1)
+
+                        #input_images.append(image) # <- add it back for later reporting
+                        #retry_flags.append(1)
                         break
 
                 image.performFit(**catfit_pars)
