@@ -1130,13 +1130,13 @@ def do_driz(insci, input_wcs, inwht,
         for key in all_lproxies:
             i,j = key
             # tiles
-            tilesci = all_lproxies[key][0]
-            tilewht = all_lproxies[key][1]
-            tilectx = all_lproxies[key][2]
+#           tilesci = all_lproxies[key][0]
+#           tilewht = all_lproxies[key][1]
+#           tilectx = all_lproxies[key][2]
             # update full image
-            outsci[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilesci
-            outwht[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilewht
-            outctx[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = tilectx
+            outsci[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = all_lproxies[key][0]
+            outwht[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = all_lproxies[key][1]
+            outctx[tileysz * i:tileysz * (i+1), tilexsz * j:tilexsz * (j+1)] = all_lproxies[key][2]
             # _vers (note: each tile's ver string overwrites previous tiles'. eez ok.)
             _vers = all_lproxies[key][3]
             # accumulations to nmiss, nskip
