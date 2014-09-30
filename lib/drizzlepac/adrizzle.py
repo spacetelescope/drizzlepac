@@ -720,7 +720,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     log.info('-Drizzle input: %s' % _expname)
 
     # Open the SCI image
-    _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
+    _handle = fileutil.openImage(_expname,mode='readonly',memmap=0) # this is file I/O
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
     # Apply sky subtraction and unit conversion to input array
@@ -878,6 +878,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     _hdrlist.append(outputvals)
     time_post = time.time() - epoch; epoch = time.time()
 
+    mb_written = 0
     if doWrite:
         ###########################
         #
@@ -923,6 +924,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         outimgs = _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,
                                     versions=_versions,virtual=img.inmemory)
         del _outimg
+        mb_written += sum([int(os.stat(f).st_size) for f in outimgs])/1000000.
 
         # update imageObject with product in memory
         if single:
@@ -930,17 +932,18 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     # this is after the doWrite
     time_write = time.time() - epoch; epoch = time.time()
-#   if False and not single: # turn off all this perf reporting for now
-    if not single: # !!!
+
+    if not single: # not single and False: # turn off all this perf reporting for now
         time_pre_all.append(time_pre)
         time_driz_all.append(time_driz)
         time_post_all.append(time_post)
         time_write_all.append(time_write)
 
-#       log.info('chip time pre-drizzling:  %6.3f' % time_pre)
-#       log.info('chip time drizzling:      %6.3f' % time_driz)
-#       log.info('chip time post-drizzling: %6.3f' % time_post)
-#       log.info('chip time writing output: %6.3f' % time_write)
+        if False:
+            log.info('chip time pre-drizzling:  %6.2f' % time_pre)
+            log.info('chip time drizzling:      %6.2f' % time_driz)
+            log.info('chip time post-drizzling: %6.2f' % time_post)
+            log.info('chip time writing output: %6.2f' % time_write)
 
         if doWrite:
             tot_pre = sum(time_pre_all)
@@ -949,10 +952,11 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
             tot_write = sum(time_write_all)
             tot = tot_pre+tot_driz+tot_post+tot_write
             log.info('time:')
-            log.info('step total pre-drizzling:  %7.2fs (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
-            log.info('step total drizzling:      %7.2fs (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
-            log.info('step total header edits:   %7.2fs (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
-            log.info('step total writing output: %7.2fs (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
+            log.info('step total pre-drizzling:  %7.1fs (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
+            log.info('step total drizzling:      %7.1fs (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
+            log.info('step total header edits:   %7.1fs (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
+            log.info('step total writing output: %7.1fs (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
+            log.info('step approx write speed:   %7.1f MB/s' % (mb_written/tot_write)) # most but not all of this is writing
 
 
 def do_driz(insci, input_wcs, inwht,
