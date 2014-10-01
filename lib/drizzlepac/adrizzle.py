@@ -924,7 +924,8 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         outimgs = _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,
                                     versions=_versions,virtual=img.inmemory)
         del _outimg
-        mb_written += sum([int(os.stat(f).st_size) for f in outimgs])/1000000.
+        if not single: # or we _could_ do if not inmemory
+            mb_written += sum([int(os.stat(f).st_size) for f in outimgs])/1000000.
 
         # update imageObject with product in memory
         if single:
