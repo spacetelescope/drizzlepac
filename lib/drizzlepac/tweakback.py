@@ -194,8 +194,8 @@ def tweakback(drzfile, input=None,  origwcs = None,
         crderr2 = 0.0
     del scihdr
     ### Step 2: Generate footprints for each WCS
-    final_fp = final_wcs.calcFootprint()
-    orig_fp = orig_wcs.calcFootprint()
+    final_fp = final_wcs.calc_footprint()
+    orig_fp = orig_wcs.calc_footprint()
 
     ### Step 3: Create pixel positions in final WCS for each footprint
     final_xy_fp = final_wcs.wcs_world2pix(final_fp, 1)
