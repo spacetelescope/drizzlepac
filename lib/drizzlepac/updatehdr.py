@@ -75,7 +75,7 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
                 xrms=img['xrms'], yrms=img['yrms'],
                 force=force)
 
-def updatewcs_with_shift(image,reference,wcsname=None,
+def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
                         rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None,
                         xrms=None, yrms = None,
                         verbose=False,force=False,sciext='SCI'):
@@ -130,6 +130,10 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         automatically append a version ID using the format '_n', such as
         'TWEAK_1', 'TWEAK_2',or 'TWEAK_update_1'.
         [Default =None]
+
+    reusename : bool
+        User can specify whether or not to over-write WCS with same name.
+        [Default: False]
 
     rot : float
         Amount of rotation measured in fit to be applied.
@@ -245,15 +249,15 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         update_refchip_with_shift(chip_wcs, wref,
                     rot=rot, scale=scale, xsh=xsh, ysh=ysh,
                     fit=fit, xrms=xrms, yrms=yrms)
-        if wcsname in [None,' ','','INDEF']:
-            wcsname = 'TWEAK'
+
         # Update FITS file with newly updated WCS for this chip
         if numextn > 0:
             extnum = fileutil.findExtname(fimg,ext[0],ext[1])
         else:
             extnum = ext
 
-        update_wcs(fimg,extnum,chip_wcs,wcsname=wcsname,verbose=verbose)
+        update_wcs(fimg,extnum,chip_wcs,wcsname=wcsname,
+                    reusename=reusename,verbose=verbose)
 
 #    if numextn > 0:
 #        # Update WCSCORR table with new WCS information
@@ -341,7 +345,7 @@ def update_refchip_with_shift(chip_wcs, wcslin,
 ###
 ### Header keyword prefix related archive functions
 ###
-def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
+def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
     """
     Updates the WCS of the specified extension number with the new WCS
     after archiving the original WCS.
@@ -362,6 +366,10 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
 
     wcsname : str
         Label to give newly updated WCS
+
+    reusename : bool
+        User can choose whether to over-write WCS with same name or not.
+        [Default: False]
 
     verbose : bool, int
         Print extra messages during processing? [Default: False]
@@ -386,7 +394,8 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
     # user-provided name
     if wcsname in ['',' ',None,'INDEF','N/A']:
         wcsname = 'TWEAK'
-    wcsname = create_unique_wcsname(fimg, extnum, wcsname)
+    if not reusename:
+        wcsname = create_unique_wcsname(fimg, extnum, wcsname)
 
     idchdr = True
     if new_wcs.idcscale is None:
@@ -418,13 +427,16 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         # Only if this image was opened in update mode should this
         # newly updated WCS be archived, as it will never be written out
         # to a file otherwise.
-        if fimg_update:
+        if fimg_update and not reusename:
             # Save the newly updated WCS as an alternate WCS as well
             wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
-            # wcskey needs to be specified so that archiveWCS will create a
-            # duplicate WCS with the same WCSNAME as the Primary WCS
-            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,wcskey=wkey)
+        else:
+            wkey = wcsutil.altwcs.getKeyFromName(hdr,wcsname)
 
+        # wcskey needs to be specified so that archiveWCS will create a
+        # duplicate WCS with the same WCSNAME as the Primary WCS
+        wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,
+            wcskey=wkey, reusekey=reusename)
     finally:
         if fimg_open:
             # finish up by closing the file now

@@ -16,6 +16,7 @@ runfile = string_kw(default="tweakreg.log",comment="Filename of processing log")
 [UPDATE HEADER]
 updatehdr = boolean_kw(default=False, triggers='_section_switch_', comment="Update headers of input files with shifts?")
 wcsname = string_kw(default='TWEAK', comment="Name of updated WCS")
+reusename = boolean_kw(default=False, comment="Override WCS with same name?")
 
 [HEADERLET CREATION]
 headerlet = boolean_kw(default=False, triggers='_section_switch_', comment="Create headerlet for solution?")

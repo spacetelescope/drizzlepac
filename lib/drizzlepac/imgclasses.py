@@ -742,7 +742,7 @@ class Image(object):
             nmatch = 0
         return {'RMS_RA':rms_ra,'RMS_DEC':rms_dec,'NMATCH':nmatch}
 
-    def updateHeader(self,wcsname=None):
+    def updateHeader(self,wcsname=None, reusename=False):
         """ Update header of image with shifts computed by *perform_fit()*.
         """
         # Insure filehandle is open and available...
@@ -768,12 +768,10 @@ class Image(object):
                     self._im.hdu.fileinfo(0)['filemode'] == 'update'):
                     self._im.hdu[self.ext_name,ext].header['wcsname'] = 'Default'
 
-        next_key = altwcs.next_wcskey(fits.getheader(self.name,extlist[0]))
-
         if not self.identityfit and self.goodmatch and \
                 self.fit['offset'][0] != np.nan:
             updatehdr.updatewcs_with_shift(self._im.hdu, self.refWCS,
-                wcsname=wcsname,
+                wcsname=wcsname, reusename=reusename,
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
                 fit=self.fit['fit_matrix'], verbose=verbose_level,
@@ -794,10 +792,10 @@ class Image(object):
             self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
             if self.perform_update:
-                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
                 # archive current WCS as alternate WCS with specified WCSNAME
                 # Start by archiving original PRIMARY WCS
                 wnames = altwcs.wcsnames(self._im.hdu,ext=extlist[0])
+
                 # Define a default WCSNAME in the case that the file to be
                 # updated did not have the WCSNAME keyword defined already
                 # (as will happen when updating images that have not been
@@ -812,17 +810,29 @@ class Image(object):
                         self._im.hdu[extlist[0]].header['wscname'] = ''
                         wnames[' '] = ''
                     pri_wcsname = wnames[' ']
+
+                next_key = altwcs.getKeyFromName(fits.getheader(self.name,extlist[0]),pri_wcsname)
+                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
+
                 altwcs.archiveWCS(self._im.hdu, extlist,
                                     wcskey=next_key, wcsname=pri_wcsname,
                                     reusekey=True)
-                # Find key for next WCS and save again to replicate an updated solution
-                next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                if reusename:
+                    # Look for key of WCS with this name
+                    next_key = altwcs.getKeyFromName(self._im.hdu[extlist[0]].header,wcsname)
+                    # This wcsname is new, so start fresh
+                    if next_key is None:
+                        next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                else:
+                    # Find key for next WCS and save again to replicate an updated solution
+                    next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                    # update WCSNAME to be the new name
+                    for ext in extlist:
+                        self._im.hdu[ext].header['WCSNAME'] = wcsname
+
                 # save again using new WCSNAME
                 altwcs.archiveWCS(self._im.hdu, extlist,
-                    wcskey=next_key,wcsname=wcsname)
-                # update WCSNAME to be the new name
-                for ext in extlist:
-                    self._im.hdu[ext].header['WCSNAME'] = wcsname
+                    wcskey=next_key,wcsname=wcsname, reusekey=reusename)
             self.next_key = ' '
 
         # add FIT values to image's PRIMARY header
