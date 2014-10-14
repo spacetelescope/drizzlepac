@@ -257,8 +257,12 @@ class Image(object):
                     xy_vertices = np.asarray(convex_hull(
                         map(tuple,np.asarray([catalog.xypos[0],catalog.xypos[1]]).transpose())),
                                              dtype=np.float64)
-                    rdv = wcs.all_pix2world(xy_vertices, 1)
-                    bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
+                    if xy_vertices.shape[0] > 2:
+                        rdv = wcs.all_pix2world(xy_vertices, 1)
+                        bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
+                    else:
+                        bounding_polygons.append(SphericalPolygon.from_wcs(wcs))
+
                     if IMGCLASSES_DEBUG:
                         all_ra, all_dec = wcs.all_pix2world(
                             catalog.xypos[0], catalog.xypos[1], 1)
@@ -668,13 +672,40 @@ class Image(object):
                 self.fit['fit_RA'] = radec_fit[:,0]
                 self.fit['fit_DEC'] = radec_fit[:,1]
                 self.fit['src_origin'] = self.matches['src_origin']
-                #if pars['fitgeometry'] != 'general':
-                    #self.fit['fit_matrix'] = None
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
-                print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
-                    self.fit['offset'][0],self.fit['offset'][1],
-                    self.fit['rot'],self.fit['scale'][0])
+                if pars['fitgeometry'] == 'shift':
+                    print("XSH: {:.6g}  YSH: {:.6g}"
+                          .format(self.fit['offset'][0],
+                                  self.fit['offset'][1]))
+                elif pars['fitgeometry'] == 'rscale' and self.fit['proper']:
+                    print("XSH: {:.6g}  YSH: {:.6g}    ROT: {:.6g}    "
+                          "SCALE: {:.6g}".format(
+                              self.fit['offset'][0],
+                              self.fit['offset'][1],
+                              self.fit['rot'],
+                              self.fit['scale'][0]))
+                elif pars['fitgeometry'] == 'general' or \
+                     (pars['fitgeometry'] == 'rscale' and not self.fit['proper']):
+                    print("XSH: {:.6g}  YSH: {:.6g}    PROPER ROT: {:.6g}    "
+                          "".format(
+                              self.fit['offset'][0],
+                              self.fit['offset'][1],
+                              self.fit['rot']))
+                    print("<ROT>: {:.6g}  SKEW: {:.6g}    ROT_X: {:.6g}  "
+                          "ROT_Y: {:.6g}".format(
+                              self.fit['rotxy'][2],
+                              self.fit['skew'],
+                              self.fit['rotxy'][0],
+                              self.fit['rotxy'][1]))
+                    print("<SCALE>: {:.6g}  SCALE_X: {:.6g}  "
+                          "SCALE_Y: {:.6g}".format(
+                              self.fit['scale'][0],
+                              self.fit['scale'][1],
+                              self.fit['scale'][2]))
+                else:
+                    assert(False)
+
                 print 'XRMS: %0.6g    YRMS: %0.6g\n'%(
                         self.fit['rms'][0],self.fit['rms'][1])
                 print 'RMS_RA: %g (deg)   RMS_DEC: %g (deg)\n'%(
@@ -729,6 +760,7 @@ class Image(object):
                 self.fit['rot'] = np.nan
                 self.fit['scale'] = [np.nan]
 
+
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
         if not self.identityfit and self.goodmatch:
@@ -742,7 +774,7 @@ class Image(object):
             nmatch = 0
         return {'RMS_RA':rms_ra,'RMS_DEC':rms_dec,'NMATCH':nmatch}
 
-    def updateHeader(self,wcsname=None, reusename=False):
+    def updateHeader(self, wcsname=None, reusename=False):
         """ Update header of image with shifts computed by *perform_fit()*.
         """
         # Insure filehandle is open and available...
@@ -772,10 +804,12 @@ class Image(object):
                 self.fit['offset'][0] != np.nan:
             updatehdr.updatewcs_with_shift(self._im.hdu, self.refWCS,
                 wcsname=wcsname, reusename=reusename,
+                fitgeom=self.fit_pars['fitgeometry'],
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
                 fit=self.fit['fit_matrix'], verbose=verbose_level,
-                xrms=self.fit['rms_keys']['RMS_RA'],yrms=self.fit['rms_keys']['RMS_DEC'])
+                xrms=self.fit['rms_keys']['RMS_RA'],
+                yrms=self.fit['rms_keys']['RMS_DEC'])
 
             wnames = altwcs.wcsnames(self._im.hdu,ext=extlist[0])
 
@@ -856,6 +890,7 @@ class Image(object):
             wcscorr.update_wcscorr(self._im.hdu, wcs_id=wcsname,
                                    extname=self.ext_name)
 
+
     def writeHeaderlet(self,**kwargs):
         """ Write and/or attach a headerlet based on update to PRIMARY WCS
         """
@@ -886,6 +921,7 @@ class Image(object):
                 attach=pars['attach'], clobber=pars['clobber']
             )
 
+
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """
@@ -901,6 +937,7 @@ class Image(object):
             f.write('%0.12f  %0.12f\n'%(ralist[i],declist[i]))
         f.close()
 
+
     def get_xy_catnames(self):
         """ Return a string with the names of input_xy catalog names
         """
@@ -909,6 +946,7 @@ class Image(object):
             for xycat in self.catalog_names['input_xy']:
                 catstr += '  '+xycat
         return catstr + '\n'
+
 
     def write_fit_catalog(self):
         """ Write out the catalog of all sources and resids used in the final fit.
@@ -1019,6 +1057,7 @@ class Image(object):
                     if os.path.exists(extn):
                         log.info('Deleting intermediate catalog: %d'%extn)
                         os.remove(extn)
+
 
 class RefImage(object):
     """ This class provides all the information needed by to define a reference
@@ -1215,8 +1254,12 @@ class RefImage(object):
            self.outxy is not None:
             xy_vertices = np.asarray(convex_hull(map(tuple,self.outxy)),
                                      dtype=np.float64)
-            rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
-            self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+            if xy_vertices.shape[0] > 2:
+                rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
+                self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+            else:
+                self.skyline = SphericalPolygon([])
+
             if IMGCLASSES_DEBUG:
                 _debug_write_region_fk5('dbg_tweakreg_refcat_bounding_polygon.reg',
                     zip(*rdv.transpose()), zip(*self.all_radec), self.xy_catalog[-1])
@@ -1312,18 +1355,16 @@ class RefImage(object):
         not_matched_outxy = image.outxy[not_matched_mask]
 
         # apply corrections based on the fit:
-        new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
-                           image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
+        #TODO: Make sure this is correct!. It appears that subtraction/
+        # addition of crpix (see next comment block) is not necessary... Check this!!!
+        # I think it should be like this:
+        new_outxy = np.dot(not_matched_outxy-image.fit['offset'],
+                           np.linalg.inv(image.fit['fit_matrix']))
 
-        #print("\n==================")
-        #fm=image.fit['fit_matrix']
-        #print("FIT MATRIX:\n{:.16g}, {:.16g}\n{:.16g}, {:.16g}\n"\
-              #.format(fm[0,0],fm[0,1],fm[1,0],fm[1,1]))
-        #print("SHIFTS:\n   xshift={:.16g}\n   yshift={:.16g}\n"\
-              #.format(image.fit['offset'][0],image.fit['offset'][1]))
-        #print("REF WCS CRPIX:\n   x_crpix={:.16g}\n   x_crpix={:.16g}\n"\
-              #.format(self.wcs.wcs.crpix[0],self.wcs.wcs.crpix[1]))
-        #print("\n==================")
+        ## Old, I believe incorrect, transformation:
+        ##TODO: remove code below (and this comment) after testing the above code.
+        #new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
+                           #image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
 
         # convert to RA & DEC:
         new_radec = self.wcs.wcs_pix2world(new_outxy, 1)

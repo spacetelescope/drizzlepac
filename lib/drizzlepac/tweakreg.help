@@ -147,6 +147,10 @@ updatehdr : bool (Default = No)
 wcsname : str (Default = 'TWEAK')
     Name of updated WCS.
 
+reusename : bool (Default = False)
+    Allows overwriting of an existing WCS with the same name as
+    specified by `wcsname` parameter.
+
 *HEADERLET CREATION*
 headerlet: bool (Default = No)
     Specify whether or not to generate a headerlet from the images at
@@ -363,10 +367,11 @@ yoffset : float (Default = 0.0)
     be assumed in matching sources in `xyxymatch`.
 
 *CATALOG FITTING PARAMETERS*
-fitgeometry : str {'shift', 'rscale'} (Default = 'rscale')
+fitgeometry : str {'shift', 'rscale', 'general'} (Default = 'rscale')
     The fitting geometry to be used in fitting the matched object lists.
     This parameter is used in fitting the offsets, rotations and/or scale
-    changes from the matched object lists.
+    changes from the matched object lists. The 'general' fit geometry
+    allows for independent scale and rotation for each axis.
 
 residplot : str {'No plot', 'vector', 'residuals', 'both'}  (Default = 'both')
     Plot residuals from fit? If 'both' is selected, the 'vector'
@@ -436,6 +441,10 @@ input and the reference to produce the 'shiftfile'. If the user is
 confident that the solution will be correct, the header of each input image
 can be updated directly with the fit derived for that image. Otherwise,
 the 'shiftfile' can be passed to AstroDrizzle for aligning the images.
+
+.. note:: Because of the nature of the used algorithm it may be necessary
+          to run this task multiple time until new shifts, rotations,
+          and/or scales are small enough for the required precision.
 
 New sources (that are not in the reference catalog) from the matched images
 are added to the reference catalog in order to allow next image to be
