@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &mdash; DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</title>
+    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev33830 (11-Aug-2014)',
+        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
     <link rel="next" title="Region mapping for TweakReg" href="mapreg.html" />
     <link rel="prev" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -93,7 +93,7 @@ or saved in a shiftfile.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Mihai Cara</td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
@@ -169,7 +169,7 @@ wcsname? [Default=False]</p>
 
 <dl class="function">
 <dt id="drizzlepac.updatehdr.update_wcs">
-<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_wcs</tt><big>(</big><em>image</em>, <em>extnum</em>, <em>new_wcs</em>, <em>wcsname=''</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_wcs" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_wcs</tt><big>(</big><em>image</em>, <em>extnum</em>, <em>new_wcs</em>, <em>wcsname=''</em>, <em>reusename=False</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_wcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates the WCS of the specified extension number with the new WCS
 after archiving the original WCS.</p>
 <p>The value of &#8216;new_wcs&#8217; needs to be the full
@@ -195,6 +195,11 @@ HSTWCS object.</p>
 <blockquote>
 <div><p>Label to give newly updated WCS</p>
 </div></blockquote>
+<p><strong id="reusename">reusename</strong> : bool</p>
+<blockquote>
+<div><p>User can choose whether to over-write WCS with same name or not.
+[Default: False]</p>
+</div></blockquote>
 <p><strong id="verbose">verbose</strong> : bool, int</p>
 <blockquote class="last">
 <div><p>Print extra messages during processing? [Default: False]</p>
@@ -207,7 +212,7 @@ HSTWCS object.</p>
 
 <dl class="function">
 <dt id="drizzlepac.updatehdr.updatewcs_with_shift">
-<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">updatewcs_with_shift</tt><big>(</big><em>image</em>, <em>reference</em>, <em>wcsname=None</em>, <em>rot=0.0</em>, <em>scale=1.0</em>, <em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>fit=None</em>, <em>xrms=None</em>, <em>yrms=None</em>, <em>verbose=False</em>, <em>force=False</em>, <em>sciext='SCI'</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.updatewcs_with_shift" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">updatewcs_with_shift</tt><big>(</big><em>image</em>, <em>reference</em>, <em>wcsname=None</em>, <em>reusename=False</em>, <em>fitgeom='rscale'</em>, <em>rot=0.0</em>, <em>scale=1.0</em>, <em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>fit=None</em>, <em>xrms=None</em>, <em>yrms=None</em>, <em>verbose=False</em>, <em>force=False</em>, <em>sciext='SCI'</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.updatewcs_with_shift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the SCI headers in &#8216;image&#8217; based on the fit provided as determined
 in the WCS specified by &#8216;reference&#8217;.  The fit should be a 2-D matrix as
 generated for use with &#8216;make_vector_plot()&#8217;.</p>
@@ -236,6 +241,11 @@ label. If a WCS has a name with this specific value, the code will
 automatically append a version ID using the format &#8216;_n&#8217;, such as
 &#8216;TWEAK_1&#8217;, &#8216;TWEAK_2&#8217;,or &#8216;TWEAK_update_1&#8217;.
 [Default =None]</p>
+</div></blockquote>
+<p><strong id="reusename">reusename</strong> : bool</p>
+<blockquote>
+<div><p>User can specify whether or not to over-write WCS with same name.
+[Default: False]</p>
 </div></blockquote>
 <p><strong id="rot">rot</strong> : float</p>
 <blockquote>
@@ -355,7 +365,7 @@ input image&#8217;s chips:</p>
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
