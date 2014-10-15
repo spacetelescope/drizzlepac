@@ -825,6 +825,16 @@ class Image(object):
 
             self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
+            if reusename:
+                # Look for key of WCS with this name
+                next_key = altwcs.getKeyFromName(self._im.hdu[extlist[0]].header,wcsname)
+                # This wcsname is new, so start fresh
+                if next_key is None:
+                    next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+            else:
+                # Find key for next WCS and save again to replicate an updated solution
+                next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+
             if self.perform_update:
                 # archive current WCS as alternate WCS with specified WCSNAME
                 # Start by archiving original PRIMARY WCS
@@ -845,11 +855,11 @@ class Image(object):
                         wnames[' '] = ''
                     pri_wcsname = wnames[' ']
 
-                next_key = altwcs.getKeyFromName(fits.getheader(self.name,extlist[0]),pri_wcsname)
-                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
+                next_pkey = altwcs.getKeyFromName(fits.getheader(self.name,extlist[0]),pri_wcsname)
+                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_pkey)
 
                 altwcs.archiveWCS(self._im.hdu, extlist,
-                                    wcskey=next_key, wcsname=pri_wcsname,
+                                    wcskey=next_pkey, wcsname=pri_wcsname,
                                     reusekey=True)
                 if reusename:
                     # Look for key of WCS with this name

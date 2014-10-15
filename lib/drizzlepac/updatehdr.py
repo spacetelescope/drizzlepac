@@ -470,16 +470,17 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
         # Only if this image was opened in update mode should this
         # newly updated WCS be archived, as it will never be written out
         # to a file otherwise.
-        if fimg_update and not reusename:
-            # Save the newly updated WCS as an alternate WCS as well
-            wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
-        else:
-            wkey = wcsutil.altwcs.getKeyFromName(hdr,wcsname)
+        if fimg_update:
+            if not reusename:
+                # Save the newly updated WCS as an alternate WCS as well
+                wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
+            else:
+                wkey = wcsutil.altwcs.getKeyFromName(hdr,wcsname)
 
-        # wcskey needs to be specified so that archiveWCS will create a
-        # duplicate WCS with the same WCSNAME as the Primary WCS
-        wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,
-            wcskey=wkey, reusekey=reusename)
+            # wcskey needs to be specified so that archiveWCS will create a
+            # duplicate WCS with the same WCSNAME as the Primary WCS
+            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,
+                wcskey=wkey, reusekey=reusename)
     finally:
         if fimg_open:
             # finish up by closing the file now
