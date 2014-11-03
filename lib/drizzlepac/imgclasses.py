@@ -16,7 +16,7 @@ from astropy import wcs as pywcs
 import stwcs
 from astropy.io import fits
 from stsci.sphere.polygon import SphericalPolygon
-from stsci.skypac.parseat import FileExtMaskInfo
+from stsci.skypac.parseat import FileExtMaskInfo, parse_cs_line
 from stsci.skypac import utils as spu
 
 from stwcs import distortion
@@ -257,8 +257,12 @@ class Image(object):
                     xy_vertices = np.asarray(convex_hull(
                         map(tuple,np.asarray([catalog.xypos[0],catalog.xypos[1]]).transpose())),
                                              dtype=np.float64)
-                    rdv = wcs.all_pix2world(xy_vertices, 1)
-                    bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
+                    if xy_vertices.shape[0] > 2:
+                        rdv = wcs.all_pix2world(xy_vertices, 1)
+                        bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
+                    else:
+                        bounding_polygons.append(SphericalPolygon.from_wcs(wcs))
+
                     if IMGCLASSES_DEBUG:
                         all_ra, all_dec = wcs.all_pix2world(
                             catalog.xypos[0], catalog.xypos[1], 1)
@@ -668,13 +672,40 @@ class Image(object):
                 self.fit['fit_RA'] = radec_fit[:,0]
                 self.fit['fit_DEC'] = radec_fit[:,1]
                 self.fit['src_origin'] = self.matches['src_origin']
-                #if pars['fitgeometry'] != 'general':
-                    #self.fit['fit_matrix'] = None
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
-                print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
-                    self.fit['offset'][0],self.fit['offset'][1],
-                    self.fit['rot'],self.fit['scale'][0])
+                if pars['fitgeometry'] == 'shift':
+                    print("XSH: {:.6g}  YSH: {:.6g}"
+                          .format(self.fit['offset'][0],
+                                  self.fit['offset'][1]))
+                elif pars['fitgeometry'] == 'rscale' and self.fit['proper']:
+                    print("XSH: {:.6g}  YSH: {:.6g}    ROT: {:.6g}    "
+                          "SCALE: {:.6g}".format(
+                              self.fit['offset'][0],
+                              self.fit['offset'][1],
+                              self.fit['rot'],
+                              self.fit['scale'][0]))
+                elif pars['fitgeometry'] == 'general' or \
+                     (pars['fitgeometry'] == 'rscale' and not self.fit['proper']):
+                    print("XSH: {:.6g}  YSH: {:.6g}    PROPER ROT: {:.6g}    "
+                          "".format(
+                              self.fit['offset'][0],
+                              self.fit['offset'][1],
+                              self.fit['rot']))
+                    print("<ROT>: {:.6g}  SKEW: {:.6g}    ROT_X: {:.6g}  "
+                          "ROT_Y: {:.6g}".format(
+                              self.fit['rotxy'][2],
+                              self.fit['skew'],
+                              self.fit['rotxy'][0],
+                              self.fit['rotxy'][1]))
+                    print("<SCALE>: {:.6g}  SCALE_X: {:.6g}  "
+                          "SCALE_Y: {:.6g}".format(
+                              self.fit['scale'][0],
+                              self.fit['scale'][1],
+                              self.fit['scale'][2]))
+                else:
+                    assert(False)
+
                 print 'XRMS: %0.6g    YRMS: %0.6g\n'%(
                         self.fit['rms'][0],self.fit['rms'][1])
                 print 'RMS_RA: %g (deg)   RMS_DEC: %g (deg)\n'%(
@@ -729,6 +760,7 @@ class Image(object):
                 self.fit['rot'] = np.nan
                 self.fit['scale'] = [np.nan]
 
+
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
         if not self.identityfit and self.goodmatch:
@@ -742,7 +774,7 @@ class Image(object):
             nmatch = 0
         return {'RMS_RA':rms_ra,'RMS_DEC':rms_dec,'NMATCH':nmatch}
 
-    def updateHeader(self,wcsname=None):
+    def updateHeader(self, wcsname=None, reusename=False):
         """ Update header of image with shifts computed by *perform_fit()*.
         """
         # Insure filehandle is open and available...
@@ -768,16 +800,16 @@ class Image(object):
                     self._im.hdu.fileinfo(0)['filemode'] == 'update'):
                     self._im.hdu[self.ext_name,ext].header['wcsname'] = 'Default'
 
-        next_key = altwcs.next_wcskey(fits.getheader(self.name,extlist[0]))
-
         if not self.identityfit and self.goodmatch and \
                 self.fit['offset'][0] != np.nan:
             updatehdr.updatewcs_with_shift(self._im.hdu, self.refWCS,
-                wcsname=wcsname,
+                wcsname=wcsname, reusename=reusename,
+                fitgeom=self.fit_pars['fitgeometry'],
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
                 fit=self.fit['fit_matrix'], verbose=verbose_level,
-                xrms=self.fit['rms_keys']['RMS_RA'],yrms=self.fit['rms_keys']['RMS_DEC'])
+                xrms=self.fit['rms_keys']['RMS_RA'],
+                yrms=self.fit['rms_keys']['RMS_DEC'])
 
             wnames = altwcs.wcsnames(self._im.hdu,ext=extlist[0])
 
@@ -793,11 +825,21 @@ class Image(object):
 
             self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
+            if reusename:
+                # Look for key of WCS with this name
+                next_key = altwcs.getKeyFromName(self._im.hdu[extlist[0]].header,wcsname)
+                # This wcsname is new, so start fresh
+                if next_key is None:
+                    next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+            else:
+                # Find key for next WCS and save again to replicate an updated solution
+                next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+
             if self.perform_update:
-                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
                 # archive current WCS as alternate WCS with specified WCSNAME
                 # Start by archiving original PRIMARY WCS
                 wnames = altwcs.wcsnames(self._im.hdu,ext=extlist[0])
+
                 # Define a default WCSNAME in the case that the file to be
                 # updated did not have the WCSNAME keyword defined already
                 # (as will happen when updating images that have not been
@@ -812,17 +854,29 @@ class Image(object):
                         self._im.hdu[extlist[0]].header['wscname'] = ''
                         wnames[' '] = ''
                     pri_wcsname = wnames[' ']
+
+                next_pkey = altwcs.getKeyFromName(fits.getheader(self.name,extlist[0]),pri_wcsname)
+                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_pkey)
+
                 altwcs.archiveWCS(self._im.hdu, extlist,
-                                    wcskey=next_key, wcsname=pri_wcsname,
+                                    wcskey=next_pkey, wcsname=pri_wcsname,
                                     reusekey=True)
-                # Find key for next WCS and save again to replicate an updated solution
-                next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                if reusename:
+                    # Look for key of WCS with this name
+                    next_key = altwcs.getKeyFromName(self._im.hdu[extlist[0]].header,wcsname)
+                    # This wcsname is new, so start fresh
+                    if next_key is None:
+                        next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                else:
+                    # Find key for next WCS and save again to replicate an updated solution
+                    next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                    # update WCSNAME to be the new name
+                    for ext in extlist:
+                        self._im.hdu[ext].header['WCSNAME'] = wcsname
+
                 # save again using new WCSNAME
                 altwcs.archiveWCS(self._im.hdu, extlist,
-                    wcskey=next_key,wcsname=wcsname)
-                # update WCSNAME to be the new name
-                for ext in extlist:
-                    self._im.hdu[ext].header['WCSNAME'] = wcsname
+                    wcskey=next_key,wcsname=wcsname, reusekey=reusename)
             self.next_key = ' '
 
         # add FIT values to image's PRIMARY header
@@ -845,6 +899,7 @@ class Image(object):
             log.info('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
             wcscorr.update_wcscorr(self._im.hdu, wcs_id=wcsname,
                                    extname=self.ext_name)
+
 
     def writeHeaderlet(self,**kwargs):
         """ Write and/or attach a headerlet based on update to PRIMARY WCS
@@ -876,6 +931,7 @@ class Image(object):
                 attach=pars['attach'], clobber=pars['clobber']
             )
 
+
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """
@@ -891,6 +947,7 @@ class Image(object):
             f.write('%0.12f  %0.12f\n'%(ralist[i],declist[i]))
         f.close()
 
+
     def get_xy_catnames(self):
         """ Return a string with the names of input_xy catalog names
         """
@@ -899,6 +956,7 @@ class Image(object):
             for xycat in self.catalog_names['input_xy']:
                 catstr += '  '+xycat
         return catstr + '\n'
+
 
     def write_fit_catalog(self):
         """ Write out the catalog of all sources and resids used in the final fit.
@@ -1010,31 +1068,70 @@ class Image(object):
                         log.info('Deleting intermediate catalog: %d'%extn)
                         os.remove(extn)
 
+
 class RefImage(object):
     """ This class provides all the information needed by to define a reference
         tangent plane and list of source positions on the sky.
+
+        .. warning::
+          When `wcs_list` is a Python list of `WCS` objects,
+          each element must be an instance of `stwcs.wcsutil.HSTWCS`.
+
     """
     def __init__(self, wcs_list, catalog, xycatalog=None, cat_origin=None, **kwargs):
         assert(isinstance(xycatalog, list) if xycatalog is not None else True)
-        if isinstance(wcs_list,str):
-            # Input was a filename for the reference image
-            froot, fextn = fu.parseFilename(wcs_list)
-            if fextn is None:
-                num_sci = spu.count_extensions(froot)
-                fextn = '[SCI,1]' if num_sci > 0 else '[0]'
-                fname = froot + fextn
-            else:
-                fname = wcs_list
-            self.wcs = stwcs.wcsutil.HSTWCS(fname)
-            if _is_wcs_distorted(self.wcs):
-                log.warn("\nReference image contains a distorted WCS.\n"
-                         "Using the undistorted version of this WCS.\n")
-                self.wcs = utils.output_wcs([self.wcs], undistort=True)
-                self.wcs.filename = froot
+        hdulist = None
 
-        elif isinstance(wcs_list,list):
+        if isinstance(wcs_list, str):
+            # Input was a filename for the reference image
+            #froot, fextn = fu.parseFilename(wcs_list)
+            fi = parse_cs_line(wcs_list, fnamesOnly=False, doNotOpenDQ=True,
+                               im_fmode='readonly')
+            fi[0].release_all_images()
+            if len(fi) != 1:
+                ValueError('Reference image file name must contain a single '
+                           'file name specification.')
+            froot = fi[0].image
+            if len(fi[0].fext) == 0:
+                # there are no 'SCI' extensions in the input file -> use
+                # primary HDU:
+                fextn = 0
+            else:
+                fextn = fi[0].fext[0] # <- we assume that only one
+                                      # extension is specified or that the
+                                      # first one should be used
+
+            hdulist = fits.open(froot, mode='readonly', memmap=False)
+            try:
+                self.wcs = stwcs.wcsutil.HSTWCS(hdulist, fextn)
+                if _is_wcs_distorted(self.wcs):
+                    if self.wcs.instrument == 'DEFAULT':
+                        raise ValueError("Distorted non-HST reference images "
+                                         "are not supported.")
+                    log.warn("\nReference image contains a distorted WCS.\n"
+                             "Using the undistorted version of this WCS.\n")
+                    self.wcs = utils.output_wcs([self.wcs], undistort=True)
+            except KeyError as e:
+                if not e.args[0].startswith('Unsupported instrument'):
+                    raise e
+                # try using astropy.wcs:
+                self.wcs = pywcs.WCS(hdulist[fextn].header, hdulist)
+                if _is_wcs_distorted(self.wcs):
+                    raise ValueError("Distorted non-HST reference images "
+                                     "are not supported.")
+            finally:
+                if hdulist is not None:
+                    hdulist.close()
+
+            self.wcs.filename = froot
+
+        elif isinstance(wcs_list, list):
             # generate a reference tangent plane from a list of STWCS objects
             undistort = _is_wcs_distorted(wcs_list[0])
+            if undistort and wcs_list[0].instrument == 'DEFAULT':
+                raise ValueError("Distorted non-HST reference images "
+                                 "are not supported.")
+
             self.wcs = utils.output_wcs(wcs_list, undistort=undistort)
             if 'ref_wcs_name' in kwargs:
                 self.wcs.filename = kwargs['ref_wcs_name']
@@ -1043,16 +1140,21 @@ class RefImage(object):
 
         else:
             # only a single WCS provided, so use that as the definition
-            if not isinstance(wcs_list,stwcs.wcsutil.HSTWCS): # User only provided a filename
-                self.wcs = stwcs.wcsutil.HSTWCS(wcs_list)
-            else: # User provided full HSTWCS object
+            if isinstance(wcs_list, stwcs.wcsutil.HSTWCS):
+                 # User provided full HSTWCS object
                 self.wcs = wcs_list
-            froot = self.wcs.filename
-            if _is_wcs_distorted(self.wcs):
-                log.warn("\nReference image contains a distorted WCS.\n"
-                         "Using the undistorted version of this WCS.\n")
-                self.wcs = utils.output_wcs([self.wcs], undistort=True)
-                self.wcs.filename = froot
+                froot = self.wcs.filename
+                if _is_wcs_distorted(self.wcs):
+                    if self.wcs.instrument == 'DEFAULT':
+                        raise ValueError("Distorted non-HST reference images "
+                                         "are not supported.")
+                    log.warn("\nReference image contains a distorted WCS.\n"
+                             "Using the undistorted version of this WCS.\n")
+                    self.wcs = utils.output_wcs([self.wcs], undistort=True)
+                    self.wcs.filename = froot
+
+            else:
+                raise TypeError("Unsupported 'wcs_list' type.")
 
         assert(not _is_wcs_distorted(self.wcs))
 
@@ -1162,8 +1264,12 @@ class RefImage(object):
            self.outxy is not None:
             xy_vertices = np.asarray(convex_hull(map(tuple,self.outxy)),
                                      dtype=np.float64)
-            rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
-            self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+            if xy_vertices.shape[0] > 2:
+                rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
+                self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+            else:
+                self.skyline = SphericalPolygon([])
+
             if IMGCLASSES_DEBUG:
                 _debug_write_region_fk5('dbg_tweakreg_refcat_bounding_polygon.reg',
                     zip(*rdv.transpose()), zip(*self.all_radec), self.xy_catalog[-1])
@@ -1259,18 +1365,16 @@ class RefImage(object):
         not_matched_outxy = image.outxy[not_matched_mask]
 
         # apply corrections based on the fit:
-        new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
-                           image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
+        #TODO: Make sure this is correct!. It appears that subtraction/
+        # addition of crpix (see next comment block) is not necessary... Check this!!!
+        # I think it should be like this:
+        new_outxy = np.dot(not_matched_outxy-image.fit['offset'],
+                           np.linalg.inv(image.fit['fit_matrix']))
 
-        #print("\n==================")
-        #fm=image.fit['fit_matrix']
-        #print("FIT MATRIX:\n{:.16g}, {:.16g}\n{:.16g}, {:.16g}\n"\
-              #.format(fm[0,0],fm[0,1],fm[1,0],fm[1,1]))
-        #print("SHIFTS:\n   xshift={:.16g}\n   yshift={:.16g}\n"\
-              #.format(image.fit['offset'][0],image.fit['offset'][1]))
-        #print("REF WCS CRPIX:\n   x_crpix={:.16g}\n   x_crpix={:.16g}\n"\
-              #.format(self.wcs.wcs.crpix[0],self.wcs.wcs.crpix[1]))
-        #print("\n==================")
+        ## Old, I believe incorrect, transformation:
+        ##TODO: remove code below (and this comment) after testing the above code.
+        #new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
+                           #image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
 
         # convert to RA & DEC:
         new_radec = self.wcs.wcs_pix2world(new_outxy, 1)
@@ -1438,6 +1542,34 @@ def convex_hull(points):
     return lower[:-1] + upper
 
 def _is_wcs_distorted(wcs):
-    return not (wcs.sip is None and \
+    return not (_is_cd_unitary(wcs) and wcs.sip is None and \
                 wcs.cpdis1 is None and wcs.cpdis2 is None and \
                 wcs.det2im1 is None and wcs.det2im2 is None)
+
+def _is_cd_unitary(wcs):
+    # set maximum acceptable deviation of matrix elements from zero -
+    # a measure of closeness to matrix being unitary:
+    maxerr = 10.0 * np.finfo(np.float32).eps
+
+    cd = None
+    if hasattr(wcs.wcs, 'cd'):
+        cd = wcs.wcs.cd.copy()
+    elif hasattr(wcs.wcs, 'pc'):
+        cd = wcs.wcs.pc.copy()
+
+    if cd is None:
+        return False
+
+    shape = cd.shape
+    assert(len(shape) == 2 and shape[0] == shape[1])
+
+    scale = np.sqrt(np.abs(np.linalg.det(cd)))
+    assert(scale > 0.0)
+    cd /= scale
+
+    # NOTE: Technically, below we should use np.dot(cd, np.conjugate(cd.T))
+    # However, I am not aware of complex CD/PC matrices...
+    I = 0.5*(np.dot(cd, cd.T)+np.dot(cd, cd.T))
+    cd_unitary_err = np.amax(np.abs(I-np.eye(shape[0])))
+
+    return (cd_unitary_err < maxerr)

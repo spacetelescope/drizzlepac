@@ -1,11 +1,13 @@
 """
 
-:Authors: Warren Hack
+:Authors: Warren Hack, Mihai Cara
 
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
 import re
+import math
+import warnings
 
 from astropy.io import fits
 import numpy as np
@@ -15,14 +17,21 @@ from astropy import wcs as pywcs
 from stsci.tools import fileutil, logutil
 from stwcs import wcsutil, updatewcs
 from stwcs.wcsutil import wcscorr
+from stsci.skypac.utils import get_ext_list, ext2str
 
 from . import util
 
 import linearfit
 
+__version__ = '0.2.0'
+__vdate__ = '10-Oct-2014'
+
+
 log = logutil.create_logger(__name__)
 
-wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2','CRPIX1','CRPIX2','ORIENTAT']
+wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2',
+            'CRPIX1','CRPIX2','ORIENTAT']
+
 
 def update_from_shiftfile(shiftfile,wcsname=None,force=False):
     """
@@ -75,10 +84,11 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
                 xrms=img['xrms'], yrms=img['yrms'],
                 force=force)
 
-def updatewcs_with_shift(image,reference,wcsname=None,
-                        rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None,
-                        xrms=None, yrms = None,
-                        verbose=False,force=False,sciext='SCI'):
+def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
+                         fitgeom='rscale',
+                         rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None,
+                         xrms=None, yrms = None,
+                         verbose=False,force=False,sciext='SCI'):
 
     """
     Update the SCI headers in 'image' based on the fit provided as determined
@@ -130,6 +140,10 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         automatically append a version ID using the format '_n', such as
         'TWEAK_1', 'TWEAK_2',or 'TWEAK_update_1'.
         [Default =None]
+
+    reusename : bool
+        User can specify whether or not to over-write WCS with same name.
+        [Default: False]
 
     rot : float
         Amount of rotation measured in fit to be applied.
@@ -201,24 +215,20 @@ def updatewcs_with_shift(image,reference,wcsname=None,
         filename = image
         image_update = None
 
-    # Now that we are sure we have a good reference WCS to use, continue with the update
-    logstr = '....Updating header for %s...'%filename
+    # Now that we are sure we have a good reference WCS to use,
+    # continue with the update
+    logstr = "....Updating header for {:s}...".format(filename)
     if verbose:
-        print '\n'+logstr+'\n'
+        print("\n{:s}\n".format(logstr))
     else:
         log.info(logstr)
 
     # reset header WCS keywords to original (OPUS generated) values
-    numextn = fileutil.countExtn(image,extname=sciext)
-
-    if numextn > 0:
-        if image_update is True:
+    extlist = get_ext_list(image, extname='SCI')
+    if extlist:
+        if image_update:
             # Create initial WCSCORR extension
             wcscorr.init_wcscorr(image,force=force)
-
-        extlist = []
-        for extn in xrange(1,numextn+1):
-            extlist.append((sciext,extn))
     else:
         extlist = [0]
 
@@ -235,113 +245,150 @@ def updatewcs_with_shift(image,reference,wcsname=None,
 
     # Process MEF images...
     for ext in extlist:
-        logstr = 'Processing %s[%s]'%(fimg.filename(),str(ext))
+        logstr = "Processing {:s}[{:s}]".format(fimg.filename(),
+                                                ext2str(ext))
         if verbose:
-            print '\n'+logstr+'\n'
+            print("\n{:s}\n".format(logstr))
         else:
             log.info(logstr)
         chip_wcs = wcsutil.HSTWCS(fimg,ext=ext)
 
-        update_refchip_with_shift(chip_wcs, wref,
+        update_refchip_with_shift(chip_wcs, wref, fitgeom=fitgeom,
                     rot=rot, scale=scale, xsh=xsh, ysh=ysh,
                     fit=fit, xrms=xrms, yrms=yrms)
-        if wcsname in [None,' ','','INDEF']:
-            wcsname = 'TWEAK'
+        #if util.is_blank(wcsname):
+            #wcsname = 'TWEAK'
+
         # Update FITS file with newly updated WCS for this chip
-        if numextn > 0:
-            extnum = fileutil.findExtname(fimg,ext[0],ext[1])
-        else:
-            extnum = ext
+        extnum = fimg.index(fimg[ext])
+        update_wcs(fimg, extnum, chip_wcs, wcsname=wcsname,
+                   reusename=reusename, verbose=verbose)
 
-        update_wcs(fimg,extnum,chip_wcs,wcsname=wcsname,verbose=verbose)
-
-#    if numextn > 0:
-#        # Update WCSCORR table with new WCS information
-#        wcscorr.update_wcscorr(fimg,wcs_id=wcsname)
     if open_image:
         fimg.close()
 
-def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
-    xy1x = data[0]
-    xy1y = data[1]
-    if xsh != 0.0:
-        xy1x += xsh
-    if ysh != 0.0:
-        xy1y += ysh
-    numpts = xy1x.shape[0]
-    if fit is not None:
-        xy1 = np.zeros((xy1x.shape[0],2),np.float64)
-        xy1[:,0] = xy1x
-        xy1[:,1] = xy1y
-        xy1 = np.dot(xy1,fit)
-        xy1x = xy1[:,0]
-        xy1y = xy1[:,1]
-    return xy1x,xy1y
 
-def update_refchip_with_shift(chip_wcs, wcslin,
+def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
+    # linearization using 5-point formula for first order derivative
+    x0 = imcrpix[0]
+    y0 = imcrpix[1]
+    p = np.asarray([[x0, y0],
+                    [x0 - hx, y0],
+                    [x0 - hx * 0.5, y0],
+                    [x0 + hx * 0.5, y0],
+                    [x0 + hx, y0],
+                    [x0, y0 - hy],
+                    [x0, y0 - hy * 0.5],
+                    [x0, y0 + hy * 0.5],
+                    [x0, y0 + hy]],
+                   dtype=np.float64)
+    # convert image coordinates to reference image coordinates:
+    p = wcsref.wcs_world2pix(wcsim.wcs_pix2world(p, 1), 1).astype(np.float128)
+    # apply linear fit transformation:
+    p = np.dot(f, (p - shift).T).T
+    # convert back to image coordinate system:
+    p = wcsima.wcs_world2pix(wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(np.float128)
+
+    # derivative with regard to x:
+    u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6*hx)
+    # derivative with regard to y:
+    u2 = ((p[5] - p[8]) + 8 * (p[7] - p[6])) / (6*hy)
+
+    return (np.asarray([u1, u2]).T, p[0])
+
+
+def _inv2x2(x):
+    assert(x.shape == (2,2))
+    inv = x.astype(np.float128)
+    det = inv[0,0]*inv[1,1] - inv[0,1]*inv[1,0]
+    if np.abs(det) < np.finfo(np.float64).tiny:
+        raise ArithmeticError('Singular matrix.')
+    a = inv[0.0]
+    d = inv[1,1]
+    inv[1,0] *= -1.0
+    inv[0,1] *= -1.0
+    inv[0,0] = d
+    inv[1,1] = d
+    inv /= det
+    inv = inv.astype(np.float64)
+    if not np.all(np.isfinite(inv)):
+        raise ArithmeticError('Singular matrix.')
+    return inv
+
+
+def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
                             rot=0.0, scale=1.0, xsh=0.0, ysh=0.0,
                             fit=None, xrms=None, yrms=None):
     # compute the matrix for the scale and rotation correction
     if fit is None:
-        fitmat = fileutil.buildRotMatrix(-1*rot)*scale
-    else:
-        fitmat = fit
+        fit = linearfit.buildFitMatrix(rot, scale)
+    fit = _inv2x2(fit).T if fit.shape == (2,2) else np.linalg.inv(fit).T
 
-    rmode='rscale'
-    fit = np.linalg.inv(fitmat)
+    shift = np.asarray([xsh, ysh])
 
-    # step 1
-    xpix = [chip_wcs.wcs.crpix[0],chip_wcs.wcs.crpix[0]+1,chip_wcs.wcs.crpix[0]]
-    ypix = [chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1],chip_wcs.wcs.crpix[1]+1]
+    cwcs = chip_wcs.deepcopy()
+    cd_eye = np.eye(chip_wcs.wcs.cd.shape[0], dtype=np.float128)
+    zero_shift = np.zeros(2, dtype=np.float128)
 
-    # This full transformation includes all parts of model, excluding DGEO/NPOL
-    Rc_i,Dc_i = chip_wcs.wcs_pix2world(xpix,ypix,1)
+    # estimate precision necessary for iterative processes:
+    maxiter = 100
+    crpix2corners = np.dstack([i.flatten() for i in np.meshgrid(
+        [1,chip_wcs._naxis1],
+        [1,chip_wcs._naxis2])])[0] - chip_wcs.wcs.crpix
+    maxUerr = 1.0e-5 / np.amax(np.linalg.norm(crpix2corners, axis=1))
 
-    # step 2
-    Xc_i,Yc_i = wcslin.wcs_world2pix(Rc_i,Dc_i,1)
-    Xc_i -= wcslin.wcs.crpix[0]
-    Yc_i -= wcslin.wcs.crpix[1]
-    # step 3
+    # estimate step for numerical differentiation. We need a step
+    # large enough to avoid rounding errors and small enough to get a
+    # better precision for numerical differentiation.
+    # TODO: The logic below should be revised at a later time so that it
+    # better takes into account the two competing requirements.
+    hx = max(1.0, min(20.0, (chip_wcs.wcs.crpix[0] - 1.0)/100.0,
+                      (chip_wcs._naxis1 - chip_wcs.wcs.crpix[0])/100.0))
+    hy = max(1.0, min(20.0, (chip_wcs.wcs.crpix[1] - 1.0)/100.0,
+                      (chip_wcs._naxis2 - chip_wcs.wcs.crpix[1])/100.0))
 
-    Xcs_i,Ycs_i = apply_db_fit([Xc_i,Yc_i],fit,xsh=-1*xsh,ysh=-1*ysh)
-    Xcs_i += wcslin.wcs.crpix[0]
-    Ycs_i += wcslin.wcs.crpix[1]
-
-    chip_fit = fit
-    # step 4
-    Rcs_i,Dcs_i = wcslin.wcs_pix2world(Xcs_i,Ycs_i,1)
-    # step 5
-    # new crval should be first member
-    new_crval1 = Rcs_i[0]
-    new_crval2 = Dcs_i[0]
-    chip_wcs.wcs.crval = np.array([new_crval1,new_crval2])
+    # compute new CRVAL for the image WCS:
+    crpixinref = np.dot(fit, (wcslin.wcs_world2pix(
+        chip_wcs.wcs_pix2world([chip_wcs.wcs.crpix],1),1)-shift).T).T
+    chip_wcs.wcs.crval = wcslin.wcs_pix2world(crpixinref, 1)[0]
     chip_wcs.wcs.set()
-    # step 6
-    # compute new sky positions (with full model) based on new CRVAL
-    Rc_iu,Dc_iu = chip_wcs.wcs_pix2world(xpix, ypix, 1)
-    Xc_iu,Yc_iu = wcslin.wcs_world2pix(Rc_iu,Dc_iu, 1)
-    # step 7
-    # Perform rscale (linear orthogonal) fit between previously updated positions
-    # and newly updated positions
-    XYc_iu = np.transpose([Xc_iu,Yc_iu])
-    XYcs_i = np.transpose([Xcs_i,Ycs_i])
-    #rfit = linearfit.fit_all(XYcs_i,XYc_iu,mode=rmode,center=[new_crval1,new_crval2],verbose=False)
-    #rmat = rfit['fit_matrix']
-    rfit = linearfit.fit_all(XYcs_i,XYc_iu,mode='rscale',center=[new_crval1,new_crval2],verbose=False)
-    rmat = fileutil.buildRotMatrix(rfit['rot'])*rfit['scale'][0]
 
-    # Step 8
-    # apply final fit to CD matrix
-    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd,rmat)
+    # initial approximation for CD matrix of the image WCS:
+    (U, u) = linearize(cwcs, chip_wcs, wcslin, chip_wcs.wcs.crpix,
+                       fit, shift, hx=hx, hy=hy)
+    err0 = np.amax(np.abs(U-cd_eye)).astype(np.float64)
+    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(np.float128), U).astype(np.float64)
+    chip_wcs.wcs.set()
 
-    # Step 9
-    # record any reported error for this fit
+    # NOTE: initial solution is the exact mathematical solution (modulo numeric
+    # differentiation). However, e.g., due to rounding errors, approximate
+    # numerical differentiation, the solution may be improved by performing
+    # several iterations. The next step will try to perform
+    # fixed-point iterations to "improve" the solution
+    # but this is not really required.
+
+    # Perform fixed-point iterations to improve the approximation
+    # for CD matrix of the image WCS (actually for the U matrix).
+    for i in xrange(maxiter):
+        (U, u) = linearize(chip_wcs, chip_wcs, wcslin, chip_wcs.wcs.crpix,
+                           cd_eye, zero_shift, hx=hx, hy=hy)
+        err = np.amax(np.abs(U-cd_eye)).astype(np.float64)
+        if err > err0:
+            break
+        chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd, U).astype(np.float64)
+        chip_wcs.wcs.set()
+        if err < maxUerr:
+            break
+        err0 = err
+
     if xrms is not None:
         chip_wcs.wcs.crder = np.array([xrms,yrms])
+
+
 ###
 ### Header keyword prefix related archive functions
 ###
-def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
+def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
     """
     Updates the WCS of the specified extension number with the new WCS
     after archiving the original WCS.
@@ -362,6 +409,10 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
 
     wcsname : str
         Label to give newly updated WCS
+
+    reusename : bool
+        User can choose whether to over-write WCS with same name or not.
+        [Default: False]
 
     verbose : bool, int
         Print extra messages during processing? [Default: False]
@@ -384,9 +435,10 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
 
     # Determine final (unique) WCSNAME value, either based on the default or
     # user-provided name
-    if wcsname in ['',' ',None,'INDEF','N/A']:
+    if util.is_blank(wcsname):
         wcsname = 'TWEAK'
-    wcsname = create_unique_wcsname(fimg, extnum, wcsname)
+    if not reusename:
+        wcsname = create_unique_wcsname(fimg, extnum, wcsname)
 
     idchdr = True
     if new_wcs.idcscale is None:
@@ -419,18 +471,23 @@ def update_wcs(image,extnum,new_wcs,wcsname="",verbose=False):
         # newly updated WCS be archived, as it will never be written out
         # to a file otherwise.
         if fimg_update:
-            # Save the newly updated WCS as an alternate WCS as well
-            wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
+            if not reusename:
+                # Save the newly updated WCS as an alternate WCS as well
+                wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
+            else:
+                wkey = wcsutil.altwcs.getKeyFromName(hdr,wcsname)
+
             # wcskey needs to be specified so that archiveWCS will create a
             # duplicate WCS with the same WCSNAME as the Primary WCS
-            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,wcskey=wkey)
-
+            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,
+                wcskey=wkey, reusekey=reusename)
     finally:
         if fimg_open:
             # finish up by closing the file now
             fimg.close()
 
-def create_unique_wcsname(fimg, extnum ,wcsname):
+
+def create_unique_wcsname(fimg, extnum, wcsname):
     """
     This function evaluates whether the specified wcsname value has
     already been used in this image.  If so, it automatically modifies

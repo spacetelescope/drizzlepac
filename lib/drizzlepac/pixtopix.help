@@ -98,6 +98,12 @@ to run the task in a couple of common modes.
    >>> outx,outy = pixtopix.tran("input_file_flt.fits[sci,1]",
    ...                           "output_drz.fits[sci,1],"forward", 256,256)
 
+   or if you the default direction of 'forward' is already appropriate and
+   you don't want to explicitly set that value:
+
+   >>> outx,outy = pixtopix.tran("input_file_flt.fits[sci,1]",
+   ...                           "output_drz.fits[sci,1],x=256,y=256)
+
 3. The set of X,Y positions from 'output_drz.fits[sci,1]' stored as
    the 3rd and 4th columns from the ASCII file ``xy_sci1.dat``
    will be transformed into pixel positions from 'input_flt.fits[sci,1]'

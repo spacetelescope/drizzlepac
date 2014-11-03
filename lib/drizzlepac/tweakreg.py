@@ -23,8 +23,8 @@ import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.4.0'
-__vdate__ = '21-Jul-2014'
+__version__ = '1.4.2'
+__vdate__ = '22-Sep-2014'
 
 import tweakutils
 import imgclasses
@@ -142,14 +142,15 @@ def run(configobj):
     if configobj['UPDATE HEADER']['updatehdr']:
         wname = configobj['UPDATE HEADER']['wcsname']
         # verify that a unique WCSNAME has been specified by the user
-        for fname in filenames:
-            uniq = util.verifyUniqueWcsname(fname,wname)
-            if not uniq:
-                errstr = 'WCSNAME "%s" already present in "%s".  '%(wname,fname)+\
-                'A unique value for the "wcsname" parameter needs to be ' + \
-                'specified. \n\nQuitting!'
-                print textutil.textbox(errstr,width=60)
-                raise IOError
+        if not configobj['UPDATE HEADER']['reusename']:
+            for fname in filenames:
+                uniq = util.verifyUniqueWcsname(fname,wname)
+                if not uniq:
+                    errstr = 'WCSNAME "%s" already present in "%s".  '%(wname,fname)+\
+                    'A unique value for the "wcsname" parameter needs to be ' + \
+                    'specified. \n\nQuitting!'
+                    print textutil.textbox(errstr,width=60)
+                    raise IOError
 
     if configobj['updatewcs']:
         print '\nRestoring WCS solutions to original state using updatewcs...\n'
@@ -309,6 +310,9 @@ def run(configobj):
                             ref_source, xycatalog=xycat,
                             cat_origin=cat_src, **kwargs)
             refwcs_fname = refimage.wcs.filename
+            if cat_src is not None:
+                refimage.name = cat_src
+
         except KeyboardInterrupt:
             refimage.close()
             for img in input_images:
@@ -426,9 +430,9 @@ def run(configobj):
         omitted_images.insert(0, refimg) # refimage *must* be first
         do_match_refimg = True
 
-    print '\n'+'='*20+'\n'
-    print 'Aligning all input images to WCS defined by ',refwcs_fname
-    print '\n'+'='*20+'\n'
+    print ('\n'+'='*20+'\n')
+    print ('Aligning all input images to WCS defined by ',refwcs_fname)
+    print ('\n'+'='*20+'\n')
 
     if refimage.outxy is not None:
         if cat_src is None:
@@ -466,8 +470,8 @@ def run(configobj):
             retry_flags = len(input_images)*[0]
             objmatch_par['cat_src_type'] = cat_src_type
             while image is not None:
-                print '\n'+'='*20
-                print 'Performing fit for: ',image.name,'\n'
+                print ('\n'+'='*20)
+                print ('Performing fit for: ',image.name,'\n')
                 image.match(refimage, quiet_identity=False, **objmatch_par)
                 assert(len(retry_flags) == len(input_images))
 
@@ -486,8 +490,9 @@ def run(configobj):
                         # no new sources have been added to the reference
                         # catalog and we have already tried to match
                         # images to the existing reference catalog
-                        input_images.append(image) # <- add it back for later reporting
-                        retry_flags.append(1)
+
+                        #input_images.append(image) # <- add it back for later reporting
+                        #retry_flags.append(1)
                         break
 
                 image.performFit(**catfit_pars)
@@ -501,7 +506,8 @@ def run(configobj):
                 if expand_refcat:
                     refimage.append_not_matched_sources(image)
 
-                image.updateHeader(wcsname=uphdr_par['wcsname'])
+                image.updateHeader(wcsname=uphdr_par['wcsname'],
+                                    reusename=uphdr_par['reusename'])
                 if hdrlet_par['headerlet']:
                     image.writeHeaderlet(**hdrlet_par)
                 if configobj['clean']:
@@ -556,7 +562,8 @@ def run(configobj):
                         quit_immediately = True
                         image.close()
                         break
-                    image.updateHeader(wcsname=uphdr_par['wcsname'])
+                    image.updateHeader(wcsname=uphdr_par['wcsname'],
+                                    reusename=uphdr_par['reusename'])
                     if hdrlet_par['headerlet']:
                         image.writeHeaderlet(**hdrlet_par)
                     if configobj['clean']:
@@ -593,10 +600,10 @@ def run(configobj):
             for img in input_images_orig_copy:
                 img.close()
                 del img
-            print 'Quitting as a result of user request (Ctrl-C)...'
+            print ('Quitting as a result of user request (Ctrl-C)...')
             return
     else:
-        print 'No valid sources in reference frame. Quitting...'
+        print ('No valid sources in reference frame. Quitting...')
         return
 
 

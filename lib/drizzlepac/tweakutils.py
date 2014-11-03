@@ -621,30 +621,34 @@ def createWcsHDU(wcs):
         For most applications, stwcs.wcsutil.HSTWCS.wcs2header()
         will work just as well.
     """
+    header = wcs.to_header()
 
-    hdu = fits.ImageHDU()
-    hdu.header['EXTNAME'] = 'WCS'
-    hdu.header['EXTVER'] = 1
+    header['EXTNAME'] = 'WCS'
+    header['EXTVER'] = 1
+
     # Now, update original image size information
-    hdu.header['WCSAXES'] = (2, "number of World Coordinate System axes")
-    hdu.header['NPIX1'] = (wcs._naxis1, "Length of array axis 1")
-    hdu.header['NPIX2'] = (wcs._naxis2, "Length of array axis 2")
-    hdu.header['PIXVALUE'] = (0.0, "values of pixels in array")
+    header['NPIX1'] = (wcs._naxis1, "Length of array axis 1")
+    header['NPIX2'] = (wcs._naxis2, "Length of array axis 2")
+    header['PIXVALUE'] = (0.0, "values of pixels in array")
 
-    # Write out values to header...
-    hdu.header['CD1_1'] = (wcs.wcs.cd[0,0], "partial of first axis coordinate w.r.t. x")
-    hdu.header['CD1_2'] = (wcs.wcs.cd[0,1], "partial of first axis coordinate w.r.t. y")
-    hdu.header['CD2_1'] = (wcs.wcs.cd[1,0], "partial of second axis coordinate w.r.t. x")
-    hdu.header['CD2_2'] = (wcs.wcs.cd[1,1], "partial of second axis coordinate w.r.t. y")
-    hdu.header['ORIENTAT'] = (wcs.orientat, "position angle of image y axis (deg. e of n)")
-    hdu.header['CRPIX1'] = (wcs.wcs.crpix[0], "x-coordinate of reference pixel")
-    hdu.header['CRPIX2'] = (wcs.wcs.crpix[1], "y-coordinate of reference pixel")
-    hdu.header['CRVAL1'] = (wcs.wcs.crval[0], "first axis value at reference pixel")
-    hdu.header['CRVAL2'] = (wcs.wcs.crval[1], "second axis value at reference pixel")
-    hdu.header['CTYPE1'] = (wcs.wcs.ctype[0], "the coordinate type for the first axis")
-    hdu.header['CTYPE2'] = (wcs.wcs.ctype[1], "the coordinate type for the second axis")
+    if hasattr(wcs, 'orientat'):
+        orientat = wcs.orientat
+    else:
+        # find orientat from CD or PC matrix
+        if wcs.wcs.has_cd():
+            cd12 = wcs.wcs.cd[0][1]
+            cd22 = wcs.wcs.cd[1][1]
+        elif wcs.wcs.has_pc():
+            cd12 = wcs.wcs.cdelt[0] * wcs.wcs.pc[0][1]
+            cd22 = wcs.wcs.cdelt[1] * wcs.wcs.pc[1][1]
+        else:
+            raise ValueError("Invalid WCS: WCS does not contain neither "
+                             "a CD nor a PC matrix.")
+        orientat = np.rad2deg(np.arctan2(cd12,cd22))
+    header['ORIENTAT'] = (orientat, "position angle of "
+                          "image y axis (deg. e of n)")
 
-    return hdu
+    return fits.ImageHDU(None, header)
 
 #
 # Code used for testing source finding algorithms

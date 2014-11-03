@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Image Class &mdash; DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</title>
+    <title>Image Class &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev33830 (11-Aug-2014)',
+        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
     <link rel="next" title="Classes to manage Catalogs and WCS’s" href="catalogs.html" />
     <link rel="prev" title="Imagefindpars: Source finding parameters" href="imagefindpars.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -109,7 +109,7 @@ Used by <em class="xref py py-obj">TweakReg</em>.</p>
 <dl class="class">
 <dt id="drizzlepac.imgclasses.Image">
 <em class="property">class </em><tt class="descclassname">drizzlepac.imgclasses.</tt><tt class="descname">Image</tt><big>(</big><em>filename</em>, <em>input_catalogs=None</em>, <em>exclusions=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
 <p>Primary class to keep track of all WCS and catalog information for
 a single input image. This class also performs all matching and fitting.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -236,7 +236,7 @@ It keeps a copy of the original full list in order to support iteration.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imgclasses.Image.updateHeader">
-<tt class="descname">updateHeader</tt><big>(</big><em>wcsname=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.updateHeader" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">updateHeader</tt><big>(</big><em>wcsname=None</em>, <em>reusename=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.updateHeader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update header of image with shifts computed by <em>perform_fit()</em>.</p>
 </dd></dl>
 
@@ -269,9 +269,14 @@ It keeps a copy of the original full list in order to support iteration.</p>
 <dl class="class">
 <dt id="drizzlepac.imgclasses.RefImage">
 <em class="property">class </em><tt class="descclassname">drizzlepac.imgclasses.</tt><tt class="descname">RefImage</tt><big>(</big><em>wcs_list</em>, <em>catalog</em>, <em>xycatalog=None</em>, <em>cat_origin=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
 <p>This class provides all the information needed by to define a reference
 tangent plane and list of source positions on the sky.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">When <em class="xref py py-obj">wcs_list</em> is a Python list of <em class="xref py py-obj">WCS</em> objects,
+each element must be an instance of <tt class="xref py py-obj docutils literal"><span class="pre">stwcs.wcsutil.HSTWCS</span></tt>.</p>
+</div>
 <dl class="method">
 <dt id="drizzlepac.imgclasses.RefImage.append_not_matched_sources">
 <tt class="descname">append_not_matched_sources</tt><big>(</big><em>image</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.append_not_matched_sources" title="Permalink to this definition">¶</a></dt>
@@ -343,7 +348,7 @@ to reference tangent plane (self.wcs) to create output X,Y positions.</p>
         <li class="right" >
           <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
