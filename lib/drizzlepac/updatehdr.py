@@ -287,7 +287,8 @@ def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
     # apply linear fit transformation:
     p = np.dot(f, (p - shift).T).T
     # convert back to image coordinate system:
-    p = wcsima.wcs_world2pix(wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(np.float128)
+    p = wcsima.wcs_world2pix(
+        wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(np.float128)
 
     # derivative with regard to x:
     u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6*hx)
@@ -322,9 +323,10 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
     # compute the matrix for the scale and rotation correction
     if fit is None:
         fit = linearfit.buildFitMatrix(rot, scale)
-    fit = _inv2x2(fit).T if fit.shape == (2,2) else np.linalg.inv(fit).T
 
-    shift = np.asarray([xsh, ysh])
+    shift = np.asarray([xsh, ysh]) - np.dot(wcslin.wcs.crpix, fit) + wcslin.wcs.crpix
+
+    fit = _inv2x2(fit).T if fit.shape == (2,2) else np.linalg.inv(fit).T
 
     cwcs = chip_wcs.deepcopy()
     cd_eye = np.eye(chip_wcs.wcs.cd.shape[0], dtype=np.float128)
@@ -348,8 +350,9 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
                       (chip_wcs._naxis2 - chip_wcs.wcs.crpix[1])/100.0))
 
     # compute new CRVAL for the image WCS:
-    crpixinref = np.dot(fit, (wcslin.wcs_world2pix(
-        chip_wcs.wcs_pix2world([chip_wcs.wcs.crpix],1),1)-shift).T).T
+    crpixinref = wcslin.wcs_world2pix(
+        chip_wcs.wcs_pix2world([chip_wcs.wcs.crpix],1),1)
+    crpixinref = np.dot(fit, (crpixinref - shift).T).T
     chip_wcs.wcs.crval = wcslin.wcs_pix2world(crpixinref, 1)[0]
     chip_wcs.wcs.set()
 
@@ -380,6 +383,8 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
         if err < maxUerr:
             break
         err0 = err
+
+    #print("|u - crpix|: {}".format(np.linalg.norm(u - chip_wcs.wcs.crpix)))
 
     if xrms is not None:
         chip_wcs.wcs.crder = np.array([xrms,yrms])

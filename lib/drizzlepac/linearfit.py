@@ -110,8 +110,10 @@ def iter_fit_all(xy,uv,xyindx,uvindx,
         xcen = uv[:,0].mean()
         ycen = uv[:,1].mean()
         center = [xcen,ycen]
+    xy -= center
+    uv -= center
 
-    fit = fit_all(xy,uv,mode=mode,center=center,verbose=verbose)
+    fit = fit_all(xy, uv, mode=mode, center=center, verbose=verbose)
     npts = xy.shape[0]
     npts0 = 0
     if nclip is None: nclip = 0
@@ -120,7 +122,7 @@ def iter_fit_all(xy,uv,xyindx,uvindx,
         if 'resids' in fit:
             resids = fit['resids']
         else:
-            resids = compute_resids(xy,uv,fit)
+            resids = compute_resids(xy, uv, fit)
 
         # redefine what pixels will be included in next iteration
         whtfrac = npts/(npts-npts0-1.0)
@@ -141,19 +143,10 @@ def iter_fit_all(xy,uv,xyindx,uvindx,
                 xyorig = xyorig[goodpix]
             if uvorig is not None:
                 uvorig = uvorig[goodpix]
-            fit = fit_all(xy,uv,mode=mode,center=center,verbose=False)
+            fit = fit_all(xy, uv, mode=mode, center=center, verbose=False)
             del goodpix,goodx,goody
         else:
             break
-
-    # This is needed:
-    # 1. to keep compatibility with the rest of the code
-    # 2. to keep compatibility with the way source coordinates
-    #    are reported in the *_catalog_fit.match files (relative to the
-    #    reference WCS's CRPIX)
-    # 3. Same as #2 but for the residual plots (they are centered on
-    #    reference image's CRPIX).
-    xy -= center
 
     fit['img_coords'] = xy
     fit['ref_coords'] = uv

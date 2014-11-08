@@ -471,7 +471,7 @@ def run(configobj):
             objmatch_par['cat_src_type'] = cat_src_type
             while image is not None:
                 print ('\n'+'='*20)
-                print ('Performing fit for: ',image.name,'\n')
+                print ('Performing fit for: {}\n'.format(image.name))
                 image.match(refimage, quiet_identity=False, **objmatch_par)
                 assert(len(retry_flags) == len(input_images))
 
