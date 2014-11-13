@@ -1365,16 +1365,8 @@ class RefImage(object):
         not_matched_outxy = image.outxy[not_matched_mask]
 
         # apply corrections based on the fit:
-        #TODO: Make sure this is correct!. It appears that subtraction/
-        # addition of crpix (see next comment block) is not necessary... Check this!!!
-        # I think it should be like this:
-        new_outxy = np.dot(not_matched_outxy-image.fit['offset'],
-                           np.linalg.inv(image.fit['fit_matrix']))
-
-        ## Old, I believe incorrect, transformation:
-        ##TODO: remove code below (and this comment) after testing the above code.
-        #new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
-                           #image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
+        new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
+                           image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
 
         # convert to RA & DEC:
         new_radec = self.wcs.wcs_pix2world(new_outxy, 1)
