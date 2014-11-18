@@ -64,14 +64,21 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
             refimage = refimage[:refimage.find('[wcs]')]
             break
 
+    # Determine the max length in the first column (filenames)
+    fnames = []
+    for row in shift_lines:
+        if row.startswith('#'): continue
+        fnames.append(len(row.split(' ')[0]))
+    fname_fmt = 'S{0}'.format(max(fnames))
+
     # Now read in numerical values from shiftfile
     type_list = {'names':('fnames','xsh','ysh','rot','scale','xrms','yrms'),
-                 'formats':('S24','f4','f4','f4','f4','f4','f4')}
+                 'formats':(fname_fmt,'f4','f4','f4','f4','f4','f4')}
     try:
         sdict = np.loadtxt(shiftfile,dtype=type_list,unpack=False)
     except IndexError:
         tlist = {'names':('fnames','xsh','ysh','rot','scale'),
-                     'formats':('S24','f4','f4','f4','f4')}
+                     'formats':(fname_fmt,'f4','f4','f4','f4')}
         s = np.loadtxt(shiftfile,dtype=tlist,unpack=False)
         sdict = np.zeros([s['fnames'].shape[0],],dtype=type_list)
         for sname in s.dtype.names:
@@ -383,8 +390,6 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
         if err < maxUerr:
             break
         err0 = err
-
-    #print("|u - crpix|: {}".format(np.linalg.norm(u - chip_wcs.wcs.crpix)))
 
     if xrms is not None:
         chip_wcs.wcs.crder = np.array([xrms,yrms])
