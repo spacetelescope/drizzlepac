@@ -742,11 +742,11 @@ class baseImageObject(object):
         if ivmname != None:
             log.info("Applying user supplied IVM files for chip %s" % chip)
             #Parse the input file name to get the extension we are working on
-            extn = "IVM,"+chip
+            extn = "IVM,{}".format(chip)
 
             #Open the mask image for updating and the IVM image
-            ivm =  fileutil.openImage(ivmname,mode='readonly')
-            ivmfile = fileutil.getExtn(ivm,extn)
+            ivm =  fileutil.openImage(ivmname, mode='readonly')
+            ivmfile = fileutil.getExtn(ivm, extn)
 
             # Multiply the IVM file by the input mask in place.
             ivmarr = ivmfile.data * dqarr
