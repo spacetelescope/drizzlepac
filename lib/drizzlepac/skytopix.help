@@ -1,0 +1,96 @@
+`skytopix` transforms source positions given as RA, Dec values into
+pixel positions on the image based on the WCS information and any recognized
+distortion keywords contained in the input image header.
+
+:Authors: Warren Hack
+
+:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+
+Parameters
+----------
+    input : str
+        full filename with path of input image, an extension name
+        ['sci',1] should be provided if input is a multi-extension
+        FITS file.
+
+Optional Parameters
+-------------------
+    ra : string, optional
+        RA position in either decimal degrees or HMS format
+        (with or without ``':'``)
+        like ``'19:10:50.337406303'`` or ``'19 10 50.337406303'``
+
+    dec : string, optional
+        Dec position in either decimal degrees or HMS format
+        (with or without ``':'``)
+        like ``'-60:2:22.186557409'`` or ``'-60 2 22.186557409'``
+
+    coordfile : str, optional
+        full filename with path of file with sky coordinates
+
+    colnames : str, optional
+        comma separated list of column names from 'coordfile' file
+        containing sky coordinates, respectively. Will default to
+        first two columns if None are specified. Column names for ASCII
+        files will use 'c1','c2',... convention.
+
+    precision : int, optional
+        Number of floating-point digits in output values
+
+    output : str, optional
+        Name of output file with results, if desired
+
+    verbose : bool
+        Print out full list of transformation results (default: `False`)
+
+Returns
+--------
+    x : float
+        X position of pixel. If more than 1 input value, then it will be a
+        numpy array.
+    y : float
+        Y position of pixel. If more than 1 input value, then it will be a
+        numpy array.
+
+
+Notes
+-----
+This task performs a full distortion-correction coordinate transformation
+based on all WCS keywords and any recognized distortion keywords from the
+input image header. The transformation recognizes the conventions for
+describing distortion implemented as part of the SIP and Paper IV conventions
+used with `AstroDrizzle`.  Input images can be updated to use these conventions
+through the use of the `updatewcs` module the STWCS package.
+
+
+See Also
+--------
+stwcs
+
+
+Examples
+--------
+This task can be run from either the TEAL GUI, or from the Python command-line.
+These examples illustrate the syntax that can be used to run the task in a
+couple of common modes.
+
+1. Run the task using the TEAL GUI under PyRAF:
+
+   >>> import drizzlepac
+   >>> epar skytopix
+
+2. Convert a single sky position (0:22:07.0088,-72:03:05.429)
+    from a calibrated ACS image (j94f05bgq\_flt.fits) into a
+    pixel position (X,Y) without using the TEAL GUI:
+
+  >>> from drizzlepac import skytopix
+  >>> x,y = skytopix.rd2xy("j8bt06nyq_flt.fits[sci,1]",
+  ...                      '0:22:07.0088', '-72:03:05.429')
+
+3. Convert a list of (undistorted) sky positions from the file,
+    'radec.dat' for a calibrated ACS image (j8bt06nyq_flt.fits)
+     into distorted pixel positions, and write out the result to
+     the file 'xypos.dat' without using the TEAL GUI:
+
+  >>> x,y = skytopix.rd2xy("j8bt06nyq_flt.fits[sci,1]",
+  ...                      coordfile="radec.dat", output="xypos.dat")

@@ -1,0 +1,1 @@
+xc -z -p stsdas nblot.f drutil.f nrieval.x ii_bieval.x x_nblot.x /usr/stsci/stsdasx/lib/libiraf77.a /usr/stsci/irafx/bin.ssun/libiminterp.a

@@ -1,0 +1,75 @@
+[files]
+packages =
+	drizzlepac
+	drizzlepac.tests
+package_data =
+	drizzlepac = pars/* *.help htmlhelp/*.html htmlhelp/_images/math/* htmlhelp/_images/*.*
+	htmlhelp/_sources/* htmlhelp/_static/*
+scripts =
+	scripts/mdriz
+	scripts/resetbits
+	scripts/updatenpol
+packages_root = lib
+
+[extension=drizzlepac.cdriz]
+libraries = m
+include_dirs =
+	numpy
+	wcs
+	pdk_fctx
+	src
+	src/tests
+define_macros = PYDRIZZLE
+sources =
+	src/arrdrizmodule.c
+	src/cdrizzleblot.c
+	src/cdrizzlebox.c
+	src/cdrizzleio.c
+	src/cdrizzlemap.c
+	src/cdrizzleutil.c
+	src/tests/utest_cdrizzlepac.c
+
+extra_compile_args = -O0 -g
+
+[global]
+setup_hooks =
+	stsci.distutils.hooks.use_packages_root
+	stsci.distutils.hooks.tag_svn_revision
+	stsci.distutils.hooks.version_setup_hook
+
+[build_ext]
+pre-hook.wcs = setup_hooks.wcs_include
+pre-hook.numpy-extension-hook = stsci.distutils.hooks.numpy_extension_hook
+pre-hook.pdk_fctx = setup_hooks.pdk_fctx
+
+[metadata]
+description-file = README
+name = drizzlepac
+author = Megan Sosey, Warren Hack, Christopher Hanley, Chris Sontag, Mihai Cara, Bernie Simon
+requires-python = >=2.6
+vdate = 14-Aug-2014
+home-page = http://www.stsci.edu/resources/software_hardware/stsci_python
+summary = drizzle tools: combines astronomical images, including modeling distortion, removing cosmic rays, and generally improving fidelity of data in the final image
+version = 2.0.0.dev
+requires-dist =
+	stsci.tools
+	stsci.convolve
+	stsci.image
+	stsci.imagemanip
+	stsci.imagestats
+	stsci.ndimage
+	stsci.stimage
+	nictools
+	stwcs (>=1.1.9)
+	fitsblender (>=0.2.2)
+	astrolib.coords (>=0.39.4)
+	astropy (>=0.3.1)
+	numpy (>=1.5.1)
+classifier =
+	Intended Audience :: Science/Research
+	License :: OSI Approved :: BSD License
+	Operating System :: OS Independent
+	Programming Language :: Python
+	Topic :: Scientific/Engineering :: Astronomy
+	Topic :: Software Development :: Libraries :: Python Modules
+author-email = help@stsci.edu

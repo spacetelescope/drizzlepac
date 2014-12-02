@@ -1,0 +1,1 @@
+xc -z -p stsdas blot.f drutil.f x_blot.x /usr/stsci/stsdasx/lib/libiraf77.a /usr/stsci/irafx/bin.ssun/libiminterp.a

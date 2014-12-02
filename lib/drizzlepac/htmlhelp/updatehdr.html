@@ -1,0 +1,376 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
+    <link rel="next" title="Region mapping for TweakReg" href="mapreg.html" />
+    <link rel="prev" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mapreg.html" title="Region mapping for TweakReg"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tweakutils.html"
+                        title="previous chapter">TWEAKUTILS: Utility Functions for Tweakreg</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mapreg.html"
+                        title="next chapter">Region mapping for TweakReg</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/updatehdr.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="updatehdr-functions-for-updating-wcs-with-new-solutions">
+<span id="updatehdr"></span><h1>UPDATEHDR: Functions for Updating WCS with New Solutions<a class="headerlink" href="#updatehdr-functions-for-updating-wcs-with-new-solutions" title="Permalink to this headline">¶</a></h1>
+<p>The functions in this module support updating the WCS information in
+distorted images with the alignment solution determined by <em class="xref py py-obj">tweakreg</em>
+or saved in a shiftfile.</p>
+<span class="target" id="module-drizzlepac.updatehdr"></span><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Mihai Cara</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="drizzlepac.updatehdr.create_unique_wcsname">
+<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">create_unique_wcsname</tt><big>(</big><em>fimg</em>, <em>extnum</em>, <em>wcsname</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.create_unique_wcsname" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function evaluates whether the specified wcsname value has
+already been used in this image.  If so, it automatically modifies
+the name with a simple version ID using wcsname_NNN format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fimg">fimg</strong> : obj</p>
+<blockquote>
+<div><p>PyFITS object of image with WCS information to be updated</p>
+</div></blockquote>
+<p><strong id="extnum">extnum</strong> : int</p>
+<blockquote>
+<div><p>Index of extension with WCS information to be updated</p>
+</div></blockquote>
+<p><strong id="wcsname">wcsname</strong> : str</p>
+<blockquote>
+<div><p>Value of WCSNAME specified by user for labelling the new WCS</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>uniqname</strong> : str</p>
+<blockquote class="last">
+<div><p>Unique WCSNAME value</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.updatehdr.update_from_shiftfile">
+<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_from_shiftfile</tt><big>(</big><em>shiftfile</em>, <em>wcsname=None</em>, <em>force=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_from_shiftfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update headers of all images specified in shiftfile with shifts
+from shiftfile.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="shiftfile">shiftfile</strong> : str</p>
+<blockquote>
+<div><p>Filename of shiftfile.</p>
+</div></blockquote>
+<p><strong id="wcsname">wcsname</strong> : str</p>
+<blockquote>
+<div><p>Label to give to new WCS solution being created by this fit. If
+a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
+label. [Default =None]</p>
+</div></blockquote>
+<p><strong id="force">force</strong> : bool</p>
+<blockquote class="last">
+<div><p>Update header even though WCS already exists with this solution or
+wcsname? [Default=False]</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.updatehdr.update_wcs">
+<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_wcs</tt><big>(</big><em>image</em>, <em>extnum</em>, <em>new_wcs</em>, <em>wcsname=''</em>, <em>reusename=False</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_wcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the WCS of the specified extension number with the new WCS
+after archiving the original WCS.</p>
+<p>The value of &#8216;new_wcs&#8217; needs to be the full
+HSTWCS object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="image">image</strong> : str</p>
+<blockquote>
+<div><p>Filename of image with WCS that needs to be updated</p>
+</div></blockquote>
+<p><strong id="extnum">extnum</strong> : int</p>
+<blockquote>
+<div><p>Extension number for extension with WCS to be updated/replaced</p>
+</div></blockquote>
+<p><strong id="new_wcs">new_wcs</strong> : object</p>
+<blockquote>
+<div><p>Full HSTWCS object which will replace/update the existing WCS</p>
+</div></blockquote>
+<p><strong id="wcsname">wcsname</strong> : str</p>
+<blockquote>
+<div><p>Label to give newly updated WCS</p>
+</div></blockquote>
+<p><strong id="reusename">reusename</strong> : bool</p>
+<blockquote>
+<div><p>User can choose whether to over-write WCS with same name or not.
+[Default: False]</p>
+</div></blockquote>
+<p><strong id="verbose">verbose</strong> : bool, int</p>
+<blockquote class="last">
+<div><p>Print extra messages during processing? [Default: False]</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.updatehdr.updatewcs_with_shift">
+<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">updatewcs_with_shift</tt><big>(</big><em>image</em>, <em>reference</em>, <em>wcsname=None</em>, <em>reusename=False</em>, <em>fitgeom='rscale'</em>, <em>rot=0.0</em>, <em>scale=1.0</em>, <em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>fit=None</em>, <em>xrms=None</em>, <em>yrms=None</em>, <em>verbose=False</em>, <em>force=False</em>, <em>sciext='SCI'</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.updatewcs_with_shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the SCI headers in &#8216;image&#8217; based on the fit provided as determined
+in the WCS specified by &#8216;reference&#8217;.  The fit should be a 2-D matrix as
+generated for use with &#8216;make_vector_plot()&#8217;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="image">image</strong> : str or PyFITS.HDUList object</p>
+<blockquote>
+<div><p>Filename, or PyFITS object, of image with WCS to be updated.
+All extensions with EXTNAME matches the value of the &#8216;sciext&#8217;
+parameter value (by default, all &#8216;SCI&#8217; extensions) will be updated.</p>
+</div></blockquote>
+<p><strong id="reference">reference</strong> : str</p>
+<blockquote>
+<div><p>Filename of image/headerlet (FITS file) which contains the WCS
+used to define the tangent plane in which all the fit parameters
+(shift, rot, scale) were measured.</p>
+</div></blockquote>
+<p><strong id="wcsname">wcsname</strong> : str</p>
+<blockquote>
+<div><p>Label to give to new WCS solution being created by this fit. If
+a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
+label. If a WCS has a name with this specific value, the code will
+automatically append a version ID using the format &#8216;_n&#8217;, such as
+&#8216;TWEAK_1&#8217;, &#8216;TWEAK_2&#8217;,or &#8216;TWEAK_update_1&#8217;.
+[Default =None]</p>
+</div></blockquote>
+<p><strong id="reusename">reusename</strong> : bool</p>
+<blockquote>
+<div><p>User can specify whether or not to over-write WCS with same name.
+[Default: False]</p>
+</div></blockquote>
+<p><strong id="rot">rot</strong> : float</p>
+<blockquote>
+<div><p>Amount of rotation measured in fit to be applied.
+[Default=0.0]</p>
+</div></blockquote>
+<p><strong id="scale">scale</strong> : float</p>
+<blockquote>
+<div><p>Amount of scale change measured in fit to be applied.
+[Default=1.0]</p>
+</div></blockquote>
+<p><strong id="xsh">xsh</strong> : float</p>
+<blockquote>
+<div><p>Offset in X pixels from defined tangent plane to be applied to image.
+[Default=0.0]</p>
+</div></blockquote>
+<p><strong id="ysh">ysh</strong> : float</p>
+<blockquote>
+<div><p>Offset in Y pixels from defined tangent plane to be applied to image.
+[Default=0.0]</p>
+</div></blockquote>
+<p><strong id="fit">fit</strong> : arr</p>
+<blockquote>
+<div><p>Linear coefficients for fit
+[Default = None]</p>
+</div></blockquote>
+<p><strong id="xrms">xrms</strong> : float</p>
+<blockquote>
+<div><p>RMS of fit in RA (in decimal degrees) that will be recorded as
+CRDER1 in WCS and header
+[Default = None]</p>
+</div></blockquote>
+<p><strong id="yrms">yrms</strong> : float</p>
+<blockquote>
+<div><p>RMS of fit in Dec (in decimal degrees) that will be recorded as
+CRDER2 in WCS and header
+[Default = None]</p>
+</div></blockquote>
+<p><strong id="verbose">verbose</strong> : bool</p>
+<blockquote>
+<div><p>Print extra messages during processing? [Default=False]</p>
+</div></blockquote>
+<p><strong id="force">force</strong> : bool</p>
+<blockquote>
+<div><p>Update header even though WCS already exists with this solution or
+wcsname? [Default=False]</p>
+</div></blockquote>
+<p><strong id="sciext">sciext</strong> : string</p>
+<blockquote class="last">
+<div><p>Value of FITS EXTNAME keyword for extensions with WCS headers to
+be updated with the fit values. [Default=&#8217;SCI&#8217;]</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The algorithm used to apply the provided fit solution to the image
+involves applying the following steps to the WCS of each of the
+input image&#8217;s chips:</p>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>compute RA/Dec with full distortion correction for</dt>
+<dd><p class="first last">reference point as (Rc_i,Dc_i)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>find the Xc,Yc for each Rc_i,Dc_i and get the difference from the</dt>
+<dd><p class="first last">CRPIX position for the reference WCS as (dXc_i,dYc_i)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>apply fit (rot&amp;scale) to (dXc_i,dYc_i) then apply shift, then add</dt>
+<dd><p class="first last">CRPIX back to get new (Xcs_i,Ycs_i) position</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)</p>
+</li>
+<li><p class="first">compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)</p>
+</li>
+<li><dl class="first docutils">
+<dt>apply the fit to the chip&#8217;s undistorted CD matrix, the apply linear</dt>
+<dd><p class="first last">distortion terms back in to create a new CD matrix</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">add (dRcs_i,dDcs_i) to CRVAL of the reference chip&#8217;s WCS</p>
+</li>
+<li><p class="first">update header with new WCS values</p>
+</li>
+</ol>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mapreg.html" title="Region mapping for TweakReg"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

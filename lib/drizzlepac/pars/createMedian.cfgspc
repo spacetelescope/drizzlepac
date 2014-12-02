@@ -1,0 +1,18 @@
+_task_name_ = string_kw(default="createMedian")
+input = string_kw(default="",comment="List of images to median")
+
+[STEP 4: CREATE MEDIAN IMAGE]
+_section_ = string_kw(default='', active='_rule1_', comment= "en/dis-able whole section")
+median = boolean_kw(default=True, comment= "Create a median image?")
+median_newmasks= boolean_kw(default=true, comment= "Create new masks when doing the median?")
+combine_maskpt = float_kw(default=0.7, comment= "Percentage of weight image value below which it is flagged as a bad pixel.")
+combine_type = option_kw("minmed","median","sum",default="minmed", comment= "Type of combine operation")
+combine_nsigma = string_kw(default="4 3", comment= "Significance for accepting minimum instead of median")
+combine_nlow = integer_kw(default=0, comment= "minmax: Number of low pixels to reject")
+combine_nhigh = integer_kw(default=0, comment= "minmax: Number of high pixels to reject")
+combine_lthresh = float_or_none_kw(default=None, comment="Lower threshold for clipping input pixel values")
+combine_hthresh = float_or_none_kw(default=None, comment= "Upper threshold for clipping input pixel values")
+combine_grow = integer_kw(default=1, comment=" Radius (pixels) for neighbor rejection")
+combine_bufsize = float_or_none_kw(default=None, comment= "Size of buffer(in Mb) for each input image")
+
+[ _RULES_ ]

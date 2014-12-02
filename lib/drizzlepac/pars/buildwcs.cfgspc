@@ -1,0 +1,22 @@
+_task_name_ = string_kw(default="buildwcs")
+outwcs = string_kw(default="",comment="Output WCS file (headerlet)") 
+wcsname = string_kw(default="",comment="Name for created WCS")
+refimage = string_kw(default="",comment="Reference image to define the output WCS") 
+undistort = boolean_kw(default=True, comment="Create UNDISTORTED output WCS?")
+
+[Distortion Model]
+applycoeffs = boolean_kw(default=False, triggers='_section_switch_', comment="Apply custom distortion model?")
+coeffsfile = string_kw(default="",comment="File with distortion model") 
+
+[User WCS Parameters]
+userwcs = boolean_kw(default=False,triggers='_section_switch_', comment="Build/update WCS using custom values?")
+outscale = float_or_none_kw(default=None,comment="Absolute size of output pixels in arcsec/pixel") 
+orient = float_or_none_kw(default=None, comment="Orientation of output (PA of Y axis, N through E)") 
+raref = float_or_none_kw(default=None, comment="RA of reference point on output image(CRVAL1,degrees)") 
+decref = float_or_none_kw(default=None, comment="Dec of reference point on output image (CRVAL2, degrees)") 
+xrefpix = float_or_none_kw(default=None, comment="Reference pixel X position on output (CRPIX1)") 
+yrefpix = float_or_none_kw(default=None, comment="Reference pixel Y position on output (CRPIX2)") 
+outnx = float_or_none_kw(default=None, comment="Size of output image's X-axis (pixels)") 
+outny = float_or_none_kw(default=None, comment="Size of output image's Y-axis (pixels)") 
+
+[ _RULES_ ]

@@ -1,0 +1,255 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>WFPC2 ImageObjects &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
+    <link rel="up" title="imageObject Classes" href="imageobject.html" />
+    <link rel="next" title="Step 1: Process Input" href="process.html" />
+    <link rel="prev" title="NICMOS ImageObjects" href="nicmosobjects.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="process.html" title="Step 1: Process Input"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="nicmosobjects.html" title="NICMOS ImageObjects"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="nicmosobjects.html"
+                        title="previous chapter">NICMOS ImageObjects</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="process.html"
+                        title="next chapter">Step 1: Process Input</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/wfpc2objects.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-drizzlepac.wfpc2Data">
+<span id="wfpc2-imageobjects"></span><span id="wfpc2data"></span><h1>WFPC2 ImageObjects<a class="headerlink" href="#module-drizzlepac.wfpc2Data" title="Permalink to this headline">¶</a></h1>
+<p><em class="xref py py-obj">wfpc2Data</em> module provides classes used to import WFPC2 specific instrument data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Ivo Busko, Christopher Hanley</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.wfpc2Data.</tt><tt class="descname">WFPC2InputImage</tt><big>(</big><em>filename</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="drizzlepac.imageObject.imageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.imageObject</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.buildMask">
+<tt class="descname">buildMask</tt><big>(</big><em>chip</em>, <em>bits=0</em>, <em>write=False</em><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.buildMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build masks as specified in the user parameters found in the
+configObj object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.doUnitConversions">
+<tt class="descname">doUnitConversions</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.doUnitConversions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply unit conversions to all the chips, ignoring the group parameter.
+This insures that all the chips get the same conversions when this
+gets done, even if only 1 chip was specified to be processed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.find_DQ_extension">
+<tt class="descname">find_DQ_extension</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.find_DQ_extension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the suffix for the data quality extension and the name of the file
+which that DQ extension should be read from.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.getEffGain">
+<tt class="descname">getEffGain</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.getEffGain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method used to return the effective gain of a instrument&#8217;s
+detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>gain</strong> : float</p>
+<blockquote class="last">
+<div><p>The effective gain.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.getReadNoise">
+<tt class="descname">getReadNoise</tt><big>(</big><em>exten</em><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.getReadNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for returning the readnoise of a detector (in counts).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>readnoise</strong> : float</p>
+<blockquote class="last">
+<div><p>The readnoise of the detector in <strong>units of counts/electrons</strong>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.getdarkcurrent">
+<tt class="descname">getdarkcurrent</tt><big>(</big><em>exten</em><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the dark current for the WFPC2 detector.  This value
+will be contained within an instrument specific keyword.
+The value in the image header will be converted to units
+of electrons.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent</strong> : float</p>
+<blockquote class="last">
+<div><p>Dark current for the WFPC3 detector in <strong>units of counts/electrons</strong>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.getflat">
+<tt class="descname">getflat</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.getflat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for retrieving a detector&#8217;s flat field.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>flat</strong> : array</p>
+<blockquote class="last">
+<div><p>The flat-field array in the same shape as the input image.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="drizzlepac.wfpc2Data.WFPC2InputImage.SEPARATOR">
+<tt class="descname">SEPARATOR</tt><em class="property"> = '_'</em><a class="headerlink" href="#drizzlepac.wfpc2Data.WFPC2InputImage.SEPARATOR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="process.html" title="Step 1: Process Input"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="nicmosobjects.html" title="NICMOS ImageObjects"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

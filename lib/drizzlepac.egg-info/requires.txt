@@ -1,0 +1,13 @@
+stsci.tools
+stsci.convolve
+stsci.image
+stsci.imagemanip
+stsci.imagestats
+stsci.ndimage
+stsci.stimage
+nictools
+stwcs>=1.1.9
+fitsblender>=0.2.2
+astrolib.coords>=0.39.4
+astropy>=0.3.1
+numpy>=1.5.1

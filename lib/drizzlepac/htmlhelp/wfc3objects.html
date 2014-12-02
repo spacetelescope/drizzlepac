@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>WFC3 ImageObjects &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
+    <link rel="up" title="imageObject Classes" href="imageobject.html" />
+    <link rel="next" title="STIS ImageObjects" href="stisobjects.html" />
+    <link rel="prev" title="ACS ImageObjects" href="acsobjects.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="stisobjects.html" title="STIS ImageObjects"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="acsobjects.html" title="ACS ImageObjects"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="acsobjects.html"
+                        title="previous chapter">ACS ImageObjects</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="stisobjects.html"
+                        title="next chapter">STIS ImageObjects</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/wfc3objects.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-drizzlepac.wfc3Data">
+<span id="wfc3-imageobjects"></span><span id="wfc3data"></span><h1>WFC3 ImageObjects<a class="headerlink" href="#module-drizzlepac.wfc3Data" title="Permalink to this headline">¶</a></h1>
+<p><em class="xref py py-obj">wfc3Data</em> module provides classes used to import WFC3 specific instrument data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Megan Sosey, Christopher Hanley</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="drizzlepac.wfc3Data.WFC3InputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.wfc3Data.</tt><tt class="descname">WFC3InputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3InputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="drizzlepac.imageObject.imageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.imageObject</span></tt></a></p>
+<dl class="attribute">
+<dt id="drizzlepac.wfc3Data.WFC3InputImage.SEPARATOR">
+<tt class="descname">SEPARATOR</tt><em class="property"> = '_'</em><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3InputImage.SEPARATOR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.wfc3Data.WFC3UVISInputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.wfc3Data.</tt><tt class="descname">WFC3UVISInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3UVISInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.wfc3Data.WFC3InputImage" title="drizzlepac.wfc3Data.WFC3InputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.wfc3Data.WFC3InputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3UVISInputImage.doUnitConversions">
+<tt class="descname">doUnitConversions</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3UVISInputImage.doUnitConversions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3UVISInputImage.getdarkcurrent">
+<tt class="descname">getdarkcurrent</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3UVISInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the dark current for the WFC3 UVIS detector.  This value
+will be contained within an instrument specific keyword.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent: float</strong> :</p>
+<blockquote class="last">
+<div><p>The dark current value with <strong>units of electrons</strong>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3UVISInputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3UVISInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.wfc3Data.WFC3IRInputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.wfc3Data.</tt><tt class="descname">WFC3IRInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3IRInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.wfc3Data.WFC3InputImage" title="drizzlepac.wfc3Data.WFC3InputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.wfc3Data.WFC3InputImage</span></tt></a></p>
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3IRInputImage.doUnitConversions">
+<tt class="descname">doUnitConversions</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3IRInputImage.doUnitConversions" title="Permalink to this definition">¶</a></dt>
+<dd><p>WF3 IR data come out in electrons, and I imagine  the
+photometry keywords will be calculated as such, so no image
+manipulation needs be done between native and electrons</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3IRInputImage.getdarkcurrent">
+<tt class="descname">getdarkcurrent</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3IRInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the dark current for the WFC3/IR detector.  This value
+will be contained within an instrument specific keyword.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>darkcurrent: float</strong> :</p>
+<blockquote class="last">
+<div><p>The dark current value in <strong>units of electrons</strong>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3IRInputImage.getdarkimg">
+<tt class="descname">getdarkimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3IRInputImage.getdarkimg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array representing the dark image for the detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark: array</strong> :</p>
+<blockquote class="last">
+<div><p>Dark image array in the same shape as the input image with <strong>units of cps</strong></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3IRInputImage.getexptimeimg">
+<tt class="descname">getexptimeimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3IRInputImage.getexptimeimg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array representing the exposure time per pixel for the detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>dark: array</strong> :</p>
+<blockquote class="last">
+<div><p>Exposure time array in the same shape as the input image</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3IRInputImage.getskyimg">
+<tt class="descname">getskyimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3IRInputImage.getskyimg" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Notes</p>
+<p>Return an array representing the sky image for the detector.  The value
+of the sky is what would actually be subtracted from the exposure by
+the skysub step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Units:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">electrons</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.wfc3Data.WFC3IRInputImage.setInstrumentParameters">
+<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.wfc3Data.WFC3IRInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method overrides the superclass to set default values into
+the parameter dictionary, in case empty entries are provided.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="stisobjects.html" title="STIS ImageObjects"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="acsobjects.html" title="ACS ImageObjects"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li>
+          <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

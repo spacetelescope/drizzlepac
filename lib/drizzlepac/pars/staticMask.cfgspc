@@ -1,0 +1,10 @@
+_task_name_ = string_kw(default="staticMask")
+input = string_kw(default="",comment="Input files (name, suffix, or @list)")  
+group = float_or_none_kw(default=None,comment="Image group to use, None uses all groups")
+
+[STEP 1: STATIC MASK ]
+static = boolean_kw(default=True,comment="Create static bad-pixel mask from the data?") 
+static_sig = float_or_none_kw(default=4.0,comment="Sigma*rms below mode to clip for static mask") 
+
+
+[ _RULES_ ]

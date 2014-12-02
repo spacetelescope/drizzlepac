@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Output Image Generation &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
+    <link rel="up" title="Utilities" href="util.html" />
+    <link rel="next" title="MultiDrizzle Reference Table" href="mdztab.html" />
+    <link rel="prev" title="WCS Utilities" href="wcsutils.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mdztab.html" title="MultiDrizzle Reference Table"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="wcsutils.html" title="WCS Utilities"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li>
+          <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="wcsutils.html"
+                        title="previous chapter">WCS Utilities</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mdztab.html"
+                        title="next chapter">MultiDrizzle Reference Table</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/outimage.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-drizzlepac.outputimage">
+<span id="output-image-generation"></span><span id="outputimage"></span><h1>Output Image Generation<a class="headerlink" href="#module-drizzlepac.outputimage" title="Permalink to this headline">¶</a></h1>
+<p>This module manages the creation of the output image FITS file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="drizzlepac.outputimage.OutputImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.outputimage.</tt><tt class="descname">OutputImage</tt><big>(</big><em>plist</em>, <em>input_pars</em>, <em>build=True</em>, <em>wcs=None</em>, <em>single=False</em>, <em>blot=False</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class manages the creation of the array objects
+which will be used by Drizzle. The three arrays, SCI/WHT/CTX,
+will be setup either as extensions in a
+single multi-extension FITS file, or as separate FITS
+files.</p>
+<p>The object &#8216;plist&#8217; must contain at least the following members:</p>
+<div class="highlight-python"><div class="highlight"><pre>plist[&#39;output&#39;]   - name of output FITS image (for SCI)
+plist[&#39;outnx&#39;]    - size of X axis for output array
+plist[&#39;outny&#39;]    - size of Y axis for output array
+</pre></div>
+</div>
+<p>If &#8216;single=yes&#8217;, then &#8216;plist&#8217; also needs to contain:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">plist</span><span class="p">[</span><span class="s">&#39;outsingle&#39;</span><span class="p">]</span>
+<span class="n">plist</span><span class="p">[</span><span class="s">&#39;outsweight&#39;</span><span class="p">]</span>
+<span class="n">plist</span><span class="p">[</span><span class="s">&#39;outscontext&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>If &#8216;blot=yes&#8217;, then &#8216;plist&#8217; also needs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">plist</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span>
+<span class="n">plist</span><span class="p">[</span><span class="s">&#39;blotImage&#39;</span><span class="p">]</span>
+<span class="n">plist</span><span class="p">[</span><span class="s">&#39;blotnx&#39;</span><span class="p">],</span><span class="n">plist</span><span class="p">[</span><span class="s">&#39;blotny&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>If &#8216;build&#8217; is set to &#8216;no&#8217;, then each extension/array must be
+in separate FITS objects.  This would also require:</p>
+<div class="highlight-python"><div class="highlight"><pre>plist[&#39;outdata&#39;]    - name of output SCI FITS image
+plist[&#39;outweight&#39;]  - name of output WHT FITS image
+plist[&#39;outcontext&#39;] - name of output CTX FITS image
+</pre></div>
+</div>
+<p>Optionally, the overall exposure time information can be passed as:</p>
+<div class="highlight-python"><div class="highlight"><pre>plist[&#39;texptime&#39;] - total exptime for output
+plist[&#39;expstart&#39;] - start time of combined exposure
+plist[&#39;expend&#39;]   - end time of combined exposure
+</pre></div>
+</div>
+<dl class="method">
+<dt id="drizzlepac.outputimage.OutputImage.addDrizKeywords">
+<tt class="descname">addDrizKeywords</tt><big>(</big><em>hdr</em>, <em>versions</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.addDrizKeywords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add drizzle parameter keywords to header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.outputimage.OutputImage.find_kwupdate_location">
+<tt class="descname">find_kwupdate_location</tt><big>(</big><em>hdr</em>, <em>keyword</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.find_kwupdate_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the last keyword in the output header that comes before the new
+keyword in the original, full input headers.
+This will rely on the original ordering of keywords from the original input
+files in order to place the updated keyword in the correct location in case
+the keyword was removed from the output header prior to calling this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.outputimage.OutputImage.set_bunit">
+<tt class="descname">set_bunit</tt><big>(</big><em>bunit</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.set_bunit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method used to update the value of the bunit attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.outputimage.OutputImage.set_units">
+<tt class="descname">set_units</tt><big>(</big><em>units</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.set_units" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method used to record what units were specified by the user for the output product.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.outputimage.OutputImage.writeFITS">
+<tt class="descname">writeFITS</tt><big>(</big><em>template</em>, <em>sciarr</em>, <em>whtarr</em>, <em>ctxarr=None</em>, <em>versions=None</em>, <em>overwrite=True</em>, <em>blend=True</em>, <em>virtual=False</em><big>)</big><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.writeFITS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate PyFITS objects for each output extension
+using the file given by &#8216;template&#8217; for populating
+headers.</p>
+<p>The arrays will have the size specified by &#8216;shape&#8217;.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mdztab.html" title="MultiDrizzle Reference Table"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="wcsutils.html" title="WCS Utilities"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li>
+          <li><a href="util.html" >Utilities</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

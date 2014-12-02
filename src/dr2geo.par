@@ -1,0 +1,7 @@
+align,s,h,"center","center|corner",,Reference point: corner or center of pixel
+coeffs,f,h,"",,,Geometrical distortion coefficients file name 
+lambda,r,h,555.0,,,"Effective Wavelength (nm), Trauger coefficients only"
+xgeoim,f,h,"",,,X-shifts geometric distortion image
+ygeoim,f,h,"",,,Y-shifts geometric distortion image
+nxgeo,i,h,4096,,,X dimension for created geometric distortion images 
+nygeo,i,h,2048,,,Y dimension for created geometric distortion images

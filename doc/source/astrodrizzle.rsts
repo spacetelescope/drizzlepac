@@ -1,0 +1,411 @@
+=================================
+AstroDrizzle Processing Overview:
+=================================
+
+AstroDrizzle automates the process of aligning images in an output frame, identifying cosmic-rays, removing distortion, and then combining the images while removing the identified cosmic-rays.  This process involves a number of steps; namely:
+  1.  Processing the input images and input parameters
+  2.  Creating a static mask
+  3.  Performing sky subtraction
+  4.  Drizzling onto separate output images
+  5.  Creating the median image
+  6.  Blotting the median image
+  7.  Identifying and flagging cosmic-rays
+  8.  Final combination
+
+A full description of this process can be found in the AstroDrizzle Handbook available online at:
+
+http://stsdas.stsci.edu/multidrizzle 
+
+or 
+
+http://drizzlepac.stsci.edu
+
+
+*Input*:  The primary inputs to this task are the images which need to be combined.
+
+*Output*: The primary output from this task is the distortion-corrected, cosmic-ray cleaned combined image.
+
+===================================
+Current User Accessable Parameters:
+===================================
+This function can be used to run AstroDrizzle from within Python code
+directly, rather than through the TEAL GUI. The 'input' parameter 
+needs to be provided at all times. With over 80 input parameters for 
+this task, only those which need to be set to non-default values need to
+be specified.  The default values get read in from the config file 
+that gets installed with the task.  
+
+The syntax for calling AstroDrizzle in a Python script would be:
+
+.. function:: AstroDrizzle(input, mdriztab=False, editpars=False, 
+                            configObj=None, **input_dict)
+
+   This task controls all AstroDrizzle processing using numerous user-settable parameters to control the primary aspects of each of the processing steps.  
+
+    input: Names of input images to be processed by AstroDrizzle. 
+   
+    mdriztab: Specifies whether or not to use an MDRIZTAB reference table to specify the remaining AstroDrizzle parameter settings. If 'True', the values in the table will override the settings for the remainder of the parameters.
+
+    editpars: Specifies whether or not to bring up the TEAL GUI to edit the
+         full set of parameters.
+        
+    configobj: Custom configObj instance provided by user with user-defined parameter values.
+    
+
+.. function:: AstroDrizzle (input, output, **input_dict)
+
+   :param input: Names of input images to be processed by AstroDrizzle.
+
+    The name or names of the input files to be processed which can be provided in any of several forms; namely,
+    
+          * filename of a single image
+          * filename of an association (ASN) table
+          * wild-card specification for files in directory
+          * comma-separated list of filenames
+          * '@file' filelist containing list of desired input filenames. 
+          
+    The file list needs to be provided as an ASCII text file containing a list of filenames for all input images with one filename on each line of the file. If inverse variance maps (IVM maps) have also been created by the user and are to be used (by specifying 'IVM' to the parameter final_wht_type, then these are simply provided as a second column in the filelist, with each IVM filename listed on the same line as a second entry, after its corresponding exposure filename. 
+          
+    If the user specifies 'IVM' for the 'final_wht_type' but does not provide the names of IVM files, AstroDrizzle will automatically generate the IVM files itself for each input exposure. 
+    
+        * the MDRIZTAB reference table which specifies default parameters, contained in the input image headers
+        * the IDCTAB reference table specified in the input image headers
+        * any specified reference image as named in the 'refimage' parameter 
+   
+    :param output: The rootname for the output drizzled products. This step can result in the creation of several files, including:
+
+        * copies of each input image as a FITS image, if workinplace=yes and/or input images are in GEIS format
+        * mask files and coeffs files created by PyDrizzle for use by 'drizzle' 
+
+    If an association file has been given as input, this name will be used instead of the product name specified in the ASN file. Similarly, if a single exposure is provided, this rootname will be used for the output product instead of relying on input rootname. If no value is provided when a filelist or wild-card specification is given as input, then a rootname of 'final' will be used. 
+
+   :param refimage: Optional "reference image" that can be provided, in which case AstroDrizzle will create a final product with the same WCS. This reference image should be a simple FITS file (single-group, no multiple extensions), and should have been already drizzled so that all of its distortion has been removed, and its WCS is completely rectified.
+
+
+   :param runfile: This log file will contain all the output messages generated during processing, including full details of any errors/exceptions. These messages will be a super-set of those reported to the screen during processing.
+
+
+   :param updatewcs: This parameter specifies whether the WCS keywords are to be updated by running makewcs on the input data, or left alone. The update performed by makewcs not only recomputes the WCS based on the currently used IDCTAB, but also populates the header with the SIP coefficients. Also, for ACS/WFC images, the time-dependence correction will also be applied to the WCS and SIP keywords. This parameter should usually be set to 'yes', unless the WCS keywords have been carefully set by some other method, and need to be passed through to drizzle 'as is'.
+
+   :param wcskey: Letter or name (WCSNAME) of the WCS version found in the input image headers to be used in processing. Any non-default value will cause the input image headers to be updated so that the current default (primary) WCS gets copied in the header (archived) and the specified WCS will then become the new default (primary) WCS that gets used in processing. For more details about WCS versions, please see the STWCS package documentation. 
+
+   :param proc_unit: Image units used during processing; either, "native" or "electrons" (default).
+   
+   :param coeffs: This parameter allows the user to turn off the use of the distortion model information specified in each input image header during processing.
+
+   :param context: This parameter specifies whether or not to create a context image during the final drizzle combination. The context image contains the information on what image(s) contributed to each pixel encoded as a bit-mask. More information on context images can be obtained from the ACS Data Handbook.
+
+
+   :param group: A single FITS extension or group can be drizzled by setting this parameter. If an extension is provided, then only that chip will be drizzled onto the output frame. Either a FITS extension number or GEIS group number (such as '1'), or a FITS extension name (such as 'sci,1') may be specified.
+
+   :param build: AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file when this parameter gets set to 'True'. This combined output file will contain a SCI (science), a WHT (weight), and a CTX (context) extension. If set to 'False', each extension would remain as a separate simple FITS file on its own.
+
+   :param crbit: Integer value to use in DQ array for flagging pixels identified as affected by a cosmic-ray with a default value of 4096.
+   
+   :param stepsize: Step size to use in performing the coordinate transformation from input image pixel positions to output frame pixel positions.  A value of 1 or 0 will result in all pixels using the full WCS transformation (it can be very slow), whereas the default of 10 indicates that this full transformation only happens for every 10th pixel in X and Y and all pixels in between will use bilinear interpolation. This speeds up drizzling at the cost of a slight astrometric error that is typically much less than 1e-4 pixels.  
+
+   :param resetbits: This integer value specifies what bits in the DQ array  should be reset to 0 (good).  The default value of 4096 removes all flags for cosmic-rays previously generated by AstroDrizzle (or MultiDrizzle).  Multiple bit values can be reset at the same time by simply specifying an integer value which is the sum of multiple DQ bit values (powers of 2).  For example, resetting all CRs identified by MultiDrizzle (4096) and CALWF3 (8192) would require an input value of 12288 (4096+8192).  If a pixel had a value of 4352 (4096+256) and resetbits=12288, for example, the new DQ value would simply be 256.
+   
+   :num_cores: This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing. 
+   
+   :param restore: Setting this to 'yes' (True) directs AstroDrizzle to copy the input images from the 'OrIg_files' sub-directory and use them for processing, if they had been archived by AstroDrizzle using the 'preserve' or 'overwrite' parameters already.  If set to 'yes' and the input files had not been archived already, it will simply ignore this and work with the current input images.
+   
+   :param preserve: Setting this to 'yes' (True) directs AstroDrizzle to archive the current input images prior to processing in the 'OrIg_files' sub-directory (creating the new directory if needed).  This operation will NOT overwrite any pre-existing copies of the input images found in this directory.
+   
+   :param overwrite: Setting this to 'yes' (True) will force AstroDrizzle to archive the current version of the input images in the 'OrIg_files' sub-directory whether those files had been archived previously or not. 
+   
+   :param clean: The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to 'True'. The affected files would include the coefficients files and static mask files created by PyDrizzle, along with other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. But when running it routinely, or on a small disk drive, these files can be removed to save space.
+
+
+   :param ra: Right ascension (in decimal degrees) of the center of the output image. If this is not specified, the code will calculate the center automatically based on the distribution of image dither positions.
+
+
+   :param dec: Declination (in decimal degrees) of the center of the output image. If this is not specified, the code will calculate the center automatically based on the distribution of image dither positions.
+
+
+   :param shiftfile: Name of optional shiftfile. This shiftfile contains the shifts to be applied to the input images to improve their registration. These shifts will be added to those calculated automatically from the image headers. The file should be organized as follows\:  
+
+    ::
+    
+      # units: pixels  
+      # frame: input
+      # form: delta
+      rootname  xshift   yshift   rotation 
+            
+   :param static: Create a static bad-pixel mask from the data?  This mask flags all pixels that deviate by more than 'static_sig' sigma below the image median, since these pixels usually result from oversubtraction of bad pixels in the dark image during calibration.
+
+   :param static_sig: The number of sigma below the RMS to use as the clipping limit for creating the static mask, defaulted to 4.0 
+
+   :param staticfile: Name of the optional input static bad-pixel mask. The input data are multiplied by the contents of this static mask file. 
+
+   :param skysub:   Turn on or off sky subtraction on the input data.
+
+   :param skywidth: Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.
+
+   :param skystat:  Statistical method for determining the sky value from the image pixel values. Valid options are\:
+
+     * median
+     * mode
+     * mean 
+
+   :param skylower: Lower limit of usable pixel values for computing the sky. This value should be specified in *units of electrons*.
+
+   :param skyupper: Upper limit of usable pixel values for computing the sky. This value should be specified in *units of electrons*.
+
+   :param skyclip:  Number of clipping iterations to use when computing the sky value.
+
+   :param skylsigma: Lower clipping limit, in sigma, used when computing the sky value.
+
+   :param skyusigma: Upper clipping limit, in sigma, used when computing the sky value.
+
+   :param skyuser:  Name of header keyword which records the sky value already subtracted from the image by the user.
+
+   :param driz_separate: This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for the cosmic ray rejection step further on.
+
+
+   :param driz_sep_outnx: Size of the X axis of the output images, in pixels, on which each input will be drizzled onto. If no value is specified, it will use the smallest size that can accommodate the full dithered field.
+
+
+   :param driz_sep_outny: Size of the Y axis of the output images, in pixels, on which each input will be drizzled onto. If no value is specified, it will use the smallest size that can accommodate the full dithered field.
+
+
+   :param driz_sep_kernel: For the initial separate drizzling operation only, this specifies the form of the kernel function used to distribute flux onto the separate output images. The options are currently\:
+
+     * **square**\: original classic drizzling kernel
+     * **point**\: this kernel is a point so each input pixelcan only contribute to the single pixel which is closest to the output position. It is equivalent to the limit pixfrac -> 0 and is very fast.
+     * **gaussian**\: this kernel is a circular gaussian with FWHM equal to the value of pixfrac, measured in input pixels.
+     * **turbo**\: this is similar to kernel="square" but the box is always the same shape and size on the output grid and always aligned with the X and Y axes. This may result in a significant speed increase.
+     * **tophat**\: the kernel is a circular "top hat" shape of width pixfrac. It effects only output pixels within pixfrac/2 of the output position.
+     * **lanczos3**\: a Lanczos style kernel extending 3 pixels from the center. The Lanczos kernel is a damped, bounded form of the "sinc" interpolator and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than the other kernels, and also less correlated noise in outputs. 
+     
+     .. warning:: The ''lanczos3'' kernel is however much slower. It should never be used for pixfrac != 1.0 and is not recommended for scale != 1.0. 
+
+    The default for this step is "turbo" since it is much faster than "square", and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task. 
+
+
+   :param driz_sep_wt_scl: Weighting factor for input image. If driz_sep_wt_scl=exptime then the scaling value will be set equal 
+                to the exposure time found in the image header. This is the default recommended behavior. It is also 
+                possible to give wt_scl=expsq for weighting by the square of exposure time, which is optimal for 
+                read-noise dominated images.
+
+
+   :param driz_sep_scale: Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (to be used 
+                in creating the median for cosmic ray rejection). The default value of INDEF specifies that the 
+                undistorted pixel scale for the first input image, as computed by PyDrizzle, will be used as the 
+                pixel scale for all the output images.
+
+
+   :param driz_sep_pixfrac: Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, 
+                    given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", 
+                    of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel get 
+                    reset to 'point' for more efficient processing. For the step of drizzling each input image onto a 
+                    separate output image, the default value of 1 is best in order to ensure that each output drizzled 
+                    image is fully populated with pixels from the input image. For more information, see the help for 
+                    the task 'drizzle'.
+
+
+   :param driz_sep_rot: Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output 
+              image with North up. The default of INDEF specifies that the images will not be rotated, but will instead 
+              be drizzled in the default orientation for the camera, with the x and y axes of the drizzled image 
+              corresponding approximately to the detector axes. This conserves disk space, since these single 
+              drizzled images are only used in the intermediate step of creating a median image.
+
+
+   :param driz_sep_fillval: Value to be assigned to output pixels that have zero weight or did not receive flux from any 
+                input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' 
+                task. If the default of 'INDEF' is used and if the weight in both the input and output images for a 
+                given pixel are zero, then the output pixel will be set to the value it would have had if the input 
+                had a non-zero weight. Otherwise, if a numerical value is provided (eg. 0), then these pixels will 
+                be set to that value.
+
+
+   :param driz_sep_bits: Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' 
+                when building the weighting mask. This can also be used to reset pixels to good if they had been flagged 
+                as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data.
+                Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.
+
+   :param median: The user can specify whether or not to create a median image with this parameter. This median 
+        image will be used as the comparison 'truth' image :in the cosmic ray rejection step.
+
+
+   :param median_newmasks: The user can specify whether or not to create new mask files when creating the median image. 
+                 These masks are generated from the weight files produced previously by the "driz_separate" step, 
+                 and would contain all the bad pixel information. These pixels will be excluded when calculating 
+                 the median. Generally this step should be set to "yes", unless it is desired to include bad 
+                 pixels in generating the median.
+
+
+   :param combine_type: This parameter allows the user to choose which method is used to create the median image. Valid options are\:
+
+            * average
+            * median
+            * sum
+            * minmed 
+
+    The 'average', 'median', and 'sum' options set the mode of operation for using numcombine , a numpy 
+    method for median-combining arrays, to create the median image. The "minmed" option will produce an image 
+    that is generally the same as the median, except in cases where the median is significantly higher than the 
+    minimum good pixel value, in which case it will choose the minimum. The sigma thresholds for this decision 
+    are provided by the "combine_nsigma" parameter. However, as the "combine_nsigma" parameter does not adjust 
+    for the larger probability of a single "nsigma" event with a greater number of images, "minmed" will bias 
+    the comparison image low for a large number of images. "minmed" is highly recommended for three images, 
+    and good for four to six or more images. "minmed" should definitely be avoided for ten or more images. 
+
+    Median is the recommended method for a large number of images, and works equally well as minmed down to 
+    about four images. However, the user should set the "combine_nhigh" parameter to one when using "median" 
+    with four images, and consider raising this parameter for larger numbers of images. As a median averages 
+    the two inner values when the number of values being considered is even, the user may want to keep the 
+    total number of images minus "combine_nhigh" odd when using "median". 
+
+
+   :param combine_nsigma: Sigmas used for accepting minimum values instead of median values when using the 'minmed' 
+                combination method. If two values are specified, then the first value will be used in the 
+                initial choice between median and minimum, while the second value will be used in the "growing" 
+                step to reject additional pixels around those identified in the first step. If only one value is 
+                specified, then it is used in both steps.
+
+
+   :param combine_nlow: This parameter sets the number of low value pixels to reject automatically during image combination.
+
+   :param combine_nhigh: This parameter sets the number of high value pixels to reject automatically during image combination.
+
+   :param combine_lthresh: Sets the lower threshold for clipping input pixel values during image combination. This value 
+                 gets passed directly to 'imcombine' for use in creating the median image. If None, no thresholds 
+                 are used at all.
+
+
+   :param combine_hthresh: Sets the upper threshold for clipping input pixel values during image combination. This value gets
+                 passed directly to 'imcombine' for use in creating the median image. If None, no thresholds are used at all.
+
+   :param combine_grow: Width in pixels for additional pixels to be rejected in an image with a rejected pixel from one of the 
+              rejection algorithms. This parameter is used to set the 'grow' parameter in 'imcombine' for use in 
+              creating the median image. 
+
+
+   :param blot: Perform the blot operation on the median image. The output will be median smoothed images which match 
+      each input chips location, these are used in the cosmic ray rejection step.
+
+
+   :param blot_interp: Type of interpolation to use when blotting drizzled images back to their original WCS. Valid options are:
+
+     * **nearest**: Nearest neighbor
+     * **linear**: Bilinear interpolation in x and y
+     * **poly3**: Third order interior polynomial in x and y
+     * **poly5**: Fifth order interior polynomial in x and y 
+     * **sinc**: Sinc interpolation; accurate but slow 
+
+    The ''poly5'' interpolation method has been chosen as the default because it is relatively fast and accurate. 
+    If ''sinc'' interpolation has been selected, then it will use the value of the parameter 'blot_sinscl' to 
+    specify the size of the sinc interpolation kernel. 
+
+
+   :param blot_sinscl: Size of the sinc interpolation kernel in pixels. 
+
+
+   :param driz_cr: Perform cosmic-ray detection? If set to "yes", it will detect cosmic-rays and create cosmic-ray masks using the algorithms from 'deriv' and 'driz_cr'.
+
+   :param driz_cr_corr: Create a cosmic-ray cleaned input image? The cosmic-ray cleaned _cor image will be generated directly from the input image, and a corresponding _crmask file will be written to document the pixels detected as affected by cosmic-rays.
+
+   :param driz_cr_snr: These values specify the signal-to-noise ratios for the 'driz_cr' task to use in detecting cosmic rays. This parameter value gets passed directly to 'driz_cr'; see the help file for 'driz_cr' for further discussion of this parameter.
+
+   :param driz_cr_scale: Scaling factor applied to the derivative in 'driz_cr' when detecting cosmic-rays. This parameter gets passed directly to 'driz_cr'. See the help file for 'driz_cr' for further discussion of this parameter.
+ 
+   :param driz_cr_grow: Radius (in pixels) around each detected cosmic-ray to use more stringent detection criteria for additional cosmic rays.
+
+
+   :param driz_cr_ctegrow: Length (in pixels) of CTE tail to mask in drizzled output.
+
+
+   :param driz_combine: This parameter specifies whether or not to drizzle each input image onto the final output image. This applies the generated cosmic-ray masks to the input images and create a final, cleaned, distortion-corrected product.
+
+   :param final_wht_type: Specify the type of weighting image to apply with the bad pixel mask for the final drizzle step.  The options are:
+
+      * **EXP**\: The default of 'EXP' indicates that the images will be weighted according to their exposure time, which is the standard behavior for drizzle. This weighting is a good approximation in the regime where the noise is dominated by photon counts from the sources, while contributions from sky background, read-noise and dark current are negligible. This option is provided as the default since it produces reliable weighting for all types of data, including older instruments (eg., WFPC2) where more sophisticated options may not be available.
+           
+      * **ERR**\: Specifying 'ERR' is an alternative for ACS and STIS data, in which case the final drizzled images will be weighted according to the inverse variance of each pixel in the input exposure files, calculated from the error array data extension that is in each calibrated input exposure file. This array encapsulates all the noise sources in each exposure, including read-noise, dark current and sky background, as well as Poisson noise from the sources themselves, and this also includes a dependence upon exposure time. For WFPC2, the ERR array is not produced during calibration, therefore this option is not available. We advise extreme caution when selecting the "ERR" option, since the nature of this weighting scheme can introduce photometric discrepancies in sharp unresolved sources, although these effects are minimized for sources with gradual variations between pixels. The "EXP" weighting option does not suffer from these effects and is therefore the recommended option.
+
+      * **IVM**\: Finally, 'IVM' can be specified, in which case the user can either supply their own inverse-variance weighting map or let AstroDrizzle generate one on-the-fly automatically during the final drizzle step. This may be necessary for specific purposes, for example to create a drizzled weight file for software such as Sextractor, which expects a weight image that contains all the background noise sources (sky level, read-noise, dark current, etc) but not the Poisson noise from the objects themselves. The user can create the inverse variance images and then specify their names using the 'input' parameter for AstroDrizzle to specify an '@file'. This would be a single ASCII file containing the list of input calibrated exposure filenames (one per line), with a second column containing the name of the IVM file corresponding to each calibrated exposure. Each IVM file must have the same file format as the input file, and if given as multi-extension FITS files (for example, ACS or STIS data) then the IVM extension must have the EXTNAME of 'IVM'. If no IVM files are specified on input, then AstroDrizzle will rely on the flat-field reference file and computed dark value from the image header to automatically generate an IVM file specific to each exposure.
+
+
+   :param final_outnx: Size of the X axis of the output images, in pixels, on which each input will be drizzled onto. 
+                If no value is specified, it will use the smallest size that can accommodate the full dithered field.
+   :type final_outnx: float
+
+   :param final_outny: Size of the Y axis of the output images, in pixels, on which each input will be drizzled onto. 
+                If no value is specified, it will use the smallest size that can accommodate the full dithered field.
+   :type final_outny: float
+
+
+   :param final_kernel: For the initial separate drizzling operation only, this specifies the form of the kernel function used to distribute flux onto the separate output images. The options are currently:
+
+     * **square**\: original classic drizzling kernel
+     * **point**\: this kernel is a point so each input pixelcan only contribute to the single pixel which is closest to the output position. It is equivalent to the limit pixfrac -> 0 and is very fast.
+     * **gaussian**\: this kernel is a circular gaussian with FWHM equal to the value of pixfrac, measured in input pixels.
+     * **turbo**\: this is similar to kernel="square" but the box is always the same shape and size on the output grid and always aligned with the X and Y axes. This may result in a significant speed increase.
+     * **tophat**\: the kernel is a circular "top hat" shape of width pixfrac. It effects only output pixels within pixfrac/2 of the output position.
+     * **lanczos3**\: a Lanczos style kernel extending 3 pixels from the center. The Lanczos kernel is a damped, bounded form of the "sinc" interpolator and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than the other kernels, and also less correlated noise in outputs. 
+     
+     .. warning:: The ''lanczos3'' kernel is however much slower. It should never be used for pixfrac != 1.0 and is not recommended for scale != 1.0. 
+
+    The default for this step is ''square''. More information about the different kernels can be found in the help file for the drizzle task. 
+
+
+   :param final_wt_scl: Weighting factor for input image. If final_wt_scl=exptime then the scaling value will be set equal 
+                to the exposure time found in the image header. This is the default recommended behavior. It is also 
+                possible to give wt_scl=expsq for weighting by the square of exposure time, which is optimal for 
+                read-noise dominated images.
+
+
+   :param final_scale: Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (to be used 
+                in creating the median for cosmic ray rejection). The default value of INDEF (or blank) specifies that the
+                undistorted pixel scale for the first input image will be used as the 
+                pixel scale for all the output images.
+   :type final_scale: float or blank
+
+
+   :param final_pixfrac: Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If pixfrac is set to less than 0.001, the kernel get reset to 'point' for more efficient processing. For the step of drizzling each input image onto a separate output image, the default value of 1 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the task 'drizzle'.
+   :type final_pixfrac: float
+
+
+   :param final_rot: Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image with North up. The default of INDEF specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera, with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, since these single drizzled images are only used in the intermediate step of creating a median image.
+   :type final_rot: float or blank
+
+
+   :param final_fillval: Value to be assigned to output pixels that have zero weight or did not receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'INDEF' is used and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (eg. 0), then these pixels will be set to that value.
+   :type final_fillval: float
+
+
+   :param final_bits: Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. 
+     .. note:: Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.
+   :type final_bits: integer or None
+
+   :param final_units: This parameter determines the units of the final drizzle-combined image, and can either be 'counts' or 'cps'.  It is passed through to 'drizzle' in the final drizzle step.
+
+   :param gain: Value used to override instrument specific default gain values.  The value is assumed to be in units of electrons/count.  This parameter should not be populated if the gainkeyword parameter is in use.
+
+   :param gainkeyword: Keyword used to specify a value to be used to override instrument specific default gain values.  The value is assumed to be in units of electrons/count. This parameter should not be populated if the gain parameter is in use.
+
+   :param rdnoise: Value used to override instrument specific default readnoise values.  The value is assumed to be in units of electrons.  This parameter should not be populated if the rnkeyword parameter is in use.
+
+   :param rnkeyword: Keyword used to specify a value to be used to override instrument specific default readnoise values.  The value is assumed to be in units of electrons. This parameter should not be populated if the rdnoise parameter is in use.
+
+   :param exptime: Value used to override default exposure time image header values.  The value is assumed to be in units of seconds.  This parameter should not be populated if the expkeyword parameter is in use.
+
+   :param expkeyword:  Keyword used to specify a value to be used to override default exposure time image header values.  The value is assumed to be in units of seconds. This parameter should not be populated if the exptime parameter is in use.
+
+
+---------------------------------------------------------------
+How to use the tasks stand alone interface in your own scripts:
+---------------------------------------------------------------
+This task also has the ability to be called directly from Python for use in larger tasks. 
+
+:note: Something to keep in mind is that the full AstroDrizzle interface will make backup copies of your original files and place them in the *OrIg_files\/* directory of you current working directory.
+
+The primary Python interface to AstroDrizzle has been developed as:
+
+def AstroDrizzle(editpars=False, configObj=None, wcsmap=None, \*\*input_dict)
+
+A basic example of how to call this from within a Python task would be:
+
+>>> from drizzlepac import astrodrizzle
+>>> astrodrizzle.AstroDrizzle('*flt.fits', editpars=False)

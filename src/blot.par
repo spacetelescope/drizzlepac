@@ -1,0 +1,14 @@
+/* Data structures and macros used to handle images */
+
+#include <Python.h>
+#include <numpy/arrayobject.h>
+
+#define driz_xsize(image)           (image->dimensions[1])
+#define driz_ysize(image)           (image->dimensions[0])
+#define driz_data(image)            (PyArray_DATA(image))
+#define driz_pixel(image, ix, iy)   (driz_data(image)[((iy)*driz_xsize(image))+(ix)])
+
+typedef driz_image  PyArrayObject
+
+void free_driz_image(driz_image *py_image);
+driz_image *to_driz_image(PyObject *np_image);

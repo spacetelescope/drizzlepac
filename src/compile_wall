@@ -1,0 +1,7 @@
+./compile_wcs2dr 
+./compile_wdrizzle 
+./compile_wblot 
+./compile_wtraxy
+./compile_wtranback
+./compile_steep  
+./compile_satmask

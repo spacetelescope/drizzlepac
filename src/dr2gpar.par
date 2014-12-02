@@ -1,0 +1,6 @@
+xscale,r,h,1.0,,,Secondary scaling factor (in x)
+yscale,r,h,1.0,,,Secondary scaling factor (in y)
+xsh,r,h,0.0,,,Secondary shift in X output pixels
+ysh,r,h,0.0,,,Secondary shift in Y output pixels
+rot,r,h,0.0,,,Secondary rotation (degrees anti-clockwise)
+shft_fr,s,h,"output","input|output",,"Frame in which secondary shifts are applied"

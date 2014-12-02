@@ -1,0 +1,359 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Image Class &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
+    <link rel="next" title="Classes to manage Catalogs and WCS’s" href="catalogs.html" />
+    <link rel="prev" title="Imagefindpars: Source finding parameters" href="imagefindpars.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="imagefindpars.html"
+                        title="previous chapter">Imagefindpars: Source finding parameters</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="catalogs.html"
+                        title="next chapter">Classes to manage Catalogs and WCS&#8217;s</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/image.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="image-class">
+<span id="images"></span><h1>Image Class<a class="headerlink" href="#image-class" title="Permalink to this headline">¶</a></h1>
+<p class="graphviz">
+<img src="_images/inheritance-15a31ab9f86990beaf25087abba3edfd536b6bde.png" alt="Inheritance diagram of drizzlepac.imgclasses" usemap="#inheritanced9e0a89e98" class="inheritance"/>
+<map id="inheritanced9e0a89e98" name="inheritanced9e0a89e98">
+<area shape="rect" id="node1" href="#drizzlepac.imgclasses.Image" title="Primary class to keep track of all WCS and catalog information for" alt="" coords="16,59,152,88"/>
+<area shape="rect" id="node2" href="#drizzlepac.imgclasses.RefImage" title="This class provides all the information needed by to define a reference" alt="" coords="6,5,162,35"/>
+</map>
+</p>
+<span class="target" id="module-drizzlepac.imgclasses"></span><p>Classes to keep track of all WCS and catalog information.
+Used by <em class="xref py py-obj">TweakReg</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Mihai Cara</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="drizzlepac.imgclasses.Image">
+<em class="property">class </em><tt class="descclassname">drizzlepac.imgclasses.</tt><tt class="descname">Image</tt><big>(</big><em>filename</em>, <em>input_catalogs=None</em>, <em>exclusions=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Primary class to keep track of all WCS and catalog information for
+a single input image. This class also performs all matching and fitting.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filename">filename</strong> : str</p>
+<blockquote>
+<div><p>Filename for image.</p>
+</div></blockquote>
+<p><strong id="input_catalogs">input_catalogs</strong> : list of str or None</p>
+<blockquote>
+<div><p>Filename of catalog files for each chip, if specified by user.</p>
+</div></blockquote>
+<p><strong id="kwargs">kwargs</strong> : dict</p>
+<blockquote class="last">
+<div><p>Parameters necessary for processing derived from input configObj object.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.buildDefaultRefWCS">
+<tt class="descname">buildDefaultRefWCS</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.buildDefaultRefWCS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a default reference WCS for this image.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.buildSkyCatalog">
+<tt class="descname">buildSkyCatalog</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.buildSkyCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert sky catalog for all chips into a single catalog for
+the entire field-of-view of this image.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.clean">
+<tt class="descname">clean</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.clean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove intermediate files created.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close any open file handles and flush updates to disk</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.compute_fit_rms">
+<tt class="descname">compute_fit_rms</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.compute_fit_rms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.get_shiftfile_row">
+<tt class="descname">get_shiftfile_row</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.get_shiftfile_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the information for a shiftfile for this image to provide
+compatability with the IRAF-based MultiDrizzle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.get_wcs">
+<tt class="descname">get_wcs</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.get_wcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to return a list of all the input WCS objects associated
+with this image.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.get_xy_catnames">
+<tt class="descname">get_xy_catnames</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.get_xy_catnames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string with the names of input_xy catalog names</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.match">
+<tt class="descname">match</tt><big>(</big><em>refimage</em>, <em>quiet_identity</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses xyxymatch to cross-match sources between this catalog and
+a reference catalog (refCatalog).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.openFile">
+<tt class="descname">openFile</tt><big>(</big><em>openDQ=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.openFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open file and set up filehandle for image file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.performFit">
+<tt class="descname">performFit</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.performFit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a fit between the matched sources.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="kwargs">kwargs</strong> : dict</p>
+<blockquote class="last">
+<div><p>Parameter necessary to perform the fit; namely, <em>fitgeometry</em>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<dl class="docutils">
+<dt>This task still needs to implement (eventually) interactive iteration of</dt>
+<dd>the fit to remove outliers.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.sortSkyCatalog">
+<tt class="descname">sortSkyCatalog</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.sortSkyCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort and clip the source catalog based on the flux range specified
+by the user.
+It keeps a copy of the original full list in order to support iteration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.transformToRef">
+<tt class="descname">transformToRef</tt><big>(</big><em>ref_wcs</em>, <em>force=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.transformToRef" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform sky coords from ALL chips into X,Y coords in reference WCS.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.updateHeader">
+<tt class="descname">updateHeader</tt><big>(</big><em>wcsname=None</em>, <em>reusename=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.updateHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update header of image with shifts computed by <em>perform_fit()</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.writeHeaderlet">
+<tt class="descname">writeHeaderlet</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.writeHeaderlet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write and/or attach a headerlet based on update to PRIMARY WCS</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.write_fit_catalog">
+<tt class="descname">write_fit_catalog</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.write_fit_catalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out the catalog of all sources and resids used in the final fit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.write_outxy">
+<tt class="descname">write_outxy</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.write_outxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out the output(transformed) XY catalog for this image to a file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.Image.write_skycatalog">
+<tt class="descname">write_skycatalog</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.Image.write_skycatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out the all_radec catalog for this image to a file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drizzlepac.imgclasses.RefImage">
+<em class="property">class </em><tt class="descclassname">drizzlepac.imgclasses.</tt><tt class="descname">RefImage</tt><big>(</big><em>wcs_list</em>, <em>catalog</em>, <em>xycatalog=None</em>, <em>cat_origin=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class provides all the information needed by to define a reference
+tangent plane and list of source positions on the sky.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">When <em class="xref py py-obj">wcs_list</em> is a Python list of <em class="xref py py-obj">WCS</em> objects,
+each element must be an instance of <tt class="xref py py-obj docutils literal"><span class="pre">stwcs.wcsutil.HSTWCS</span></tt>.</p>
+</div>
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.append_not_matched_sources">
+<tt class="descname">append_not_matched_sources</tt><big>(</big><em>image</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.append_not_matched_sources" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.clean">
+<tt class="descname">clean</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.clean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove intermediate files created</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.clear_dirty_flag">
+<tt class="descname">clear_dirty_flag</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.clear_dirty_flag" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.get_shiftfile_row">
+<tt class="descname">get_shiftfile_row</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.get_shiftfile_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the information for a shiftfile for this image to provide
+compatability with the IRAF-based MultiDrizzle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.set_dirty">
+<tt class="descname">set_dirty</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.set_dirty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.transformToRef">
+<tt class="descname">transformToRef</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.transformToRef" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform reference catalog sky positions (self.all_radec)
+to reference tangent plane (self.wcs) to create output X,Y positions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drizzlepac.imgclasses.RefImage.write_skycatalog">
+<tt class="descname">write_skycatalog</tt><big>(</big><em>filename</em>, <em>show_flux=False</em>, <em>show_id=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imgclasses.RefImage.write_skycatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write out the all_radec catalog for this image to a file.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
+             >previous</a> |</li>
+        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

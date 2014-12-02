@@ -1,0 +1,10 @@
+_task_name_ = string_kw(default="skytopix")
+input = string_kw(default="", comment="Input filename")
+ra = string_kw(default="", comment= "Input RA position")
+dec = string_kw(default="", comment= "Input Dec position")
+coordfile = string_kw(default="", comment="File containing sky positions")
+colnames = string_kw(default="",comment="Names of columns from coordinates file")
+precision = integer_kw(default=3,comment="Number of floating-point digits in output values")
+output = string_kw(default="",comment="Name of output file to save results")
+verbose = boolean_kw(default=False, comment="Print out full list of results?")
+[ _RULES_ ]

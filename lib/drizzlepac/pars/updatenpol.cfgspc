@@ -1,0 +1,7 @@
+_task_name_ = string_kw(default="updatenpol")
+input = string_kw(default="*flt.fits", comment="Input files (name, suffix, or @list)")
+refdir = string_kw(default='jref$', comment="Directory containing new reference files")
+local = boolean_kw(default=False, comment="Copy new reference files to local directory?")
+interactive = boolean_kw(default=False, comment="Prompt user to update each file?")
+wcsupdate = boolean_kw(default=True, comment="Update WCS information using new reference files?")
+[ _RULES_ ]

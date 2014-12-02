@@ -1,0 +1,14 @@
+_task_name_ = string_kw(default="drizCR")
+imageList = string_kw(default="")  
+
+[STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR]
+_section_ = string_kw(default='', active='_rule1_', comment="en/dis-able whole section")
+driz_cr = boolean_kw(default=True, comment="Perform CR rejection with deriv and driz_cr?")
+driz_cr_corr = boolean_kw(default=False, comment= "Create CR cleaned _cor file and a _crmask file?")
+driz_cr_snr = string_kw(default="3.5 3.0", comment= "Driz_cr.SNR parameter")
+driz_cr_grow = integer_kw(default=1, comment="Driz_cr_grow parameter")
+driz_cr_ctegrow = integer_kw(default=0, comment="Driz_cr_ctegrow parameter")
+driz_cr_scale = string_kw(default="1.2 0.7", comment="Driz_cr.scale parameter")
+
+
+[ _RULES_ ]

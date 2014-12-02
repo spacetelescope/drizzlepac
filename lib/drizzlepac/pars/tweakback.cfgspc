@@ -1,0 +1,11 @@
+_task_name_ = string_kw(default="tweakback")
+drzfile = string_kw(default="",comment="Name of file with updated WCS") 
+newname = string_kw(default="", comment="Name for updated WCS")
+input = string_kw(default="",comment="Name(s) of files to be updated with new WCS")
+origwcs = string_kw(default="", comment="WCSNAME of WCS upon input to tweakreg")
+wcsname = string_kw(default="", comment="Name of WCS updated by tweakreg")
+extname = string_kw(default="SCI",comment="EXTNAME of extension to be updated with WCS")
+verbose = boolean_kw(default=True, comment="Print processing messages?")
+force = boolean_kw(default=False, comment="Force updates of WCS?")
+
+[ _RULES_ ]
