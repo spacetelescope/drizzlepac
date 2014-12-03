@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: drizzlepac
-Version: 2.0.0.dev35964
+Version: 2.0.0.dev35965
 Summary: drizzle tools: combines astronomical images, including modeling distortion, removing cosmic rays, and generally improving fidelity of data in the final image
 Home-page: http://www.stsci.edu/resources/software_hardware/stsci_python
 Author: Megan Sosey, Warren Hack, Christopher Hanley, Chris Sontag, Mihai Cara, Bernie Simon

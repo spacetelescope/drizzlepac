@@ -346,88 +346,130 @@ FCT_BGN_FN(utest_cdrizzlepac)
         }
         FCT_TEST_END();
   
-        FCT_TEST_BGN(utest_check_over_01)
+        FCT_TEST_BGN(utest_check_line_overlap_01)
         {
             /* Test for complete overlap */
             
             const integer_t j = 0;      /* which image line to check ? */
-            const integer_t margin = 5; /* extra margin around edge of image */
-            double ofrac;               /* fraction of line in-bounds */
-            integer_t x1;               /* start of in-bounds */
-            integer_t x2;               /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
+            const int margin = 2;       /* extra margin around edge of image */
+            integer_t xbounds[2];       /* start of in-bounds */
             struct driz_param_t *p;     /* parameter structure */
             
             p = setup_parameters();
             offset_pixmap(p, 0.0, 0.0);
             
-            check_over(p, j, margin,
-            /* Output parameters  */
-            &ofrac, &x1, &x2, &error);
-            
-            fct_chk_eq_dbl(ofrac, 1.0);
-            fct_chk_eq_int(x1, 0);
-            fct_chk_eq_int(x2, image_size[0]-1);
+            check_line_overlap(p->pixmap, p->output_data, margin, j, xbounds);
+
+            fct_chk_eq_int(xbounds[0], 0);
+            fct_chk_eq_int(xbounds[1], image_size[0]);
             
             teardown_parameters(p);
         }
         FCT_TEST_END();
 
-        FCT_TEST_BGN(utest_check_over_02)
+        FCT_TEST_BGN(utest_check_line_overlap_02)
         {
             /* Test for half overlap */
             
             const integer_t j = 0;      /* which image line to check ? */
-            const integer_t margin = 5; /* extra margin around edge of image */
-            double ofrac;               /* fraction of line in-bounds */
-            integer_t x1;               /* start of in-bounds */
-            integer_t x2;               /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
+            const integer_t margin = 2; /* extra margin around edge of image */
+            integer_t xbounds[2];       /* start of in-bounds */
             struct driz_param_t *p;     /* parameter structure */
             
             p = setup_parameters();
             offset_pixmap(p, 70.0, 0.0);
+
+            check_line_overlap(p->pixmap, p->output_data, margin, j, xbounds);
             
-            check_over(p, j, margin,
-            /* Output parameters  */
-            &ofrac, &x1, &x2, &error);
-            
-            fct_chk_eq_dbl(ofrac, 5.0/11.0);
-            fct_chk_eq_int(x1, 0);
-            fct_chk_eq_int(x2, 40);
+            fct_chk_eq_int(xbounds[0], 0);
+            fct_chk_eq_int(xbounds[1], 32);
             
             teardown_parameters(p);
         }
         FCT_TEST_END();
 
-        FCT_TEST_BGN(utest_check_over_03)
+        FCT_TEST_BGN(utest_check_line_overlap_03)
         {
             /* Test for negative half overlap */
             
             const integer_t j = 0;      /* which image line to check ? */
-            const integer_t margin = 5; /* extra margin around edge of image */
-            double ofrac;               /* fraction of line in-bounds */
-            integer_t x1;               /* start of in-bounds */
-            integer_t x2;               /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
+            const integer_t margin = 2; /* extra margin around edge of image */
+            integer_t xbounds[2];       /* start of in-bounds */
             struct driz_param_t *p;     /* parameter structure */
             
             p = setup_parameters();
             offset_pixmap(p, -70.0, 0.0);
+
+            check_line_overlap(p->pixmap, p->output_data, margin, j, xbounds);
             
-            check_over(p, j, margin,
-            /* Output parameters  */
-            &ofrac, &x1, &x2, &error);
-            
-            fct_chk_eq_dbl(ofrac, 5.0/11.0);
-            fct_chk_eq_int(x1, 60);
-            fct_chk_eq_int(x2, 99);
+            fct_chk_eq_int(xbounds[0], 68);
+            fct_chk_eq_int(xbounds[1], 100);
             
             teardown_parameters(p);
         }
         FCT_TEST_END();
 
-         FCT_TEST_BGN(utest_do_kernel_square_01)
+        FCT_TEST_BGN(utest_check_image_overlap_01)
+        {
+            /* Test for complete overlap */
+            
+            const int margin = 2;       /* extra margin around edge of image */
+            integer_t ybounds[2];       /* start of in-bounds */
+            struct driz_param_t *p;     /* parameter structure */
+            
+            p = setup_parameters();
+            offset_pixmap(p, 0.0, 0.0);
+            
+            check_image_overlap(p->pixmap, p->output_data, margin, ybounds);
+
+            fct_chk_eq_int(ybounds[0], 0);
+            fct_chk_eq_int(ybounds[1], image_size[1]);
+            
+            teardown_parameters(p);
+        }
+        FCT_TEST_END();
+
+        FCT_TEST_BGN(utest_check_image_overlap_02)
+        {
+            /* Test for half overlap */
+            
+            const integer_t margin = 2; /* extra margin around edge of image */
+            integer_t ybounds[2];       /* start of in-bounds */
+            struct driz_param_t *p;     /* parameter structure */
+            
+            p = setup_parameters();
+            offset_pixmap(p, 0.0, 70.0);
+
+            check_image_overlap(p->pixmap, p->output_data, margin, ybounds);
+            
+            fct_chk_eq_int(ybounds[0], 0);
+            fct_chk_eq_int(ybounds[1], 32);
+            
+            teardown_parameters(p);
+        }
+        FCT_TEST_END();
+
+        FCT_TEST_BGN(utest_check_image_overlap_03)
+        {
+            /* Test for negative half overlap */
+            
+            const integer_t margin = 2; /* extra margin around edge of image */
+            integer_t ybounds[2];       /* start of in-bounds */
+            struct driz_param_t *p;     /* parameter structure */
+            
+            p = setup_parameters();
+            offset_pixmap(p, 0.0, -70.0);
+
+            check_image_overlap(p->pixmap, p->output_data, margin, ybounds);
+            
+            fct_chk_eq_int(ybounds[0], 68);
+            fct_chk_eq_int(ybounds[1], 100);
+            
+            teardown_parameters(p);
+        }
+        FCT_TEST_END();
+
+        FCT_TEST_BGN(utest_do_kernel_square_01)
         {
             /* Simplest case */
             

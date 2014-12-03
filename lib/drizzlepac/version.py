@@ -7,11 +7,11 @@ __all__ = ['__version__', '__vdate__', '__svn_revision__', '__svn_full_info__',
 
 import datetime
 
-__version__ = '2.0.0.dev35964'
+__version__ = '2.0.0.dev35965'
 __vdate__ = '14-Aug-2014'
-__svn_revision__ = '35964'
-__svn_full_info__ = 'Path: drizzlepac\nWorking Copy Root Path: /Users/bsimon/Code/drizzlepac\nURL: https://svn.stsci.edu/svn/ssb/stsci_python/drizzlepac/branches/refactor\nRepository Root: https://svn.stsci.edu/svn/ssb/stsci_python\nRepository UUID: fe389314-cf27-0410-b35b-8c050e845b92\nRevision: 35964\nNode Kind: directory\nSchedule: normal\nLast Changed Author: cslocum\nLast Changed Rev: 35964\nLast Changed Date: 2014-12-02 11:26:54 -0500 (Tue, 02 Dec 2014)'
-__setup_datetime__ = datetime.datetime(2014, 12, 2, 13, 48, 24, 152265)
+__svn_revision__ = '35965M'
+__svn_full_info__ = 'Path: drizzlepac\nWorking Copy Root Path: /Users/bsimon/Code/drizzlepac\nURL: https://svn.stsci.edu/svn/ssb/stsci_python/drizzlepac/branches/refactor\nRepository Root: https://svn.stsci.edu/svn/ssb/stsci_python\nRepository UUID: fe389314-cf27-0410-b35b-8c050e845b92\nRevision: 35965\nNode Kind: directory\nSchedule: normal\nLast Changed Author: bsimon\nLast Changed Rev: 35965\nLast Changed Date: 2014-12-02 14:42:17 -0500 (Tue, 02 Dec 2014)'
+__setup_datetime__ = datetime.datetime(2014, 12, 3, 15, 25, 41, 84050)
 
 # what version of stsci.distutils created this version.py
 stsci_distutils_version = '0.3.8.dev33944'
