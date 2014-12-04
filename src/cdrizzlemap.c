@@ -240,7 +240,7 @@ clip_bounds(PyArrayObject *pixmap, int jdim, struct segment *xylimit, struct seg
 /*----------------------------------------------------------------------------------------------------
  * Determine the range of pixels in a specified line of an input image
  * which are inside the output image. Range is one-sided, that is, the second
- * value returned is one greater than the last value that is on the image.
+ * value returned is one greater than the last pixel that is on the image.
  *
  * pixmap:      the mapping between input and output images
  * output_data: the output data, used only to find its limits
@@ -278,7 +278,7 @@ check_line_overlap(PyArrayObject *pixmap, PyArrayObject *output_data,
 /*----------------------------------------------------------------------------------------------------
  * Determine the range of lines in the input image that overlap the output image
  * Range is one-sided, that is, the second value returned is one greater than the
- * last value that is on the image.
+ * last line that is on the image.
  * 
  * pixmap:      the mapping between input and output images
  * output_data: the output data, used only to find its limits

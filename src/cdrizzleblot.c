@@ -955,8 +955,6 @@ doblot(struct driz_param_t* p,
   interp_function* interpolate;
   struct sinc_param_t sinc;
   void* state = NULL;
-  double xyin[2];
-  double xyout[2];
   
   assert(p);
   assert(error);
@@ -1025,12 +1023,8 @@ doblot(struct driz_param_t* p,
 
     /* Loop through the output positions and do the interpolation */
     for (i = 0; i < osize[0]; ++i) {
-
-      xyin[0] = (double) i;
-      xyin[1] = (double) j;
-      map_point(p->pixmap, xyin, xyout);
-      xo = xyout[0];
-      yo = xyout[1];
+      xo = get_pixmap(p->pixmap, i, j)[0];
+      yo = get_pixmap(p->pixmap, i, j)[1];
       
       /* Check it is on the input image */
       if (xo >= 0.0 && xo < isize[0] &&

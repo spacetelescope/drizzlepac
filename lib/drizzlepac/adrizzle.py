@@ -1007,7 +1007,6 @@ def do_driz(insci, input_wcs, inwht,
 
     _shift_fr = 'output'
     _shift_un = 'output'
-    ystart = 0
     nmiss = 0
     nskip = 0
     #
@@ -1018,8 +1017,8 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    _vers,nmiss,nskip = drizzlepac.cdriz.tdriz(insci, inwht, outsci, outwht,
-        outctx, uniqid, ystart, 0, 0, 
+    _vers,nmiss,nskip = drizzlepac.cdriz.tdriz(insci, inwht, 
+        outsci, outwht, outctx, uniqid, 0, 0, 
         pix_ratio, 1.0, 1.0, 'center', pixfrac,
         kernel, in_units, expscale, wt_scl,
         fillval, nmiss, nskip, 1, pixmap)

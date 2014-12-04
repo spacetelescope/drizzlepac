@@ -67,8 +67,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   driz_error_init(&error);
 
-  if (!PyArg_ParseTuple(args,"OOOOOlllldddsdssffsiiiO:tdriz",
-                        &oimg, &owei, &oout, &owht, &ocon, &uniqid, &ystart,
+  if (!PyArg_ParseTuple(args,"OOOOOllldddsdssffsiiiO:tdriz",
+                        &oimg, &owei, &oout, &owht, &ocon, &uniqid, 
                         &xmin, &ymin, &scale, &xscale, &yscale,
                         &align_str, &pfract, &kernel_str, &inun_str,
                         &expin, &wtscl, &fillstr, &nmiss, &nskip, &vflag,
@@ -107,18 +107,13 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     goto _exit;
   }
 
-  /* pixmap is None if the WCS did not overlap */
-  if (pixmap == Py_None) {
-    map = NULL;
+  map = (PyArrayObject *)PyArray_ContiguousFromAny(pixmap, PyArray_DOUBLE, 3, 3);
 
-  } else {
-    map = (PyArrayObject *)PyArray_ContiguousFromAny(pixmap, PyArray_DOUBLE, 3, 3);
-
-    if (!map) {
-      driz_error_set_message(&error, "Invalid pixmap array");
-      goto _exit;
-    }
+  if (!map) {
+    driz_error_set_message(&error, "Invalid pixmap array");
+    goto _exit;
   }
+
   
   /* Convert strings to enumerations */
   if (align_str2enum(align_str, &align, &error) ||
@@ -169,8 +164,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   p.uuid = uniqid;
   p.xmin = xmin;
   p.ymin = ymin;
-  p.xmax = osize[0] - 1;
-  p.ymax = osize[1] - 1;
+  p.xmax = osize[0];
+  p.ymax = osize[1];
   p.scale = scale;
   p.x_scale = xscale;
   p.y_scale = yscale;
@@ -180,20 +175,13 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   p.in_units = inun;
   p.exposure_time = expin;
   p.weight_scale = wtscl;
-  
-  if (map == NULL) {
-    p.no_over = TRUE;
-    p.pixmap = NULL;
-  } else {
-    p.no_over = FALSE;
-    p.pixmap = map;
-  }
-  
+  p.pixmap = map;
+ 
   /*
   start_t = clock();
   */
   /* Do the drizzling */
-  if (dobox(&p, ystart, &nmiss, &nskip, &error)) {
+  if (dobox(&p, &nmiss, &nskip, &error)) {
     goto _exit;
   }
   /*
@@ -272,24 +260,18 @@ tblot(PyObject *obj, PyObject *args)
     driz_error_set_message(&error, "Invalid input array");
     goto _exit;
   }
+  
   out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, PyArray_FLOAT, 2, 2);
   if (!out) {
     driz_error_set_message(&error, "Invalid output array");
     goto _exit;
   }
 
-  /* pixmap is None if the WCS did not overlap */
-  if (pixmap == Py_None) {
-    map = NULL;
-
-  } else {
-    map = (PyArrayObject *)PyArray_ContiguousFromAny(pixmap, PyArray_DOUBLE, 3, 3);
-    if (!map) {
-      driz_error_set_message(&error, "Invalid pixmap array");
-      goto _exit;
-    }
+  map = (PyArrayObject *)PyArray_ContiguousFromAny(pixmap, PyArray_DOUBLE, 3, 3);
+  if (!map) {
+    driz_error_set_message(&error, "Invalid pixmap array");
+    goto _exit;
   }
-
   
   if (align_str2enum(align_str, &align, &error) ||
       interp_str2enum(interp_str, &interp, &error)) {
@@ -314,14 +296,7 @@ tblot(PyObject *obj, PyObject *args)
   p.ef = ef;
   p.misval = misval;
   p.sinscl = sinscl;
-
-  if (map == NULL) {
-    p.no_over = TRUE;
-    p.pixmap = NULL;
-  } else {
-    p.no_over = FALSE;
-    p.pixmap = map;
-  }
+  p.pixmap = map;
 
   istat = doblot(&p, &error);
 

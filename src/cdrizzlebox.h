@@ -20,11 +20,7 @@ include some limited multi-kernel support.
 */
 
 int
-check_over(struct driz_param_t* p, const integer_t y, const integer_t margin,
-           double* ofrac, integer_t* x1, integer_t* x2, struct driz_error_t* error);
-
-int
-dobox(struct driz_param_t* p, const integer_t ystart, integer_t* nmiss,
+dobox(struct driz_param_t* p, integer_t* nmiss,
       integer_t* nskip, struct driz_error_t* error);
 
 typedef int (*kernel_handler_t)(struct driz_param_t*, const integer_t,

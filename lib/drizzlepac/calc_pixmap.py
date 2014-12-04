@@ -29,18 +29,5 @@ def calc_pixmap(first_wcs, second_wcs):
 
     pixmap = pixmap.reshape(first_naxis2, first_naxis1, 2)
     pixmap = pixmap - one
-
-    # Check to see if two images do not overlap,
-    # return None if that is the case as a flag
-    # to not perform the drizzle
-
-    xmin = pixmap[:,:,0].min()
-    xmax = pixmap[:,:,0].max()
-    ymin = pixmap[:,:,1].min()
-    ymax = pixmap[:,:,1].max() 
-
-    if (xmax < -1 or xmin > second_wcs._naxis1 + 1 or
-        ymax < -1 or ymin > second_wcs._naxis2 + 1):
-        return None
     
     return pixmap

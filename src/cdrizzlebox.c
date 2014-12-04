@@ -22,114 +22,6 @@ was: CHOVER
 */
 #define CHECK_OVER_NPOINT 21
 
-int
-check_over(struct driz_param_t* p, const integer_t j, const integer_t margin,
-           /* Output parameters */
-           double* ofrac, integer_t* x1, integer_t* x2,
-           struct driz_error_t* error) {
-
-  const integer_t npoint = CHECK_OVER_NPOINT;
-  integer_t xin[CHECK_OVER_NPOINT], yin[CHECK_OVER_NPOINT];
-  double xout[CHECK_OVER_NPOINT], yout[CHECK_OVER_NPOINT];
-  double xyin[2], xyout[2];
-  
-  integer_t logo[CHECK_OVER_NPOINT];
-  integer_t isize[2], osize[2];
-  integer_t step, first, last;
-  integer_t nhit, nmiss;
-  integer_t i, np;
-  
-  assert(p);
-  assert(ofrac);
-  assert(x1);
-  assert(x2);
-  assert(error);
-
-  get_dimensions(p->data, isize);
-  get_dimensions(p->output_data, osize);
-  
-  if (isize[0] < npoint)
-    step = 1;
-  else
-    step = isize[0] / (npoint / 2);
-
-  for (i = 0, np = 0; i < isize[0]; i += step, ++np) {
-    assert(np < npoint);
-    xin[np] = i;
-    yin[np] = j;
-  }
-  assert(np < npoint);
-
-  /* Check end point */
-  if (xin[np - 1] < (double) isize[0]) {
-    xin[np] = isize[0] - 1;
-    yin[np] = j;
-    ++np;
-  }
-
-  /* Check where the overlap starts and ends */
-  for (i = 0; i < np; ++i) {
-    logo[i] = 0;
-    xout[i] = get_pixmap(p->pixmap, xin[i], yin[i])[0];
-    yout[i] = get_pixmap(p->pixmap, xin[i], yin[i])[1];
-  }
-
-  for (i = 0; i < np - 1; ++i) {
-    if (MAX(xout[i], xout[i+1]) >= 1.0 - (double) margin &&
-        MIN(xout[i], xout[i+1]) < (double)(osize[0] + margin) &&
-        MAX(yout[i], yout[i+1]) >= 1.0 - (double) margin &&
-        MIN(yout[i], yout[i+1]) < (double)(osize[1] + margin)) {
-
-      logo[i] = 1;
-      logo[i+1] = 1;
-    }
-  }
-
-  nhit = 0;
-  for (i = 0; i < np; ++i) {
-    if (logo[i]) {
-      ++nhit;
-    }
-  }
-
-  nmiss = np - nhit;
-
-  if (nhit == 0) {
-    *ofrac = 0.0;
-    *x1 = 0;
-    *x2 = 0;
-    return 0;
-  }
-
-  first = 0;
-  last = 0;
-
-  for (i = 0; i < np; ++i) {
-    if (logo[i]) {
-      *x1 = xin[i];
-      break;
-    }
-  }
-
-  for (i = np - 1; i >= 0; --i) {
-    if (logo[i]) {
-      *x2 = xin[i];
-      break;
-    }
-  }
-
-  if (nhit == 0 && nmiss == 0) {
-    *ofrac = 0.0;
-  } else {
-    *ofrac = (double)nhit / (double)(nhit + nmiss);
-  }
-
-  assert(*x1 >= 0 && *x1 < isize[0]);
-  assert(*x2 >= 0 && *x2 < isize[0]);
-
-  return 0;
-}
-
 inline_macro static void
 update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
             const float d, const float vc, const float dow) {
@@ -335,7 +227,7 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
   dy = 1.0;
 
   /* Offset within the subset */
-  for (i = x1; i <= x2; ++i) {
+  for (i = x1; i < x2; ++i) {
     ii = fortran_round(get_pixmap(p->pixmap, i, j)[0]);
     jj = fortran_round(get_pixmap(p->pixmap, i, j)[1]);
 
@@ -383,7 +275,7 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
   dx = 1.0;
   dy = 1.0;
 
-  for (i = x1; i <= x2; ++i) {
+  for (i = x1; i < x2; ++i) {
     /* Offset within the subset */
     xx = get_pixmap(p->pixmap, i, j)[0];
     yy = get_pixmap(p->pixmap, i, j)[1];
@@ -459,7 +351,7 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
   dx = 1.0;
   dy = 1.0;
 
-  for (i = x1; i <= x2; ++i) {
+  for (i = x1; i < x2; ++i) {
     xx = get_pixmap(p->pixmap, i, j)[0];
     yy = get_pixmap(p->pixmap, i, j)[1];
 
@@ -533,7 +425,7 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
   dx = 1.0;
   dy = 1.0;
 
-  for (i = x1; i <= x2; ++i) {
+  for (i = x1; i < x2; ++i) {
     xx = get_pixmap(p->pixmap, i, j)[0];
     yy = get_pixmap(p->pixmap, i, j)[1];
 
@@ -606,7 +498,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 
   nhit = 0;
 
-  for (i = x1; i <= x2; ++i) {
+  for (i = x1; i < x2; ++i) {
     /* Offset within the subset */
     xoi = get_pixmap(p->pixmap, i, j)[0];
     yoi = get_pixmap(p->pixmap, i, j)[1];
@@ -685,7 +577,7 @@ do_kernel_square(struct driz_param_t* p, const integer_t j,
 
   /* TODO: These are constant across calls -- perhaps cache??? */
   dh = 0.5 * p->pixel_fraction;
-  n = x2 - x1 + 1;
+  n = x2 - x1;
 
   /* Next the "classic" drizzle square kernel...  this is different
      because we have to transform all four corners of the shrunken
@@ -698,7 +590,7 @@ do_kernel_square(struct driz_param_t* p, const integer_t j,
   xyin[2][1] = (double) j - dh;
   xyin[3][1] = (double) j - dh;
 
-  for (i = x1; i <= x2; ++i) {
+  for (i = x1; i < x2; ++i) {
     xyin[0][0] = (double) i - dh;
     xyin[1][0] = (double) i + dh;
     xyin[2][0] = (double) i + dh;
@@ -801,22 +693,19 @@ In V1.6 this was simplified to use the DRIVAL routine and also to
 include some limited multi-kernel support.
 */
 int
-dobox(struct driz_param_t* p, const integer_t ystart,
+dobox(struct driz_param_t* p,
       /* Output parameters */
       integer_t* nmiss, integer_t* nskip, struct driz_error_t* error) {
 
   const double nsig = 2.5;
   const size_t nlut = 512;
   const float del = 0.01;
-  integer_t j, x1, x2;
-  double y, dh, ofrac;
   kernel_handler_t kernel_handler = NULL;
-  integer_t np;
+  integer_t j, np;
   float inv_exposure_time;
-  float* data_begin, *data_end;
   int kernel_order;
   size_t bit_no;
-  integer_t isize[2];
+  integer_t isize[2], xbounds[2], ybounds[2];
 
   assert(p);
   assert(nmiss);
@@ -825,14 +714,6 @@ dobox(struct driz_param_t* p, const integer_t ystart,
 
   get_dimensions(p->data, isize);
 
-  /* We skip all this if there is no overlap */
-  if (p->no_over) {
-    /* If there is no overlap at all, set appropriate values */
-    *nskip = isize[1];
-    *nmiss = isize[0] * isize[1];
-    return 0;
-  }
-
   /* The bitmask, trimmed to the appropriate range */
   np = (p->uuid - 1) / 32 + 1;
   bit_no = (size_t)(p->uuid - 1 - (32 * (np - 1)));
@@ -840,8 +721,9 @@ dobox(struct driz_param_t* p, const integer_t ystart,
   p->bv = (integer_t)(1 << bit_no);
 
   /* Image subset size */
-  p->nsx = p->xmax - p->xmin + 1;
-  p->nsy = p->ymax - p->ymin + 1;
+  p->nsx = p->xmax - p->xmin;
+  p->nsy = p->ymax - p->ymin;
+
   assert(p->pixel_fraction != 0.0);
   p->ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
 
@@ -914,28 +796,20 @@ dobox(struct driz_param_t* p, const integer_t ystart,
   DRIZLOG("-Drizzling using kernel = %s\n",kernel_enum2str(p->kernel));
 
   /* This is the outer loop over all the lines in the input image */
-  for (j = 0; j < isize[1]; ++j) {
+
+  check_image_overlap(p->pixmap, p->output_data, 5, ybounds);
+  *nskip = isize[1] - (ybounds[1] - ybounds[0]);
+
+  for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    if (check_over(p, j, 5, &ofrac, &x1, &x2, error)) {
+    check_line_overlap(p->pixmap, p->output_data, 5, j, xbounds);
+    
+    /* We know there may be some misses */
+    *nmiss += isize[0] - (xbounds[1] - xbounds[0]);
+    if (xbounds[0] == xbounds[1]) ++(*nskip);
+    
+    if (kernel_handler(p, j, xbounds[0], xbounds[1], nmiss, error)) {
       goto dobox_exit_;
-    }
-
-    /* If the line falls completely off the output, then skip it */
-    if (ofrac != 0.0) {
-      assert(x1 >= 0 && x1 < isize[0]);
-      assert(x2 >= 0 && x2 < isize[0]);
-
-      /* We know there may be some misses */
-      *nmiss += isize[0] - (x2 - x1 + 1);
-
-      if (kernel_handler(p, j, x1, x2, nmiss, error)) {
-        goto dobox_exit_;
-      }
-
-    } else {
-      /* If we are skipping a line, count it */
-      ++(*nskip);
-      *nmiss += isize[0];
     }
   }
 
