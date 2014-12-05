@@ -143,6 +143,11 @@ struct driz_param_t {
   enum e_unit_t in_units; /* CPS / counts was: INCPS, either counts or CPS */
   enum e_unit_t out_units; /* CPS / counts was: INCPS, either counts or CPS */
 
+  integer_t xmin;
+  integer_t xmax;
+  integer_t ymin;
+  integer_t ymax;
+
   /* Input images */
   PyArrayObject *data; 
   PyArrayObject *weights;
@@ -153,6 +158,12 @@ struct driz_param_t {
   PyArrayObject *output_counts;  /* was: COU */
   PyArrayObject *output_context; /* was: CONTIM */
 
+  /* Other output */
+  
+  integer_t nmiss;
+  integer_t nskip;
+  struct driz_error_t* error;
+
   /* Blotting-specific parameters */
   enum e_interp_t interpolation; /* was INTERP */
   float ef; /* TODO: Rename these variables */
@@ -162,11 +173,6 @@ struct driz_param_t {
   float kscale2;
 
   integer_t uuid; /* was: UNIQID */
-
-  integer_t xmin;
-  integer_t xmax;
-  integer_t ymin;
-  integer_t ymax;
 
   bool_t sub;
   bool_t no_over;

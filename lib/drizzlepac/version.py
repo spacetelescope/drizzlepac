@@ -9,9 +9,9 @@ import datetime
 
 __version__ = '2.0.0.dev35965'
 __vdate__ = '14-Aug-2014'
-__svn_revision__ = '35965:35969M'
+__svn_revision__ = '35965:36076M'
 __svn_full_info__ = 'Path: drizzlepac\nWorking Copy Root Path: /Users/bsimon/Code/drizzlepac\nURL: https://svn.stsci.edu/svn/ssb/stsci_python/drizzlepac/branches/refactor\nRepository Root: https://svn.stsci.edu/svn/ssb/stsci_python\nRepository UUID: fe389314-cf27-0410-b35b-8c050e845b92\nRevision: 35969\nNode Kind: directory\nSchedule: normal\nLast Changed Author: bsimon\nLast Changed Rev: 35969\nLast Changed Date: 2014-12-04 11:46:32 -0500 (Thu, 04 Dec 2014)'
-__setup_datetime__ = datetime.datetime(2014, 12, 5, 10, 13, 59, 293853)
+__setup_datetime__ = datetime.datetime(2014, 12, 5, 14, 59, 44, 611252)
 
 # what version of stsci.distutils created this version.py
 stsci_distutils_version = '0.3.8.dev33944'

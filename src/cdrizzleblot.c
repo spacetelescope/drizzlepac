@@ -941,12 +941,10 @@ interp_function* interp_function_map[interp_LAST] = {
 
 /* See header file for documentation */
 int
-doblot(struct driz_param_t* p,
-       struct driz_error_t* error) {
+doblot(struct driz_param_t* p) {
 
   const size_t nlut = 2048;
   const float space = 0.01;
-  integer_t nmiss;
   integer_t isize[2], osize[2];
   double yv;
   float xo, yo, v;
@@ -957,19 +955,15 @@ doblot(struct driz_param_t* p,
   void* state = NULL;
   
   assert(p);
-  assert(error);
 
   get_dimensions(p->data, isize);
   get_dimensions(p->output_data, osize);
-
-  /* Some initial settings */
-  nmiss = 0;
 
   /* Select interpolation function */
   assert(p->interpolation >= 0 && p->interpolation < interp_LAST);
   interpolate = interp_function_map[p->interpolation];
   if (interpolate == NULL) {
-    driz_error_set_message(error, "Requested interpolation type not implemented.");
+    driz_error_set_message(p->error, "Requested interpolation type not implemented.");
     goto doblot_exit_;
   }
 
@@ -978,7 +972,7 @@ doblot(struct driz_param_t* p,
     assert(p->kscale != 0.0);
     assert(p->lanczos.lut == NULL);
     if ((p->lanczos.lut = (float*)malloc(nlut * sizeof(float))) == NULL) {
-      driz_error_set_message(error, "Out of memory");
+      driz_error_set_message(p->error, "Out of memory");
       goto doblot_exit_;
     }
     create_lanczos_lut(p->interpolation == interp_lanczos3 ? 3 : 5,
@@ -1026,7 +1020,7 @@ doblot(struct driz_param_t* p,
         double value;
 
         /* Check for look-up-table interpolation */
-        if (interpolate(state, p->data, xo, yo, &v, error)) {
+        if (interpolate(state, p->data, xo, yo, &v, p->error)) {
           goto doblot_exit_;
         }
         
@@ -1039,7 +1033,7 @@ doblot(struct driz_param_t* p,
         /* If there is nothing for us then set the output to missing C
            value flag */
         set_pixel(p->output_data, i, j, p->misval);
-        nmiss++;
+        p->nmiss++;
       }
     }
   }
@@ -1047,5 +1041,5 @@ doblot(struct driz_param_t* p,
  doblot_exit_:
   free(p->lanczos.lut); p->lanczos.lut = NULL;
 
-  return driz_error_is_set(error);
+  return driz_error_is_set(p->error);
 }

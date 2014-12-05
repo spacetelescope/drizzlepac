@@ -216,9 +216,7 @@ over(const integer_t i, const integer_t j,
 
 static int
 do_kernel_point(struct driz_param_t* p, const integer_t j,
-                const integer_t x1, const integer_t x2,
-                /* Input/output parameters */
-                integer_t* nmiss, struct driz_error_t* error) {
+                const integer_t x1, const integer_t x2) {
   integer_t i, ii, jj;
   float vc, d, dow;
   double dx, dy;
@@ -256,7 +254,7 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
       update_data(p, ii, jj, d, vc, dow);
     } else {
 
-      ++(*nmiss);
+      ++ p->nmiss;
     }
   }
 
@@ -265,9 +263,7 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
 
 static int
 do_kernel_tophat(struct driz_param_t* p, const integer_t j,
-                 const integer_t x1, const integer_t x2,
-                 /* Input/output parameters */
-                 integer_t* nmiss, struct driz_error_t* error) {
+                 const integer_t x1, const integer_t x2) {
   integer_t i, ii, jj, nhit, nxi, nxa, nyi, nya;
   float vc, d, dow;
   double xx, yy, xxi, xxa, yyi, yya, dx, dy, ddx, ddy, r2;
@@ -333,7 +329,7 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
     }
 
     /* Count cases where the pixel is off the output image */
-    if (nhit == 0) ++(*nmiss);
+    if (nhit == 0) ++ p->nmiss;
   }
 
   return 0;
@@ -341,9 +337,7 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
 
 static int
 do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
-                   const integer_t x1, const integer_t x2,
-                   /* Input/output parameters */
-                   integer_t* nmiss, struct driz_error_t* error) {
+                   const integer_t x1, const integer_t x2) {
   integer_t i, ii, jj, nxi, nxa, nyi, nya, nhit;
   float vc, d, dow;
   double xx, yy, xxi, xxa, yyi, yya, w, dx, dy, ddx, ddy, r2, dover;
@@ -407,7 +401,7 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
     }
 
     /* Count cases where the pixel is off the output image */
-    if (nhit == 0) ++(*nmiss);
+    if (nhit == 0) ++ p->nmiss;
   }
 
   return 0;
@@ -415,9 +409,7 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
 
 static int
 do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
-                  const integer_t x1, const integer_t x2,
-                  /* Input/output parameters */
-                  integer_t* nmiss, struct driz_error_t* error) {
+                  const integer_t x1, const integer_t x2) {
   integer_t i, ii, jj, nxi, nxa, nyi, nya, nhit, ix, iy;
   float vc, d, dow;
   double xx, yy, xxi, xxa, yyi, yya, w, dx, dy, dover;
@@ -481,7 +473,7 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
     }
 
     /* Count cases where the pixel is off the output image */
-    if (nhit == 0) ++(*nmiss);
+    if (nhit == 0) ++ p->nmiss;
   }
 
   return 0;
@@ -489,9 +481,7 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
 
 static int
 do_kernel_turbo(struct driz_param_t* p, const integer_t j,
-                const integer_t x1, const integer_t x2,
-                /* Input/output parameters */
-                integer_t* nmiss, struct driz_error_t* error) {
+                const integer_t x1, const integer_t x2) {
   integer_t i, ii, jj, nxi, nxa, nyi, nya, nhit, iis, iie, jjs, jje;
   float vc, d, dow;
   double xxi, xxa, yyi, yya, w, dover, xoi, yoi;
@@ -558,7 +548,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
     }
 
     /* Count cases where the pixel is off the output image */
-    if (nhit == 0) ++(*nmiss);
+    if (nhit == 0) ++ p->nmiss;
   }
 
   return 0;
@@ -566,9 +556,7 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
 
 int
 do_kernel_square(struct driz_param_t* p, const integer_t j, 
-                 const integer_t x1, const integer_t x2,
-                 /* Input/output parameters */
-                 integer_t* nmiss,  struct driz_error_t* error) {
+                 const integer_t x1, const integer_t x2) {
 
   integer_t i, nhit, ii, jj, min_ii, max_ii, min_jj, max_jj, n;
   float vc, d, dow;
@@ -662,7 +650,7 @@ do_kernel_square(struct driz_param_t* p, const integer_t j,
     }
 
     /* Count cases where the pixel is off the output image */
-    if (nhit == 0) ++(*nmiss);
+    if (nhit == 0) ++ p->nmiss;
   }
 
   return 0;
@@ -693,9 +681,7 @@ In V1.6 this was simplified to use the DRIVAL routine and also to
 include some limited multi-kernel support.
 */
 int
-dobox(struct driz_param_t* p,
-      /* Output parameters */
-      integer_t* nmiss, integer_t* nskip, struct driz_error_t* error) {
+dobox(struct driz_param_t* p) {
 
   const double nsig = 2.5;
   const size_t nlut = 512;
@@ -709,9 +695,6 @@ dobox(struct driz_param_t* p,
   integer_t xbounds[2], ybounds[2];
 
   assert(p);
-  assert(nmiss);
-  assert(nskip);
-  assert(error);
 
   /* The bitmask, trimmed to the appropriate range */
   np = (p->uuid - 1) / 32 + 1;
@@ -746,7 +729,7 @@ dobox(struct driz_param_t* p,
     p->lanczos.nlut = nlut;
     assert(p->lanczos.lut == NULL);
     if ((p->lanczos.lut = malloc(nlut * sizeof(float))) == NULL) {
-      driz_error_set_message(error, "Out of memory");
+      driz_error_set_message(p->error, "Out of memory");
       goto dobox_exit_;
     }
     /* Set up a look-up-table for Lanczos-style interpolation
@@ -764,13 +747,13 @@ dobox(struct driz_param_t* p,
 
   /* Set up a function pointer to handle the appropriate kernel */
   if (p->kernel >= kernel_LAST) {
-    driz_error_set_message(error, "Invalid kernel type");
+    driz_error_set_message(p->error, "Invalid kernel type");
     goto dobox_exit_;
   }
   
   kernel_handler = kernel_handler_map[p->kernel];
   if (kernel_handler == NULL) {
-    driz_error_set_message(error, "Invalid kernel type");
+    driz_error_set_message(p->error, "Invalid kernel type");
     goto dobox_exit_;
   }
 
@@ -779,7 +762,7 @@ dobox(struct driz_param_t* p,
      exposure */
   if (p->in_units != unit_cps) {
     if (p->exposure_time == 0.0) {
-      driz_error_set_message(error, "Invalid exposure time");
+      driz_error_set_message(p->error, "Invalid exposure time");
       goto dobox_exit_;
     }
 
@@ -795,18 +778,18 @@ dobox(struct driz_param_t* p,
   margin = 5;
   check_image_overlap(p, margin, ybounds);
 
-  *nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
-  *nmiss = *nskip * (p->ymax - p->ymin);
+  p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
+  p->nmiss = p->nskip * (p->ymax - p->ymin);
   
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
     check_line_overlap(p, margin, j, xbounds);
     
     /* We know there may be some misses */
-    *nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
-    if (xbounds[0] == xbounds[1]) ++(*nskip);
+    p->nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
+    if (xbounds[0] == xbounds[1]) ++ p->nskip;
     
-    if (kernel_handler(p, j, xbounds[0], xbounds[1], nmiss, error)) {
+    if (kernel_handler(p, j, xbounds[0], xbounds[1])) {
       goto dobox_exit_;
     }
   }
@@ -814,5 +797,5 @@ dobox(struct driz_param_t* p,
  dobox_exit_:
   free(p->lanczos.lut); p->lanczos.lut = NULL;
 
-  return driz_error_is_set(error);
+  return driz_error_is_set(p->error);
 }

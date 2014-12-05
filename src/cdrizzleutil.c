@@ -152,6 +152,10 @@ driz_param_init(struct driz_param_t* p) {
   p->lanczos.lut = NULL;
   p->lanczos.space = 1.0;
 
+  p->nmiss = 0;
+  p->nskip = 0;
+  p->error = NULL;
+  
   p->scale = 1.0;
   p->scale2 = 1.0;
   p->x_scale = 1.0;

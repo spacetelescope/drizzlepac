@@ -180,6 +180,7 @@ print_pixmap(char *title, struct driz_param_t *p, int lo, int hi) {
 struct driz_param_t *
 setup_parameters() {
     npy_intp *dims;
+    struct driz_error_t *error;
 
     /* Initialize the parameter struct with vanilla defaults */
     
@@ -211,8 +212,14 @@ setup_parameters() {
     p->output_data = test_output_data;
     p->output_counts = test_output_counts;
     p->output_context = test_context;
+    p->nmiss = 0;
+    p->nskip = 0;
 
+    error = (struct driz_error_t *) malloc(sizeof(struct driz_error_t));
+    driz_error_init(error);
+    p->error = error;
     init_pixmap(p);
+    
     fill_image(p->data, 0.0);
     fill_image(p->weights, 1.0);
     fill_image(p->output_data, 0.0);
@@ -225,6 +232,7 @@ setup_parameters() {
 void
 teardown_parameters(struct driz_param_t *p) {
     
+    free(p->error);
     free(p);
 }
 
@@ -747,7 +755,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p->kernel = kernel_turbo;
 
             set_pixel(p->data, k, k, value);
-            status = dobox(p, &nmiss, &nskip, &error);
+            status = dobox(p);
  
             fct_chk_eq_dbl(get_pixel(p->output_data, (k+2), (k+2)), get_pixel(p->data, k, k));
             fct_chk_eq_int(nskip, 0);
@@ -776,7 +784,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p->kernel = kernel_turbo;
 
             set_pixel(p->data, k, k, value);
-            status = dobox(p, &nmiss, &nskip, &error);
+            status = dobox(p);
 
             for (i = 2; i <= 3; ++i) {
                 for (j = 2; j <= 3; ++j) {
@@ -811,7 +819,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
                 set_pixel(p->data, j, j, value);
             }
 
-            status = dobox(p, &nmiss, &nskip, &error);
+            status = dobox(p);
             
             for (i = 4; i < 100; ++i) {
                 fct_chk_eq_dbl(get_pixel(p->output_data, i, i), value/2.0);
@@ -848,7 +856,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
                 set_pixel(p->data, j, j, value);
             }
 
-            status = dobox(p, &nmiss, &nskip, &error);
+            status = dobox(p);
 
             for (i = 4; i < 100; ++i) {
                 fct_chk_eq_int(get_bit(p->output_context, i, i, p->bv), 1);
@@ -878,7 +886,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             offset_pixmap(p, offset, offset);
 
             set_pixel(p->data, k, k, value);
-            status = doblot(p, &error);
+            status = doblot(p);
 
            fct_chk_eq_dbl(get_pixel(p->output_data, (k+2), (k+2)), get_pixel(p->data, k, k));
         }
@@ -904,7 +912,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             offset_pixmap(p, offset, offset);
 
             set_pixel(p->data, k, k, value);
-            status = doblot(p, &error);
+            status = doblot(p);
 
             fct_chk_eq_dbl(get_pixel(p->output_data, (k+2), (k+2)), get_pixel(p->data, k, k));
         }

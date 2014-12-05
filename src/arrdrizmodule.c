@@ -46,7 +46,9 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   char *kernel_str, *inun_str;
   float expin, wtscl;
   char *fillstr;
-  integer_t nmiss, nskip, vflag;
+  integer_t nmiss;
+  integer_t nskip;
+  integer_t vflag;
   PyObject *pixmap;
 
   /* Derived values */
@@ -65,7 +67,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   /* double delta_time; */
 
   driz_error_init(&error);
-
+  
   if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffsiiiO:tdriz",
                         &oimg, &owei, &oout, &owht, &ocon, &uniqid, 
                         &xmin, &xmax, &ymin, &ymax, &scale, &xscale, &yscale,
@@ -147,9 +149,6 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 #endif
   }
 
-  nmiss = 0;
-  nskip = 0;
-
   /* Setup reasonable defaults for drizzling */
   driz_param_init(&p);
 
@@ -173,12 +172,13 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   p.exposure_time = expin;
   p.weight_scale = wtscl;
   p.pixmap = map;
+  p.error = &error;
  
   /*
   start_t = clock();
   */
   /* Do the drizzling */
-  if (dobox(&p, &nmiss, &nskip, &error)) {
+  if (dobox(&p)) {
     goto _exit;
   }
   /*
@@ -201,6 +201,9 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   Py_XDECREF(wht);
   Py_XDECREF(map);
 
+  nmiss = p.nmiss;
+  nskip = p.nskip;
+  
   if (istat || driz_error_is_set(&error)) {
     if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
       PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
@@ -294,8 +297,9 @@ tblot(PyObject *obj, PyObject *args)
   p.misval = misval;
   p.sinscl = sinscl;
   p.pixmap = map;
-
-  istat = doblot(&p, &error);
+  p.error = &error;
+  
+  istat = doblot(&p);
 
  _exit:
   Py_DECREF(img);
