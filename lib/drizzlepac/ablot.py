@@ -331,9 +331,9 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
     kscale = 1.0
 
     xmin = 0
-    xmax = source_wcs._naxis1 - 1
+    xmax = source_wcs._naxis1
     ymin = 0
-    ymax = source_wcs._naxis2 - 1
+    ymax = source_wcs._naxis2
 
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
@@ -348,14 +348,12 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
     pixmap = calc_pixmap.calc_pixmap(blot_wcs, source_wcs)
     pix_ratio = source_wcs.pscale/wcslin.pscale
 
-    if pixmap is None:
-        log.warning("No overlap between source and output images!")
-    else:
-        t = drizzlepac.cdriz.tblot(
-            source, _outsci,xmin,xmax,ymin,ymax,
-            pix_ratio, kscale, 1.0, 1.0,
-            'center',interp, exptime,
-            misval, sinscl, 1, pixmap)
+    t = drizzlepac.cdriz.tblot(
+        source, _outsci,
+        xmin, xmax, ymin, ymax,
+        pix_ratio, kscale, 1.0, 1.0,
+        'center',interp, exptime,
+        misval, sinscl, 1, pixmap)
 
     return _outsci
 

@@ -48,16 +48,14 @@ clip_bounds(PyArrayObject *pixmap,
            );
 
 void
-check_line_overlap(PyArrayObject *pixmap,
-                   PyArrayObject *output_data,
+check_line_overlap(struct driz_param_t* p, 
                    int margin,
                    integer_t jy,
                    integer_t *xbounds
                   );
 
 void
-check_image_overlap(PyArrayObject *pixmap,
-                    PyArrayObject *output_data,
+check_image_overlap(struct driz_param_t* p, 
                     const int margin,
                     integer_t *ybounds
                    );

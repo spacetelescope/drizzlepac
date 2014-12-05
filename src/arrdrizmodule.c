@@ -39,7 +39,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 {
   /* Arguments in the order they appear */
   PyObject *oimg, *owei, *oout, *owht, *ocon;
-  long uniqid, ystart, xmin, ymin;
+  long uniqid, ystart, xmin, xmax, ymin, ymax;
   double scale, xscale, yscale;
   char *align_str;
   double pfract;
@@ -60,16 +60,15 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   int istat = 0;
   struct driz_error_t error;
   struct driz_param_t p;
-  integer_t osize[2];
 
   /* clock_t start_t, end_t; */
   /* double delta_time; */
 
   driz_error_init(&error);
 
-  if (!PyArg_ParseTuple(args,"OOOOOllldddsdssffsiiiO:tdriz",
+  if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffsiiiO:tdriz",
                         &oimg, &owei, &oout, &owht, &ocon, &uniqid, 
-                        &xmin, &ymin, &scale, &xscale, &yscale,
+                        &xmin, &xmax, &ymin, &ymax, &scale, &xscale, &yscale,
                         &align_str, &pfract, &kernel_str, &inun_str,
                         &expin, &wtscl, &fillstr, &nmiss, &nskip, &vflag,
                         &pixmap)) {
@@ -148,8 +147,6 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 #endif
   }
 
-  get_dimensions(out, osize);
-  
   nmiss = 0;
   nskip = 0;
 
@@ -164,8 +161,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   p.uuid = uniqid;
   p.xmin = xmin;
   p.ymin = ymin;
-  p.xmax = osize[0];
-  p.ymax = osize[1];
+  p.xmax = xmax;
+  p.ymax = ymax;
   p.scale = scale;
   p.x_scale = xscale;
   p.y_scale = yscale;

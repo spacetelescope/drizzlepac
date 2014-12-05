@@ -962,13 +962,6 @@ doblot(struct driz_param_t* p,
   get_dimensions(p->data, isize);
   get_dimensions(p->output_data, osize);
 
-  /* We skip all this if there is no overlap */
-  if (p->no_over) {
-    /* If there is no overlap at all, set appropriate values */;
-    nmiss = osize[0] * osize[1];
-    return 0;
-  }
-
   /* Some initial settings */
   nmiss = 0;
 

@@ -171,9 +171,6 @@ struct driz_param_t {
   bool_t sub;
   bool_t no_over;
 
-  integer_t nsx;
-  integer_t nsy;
-
   integer_t bv;
   double ac;
   double pfo;

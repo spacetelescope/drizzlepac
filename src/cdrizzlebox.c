@@ -232,8 +232,8 @@ do_kernel_point(struct driz_param_t* p, const integer_t j,
     jj = fortran_round(get_pixmap(p->pixmap, i, j)[1]);
 
     /* Check it is on the output image */
-    if (ii >= 0 && ii < p->nsx &&
-        jj >= 0 && jj < p->nsy) {
+    if (ii >= p->xmin && ii < p->xmax &&
+        jj >= p->ymin && jj < p->ymax) {
       vc = get_pixel(p->output_counts, ii, jj);
 
       /* Allow for stretching because of scale change */
@@ -285,10 +285,10 @@ do_kernel_tophat(struct driz_param_t* p, const integer_t j,
     yyi = yy - p->pfo;
     yya = yy + p->pfo;
 
-    nxi = MAX(fortran_round(xxi), 0);
-    nxa = MIN(fortran_round(xxa), p->nsx - 1);
-    nyi = MAX(fortran_round(yyi), 0);
-    nya = MIN(fortran_round(yya), p->nsy - 1);
+    nxi = MAX(fortran_round(xxi), p->xmin);
+    nxa = MIN(fortran_round(xxa), p->xmax-1);
+    nyi = MAX(fortran_round(yyi), p->ymin);
+    nya = MIN(fortran_round(yya), p->ymax-1);
 
     nhit = 0;
 
@@ -360,10 +360,10 @@ do_kernel_gaussian(struct driz_param_t* p, const integer_t j,
     yyi = yy - p->pfo;
     yya = yy + p->pfo;
 
-    nxi = MAX(fortran_round(xxi), 0);
-    nxa = MIN(fortran_round(xxa), p->nsx - 1);
-    nyi = MAX(fortran_round(yyi), 0);
-    nya = MIN(fortran_round(yya), p->nsy - 1);
+    nxi = MAX(fortran_round(xxi), p->xmin);
+    nxa = MIN(fortran_round(xxa), p->xmax-1);
+    nyi = MAX(fortran_round(yyi), p->ymin);
+    nya = MIN(fortran_round(yya), p->ymax-1);
 
     nhit = 0;
 
@@ -434,10 +434,10 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
     yyi = yy - dy - p->pfo;
     yya = yy - dy + p->pfo;
 
-    nxi = MAX(fortran_round(xxi), 0);
-    nxa = MIN(fortran_round(xxa), p->nsx - 1);
-    nyi = MAX(fortran_round(yyi), 0);
-    nya = MIN(fortran_round(yya), p->nsy - 1);
+    nxi = MAX(fortran_round(xxi), p->xmin);
+    nxa = MIN(fortran_round(xxa), p->xmax-1);
+    nyi = MAX(fortran_round(yyi), p->ymin);
+    nya = MIN(fortran_round(yya), p->ymax-1);
 
     nhit = 0;
 
@@ -511,10 +511,10 @@ do_kernel_turbo(struct driz_param_t* p, const integer_t j,
     nxa = fortran_round(xxa);
     nyi = fortran_round(yyi);
     nya = fortran_round(yya);
-    iis = MAX(nxi, 0);  /* Needed to be set to 0 to avoid edge effects */
-    iie = MIN(nxa, p->nsx - 1);
-    jjs = MAX(nyi, 0);  /* Needed to be set to 0 to avoid edge effects */
-    jje = MIN(nya, p->nsy - 1);
+    iis = MAX(nxi, p->xmin);  /* Needed to be set to 0 to avoid edge effects */
+    iie = MIN(nxa, p->xmax-1);
+    jjs = MAX(nyi, p->ymin);  /* Needed to be set to 0 to avoid edge effects */
+    jje = MIN(nya, p->ymax-1);
 
     nhit = 0;
 
@@ -630,10 +630,10 @@ do_kernel_square(struct driz_param_t* p, const integer_t j,
     }
 
     /* Loop over output pixels which could be affected */
-    min_jj = MAX(fortran_round(min_doubles(yout, 4)), 0);
-    max_jj = MIN(fortran_round(max_doubles(yout, 4)), p->nsy - 1);
-    min_ii = MAX(fortran_round(min_doubles(xout, 4)), 0);
-    max_ii = MIN(fortran_round(max_doubles(xout, 4)), p->nsx - 1);
+    min_jj = MAX(fortran_round(min_doubles(yout, 4)), p->ymin);
+    max_jj = MIN(fortran_round(max_doubles(yout, 4)), p->ymax-1);
+    min_ii = MAX(fortran_round(min_doubles(xout, 4)), p->xmin);
+    max_ii = MIN(fortran_round(max_doubles(xout, 4)), p->xmax-1);
 
     for (jj = min_jj; jj <= max_jj; ++jj) {
       for (ii = min_ii; ii <= max_ii; ++ii) {
@@ -704,25 +704,20 @@ dobox(struct driz_param_t* p,
   integer_t j, np;
   float inv_exposure_time;
   int kernel_order;
+  int margin;
   size_t bit_no;
-  integer_t isize[2], xbounds[2], ybounds[2];
+  integer_t xbounds[2], ybounds[2];
 
   assert(p);
   assert(nmiss);
   assert(nskip);
   assert(error);
 
-  get_dimensions(p->data, isize);
-
   /* The bitmask, trimmed to the appropriate range */
   np = (p->uuid - 1) / 32 + 1;
   bit_no = (size_t)(p->uuid - 1 - (32 * (np - 1)));
   assert(bit_no < 32);
   p->bv = (integer_t)(1 << bit_no);
-
-  /* Image subset size */
-  p->nsx = p->xmax - p->xmin;
-  p->nsy = p->ymax - p->ymin;
 
   assert(p->pixel_fraction != 0.0);
   p->ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
@@ -797,15 +792,18 @@ dobox(struct driz_param_t* p,
 
   /* This is the outer loop over all the lines in the input image */
 
-  check_image_overlap(p->pixmap, p->output_data, 5, ybounds);
-  *nskip = isize[1] - (ybounds[1] - ybounds[0]);
+  margin = 5;
+  check_image_overlap(p, margin, ybounds);
 
+  *nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
+  *nmiss = *nskip * (p->ymax - p->ymin);
+  
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    check_line_overlap(p->pixmap, p->output_data, 5, j, xbounds);
+    check_line_overlap(p, margin, j, xbounds);
     
     /* We know there may be some misses */
-    *nmiss += isize[0] - (xbounds[1] - xbounds[0]);
+    *nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
     if (xbounds[0] == xbounds[1]) ++(*nskip);
     
     if (kernel_handler(p, j, xbounds[0], xbounds[1], nmiss, error)) {

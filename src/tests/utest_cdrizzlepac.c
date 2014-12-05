@@ -203,8 +203,6 @@ setup_parameters() {
     p->ef = p->exposure_time;
     p->kernel = kernel_square;
     p->interpolation = interp_poly5;
-    p->nsx = p->xmax - p->xmin + 1;
-    p->nsy = p->ymax - p->ymin + 1;
     p->weight_scale = 1.0;
 
     p->data = test_data;
@@ -358,7 +356,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p = setup_parameters();
             offset_pixmap(p, 0.0, 0.0);
             
-            check_line_overlap(p->pixmap, p->output_data, margin, j, xbounds);
+            check_line_overlap(p, margin, j, xbounds);
 
             fct_chk_eq_int(xbounds[0], 0);
             fct_chk_eq_int(xbounds[1], image_size[0]);
@@ -379,7 +377,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p = setup_parameters();
             offset_pixmap(p, 70.0, 0.0);
 
-            check_line_overlap(p->pixmap, p->output_data, margin, j, xbounds);
+            check_line_overlap(p, margin, j, xbounds);
             
             fct_chk_eq_int(xbounds[0], 0);
             fct_chk_eq_int(xbounds[1], 32);
@@ -400,7 +398,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p = setup_parameters();
             offset_pixmap(p, -70.0, 0.0);
 
-            check_line_overlap(p->pixmap, p->output_data, margin, j, xbounds);
+            check_line_overlap(p, margin, j, xbounds);
             
             fct_chk_eq_int(xbounds[0], 68);
             fct_chk_eq_int(xbounds[1], 100);
@@ -420,7 +418,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p = setup_parameters();
             offset_pixmap(p, 0.0, 0.0);
             
-            check_image_overlap(p->pixmap, p->output_data, margin, ybounds);
+            check_image_overlap(p, margin, ybounds);
 
             fct_chk_eq_int(ybounds[0], 0);
             fct_chk_eq_int(ybounds[1], image_size[1]);
@@ -440,7 +438,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p = setup_parameters();
             offset_pixmap(p, 0.0, 70.0);
 
-            check_image_overlap(p->pixmap, p->output_data, margin, ybounds);
+            check_image_overlap(p, margin, ybounds);
             
             fct_chk_eq_int(ybounds[0], 0);
             fct_chk_eq_int(ybounds[1], 32);
@@ -460,7 +458,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             p = setup_parameters();
             offset_pixmap(p, 0.0, -70.0);
 
-            check_image_overlap(p->pixmap, p->output_data, margin, ybounds);
+            check_image_overlap(p, margin, ybounds);
             
             fct_chk_eq_int(ybounds[0], 68);
             fct_chk_eq_int(ybounds[1], 100);

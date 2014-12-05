@@ -1009,6 +1009,12 @@ def do_driz(insci, input_wcs, inwht,
     _shift_un = 'output'
     nmiss = 0
     nskip = 0
+    
+    xmin = 0
+    xmax = output_wcs._naxis1
+    ymin = 0
+    ymax = output_wcs._naxis2
+    
     #
     # Call 'drizzle' to perform image combination
     # This call to 'cdriz.tdriz' uses the new C syntax
@@ -1018,7 +1024,7 @@ def do_driz(insci, input_wcs, inwht,
         insci = insci.astype(np.float32)
 
     _vers,nmiss,nskip = drizzlepac.cdriz.tdriz(insci, inwht, 
-        outsci, outwht, outctx, uniqid, 0, 0, 
+        outsci, outwht, outctx, uniqid, xmin, xmax, ymin, ymax, 
         pix_ratio, 1.0, 1.0, 'center', pixfrac,
         kernel, in_units, expscale, wt_scl,
         fillval, nmiss, nskip, 1, pixmap)

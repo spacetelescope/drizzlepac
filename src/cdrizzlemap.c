@@ -242,29 +242,27 @@ clip_bounds(PyArrayObject *pixmap, int jdim, struct segment *xylimit, struct seg
  * which are inside the output image. Range is one-sided, that is, the second
  * value returned is one greater than the last pixel that is on the image.
  *
- * pixmap:      the mapping between input and output images
- * output_data: the output data, used only to find its limits
- * margin:      a margin in pixels added to the limits
- * jy:          the index of the line in the input image whose range is computed
- * xbounds:     the input pixels bounding the overlap (output)
+ * p:       the stucture containing the image pointers
+ * margin:  a margin in pixels added to the limits
+ * jy:      the index of the line in the input image whose range is computed
+ * xbounds: the input pixels bounding the overlap (output)
  */
 
 void
-check_line_overlap(PyArrayObject *pixmap, PyArrayObject *output_data,
-                   int margin, integer_t jy, integer_t *xbounds) {
+check_line_overlap(struct driz_param_t* p, int margin, integer_t jy, integer_t *xbounds) {
 
   struct segment xylimit, xybounds;
   integer_t isize[2], osize[2];
   int idim;
     
-  get_dimensions(pixmap, isize);
-  get_dimensions(output_data, osize);
+  get_dimensions(p->pixmap, isize);
 
   initialize_segment(&xybounds, 0, jy, isize[0], jy);
-  initialize_segment(&xylimit, - margin, - margin, osize[0] + margin, osize[1] + margin);
+  initialize_segment(&xylimit, p->xmin - margin, p->ymin - margin,
+                               p->xmax + margin, p->ymax + margin);
 
   for (idim = 0; idim < 2; ++idim) {
-    clip_bounds(pixmap, idim, &xylimit, &xybounds);
+    clip_bounds(p->pixmap, idim, &xylimit, &xybounds);
     if (xybounds.valid) break;
   }
  
@@ -280,33 +278,31 @@ check_line_overlap(PyArrayObject *pixmap, PyArrayObject *output_data,
  * Range is one-sided, that is, the second value returned is one greater than the
  * last line that is on the image.
  * 
- * pixmap:      the mapping between input and output images
- * output_data: the output data, used only to find its limits
- * margin:      a margin in pixels added to the limits
- * ybounds:     the input lines bounding the overlap (output)
+ * p:       the stucture containing the image pointers
+ * margin:  a margin in pixels added to the limits
+ * ybounds: the input lines bounding the overlap (output)
  */
 
 void
-check_image_overlap(PyArrayObject *pixmap, PyArrayObject *output_data,
-                   const int margin, integer_t *ybounds) {
+check_image_overlap(struct driz_param_t* p, const int margin, integer_t *ybounds) {
 
   struct segment xylimit, xybounds[2];
   integer_t isize[2], osize[2];
   int ipoint, idim;
   
-  get_dimensions(pixmap, isize);
-  get_dimensions(output_data, osize);
+  get_dimensions(p->pixmap, isize);
 
   ybounds[0] = 0;
   ybounds[1] = isize[0];
   
-  initialize_segment(&xylimit, - margin, - margin, osize[0] + margin, osize[1] + margin);
+  initialize_segment(&xylimit, p->xmin - margin, p->ymin - margin,
+                               p->xmax + margin, p->ymax + margin);
 
   for (ipoint = 0; ipoint < 2; ++ipoint) {
     initialize_segment(&xybounds[ipoint], ybounds[ipoint], 0, ybounds[ipoint], isize[1]);
     
     for (idim = 0; idim < 2; ++idim) {
-      clip_bounds(pixmap, idim, &xylimit, &xybounds[ipoint]);
+      clip_bounds(p->pixmap, idim, &xylimit, &xybounds[ipoint]);
       if (xybounds[ipoint].valid) break;
     }
   }
