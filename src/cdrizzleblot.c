@@ -947,7 +947,7 @@ doblot(struct driz_param_t* p) {
   const float space = 0.01;
   integer_t isize[2], osize[2];
   double yv;
-  float xo, yo, v;
+  float scale2, xo, yo, v;
   float nx, ny;
   integer_t i, j;
   interp_function* interpolate;
@@ -1002,7 +1002,7 @@ doblot(struct driz_param_t* p) {
 
   /* Recalculate the area scaling factor */
   assert(p->scale != 0.0);
-  p->scale2 = p->scale*p->scale;
+  scale2 = p->scale * p->scale;
   v = 1.0;
 
   /* Outer look over output image pixels (X, Y) */
@@ -1024,9 +1024,7 @@ doblot(struct driz_param_t* p) {
           goto doblot_exit_;
         }
         
-        /* TODO: This float cast makes it match Fortran, but technically
-           loses more precision */
-        value = v * p->ef / (float)p->scale2;
+        value = v * p->ef / scale2;
         set_pixel(p->output_data, i, j, value);
 
       } else {

@@ -198,17 +198,12 @@ setup_parameters() {
     p->scale = 1.0;
     p->x_scale = 1.0;
     p->y_scale = 1.0;
-    p->no_over = FALSE;
     p->pixel_fraction = 1.0;
     p->exposure_time = 1.0;
     p->ef = p->exposure_time;
     p->kernel = kernel_square;
     p->interpolation = interp_poly5;
     p->weight_scale = 1.0;
-
-    p->pfo = p->pixel_fraction / p->scale / 2.0;
-    p->ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
-    p->scale2 = p->scale * p->scale;
 
     p->data = test_data;
     p->weights = test_weights;

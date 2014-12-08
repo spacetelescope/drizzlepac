@@ -97,7 +97,6 @@ driz_param_dump(struct driz_param_t* p) {
          "in_units:             %s\n"
          "out_units:            %s\n"
          "scale:                %f\n"
-         "scale2:               %f\n"
          "x_scale:              %f\n"
          "y_scale:              %f\n",
          kernel_enum2str(p->kernel),
@@ -109,7 +108,6 @@ driz_param_dump(struct driz_param_t* p) {
          unit_enum2str(p->in_units),
          unit_enum2str(p->out_units),
          p->scale,
-         p->scale2,
          p->x_scale,
          p->y_scale
          );
@@ -157,7 +155,6 @@ driz_param_init(struct driz_param_t* p) {
   p->error = NULL;
   
   p->scale = 1.0;
-  p->scale2 = 1.0;
   p->x_scale = 1.0;
   p->y_scale = 1.0;
 }

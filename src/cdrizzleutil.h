@@ -173,14 +173,7 @@ struct driz_param_t {
   float kscale2;
 
   integer_t uuid; /* was: UNIQID */
-
-  bool_t sub;
-  bool_t no_over;
-
   integer_t bv;
-  double ac;
-  double pfo;
-  double pfo2;
 
   /* Stuff specific to certain kernel types */
   /* Gaussian values */
@@ -193,7 +186,6 @@ struct driz_param_t {
   /* Scaling */
   enum e_align_t align;
   double scale;
-  double scale2;
   double x_scale;
   double y_scale;
 };

@@ -30,6 +30,21 @@ update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
   set_pixel(p->output_counts, ii, jj, vc_plus_dow);
 }
 
+/* The bit value, trimmed to the appropriate range */
+
+static integer_t
+compute_bit_value(integer_t uuid) {
+  integer_t bv;
+  int np, bit_no;
+  
+  np = (uuid - 1) / 32 + 1;
+  bit_no = (uuid - 1 - (32 * (np - 1)));
+  assert(bit_no < 32);
+  bv = (integer_t)(1 << bit_no);
+
+  return bv;
+}
+
 /**
 To calculate area under a line segment within unit square at origin.
 This is used by BOXER.
@@ -207,7 +222,8 @@ static int
 do_kernel_point(struct driz_param_t* p) {
   integer_t i, j, ii, jj;
   integer_t xbounds[2], ybounds[2];
-  float vc, d, dow;
+  float scale2, vc, d, dow;
+  integer_t bv;
   int margin;
 
   margin = 2;
@@ -216,6 +232,9 @@ do_kernel_point(struct driz_param_t* p) {
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
 
+  scale2 = p->scale * p->scale;
+  bv = compute_bit_value(p->uuid);
+  
   /* This is the outer loop over all the lines in the input image */
   
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
@@ -236,7 +255,7 @@ do_kernel_point(struct driz_param_t* p) {
         vc = get_pixel(p->output_counts, ii, jj);
   
         /* Allow for stretching because of scale change */
-        d = get_pixel(p->data, i, j) * (float)p->scale2;
+        d = get_pixel(p->data, i, j) * scale2;
   
         /* Scale the weighting mask by the scale factor.  Note that we
            DON'T scale by the Jacobian as it hasn't been calculated */
@@ -249,7 +268,7 @@ do_kernel_point(struct driz_param_t* p) {
         /* If we are creating of modifying the context image,
            we do so here. */
         if (p->output_context && dow > 0.0) {
-          set_bit(p->output_context, ii, jj, p->bv);
+          set_bit(p->output_context, ii, jj, bv);
         }
   
         update_data(p, ii, jj, d, vc, dow);
@@ -265,9 +284,9 @@ do_kernel_point(struct driz_param_t* p) {
 
 static int
 do_kernel_tophat(struct driz_param_t* p) {
-  integer_t i, j, ii, jj, nhit, nxi, nxa, nyi, nya;
+  integer_t bv, i, j, ii, jj, nhit, nxi, nxa, nyi, nya;
   integer_t xbounds[2], ybounds[2];
-  float vc, d, dow;
+  float scale2, pfo, pfo2, vc, d, dow;
   double xx, yy, xxi, xxa, yyi, yya, ddx, ddy, r2;
   int margin;
   
@@ -277,6 +296,11 @@ do_kernel_tophat(struct driz_param_t* p) {
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
   
+  scale2 = p->scale * p->scale;
+  pfo = p->pixel_fraction / p->scale / 2.0;
+  pfo2 = pfo * pfo;
+  bv = compute_bit_value(p->uuid);
+ 
   /* This is the outer loop over all the lines in the input image */
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
@@ -292,10 +316,10 @@ do_kernel_tophat(struct driz_param_t* p) {
       xx = get_pixmap(p->pixmap, i, j)[0];
       yy = get_pixmap(p->pixmap, i, j)[1];
   
-      xxi = xx - p->pfo;
-      xxa = xx + p->pfo;
-      yyi = yy - p->pfo;
-      yya = yy + p->pfo;
+      xxi = xx - pfo;
+      xxa = xx + pfo;
+      yyi = yy - pfo;
+      yya = yy + pfo;
   
       nxi = MAX(fortran_round(xxi), p->xmin);
       nxa = MIN(fortran_round(xxa), p->xmax-1);
@@ -305,7 +329,7 @@ do_kernel_tophat(struct driz_param_t* p) {
       nhit = 0;
   
       /* Allow for stretching because of scale change */
-      d = get_pixel(p->data, i, j) * (float)p->scale2;
+      d = get_pixel(p->data, i, j) * scale2;
   
       /* Scale the weighting mask by the scale factor and inversely by
          the Jacobian to ensure conservation of weight in the output */
@@ -328,7 +352,7 @@ do_kernel_tophat(struct driz_param_t* p) {
   
           /* Weight is one within the specified radius and zero outside.
              Note: weight isn't conserved in this case */
-          if (r2 <= p->pfo2) {
+          if (r2 <= pfo2) {
             /* Count the hits */
             nhit++;
             vc = get_pixel(p->output_counts, ii, jj);
@@ -336,7 +360,7 @@ do_kernel_tophat(struct driz_param_t* p) {
             /* If we are create or modifying the context image,
                we do so here. */
             if (p->output_context && dow > 0.0) {
-              set_bit(p->output_context, ii, jj, p->bv);
+              set_bit(p->output_context, ii, jj, bv);
             }
   
             update_data(p, ii, jj, d, vc, dow);
@@ -354,10 +378,10 @@ do_kernel_tophat(struct driz_param_t* p) {
 
 static int
 do_kernel_gaussian(struct driz_param_t* p) {
-  integer_t i, j, ii, jj, nxi, nxa, nyi, nya, nhit;
+  integer_t bv, i, j, ii, jj, nxi, nxa, nyi, nya, nhit;
   integer_t xbounds[2], ybounds[2];
   float vc, d, dow;
-  double xx, yy, xxi, xxa, yyi, yya, w, ddx, ddy, r2, dover;
+  double pfo, ac,  scale2, xx, yy, xxi, xxa, yyi, yya, w, ddx, ddy, r2, dover;
   const double nsig = 2.5;
   int margin;
   
@@ -366,14 +390,19 @@ do_kernel_gaussian(struct driz_param_t* p) {
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
-  
-  p->gaussian.efac = (2.3548*2.3548) * p->scale2 * p->ac / 2.0;
-  p->gaussian.es = p->gaussian.efac / M_PI;
-  p->pfo = nsig * p->pixel_fraction / 2.3548 / p->scale;
-  /* Added in V2.9 - make sure this doesn't get less than 1.2
+ 
+  /* Added in V2.9 - make sure pfo doesn't get less than 1.2
      divided by the scale so that there are never holes in the
      output */
-  p->pfo = CLAMP_ABOVE(p->pfo, 1.2 / p->scale);
+  pfo = nsig * p->pixel_fraction / 2.3548 / p->scale;
+  pfo = CLAMP_ABOVE(pfo, 1.2 / p->scale);
+  
+  ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
+  scale2 = p->scale * p->scale;
+  bv = compute_bit_value(p->uuid);
+  
+  p->gaussian.efac = (2.3548*2.3548) * scale2 * ac / 2.0;
+  p->gaussian.es = p->gaussian.efac / M_PI;
 
   /* This is the outer loop over all the lines in the input image */
 
@@ -389,10 +418,10 @@ do_kernel_gaussian(struct driz_param_t* p) {
       xx = get_pixmap(p->pixmap, i, j)[0];
       yy = get_pixmap(p->pixmap, i, j)[1];
   
-      xxi = xx - p->pfo;
-      xxa = xx + p->pfo;
-      yyi = yy - p->pfo;
-      yya = yy + p->pfo;
+      xxi = xx - pfo;
+      xxa = xx + pfo;
+      yyi = yy - pfo;
+      yya = yy + pfo;
   
       nxi = MAX(fortran_round(xxi), p->xmin);
       nxa = MIN(fortran_round(xxa), p->xmax-1);
@@ -402,7 +431,7 @@ do_kernel_gaussian(struct driz_param_t* p) {
       nhit = 0;
   
       /* Allow for stretching because of scale change */
-      d = get_pixel(p->data, i, j) * (float)p->scale2;
+      d = get_pixel(p->data, i, j) * scale2;
   
       /* Scale the weighting mask by the scale factor and inversely by
          the Jacobian to ensure conservation of weight in the output */
@@ -433,7 +462,7 @@ do_kernel_gaussian(struct driz_param_t* p) {
           /* If we are create or modifying the context image, we do so
              here. */
           if (p->output_context && dow > 0.0) {
-            set_bit(p->output_context, ii, jj, p->bv);
+            set_bit(p->output_context, ii, jj, bv);
           }
   
           update_data(p, ii, jj, d, vc, dow);
@@ -450,10 +479,10 @@ do_kernel_gaussian(struct driz_param_t* p) {
 
 static int
 do_kernel_lanczos(struct driz_param_t* p) {
-  integer_t i, j, ii, jj, nxi, nxa, nyi, nya, nhit, ix, iy;
+  integer_t bv, i, j, ii, jj, nxi, nxa, nyi, nya, nhit, ix, iy;
   integer_t xbounds[2], ybounds[2];
-  float vc, d, dow;
-  double xx, yy, xxi, xxa, yyi, yya, w, dx, dy, dover;
+  float scale2, vc, d, dow;
+  double pfo, xx, yy, xxi, xxa, yyi, yya, w, dx, dy, dover;
   int kernel_order;
   int margin;
   
@@ -462,13 +491,18 @@ do_kernel_lanczos(struct driz_param_t* p) {
 
   dx = 1.0;
   dy = 1.0;
+
+  scale2 = p->scale * p->scale;
+  kernel_order = (p->kernel == kernel_lanczos2) ? 2 : 3;
+  pfo = (double)kernel_order * p->pixel_fraction / p->scale;
+  bv = compute_bit_value(p->uuid);
+  
   margin = 2;
   check_image_overlap(p, margin, ybounds);
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
   
-  kernel_order = (p->kernel == kernel_lanczos2) ? 2 : 3;
   p->lanczos.nlut = nlut;
   assert(p->lanczos.lut == NULL);
   if ((p->lanczos.lut = malloc(nlut * sizeof(float))) == NULL) {
@@ -479,7 +513,6 @@ do_kernel_lanczos(struct driz_param_t* p) {
   /* Set up a look-up-table for Lanczos-style interpolation
      kernels */
   create_lanczos_lut(kernel_order, nlut, del, p->lanczos.lut);
-  p->pfo = (double)kernel_order * p->pixel_fraction / p->scale;
   p->lanczos.sdp = p->scale / del / p->pixel_fraction;
 
   /* This is the outer loop over all the lines in the input image */
@@ -496,10 +529,10 @@ do_kernel_lanczos(struct driz_param_t* p) {
       xx = get_pixmap(p->pixmap, i, j)[0];
       yy = get_pixmap(p->pixmap, i, j)[1];
   
-      xxi = xx - dx - p->pfo;
-      xxa = xx - dx + p->pfo;
-      yyi = yy - dy - p->pfo;
-      yya = yy - dy + p->pfo;
+      xxi = xx - dx - pfo;
+      xxa = xx - dx + pfo;
+      yyi = yy - dy - pfo;
+      yya = yy - dy + pfo;
   
       nxi = MAX(fortran_round(xxi), p->xmin);
       nxa = MIN(fortran_round(xxa), p->xmax-1);
@@ -509,7 +542,7 @@ do_kernel_lanczos(struct driz_param_t* p) {
       nhit = 0;
   
       /* Allow for stretching because of scale change */
-      d = get_pixel(p->data, i, j) * (float)p->scale2;
+      d = get_pixel(p->data, i, j) * scale2;
   
       /* Scale the weighting mask by the scale factor and inversely by
          the Jacobian to ensure conservation of weight in the output */
@@ -540,7 +573,7 @@ do_kernel_lanczos(struct driz_param_t* p) {
           /* If we are create or modifying the context image, we do so
              here. */
           if (p->output_context && dow > 0.0) {
-            set_bit(p->output_context, ii, jj, p->bv);
+            set_bit(p->output_context, ii, jj, bv);
           }
   
           update_data(p, ii, jj, d, vc, dow);
@@ -557,9 +590,10 @@ do_kernel_lanczos(struct driz_param_t* p) {
 
 static int
 do_kernel_turbo(struct driz_param_t* p) {
-  integer_t i, j, ii, jj, nxi, nxa, nyi, nya, nhit, iis, iie, jjs, jje;
+  integer_t bv, i, j, ii, jj, nxi, nxa, nyi, nya, nhit, iis, iie, jjs, jje;
   integer_t xbounds[2], ybounds[2];
   float vc, d, dow;
+  double pfo, scale2, ac;
   double xxi, xxa, yyi, yya, w, dover, xoi, yoi;
   int margin;
   
@@ -568,6 +602,11 @@ do_kernel_turbo(struct driz_param_t* p) {
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
+  
+  bv = compute_bit_value(p->uuid);
+  ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
+  pfo = p->pixel_fraction / p->scale / 2.0;
+  scale2 = p->scale * p->scale;
   
   /* This is the outer loop over all the lines in the input image */
 
@@ -583,10 +622,10 @@ do_kernel_turbo(struct driz_param_t* p) {
       /* Offset within the subset */
       xoi = get_pixmap(p->pixmap, i, j)[0];
       yoi = get_pixmap(p->pixmap, i, j)[1];
-      xxi = xoi - p->pfo;
-      xxa = xoi + p->pfo;
-      yyi = yoi - p->pfo;
-      yya = yoi + p->pfo;
+      xxi = xoi - pfo;
+      xxa = xoi + pfo;
+      yyi = yoi - pfo;
+      yya = yoi + pfo;
   
       nxi = fortran_round(xxi);
       nxa = fortran_round(xxa);
@@ -600,7 +639,7 @@ do_kernel_turbo(struct driz_param_t* p) {
       nhit = 0;
   
       /* Allow for stretching because of scale change */
-      d = get_pixel(p->data, i, j) * (float)p->scale2;
+      d = get_pixel(p->data, i, j) * (float)scale2;
   
       /* Scale the weighting mask by the scale factor and inversely by
          the Jacobian to ensure conservation of weight in the output. */
@@ -619,7 +658,7 @@ do_kernel_turbo(struct driz_param_t* p) {
         
           if (dover > 0.0) {
             /* Correct for the pixfrac area factor */
-            dover *= p->scale2 * p->ac;
+            dover *= scale2 * ac;
   
             /* Count the hits */
             ++nhit;
@@ -630,7 +669,7 @@ do_kernel_turbo(struct driz_param_t* p) {
             /* If we are create or modifying the context image,
                we do so here. */
             if (p->output_context && dow > 0.0) {
-              set_bit(p->output_context, ii, jj, p->bv);
+              set_bit(p->output_context, ii, jj, bv);
             }
   
             update_data(p, ii, jj, d, vc, dow);
@@ -648,15 +687,17 @@ do_kernel_turbo(struct driz_param_t* p) {
 
 int
 do_kernel_square(struct driz_param_t* p) {
-  integer_t i, j, ii, jj, min_ii, max_ii, min_jj, max_jj, nhit, n;
+  integer_t bv, i, j, ii, jj, min_ii, max_ii, min_jj, max_jj, nhit, n;
   integer_t xbounds[2], ybounds[2];
-  float vc, d, dow;
+  float scale2, vc, d, dow;
   double dh, jaco, tem, dover, w;
   double xyin[4][2], xyout[2], xout[4], yout[4];
   int margin;
 
   dh = 0.5 * p->pixel_fraction;
-
+  bv = compute_bit_value(p->uuid);
+  scale2 = p->scale * p->scale;
+  
   /* Next the "classic" drizzle square kernel...  this is different
      because we have to transform all four corners of the shrunken
      pixel */
@@ -713,7 +754,7 @@ do_kernel_square(struct driz_param_t* p) {
       nhit = 0;
   
       /* Allow for stretching because of scale change */
-      d = get_pixel(p->data, i, j) * (float)p->scale2;
+      d = get_pixel(p->data, i, j) * scale2;
   
       /* Scale the weighting mask by the scale factor and inversely by
          the Jacobian to ensure conservation of weight in the output */
@@ -747,7 +788,7 @@ do_kernel_square(struct driz_param_t* p) {
             /* If we are creating or modifying the context image we do
                so here */
             if (p->output_context && dow > 0.0) {
-              set_bit(p->output_context, ii, jj, p->bv);
+              set_bit(p->output_context, ii, jj, bv);
             }
   
             update_data(p, ii, jj, d, vc, dow);
