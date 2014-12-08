@@ -159,7 +159,6 @@ struct driz_param_t {
   PyArrayObject *output_context; /* was: CONTIM */
 
   /* Other output */
-  
   integer_t nmiss;
   integer_t nskip;
   struct driz_error_t* error;
@@ -173,14 +172,9 @@ struct driz_param_t {
   float kscale2;
 
   integer_t uuid; /* was: UNIQID */
-  integer_t bv;
 
   /* Stuff specific to certain kernel types */
-  /* Gaussian values */
-  struct {
-    double efac;
-    double es;
-  } gaussian;
+
   struct lanczos_param_t lanczos;
 
   /* Scaling */

@@ -142,11 +142,14 @@ print_image(char *title, PyArrayObject* image, int lo, int hi) {
 void
 print_context(char *title, struct driz_param_t *p, int lo, int hi) {
     int j, i;
+    integer_t bv;
+    
+    bv = compute_bit_value(p->uuid);
     
     printf("\n%s\n", title);
     for (j = lo; j < hi; ++j) {
         for (i = lo; i < hi; ++i) {
-            printf("%4d", get_bit(p->output_context, i, j, p->bv));
+            printf("%4d", get_bit(p->output_context, i, j, bv));
         }
         printf("\n");
     }
@@ -190,7 +193,6 @@ setup_parameters() {
     driz_param_init(p);
 
     p->uuid = 1;
-    p->bv = 1;
     p->xmin = 0;
     p->xmax = image_size[0];
     p->ymin = 0;
@@ -783,6 +785,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             struct driz_param_t *p;     /* parameter structure */
             int i, j, k, n, status;
             double offset, value;
+            integer_t bv;
             
             k = 2;
             n = 100;
@@ -799,8 +802,9 @@ FCT_BGN_FN(utest_cdrizzlepac)
 
             status = dobox(p);
 
+            bv = compute_bit_value(p->uuid);
             for (i = 4; i < 100; ++i) {
-                fct_chk_eq_int(get_bit(p->output_context, i, i, p->bv), 1);
+                fct_chk_eq_int(get_bit(p->output_context, i, i, bv), 1);
             }
 
             teardown_parameters(p);

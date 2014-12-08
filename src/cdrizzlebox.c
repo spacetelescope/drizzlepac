@@ -32,7 +32,7 @@ update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
 
 /* The bit value, trimmed to the appropriate range */
 
-static integer_t
+integer_t
 compute_bit_value(integer_t uuid) {
   integer_t bv;
   int np, bit_no;
@@ -381,6 +381,7 @@ do_kernel_gaussian(struct driz_param_t* p) {
   integer_t bv, i, j, ii, jj, nxi, nxa, nyi, nya, nhit;
   integer_t xbounds[2], ybounds[2];
   float vc, d, dow;
+  double gaussian_efac, gaussian_es;
   double pfo, ac,  scale2, xx, yy, xxi, xxa, yyi, yya, w, ddx, ddy, r2, dover;
   const double nsig = 2.5;
   int margin;
@@ -401,8 +402,8 @@ do_kernel_gaussian(struct driz_param_t* p) {
   scale2 = p->scale * p->scale;
   bv = compute_bit_value(p->uuid);
   
-  p->gaussian.efac = (2.3548*2.3548) * scale2 * ac / 2.0;
-  p->gaussian.es = p->gaussian.efac / M_PI;
+  gaussian_efac = (2.3548*2.3548) * scale2 * ac / 2.0;
+  gaussian_es = gaussian_efac / M_PI;
 
   /* This is the outer loop over all the lines in the input image */
 
@@ -451,7 +452,7 @@ do_kernel_gaussian(struct driz_param_t* p) {
   
           /* Weight is a scaled Gaussian function of radial
              distance */
-          dover = p->gaussian.es * exp(-r2 * p->gaussian.efac);
+          dover = gaussian_es * exp(-r2 * gaussian_efac);
   
           /* Count the hits */
           ++nhit;
