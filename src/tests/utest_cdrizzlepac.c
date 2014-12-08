@@ -206,6 +206,10 @@ setup_parameters() {
     p->interpolation = interp_poly5;
     p->weight_scale = 1.0;
 
+    p->pfo = p->pixel_fraction / p->scale / 2.0;
+    p->ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
+    p->scale2 = p->scale * p->scale;
+
     p->data = test_data;
     p->weights = test_weights;
     p->pixmap = test_pixmap;
@@ -481,9 +485,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             
             integer_t i, x1;            /* start of in-bounds */
             integer_t j, x2;            /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nmiss;
             int n, status;
             
             n = 100;
@@ -491,11 +493,11 @@ FCT_BGN_FN(utest_cdrizzlepac)
             offset_pixmap(p, 0.0, 0.0);
             fill_image(p->data, 5.0);
             
+            status = do_kernel_square(p);
+
             j = 3;
             x1 = 0;
             x2 = n;
-
-            status = do_kernel_square(p, j, x1, x2, &nmiss, &error);
 
             fct_chk_eq_int(status, 0);
             fct_chk_eq_dbl(get_pixel(p->output_data, x1, j), get_pixel(p->data, x1, j));
@@ -509,11 +511,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Offset image */
             
-            integer_t i, x1;            /* start of in-bounds */
-            integer_t j, x2;            /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nmiss;
+            integer_t j;
             int k, n, status;
             double offset;
             
@@ -524,10 +523,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
             fill_image(p->data, 5.0);
             
             j = 3;
-            x1 = 0;
-            x2 = n;
-
-            status = do_kernel_square(p, j, x1, x2, &nmiss, &error);
+            status = do_kernel_square(p);
 
             fct_chk_eq_int(status, 0);
             for (k = 1; k < n-2; k++) {
@@ -542,11 +538,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Single pixel set */
             
-            integer_t i, x1;            /* start of in-bounds */
-            integer_t j, x2;            /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nmiss;
+            integer_t i, j;
             int k, n, status;
             double offset, value;
             
@@ -561,10 +554,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
             }
             
             k = 3;
-            x1 = 0;
-            x2 = n;
-
-            status = do_kernel_square(p, k, x1, x2, &nmiss, &error);
+            status = do_kernel_square(p);
+            
             fct_chk_eq_dbl(get_pixel(p->output_data, (k+2), k), get_pixel(p->data, k, k));
 
             teardown_parameters(p);
@@ -575,12 +566,9 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Single pixel, fractional pixel offset */
             
-            integer_t i, x1;            /* start of in-bounds */
-            integer_t j, x2;            /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nmiss;
-            int k, n, status;
+            integer_t i, j, k;
+            int n, status;
             double offset, value;
             
             n = 100;
@@ -592,13 +580,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
             k = 1;
             set_pixel(p->data, k, k, value);
             
-            x1 = 0;
-            x2 = n;
+            status = do_kernel_square(p);
 
-            for (j = 0; j < n; ++j) {
-                status = do_kernel_square(p, j, x1, x2, &nmiss, &error);
-            }
-            
             for (i = 2; i <= 3; ++i) {
                 for (j = 2; j <= 3; ++j) {
                     fct_chk_eq_dbl(get_pixel(p->output_data, (i+k), (j+k)), value/4.0);
@@ -613,11 +596,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Diagonal line, fractional pixel offset */
             
-            integer_t i, x1;            /* start of in-bounds */
-            integer_t j, x2;            /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nmiss;
+            integer_t i,j;
             int k, n, status;
             double offset, value;
             
@@ -631,12 +611,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
                 set_pixel(p->data, j, j, value);
             }
             
-            x1 = 0;
-            x2 = n;
-            for (j = 0; j < n; ++j) {
-                status = do_kernel_square(p, j, x1, x2, &nmiss, &error);
-            }
-            
+           status = do_kernel_square(p);
+
             for (i = 4; i < 100; ++i) {
                 fct_chk_eq_dbl(get_pixel(p->output_data, i, i), value/2.0);
                 fct_chk_eq_dbl(get_pixel(p->output_data, i-1, i), value/4.0);
@@ -651,11 +627,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Block of pixels, whole number offset */
             
-            integer_t i, x1;            /* start of in-bounds */
-            integer_t j, x2;            /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nmiss;
+            integer_t i,j;
             int k, n, status;
             double offset, value;
             
@@ -672,11 +645,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
                 }
             }
             
-            x1 = 0;
-            x2 = n-1;
-            for (j = 0; j < n; ++j) {
-                status = do_kernel_square(p, j, x1, x2, &nmiss, &error);
-            }
+            status = do_kernel_square(p);
 
             for (i = 0; i < k; ++i) {
                 for (j = 0; j < k; ++j) {
@@ -692,11 +661,8 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Block of pixels, fractional offset */
             
-            integer_t i, x1;            /* start of in-bounds */
-            integer_t j, x2;            /* end of in-bounds */
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nmiss;
+            integer_t i, j;
             int k, n, status;
             double offset, value;
             
@@ -713,11 +679,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
                 }
             }
             
-            x1 = 0;
-            x2 = n-1;
-            for (j = 0; j < n; ++j) {
-                status = do_kernel_square(p, j, x1, x2, &nmiss, &error);
-            }
+            status = do_kernel_square(p);
 
             fct_chk_eq_dbl(get_pixel(p->output_data, 3, 3), 1.0);
             fct_chk_eq_dbl(get_pixel(p->output_data, 3, 5), 1.0);
@@ -737,9 +699,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Single pixel set, whole number offset */
             
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nskip, nmiss;     /* ouput statistics */
             int k, n, status;
             double offset, value;
             
@@ -747,8 +707,6 @@ FCT_BGN_FN(utest_cdrizzlepac)
             n = 100;
             offset = 2.0;
             value = 44.0;
-            nmiss = 0;
-            nskip = 0;
 
             p = setup_parameters();
             offset_pixmap(p, offset, offset);
@@ -758,17 +716,15 @@ FCT_BGN_FN(utest_cdrizzlepac)
             status = dobox(p);
  
             fct_chk_eq_dbl(get_pixel(p->output_data, (k+2), (k+2)), get_pixel(p->data, k, k));
-            fct_chk_eq_int(nskip, 0);
+            fct_chk_eq_int(p->nskip, 0);
         }
         FCT_TEST_END();
 
         FCT_TEST_BGN(utest_dobox_02)
         {
             /* Single pixel, fractional pixel offset */
-            
-            struct driz_error_t error;  /* error structure */
+
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nskip, nmiss;     /* ouput statistics */
             int i, j, k, n, status;
             double offset, value;
             
@@ -776,8 +732,6 @@ FCT_BGN_FN(utest_cdrizzlepac)
             n = 100;
             offset = 2.5;
             value = 44.0;
-            nmiss = 0;
-            nskip = 0;
 
             p = setup_parameters();
             offset_pixmap(p, offset, offset);
@@ -798,9 +752,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Turbo mode kernel, diagonal line of pixels set */
             
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nskip, nmiss;     /* ouput statistics */
             int i, j, k, n, status;
             double offset, value;
             
@@ -808,8 +760,6 @@ FCT_BGN_FN(utest_cdrizzlepac)
             n = 100;
             offset = 2.5;
             value = 4.0;
-            nmiss = 0;
-            nskip = 0;
 
             p = setup_parameters();
             offset_pixmap(p, offset, offset);
@@ -835,9 +785,7 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Check that context map is set for the affected pixels */
             
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
-            integer_t nskip, nmiss;     /* ouput statistics */
             int i, j, k, n, status;
             double offset, value;
             
@@ -845,8 +793,6 @@ FCT_BGN_FN(utest_cdrizzlepac)
             n = 100;
             offset = 2.5;
             value = 4.0;
-            nmiss = 0;
-            nskip = 0;
 
             p = setup_parameters();
             offset_pixmap(p, offset, offset);
@@ -870,7 +816,6 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Single pixel set blinear interpolation */
             
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
             int k, n, status;
             double offset, value;
@@ -896,7 +841,6 @@ FCT_BGN_FN(utest_cdrizzlepac)
         {
             /* Single pixel set quintic interpolation*/
             
-            struct driz_error_t error;  /* error structure */
             struct driz_param_t *p;     /* parameter structure */
             int k, n, status;
             double offset, value;

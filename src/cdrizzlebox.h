@@ -22,6 +22,6 @@ include some limited multi-kernel support.
 int
 dobox(struct driz_param_t* p);
 
-typedef int (*kernel_handler_t)(struct driz_param_t*, const integer_t, const integer_t, const integer_t);
+typedef int (*kernel_handler_t)(struct driz_param_t*);
 
 #endif /* CDRIZZLEBOX_H */

@@ -244,12 +244,12 @@ clip_bounds(PyArrayObject *pixmap, int jdim, struct segment *xylimit, struct seg
  *
  * p:       the stucture containing the image pointers
  * margin:  a margin in pixels added to the limits
- * jy:      the index of the line in the input image whose range is computed
+ * j:       the index of the line in the input image whose range is computed
  * xbounds: the input pixels bounding the overlap (output)
  */
 
 void
-check_line_overlap(struct driz_param_t* p, int margin, integer_t jy, integer_t *xbounds) {
+check_line_overlap(struct driz_param_t* p, int margin, integer_t j, integer_t *xbounds) {
 
   struct segment xylimit, xybounds;
   integer_t isize[2], osize[2];
@@ -257,7 +257,7 @@ check_line_overlap(struct driz_param_t* p, int margin, integer_t jy, integer_t *
     
   get_dimensions(p->pixmap, isize);
 
-  initialize_segment(&xybounds, 0, jy, isize[0], jy);
+  initialize_segment(&xybounds, 0, j, isize[0], j);
   initialize_segment(&xylimit, p->xmin - margin, p->ymin - margin,
                                p->xmax + margin, p->ymax + margin);
 

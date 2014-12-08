@@ -59,6 +59,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   char *fillstr_end;
   bool_t do_fill;
   float fill_value;
+  float inv_exposure_time;
+  int np, bit_no;
   int istat = 0;
   struct driz_error_t error;
   struct driz_param_t p;
@@ -174,6 +176,36 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   p.pixmap = map;
   p.error = &error;
  
+  /* The bitmask, trimmed to the appropriate range */
+  np = (p.uuid - 1) / 32 + 1;
+  bit_no = (p.uuid - 1 - (32 * (np - 1)));
+  assert(bit_no < 32);
+  p.bv = (integer_t)(1 << bit_no);
+
+  assert(p.pixel_fraction != 0.0);
+  p.ac = 1.0 / (p.pixel_fraction * p.pixel_fraction);
+
+  /* Recalculate the area scaling factor */
+  p.scale2 = p.scale * p.scale;
+
+  /* Half pixfrac on output */
+  assert(p.scale != 0.0);
+  p.pfo = p.pixel_fraction / p.scale / 2.0;
+  p.pfo2 = p.pfo*p.pfo;
+
+  /* If the input image is not in CPS we need to divide by the
+     exposure */
+  if (p.in_units != unit_cps) {
+    if (p.exposure_time == 0.0) {
+      driz_error_set_message(&error, "Invalid exposure time");
+      goto _exit;
+    }
+
+    assert(p.exposure_time != 0.0);
+    inv_exposure_time = 1.0f / p.exposure_time;
+    scale_image(p.data, inv_exposure_time);
+  }
+
   /*
   start_t = clock();
   */
