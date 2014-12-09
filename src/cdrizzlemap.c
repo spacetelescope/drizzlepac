@@ -252,11 +252,10 @@ void
 check_line_overlap(struct driz_param_t* p, int margin, integer_t j, integer_t *xbounds) {
 
   struct segment xylimit, xybounds;
-  integer_t isize[2], osize[2];
+  integer_t isize[2];
   int idim;
     
   get_dimensions(p->pixmap, isize);
-
   initialize_segment(&xybounds, 0, j, isize[0], j);
   initialize_segment(&xylimit, p->xmin - margin, p->ymin - margin,
                                p->xmax + margin, p->ymax + margin);

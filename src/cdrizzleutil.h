@@ -135,18 +135,33 @@ struct lanczos_param_t {
 struct driz_param_t {
   /* Options */
   enum e_kernel_t kernel; /* Kernel shape and size */
-  double pixel_fraction; /* was: PIXFRAC */
-  float exposure_time; /* Exposure time was: EXPIN */
-  float weight_scale; /* Weight scale was: WTSCL */
-  float fill_value; /* Filling was: FILVAL */
-  bool_t do_fill; /* was: FILL */
-  enum e_unit_t in_units; /* CPS / counts was: INCPS, either counts or CPS */
-  enum e_unit_t out_units; /* CPS / counts was: INCPS, either counts or CPS */
+  double          pixel_fraction; /* was: PIXFRAC */
+  float           exposure_time; /* Exposure time was: EXPIN */
+  float           weight_scale; /* Weight scale was: WTSCL */
+  float           fill_value; /* Filling was: FILVAL */
+  bool_t          do_fill; /* was: FILL */
+  enum e_unit_t   in_units; /* CPS / counts was: INCPS, either counts or CPS */
+  enum e_unit_t   out_units; /* CPS / counts was: INCPS, either counts or CPS */
+  integer_t       uuid; /* was: UNIQID */
 
+  /* Scaling */
+  enum e_align_t align;
+  double scale;
+  double x_scale;
+  double y_scale;
+
+  /* Image subset */
   integer_t xmin;
   integer_t xmax;
   integer_t ymin;
   integer_t ymax;
+
+  /* Blotting-specific parameters */
+  enum e_interp_t interpolation; /* was INTERP */
+  float ef; /* TODO: Rename these variables */
+  float misval;
+  float sinscl;
+  float kscale;
 
   /* Input images */
   PyArrayObject *data; 
@@ -163,25 +178,6 @@ struct driz_param_t {
   integer_t nskip;
   struct driz_error_t* error;
 
-  /* Blotting-specific parameters */
-  enum e_interp_t interpolation; /* was INTERP */
-  float ef; /* TODO: Rename these variables */
-  float misval;
-  float sinscl;
-  float kscale;
-  float kscale2;
-
-  integer_t uuid; /* was: UNIQID */
-
-  /* Stuff specific to certain kernel types */
-
-  struct lanczos_param_t lanczos;
-
-  /* Scaling */
-  enum e_align_t align;
-  double scale;
-  double x_scale;
-  double y_scale;
 };
 
 /**

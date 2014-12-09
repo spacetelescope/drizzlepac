@@ -226,15 +226,15 @@ do_kernel_point(struct driz_param_t* p) {
   integer_t bv;
   int margin;
 
+  scale2 = p->scale * p->scale;
+  bv = compute_bit_value(p->uuid);
+  
   margin = 2;
   check_image_overlap(p, margin, ybounds);
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
 
-  scale2 = p->scale * p->scale;
-  bv = compute_bit_value(p->uuid);
-  
   /* This is the outer loop over all the lines in the input image */
   
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
@@ -290,17 +290,17 @@ do_kernel_tophat(struct driz_param_t* p) {
   double xx, yy, xxi, xxa, yyi, yya, ddx, ddy, r2;
   int margin;
   
+  scale2 = p->scale * p->scale;
+  pfo = p->pixel_fraction / p->scale / 2.0;
+  pfo2 = pfo * pfo;
+  bv = compute_bit_value(p->uuid);
+ 
   margin = 2;
   check_image_overlap(p, margin, ybounds);
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
   
-  scale2 = p->scale * p->scale;
-  pfo = p->pixel_fraction / p->scale / 2.0;
-  pfo2 = pfo * pfo;
-  bv = compute_bit_value(p->uuid);
- 
   /* This is the outer loop over all the lines in the input image */
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
@@ -386,15 +386,10 @@ do_kernel_gaussian(struct driz_param_t* p) {
   const double nsig = 2.5;
   int margin;
   
-  margin = 2;
-  check_image_overlap(p, margin, ybounds);
-
-  p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
-  p->nmiss = p->nskip * (p->ymax - p->ymin);
- 
   /* Added in V2.9 - make sure pfo doesn't get less than 1.2
      divided by the scale so that there are never holes in the
      output */
+
   pfo = nsig * p->pixel_fraction / 2.3548 / p->scale;
   pfo = CLAMP_ABOVE(pfo, 1.2 / p->scale);
   
@@ -405,6 +400,12 @@ do_kernel_gaussian(struct driz_param_t* p) {
   gaussian_efac = (2.3548*2.3548) * scale2 * ac / 2.0;
   gaussian_es = gaussian_efac / M_PI;
 
+  margin = 2;
+  check_image_overlap(p, margin, ybounds);
+
+  p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
+  p->nmiss = p->nskip * (p->ymax - p->ymin);
+ 
   /* This is the outer loop over all the lines in the input image */
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
@@ -486,7 +487,7 @@ do_kernel_lanczos(struct driz_param_t* p) {
   double pfo, xx, yy, xxi, xxa, yyi, yya, w, dx, dy, dover;
   int kernel_order;
   int margin;
-  
+  struct lanczos_param_t lanczos;
   const size_t nlut = 512;
   const float del = 0.01;
 
@@ -498,24 +499,24 @@ do_kernel_lanczos(struct driz_param_t* p) {
   pfo = (double)kernel_order * p->pixel_fraction / p->scale;
   bv = compute_bit_value(p->uuid);
   
-  margin = 2;
-  check_image_overlap(p, margin, ybounds);
-
-  p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
-  p->nmiss = p->nskip * (p->ymax - p->ymin);
-  
-  p->lanczos.nlut = nlut;
-  assert(p->lanczos.lut == NULL);
-  if ((p->lanczos.lut = malloc(nlut * sizeof(float))) == NULL) {
+  assert(lanczos.lut == NULL);
+  if ((lanczos.lut = malloc(nlut * sizeof(float))) == NULL) {
     driz_error_set_message(p->error, "Out of memory");
     return driz_error_is_set(p->error);
   }
   
   /* Set up a look-up-table for Lanczos-style interpolation
      kernels */
-  create_lanczos_lut(kernel_order, nlut, del, p->lanczos.lut);
-  p->lanczos.sdp = p->scale / del / p->pixel_fraction;
+  create_lanczos_lut(kernel_order, nlut, del, lanczos.lut);
+  lanczos.sdp = p->scale / del / p->pixel_fraction;
+  lanczos.nlut = nlut;
 
+  margin = 2;
+  check_image_overlap(p, margin, ybounds);
+
+  p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
+  p->nmiss = p->nskip * (p->ymax - p->ymin);
+  
   /* This is the outer loop over all the lines in the input image */
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
@@ -557,11 +558,11 @@ do_kernel_lanczos(struct driz_param_t* p) {
       for (jj = nyi; jj <= nya; ++jj) {
         for (ii = nxi; ii <= nxa; ++ii) {
           /* X and Y offsets */
-          ix = fortran_round(fabs(xx - (double)ii) * p->lanczos.sdp) + 1;
-          iy = fortran_round(fabs(yy - (double)jj) * p->lanczos.sdp) + 1;
+          ix = fortran_round(fabs(xx - (double)ii) * lanczos.sdp) + 1;
+          iy = fortran_round(fabs(yy - (double)jj) * lanczos.sdp) + 1;
   
           /* Weight is product of Lanczos function values in X and Y */
-          dover = p->lanczos.lut[ix] * p->lanczos.lut[iy];
+          dover = lanczos.lut[ix] * lanczos.lut[iy];
   
           /* Count the hits */
           ++nhit;
@@ -586,6 +587,9 @@ do_kernel_lanczos(struct driz_param_t* p) {
     }
   }
   
+  free(lanczos.lut);
+  lanczos.lut = NULL;
+  
   return 0;
 }
 
@@ -598,16 +602,16 @@ do_kernel_turbo(struct driz_param_t* p) {
   double xxi, xxa, yyi, yya, w, dover, xoi, yoi;
   int margin;
   
+  bv = compute_bit_value(p->uuid);
+  ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
+  pfo = p->pixel_fraction / p->scale / 2.0;
+  scale2 = p->scale * p->scale;
+  
   margin = 2;
   check_image_overlap(p, margin, ybounds);
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
-  
-  bv = compute_bit_value(p->uuid);
-  ac = 1.0 / (p->pixel_fraction * p->pixel_fraction);
-  pfo = p->pixel_fraction / p->scale / 2.0;
-  scale2 = p->scale * p->scale;
   
   /* This is the outer loop over all the lines in the input image */
 
@@ -685,6 +689,17 @@ do_kernel_turbo(struct driz_param_t* p) {
 
   return 0;
 }
+
+/**
+This module does the actual mapping of input flux to output images
+using "boxer", a code written by Bill Sparks for FOC geometric
+distortion correction, rather than the "drizzling" approximation.
+
+This works by calculating the positions of the four corners of a
+quadrilateral on the output grid corresponding to the corners of the
+input pixel and then working out exactly how much of each pixel in the
+output is covered, or not.
+*/
 
 int
 do_kernel_square(struct driz_param_t* p) {
@@ -817,43 +832,29 @@ kernel_handler_map[] = {
 };
 
 /**
-This module does the actual mapping of input flux to output images
-using "boxer", a code written by Bill Sparks for FOC geometric
-distortion correction, rather than the "drizzling" approximation.
-
-This works by calculating the positions of the four corners of a
-quadrilateral on the output grid corresponding to the corners of the
-input pixel and then working out exactly how much of each pixel in the
-output is covered, or not.
-
 In V1.6 this was simplified to use the DRIVAL routine and also to
 include some limited multi-kernel support.
 */
+
 int
 dobox(struct driz_param_t* p) {
   kernel_handler_t kernel_handler = NULL;
+
   assert(p);
 
   /* Set up a function pointer to handle the appropriate kernel */
-  if (p->kernel >= kernel_LAST) {
-    driz_error_set_message(p->error, "Invalid kernel type");
-    goto dobox_exit_;
+  if (p->kernel < kernel_LAST) {
+    kernel_handler = kernel_handler_map[p->kernel];
+    
+    if (kernel_handler != NULL) {
+      DRIZLOG("-Drizzling using kernel = %s\n", kernel_enum2str(p->kernel));
+      kernel_handler(p);
+    }
   }
-  
-  kernel_handler = kernel_handler_map[p->kernel];
+
   if (kernel_handler == NULL) {
     driz_error_set_message(p->error, "Invalid kernel type");
-    goto dobox_exit_;
   }
-
-  DRIZLOG("-Drizzling using kernel = %s\n",kernel_enum2str(p->kernel));
-
-  if (kernel_handler(p)) {
-    goto dobox_exit_;
-  }
-
- dobox_exit_:
-  free(p->lanczos.lut); p->lanczos.lut = NULL;
-
+ 
   return driz_error_is_set(p->error);
 }

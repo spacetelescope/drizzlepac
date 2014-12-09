@@ -880,14 +880,14 @@ interpolate_lanczos(const void* state,
   float luty, sum;
   integer_t nbox;
   integer_t i, j;
-  const struct lanczos_param_t* p = (const struct lanczos_param_t*)state;
+  const struct lanczos_param_t* lanczos = (const struct lanczos_param_t*)state;
   integer_t   isize[2];
   get_dimensions(data, isize);
 
   assert(state);
   INTERPOLATION_ASSERTS;
 
-  nbox = p->nbox;
+  nbox = lanczos->nbox;
 
   /* First check for being close to the edge and, if so, return the
      missing value */
@@ -897,25 +897,25 @@ interpolate_lanczos(const void* state,
   iye = (integer_t)(y) + nbox;
   if (ixs < 0 || ixe >= isize[0] ||
       iys < 0 || iye >= isize[1]) {
-    *value = p->misval;
+    *value = lanczos->misval;
     return 0;
   }
 
   /* Don't divide-by-zero errors */
-  assert(p->space != 0.0);
+  assert(lanczos->space != 0.0);
 
   /* Loop over the box, which is assumed to be scaled appropriately */
   sum = 0.0;
   for (j = iys; j <= iye; ++j) {
-    yoff = (integer_t)(fabs((y - (float)j) / p->space));
-    assert(yoff >= 0 && yoff < p->nlut);
+    yoff = (integer_t)(fabs((y - (float)j) / lanczos->space));
+    assert(yoff >= 0 && yoff < lanczos->nlut);
 
-    luty = p->lut[yoff];
+    luty = lanczos->lut[yoff];
     for (i = ixs; i <= ixe; ++i) {
-      xoff = (integer_t)(fabs((x - (float)i) / p->space));
-      assert(xoff >= 0 && xoff < p->nlut);
+      xoff = (integer_t)(fabs((x - (float)i) / lanczos->space));
+      assert(xoff >= 0 && xoff < lanczos->nlut);
 
-      sum += get_pixel(data, i, j) * p->lut[xoff] * luty;
+      sum += get_pixel(data, i, j) * lanczos->lut[xoff] * luty;
     }
   }
 
@@ -952,6 +952,7 @@ doblot(struct driz_param_t* p) {
   integer_t i, j;
   interp_function* interpolate;
   struct sinc_param_t sinc;
+  struct lanczos_param_t lanczos;
   void* state = NULL;
   
   assert(p);
@@ -967,25 +968,31 @@ doblot(struct driz_param_t* p) {
     goto doblot_exit_;
   }
 
+  lanczos.lut = NULL;
+
   /* Some interpolation functions need some pre-calculated state */
   if (p->interpolation == interp_lanczos3 || p->interpolation == interp_lanczos5) {
     assert(p->kscale != 0.0);
-    assert(p->lanczos.lut == NULL);
-    if ((p->lanczos.lut = (float*)malloc(nlut * sizeof(float))) == NULL) {
+
+    if ((lanczos.lut = (float*)malloc(nlut * sizeof(float))) == NULL) {
       driz_error_set_message(p->error, "Out of memory");
       goto doblot_exit_;
     }
+
     create_lanczos_lut(p->interpolation == interp_lanczos3 ? 3 : 5,
-                       nlut, space, p->lanczos.lut);
-    p->lanczos.nbox = (integer_t)(3.0 / p->kscale);
-    p->kscale2 = 1.0f / (p->kscale * p->kscale);
-    p->lanczos.nlut = nlut;
-    p->lanczos.space = space;
-    p->lanczos.misval = p->misval;
-    state = &(p->lanczos);
+                       nlut, space, lanczos.lut);
+
+    lanczos.nbox = (integer_t)(3.0 / p->kscale);
+    lanczos.nlut = nlut;
+    lanczos.space = space;
+    lanczos.misval = p->misval;
+
+    state = &lanczos;
+
   } else if (p->interpolation == interp_sinc || p->interpolation == interp_lsinc) {
     sinc.sinscl = p->sinscl;
     state = &sinc;
+    
   } /* Otherwise state is NULL */
 
   /* In the WCS case, we can't use the scale to calculate the Jacobian,
@@ -1037,7 +1044,7 @@ doblot(struct driz_param_t* p) {
   }
 
  doblot_exit_:
-  free(p->lanczos.lut); p->lanczos.lut = NULL;
+  if (lanczos.lut) free(lanczos.lut);
 
   return driz_error_is_set(p->error);
 }
