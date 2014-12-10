@@ -96,9 +96,7 @@ driz_param_dump(struct driz_param_t* p) {
          "do_fill:              %s\n"
          "in_units:             %s\n"
          "out_units:            %s\n"
-         "scale:                %f\n"
-         "x_scale:              %f\n"
-         "y_scale:              %f\n",
+         "scale:                %f\n",
          kernel_enum2str(p->kernel),
          p->pixel_fraction,
          p->exposure_time,
@@ -107,9 +105,7 @@ driz_param_dump(struct driz_param_t* p) {
          bool2str(p->do_fill),
          unit_enum2str(p->in_units),
          unit_enum2str(p->out_units),
-         p->scale,
-         p->x_scale,
-         p->y_scale
+         p->scale
          );
 }
 
@@ -137,14 +133,12 @@ driz_param_init(struct driz_param_t* p) {
   p->in_units = unit_counts;
   p->out_units = unit_counts;
 
+  p->scale = 1.0;
+
   /* Input data */
   p->data = NULL;
   p->weights = NULL;
   p->pixmap = NULL;
-
-  p->scale = 1.0;
-  p->x_scale = 1.0;
-  p->y_scale = 1.0;
 
   /* Output data */
   p->output_data = NULL;
@@ -162,12 +156,6 @@ driz_param_init(struct driz_param_t* p) {
 static const char* shift_string_table[] = {
   "input",
   "output",
-  NULL
-};
-
-static const char* align_string_table[] = {
-  "center",
-  "corner",
   NULL
 };
 
@@ -238,16 +226,6 @@ shift_str2enum(const char* s, enum e_shift_t* result, struct driz_error_t* error
 }
 
 int
-align_str2enum(const char* s, enum e_align_t* result, struct driz_error_t* error) {
-  if (str2enum(s, align_string_table, (int *)result, error)) {
-    driz_error_format_message(error, "Unknown align type '%s'", s);
-    return 1;
-  }
-
-  return 0;
-}
-
-int
 kernel_str2enum(const char* s, enum e_kernel_t* result, struct driz_error_t* error) {
   if (str2enum(s, kernel_string_table, (int *)result, error)) {
     driz_error_format_message(error, "Unknown kernel type '%s'", s);
@@ -282,13 +260,6 @@ shift_enum2str(enum e_shift_t value) {
   assert(value >= 0 && value < 2);
 
   return shift_string_table[value];
-}
-
-const char*
-align_enum2str(enum e_align_t value) {
-  assert(value >= 0 && value < 2);
-
-  return align_string_table[value];
 }
 
 const char*

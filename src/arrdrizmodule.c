@@ -7,7 +7,6 @@
 #include <string.h>
 #include <time.h>
 #include <float.h>
-#include <stdio.h>
 
 #include <numpy/arrayobject.h>
 
@@ -41,19 +40,16 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   PyObject *oimg, *owei, *oout, *owht, *ocon;
   long uniqid, ystart, xmin, xmax, ymin, ymax;
   double scale, xscale, yscale;
-  char *align_str;
   double pfract;
   char *kernel_str, *inun_str;
   float expin, wtscl;
   char *fillstr;
   integer_t nmiss;
   integer_t nskip;
-  integer_t vflag;
   PyObject *pixmap;
 
   /* Derived values */
   PyArrayObject *img = NULL, *wei = NULL, *out = NULL, *wht = NULL, *con = NULL, *map = NULL;
-  enum e_align_t align;
   enum e_kernel_t kernel;
   enum e_unit_t inun;
   char *fillstr_end;
@@ -68,13 +64,13 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   /* double delta_time; */
 
   driz_error_init(&error);
-  
-  if (!PyArg_ParseTuple(args,"OOOOOllllldddsdssffsiiiO:tdriz",
-                        &oimg, &owei, &oout, &owht, &ocon, &uniqid, 
-                        &xmin, &xmax, &ymin, &ymax, &scale, &xscale, &yscale,
-                        &align_str, &pfract, &kernel_str, &inun_str,
-                        &expin, &wtscl, &fillstr, &nmiss, &nskip, &vflag,
-                        &pixmap)) {
+
+  if (!PyArg_ParseTuple(args,"OOOOOlllllddssffsiiO:tdriz",
+                        &oimg, &owei, &oout, &owht, &ocon, /* OOOOO */
+                        &uniqid, &xmin, &xmax, &ymin, &ymax, &scale, /* llllld */
+                        &pfract, &kernel_str, &inun_str, &expin, &wtscl, /* dssff */
+                        &fillstr, &nmiss, &nskip, &pixmap) /* siiO */
+                       ) {
     return PyErr_Format(gl_Error, "cdriz.tdriz: Invalid Parameters.");
   }
 
@@ -116,10 +112,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     goto _exit;
   }
 
-  
   /* Convert strings to enumerations */
-  if (align_str2enum(align_str, &align, &error) ||
-      kernel_str2enum(kernel_str, &kernel, &error) ||
+    if (kernel_str2enum(kernel_str, &kernel, &error) ||
       unit_str2enum(inun_str, &inun, &error)) {
     goto _exit;
   }
@@ -164,9 +158,6 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   p.xmax = xmax;
   p.ymax = ymax;
   p.scale = scale;
-  p.x_scale = xscale;
-  p.y_scale = yscale;
-  p.align = align;
   p.pixel_fraction = pfract;
   p.kernel = kernel;
   p.in_units = inun;
@@ -239,13 +230,11 @@ tblot(PyObject *obj, PyObject *args)
   double scale;
   float kscale;
   double xscale, yscale;
-  char *align_str, *interp_str;
+  char *interp_str;
   float ef, misval, sinscl;
-  long vflag;
   PyObject *pixmap;
 
   PyArrayObject *img = NULL, *out = NULL, *map = NULL;
-  enum e_align_t align;
   enum e_interp_t interp;
   int istat = 0;
   struct driz_error_t error;
@@ -253,14 +242,15 @@ tblot(PyObject *obj, PyObject *args)
   double maxdiff = 0.0;
 
   driz_error_init(&error);
-
-  if (!PyArg_ParseTuple(args,"OOlllldfddssffflO:tblot", &oimg, &oout, &xmin,
-                        &xmax, &ymin, &ymax, &scale, &kscale, &xscale,
-                        &yscale, &align_str, &interp_str, &ef, &misval,
-                        &sinscl, &vflag, &pixmap)){
+  
+  if (!PyArg_ParseTuple(args,"OOlllldfsfffO:tblot",
+                        &oimg, &oout, &xmin, &xmax, &ymin, &ymax, /* OOllll */
+                        &scale, &kscale, &interp_str, &ef, /* dfsf */
+                        &misval, &sinscl, &pixmap) /* ffO */
+                       ){
     return PyErr_Format(gl_Error, "cdriz.tblot: Invalid Parameters.");
   }
-
+  
   /* Check for invalid scale */
   if (scale == 0.0) {
     driz_error_format_message(&error, "Invalid scale %f (must be non-zero)", scale);
@@ -290,13 +280,12 @@ tblot(PyObject *obj, PyObject *args)
     goto _exit;
   }
   
-  if (align_str2enum(align_str, &align, &error) ||
-      interp_str2enum(interp_str, &interp, &error)) {
+  if (interp_str2enum(interp_str, &interp, &error)) {
     goto _exit;
   }
 
   driz_param_init(&p);
-
+  
   p.data = img;
   p.output_data = out;
   p.xmin = xmin;
@@ -305,10 +294,7 @@ tblot(PyObject *obj, PyObject *args)
   p.ymax = ymax;
   p.scale = scale;
   p.kscale = kscale;
-  p.x_scale = xscale;
-  p.y_scale = yscale;
   p.in_units = unit_cps;
-  p.align = align;
   p.interpolation = interp;
   p.ef = ef;
   p.misval = misval;
@@ -826,8 +812,8 @@ test_cdrizzlepac(PyObject *self, PyObject *args)
 
 static PyMethodDef cdriz_methods[] =
   {
-    {"tdriz",  tdriz, METH_VARARGS, "tdriz(image, weight, output, outweight, context, uniqid, ystart, xmin, ymin, scale, xscale, yscale, align, pfrace, kernel, inun, expin, wtscl, fill, nmiss, nskip, vflag, pixmap)"},
-    {"tblot",  tblot, METH_VARARGS, "tblot(image, output, xmin, xmax, ymin, ymax, scale, kscale, xscale, yscale, align, interp, ef, misval, sinscl, vflag, pixmap)"},
+    {"tdriz",  tdriz, METH_VARARGS, "tdriz(image, weight, output, outweight, context, uniqid,  xmin, ymin, scale, pfract, kernel, inun, expin, wtscl, fill, nmiss, nskip, pixmap)"},
+    {"tblot",  tblot, METH_VARARGS, "tblot(image, output, xmin, xmax, ymin, ymax, scale, kscale, interp, ef, misval, sinscl, pixmap)"},
     {"arrmoments", arrmoments, METH_VARARGS, "arrmoments(image, p, q)"},
     {"arrxyround", arrxyround, METH_VARARGS, "arrxyround(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin,datamax)"},
     {"arrxyzero", arrxyzero, METH_VARARGS, "arrxyzero(imgxy,refxy,searchrad,zpmat)"},

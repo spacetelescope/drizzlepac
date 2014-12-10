@@ -1023,11 +1023,11 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    _vers,nmiss,nskip = drizzlepac.cdriz.tdriz(insci, inwht, 
-        outsci, outwht, outctx, uniqid, xmin, xmax, ymin, ymax, 
-        pix_ratio, 1.0, 1.0, 'center', pixfrac,
-        kernel, in_units, expscale, wt_scl,
-        fillval, nmiss, nskip, 1, pixmap)
+    _vers,nmiss,nskip = drizzlepac.cdriz.tdriz(
+        insci, inwht, outsci, outwht, outctx, 
+        uniqid, xmin, xmax, ymin, ymax, 
+        pix_ratio, pixfrac, kernel, in_units, expscale, wt_scl,
+        fillval, nmiss, nskip, pixmap)
 
     if nmiss > 0:
         log.warning('! %s points were outside the output image.' % nmiss)

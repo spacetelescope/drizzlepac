@@ -144,9 +144,9 @@ print_context(char *title, struct driz_param_t *p, int lo, int hi) {
     int j, i;
     integer_t bv;
     
-    bv = compute_bit_value(p->uuid);
-    
+    bv = 1;
     printf("\n%s\n", title);
+
     for (j = lo; j < hi; ++j) {
         for (i = lo; i < hi; ++i) {
             printf("%4d", get_bit(p->output_context, i, j, bv));
@@ -198,8 +198,6 @@ setup_parameters() {
     p->ymin = 0;
     p->ymax = image_size[1];
     p->scale = 1.0;
-    p->x_scale = 1.0;
-    p->y_scale = 1.0;
     p->pixel_fraction = 1.0;
     p->exposure_time = 1.0;
     p->ef = p->exposure_time;

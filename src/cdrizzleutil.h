@@ -88,11 +88,6 @@ enum e_shift_t {
   shift_output
 };
 
-enum e_align_t {
-  align_center,
-  align_corner
-};
-
 enum e_kernel_t {
   kernel_square,
   kernel_gaussian,
@@ -145,10 +140,7 @@ struct driz_param_t {
   integer_t       uuid; /* was: UNIQID */
 
   /* Scaling */
-  enum e_align_t align;
   double scale;
-  double x_scale;
-  double y_scale;
 
   /* Image subset */
   integer_t xmin;
@@ -158,7 +150,7 @@ struct driz_param_t {
 
   /* Blotting-specific parameters */
   enum e_interp_t interpolation; /* was INTERP */
-  float ef; /* TODO: Rename these variables */
+  float ef; 
   float misval;
   float sinscl;
   float kscale;
@@ -310,9 +302,6 @@ int
 shift_str2enum(const char* s, enum e_shift_t* result, struct driz_error_t* error);
 
 int
-align_str2enum(const char* s, enum e_align_t* result, struct driz_error_t* error);
-
-int
 kernel_str2enum(const char* s, enum e_kernel_t* result, struct driz_error_t* error);
 
 int
@@ -323,9 +312,6 @@ interp_str2enum(const char* s, enum e_interp_t* result, struct driz_error_t* err
 
 const char*
 shift_enum2str(enum e_shift_t value);
-
-const char*
-align_enum2str(enum e_align_t value);
 
 const char*
 kernel_enum2str(enum e_kernel_t value);

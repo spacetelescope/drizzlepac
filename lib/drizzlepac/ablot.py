@@ -349,11 +349,9 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
     pix_ratio = source_wcs.pscale/wcslin.pscale
 
     t = drizzlepac.cdriz.tblot(
-        source, _outsci,
-        xmin, xmax, ymin, ymax,
-        pix_ratio, kscale, 1.0, 1.0,
-        'center',interp, exptime,
-        misval, sinscl, 1, pixmap)
+        source, _outsci, xmin, xmax, ymin, ymax,
+        pix_ratio, kscale, interp, exptime,
+        misval, sinscl, pixmap)
 
     return _outsci
 

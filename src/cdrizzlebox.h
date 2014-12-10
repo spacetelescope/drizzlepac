@@ -19,6 +19,9 @@ In V1.6 this was simplified to use the DRIVAL routine and also to
 include some limited multi-kernel support.
 */
 
+integer_t
+compute_bit_value(integer_t uuid);
+
 int
 dobox(struct driz_param_t* p);
 
