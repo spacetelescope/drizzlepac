@@ -1005,11 +1005,6 @@ def do_driz(insci, input_wcs, inwht,
     # Compute the mapping between the input and output pixel coordinates
     pixmap = calc_pixmap.calc_pixmap(input_wcs, output_wcs)
 
-    _shift_fr = 'output'
-    _shift_un = 'output'
-    nmiss = 0
-    nskip = 0
-    
     xmin = 0
     xmax = output_wcs._naxis1
     ymin = 0
@@ -1023,11 +1018,11 @@ def do_driz(insci, input_wcs, inwht,
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    _vers,nmiss,nskip = drizzlepac.cdriz.tdriz(
-        insci, inwht, outsci, outwht, outctx, 
+    _vers, nmiss, nskip = drizzlepac.cdriz.tdriz(
+        insci, inwht, pixmap, outsci, outwht, outctx, 
         uniqid, xmin, xmax, ymin, ymax, 
-        pix_ratio, pixfrac, kernel, in_units, expscale, wt_scl,
-        fillval, nmiss, nskip, pixmap)
+        pix_ratio, pixfrac, kernel, in_units, 
+        expscale, wt_scl, fillval)
 
     if nmiss > 0:
         log.warning('! %s points were outside the output image.' % nmiss)

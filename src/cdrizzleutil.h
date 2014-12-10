@@ -286,6 +286,7 @@ scale_image(PyArrayObject *image, double scale_factor) {
   
   assert(image);
   imptr = (float *) PyArray_DATA(image);
+
   size = PyArray_DIMS(image)[0] * PyArray_DIMS(image)[1];
 
   for (i = size; i > 0; --i) {

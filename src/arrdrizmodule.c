@@ -1,4 +1,3 @@
-
 #include <Python.h>
 
 #define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
@@ -37,16 +36,13 @@ static PyObject *
 tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 {
   /* Arguments in the order they appear */
-  PyObject *oimg, *owei, *oout, *owht, *ocon;
+  PyObject *oimg, *owei, *pixmap, *oout, *owht, *ocon;
   long uniqid, ystart, xmin, xmax, ymin, ymax;
   double scale, xscale, yscale;
   double pfract;
   char *kernel_str, *inun_str;
   float expin, wtscl;
   char *fillstr;
-  integer_t nmiss;
-  integer_t nskip;
-  PyObject *pixmap;
 
   /* Derived values */
   PyArrayObject *img = NULL, *wei = NULL, *out = NULL, *wht = NULL, *con = NULL, *map = NULL;
@@ -65,11 +61,11 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   driz_error_init(&error);
 
-  if (!PyArg_ParseTuple(args,"OOOOOlllllddssffsiiO:tdriz",
-                        &oimg, &owei, &oout, &owht, &ocon, /* OOOOO */
-                        &uniqid, &xmin, &xmax, &ymin, &ymax, &scale, /* llllld */
-                        &pfract, &kernel_str, &inun_str, &expin, &wtscl, /* dssff */
-                        &fillstr, &nmiss, &nskip, &pixmap) /* siiO */
+  if (!PyArg_ParseTuple(args,"OOOOOOlllllddssffs:tdriz",
+                        &oimg, &owei, &pixmap, &oout, &owht, &ocon, /* OOOOOO */
+                        &uniqid, &xmin, &xmax, &ymin, &ymax,  /* lllll */
+                        &scale, &pfract, &kernel_str, &inun_str, /* ddss */
+                        &expin, &wtscl,  &fillstr) /* ffs */
                        ) {
     return PyErr_Format(gl_Error, "cdriz.tdriz: Invalid Parameters.");
   }
@@ -87,6 +83,12 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     goto _exit;
   }
 
+  map = (PyArrayObject *)PyArray_ContiguousFromAny(pixmap, PyArray_DOUBLE, 3, 3);
+  if (!map) {
+    driz_error_set_message(&error, "Invalid pixmap array");
+    goto _exit;
+  }
+
   out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, PyArray_FLOAT, 2, 2);
   if (!out) {
     driz_error_set_message(&error, "Invalid output array");
@@ -95,7 +97,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 
   wht = (PyArrayObject *)PyArray_ContiguousFromAny(owht, PyArray_FLOAT, 2, 2);
   if (!wht) {
-    driz_error_set_message(&error, "Invalid array");
+    driz_error_set_message(&error, "Invalid counts array");
     goto _exit;
   }
 
@@ -105,18 +107,12 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
     goto _exit;
   }
 
-  map = (PyArrayObject *)PyArray_ContiguousFromAny(pixmap, PyArray_DOUBLE, 3, 3);
-
-  if (!map) {
-    driz_error_set_message(&error, "Invalid pixmap array");
-    goto _exit;
-  }
-
   /* Convert strings to enumerations */
     if (kernel_str2enum(kernel_str, &kernel, &error) ||
       unit_str2enum(inun_str, &inun, &error)) {
     goto _exit;
   }
+  
   if (pfract <= 0.001){
     printf("kernel reset to POINT due to pfract being set to 0.0...\n");
     kernel_str2enum("point", &kernel, &error);
@@ -209,15 +205,12 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   Py_XDECREF(wht);
   Py_XDECREF(map);
 
-  nmiss = p.nmiss;
-  nskip = p.nskip;
-  
   if (istat || driz_error_is_set(&error)) {
     if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
       PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
     return NULL;
   } else {
-    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.8 (20th May 2009)", nmiss, nskip);
+    return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.9 (10th May 2014)", p.nmiss, p.nskip);
   }
 }
 
@@ -243,10 +236,11 @@ tblot(PyObject *obj, PyObject *args)
 
   driz_error_init(&error);
   
-  if (!PyArg_ParseTuple(args,"OOlllldfsfffO:tblot",
-                        &oimg, &oout, &xmin, &xmax, &ymin, &ymax, /* OOllll */
+  if (!PyArg_ParseTuple(args,"OOOlllldfsfff:tblot",
+                        &oimg, &pixmap, &oout, /* OOO */
+                        &xmin, &xmax, &ymin, &ymax, /* llll */
                         &scale, &kscale, &interp_str, &ef, /* dfsf */
-                        &misval, &sinscl, &pixmap) /* ffO */
+                        &misval, &sinscl) /* ff */
                        ){
     return PyErr_Format(gl_Error, "cdriz.tblot: Invalid Parameters.");
   }
@@ -268,18 +262,18 @@ tblot(PyObject *obj, PyObject *args)
     goto _exit;
   }
   
-  out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, PyArray_FLOAT, 2, 2);
-  if (!out) {
-    driz_error_set_message(&error, "Invalid output array");
-    goto _exit;
-  }
-
   map = (PyArrayObject *)PyArray_ContiguousFromAny(pixmap, PyArray_DOUBLE, 3, 3);
   if (!map) {
     driz_error_set_message(&error, "Invalid pixmap array");
     goto _exit;
   }
   
+  out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, PyArray_FLOAT, 2, 2);
+  if (!out) {
+    driz_error_set_message(&error, "Invalid output array");
+    goto _exit;
+  }
+
   if (interp_str2enum(interp_str, &interp, &error)) {
     goto _exit;
   }
@@ -812,12 +806,18 @@ test_cdrizzlepac(PyObject *self, PyObject *args)
 
 static PyMethodDef cdriz_methods[] =
   {
-    {"tdriz",  tdriz, METH_VARARGS, "tdriz(image, weight, output, outweight, context, uniqid,  xmin, ymin, scale, pfract, kernel, inun, expin, wtscl, fill, nmiss, nskip, pixmap)"},
-    {"tblot",  tblot, METH_VARARGS, "tblot(image, output, xmin, xmax, ymin, ymax, scale, kscale, interp, ef, misval, sinscl, pixmap)"},
-    {"arrmoments", arrmoments, METH_VARARGS, "arrmoments(image, p, q)"},
-    {"arrxyround", arrxyround, METH_VARARGS, "arrxyround(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin,datamax)"},
-    {"arrxyzero", arrxyzero, METH_VARARGS, "arrxyzero(imgxy,refxy,searchrad,zpmat)"},
-    {"test_cdrizzlepac", test_cdrizzlepac, METH_VARARGS, "test_cdrizzlepac(data, weights, pixmap, output_data, output_counts)"},
+    {"tdriz",  tdriz, METH_VARARGS,
+    "tdriz(image, weight, output, outweight, context, uniqid,  xmin, ymin, scale, pfract, kernel, inun, expin, wtscl, fill, nmiss, nskip, pixmap)"},
+    {"tblot",  tblot, METH_VARARGS,
+    "tblot(image, output, xmin, xmax, ymin, ymax, scale, kscale, interp, ef, misval, sinscl, pixmap)"},
+    {"arrmoments", arrmoments, METH_VARARGS,
+    "arrmoments(image, p, q)"},
+    {"arrxyround", arrxyround, METH_VARARGS,
+    "arrxyround(data,x0,y0,skymode,ker2d,xsigsq,ysigsq,datamin,datamax)"},
+    {"arrxyzero", arrxyzero, METH_VARARGS,
+    "arrxyzero(imgxy,refxy,searchrad,zpmat)"},
+    {"test_cdrizzlepac", test_cdrizzlepac, METH_VARARGS,
+    "test_cdrizzlepac(data, weights, pixmap, output_data, output_counts)"},
     {0, 0, 0, 0}                             /* sentinel */
   };
 
