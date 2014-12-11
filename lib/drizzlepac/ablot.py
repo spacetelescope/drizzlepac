@@ -330,11 +330,6 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
     misval = 0.0
     kscale = 1.0
 
-    xmin = 0
-    xmax = source_wcs._naxis1
-    ymin = 0
-    ymax = source_wcs._naxis2
-
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
         wcslin = distortion.utils.undistortWCS(blot_wcs)
@@ -349,9 +344,8 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
     pix_ratio = source_wcs.pscale/wcslin.pscale
 
     t = drizzlepac.cdriz.tblot(
-        source, pixmap, _outsci, xmin, xmax, ymin, ymax,
-        pix_ratio, kscale, interp, exptime,
-        misval, sinscl)
+        source, pixmap, _outsci,  scale=pix_ratio, kscale=kscale,
+        interp=interp, exptime=exptime, misval=misval, sinscl=sinscl)
 
     return _outsci
 

@@ -1005,11 +1005,6 @@ def do_driz(insci, input_wcs, inwht,
     # Compute the mapping between the input and output pixel coordinates
     pixmap = calc_pixmap.calc_pixmap(input_wcs, output_wcs)
 
-    xmin = 0
-    xmax = output_wcs._naxis1
-    ymin = 0
-    ymax = output_wcs._naxis2
-    
     #
     # Call 'drizzle' to perform image combination
     # This call to 'cdriz.tdriz' uses the new C syntax
@@ -1020,9 +1015,9 @@ def do_driz(insci, input_wcs, inwht,
 
     _vers, nmiss, nskip = drizzlepac.cdriz.tdriz(
         insci, inwht, pixmap, outsci, outwht, outctx, 
-        uniqid, xmin, xmax, ymin, ymax, 
-        pix_ratio, pixfrac, kernel, in_units, 
-        expscale, wt_scl, fillval)
+        uniqid=uniqid, scale=pix_ratio, pixfrac=pixfrac,
+        kernel=kernel, in_units=in_units, expscale=expscale, 
+        wtscale=wt_scl, fillstr=fillval)
 
     if nmiss > 0:
         log.warning('! %s points were outside the output image.' % nmiss)

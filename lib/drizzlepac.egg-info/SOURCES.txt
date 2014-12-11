@@ -102,6 +102,7 @@ svn-commit.tmp~
 .svn/pristine/39/396b2f838c6c1e26f7b1286a62b251459e69da9b.svn-base
 .svn/pristine/3a/3ab5540bf421c58e0291d2f92d6ced3f00222c53.svn-base
 .svn/pristine/3b/3b28e072194caa4e2f398d3a9845a3e1dc87ba5b.svn-base
+.svn/pristine/3b/3b9d02e9fa53238770f9af8fb7f04df9424e293a.svn-base
 .svn/pristine/3c/3c8c8c9ce94b4884c6bc42e0a35df1512a6d9378.svn-base
 .svn/pristine/3c/3cb9a7617a3ed300e023d2d2a69359b74f3c16c9.svn-base
 .svn/pristine/3d/3dd109eb89073292587d029fdcd0c4e54b232cfe.svn-base
@@ -195,6 +196,7 @@ svn-commit.tmp~
 .svn/pristine/7a/7ae0c11eaccf2d13a6203e990c8f66236b1211cd.svn-base
 .svn/pristine/7b/7b264b16c2c84af3fef8c764adf2964581609a68.svn-base
 .svn/pristine/7c/7c123c6661f30c1928aa56be7b1feadba2f8e537.svn-base
+.svn/pristine/7c/7ca4ac3eda2a8ba2f3fe1524a1d4e4d4a2c62ea8.svn-base
 .svn/pristine/7d/7d89d8bc8c4526846ccc264bd974bc365456605e.svn-base
 .svn/pristine/7d/7dcf78885ac4c79dbeabcc9d5a8e54f1f67eaebd.svn-base
 .svn/pristine/7f/7fdbc6f291f3247e811c430857fad17c1bc543f9.svn-base
@@ -240,6 +242,7 @@ svn-commit.tmp~
 .svn/pristine/9c/9c3ae25d5bf66c4c6442e29325bdabe6b6d00b3f.svn-base
 .svn/pristine/9c/9c5f499d35cdedeb51c9e4a13229a2fa439c912a.svn-base
 .svn/pristine/9c/9c6c1466b70e0df2ca8ca1ab62612c9025ffd2d0.svn-base
+.svn/pristine/9c/9c836e3c73fc00827d94ceeccff5d044bf8efdd4.svn-base
 .svn/pristine/9c/9c85b3d866858eda94405d9142df9d8c8fa82e7d.svn-base
 .svn/pristine/9d/9d87e044634a4d4d1039482dc2bb961b5abe4840.svn-base
 .svn/pristine/9e/9e254af5d77a71fedb8d7380f5b311ab37cf2f14.svn-base
@@ -296,6 +299,7 @@ svn-commit.tmp~
 .svn/pristine/bd/bd20323eba5b9ee4b99b6da9cb302f9558292602.svn-base
 .svn/pristine/bd/bd78b6314fd7c3e4686c68acc01819cdc97b5061.svn-base
 .svn/pristine/bd/bdff3687ed965d08ada9a6c5ef1fdc324f091781.svn-base
+.svn/pristine/be/be4bdda4e2919dc3e7e54eb6b4a7b730dd1b3423.svn-base
 .svn/pristine/bf/bff5e007c9a05f89b9a452f7fa8c5bf49201b2c7.svn-base
 .svn/pristine/c0/c01e14e7d6f387e1c991ea133df51fc8532d1313.svn-base
 .svn/pristine/c0/c077800248bf3842b04043448d8896130537f4b7.svn-base
@@ -316,6 +320,7 @@ svn-commit.tmp~
 .svn/pristine/c7/c7d26a7a8e501ca9ae7d352703b0b06d082ca98d.svn-base
 .svn/pristine/c8/c8906b1abd5d84e370d6a7bda676dafe38491d31.svn-base
 .svn/pristine/c9/c9d370a5020089ec81c4819243d93e3e1fd4ad01.svn-base
+.svn/pristine/ca/cacb64407b8ce048a9012da92ec98643d5b62f68.svn-base
 .svn/pristine/cb/cbad2fcfa2697c0a075281412f62ae44f526e12e.svn-base
 .svn/pristine/cb/cbb7668beab33fd64a7ce68282090fc753d84cf8.svn-base
 .svn/pristine/cc/cc1c6d219ba18c67430cd39c1c68741bd1504c94.svn-base
@@ -354,6 +359,7 @@ svn-commit.tmp~
 .svn/pristine/df/df7a3ee9063066feb5e79a28603cf899d683bbe2.svn-base
 .svn/pristine/e1/e126adc732aa2dc0a76036f929b0da7e62a822b0.svn-base
 .svn/pristine/e2/e20d00b3173c8754388885527cae093bab828ca7.svn-base
+.svn/pristine/e2/e23ce80d27e1fc6c2ba25abe905c0f3b2d530ffa.svn-base
 .svn/pristine/e3/e38d2900e9abdf9a5e9ce510edf07b73d72d74a2.svn-base
 .svn/pristine/e3/e3a268609eb70aca77d14da2e0ffee97e00c3590.svn-base
 .svn/pristine/e3/e3e59d79e7e5d40d3cde695ce5bd801a444e853f.svn-base
@@ -738,10 +744,6 @@ lib/drizzlepac/tests/data/difference_turbo_grid.txt
 lib/drizzlepac/tests/data/input1.fits
 lib/drizzlepac/tests/data/input3.fits
 lib/drizzlepac/tests/data/j8bt06nyq_flt.fits
-lib/drizzlepac/tests/data/output_blot_default.fits
-lib/drizzlepac/tests/data/output_blot_lan3.fits
-lib/drizzlepac/tests/data/output_blot_lan5.fits
-lib/drizzlepac/tests/data/output_blot_point.fits
 lib/drizzlepac/tests/data/output_gaussian_grid.fits
 lib/drizzlepac/tests/data/output_lanczos_grid.fits
 lib/drizzlepac/tests/data/output_point_grid.fits
