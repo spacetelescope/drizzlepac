@@ -39,7 +39,6 @@ compute_bit_value(integer_t uuid) {
   
   np = (uuid - 1) / 32 + 1;
   bit_no = (uuid - 1 - (32 * (np - 1)));
-  assert(bit_no < 32);
   bv = (integer_t)(1 << bit_no);
 
   return bv;
@@ -162,9 +161,6 @@ boxer(double is, double js,
   integer_t i;
   double sum;
   double px[4], py[4];
-
-  assert(x);
-  assert(y);
 
   is -= 0.5;
   js -= 0.5;
@@ -499,7 +495,6 @@ do_kernel_lanczos(struct driz_param_t* p) {
   pfo = (double)kernel_order * p->pixel_fraction / p->scale;
   bv = compute_bit_value(p->uuid);
   
-  assert(lanczos.lut == NULL);
   if ((lanczos.lut = malloc(nlut * sizeof(float))) == NULL) {
     driz_error_set_message(p->error, "Out of memory");
     return driz_error_is_set(p->error);
@@ -839,8 +834,6 @@ include some limited multi-kernel support.
 int
 dobox(struct driz_param_t* p) {
   kernel_handler_t kernel_handler = NULL;
-
-  assert(p);
 
   /* Set up a function pointer to handle the appropriate kernel */
   if (p->kernel < kernel_LAST) {

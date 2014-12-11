@@ -21,6 +21,17 @@ driz_error_init(struct driz_error_t* error) {
   error->last_message[0] = 0;
 }
 
+int
+driz_error_check(struct driz_error_t* error, const char* message, int test) {
+#ifndef NDEBUG
+  if (! test) {
+    driz_error_set_message(error, message);
+    return 1;
+  }
+#endif
+  return 0;
+}
+
 void
 driz_error_set_message(struct driz_error_t* error, const char* message) {
   assert(error);

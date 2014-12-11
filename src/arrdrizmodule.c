@@ -44,10 +44,10 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
   /* Arguments in the order they appear */
   PyObject *oimg, *owei, *pixmap, *oout, *owht, *ocon;
   long uniqid = 1;
-  long xmin = -1;
-  long xmax = -1;
-  long ymin = -1;
-  long ymax = -1;
+  long xmin = 0;
+  long xmax = 0;
+  long ymin = 0;
+  long ymax = 0;
   double scale = 1.0;
   double pfract = 1.0;
   char *kernel_str = "square";
@@ -65,7 +65,6 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
   bool_t do_fill;
   float fill_value;
   float inv_exposure_time;
-  int istat = 0;
   struct driz_error_t error;
   struct driz_param_t p;
   integer_t osize[2];
@@ -121,8 +120,38 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
     goto _exit;
   }
 
+  /* Convert the fill value string */
+
+  if (fillstr == NULL ||
+      *fillstr == 0 ||
+      strncmp(fillstr, "INDEF", 6) == 0 ||
+      strncmp(fillstr, "indef", 6) == 0) {
+
+    do_fill = 0;
+    fill_value = 0.0;
+
+  } else {
+    do_fill = 1;
+#ifdef _WIN32
+    fill_value = atof(fillstr);
+#else
+    fill_value = strtof(fillstr, &fillstr_end);
+    if (fillstr == fillstr_end || *fillstr_end != '\0') {
+      driz_error_set_message(&error, "Illegal fill value");
+      goto _exit;
+    }
+#endif
+  }
+
+  /* Set the area to be processed */
+  
+  get_dimensions(out, osize);
+  if (xmax == 0) xmax = osize[0];
+  if (ymax == 0) ymax = osize[1];
+  
   /* Convert strings to enumerations */
-    if (kernel_str2enum(kernel_str, &kernel, &error) ||
+  
+  if (kernel_str2enum(kernel_str, &kernel, &error) ||
       unit_str2enum(inun_str, &inun, &error)) {
     goto _exit;
   }
@@ -132,39 +161,18 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
     kernel_str2enum("point", &kernel, &error);
   }
 
-  /* Convert the fill value string */
-  if (fillstr == NULL ||
-      *fillstr == 0 ||
-      strncmp(fillstr, "INDEF", 6) == 0 ||
-      strncmp(fillstr, "indef", 6) == 0)
-  {
-    do_fill = 0;
-    fill_value = 0.0;
-  } else {
-    do_fill = 1;
-#ifdef _WIN32
-    fill_value = atof(fillstr);
-#else
-    fill_value = strtof(fillstr, &fillstr_end);
-    if (fillstr == fillstr_end || *fillstr_end != '\0') {
-      driz_error_format_message(&error, "Could not convert fill value '%s'",
-                                fillstr);
-      goto _exit;
-    }
-#endif
+  /* If the input image is not in CPS we need to divide by the exposure */
+  if (inun != unit_cps) {
+    inv_exposure_time = 1.0f / p.exposure_time;
+    scale_image(img, inv_exposure_time);
   }
 
-  get_dimensions(out, osize);
-  if (xmin < 0) xmin = 0;
-  if (ymin < 0) ymin = 0;
-  if (xmax < 0) xmax = osize[0];
-  if (ymax < 0) ymax = osize[1];
-  
   /* Setup reasonable defaults for drizzling */
   driz_param_init(&p);
 
   p.data = img;
   p.weights = wei;
+  p.pixmap = map;
   p.output_data = out;
   p.output_counts = wht;
   p.output_context = con;
@@ -179,25 +187,17 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
   p.in_units = inun;
   p.exposure_time = expin;
   p.weight_scale = wtscl;
-  p.pixmap = map;
+  p.fill_value = fill_value;
   p.error = &error;
- 
-  assert(p.pixel_fraction != 0.0);
-  assert(p.scale != 0.0);
+
+  if (driz_error_check(&error, "xmin must be >= 0", p.xmin >= 0)) goto _exit;
+  if (driz_error_check(&error, "ymin must be >= 0", p.ymin >= 0)) goto _exit;
+  if (driz_error_check(&error, "xmax must be > xmin", p.xmax > p.xmin)) goto _exit;
+  if (driz_error_check(&error, "ymax must be > ymin", p.ymax > p.ymin)) goto _exit;
+  if (driz_error_check(&error, "scale must be > 0", p.scale > 0.0)) goto _exit;
+  if (driz_error_check(&error, "exposure time must be > 0", p.exposure_time)) goto _exit;
+  if (driz_error_check(&error, "weight scale must be > 0", p.weight_scale > 0.0)) goto _exit;
   
-  /* If the input image is not in CPS we need to divide by the
-     exposure */
-  if (p.in_units != unit_cps) {
-    if (p.exposure_time == 0.0) {
-      driz_error_set_message(&error, "Invalid exposure time");
-      goto _exit;
-    }
-
-    assert(p.exposure_time != 0.0);
-    inv_exposure_time = 1.0f / p.exposure_time;
-    scale_image(p.data, inv_exposure_time);
-  }
-
   /*
   start_t = clock();
   */
@@ -225,9 +225,8 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
   Py_XDECREF(wht);
   Py_XDECREF(map);
 
-  if (istat || driz_error_is_set(&error)) {
-    if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
-      PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
+  if (driz_error_is_set(&error)) {
+    PyErr_SetString(PyExc_ValueError, driz_error_get_message(&error));
     return NULL;
   } else {
     return Py_BuildValue("sii", "Callable C-based DRIZZLE Version 0.9 (10th May 2014)", p.nmiss, p.nskip);
@@ -271,20 +270,9 @@ tblot(PyObject *obj, PyObject *args, PyObject *keywords)
                         &scale, &kscale, &interp_str, &ef, /* dfsf */
                         &misval, &sinscl) /* ff */
                        ){
-    return PyErr_Format(gl_Error, "cdriz.tblot: Invalid Parameters.");
+    return NULL;
   }
   
-  /* Check for invalid scale */
-  if (scale == 0.0) {
-    driz_error_format_message(&error, "Invalid scale %f (must be non-zero)", scale);
-    goto _exit;
-  }
-
-  if (kscale == 0.0) {
-    driz_error_format_message(&error, "Invalid kscale %f (must be non-zero)", scale);
-    goto _exit;
-  }
-
   img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
   if (!img) {
     driz_error_set_message(&error, "Invalid input array");
@@ -308,8 +296,6 @@ tblot(PyObject *obj, PyObject *args, PyObject *keywords)
   }
 
   get_dimensions(out, osize);
-  if (xmin < 0) xmin = 0;
-  if (ymin < 0) ymin = 0;
   if (xmax < 0) xmax = osize[0];
   if (ymax < 0) ymax = osize[1];
 
@@ -331,14 +317,22 @@ tblot(PyObject *obj, PyObject *args, PyObject *keywords)
   p.pixmap = map;
   p.error = &error;
   
-  istat = doblot(&p);
+  if (driz_error_check(&error, "xmin must be >= 0", p.xmin >= 0)) goto _exit;
+  if (driz_error_check(&error, "ymin must be >= 0", p.ymin >= 0)) goto _exit;
+  if (driz_error_check(&error, "xmax must be > xmin", p.xmax > p.xmin)) goto _exit;
+  if (driz_error_check(&error, "ymax must be > ymin", p.ymax > p.ymin)) goto _exit;
+  if (driz_error_check(&error, "scale must be > 0", p.scale > 0.0)) goto _exit;
+  if (driz_error_check(&error, "kscale must be > 0", p.kscale > 0.0)) goto _exit;
+  if (driz_error_check(&error, "exposure time must be > 0", p.ef > 0.0)) goto _exit;
+
+  if(doblot(&p)) goto _exit;
 
  _exit:
   Py_DECREF(img);
   Py_DECREF(out);
   Py_DECREF(map);
 
-  if (istat || driz_error_is_set(&error)) {
+  if (driz_error_is_set(&error)) {
     if (strcmp(driz_error_get_message(&error), "<PYTHON>") != 0)
       PyErr_SetString(PyExc_Exception, driz_error_get_message(&error));
     return NULL;

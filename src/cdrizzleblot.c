@@ -52,11 +52,6 @@ ii_bipoly3(const float* coeff /* [len_coeff][len_coeff] */,
   integer_t firstw, index;
   integer_t i, j;
 
-  assert(coeff);
-  assert(x);
-  assert(y);
-  assert(zfit);
-
   nxold = nyold = -1;
   for (i = 0; i < npts; ++i) {
     nx = (integer_t)x[i];
@@ -955,8 +950,6 @@ doblot(struct driz_param_t* p) {
   struct lanczos_param_t lanczos;
   void* state = NULL;
   
-  assert(p);
-
   get_dimensions(p->data, isize);
   get_dimensions(p->output_data, osize);
 
@@ -972,7 +965,6 @@ doblot(struct driz_param_t* p) {
 
   /* Some interpolation functions need some pre-calculated state */
   if (p->interpolation == interp_lanczos3 || p->interpolation == interp_lanczos5) {
-    assert(p->kscale != 0.0);
 
     if ((lanczos.lut = (float*)malloc(nlut * sizeof(float))) == NULL) {
       driz_error_set_message(p->error, "Out of memory");
@@ -1008,7 +1000,6 @@ doblot(struct driz_param_t* p) {
   */
 
   /* Recalculate the area scaling factor */
-  assert(p->scale != 0.0);
   scale2 = p->scale * p->scale;
   v = 1.0;
 

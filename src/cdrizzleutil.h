@@ -24,6 +24,7 @@ struct driz_error_t {
 };
 
 void driz_error_init(struct driz_error_t* error);
+int driz_error_check(struct driz_error_t* error, const char* message, int test);
 void driz_error_set_message(struct driz_error_t* error, const char* message);
 void driz_error_format_message(struct driz_error_t* error, const char* format, ...);
 const char* driz_error_get_message(struct driz_error_t* error);
@@ -203,33 +204,17 @@ get_dimensions(PyArrayObject *image, integer_t size[2]) {
 
 static inline_macro double*
 get_pixmap(PyArrayObject *pixmap, integer_t xpix, integer_t ypix) {
-
-  assert(pixmap);
-  assert(xpix >= 0 && xpix < PyArray_DIMS(pixmap)[1]);
-  assert(ypix >= 0 && ypix < PyArray_DIMS(pixmap)[0]);
-
   return (double*) PyArray_GETPTR3(pixmap, ypix, xpix, 0);
 }
 
 static inline_macro float
 get_pixel(PyArrayObject *image, integer_t xpix, integer_t ypix) {
-  
-  assert(image);
-  assert(xpix >= 0 && xpix < PyArray_DIMS(image)[1]);
-  assert(ypix >= 0 && ypix < PyArray_DIMS(image)[0]);
-
   return *(float*) PyArray_GETPTR2(image, ypix, xpix);
 }
 
 static inline_macro float
 get_pixel_at_pos(PyArrayObject *image, integer_t pos) {
-  integer_t size;
   float *imptr;
-  
-  assert(image);
-  size = PyArray_DIMS(image)[0] * PyArray_DIMS(image)[1];
-  assert(pos >= 0 && pos < size);
-
   imptr = (float *) PyArray_DATA(image);
   return imptr[pos];
 }
@@ -237,10 +222,6 @@ get_pixel_at_pos(PyArrayObject *image, integer_t pos) {
 static inline_macro void
 set_pixel(PyArrayObject *image, integer_t xpix, integer_t ypix, double value) {
   
-  assert(image);
-  assert(xpix >= 0 && xpix < PyArray_DIMS(image)[1]);
-  assert(ypix >= 0 && ypix < PyArray_DIMS(image)[0]);
-
   *(float*) PyArray_GETPTR2(image, ypix, xpix) = value;
   return;
 }
@@ -248,33 +229,18 @@ set_pixel(PyArrayObject *image, integer_t xpix, integer_t ypix, double value) {
 static inline_macro int
 get_bit(PyArrayObject *image, integer_t xpix, integer_t ypix, integer_t bitval) {
   integer_t value;
-  
-  assert(image);
-  assert(xpix >= 0 && xpix < PyArray_DIMS(image)[1]);
-  assert(ypix >= 0 && ypix < PyArray_DIMS(image)[0]);
-
   value = *(integer_t*) PyArray_GETPTR2(image, ypix, xpix) & bitval;
   return value? 1 : 0;
 }
 
 static inline_macro void
-set_bit(PyArrayObject *image, integer_t xpix, integer_t ypix, integer_t bitval) {
-  
-  assert(image);
-  assert(xpix >= 0 && xpix < PyArray_DIMS(image)[1]);
-  assert(ypix >= 0 && ypix < PyArray_DIMS(image)[0]);
-
+set_bit(PyArrayObject *image, integer_t xpix, integer_t ypix, integer_t bitval) {  
   *(integer_t*) PyArray_GETPTR2(image, ypix, xpix) |= bitval;
   return;
 }
 
 static inline_macro void
 unset_bit(PyArrayObject *image, integer_t xpix, integer_t ypix) {
-  
-  assert(image);
-  assert(xpix >= 0 && xpix < PyArray_DIMS(image)[1]);
-  assert(ypix >= 0 && ypix < PyArray_DIMS(image)[0]);
-
   *(integer_t*) PyArray_GETPTR2(image, ypix, xpix) = 0;
   return;
 }
