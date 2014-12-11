@@ -68,7 +68,7 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
   int istat = 0;
   struct driz_error_t error;
   struct driz_param_t p;
-  integer_t isize[2], osize[2];
+  integer_t osize[2];
   int i; /* DBG */
   /* clock_t start_t, end_t; */
   /* double delta_time; */
@@ -154,7 +154,6 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
 #endif
   }
 
-  get_dimensions(img, isize);
   get_dimensions(out, osize);
   if (xmin < 0) xmin = 0;
   if (ymin < 0) ymin = 0;
@@ -262,7 +261,7 @@ tblot(PyObject *obj, PyObject *args, PyObject *keywords)
   struct driz_error_t error;
   struct driz_param_t p;
   double maxdiff = 0.0;
-  int osize[2];
+  integer_t osize[2];
 
   driz_error_init(&error);
   
