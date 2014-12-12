@@ -20,17 +20,9 @@
 
 static PyObject *gl_Error;
 
-/**
- 
- The Python mapping callback must have the following signature:
-
-    def mapping(xin, yin):
-        return xout, yout
-
- xin, yin are the input coordinates, and xout and yout are the output
- coordinates.  All are 1-dimensional Numpy DOUBLE arrays of the same
- length.
-*/
+/** --------------------------------------------------------------------------------------------------
+ * Top level function for drizzling, interfaces with python code
+ */
 
 static PyObject *
 tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
@@ -233,6 +225,10 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args, PyObject *keywords)
   }
 }
 
+/** --------------------------------------------------------------------------------------------------
+ * Top level function for blotting, interfaces with python code
+ */
+
 static PyObject *
 tblot(PyObject *obj, PyObject *args, PyObject *keywords)
 {
@@ -341,8 +337,10 @@ tblot(PyObject *obj, PyObject *args, PyObject *keywords)
   }
 }
 
+/** --------------------------------------------------------------------------------------------------
+ * To replace the default prinf log; instead log to a pythonic log 
+ */
 
-/* To replace the default prinf log; instead log to a pythonic log */
 void cdriz_log_func(const char *format, ...) {
   static PyObject *logging = NULL;
   va_list args;
@@ -389,6 +387,8 @@ cleanup:
   return;
 }
 
+/** --------------------------------------------------------------------------------------------------
+ */
 
 static PyObject *
 arrmoments(PyObject *obj, PyObject *args)
@@ -430,6 +430,9 @@ arrmoments(PyObject *obj, PyObject *args)
 
   return Py_BuildValue("d",moment);
 }
+
+/** --------------------------------------------------------------------------------------------------
+ */
 
 static PyObject *
 arrxyround(PyObject *obj, PyObject *args)
@@ -679,8 +682,10 @@ arrxyround(PyObject *obj, PyObject *args)
   }
 }
 
-/* ==== Allocate a double *vector (vec of pointers) ======================
-    Memory is Allocated!  See void free_Carray(double ** )                  */
+/** --------------------------------------------------------------------------------------------------
+ * Allocate a double *vector (vec of pointers) Memory is Allocated!  See void free_Carray(double **)
+ */
+
 double **ptrvector(long n)  {
     double **v;
     v=(double **)malloc((size_t) (n*sizeof(double)));
@@ -690,10 +695,10 @@ double **ptrvector(long n)  {
     return v;
 }
 
+/** --------------------------------------------------------------------------------------------------
+ * Create Carray from PyArray Assumes PyArray is contiguous in memory. Memory is allocated!
+ */
 
-/* ==== Create Carray from PyArray ======================
-    Assumes PyArray is contiguous in memory.
-    Memory is allocated!                                    */
 double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
     double **c, *a;
     long i,n,m;
@@ -707,10 +712,16 @@ double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
     return c;
 }
 
-/* ==== Free a double *vector (vec of pointers) ========================== */
+/** --------------------------------------------------------------------------------------------------
+ * Free a double *vector (vec of pointers)
+ */
+
 void free_Carrayptrs(double **v)  {
     free((char*) v);
 }
+
+/** --------------------------------------------------------------------------------------------------
+ */
 
 static PyObject *
 arrxyzero(PyObject *obj, PyObject *args)
@@ -782,6 +793,10 @@ arrxyzero(PyObject *obj, PyObject *args)
   return PyArray_Return(ozpmat);
 }
 
+/** --------------------------------------------------------------------------------------------------
+ * Top level of C unit tests, interfaces with python code
+ */
+
 static PyObject *
 test_cdrizzlepac(PyObject *self, PyObject *args)
 {
@@ -830,8 +845,11 @@ test_cdrizzlepac(PyObject *self, PyObject *args)
   utest_cdrizzlepac(argc, argv);
   
   return Py_BuildValue("");
-
 }
+
+/** --------------------------------------------------------------------------------------------------
+ * Table of functions callable from python
+*/
 
 static PyMethodDef cdriz_methods[] =
   {
@@ -849,6 +867,9 @@ static PyMethodDef cdriz_methods[] =
     "test_cdrizzlepac(data, weights, pixmap, output_data, output_counts)"},
     {0, 0, 0, 0}                             /* sentinel */
   };
+
+/** --------------------------------------------------------------------------------------------------
+ */
 
 void initcdriz(void)
 {

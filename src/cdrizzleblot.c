@@ -11,32 +11,54 @@
 #include <math.h>
 #include <stdlib.h>
 
-/**
-Procedure to evaluate the bicubic polynomial interpolant.  The array
-coeff contains the coefficients of the 2D interpolant.  The procedure
-assumes that 1 <= x <= isize[0] and 1 <= y <= isize[1] and that
-coeff[1+first_point] = datain[1,1]. The interpolant is evaluated using
-Everett's central difference formula.
+/** --------------------------------------------------------------------------------------------------
+ * Signature for functions that perform blotting interpolation.
+ */
 
-@param[in] coeff Array of shape \a [len_coeff][len_coeff] contains the
-coefficients of the 2D interpolant.
+typedef int (interp_function)(const void*,
+                              PyArrayObject*,
+                              const float, const float,
+                              /* Output parameters */
+                              float*,
+                              struct driz_error_t*);
 
-@param[in] len_coeff The dimension (each side of the square) of the
-coefficient array.
+/** --------------------------------------------------------------------------------------------------
+ * A standard set of asserts for all of the interpolation functions
+ */
 
-@param[in] firstt Offset of the first data point.  (In practice, this
-is always zero.  \todo Remove this parameter?)
+#define INTERPOLATION_ASSERTS \
+  assert(data); \
+  assert(isize[0] > 0); \
+  assert(isize[1] > 0); \
+  assert(x >= 0.0f && x < (float)isize[0]);      \
+  assert(y >= 0.0f && y < (float)isize[1]);      \
+  assert(value); \
+  assert(error); \
 
-@param[in] npts The number of points to calculate.
+/** --------------------------------------------------------------------------------------------------
+ * A structure to hold parameters for sinc interpolation.
+ */
 
-@param[in] x An array of length \a npts of x values.
+struct sinc_param_t {
+  /*The scaling factor for sinc interpolation */
+  float sinscl;
+};
 
-@param[in] y An array of length \a npts of y values.
+/** --------------------------------------------------------------------------------------------------
+ * Procedure to evaluate the bicubic polynomial interpolant.  The array coeff contains the coefficients
+ * of the 2D interpolant.  The procedure assumes that 1 <= x <= isize[0] and 1 <= y <= isize[1] and
+ * that coeff[1+first_point] = datain[1,1]. The interpolant is evaluated using Everett's central
+ * difference formula. (Was: IIBIP3)
+ * 
+ * coeff:     Array of shape \a [len_coeff][len_coeff] contains the coefficients of the 2D interpolant.
+ * len_coeff: The dimension (each side of the square) of the coefficient array.
+ * firstt:    Offset of the first data point.  (In practice, this is always zero.)
+ * npts:      The number of points to calculate.
+ * x:         An array of length \a npts of x values.
+ * y:         An array of length \a npts of y values.
+ * zfit:      An array of length \a npts of interpolated values. (output)
+ */
 
-@param[out] zfit An array of length \a npts of interpolated values.
-
-was: IIBIP3
-*/
 static inline_macro void
 ii_bipoly3(const float* coeff /* [len_coeff][len_coeff] */,
            const integer_t len_coeff, const integer_t firstt,
@@ -110,31 +132,20 @@ ii_bipoly3(const float* coeff /* [len_coeff][len_coeff] */,
   }
 }
 
-/**
-Procedure to evaluate a biquintic polynomial.  The array coeff
-contains the coefficents of the 2D interpolant.  The routine assumes
-that 0 <= x < isize[0] and 0 <= y < isize[1]. The interpolant is evaluated
-using Everett's central difference formula.
+/** --------------------------------------------------------------------------------------------------
+ * Procedure to evaluate a biquintic polynomial.  The array coeff contains the coefficents of the
+ * 2D interpolant.  The routine assumes that 0 <= x < isize[0] and 0 <= y < isize[1]. The interpolant
+ * is evaluated using Everett's central difference formula. (Was: IIBIP5)
+ * 
+ * coeff:     Array of shape \a [len_coeff][len_coeff] contains the coefficients of the 2D interpolant.
+ * len_coeff: The dimension (each side of the square) of the coefficient array.
+ * firstt:    Offset of the first data point.  (In practice, this is always zero.)
+ * npts:      The number of points to calculate.
+ * x:         An array of length \a npts of x values.
+ * y:         An array of length \a npts of y values.
+ * zfit:      An array of length \a npts of interpolated values. (output)
+ */
 
-@param[in] coeff Array of shape \a [len_coeff][len_coeff] contains the
-coefficients of the 2D interpolant.
-
-@param[in] len_coeff The dimension (each side of the square) of the
-coefficient array.
-
-@param[in] firstt Offset of the first data point.  (In practice, this
-is always zero.  \todo Remove this parameter?)
-
-@param[in] npts The number of points to calculate.
-
-@param[in] x An array of length \a npts of x values.
-
-@param[in] y An array of length \a npts of y values.
-
-@param[out] zfit An array of length \a npts of interpolated values.
-
-was: IIBIP3
-*/
 static inline_macro void
 ii_bipoly5(const float* coeff /* [len_coeff][len_coeff] */,
            const integer_t len_coeff, const integer_t firstt,
@@ -238,47 +249,17 @@ ii_bipoly5(const float* coeff /* [len_coeff][len_coeff] */,
   }
 }
 
-/**
-Signature for functions that perform blotting interpolation.
+/** --------------------------------------------------------------------------------------------------
+ * Perform nearest neighbor interpolation.
+ * 
+ * state: A pointer to any constant values specific to this interpolation type. (NULL).
+ * data:  A 2D data array 
+ * x:     The fractional x coordinate
+ * y:     The fractional y coordinate
+ * value: The resulting value at x, y after interpolating the data (output)
+ * error: The error structure (output)
  */
-typedef int (interp_function)(const void*,
-                              PyArrayObject*,
-                              const float, const float,
-                              /* Output parameters */
-                              float*,
-                              struct driz_error_t*);
 
-/**
-A standard set of asserts for all of the interpolation functions
-*/
-#define INTERPOLATION_ASSERTS \
-  assert(data); \
-  assert(isize[0] > 0); \
-  assert(isize[1] > 0); \
-  assert(x >= 0.0f && x < (float)isize[0]);      \
-  assert(y >= 0.0f && y < (float)isize[1]);      \
-  assert(value); \
-  assert(error); \
-
-/**
-Perform nearest neighbor interpolation.
-
-@param[in] state A pointer to any constant values specific to this
-interpolation type.  (For \a interpolate_nearest_neighbor, it should be
-NULL).
-
-@param[in] data A 2D data array 
-
-@param[in] x The fractional x coordinate
-
-@param[in] y The fractional y coordinate
-
-@param[out] value The resulting value at x, y after interpolating the data
-
-@param[out] error
-
-@return Non-zero if an error occurred
- */
 static int
 interpolate_nearest_neighbor(const void* state UNUSED_PARAM,
                              PyArrayObject* data,
@@ -297,25 +278,17 @@ interpolate_nearest_neighbor(const void* state UNUSED_PARAM,
   return 0;
 }
 
-/**
-Perform basic bilinear interpolation.
-
-@param[in] state A pointer to any constant values specific to this
-interpolation type.  (For \a interpolate_bilinear, it should be
-NULL).
-
-@param[in] data A 2D data array 
-
-@param[in] x The fractional x coordinate
-
-@param[in] y The fractional y coordinate
-
-@param[out] value The resulting value at x, y after interpolating the data
-
-@param[out] error
-
-@return Non-zero if an error occurred
+/** --------------------------------------------------------------------------------------------------
+ * Perform basic bilinear interpolation.
+ * 
+ * state: A pointer to any constant values specific to this interpolation type. (NULL).
+ * data:  A 2D data array 
+ * x:     The fractional x coordinate
+ * y:     The fractional y coordinate
+ * value: The resulting value at x, y after interpolating the data (output)
+ * error: The error structure (output)
  */
+
 static int
 interpolate_bilinear(const void* state UNUSED_PARAM,
                      PyArrayObject* data,
@@ -376,25 +349,17 @@ interpolate_bilinear(const void* state UNUSED_PARAM,
   return 0;
 }
 
-/**
-Perform cubic polynomial interpolation.
-
-@param[in] state A pointer to any constant values specific to this
-interpolation type.  (For \a interpolate_poly3, it should be
-NULL).
-
-@param[in] data A 2D data array
-
-@param[in] x The fractional x coordinate
-
-@param[in] y The fractional y coordinate
-
-@param[out] value The resulting value at x, y after interpolating the data
-
-@param[out] error
-
-@return Non-zero if an error occurred
+/** --------------------------------------------------------------------------------------------------
+ * Perform cubic polynomial interpolation.
+ * 
+ * state: A pointer to any constant values specific to this interpolation type. (NULL).
+ * data:  A 2D data array 
+ * x:     The fractional x coordinate
+ * y:     The fractional y coordinate
+ * value: The resulting value at x, y after interpolating the data (output)
+ * error: The error structure (output)
  */
+
 static int
 interpolate_poly3(const void* state UNUSED_PARAM,
                   PyArrayObject* data,
@@ -498,25 +463,17 @@ interpolate_poly3(const void* state UNUSED_PARAM,
   return 0;
 }
 
-/**
-Perform quintic polynomial interpolation.
-
-@param[in] state A pointer to any constant values specific to this
-interpolation type.  (For \a interpolate_poly5, it should be
-NULL).
-
-@param[in] data A 2D data array
-
-@param[in] x The fractional x coordinate
-
-@param[in] y The fractional y coordinate
-
-@param[out] value The resulting value at x, y after interpolating the data
-
-@param[out] error
-
-@return Non-zero if an error occurred
+/** --------------------------------------------------------------------------------------------------
+ * Perform quintic polynomial interpolation.
+ * 
+ * state: A pointer to any constant values specific to this interpolation type. (NULL).
+ * data:  A 2D data array 
+ * x:     The fractional x coordinate
+ * y:     The fractional y coordinate
+ * value: The resulting value at x, y after interpolating the data (output)
+ * error: The error structure (output)
  */
+
 static int
 interpolate_poly5(const void* state UNUSED_PARAM,
                   PyArrayObject* data,
@@ -616,17 +573,10 @@ interpolate_poly5(const void* state UNUSED_PARAM,
   return 0;
 }
 
-/**
-A structure to hold parameters for sinc interpolation.
-*/
-struct sinc_param_t {
-  /** The scaling factor for sinc interpolation */
-  float sinscl;
-};
+/** --------------------------------------------------------------------------------------------------
+ * (Was: iinisc)
+ */
 
-/**
-was: iinisc
-*/
 #define INTERPOLATE_SINC_NCONV 15
 
 static inline_macro int
@@ -807,25 +757,17 @@ interpolate_sinc_(PyArrayObject* data,
   return 0;
 }
 
-/**
-Perform sinc interpolation.
+/** --------------------------------------------------------------------------------------------------
+ * Perform sinc interpolation.
+ * 
+ * state: A pointer to a \a sinc_param_t object
+ * data:  A 2D data array 
+ * x:     The fractional x coordinate
+ * y:     The fractional y coordinate
+ * value: The resulting value at x, y after interpolating the data (output)
+ * error: The error structure (output)
+ */
 
-@param[in] state A pointer to any constant values specific to this
-interpolation type.  (For \a interpolate_sinc, it must be a pointer
-to a \a sinc_param_t object).
-
-@param[in] data A 2D data array of shape [ny][nx]
-
-@param[in] x The fractional x coordinate
-
-@param[in] y The fractional y coordinate
-
-@param[out] value The resulting value at x, y after interpolating the data
-
-@param[out] error
-
-@return Non-zero if an error occurred
-*/
 static int
 interpolate_sinc(const void* state,
                  PyArrayObject* data,
@@ -844,25 +786,17 @@ interpolate_sinc(const void* state,
                            param->sinscl, value, error);
 }
 
-/**
-Perform Lanczos interpolation.
+/** --------------------------------------------------------------------------------------------------
+ * Perform Lanczos interpolation.
+ * 
+ * state: A pointer to a \a lanczos_param_t object
+ * data:  A 2D data array 
+ * x:     The fractional x coordinate
+ * y:     The fractional y coordinate
+ * value: The resulting value at x, y after interpolating the data (output)
+ * error: The error structure (output)
+ */
 
-@param[in] state A pointer to any constant values specific to this
-interpolation type.  (For \a interpolate_lanczos, it must be a pointer
-to a \a lanczos_param_t object, already fully filled-in).
-
-@param[in] data A 2D data array
-
-@param[in] x The fractional x coordinate
-
-@param[in] y The fractional y coordinate
-
-@param[out] value The resulting value at x, y after interpolating the data
-
-@param[out] error
-
-@return Non-zero if an error occurred
-*/
 static int
 interpolate_lanczos(const void* state,
                     PyArrayObject* data,
@@ -918,10 +852,11 @@ interpolate_lanczos(const void* state,
   return 0;
 }
 
-/**
-A mapping from e_interp_t enumeration values to function pointers that actually
-perform the interpolation.  NULL elements will raise an "unimplemented" error.
-*/
+/** --------------------------------------------------------------------------------------------------
+ * A mapping from e_interp_t enumeration values to function pointers that actually
+ * perform the interpolation.  NULL elements will raise an "unimplemented" error.
+ */
+
 interp_function* interp_function_map[interp_LAST] = {
   &interpolate_nearest_neighbor,
   &interpolate_bilinear,
@@ -934,7 +869,12 @@ interp_function* interp_function_map[interp_LAST] = {
   &interpolate_lanczos
 };
 
-/* See header file for documentation */
+/** --------------------------------------------------------------------------------------------------
+ * Interpolate grid of pixels onto new grid of different size.
+ *
+ * p:   structure containing options, input, and output
+ */
+
 int
 doblot(struct driz_param_t* p) {
 

@@ -11,6 +11,17 @@
 #include <math.h>
 #include <stdlib.h>
 
+/** --------------------------------------------------------------------------------------------------
+ * Update the flux and counts in the output image using a weighted average
+ *
+ * p:   structure containing options, input, and output
+ * ii:  x coordinate in output images
+ * jj:  y coordinate in output images
+ * d:   new contribution to weighted flux
+ * vc:  previous value of counts
+ * dow: new contribution to weighted counts
+ */
+
 inline_macro static void
 update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
             const float d, const float vc, const float dow) {
@@ -30,7 +41,11 @@ update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
   set_pixel(p->output_counts, ii, jj, vc_plus_dow);
 }
 
-/* The bit value, trimmed to the appropriate range */
+/** --------------------------------------------------------------------------------------------------
+ * The bit value, trimmed to the appropriate range
+ *
+ * uuid: the id of the input image
+ */
 
 integer_t
 compute_bit_value(integer_t uuid) {
@@ -44,13 +59,17 @@ compute_bit_value(integer_t uuid) {
   return bv;
 }
 
-/**
-To calculate area under a line segment within unit square at origin.
-This is used by BOXER.
+/** --------------------------------------------------------------------------------------------------
+ * Calculate area under a line segment within unit square at origin. This is used by boxer.
+ * NOTE: This is the single most frequently called function.  Ripe for optimization.
+ * The inputs are a line segment bordering a square on the input image containing the pixel flux.
+ *
+ * x1: The x coordinate of first point defining line segment
+ * y1: The y coordinate of first point defining line segment
+ * x2: The x coordinate of second point defining line segment
+ * y2: The y coordinate of second point defining line segment
+ */
 
-NOTE: This is the single most frequently called function.  Ripe
-for optimization.
-*/
 static inline_macro double
 sgarea(const double x1, const double y1, const double x2, const double y2) {
   double m, c, dx, dy, xlo, xhi, ylo, yhi, xtop;
@@ -146,15 +165,16 @@ sgarea(const double x1, const double y1, const double x2, const double y2) {
   return 0.0;
 }
 
-/**
- compute area of box overlap
+/** --------------------------------------------------------------------------------------------------
+ * Compute area of box overlap. Calculate the area common to input clockwise polygon x(n), y(n) with
+ * square (is, js) to (is+1, js+1). This version is for a quadrilateral. Used by do_square_kernel.
+ *
+ * is: x coordinate of a pixel on the output image
+ * js: y coordinate of a pixel on the output image
+ * x:  x coordinates of endpoints of quadrilateral containing flux of input pixel
+ * y:  y coordinates of endpoints of quadrilateral containing flux of input pixel
+ */
 
- Calculate the area common to input clockwise polygon x(n), y(n) with
- square (is, js) to (is+1, js+1).
- This version is for a quadrilateral.
-
- Used by do_square_kernel.
-*/
 static inline_macro double
 boxer(double is, double js,
       const double x[4], const double y[4]) {
@@ -184,14 +204,18 @@ boxer(double is, double js,
   return sum;
 }
 
-/**
-Calculate overlap between an arbitrary rectangle, aligned with the
-axes, and a pixel.
+/** --------------------------------------------------------------------------------------------------
+ * Calculate overlap between an arbitrary rectangle, aligned with the axes, and a pixel.
+ * This is a simplified version of the boxer code. Used by do_kernel_turbo
+ *
+ * i:    the x coordinate of a pixel on the output image
+ * j:    the y coordinate of a pixel on the output image
+ * xmin: the x coordinate of the lower edge of rectangle containing flux of input pixel
+ * xmax: the x coordinate of the upper edge of rectangle containing flux of input pixel
+ * ymin: the y coordinate of the lower edge of rectangle containing flux of input pixel
+ * ymax: the y coordinate of the upper edge of rectangle containing flux of input pixel
+ */
 
-This is a simplified version of the BOXER code.
-
-Used by do_kernel_turbo
-*/
 static inline_macro double
 over(const integer_t i, const integer_t j,
      const double xmin, const double xmax,
@@ -210,9 +234,11 @@ over(const integer_t i, const integer_t j,
   return 0.0;
 }
 
-/***************************************************************************
- KERNEL HANDLERS
-*/
+/** --------------------------------------------------------------------------------------------------
+ * The kernel assumes all the flux in an input pixel is at the center 
+ *
+ * p: structure containing options, input, and output
+ */
 
 static int
 do_kernel_point(struct driz_param_t* p) {
@@ -277,6 +303,12 @@ do_kernel_point(struct driz_param_t* p) {
   
   return 0;
 }
+
+/** --------------------------------------------------------------------------------------------------
+ * This kernel assumes flux is distrubuted evenly across a circle around the center of a pixel
+ * 
+ * p: structure containing options, input, and output
+ */
 
 static int
 do_kernel_tophat(struct driz_param_t* p) {
@@ -371,6 +403,12 @@ do_kernel_tophat(struct driz_param_t* p) {
 
   return 0;
 }
+
+/** --------------------------------------------------------------------------------------------------
+ * This kernel assumes the flux is distributed acrass a gaussian around the center of an input pixel
+ * 
+ * p: structure containing options, input, and output
+ */
 
 static int
 do_kernel_gaussian(struct driz_param_t* p) {
@@ -474,6 +512,12 @@ do_kernel_gaussian(struct driz_param_t* p) {
 
   return 0;
 }
+
+/** --------------------------------------------------------------------------------------------------
+ * This kernel assumes flux of input pixel is distributed according to lanczos function
+ * 
+ * p: structure containing options, input, and output
+ */
 
 static int
 do_kernel_lanczos(struct driz_param_t* p) {
@@ -588,6 +632,13 @@ do_kernel_lanczos(struct driz_param_t* p) {
   return 0;
 }
 
+/** --------------------------------------------------------------------------------------------------
+ * This kernel assumes the input flux is evenly distributed over a rectangle whose sides are
+ * aligned with the ouput pixel. Called turbo because it is fast, but approximate.
+ * 
+ * p: structure containing options, input, and output
+ */
+
 static int
 do_kernel_turbo(struct driz_param_t* p) {
   integer_t bv, i, j, ii, jj, nxi, nxa, nyi, nya, nhit, iis, iie, jjs, jje;
@@ -685,16 +736,17 @@ do_kernel_turbo(struct driz_param_t* p) {
   return 0;
 }
 
-/**
-This module does the actual mapping of input flux to output images
-using "boxer", a code written by Bill Sparks for FOC geometric
-distortion correction, rather than the "drizzling" approximation.
-
-This works by calculating the positions of the four corners of a
-quadrilateral on the output grid corresponding to the corners of the
-input pixel and then working out exactly how much of each pixel in the
-output is covered, or not.
-*/
+/** --------------------------------------------------------------------------------------------------
+ * This module does the actual mapping of input flux to output images using "boxer",
+ * a code written by Bill Sparks for FOC geometric distortion correction, rather than the
+ * "drizzling" approximation.
+ *
+ * This works by calculating the positions of the four corners of a quadrilateral on the output grid
+ * corresponding to the corners of the input pixel and then working out exactly how much of each pixel
+ * in the output is covered, or not.
+ *
+ * p: structure containing options, input, and output
+ */
 
 int
 do_kernel_square(struct driz_param_t* p) {
@@ -815,6 +867,12 @@ do_kernel_square(struct driz_param_t* p) {
   return 0;
 }
 
+/** --------------------------------------------------------------------------------------------------
+ * The user selects a kernel to use for drizzling from a function in the following tables
+ * The kernels differ in how the flux inside a single pixel is allocated: evenly spread
+ * across the pixel, concentrated at the central point, or by some other function.
+ */
+
 static kernel_handler_t
 kernel_handler_map[] = {
   do_kernel_square,
@@ -826,10 +884,11 @@ kernel_handler_map[] = {
   do_kernel_lanczos
 };
 
-/**
-In V1.6 this was simplified to use the DRIVAL routine and also to
-include some limited multi-kernel support.
-*/
+/** --------------------------------------------------------------------------------------------------
+ * The executive function which calls the kernel which does the actual drizzling
+ * 
+ * p: structure containing options, input, and output
+ */
 
 int
 dobox(struct driz_param_t* p) {

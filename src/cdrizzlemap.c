@@ -9,7 +9,7 @@
 #include "cdrizzlemap.h"
 #include "cdrizzleutil.h"
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Initialize a segment structure to contain the two points (x1, y1) and (x2, y2)
  * the invalid flag is initially set to 0 (valid)
  */
@@ -25,7 +25,7 @@ initialize_segment(struct segment *self, integer_t x1, integer_t y1, integer_t x
   return;
 }
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Generate a string representation of a segment for debugging
  *
  * self: the segment
@@ -42,7 +42,7 @@ show_segment(struct segment *self, char *str) {
   return;
 }
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Sort points in increasing order on jdim coordinate
  *
  * self: the segment
@@ -68,7 +68,7 @@ sort_segment(struct segment *self, int jdim) {
   return;
 }
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Take the the union of several line segments along a dimension.
  * That is, the result is the combined range of all the segments along a dimension
  *
@@ -109,7 +109,7 @@ union_of_segments(int npoint, int jdim, struct segment xybounds[], integer_t bou
   return;
 }
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Map a point on the input image to the output image using
  * a mapping of the pixel centers between the two by interpolating
  * between the centers in the mapping
@@ -161,7 +161,7 @@ map_point(PyArrayObject *pixmap,
   return;
 }
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Clip a line segment from an input image to the limits of an output image along one dimension
  *
  * pixmap:   the mapping between input and output images
@@ -271,7 +271,7 @@ clip_bounds(PyArrayObject *pixmap, struct segment *xylimit, struct segment *xybo
   return 0;
 }
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Determine the range of pixels in a specified line of an input image
  * which are inside the output image. Range is one-sided, that is, the second
  * value returned is one greater than the last pixel that is on the image.
@@ -313,7 +313,7 @@ check_line_overlap(struct driz_param_t* p, int margin, integer_t j, integer_t *x
   }
 }
 
-/*----------------------------------------------------------------------------------------------------
+/** --------------------------------------------------------------------------------------------------
  * Determine the range of lines in the input image that overlap the output image
  * Range is one-sided, that is, the second value returned is one greater than the
  * last line that is on the image.
