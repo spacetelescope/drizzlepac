@@ -12,7 +12,7 @@
 
 struct segment {
     double  point[2][2];
-    int     valid;
+    int     invalid;
 };
 
 void
@@ -29,6 +29,11 @@ show_segment(struct segment *self,
             );
 
 void
+sort_segment(struct segment *self,
+             int jdim
+            );
+
+void
 union_of_segments(int npoint, int jdim,
                   struct segment xybounds[],
                   integer_t bounds[2]
@@ -40,21 +45,20 @@ map_point(PyArrayObject * pixmap,
           double xyout[2]
          );
 
-void
+int
 clip_bounds(PyArrayObject *pixmap,
-            int jdim,
             struct segment *xylimit,
             struct segment *xybounds
            );
 
-void
+int
 check_line_overlap(struct driz_param_t* p, 
                    int margin,
                    integer_t jy,
                    integer_t *xbounds
                   );
 
-void
+int
 check_image_overlap(struct driz_param_t* p, 
                     const int margin,
                     integer_t *ybounds

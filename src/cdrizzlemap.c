@@ -11,7 +11,7 @@
 
 /*----------------------------------------------------------------------------------------------------
  * Initialize a segment structure to contain the two points (x1, y1) and (x2, y2)
- * the valid flag is initially set to 0 (valid)
+ * the invalid flag is initially set to 0 (valid)
  */
 
 void
@@ -20,7 +20,7 @@ initialize_segment(struct segment *self, integer_t x1, integer_t y1, integer_t x
   self->point[0][1] = y1;
   self->point[1][0] = x2;
   self->point[1][1] = y2;
-  self->valid = 0;
+  self->invalid = 0;
 
   return;
 }
@@ -37,7 +37,33 @@ show_segment(struct segment *self, char *str) {
   sprintf(str, "(%10f,%10f) - (%10f,%10f) [%2d]",
           self->point[0][0], self->point[0][1],
           self->point[1][0], self->point[1][1],
-          self->valid);
+          self->invalid);
+
+  return;
+}
+
+/*----------------------------------------------------------------------------------------------------
+ * Sort points in increasing order on jdim coordinate
+ *
+ * self: the segment
+ * jdim: the dimension to sort on, x (0) or y (1)
+ */
+
+void
+sort_segment(struct segment *self, int jdim) {
+  int idim;
+  
+  if (self->invalid == 0) {
+    if (self->point[0][jdim] > self->point[1][jdim]) {
+      double t;
+
+      for (idim = 0; idim < 2; ++idim) {
+        t = self->point[0][idim];
+        self->point[0][idim] = self->point[1][idim];
+        self->point[1][idim] = t;
+      }
+    }
+  }
 
   return;
 }
@@ -58,7 +84,9 @@ union_of_segments(int npoint, int jdim, struct segment xybounds[], integer_t bou
   int none = 1;
   
   for (ipoint = 0; ipoint < npoint; ++ipoint) {
-    if (xybounds[ipoint].valid == 0) {
+    sort_segment(&xybounds[ipoint], jdim);
+
+    if (xybounds[ipoint].invalid == 0) {
       integer_t lo = floor(xybounds[ipoint].point[0][jdim]);
       integer_t hi = ceil(xybounds[ipoint].point[1][jdim]);
 
@@ -133,108 +161,114 @@ map_point(PyArrayObject *pixmap,
   return;
 }
 
-
 /*----------------------------------------------------------------------------------------------------
  * Clip a line segment from an input image to the limits of an output image along one dimension
  *
  * pixmap:   the mapping between input and output images
- * jdim:     the dimension to do the clipping to, x (0) or y (1)
  * xylimit:  the limits  of the output image
  * xybounds: the clipped line segment (output)
  * 
  */
 
-void
-clip_bounds(PyArrayObject *pixmap, int jdim, struct segment *xylimit, struct segment *xybounds) {
-  int ipoint, idim;
+int
+clip_bounds(PyArrayObject *pixmap, struct segment *xylimit, struct segment *xybounds) {
+  int ipoint, idim, jdim;
   
-  xybounds->valid = 1; /* Track if bounds are both outside the image */
+  xybounds->invalid = 1; /* Track if bounds are both outside the image */
+
+  for (idim = 0; idim < 2; ++idim) {    
+    for (ipoint = 0; ipoint < 2; ++ipoint) {
+      int m = 21;         /* maximum iterations */
+      int side = 0;       /* flag indicating which side moved last */
   
-  for (ipoint = 0; ipoint < 2; ++ipoint) {
-    int m = 21;         /* maximum iterations */
-    int side = 0;       /* flag indicating which side moved last */
-
-    double xyin[2], xyout[2];
-    double a, b, c, fa, fb, fc;
-    
-    /* starting values at endpoints of interval */
-
-    for (idim = 0; idim < 2; ++idim) {
-      xyin[idim] = xybounds->point[0][idim];
-    }
-    
-    map_point(pixmap, xyin, xyout);
-    a = xybounds->point[0][jdim];
-    fa = xyout[jdim] - xylimit->point[ipoint][jdim];
-    
-    for (idim = 0; idim < 2; ++idim) {
-      xyin[idim] = xybounds->point[1][idim];
-    }
-
-    map_point(pixmap, xyin, xyout);
-    c = xybounds->point[1][jdim];
-    fc = xyout[jdim] - xylimit->point[ipoint][jdim];
-
-    /* Solution via the method of false position (regula falsi) */
-
-    if (fa * fc < 0.0) {
-      int n; /* for loop limit is just for safety's sake */
+      double xyin[2], xyout[2];
+      double a, b, c, fa, fb, fc;
       
-      for (n = 0; n < m; n++) {
-        b = (fa * c - fc * a) / (fa - fc);
-        
-        /* Solution is exact if within a pixel because linear interpolation */
-        if (floor(a) == floor(c)) break;
-        
-        xyin[jdim] = b;
-        map_point(pixmap, xyin, xyout);
-        fb = xyout[jdim] - xylimit->point[ipoint][jdim];
-
-        /* Maintain the bound by copying b to the variable
-         * with the same sign as b
-         */
-        
-        if (fb * fc > 0.0) {
-          c = b;
-          fc = fb;
-          if (side == -1) {
-              fa /= 2.0;
-          }
-          side = -1;
-
-        } else if (fa * fb > 0.0) {
-          a = b;
-          fa = fb;
-          if (side == +1) {
-              fc /= 2.0;
-          }
-          side = +1;
-            
-        } else {
-          /* if the product is zero, we have converged */
-          break;
-        } 
+      /* starting values at endpoints of interval */
+  
+      for (jdim = 0; jdim < 2; ++jdim) {
+        xyin[jdim] = xybounds->point[0][jdim];
       }
+      
+      map_point(pixmap, xyin, xyout);
+      a = xybounds->point[0][idim];
+      fa = xyout[idim] - xylimit->point[ipoint][idim];
+      
+      for (jdim = 0; jdim < 2; ++jdim) {
+        xyin[jdim] = xybounds->point[1][jdim];
+      }
+  
+      map_point(pixmap, xyin, xyout);
+      c = xybounds->point[1][idim];
+      fc = xyout[idim] - xylimit->point[ipoint][idim];
+  
+      /* Solution via the method of false position (regula falsi) */
+  
+      if (fa * fc < 0.0) {
+        int n; /* for loop limit is just for safety's sake */
+        
+        for (n = 0; n < m; n++) {
+          b = (fa * c - fc * a) / (fa - fc);
+          
+          /* Solution is exact if within a pixel because linear interpolation */
+          if (floor(a) == floor(c)) break;
+          
+          xyin[idim] = b;
+          map_point(pixmap, xyin, xyout);
+          fb = xyout[idim] - xylimit->point[ipoint][idim];
+  
+          /* Maintain the bound by copying b to the variable
+           * with the same sign as b
+           */
+          
+          if (fb * fc > 0.0) {
+            c = b;
+            fc = fb;
+            if (side == -1) {
+                fa *= 0.5;
+            }
+            side = -1;
+  
+          } else if (fa * fb > 0.0) {
+            a = b;
+            fa = fb;
+            if (side == +1) {
+                fc *= 0.5;
+            }
+            side = +1;
+              
+          } else {
+            /* if the product is zero, we have converged */
+            break;
+          } 
+        }
+  
+        if (n > m) {
+          xybounds->invalid = 1;
+          return 1;
+        }
 
-      assert(n < m);
-      xybounds->valid = 0;
-      xybounds->point[ipoint][jdim] = b;
+        xybounds->invalid = 0;
+        xybounds->point[ipoint][idim] = b;
+  
+      } else {
+        /* No bracket, so track which side the bound lies on */
+        xybounds->invalid *= fa > 0.0 ? +1 : -1;
+      }
+    }
+  
+    if (xybounds->invalid > 0) {
+        /* Positive means both bounds are outside the image */
+        xybounds->point[1][idim] = xybounds->point[0][idim];
+        break;
 
     } else {
-      /* No bracket, so track which side the bound lies on */
-      xybounds->valid *= fa > 0.0 ? +1 : -1;
+        /* Negative means both bounds are inside, which is not a problem */
+        xybounds->invalid = 0;
     }
   }
 
-  if (xybounds->valid > 0) {
-      /* Positive means both bounds are outside the image */
-      xybounds->point[1][jdim] = xybounds->point[0][jdim]; 
-  } else {
-      /* Negative means both bounds are inside, which is not a problem */
-      xybounds->valid = 0;
-  }
-  
-  return;
+  return 0;
 }
 
 /*----------------------------------------------------------------------------------------------------
@@ -248,28 +282,35 @@ clip_bounds(PyArrayObject *pixmap, int jdim, struct segment *xylimit, struct seg
  * xbounds: the input pixels bounding the overlap (output)
  */
 
-void
+int
 check_line_overlap(struct driz_param_t* p, int margin, integer_t j, integer_t *xbounds) {
-
   struct segment xylimit, xybounds;
   integer_t isize[2];
-  int idim;
-    
-  get_dimensions(p->pixmap, isize);
-  initialize_segment(&xybounds, 0, j, isize[0], j);
+
   initialize_segment(&xylimit, p->xmin - margin, p->ymin - margin,
                                p->xmax + margin, p->ymax + margin);
 
-  for (idim = 0; idim < 2; ++idim) {
-    clip_bounds(p->pixmap, idim, &xylimit, &xybounds);
-    if (xybounds.valid) break;
+  get_dimensions(p->pixmap, isize);
+  initialize_segment(&xybounds, 0, j, isize[0], j);
+
+  if (clip_bounds(p->pixmap, &xylimit, &xybounds)) {
+    driz_error_set_message(p->error, "cannot compute xbounds");
+    return 1;
   }
  
+  sort_segment(&xybounds, 0);
+  
   xbounds[0] = floor(xybounds.point[0][0]);
   xbounds[1] = ceil(xybounds.point[1][0]);
-  if (xybounds.valid) xbounds[1] = xbounds[0];
+  if (xybounds.invalid) xbounds[1] = xbounds[0];
 
-  return;
+  if (driz_error_check(p->error, "xbounds must be inside input image",
+                       xbounds[0] >= 0 && xbounds[1] <= isize[0])) {
+    return 1;
+  
+  } else {
+    return 0;
+  }
 }
 
 /*----------------------------------------------------------------------------------------------------
@@ -282,12 +323,12 @@ check_line_overlap(struct driz_param_t* p, int margin, integer_t j, integer_t *x
  * ybounds: the input lines bounding the overlap (output)
  */
 
-void
+int
 check_image_overlap(struct driz_param_t* p, const int margin, integer_t *ybounds) {
 
   struct segment xylimit, xybounds[2];
-  integer_t isize[2], osize[2];
-  int ipoint, idim;
+  integer_t isize[2];
+  int ipoint;
   
   get_dimensions(p->pixmap, isize);
 
@@ -300,13 +341,20 @@ check_image_overlap(struct driz_param_t* p, const int margin, integer_t *ybounds
   for (ipoint = 0; ipoint < 2; ++ipoint) {
     initialize_segment(&xybounds[ipoint], ybounds[ipoint], 0, ybounds[ipoint], isize[1]);
     
-    for (idim = 0; idim < 2; ++idim) {
-      clip_bounds(p->pixmap, idim, &xylimit, &xybounds[ipoint]);
-      if (xybounds[ipoint].valid) break;
+    if (clip_bounds(p->pixmap, &xylimit, &xybounds[ipoint])) {
+      driz_error_set_message(p->error, "cannot compute ybounds");
+      return 1;
     }
   }
 
   union_of_segments(2, 1, xybounds, ybounds);
-  return;
+
+  if (driz_error_check(p->error, "ybounds must be inside input image",
+                       ybounds[0] >= 0 && ybounds[1] <= isize[1])) {
+    return 1;
+  
+  } else {
+    return 0;
+  }
 }
 

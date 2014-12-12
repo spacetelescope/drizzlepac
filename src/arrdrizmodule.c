@@ -243,10 +243,10 @@ tblot(PyObject *obj, PyObject *args, PyObject *keywords)
 
   /* Arguments in the order they appear */
   PyObject *oimg, *pixmap, *oout;
-  long xmin = -1;
-  long xmax = -1;
-  long ymin = -1;
-  long ymax = -1;
+  long xmin = 0;
+  long xmax = 0;
+  long ymin = 0;
+  long ymax = 0;
   double scale = 1.0;
   float kscale = 1.0;
   char *interp_str = "poly5";
@@ -296,8 +296,8 @@ tblot(PyObject *obj, PyObject *args, PyObject *keywords)
   }
 
   get_dimensions(out, osize);
-  if (xmax < 0) xmax = osize[0];
-  if (ymax < 0) ymax = osize[1];
+  if (xmax == 0) xmax = osize[0];
+  if (ymax == 0) ymax = osize[1];
 
   driz_param_init(&p);
   

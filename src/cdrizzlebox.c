@@ -226,7 +226,7 @@ do_kernel_point(struct driz_param_t* p) {
   bv = compute_bit_value(p->uuid);
   
   margin = 2;
-  check_image_overlap(p, margin, ybounds);
+  if (check_image_overlap(p, margin, ybounds)) return 1;
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
@@ -235,7 +235,7 @@ do_kernel_point(struct driz_param_t* p) {
   
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    check_line_overlap(p, margin, j, xbounds);
+    if (check_line_overlap(p, margin, j, xbounds)) return 1;
     
     /* We know there may be some misses */
     p->nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
@@ -292,7 +292,7 @@ do_kernel_tophat(struct driz_param_t* p) {
   bv = compute_bit_value(p->uuid);
  
   margin = 2;
-  check_image_overlap(p, margin, ybounds);
+  if (check_image_overlap(p, margin, ybounds)) return 1;
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
@@ -301,7 +301,7 @@ do_kernel_tophat(struct driz_param_t* p) {
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    check_line_overlap(p, margin, j, xbounds);
+    if (check_line_overlap(p, margin, j, xbounds)) return 1;
     
     /* We know there may be some misses */
     p->nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
@@ -397,7 +397,7 @@ do_kernel_gaussian(struct driz_param_t* p) {
   gaussian_es = gaussian_efac / M_PI;
 
   margin = 2;
-  check_image_overlap(p, margin, ybounds);
+  if (check_image_overlap(p, margin, ybounds)) return 1;
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
@@ -406,7 +406,7 @@ do_kernel_gaussian(struct driz_param_t* p) {
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    check_line_overlap(p, margin, j, xbounds);
+    if (check_line_overlap(p, margin, j, xbounds)) return 1;
     
     /* We know there may be some misses */
     p->nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
@@ -507,7 +507,7 @@ do_kernel_lanczos(struct driz_param_t* p) {
   lanczos.nlut = nlut;
 
   margin = 2;
-  check_image_overlap(p, margin, ybounds);
+  if (check_image_overlap(p, margin, ybounds)) return 1;
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
@@ -516,7 +516,7 @@ do_kernel_lanczos(struct driz_param_t* p) {
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    check_line_overlap(p, margin, j, xbounds);
+    if (check_line_overlap(p, margin, j, xbounds)) return 1;
     
     /* We know there may be some misses */
     p->nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
@@ -603,7 +603,7 @@ do_kernel_turbo(struct driz_param_t* p) {
   scale2 = p->scale * p->scale;
   
   margin = 2;
-  check_image_overlap(p, margin, ybounds);
+  if (check_image_overlap(p, margin, ybounds)) return 1;
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
@@ -612,7 +612,7 @@ do_kernel_turbo(struct driz_param_t* p) {
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    check_line_overlap(p, margin, j, xbounds);
+    if (check_line_overlap(p, margin, j, xbounds)) return 1;
     
     /* We know there may be some misses */
     p->nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
@@ -714,7 +714,7 @@ do_kernel_square(struct driz_param_t* p) {
      pixel */
 
   margin = 2;
-  check_image_overlap(p, margin, ybounds);
+  if (check_image_overlap(p, margin, ybounds)) return 1;
 
   p->nskip = (p->ymax - p->ymin) - (ybounds[1] - ybounds[0]);
   p->nmiss = p->nskip * (p->ymax - p->ymin);
@@ -723,7 +723,7 @@ do_kernel_square(struct driz_param_t* p) {
 
   for (j = ybounds[0]; j < ybounds[1]; ++j) {
     /* Check the overlap with the output */
-    check_line_overlap(p, margin, j, xbounds);
+    if (check_line_overlap(p, margin, j, xbounds)) return 1;
     
     /* We know there may be some misses */
     p->nmiss += (p->xmax - p->xmin) - (xbounds[1] - xbounds[0]);
