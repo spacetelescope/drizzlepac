@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Imagefindpars: Source finding parameters &mdash; DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</title>
+    <title>Imagefindpars: Source finding parameters &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev34876 (14-Aug-2014)',
+        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
     <link rel="next" title="Imagefindpars: Source finding parameters" href="imagefindpars.html" />
     <link rel="prev" title="TWEAKREG: Alignment of Images" href="tweakreg.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -154,7 +154,7 @@ this value.</p>
 <dd><p class="first last">This parameter allows the user to select only those sources whose
 total flux (in the units of the input image) is less than this value.</p>
 </dd>
-<dt><strong>dqbits</strong>: int, None, optional (Default = None)</dt>
+<dt><strong>dqbits</strong>: int, str, None, optional (Default = None)</dt>
 <dd><p class="first">Integer sum of all the DQ bit values from the input image&#8217;s DQ array
 that should be considered &#8220;good&#8221; when building masks for source
 finding. For example, if pixels in the DQ array can be combinations
@@ -163,14 +163,31 @@ having flags 2 and 4 as being acceptable for source finding,
 then <em class="xref py py-obj">dqbits</em> should be set to 2+4=6. Then a DQ pixel having values
 2,4, or 6 will be considered a good pixel, while a DQ pixel with
 a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
+<p>Alternatively, one can enter a comma- or &#8216;+&#8217;-separated list of
+integer bit flags that should be added to obtain the final &#8220;good&#8221;
+bits. For example, both <tt class="docutils literal"><span class="pre">4,8</span></tt> and <tt class="docutils literal"><span class="pre">4+8</span></tt> are equivalent to
+setting <em class="xref py py-obj">dqbits</em> to 12.</p>
 <div class="line-block">
 <div class="line">Setting <em class="xref py py-obj">dqbits</em> to 0 will make <em>all</em> non-zero pixels in the DQ
 mask to be considered &#8220;bad&#8221; pixels, and the corresponding image
 pixels will not be used for source finding.</div>
 </div>
-<div class="last line-block">
+<div class="line-block">
 <div class="line">The default value of <em class="xref py py-obj">None</em> will turn off the use of image&#8217;s DQ
 array for source finding.</div>
+</div>
+<div class="last line-block">
+<div class="line">In order to reverse the meaning of the <em class="xref py py-obj">dqbits</em>
+parameter from indicating values of the &#8220;good&#8221; DQ flags
+to indicating the &#8220;bad&#8221; DQ flags, prepend &#8216;~&#8217; to the string
+value. For example, in order not to use pixels with
+DQ flags 4 and 8 for source finding and to consider
+as &#8220;good&#8221; all other pixels (regardless of their DQ flag),
+set <em class="xref py py-obj">dqbits</em> to <tt class="docutils literal"><span class="pre">~4+8</span></tt>, or <tt class="docutils literal"><span class="pre">~4,8</span></tt>. To obtain the
+same effect with an <em class="xref py py-obj">int</em> input value (except for 0),
+enter -(4+8+1)=-9. Following this convention,
+a <em class="xref py py-obj">dqbits</em> string value of <tt class="docutils literal"><span class="pre">'~0'</span></tt> would be equivalent to
+setting <tt class="docutils literal"><span class="pre">dqbits=None</span></tt>.</div>
 </div>
 </dd>
 <dt><strong>use_sharp_round</strong>: bool (Default = False)</dt>
@@ -257,7 +274,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev34876 (14-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
