@@ -7,7 +7,7 @@ Functions to build mask files for PyDrizzle.
     - buildShadowMaskImage(rootname,detnum,replace=no):
         This function builds a weighting image for use with drizzle from
         the WFPC2 shadow mask functions derived from 'wmosaic'.
-        
+
 """
 
 #
@@ -74,11 +74,13 @@ def buildDQMasks(imageObjectList,configObj):
         imageObjectList = [imageObjectList]
 
     for img in imageObjectList:
-        img.buildMask(configObj['bits'],configObj['single'])
+        img.buildMask(configObj['single'], configObj['bits'])
 
 
 def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
+
+    bitvalue = util.interpret_bits_value(bitvalue)
 
     #if bitvalue == None:
         #return ((dqarr * 0.0) + 1.0).astype(np.uint8)
