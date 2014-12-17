@@ -9,9 +9,6 @@
 
 #include <numpy/arrayobject.h>
 
-#include "astropy_wcs_api.h"
-#include "astropy_wcs.h"
-
 #include "cdrizzleblot.h"
 #include "cdrizzlebox.h"
 #include "cdrizzlemap.h"
@@ -882,6 +879,4 @@ void initcdriz(void)
     return;
 
   import_array();
-  import_astropy_wcs();
-
 }
