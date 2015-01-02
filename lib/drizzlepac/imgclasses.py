@@ -1541,7 +1541,7 @@ def _is_wcs_distorted(wcs):
 def _is_cd_unitary(wcs):
     # set maximum acceptable deviation of matrix elements from zero -
     # a measure of closeness to matrix being unitary:
-    maxerr = 10.0 * np.finfo(np.float32).eps
+    maxerr = 50.0 * np.finfo(np.float32).eps
 
     cd = None
     if hasattr(wcs.wcs, 'cd'):
@@ -1563,5 +1563,7 @@ def _is_cd_unitary(wcs):
     # However, I am not aware of complex CD/PC matrices...
     I = 0.5*(np.dot(cd, cd.T)+np.dot(cd, cd.T))
     cd_unitary_err = np.amax(np.abs(I-np.eye(shape[0])))
+    # or, use RMS instead of max error:
+    #cd_unitary_err = np.sqrt(np.mean(np.abs(I-np.eye(shape[0]))**2))
 
     return (cd_unitary_err < maxerr)
