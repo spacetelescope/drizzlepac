@@ -429,9 +429,8 @@ def run(configobj):
         omitted_images.insert(0, refimg) # refimage *must* be first
         do_match_refimg = True
 
-    print '\n'+'='*20+'\n'
-    print 'Aligning all input images to WCS defined by ',refwcs_fname
-    print '\n'+'='*20+'\n'
+    print('\n{0}\nAligning all input images to WCS defined by {1}\n{0}\n'
+          .format('='*20, refwcs_fname))
 
     if refimage.outxy is not None:
         if cat_src is None:

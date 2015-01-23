@@ -1097,7 +1097,19 @@ class RefImage(object):
             else:
                 raise TypeError("Unsupported 'wcs_list' type.")
 
-        assert(not _is_wcs_distorted(self.wcs))
+        # assert(not _is_wcs_distorted(self.wcs))
+        if _is_wcs_distorted(self.wcs):
+            warnstr = textutil.textbox(
+                "WARNING: Reference image appears to have a distorted WCS. \n"
+                "This is likely due to a deviation of WCS' CD (or PC) "
+                "matrix from orthogonality. \n"
+                "Residual distortions in the reference WCS will result "
+                "in sub-optimal image alignment.\n"
+                "Check orthogonality of the CD (or PC) matrix!"
+            )
+            for line in warnstr.split('\n'):
+                log.warning(line)
+            print(warnstr)
 
         self.dirty = False
 
@@ -1480,10 +1492,12 @@ def convex_hull(points):
     # Last point of each list is omitted because it is repeated at the beginning of the other list.
     return lower[:-1] + upper
 
+
 def _is_wcs_distorted(wcs):
     return not (_is_cd_unitary(wcs) and wcs.sip is None and \
                 wcs.cpdis1 is None and wcs.cpdis2 is None and \
                 wcs.det2im1 is None and wcs.det2im2 is None)
+
 
 def _is_cd_unitary(wcs):
     # set maximum acceptable deviation of matrix elements from zero -
@@ -1492,9 +1506,12 @@ def _is_cd_unitary(wcs):
 
     cd = None
     if hasattr(wcs.wcs, 'cd'):
-        cd = wcs.wcs.cd.copy()
+        cd = wcs.wcs.cd
     elif hasattr(wcs.wcs, 'pc'):
-        cd = wcs.wcs.pc.copy()
+        if not hasattr(wcs.wcs, 'cdelt'):
+            raise ValueError("Inconsistent WCS specification (missing CDELT "
+                             "with a valid PC).")
+        cd = np.dot(np.diag(wcs.wcs.cdelt), wcs.wcs.pc)
 
     if cd is None:
         return False
@@ -1502,14 +1519,14 @@ def _is_cd_unitary(wcs):
     shape = cd.shape
     assert(len(shape) == 2 and shape[0] == shape[1])
 
-    scale = np.sqrt(np.abs(np.linalg.det(cd)))
-    assert(scale > 0.0)
-    cd /= scale
+    pixarea = np.abs(np.linalg.det(cd))
+    if pixarea <= 0.0:
+        raise ValueError("Singular CD (or PC & CDELT) matrix.")
 
     # NOTE: Technically, below we should use np.dot(cd, np.conjugate(cd.T))
     # However, I am not aware of complex CD/PC matrices...
-    I = 0.5*(np.dot(cd, cd.T)+np.dot(cd, cd.T))
-    cd_unitary_err = np.amax(np.abs(I-np.eye(shape[0])))
+    I = np.dot(cd, cd.T) / pixarea
+    cd_unitary_err = np.amax(np.abs(I - np.eye(shape[0])))
     # or, use RMS instead of max error:
     #cd_unitary_err = np.sqrt(np.mean(np.abs(I-np.eye(shape[0]))**2))
 
