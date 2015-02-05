@@ -592,6 +592,7 @@ class Image(object):
                 self.matches['ref_orig_xy'] = np.column_stack([
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
+
                 self.matches['img_orig_xy'] = np.column_stack([
                     np.array(self.xy_catalog[0])[matches['input_idx']][:,np.newaxis],
                     np.array(self.xy_catalog[1])[matches['input_idx']][:,np.newaxis]])
@@ -1010,6 +1011,7 @@ class Image(object):
             #
             f.write('#\n')
             f.close()
+
             xydata = [[self.fit['ref_coords'][:,0],self.fit['ref_coords'][:,1],
                       self.fit['img_coords'][:,0],self.fit['img_coords'][:,1],
                       self.fit['fit_xy'][:,0],self.fit['fit_xy'][:,1],
@@ -1022,6 +1024,7 @@ class Image(object):
                       [self.fit['fit_RA'],self.fit['fit_DEC']],
                       [self.fit['src_origin']]
                     ]
+
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
                 append=True,format=["%15.6f","%8d","%20.12f","   %s"])
 
@@ -1081,6 +1084,8 @@ class RefImage(object):
     def __init__(self, wcs_list, catalog, xycatalog=None, cat_origin=None, **kwargs):
         assert(isinstance(xycatalog, list) if xycatalog is not None else True)
         hdulist = None
+
+        self.pars = kwargs
 
         if isinstance(wcs_list, str):
             # Input was a filename for the reference image
@@ -1228,7 +1233,10 @@ class RefImage(object):
             # Convert RA/Dec positions of source from refimage into
             # X,Y positions based on WCS of refimage
             self.xy_catalog = []
-            xypos = self.wcs.wcs_world2pix(self.all_radec[0], self.all_radec[1],1)
+            if 'refxyunits' in self.pars and self.pars['refxyunits'] == 'pixels':
+                xypos = [self.all_radec[0], self.all_radec[1]]
+            else:
+                xypos = self.wcs.wcs_world2pix(self.all_radec[0], self.all_radec[1],1)
             nobj = xypos[0].shape[0]
             assert(nradec == nobj)
             self.xy_catalog.append(xypos[0])
@@ -1266,7 +1274,6 @@ class RefImage(object):
 
         self.outxy = None
         self.origin = 1
-        self.pars = kwargs
         if self.all_radec is not None:
             # convert sky positions to X,Y positions on reference tangent plane
             self.transformToRef()
@@ -1348,7 +1355,8 @@ class RefImage(object):
             log.info('Creating RA/Dec positions for reference sources...')
             self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
             skypos = self.wcs.wcs_pix2world(self.all_radec[0],self.all_radec[1],self.origin)
-            self.all_radec = np.column_stack([skypos[0][:,np.newaxis],skypos[1][:,np.newaxis]])
+            self.all_radec[0] = skypos[0]
+            self.all_radec[1] = skypos[1]
         else:
             log.info('Converting RA/Dec positions of reference sources from "%s" to '%self.name+
                         'X,Y positions in reference WCS...')
