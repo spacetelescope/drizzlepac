@@ -290,7 +290,7 @@ def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
                       (chip_wcs._naxis2 - chip_wcs.wcs.crpix[1])/100.0))
 
     # compute new CRVAL for the image WCS:
-    chip_wcs_orig = chip_wcs.copy()
+    chip_wcs_orig = chip_wcs.deepcopy()
     crpix_in_old_drz = drz_old_wcs.wcs_world2pix([chip_wcs.wcs.crval], 1)
     chip_wcs.wcs.crval = drz_new_wcs.wcs_pix2world(crpix_in_old_drz, 1)[0]
     chip_wcs.wcs.set()
