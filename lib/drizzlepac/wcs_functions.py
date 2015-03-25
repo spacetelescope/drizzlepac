@@ -477,7 +477,7 @@ def removeAllAltWCS(hdulist,extlist):
         if hwcs is None:
             continue
         for k in hwcs.keys():
-            if k in hdr:
+            if k not in ['DATE-OBS','MJD-OBS'] and k in hdr:
                 del hdr[k]
 
 def updateImageWCS(imageObjectList, output_wcs):
