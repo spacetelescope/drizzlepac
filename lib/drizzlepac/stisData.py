@@ -279,17 +279,21 @@ class NUVInputImage(STISInputImage):
         self.doUnitConversions()
 
 
-
     def _setMAMAchippars(self):
         self._setMAMADefaultGain()
         self._setMAMADefaultReadnoise()
 
+
     def _setMAMADefaultGain(self):
         self._gain = 1
         self.effGain = 1
+        return self._gain
+
 
     def _setMAMADefaultReadnoise(self):
         self._rdnoise = 0
+        return self._rdnoise
+
 
     def getdarkcurrent(self):
         """
