@@ -2,7 +2,14 @@
 `tweakback` - propagate the "tweaked" solutions back to the original
 input files.
 
-:Authors: Warren Hack
+Version 0.4.0 - replaced previous algorithm that used fitting of WCS
+footprints to reconstruct the transformation that was applied to the
+old drizzled image (to align it with another image) to obtain the new
+drizzled image WCS with an algorithm that is based on linearization of
+the exact compound operator that transforms current image coordinates to
+the "aligned" (to the new drizzled WCS) image coordinates.
+
+:Authors: Warren Hack, Mihai Cara
 
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
@@ -13,7 +20,8 @@ import numpy as np
 from astropy.io import fits
 
 from stwcs import wcsutil
-from stsci.tools import parseinput
+from stsci.tools import parseinput, logutil
+from stsci.skypac.utils import get_ext_list, ext2str
 
 from . import updatehdr
 from . import linearfit
@@ -23,8 +31,11 @@ from . import util
 __taskname__ = 'tweakback' # unless someone comes up with anything better
 
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.3.0'
-__vdate__ = '1-Feb-2012'
+__version__ = '0.4.0'
+__vdate__ = '14-Oct-2014'
+
+
+log = logutil.create_logger(__name__)
 
 #### Primary function
 def tweakback(drzfile, input=None,  origwcs = None,
@@ -83,16 +94,10 @@ def tweakback(drzfile, input=None,  origwcs = None,
 
     Notes
     -----
-    The algorithm used by this function follows these steps:
-
-    0. Verify or determine list of distorted image's that need to be updated
-       with final solution from drizzled image
-    1. Read in HSTWCS objects for last 2 alternate WCS solutions
-    2. Generate footprints using .calFootprint() for each WCS
-    3. Create pixel positions for corners of each WCS's footprint
-       by running the :py:meth:`wcs_sky2pix` method for the last (updated) WCS
-    4. Perform linear 'rscale' fit between the 2 sets of X,Y coords
-    5. Update each input image WCS with fit using 'updatehdr_with_shift()'
+    The algorithm used by this function is based on linearization of
+    the exact compound operator that converts input image coordinates
+    to the coordinates (in the input image) that would result in
+    alignment with the new drizzled image WCS.
 
     If no input distorted files are specified as input, this task will attempt
     to generate the list of filenames from the drizzled input file's own
@@ -120,8 +125,8 @@ def tweakback(drzfile, input=None,  origwcs = None,
     stwcs.wcsutil.altwcs: Alternate WCS implementation
 
     """
-    print 'TweakBack Version %s(%s) started at: %s \n'%(
-                    __version__,__vdate__,util._ptime()[0])
+    print("TweakBack Version {:s}({:s}) started at: {:s}\n"
+          .format(__version__,__vdate__,util._ptime()[0]))
 
     # Interpret input list/string into list of filename(s)
     fltfiles = parseinput.parseinput(input)[0]
@@ -130,14 +135,14 @@ def tweakback(drzfile, input=None,  origwcs = None,
         # try to extract the filenames from the drizzled file's header
         fltfiles = extract_input_filenames(drzfile)
         if fltfiles is None:
-            print '*'*60
-            print '*'
-            print '* ERROR:'
-            print '*    No input filenames found! '
-            print '*    Please specify "fltfiles" or insure that input drizzled'
-            print '*    image contains D*DATA keywords. '
-            print '*'
-            print '*'*60
+            print('*'*60)
+            print('*')
+            print('* ERROR:')
+            print('*    No input filenames found! ')
+            print('*    Please specify "fltfiles" or insure that input drizzled')
+            print('*    image contains D*DATA keywords. ')
+            print('*')
+            print('*'*60)
             raise ValueError
 
     if not isinstance(fltfiles,list):
@@ -148,8 +153,8 @@ def tweakback(drzfile, input=None,  origwcs = None,
 
     ### Step 1: Read in updated and original WCS solutions
     # determine keys for all alternate WCS solutions in drizzled image header
-    wkeys = wcsutil.altwcs.wcskeys(drzfile,ext=sciext)
-    wnames = wcsutil.altwcs.wcsnames(drzfile,ext=sciext)
+    wkeys = wcsutil.altwcs.wcskeys(drzfile, ext=sciext)
+    wnames = wcsutil.altwcs.wcsnames(drzfile, ext=sciext)
     if not util.is_blank(newname):
         final_name = newname
     else:
@@ -165,7 +170,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
                 break
     else:
         wcskey = wkeys[-1]
-    final_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=wkeys[-1])
+    final_wcs = wcsutil.HSTWCS(drzfile, ext=sciext, wcskey=wkeys[-1])
 
     if not util.is_blank(origwcs):
         for k in wnames:
@@ -192,27 +197,135 @@ def tweakback(drzfile, input=None,  origwcs = None,
     else:
         crderr2 = 0.0
     del scihdr
-    ### Step 2: Generate footprints for each WCS
-    final_fp = final_wcs.calc_footprint()
-    orig_fp = orig_wcs.calc_footprint()
 
-    ### Step 3: Create pixel positions in final WCS for each footprint
-    final_xy_fp = final_wcs.wcs_world2pix(final_fp, 1)
-    orig_xy_fp = final_wcs.wcs_world2pix(orig_fp, 1)
-
-    ### Step 4: Perform fit between footprint X,Y positions
-    wfit = linearfit.iter_fit_all(orig_xy_fp,final_xy_fp,range(4),range(4),
-                                mode='rscale',nclip=0, verbose=verbose,
-                                center=final_wcs.wcs.crpix)
-
-    ### Step 5: Apply solution to input file headers
+    ### Step 2: Apply solution to input file headers
     for fname in fltfiles:
-        updatehdr.updatewcs_with_shift(fname,final_wcs,wcsname=final_name,
-                        rot=wfit['rot'],scale=wfit['scale'][0],
-                        xsh=wfit['offset'][0],ysh=wfit['offset'][1],
-                        fit=wfit['fit_matrix'],
-                        xrms=crderr1, yrms = crderr2,
-                        verbose=verbose,force=force,sciext=extname)
+        logstr = "....Updating header for {:s}...".format(fname)
+        if verbose:
+            print("\n{:s}\n".format(logstr))
+        else:
+            log.info(logstr)
+
+        # reset header WCS keywords to original (OPUS generated) values
+        imhdulist = fits.open(fname, mode='update', memmap=True)
+        extlist = get_ext_list(imhdulist, extname='SCI')
+        if not extlist:
+            extlist = [0]
+
+        # insure that input PRIMARY WCS has been archived before overwriting
+        # with new solution
+        wcsutil.altwcs.archiveWCS(imhdulist, extlist, reusekey=True)
+
+        # Process MEF images...
+        for ext in extlist:
+            logstr = "Processing {:s}[{:s}]".format(imhdulist.filename(),
+                                                    ext2str(ext))
+            if verbose:
+                print("\n{:s}\n".format(logstr))
+            else:
+                log.info(logstr)
+            chip_wcs = wcsutil.HSTWCS(imhdulist, ext=ext)
+
+            update_chip_wcs(chip_wcs, orig_wcs, final_wcs,
+                            xrms=crderr1, yrms = crderr2)
+
+            # Update FITS file with newly updated WCS for this chip
+            extnum = imhdulist.index(imhdulist[ext])
+            updatehdr.update_wcs(imhdulist, extnum, chip_wcs,
+                                 wcsname=final_name, reusename=False,
+                                 verbose=verbose)
+
+        imhdulist.close()
+
+
+def linearize(wcsim, wcsima, wcs_olddrz, wcs_newdrz, imcrpix, hx=1.0, hy=1.0):
+    # linearization using 5-point formula for first order derivative
+    x0 = imcrpix[0]
+    y0 = imcrpix[1]
+    p = np.asarray([[x0, y0],
+                    [x0 - hx, y0],
+                    [x0 - hx * 0.5, y0],
+                    [x0 + hx * 0.5, y0],
+                    [x0 + hx, y0],
+                    [x0, y0 - hy],
+                    [x0, y0 - hy * 0.5],
+                    [x0, y0 + hy * 0.5],
+                    [x0, y0 + hy]],
+                   dtype=np.float64)
+    # convert image coordinates to old drizzled image coordinates:
+    p = wcs_olddrz.wcs_world2pix(wcsim.wcs_pix2world(p, 1), 1)
+    # convert to sky coordinates using the new drizzled image's WCS:
+    p = wcs_newdrz.wcs_pix2world(p, 1)
+    # convert back to image coordinate system using partially (CRVAL only)
+    # aligned image's WCS:
+    p = wcsima.wcs_world2pix(p, 1).astype(np.float128)
+
+    # derivative with regard to x:
+    u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6*hx)
+    # derivative with regard to y:
+    u2 = ((p[5] - p[8]) + 8 * (p[7] - p[6])) / (6*hy)
+
+    return (np.asarray([u1, u2]).T, p[0])
+
+
+def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
+                    xrms=None, yrms=None):
+    cd_eye = np.eye(chip_wcs.wcs.cd.shape[0])
+
+    # estimate precision necessary for iterative processes:
+    maxiter = 100
+    crpix2corners = np.dstack([i.flatten() for i in np.meshgrid(
+        [1, chip_wcs._naxis1],
+        [1, chip_wcs._naxis2])])[0] - chip_wcs.wcs.crpix
+    maxUerr = 1.0e-5 / np.amax(np.linalg.norm(crpix2corners, axis=1))
+
+    # estimate step for numerical differentiation. We need a step
+    # large enough to avoid rounding errors and small enough to get a
+    # better precision for numerical differentiation.
+    # TODO: The logic below should be revised at a later time so that it
+    # better takes into account the two competing requirements.
+    hx = max(1.0, min(20.0, (chip_wcs.wcs.crpix[0] - 1.0)/100.0,
+                      (chip_wcs._naxis1 - chip_wcs.wcs.crpix[0])/100.0))
+    hy = max(1.0, min(20.0, (chip_wcs.wcs.crpix[1] - 1.0)/100.0,
+                      (chip_wcs._naxis2 - chip_wcs.wcs.crpix[1])/100.0))
+
+    # compute new CRVAL for the image WCS:
+    chip_wcs_orig = chip_wcs.deepcopy()
+    crpix_in_old_drz = drz_old_wcs.wcs_world2pix([chip_wcs.wcs.crval], 1)
+    chip_wcs.wcs.crval = drz_new_wcs.wcs_pix2world(crpix_in_old_drz, 1)[0]
+    chip_wcs.wcs.set()
+
+    # initial approximation for CD matrix of the image WCS:
+    (U, u) = linearize(chip_wcs_orig, chip_wcs, drz_old_wcs, drz_new_wcs,
+                       chip_wcs_orig.wcs.crpix, hx=hx, hy=hy)
+    err0 = np.amax(np.abs(U-cd_eye)).astype(np.float64)
+    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(np.float128), U).astype(np.float64)
+    chip_wcs.wcs.set()
+
+    # NOTE: initial solution is the exact mathematical solution (modulo numeric
+    # differentiation). However, e.g., due to rounding errors, approximate
+    # numerical differentiation, the solution may be improved by performing
+    # several iterations. The next step will try to perform
+    # fixed-point iterations to "improve" the solution
+    # but this is not really required.
+
+    # Perform fixed-point iterations to improve the approximation
+    # for CD matrix of the image WCS (actually for the U matrix).
+    for i in xrange(maxiter):
+        (U, u) = linearize(chip_wcs_orig, chip_wcs, drz_old_wcs, drz_new_wcs,
+                           chip_wcs_orig.wcs.crpix, hx=hx, hy=hy)
+        err = np.amax(np.abs(U-cd_eye)).astype(np.float64)
+        if err > err0:
+            break
+        chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd, U).astype(np.float64)
+        chip_wcs.wcs.set()
+        if err < maxUerr:
+            break
+        err0 = err
+
+    if xrms is not None:
+        chip_wcs.wcs.crder = np.array([xrms,yrms])
+
 
 #### TEAL Interfaces to run this task
 

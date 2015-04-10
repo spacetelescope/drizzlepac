@@ -233,7 +233,7 @@ use_static : bool (Default = True)
     Specifies whether or not to use static mask to exclude masked image pixels from sky computations.
 
 
-sky_bits : int, None (Default = 0)
+sky_bits : int, str, None (Default = 0)
     Integer sum of all the DQ bit values from the input image's DQ array that
     should be considered "good" when building masks for sky computations.
     For example, if pixels in the DQ array can be combinations of 1, 2, 4,
@@ -243,12 +243,29 @@ sky_bits : int, None (Default = 0)
     good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc.
     will be flagged as a "bad" pixel.
 
+    Alternatively, one can enter a comma- or '+'-separated list of integer
+    bit flags that should be added to obtain the final "good" bits.
+    For example, both ``4,8`` and ``4+8`` are equivalent to
+    setting `sky_bits` to 12.
+
     | Default value (0) will make *all* non-zero pixels in the DQ mask to
       be considered "bad" pixels, and the corresponding image pixels will
       not be used for sky computations.
 
     | Set `sky_bits` to `None` to turn off the use of image's DQ array for sky
       computations.
+
+    | In order to reverse the meaning of the `sky_bits`
+      parameter from indicating values of the "good" DQ flags
+      to indicating the "bad" DQ flags, prepend '~' to the string
+      value. For example, in order not to use pixels with
+      DQ flags 4 and 8 for sky computations and to consider
+      as "good" all other pixels (regardless of their DQ flag),
+      set `sky_bits` to ``~4+8``, or ``~4,8``. To obtain the
+      same effect with an `int` input value (except for 0),
+      enter -(4+8+1)=-9. Following this convention,
+      a `sky_bits` string value of ``'~0'`` would be equivalent to
+      setting ``sky_bits=None``.
 
     .. note::
         DQ masks (if used), *will be* combined with user masks specified
@@ -295,8 +312,15 @@ driz_sep_fillval : int (Default = None)
     Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'None' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.
 
 
-driz_sep_bits : int (Default = 0)
-    Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.
+driz_sep_bits : int, str, or None (Default = 0)
+    Integer sum of all the DQ bit values from the input image's DQ array
+    that should be considered 'good' when building the weighting mask.
+    This can also be used to reset pixels to good if they had been flagged
+    as cosmic rays during a previous run of AstroDrizzle, by adding the value
+    4096 for ACS and WFPC2 data. Please see the section on
+    Selecting the 'Bits' Parameter for a more detailed discussion.
+    For possible input formats, see the description for `sky_bits`
+    parameter.
 
 
 *STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*
@@ -482,8 +506,15 @@ final_fillval : float (Default = None)
     The value for this parameter is to be assigned to the output pixels that have zero weight or which do not receive flux from any input pixels during drizzling. This parameter corresponds to the 'fillval' parameter of the 'drizzle' task. If the default of 'None' is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that numerical value.
 
 
-final_bits : int (Default = 0)
-    Integer sum for all of the DQ bit values from the input image's DQ array that should be considered 'good' when building the weight mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the 'Bits' Parameter for a more detailed discussion.
+final_bits : int, str, or None (Default = 0)
+    Integer sum for all of the DQ bit values from the input image's DQ array
+    that should be considered 'good' when building the weight mask.
+    This can also be used to reset pixels to good if they had been flagged
+    as cosmic rays during a previous run of AstroDrizzle, by adding the value
+    4096 for ACS and WFPC2 data. Please see the section on
+    Selecting the 'Bits' Parameter for a more detailed discussion.
+    For possible input formats, see the description for `sky_bits`
+    parameter.
 
 
 final_units : str (Default = 'cps')

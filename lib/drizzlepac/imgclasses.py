@@ -64,7 +64,7 @@ class Image(object):
         """
         self._im = spu.ImageRef()
         self._dq = spu.ImageRef()
-        self.dqbits = kwargs['dqbits']
+        self.dqbits = util.interpret_bits_value(kwargs['dqbits'])
 
         if 'use_sharp_round' in kwargs:
             self.use_sharp_round = kwargs['use_sharp_round']
@@ -257,8 +257,12 @@ class Image(object):
                     xy_vertices = np.asarray(convex_hull(
                         map(tuple,np.asarray([catalog.xypos[0],catalog.xypos[1]]).transpose())),
                                              dtype=np.float64)
-                    rdv = wcs.all_pix2world(xy_vertices, 1)
-                    bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
+                    if xy_vertices.shape[0] > 2:
+                        rdv = wcs.all_pix2world(xy_vertices, 1)
+                        bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
+                    else:
+                        bounding_polygons.append(SphericalPolygon.from_wcs(wcs))
+
                     if IMGCLASSES_DEBUG:
                         all_ra, all_dec = wcs.all_pix2world(
                             catalog.xypos[0], catalog.xypos[1], 1)
@@ -588,6 +592,7 @@ class Image(object):
                 self.matches['ref_orig_xy'] = np.column_stack([
                                     np.array(ref_inxy[0])[matches['ref_idx']][:,np.newaxis],
                                     np.array(ref_inxy[1])[matches['ref_idx']][:,np.newaxis]])
+
                 self.matches['img_orig_xy'] = np.column_stack([
                     np.array(self.xy_catalog[0])[matches['input_idx']][:,np.newaxis],
                     np.array(self.xy_catalog[1])[matches['input_idx']][:,np.newaxis]])
@@ -668,13 +673,40 @@ class Image(object):
                 self.fit['fit_RA'] = radec_fit[:,0]
                 self.fit['fit_DEC'] = radec_fit[:,1]
                 self.fit['src_origin'] = self.matches['src_origin']
-                #if pars['fitgeometry'] != 'general':
-                    #self.fit['fit_matrix'] = None
 
                 print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
-                print 'XSH: %0.6g  YSH: %0.6g    ROT: %0.6g    SCALE: %0.6g'%(
-                    self.fit['offset'][0],self.fit['offset'][1],
-                    self.fit['rot'],self.fit['scale'][0])
+                if pars['fitgeometry'] == 'shift':
+                    print("XSH: {:.6g}  YSH: {:.6g}"
+                          .format(self.fit['offset'][0],
+                                  self.fit['offset'][1]))
+                elif pars['fitgeometry'] == 'rscale' and self.fit['proper']:
+                    print("XSH: {:.6g}  YSH: {:.6g}    ROT: {:.6g}    "
+                          "SCALE: {:.6g}".format(
+                              self.fit['offset'][0],
+                              self.fit['offset'][1],
+                              self.fit['rot'],
+                              self.fit['scale'][0]))
+                elif pars['fitgeometry'] == 'general' or \
+                     (pars['fitgeometry'] == 'rscale' and not self.fit['proper']):
+                    print("XSH: {:.6g}  YSH: {:.6g}    PROPER ROT: {:.6g}    "
+                          "".format(
+                              self.fit['offset'][0],
+                              self.fit['offset'][1],
+                              self.fit['rot']))
+                    print("<ROT>: {:.6g}  SKEW: {:.6g}    ROT_X: {:.6g}  "
+                          "ROT_Y: {:.6g}".format(
+                              self.fit['rotxy'][2],
+                              self.fit['skew'],
+                              self.fit['rotxy'][0],
+                              self.fit['rotxy'][1]))
+                    print("<SCALE>: {:.6g}  SCALE_X: {:.6g}  "
+                          "SCALE_Y: {:.6g}".format(
+                              self.fit['scale'][0],
+                              self.fit['scale'][1],
+                              self.fit['scale'][2]))
+                else:
+                    assert(False)
+
                 print 'XRMS: %0.6g    YRMS: %0.6g\n'%(
                         self.fit['rms'][0],self.fit['rms'][1])
                 print 'RMS_RA: %g (deg)   RMS_DEC: %g (deg)\n'%(
@@ -729,6 +761,7 @@ class Image(object):
                 self.fit['rot'] = np.nan
                 self.fit['scale'] = [np.nan]
 
+
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
         if not self.identityfit and self.goodmatch:
@@ -742,7 +775,7 @@ class Image(object):
             nmatch = 0
         return {'RMS_RA':rms_ra,'RMS_DEC':rms_dec,'NMATCH':nmatch}
 
-    def updateHeader(self,wcsname=None):
+    def updateHeader(self, wcsname=None, reusename=False):
         """ Update header of image with shifts computed by *perform_fit()*.
         """
         # Insure filehandle is open and available...
@@ -768,16 +801,16 @@ class Image(object):
                     self._im.hdu.fileinfo(0)['filemode'] == 'update'):
                     self._im.hdu[self.ext_name,ext].header['wcsname'] = 'Default'
 
-        next_key = altwcs.next_wcskey(fits.getheader(self.name,extlist[0]))
-
         if not self.identityfit and self.goodmatch and \
                 self.fit['offset'][0] != np.nan:
             updatehdr.updatewcs_with_shift(self._im.hdu, self.refWCS,
-                wcsname=wcsname,
+                wcsname=wcsname, reusename=reusename,
+                fitgeom=self.fit_pars['fitgeometry'],
                 xsh=self.fit['offset'][0],ysh=self.fit['offset'][1],
                 rot=self.fit['rot'],scale=self.fit['scale'][0],
                 fit=self.fit['fit_matrix'], verbose=verbose_level,
-                xrms=self.fit['rms_keys']['RMS_RA'],yrms=self.fit['rms_keys']['RMS_DEC'])
+                xrms=self.fit['rms_keys']['RMS_RA'],
+                yrms=self.fit['rms_keys']['RMS_DEC'])
 
             wnames = altwcs.wcsnames(self._im.hdu,ext=extlist[0])
 
@@ -793,11 +826,21 @@ class Image(object):
 
             self.next_key = next_key
         else: #if self.identityfit or not self.goodmatch:
+            if reusename:
+                # Look for key of WCS with this name
+                next_key = altwcs.getKeyFromName(self._im.hdu[extlist[0]].header,wcsname)
+                # This wcsname is new, so start fresh
+                if next_key is None:
+                    next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+            else:
+                # Find key for next WCS and save again to replicate an updated solution
+                next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+
             if self.perform_update:
-                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_key)
                 # archive current WCS as alternate WCS with specified WCSNAME
                 # Start by archiving original PRIMARY WCS
                 wnames = altwcs.wcsnames(self._im.hdu,ext=extlist[0])
+
                 # Define a default WCSNAME in the case that the file to be
                 # updated did not have the WCSNAME keyword defined already
                 # (as will happen when updating images that have not been
@@ -812,17 +855,29 @@ class Image(object):
                         self._im.hdu[extlist[0]].header['wscname'] = ''
                         wnames[' '] = ''
                     pri_wcsname = wnames[' ']
+
+                next_pkey = altwcs.getKeyFromName(fits.getheader(self.name,extlist[0]),pri_wcsname)
+                log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_pkey)
+
                 altwcs.archiveWCS(self._im.hdu, extlist,
-                                    wcskey=next_key, wcsname=pri_wcsname,
+                                    wcskey=next_pkey, wcsname=pri_wcsname,
                                     reusekey=True)
-                # Find key for next WCS and save again to replicate an updated solution
-                next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                if reusename:
+                    # Look for key of WCS with this name
+                    next_key = altwcs.getKeyFromName(self._im.hdu[extlist[0]].header,wcsname)
+                    # This wcsname is new, so start fresh
+                    if next_key is None:
+                        next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                else:
+                    # Find key for next WCS and save again to replicate an updated solution
+                    next_key = altwcs.next_wcskey(self._im.hdu[extlist[0]].header)
+                    # update WCSNAME to be the new name
+                    for ext in extlist:
+                        self._im.hdu[ext].header['WCSNAME'] = wcsname
+
                 # save again using new WCSNAME
                 altwcs.archiveWCS(self._im.hdu, extlist,
-                    wcskey=next_key,wcsname=wcsname)
-                # update WCSNAME to be the new name
-                for ext in extlist:
-                    self._im.hdu[ext].header['WCSNAME'] = wcsname
+                    wcskey=next_key,wcsname=wcsname, reusekey=reusename)
             self.next_key = ' '
 
         # add FIT values to image's PRIMARY header
@@ -845,6 +900,7 @@ class Image(object):
             log.info('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
             wcscorr.update_wcscorr(self._im.hdu, wcs_id=wcsname,
                                    extname=self.ext_name)
+
 
     def writeHeaderlet(self,**kwargs):
         """ Write and/or attach a headerlet based on update to PRIMARY WCS
@@ -876,6 +932,7 @@ class Image(object):
                 attach=pars['attach'], clobber=pars['clobber']
             )
 
+
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """
@@ -891,6 +948,7 @@ class Image(object):
             f.write('%0.12f  %0.12f\n'%(ralist[i],declist[i]))
         f.close()
 
+
     def get_xy_catnames(self):
         """ Return a string with the names of input_xy catalog names
         """
@@ -899,6 +957,7 @@ class Image(object):
             for xycat in self.catalog_names['input_xy']:
                 catstr += '  '+xycat
         return catstr + '\n'
+
 
     def write_fit_catalog(self):
         """ Write out the catalog of all sources and resids used in the final fit.
@@ -952,6 +1011,7 @@ class Image(object):
             #
             f.write('#\n')
             f.close()
+
             xydata = [[self.fit['ref_coords'][:,0],self.fit['ref_coords'][:,1],
                       self.fit['img_coords'][:,0],self.fit['img_coords'][:,1],
                       self.fit['fit_xy'][:,0],self.fit['fit_xy'][:,1],
@@ -964,6 +1024,7 @@ class Image(object):
                       [self.fit['fit_RA'],self.fit['fit_DEC']],
                       [self.fit['src_origin']]
                     ]
+
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
                 append=True,format=["%15.6f","%8d","%20.12f","   %s"])
 
@@ -1010,6 +1071,7 @@ class Image(object):
                         log.info('Deleting intermediate catalog: %d'%extn)
                         os.remove(extn)
 
+
 class RefImage(object):
     """ This class provides all the information needed by to define a reference
         tangent plane and list of source positions on the sky.
@@ -1022,6 +1084,8 @@ class RefImage(object):
     def __init__(self, wcs_list, catalog, xycatalog=None, cat_origin=None, **kwargs):
         assert(isinstance(xycatalog, list) if xycatalog is not None else True)
         hdulist = None
+
+        self.pars = kwargs
 
         if isinstance(wcs_list, str):
             # Input was a filename for the reference image
@@ -1169,7 +1233,10 @@ class RefImage(object):
             # Convert RA/Dec positions of source from refimage into
             # X,Y positions based on WCS of refimage
             self.xy_catalog = []
-            xypos = self.wcs.wcs_world2pix(self.all_radec[0], self.all_radec[1],1)
+            if 'refxyunits' in self.pars and self.pars['refxyunits'] == 'pixels':
+                xypos = [self.all_radec[0], self.all_radec[1]]
+            else:
+                xypos = self.wcs.wcs_world2pix(self.all_radec[0], self.all_radec[1],1)
             nobj = xypos[0].shape[0]
             assert(nradec == nobj)
             self.xy_catalog.append(xypos[0])
@@ -1207,7 +1274,6 @@ class RefImage(object):
 
         self.outxy = None
         self.origin = 1
-        self.pars = kwargs
         if self.all_radec is not None:
             # convert sky positions to X,Y positions on reference tangent plane
             self.transformToRef()
@@ -1217,8 +1283,12 @@ class RefImage(object):
            self.outxy is not None:
             xy_vertices = np.asarray(convex_hull(map(tuple,self.outxy)),
                                      dtype=np.float64)
-            rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
-            self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+            if xy_vertices.shape[0] > 2:
+                rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
+                self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
+            else:
+                self.skyline = SphericalPolygon([])
+
             if IMGCLASSES_DEBUG:
                 _debug_write_region_fk5('dbg_tweakreg_refcat_bounding_polygon.reg',
                     zip(*rdv.transpose()), zip(*self.all_radec), self.xy_catalog[-1])
@@ -1285,7 +1355,8 @@ class RefImage(object):
             log.info('Creating RA/Dec positions for reference sources...')
             self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
             skypos = self.wcs.wcs_pix2world(self.all_radec[0],self.all_radec[1],self.origin)
-            self.all_radec = np.column_stack([skypos[0][:,np.newaxis],skypos[1][:,np.newaxis]])
+            self.all_radec[0] = skypos[0]
+            self.all_radec[1] = skypos[1]
         else:
             log.info('Converting RA/Dec positions of reference sources from "%s" to '%self.name+
                         'X,Y positions in reference WCS...')
@@ -1316,16 +1387,6 @@ class RefImage(object):
         # apply corrections based on the fit:
         new_outxy = np.dot(not_matched_outxy-image.fit['offset']-self.wcs.wcs.crpix,
                            image.fit['fit_matrix'].transpose())+self.wcs.wcs.crpix
-
-        #print("\n==================")
-        #fm=image.fit['fit_matrix']
-        #print("FIT MATRIX:\n{:.16g}, {:.16g}\n{:.16g}, {:.16g}\n"\
-              #.format(fm[0,0],fm[0,1],fm[1,0],fm[1,1]))
-        #print("SHIFTS:\n   xshift={:.16g}\n   yshift={:.16g}\n"\
-              #.format(image.fit['offset'][0],image.fit['offset'][1]))
-        #print("REF WCS CRPIX:\n   x_crpix={:.16g}\n   x_crpix={:.16g}\n"\
-              #.format(self.wcs.wcs.crpix[0],self.wcs.wcs.crpix[1]))
-        #print("\n==================")
 
         # convert to RA & DEC:
         new_radec = self.wcs.wcs_pix2world(new_outxy, 1)

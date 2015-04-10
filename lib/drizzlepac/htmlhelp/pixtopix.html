@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pixtopix: Coordinate transformation to/from drizzled images &mdash; DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</title>
+    <title>pixtopix: Coordinate transformation to/from drizzled images &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev33830 (11-Aug-2014)',
+        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
     <link rel="next" title="pixtosky: Coordinate transformation to sky coordinates" href="pixtosky.html" />
     <link rel="prev" title="Region mapping for TweakReg" href="mapreg.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -210,6 +210,12 @@ into a position on the output image &#8216;output_drz.fits[sci,1]&#8217; using:<
 <span class="gp">... </span>                          <span class="s">&quot;output_drz.fits[sci,1],&quot;</span><span class="n">forward</span><span class="s">&quot;, 256,256)</span>
 </pre></div>
 </div>
+<p>or if you the default direction of &#8216;forward&#8217; is already appropriate and
+you don&#8217;t want to explicitly set that value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">outx</span><span class="p">,</span><span class="n">outy</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                          <span class="s">&quot;output_drz.fits[sci,1],x=256,y=256)</span>
+</pre></div>
+</div>
 </li>
 <li><p class="first">The set of X,Y positions from &#8216;output_drz.fits[sci,1]&#8217; stored as
 the 3rd and 4th columns from the ASCII file <tt class="docutils literal"><span class="pre">xy_sci1.dat</span></tt>
@@ -256,7 +262,7 @@ read from each image&#8217;s header.</p>
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

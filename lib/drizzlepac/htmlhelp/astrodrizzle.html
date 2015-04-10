@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev33830 (11-Aug-2014)',
+        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -397,7 +397,7 @@ covering significant parts of the image.</p>
 <blockquote>
 <div><p>Specifies whether or not to use static mask to exclude masked image pixels from sky computations.</p>
 </div></blockquote>
-<p><strong id="sky_bits">sky_bits</strong> : int, None (Default = 0)</p>
+<p><strong id="sky_bits">sky_bits</strong> : int, str, None (Default = 0)</p>
 <blockquote>
 <div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that
 should be considered &#8220;good&#8221; when building masks for sky computations.
@@ -407,6 +407,10 @@ as being acceptable for sky computations, then <em class="xref py py-obj">sky_bi
 to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a
 good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc.
 will be flagged as a &#8220;bad&#8221; pixel.</p>
+<p>Alternatively, one can enter a comma- or &#8216;+&#8217;-separated list of integer
+bit flags that should be added to obtain the final &#8220;good&#8221; bits.
+For example, both <tt class="docutils literal"><span class="pre">4,8</span></tt> and <tt class="docutils literal"><span class="pre">4+8</span></tt> are equivalent to
+setting <em class="xref py py-obj">sky_bits</em> to 12.</p>
 <div class="line-block">
 <div class="line">Default value (0) will make <em>all</em> non-zero pixels in the DQ mask to
 be considered &#8220;bad&#8221; pixels, and the corresponding image pixels will
@@ -415,6 +419,19 @@ not be used for sky computations.</div>
 <div class="line-block">
 <div class="line">Set <em class="xref py py-obj">sky_bits</em> to <em class="xref py py-obj">None</em> to turn off the use of image&#8217;s DQ array for sky
 computations.</div>
+</div>
+<div class="line-block">
+<div class="line">In order to reverse the meaning of the <em class="xref py py-obj">sky_bits</em>
+parameter from indicating values of the &#8220;good&#8221; DQ flags
+to indicating the &#8220;bad&#8221; DQ flags, prepend &#8216;~&#8217; to the string
+value. For example, in order not to use pixels with
+DQ flags 4 and 8 for sky computations and to consider
+as &#8220;good&#8221; all other pixels (regardless of their DQ flag),
+set <em class="xref py py-obj">sky_bits</em> to <tt class="docutils literal"><span class="pre">~4+8</span></tt>, or <tt class="docutils literal"><span class="pre">~4,8</span></tt>. To obtain the
+same effect with an <em class="xref py py-obj">int</em> input value (except for 0),
+enter -(4+8+1)=-9. Following this convention,
+a <em class="xref py py-obj">sky_bits</em> string value of <tt class="docutils literal"><span class="pre">'~0'</span></tt> would be equivalent to
+setting <tt class="docutils literal"><span class="pre">sky_bits=None</span></tt>.</div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -472,9 +489,16 @@ in the input &#64;-file.</p>
 <blockquote>
 <div><p>Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the &#8216;fillval&#8217; parameter of the &#8216;drizzle&#8217; task. If the default of &#8216;None&#8217; is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.</p>
 </div></blockquote>
-<p><strong id="driz_sep_bits">driz_sep_bits</strong> : int (Default = 0)</p>
+<p><strong id="driz_sep_bits">driz_sep_bits</strong> : int, str, or None (Default = 0)</p>
 <blockquote>
-<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8216;good&#8217; when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.</p>
+<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array
+that should be considered &#8216;good&#8217; when building the weighting mask.
+This can also be used to reset pixels to good if they had been flagged
+as cosmic rays during a previous run of AstroDrizzle, by adding the value
+4096 for ACS and WFPC2 data. Please see the section on
+Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.
+For possible input formats, see the description for <em class="xref py py-obj">sky_bits</em>
+parameter.</p>
 </div></blockquote>
 <p><strong id="*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*">*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*</strong> :</p>
 <p><strong id="driz_sep_wcs">driz_sep_wcs</strong> : bool (Default = No)</p>
@@ -666,9 +690,16 @@ in the input &#64;-file.</p>
 <blockquote>
 <div><p>The value for this parameter is to be assigned to the output pixels that have zero weight or which do not receive flux from any input pixels during drizzling. This parameter corresponds to the &#8216;fillval&#8217; parameter of the &#8216;drizzle&#8217; task. If the default of &#8216;None&#8217; is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that numerical value.</p>
 </div></blockquote>
-<p><strong id="final_bits">final_bits</strong> : int (Default = 0)</p>
+<p><strong id="final_bits">final_bits</strong> : int, str, or None (Default = 0)</p>
 <blockquote>
-<div><p>Integer sum for all of the DQ bit values from the input image&#8217;s DQ array that should be considered &#8216;good&#8217; when building the weight mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of AstroDrizzle, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.</p>
+<div><p>Integer sum for all of the DQ bit values from the input image&#8217;s DQ array
+that should be considered &#8216;good&#8217; when building the weight mask.
+This can also be used to reset pixels to good if they had been flagged
+as cosmic rays during a previous run of AstroDrizzle, by adding the value
+4096 for ACS and WFPC2 data. Please see the section on
+Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.
+For possible input formats, see the description for <em class="xref py py-obj">sky_bits</em>
+parameter.</p>
 </div></blockquote>
 <p><strong id="final_units">final_units</strong> : str (Default = &#8216;cps&#8217;)</p>
 <blockquote>
@@ -834,7 +865,7 @@ to a text file:</p>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

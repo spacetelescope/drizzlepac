@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev33830 (11-Aug-2014)',
+        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
     <link rel="next" title="Imagefindpars: Source finding parameters" href="refimagefindpars.html" />
     <link rel="prev" title="DrizzlePac v2.0.0 Release Notes" href="release_v2_0_0_notes.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -278,6 +278,11 @@ the shiftfile as well.</p>
 <blockquote>
 <div><p>Name of updated WCS.</p>
 </div></blockquote>
+<p><strong>reusename</strong> : bool (Default = False)</p>
+<blockquote>
+<div><p>Allows overwriting of an existing WCS with the same name as
+specified by <em class="xref py py-obj">wcsname</em> parameter.</p>
+</div></blockquote>
 <p><strong>*HEADERLET CREATION*</strong> :</p>
 <p><strong>headerlet: bool (Default = No)</strong> :</p>
 <blockquote>
@@ -421,7 +426,9 @@ list. If nbright is set equal to <em class="xref py py-obj">None</em>, all objec
 <p><strong>refcat</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of the external reference catalog file to be used in place of the
-catalog extracted from one of the input images.</p>
+catalog extracted from one of the input images. When <em class="xref py py-obj">refimage</em> is not
+specified, reference WCS to be used with reference catalog will be
+derived from input images.</p>
 </div></blockquote>
 <p><strong>refxcol</strong> : int (Default = 1)</p>
 <blockquote>
@@ -526,11 +533,12 @@ provided.If the parameter value is set to None, no offset will
 be assumed in matching sources in <em class="xref py py-obj">xyxymatch</em>.</p>
 </div></blockquote>
 <p><strong>*CATALOG FITTING PARAMETERS*</strong> :</p>
-<p><strong>fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;} (Default = &#8216;rscale&#8217;)</p>
+<p><strong>fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;, &#8216;general&#8217;} (Default = &#8216;rscale&#8217;)</p>
 <blockquote>
 <div><p>The fitting geometry to be used in fitting the matched object lists.
 This parameter is used in fitting the offsets, rotations and/or scale
-changes from the matched object lists.</p>
+changes from the matched object lists. The &#8216;general&#8217; fit geometry
+allows for independent scale and rotation for each axis.</p>
 </div></blockquote>
 <p><strong>residplot</strong> : str {&#8216;No plot&#8217;, &#8216;vector&#8217;, &#8216;residuals&#8217;, &#8216;both&#8217;}  (Default = &#8216;both&#8217;)</p>
 <blockquote>
@@ -608,6 +616,12 @@ input and the reference to produce the &#8216;shiftfile&#8217;. If the user is
 confident that the solution will be correct, the header of each input image
 can be updated directly with the fit derived for that image. Otherwise,
 the &#8216;shiftfile&#8217; can be passed to AstroDrizzle for aligning the images.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Because of the nature of the used algorithm it may be necessary
+to run this task multiple time until new shifts, rotations,
+and/or scales are small enough for the required precision.</p>
+</div>
 <p>New sources (that are not in the reference catalog) from the matched images
 are added to the reference catalog in order to allow next image to be
 matched to a larger reference catalog. This allows alignment of images
@@ -815,7 +829,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

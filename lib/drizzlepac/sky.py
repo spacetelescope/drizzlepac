@@ -233,6 +233,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
     # reason is that we want to combine user supplied masks with DQ+static
     # masks provided by astrodrizzle.
     new_fi = []
+    sky_bits = util.interpret_bits_value(paramDict['sky_bits'])
     for i in range(nimg):
         # extract extension information:
         extname = imageList[i].scienceExt
@@ -279,7 +280,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
             else:
                 umask = fi.mask_images[k].hdu[fi.maskext[k]].data
             (mask, mext) = _buildStaticDQUserMask(imageList[i], extlist[k],
-                               paramDict['sky_bits'], paramDict['use_static'],
+                               sky_bits, paramDict['use_static'],
                                fi.mask_images[k], fi.maskext[k], in_memory)
 
             masklist.append(mask)

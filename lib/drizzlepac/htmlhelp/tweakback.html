@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tweakback &mdash; DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</title>
+    <title>Tweakback &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev33830 (11-Aug-2014)',
+        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
     <link rel="next" title="DrizzlePac Release Notes" href="release_notes.html" />
     <link rel="prev" title="MultiDrizzle Reference Table" href="mdztab.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="mdztab.html" title="MultiDrizzle Reference Table"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -87,12 +87,18 @@
 <span id="id1"></span><h1>Tweakback<a class="headerlink" href="#tweakback" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-drizzlepac.tweakback"></span><p><a class="reference internal" href="#drizzlepac.tweakback.tweakback" title="drizzlepac.tweakback.tweakback"><tt class="xref py py-obj docutils literal"><span class="pre">tweakback</span></tt></a> - propagate the &#8220;tweaked&#8221; solutions back to the original
 input files.</p>
+<p>Version 0.4.0 - replaced previous algorithm that used fitting of WCS
+footprints to reconstruct the transformation that was applied to the
+old drizzled image (to align it with another image) to obtain the new
+drizzled image WCS with an algorithm that is based on linearization of
+the exact compound operator that transforms current image coordinates to
+the &#8220;aligned&#8221; (to the new drizzled WCS) image coordinates.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Mihai Cara</td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
 <tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
@@ -143,6 +149,11 @@ writing out the help.</p>
 </tbody>
 </table>
 </dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakback.linearize">
+<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">linearize</tt><big>(</big><em>wcsim</em>, <em>wcsima</em>, <em>wcs_olddrz</em>, <em>wcs_newdrz</em>, <em>imcrpix</em>, <em>hx=1.0</em>, <em>hy=1.0</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.linearize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.run">
@@ -225,17 +236,10 @@ messages during processing.</p>
 </dl>
 </div>
 <p class="rubric">Notes</p>
-<p>The algorithm used by this function follows these steps:</p>
-<ol class="arabic simple" start="0">
-<li>Verify or determine list of distorted image&#8217;s that need to be updated
-with final solution from drizzled image</li>
-<li>Read in HSTWCS objects for last 2 alternate WCS solutions</li>
-<li>Generate footprints using .calFootprint() for each WCS</li>
-<li>Create pixel positions for corners of each WCS&#8217;s footprint
-by running the <tt class="xref py py-meth docutils literal"><span class="pre">wcs_sky2pix</span></tt> method for the last (updated) WCS</li>
-<li>Perform linear &#8216;rscale&#8217; fit between the 2 sets of X,Y coords</li>
-<li>Update each input image WCS with fit using &#8216;updatehdr_with_shift()&#8217;</li>
-</ol>
+<p>The algorithm used by this function is based on linearization of
+the exact compound operator that converts input image coordinates
+to the coordinates (in the input image) that would result in
+alignment with the new drizzled image WCS.</p>
 <p>If no input distorted files are specified as input, this task will attempt
 to generate the list of filenames from the drizzled input file&#8217;s own
 header.</p>
@@ -256,6 +260,11 @@ can be updated using:</p>
 </pre></div>
 </div>
 </dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.tweakback.update_chip_wcs">
+<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">update_chip_wcs</tt><big>(</big><em>chip_wcs</em>, <em>drz_old_wcs</em>, <em>drz_new_wcs</em>, <em>xrms=None</em>, <em>yrms=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.update_chip_wcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt>
@@ -333,17 +342,10 @@ messages during processing.</p>
 </dl>
 </div>
 <p class="rubric">Notes</p>
-<p>The algorithm used by this function follows these steps:</p>
-<ol class="arabic simple" start="0">
-<li>Verify or determine list of distorted image&#8217;s that need to be updated
-with final solution from drizzled image</li>
-<li>Read in HSTWCS objects for last 2 alternate WCS solutions</li>
-<li>Generate footprints using .calFootprint() for each WCS</li>
-<li>Create pixel positions for corners of each WCS&#8217;s footprint
-by running the <tt class="xref py py-meth docutils literal"><span class="pre">wcs_sky2pix</span></tt> method for the last (updated) WCS</li>
-<li>Perform linear &#8216;rscale&#8217; fit between the 2 sets of X,Y coords</li>
-<li>Update each input image WCS with fit using &#8216;updatehdr_with_shift()&#8217;</li>
-</ol>
+<p>The algorithm used by this function is based on linearization of
+the exact compound operator that converts input image coordinates
+to the coordinates (in the input image) that would result in
+alignment with the new drizzled image WCS.</p>
 <p>If no input distorted files are specified as input, this task will attempt
 to generate the list of filenames from the drizzled input file&#8217;s own
 header.</p>
@@ -388,7 +390,7 @@ can be updated using:</p>
         <li class="right" >
           <a href="mdztab.html" title="MultiDrizzle Reference Table"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev33830 (11-Aug-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
