@@ -37,6 +37,14 @@ __vdate__ = '14-Oct-2014'
 
 log = logutil.create_logger(__name__)
 
+if hasattr(np, 'float128'):
+    ndfloat128 = np.float128
+elif hasattr(np, 'float96'):
+    ndfloat128 = np.float96
+else:
+    ndfloat128 = np.float64
+
+
 #### Primary function
 def tweakback(drzfile, input=None,  origwcs = None,
                 newname = None, wcsname = None,
@@ -258,7 +266,7 @@ def linearize(wcsim, wcsima, wcs_olddrz, wcs_newdrz, imcrpix, hx=1.0, hy=1.0):
     p = wcs_newdrz.wcs_pix2world(p, 1)
     # convert back to image coordinate system using partially (CRVAL only)
     # aligned image's WCS:
-    p = wcsima.wcs_world2pix(p, 1).astype(np.float128)
+    p = wcsima.wcs_world2pix(p, 1).astype(ndfloat128)
 
     # derivative with regard to x:
     u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6*hx)
@@ -299,7 +307,7 @@ def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
     (U, u) = linearize(chip_wcs_orig, chip_wcs, drz_old_wcs, drz_new_wcs,
                        chip_wcs_orig.wcs.crpix, hx=hx, hy=hy)
     err0 = np.amax(np.abs(U-cd_eye)).astype(np.float64)
-    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(np.float128), U).astype(np.float64)
+    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(ndfloat128), U).astype(np.float64)
     chip_wcs.wcs.set()
 
     # NOTE: initial solution is the exact mathematical solution (modulo numeric

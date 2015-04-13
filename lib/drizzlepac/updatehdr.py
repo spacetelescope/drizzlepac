@@ -32,6 +32,13 @@ log = logutil.create_logger(__name__)
 wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2',
             'CRPIX1','CRPIX2','ORIENTAT']
 
+if hasattr(np, 'float128'):
+    ndfloat128 = np.float128
+elif hasattr(np, 'float96'):
+    ndfloat128 = np.float96
+else:
+    ndfloat128 = np.float64
+
 
 def update_from_shiftfile(shiftfile,wcsname=None,force=False):
     """
@@ -290,12 +297,12 @@ def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
                     [x0, y0 + hy]],
                    dtype=np.float64)
     # convert image coordinates to reference image coordinates:
-    p = wcsref.wcs_world2pix(wcsim.wcs_pix2world(p, 1), 1).astype(np.float128)
+    p = wcsref.wcs_world2pix(wcsim.wcs_pix2world(p, 1), 1).astype(ndfloat128)
     # apply linear fit transformation:
     p = np.dot(f, (p - shift).T).T
     # convert back to image coordinate system:
     p = wcsima.wcs_world2pix(
-        wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(np.float128)
+        wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(ndfloat128)
 
     # derivative with regard to x:
     u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6*hx)
@@ -307,7 +314,7 @@ def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
 
 def _inv2x2(x):
     assert(x.shape == (2,2))
-    inv = x.astype(np.float128)
+    inv = x.astype(ndfloat128)
     det = inv[0,0]*inv[1,1] - inv[0,1]*inv[1,0]
     if np.abs(det) < np.finfo(np.float64).tiny:
         raise ArithmeticError('Singular matrix.')
@@ -336,8 +343,8 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
     fit = _inv2x2(fit).T if fit.shape == (2,2) else np.linalg.inv(fit).T
 
     cwcs = chip_wcs.deepcopy()
-    cd_eye = np.eye(chip_wcs.wcs.cd.shape[0], dtype=np.float128)
-    zero_shift = np.zeros(2, dtype=np.float128)
+    cd_eye = np.eye(chip_wcs.wcs.cd.shape[0], dtype=ndfloat128)
+    zero_shift = np.zeros(2, dtype=ndfloat128)
 
     # estimate precision necessary for iterative processes:
     maxiter = 100
@@ -367,7 +374,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
     (U, u) = linearize(cwcs, chip_wcs, wcslin, chip_wcs.wcs.crpix,
                        fit, shift, hx=hx, hy=hy)
     err0 = np.amax(np.abs(U-cd_eye)).astype(np.float64)
-    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(np.float128), U).astype(np.float64)
+    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(ndfloat128), U).astype(np.float64)
     chip_wcs.wcs.set()
 
     # NOTE: initial solution is the exact mathematical solution (modulo numeric
