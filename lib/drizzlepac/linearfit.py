@@ -24,6 +24,14 @@ __vdate__ = '10-Oct-2014'
 
 log = logutil.create_logger(__name__)
 
+if hasattr(np, 'float128'):
+    ndfloat128 = np.float128
+elif hasattr(np, 'float96'):
+    ndfloat128 = np.float96
+else:
+    ndfloat128 = np.float64
+
+
 def RADTODEG(rad):
     return (rad * 180. / np.pi)
 
@@ -232,8 +240,8 @@ def fit_general(xy, uv):
         =================================
     """
     # Set up products used for computing the fit
-    gxy = uv.astype(np.float128)
-    guv = xy.astype(np.float128)
+    gxy = uv.astype(ndfloat128)
+    guv = xy.astype(ndfloat128)
     Sx = gxy[:,0].sum()
     Sy = gxy[:,1].sum()
     Su = guv[:,0].sum()
@@ -489,10 +497,10 @@ def geomap_rscale(xyin,xyref,center=None):
         xcen = xyref[:,0].mean()
         ycen = xyref[:,1].mean()
 
-    dx = xyref[:,0].astype(np.float128)
-    dy = xyref[:,1].astype(np.float128)
-    du = xyin[:,0].astype(np.float128)
-    dv = xyin[:,1].astype(np.float128)
+    dx = xyref[:,0].astype(ndfloat128)
+    dy = xyref[:,1].astype(ndfloat128)
+    du = xyin[:,0].astype(ndfloat128)
+    dv = xyin[:,1].astype(ndfloat128)
 
     n = xyref.shape[0]
     Sx = dx.sum()
