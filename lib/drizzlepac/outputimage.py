@@ -12,6 +12,7 @@ from astropy.io import fits
 from stsci.tools import fileutil, readgeis, logutil
 
 from . import wcs_functions
+from . import version
 
 from fitsblender import blendheaders
 
@@ -258,6 +259,7 @@ class OutputImage:
         prihdu.header.set('EXTEND', value=True, after='NAXIS')
         prihdu.header['NEXTEND'] = nextend
         prihdu.header['FILENAME'] = self.output
+        prihdu.header['PROD_VER'] = 'DrizzlePac {}'.format(version.__version__)
 
         # Update the ROOTNAME with the new value as well
         _indx = self.output.find('_drz')
@@ -442,6 +444,7 @@ class OutputImage:
 
             # Add primary header to output file...
             fo.append(hdu)
+
             # remove all alternate WCS solutions from headers of this product
             wcs_functions.removeAllAltWCS(fo,wcs_ext)
 

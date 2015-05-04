@@ -156,7 +156,9 @@ def run(configObj, wcsmap=None):
     # Set up the output data array and insure that the units for that array is 'cps'
     if outsci is None:
         # Define a default blank array based on definition of output_wcs
-        outsci = np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        #outsci = np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        outsci = np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        outsci.fill(np.nan)
     else:
         # Convert array to units of 'cps', if needed
         if outexptime != 0.0:
@@ -566,7 +568,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
        ( (single) and (not will_parallel) and (not imageObjectList[0].inmemory) ):
         # Note there are four cases/combinations for single drizzle alone here:
         # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
-        _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outsci.fill(np.nan)
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         # initialize context to 3-D array but only pass appropriate plane to drizzle as needed
         _outctx=np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
@@ -655,7 +659,9 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     # Check for unintialized inputs
     here = _outsci==None and _outwht==None and _outctx==None
     if _outsci is None:
-        _outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outsci.fill(np.nan)
     if _outwht is None:
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outctx is None:
@@ -686,7 +692,8 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     if here:
         del _outsci,_outwht,_outctx,_hdrlist
     elif single:
-        np.multiply(_outsci,0.,_outsci)
+        #np.multiply(_outsci,0.,_outsci)
+        _outsci.fill(np.nan)
         np.multiply(_outwht,0.,_outwht)
         np.multiply(_outctx,0,_outctx)
         # this was "_hdrlist=[]", but we need to preserve the var ptr itself
