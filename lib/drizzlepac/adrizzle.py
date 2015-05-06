@@ -661,7 +661,10 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     if _outsci is None:
         #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
-        _outsci.fill(np.nan)
+        if single:
+            _outsci.fill(0)
+        else:
+            _outsci.fill(np.nan)
     if _outwht is None:
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outctx is None:
@@ -692,8 +695,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     if here:
         del _outsci,_outwht,_outctx,_hdrlist
     elif single:
-        #np.multiply(_outsci,0.,_outsci)
-        _outsci.fill(np.nan)
+        np.multiply(_outsci,0.,_outsci)
         np.multiply(_outwht,0.,_outwht)
         np.multiply(_outctx,0,_outctx)
         # this was "_hdrlist=[]", but we need to preserve the var ptr itself
