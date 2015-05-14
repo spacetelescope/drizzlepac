@@ -415,7 +415,7 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
         crmask.close()
 
 def buildDrizParamDict(configObj,single=True):
-    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits']
+    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits','maskval']
     cfunc_pars = {'pixfrac':float}
 
     # Initialize paramDict with global parameter(s)
@@ -445,6 +445,7 @@ def buildDrizParamDict(configObj,single=True):
                 if par in cfunc_pars:
                     val = cfunc_pars[par](val)
                 paramDict[par] = val
+    log.info("Interpreted paramDict with single={} as:\n{}".format(single,paramDict))
     return paramDict
 
 def _setDefaults(configObj={}):
@@ -464,6 +465,7 @@ def _setDefaults(configObj={}):
               "pixfrac":1.,
               "kernel":"square",
               "fillval":999.,
+              "maskval": None,
               "rot":0.,
               "scale":1.,
               "xsh":0.,
@@ -481,6 +483,20 @@ def _setDefaults(configObj={}):
             paramDict[key]=configObj[key]
 
     return paramDict
+
+def interpret_maskval(paramDict):
+    """ Apply logic for interpreting final_maskval value...
+    """
+    # interpret user specified final_maskval value to use for initializing
+    # output SCI array...
+    if 'maskval' not in paramDict:
+        return 0
+    maskval = paramDict['maskval']
+    if maskval == None:
+        maskval = np.nan
+    else:
+        maskval = float(maskval) # just to be clear and absolutely sure...
+    return maskval
 
 def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     """ Perform drizzle operation on input to create output.
@@ -511,6 +527,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     #stepsize = 2.0
     log.info('  **Using sub-sampling value of %s for kernel %s' %
              (paramDict['stepsize'], paramDict['kernel']))
+
+    maskval = interpret_maskval(paramDict)
 
     outwcs = copy.deepcopy(output_wcs)
 
@@ -570,7 +588,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
         # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
         #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
-        _outsci.fill(np.nan)
+        _outsci.fill(maskval)
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         # initialize context to 3-D array but only pass appropriate plane to drizzle as needed
         _outctx=np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
@@ -655,6 +673,8 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     the entirety of the code which is inside the loop over
     images.  See the :py:func:`run_driz` code for more documentation.
     """
+    maskval = interpret_maskval(paramDict)
+
 
     # Check for unintialized inputs
     here = _outsci==None and _outwht==None and _outctx==None
@@ -664,7 +684,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
         if single:
             _outsci.fill(0)
         else:
-            _outsci.fill(np.nan)
+            _outsci.fill(maskval)
     if _outwht is None:
         _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
     if _outctx is None:
