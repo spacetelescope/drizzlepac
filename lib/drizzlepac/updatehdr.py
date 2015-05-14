@@ -61,20 +61,20 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
 
     """
     f = open(fileutil.osfn(shiftfile))
-    shift_lines = f.readlines()
+    shift_lines = map(str.strip, f.readlines())
     f.close()
 
     # interpret header of shift file
     for line in shift_lines:
-        if 'refimage' in line:
+        if 'refimage' in line or 'reference' in line:
             refimage = line.split(':')[-1]
-            refimage = refimage[:refimage.find('[wcs]')]
+            refimage = refimage[:refimage.find('[wcs]')].lstrip()
             break
 
     # Determine the max length in the first column (filenames)
     fnames = []
     for row in shift_lines:
-        if row.startswith('#'): continue
+        if row[0] == '#': continue
         fnames.append(len(row.split(' ')[0]))
     fname_fmt = 'S{0}'.format(max(fnames))
 
