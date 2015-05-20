@@ -6,25 +6,25 @@ Interfaces to main drizzle functions.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 import sys,os,copy,time
-import util
+from . import util
 import numpy as np
 from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
-import outputimage, wcs_functions, processInput, util
+from . import outputimage, wcs_functions, processInput, util
 import stwcs
 from stwcs import distortion
 
 from .version import *
 
 try:
-    import cdriz
+    from . import cdriz
 except ImportError:
     cdriz = None
-    print '\n Coordinate transformation and image resampling library, cdriz, NOT found!'
-    print '\n Please check the installation of this package to insure C code was built successfully.'
+    print('\n Coordinate transformation and image resampling library, cdriz, NOT found!')
+    print('\n Please check the installation of this package to insure C code was built successfully.')
     raise ImportError
 
 if util.can_parallel:
@@ -431,7 +431,7 @@ def buildDrizParamDict(configObj,single=True):
         stepnum = 7
     section_name = util.getSectionName(configObj,stepnum)
     # Copy values from configObj for the appropriate step to paramDict
-    for p in configObj[section_name].keys()+[driz_prefix+'units']:
+    for p in list(configObj[section_name].keys())+[driz_prefix+'units']:
         if p.startswith(driz_prefix):
             par = p[len(driz_prefix):]
             if par == 'units':

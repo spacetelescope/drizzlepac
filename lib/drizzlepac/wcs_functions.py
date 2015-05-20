@@ -5,15 +5,14 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 import os,copy
 import numpy as np
 from numpy import linalg
 
 from stsci.tools import fileutil, asnutil, logutil
-import util
-import imageObject
+from . import util
 import stwcs
 #import pywcs
 from astropy import wcs as pywcs
@@ -51,7 +50,7 @@ class WCSMap:
         try:
             assert isinstance(obj, pywcs.WCS)
         except AssertionError:
-            print name +' object needs to be an instance or subclass of a PyWCS object.'
+            print(name +' object needs to be an instance or subclass of a PyWCS object.')
             raise
 
     def forward(self,pixx,pixy):
@@ -98,7 +97,7 @@ def get_pix_ratio_from_WCS(input,output):
 ##
 class IdentityMap:
     def __init__(self,input,output):
-        print 'Applying identity transformation...'
+        print('Applying identity transformation...')
         self.input = input
         self.output = output
 
@@ -207,20 +206,20 @@ def ddtohms(xsky,ysky,verbose=False,precision=6):
     fmt = "%."+repr(precision)+"f"
     if isinstance(xskyh,np.ndarray):
         rah,dech = [],[]
-        for i in xrange(len(xskyh)):
+        for i in range(len(xskyh)):
             rastr = repr(int(xskyh[i]))+':'+repr(int(xskym[i]))+':'+fmt%(xskys[i])
             decstr = repr(int(ysky[i]))+':'+repr(int(yskym[i]))+':'+fmt%(yskys[i])
             rah.append(rastr)
             dech.append(decstr)
             if verbose:
-                print 'RA = ',rastr,', Dec = ',decstr
+                print('RA = ',rastr,', Dec = ',decstr)
     else:
         rastr = repr(int(xskyh))+':'+repr(int(xskym))+':'+fmt%(xskys)
         decstr = repr(int(ysky))+':'+repr(int(yskym))+':'+fmt%(yskys)
         rah = rastr
         dech = decstr
         if verbose:
-            print 'RA = ',rastr,', Dec = ',decstr
+            print('RA = ',rastr,', Dec = ',decstr)
 
     return rah,dech
 #
@@ -443,6 +442,7 @@ def computeEdgesCenter(edges):
 #### Utility functions for working with WCSObjects
 def createWCSObject(output,default_wcs,imageObjectList):
     """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
+    from . import imageObject
     outwcs = imageObject.WCSObject(output)
     outwcs.default_wcs = default_wcs
     outwcs.wcs = default_wcs.copy()
@@ -693,7 +693,7 @@ def fitlin(imgarr,refarr):
 
     _npos = len(imgarr)
     # Populate matrices
-    for i in xrange(_npos):
+    for i in range(_npos):
         _mat[0][0] += np.power((imgarr[i][0] - _xorg),2)
         _mat[0][1] += (imgarr[i][0] - _xorg) * (imgarr[i][1] - _yorg)
         _mat[0][2] += (imgarr[i][0] - _xorg)
@@ -766,7 +766,7 @@ def fitlin_rscale(xy,uv,verbose=False):
     scale = np.sqrt(XX**2 + YY**2) / (Sxx+Syy)
     shift = (mu-mx,mv-my)
     if verbose:
-        print 'Linear RSCALE fit: rotation = ',theta_deg,'  scale = ',scale,'  offset = ',shift
+        print('Linear RSCALE fit: rotation = ',theta_deg,'  scale = ',scale,'  offset = ',shift)
     coeffs = scale * fileutil.buildRotMatrix(-theta_deg)
 
     P = [coeffs[0,0],coeffs[0,1],shift[0]]
@@ -810,7 +810,7 @@ def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
         outliers_indx = xout[0].tolist()+yout[0].tolist()
         outliers_indx.sort()
         # define the full range of indices for the data points left
-        full_indx = range(data.shape[0])
+        full_indx = list(range(data.shape[0]))
         # remove all unique indices specified in outliers from full range
         for o in outliers_indx:
             # only remove if it has not been removed already
@@ -824,11 +824,11 @@ def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
 
         numclipped += iterclipped
         if verbose:
-            print 'Removed a total of ',numclipped,' points through iteration ',i+1
+            print('Removed a total of ',numclipped,' points through iteration ',i+1)
         # create clipped data
         data_iter = np.zeros([len(full_indx),2],dtype=data.dtype)
         if verbose:
-            print 'Iter #',i+1,' data:',data.shape,data_iter.shape,len(full_indx)
+            print('Iter #',i+1,' data:',data.shape,data_iter.shape,len(full_indx))
 
         data_iter[:,0] = data[:,0][full_indx]
         data_iter[:,1] = data[:,1][full_indx]
@@ -847,7 +847,7 @@ def fitlin_clipped(xy,uv,verbose=False,mode='rscale',nclip=3,reject=3):
         fit_rms = [dx.std(),dy.std()]
 
     if verbose:
-        print 'Fit clipped ',numclipped,' points over ',nclip,' iterations.'
+        print('Fit clipped ',numclipped,' points over ',nclip,' iterations.')
     return P,Q,fit_rms
 
 def apply_fitlin(data,P,Q):

@@ -6,12 +6,12 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 from stsci.tools import fileutil
 import numpy as np
 from stsci.imagemanip import interp2d
-from imageObject import imageObject
+from .imageObject import imageObject
 
 
 class STISInputImage (imageObject):
@@ -51,7 +51,7 @@ class STISInputImage (imageObject):
         except:
             lfltdata = np.ones(self.full_shape,dtype=sci_chip.image_dtype)
             str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-            print str
+            print(str)
 
         # Try to open the file in the location specified by PFLTFILE.
         try:
@@ -61,10 +61,10 @@ class STISInputImage (imageObject):
         except:
             pfltdata = np.ones(self.image_shape,dtype=sci_chip.image_dtype)
             str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-            print str
+            print(str)
 
-        print "lfltdata shape: ",lfltdata.shape
-        print "pfltdata shape: ",pfltdata.shape
+        print("lfltdata shape: ",lfltdata.shape)
+        print("pfltdata shape: ",pfltdata.shape)
         flat = lfltdata * pfltdata
 
         return flat
@@ -92,7 +92,7 @@ class STISInputImage (imageObject):
 
             else:
                 msg = "Invalid gain value for data, no conversion done"
-                print msg
+                print(msg)
                 raise ValueError(msg)
 
         # Close the files and clean-up
@@ -189,7 +189,7 @@ class CCDInputImage(STISInputImage):
                                                      instrpars['expkeyword'])
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             chip._effGain = chip._gain
@@ -273,7 +273,7 @@ class NUVInputImage(STISInputImage):
                                                      instrpars['expkeyword'])
 
             if chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()
@@ -365,7 +365,7 @@ class FUVInputImage(STISInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
             if chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             if (instrpars['rnkeyword'] != None):
@@ -383,7 +383,7 @@ class FUVInputImage(STISInputImage):
                 usingDefaultGain = True
 
             if chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             # We need to determine if the user has used the default readnoise/gain value

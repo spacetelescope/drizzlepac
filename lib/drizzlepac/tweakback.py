@@ -14,6 +14,7 @@ the "aligned" (to the new drizzled WCS) image coordinates.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import, division, print_function
 import os
 
 import numpy as np
@@ -319,7 +320,7 @@ def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
 
     # Perform fixed-point iterations to improve the approximation
     # for CD matrix of the image WCS (actually for the U matrix).
-    for i in xrange(maxiter):
+    for i in range(maxiter):
         (U, u) = linearize(chip_wcs_orig, chip_wcs, drz_old_wcs, drz_new_wcs,
                            chip_wcs_orig.wcs.crpix, hx=hx, hy=hy)
         err = np.amax(np.abs(U-cd_eye)).astype(np.float64)
@@ -369,7 +370,7 @@ def determine_extnum(drzfile, extname='SCI'):
     hdulist = fits.open(drzfile)
     numext = len(hdulist)
     sciext = 0
-    for e,i in zip(hdulist,range(numext)):
+    for e,i in zip(hdulist,list(range(numext))):
         if 'extname' in e.header and e.header['extname'] == extname:
             sciext = i
             break

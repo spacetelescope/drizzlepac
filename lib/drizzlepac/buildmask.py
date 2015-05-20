@@ -30,16 +30,16 @@ Functions to build mask files for PyDrizzle.
 #                   added output filename as input parameter to 'buildMask'
 #                   functions. WJH
 #
-from __future__ import division # confidence high
+from __future__ import absolute_import, division, print_function # confidence high
 
-import string,os,types
+import os
 
 from stsci.tools import fileutil, readgeis
 
 from astropy.io import fits
 import numpy as np
 
-import processInput,util
+from . import processInput,util
 
 __taskname__ = 'drizzlepac.buildmask'
 #
@@ -152,7 +152,7 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
             os.remove(maskname)
         _errstr = "\nWarning: Problem creating MASK file for "+rootname+".\n"
         #raise IOError, _errstr
-        print _errstr
+        print(_errstr)
         return None
 
     # Return the name of the mask image written out
@@ -195,7 +195,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
       detnum - string value for 'DETECTOR' detector
     """
     # insure detnum is a string
-    if not isinstance(detnum,types.StringType):
+    if type(detnum) != type(''):
         detnum = repr(detnum)
 
     _funcroot = '_func_Shadow_WF'
@@ -279,7 +279,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
                 os.remove(maskname)
             _errstr = "\nWarning: Problem creating DQMASK file for "+rootname+".\n"
             #raise IOError, _errstr
-            print _errstr
+            print(_errstr)
             return None
 
 

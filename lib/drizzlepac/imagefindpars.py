@@ -4,9 +4,10 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import
 import os, string
 from stsci.tools import teal
-import tweakreg, util
+from . import tweakreg, util
 from .version import *
 
 __taskname__ = 'drizzlepac.imagefindpars'

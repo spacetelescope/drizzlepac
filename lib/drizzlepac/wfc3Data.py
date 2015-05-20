@@ -7,12 +7,12 @@
 
 """
 
-from __future__ import division # confidence high
+from __future__ import absolute_import, division, print_function # confidence high
 
 
 from stsci.tools import fileutil
 from nictools import readTDD
-from imageObject import imageObject
+from .imageObject import imageObject
 import numpy as np
 
 class WFC3InputImage(imageObject):
@@ -110,7 +110,7 @@ class WFC3UVISInputImage(WFC3InputImage):
             chip._effGain=chip._gain
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # Convert the science data to electrons.
@@ -144,7 +144,7 @@ class WFC3UVISInputImage(WFC3InputImage):
             str += "# Error occured in WFC3UVISInputImage class #\n"
             str += "#                                           #\n"
             str += "#############################################\n"
-            raise ValueError, str
+            raise ValueError(str)
 
 
         return darkcurrent
@@ -186,7 +186,8 @@ class WFC3IRInputImage(WFC3InputImage):
             if '/S' in chip._bunit:
                 conversionFactor = chip._exptime
             else:
-                print "Input %s[%s,%d] already in units of ELECTRONS"%(self._filename,self.scienceExt,chip._chip)
+                print("Input %s[%s,%d] already in units of ELECTRONS"
+                      %(self._filename,self.scienceExt,chip._chip))
 
             chip._effGain = 1.0# chip._gain #1.
             chip._conversionFactor = conversionFactor #1.
@@ -230,7 +231,7 @@ class WFC3IRInputImage(WFC3InputImage):
             chip._effGain= 1
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             self._assignSignature(chip.extnum) #this is used in the static mask
@@ -323,7 +324,6 @@ class WFC3IRInputImage(WFC3InputImage):
             str += "# Error occured in WFC3IRInputImage class   #\n"
             str += "#                                           #\n"
             str += "#############################################\n"
-            raise ValueError, str
-
+            raise ValueError(str)
 
         return darkcurrent

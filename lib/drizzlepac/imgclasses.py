@@ -7,6 +7,7 @@ Used by `TweakReg`\ .
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import, division, print_function
 import os
 import sys
 import copy
@@ -28,11 +29,11 @@ from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
 from stsci.tools import logutil,textutil
 
-import catalogs
-import linearfit
-import updatehdr
-import util
-import tweakutils
+from . import catalogs
+from . import linearfit
+from . import updatehdr
+from . import util
+from . import tweakutils
 
 # DEBUG
 IMGCLASSES_DEBUG = False
@@ -90,7 +91,7 @@ class Image(object):
         # alignment
         # use 'numwht' != 0 to indicate a DRZ file has been specified as input
         if len(wnames) == 0 and numwht == 0:
-            print textutil.textbox('WARNING:\n'
+            print(textutil.textbox('WARNING:\n'
             'Image %s may not have the full correct '%filename+
             'WCS solution in the header as created by stwcs.updatewcs '
             'Image alignment may not be taking into account '
@@ -98,7 +99,7 @@ class Image(object):
             'Turning on the "updatewcs" parameter would insure '
             'that each image uses the full distortion model when '
             'aligning this image.\n', width=60
-            )
+            ))
 
         self.rootname = os.path.splitext(os.path.basename(filename))[0]
         self.origin = 1
@@ -129,7 +130,7 @@ class Image(object):
         except KeyError:
             err_msg = "ERROR: No Valid WCS available for {:s}" \
                 .format(filename)
-            print >> sys.stderr,textutil.textbox(err_msg)
+            print(textutil.textbox(err_msg), file=sys.stderr)
             raise ValueError(err_msg)
 
         # Need to generate a separate catalog for each chip
@@ -177,13 +178,13 @@ class Image(object):
         bounding_polygons = []
 
         chip_filenames = {}
-        for sci_extn in xrange(1,self.nvers+1):
+        for sci_extn in range(1,self.nvers+1):
             extnum = fu.findExtname(self._im.hdu, self.ext_name, extver=sci_extn)
             if extnum is None:
                 extnum = 0
             chip_filenames[sci_extn] = "{:s}[{:d}]".format(filename, extnum)
 
-        for sci_extn in xrange(1,self.nvers+1):
+        for sci_extn in range(1,self.nvers+1):
             chip_filename = chip_filenames[sci_extn]
             wcs = stwcs.wcsutil.HSTWCS(chip_filename)
 
@@ -226,13 +227,12 @@ class Image(object):
                     del data
                 else:
                     mask = None
-                    print >> sys.stderr, textutil.textbox(
+                    print(textutil.textbox(
                             "WARNING: User requested to use "
                             "DQ mask for source finding, but DQ data are "
                             "not available.\n"
                             "DQ mask WILL NOT be used for source finding.",
-                            indent = 5
-                    )
+                            indent = 5), file=sys.stderr)
 
             # read in and convert all catalog positions to RA/Dec
             catalog.buildCatalogs(exclusions=None, mask=mask)
@@ -244,7 +244,7 @@ class Image(object):
             nxypos = 0 if catalog.xypos is None else min(len(self.xy_catalog),len(catalog.xypos))
             if nxypos > 0:
                 nsrc = catalog.xypos[0].shape[0]
-                for i in xrange(nxypos):
+                for i in range(nxypos):
                     self.xy_catalog[i] = np.append(self.xy_catalog[i], catalog.xypos[i])
 
                 # add "source origin":
@@ -255,8 +255,8 @@ class Image(object):
                 if IMAGE_USE_CONVEX_HULL and self.xy_catalog is not None:
                     # if catalog.xypos[0].shape[0] < 3:
                     xy_vertices = np.asarray(convex_hull(
-                        map(tuple,np.asarray([catalog.xypos[0],catalog.xypos[1]]).transpose())),
-                                             dtype=np.float64)
+                        list(map(tuple,np.asarray([catalog.xypos[0],catalog.xypos[1]]).transpose()))),
+                                                 dtype=np.float64)
                     if xy_vertices.shape[0] > 2:
                         rdv = wcs.all_pix2world(xy_vertices, 1)
                         bounding_polygons.append(SphericalPolygon.from_radec(rdv[:,0], rdv[:,1]))
@@ -267,8 +267,8 @@ class Image(object):
                         all_ra, all_dec = wcs.all_pix2world(
                             catalog.xypos[0], catalog.xypos[1], 1)
                         _debug_write_region_fk5('dbg_'+self.rootname+'_bounding_polygon.reg',
-                                                zip(*rdv.transpose()),
-                                                zip(*[catalog.radec[0], catalog.radec[1]]),
+                                                list(zip(*rdv.transpose())),
+                                                list(zip(*[catalog.radec[0], catalog.radec[1]])),
                                                 append=sci_extn > 1)
                 else:
                     bounding_polygons.append(SphericalPolygon.from_wcs(wcs))
@@ -302,7 +302,7 @@ class Image(object):
                 self.catalog_names['input_xy'].append(catname)
             self.catalog_names['fitmatch'] = self.rootname+"_catalog_fit.match"
 
-        print '\n'
+        print('\n')
         # Set up products which need to be computed by methods of this class
         self.outxy = None
         self.refWCS = None # reference WCS assigned for the final fit
@@ -397,8 +397,8 @@ class Image(object):
         """ Transform sky coords from ALL chips into X,Y coords in reference WCS.
         """
         if not isinstance(ref_wcs, pywcs.WCS):
-            print >> sys.stderr, textutil.textbox(
-                            'Reference WCS not a valid HSTWCS object')
+            print(textutil.textbox('Reference WCS not a valid HSTWCS object'),
+                  file=sys.stderr)
             raise ValueError
         # Need to concatenate catalogs from each input
         if self.outxy is None or force:
@@ -417,7 +417,7 @@ class Image(object):
         """
         if len(self.all_radec_orig[2].nonzero()[0]) == 0:
             warn_str = "Source catalog NOT trimmed by flux/mag. No fluxes read in for sources!"
-            print '\nWARNING: ',warn_str,'\n'
+            print('\nWARNING: ',warn_str,'\n')
             log.warning(warn_str)
             return
         clip_catalog = False
@@ -545,7 +545,13 @@ class Image(object):
                 if matchpars['see2dplot'] and ('residplot' in matchpars and
                                                'No' in matchpars['residplot']):
                     if self.interactive:
-                        a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
+                        prompt = ("Press ENTER for next image, \n" +
+                                  "     'n' to continue without updating header or \n" +
+                                  "     'q' to quit immediately...\n")
+                        if sys.version_info[0] >= 3:
+                            a = input(prompt)
+                        else:
+                            a = raw_input(prompt)
                     else:
                         a = ' '
                     if 'n' in a.lower():
@@ -597,7 +603,7 @@ class Image(object):
                     np.array(self.xy_catalog[0])[matches['input_idx']][:,np.newaxis],
                     np.array(self.xy_catalog[1])[matches['input_idx']][:,np.newaxis]])
                 self.matches['src_origin'] = ref_inxy[-1][matches['ref_idx']]
-                print 'Found %d matches for %s...'%(len(matches),self.name)
+                print('Found %d matches for %s...'%(len(matches),self.name))
 
                 if self.pars['writecat']:
                     matchfile = open(self.catalog_names['match'],mode='w+')
@@ -612,7 +618,7 @@ class Image(object):
                     fmtstr = '%0.6f    %0.6f        '*4
                     fmtstr += '%d    %d    %s\n'
                     matchfile.write(title)
-                    for i in xrange(len(matches['input_x'])):
+                    for i in range(len(matches['input_x'])):
                         linestr = fmtstr%\
                             (matches['ref_x'][i],matches['ref_y'][i],\
                              matches['input_x'][i],matches['input_y'][i],
@@ -674,7 +680,7 @@ class Image(object):
                 self.fit['fit_DEC'] = radec_fit[:,1]
                 self.fit['src_origin'] = self.matches['src_origin']
 
-                print 'Computed ',pars['fitgeometry'],' fit for ',self.name,': '
+                print('Computed ',pars['fitgeometry'],' fit for ',self.name,': ')
                 if pars['fitgeometry'] == 'shift':
                     print("XSH: {:.6g}  YSH: {:.6g}"
                           .format(self.fit['offset'][0],
@@ -707,12 +713,12 @@ class Image(object):
                 else:
                     assert(False)
 
-                print 'XRMS: %0.6g    YRMS: %0.6g\n'%(
-                        self.fit['rms'][0],self.fit['rms'][1])
-                print 'RMS_RA: %g (deg)   RMS_DEC: %g (deg)\n'%(
+                print('XRMS: %0.6g    YRMS: %0.6g\n'%(
+                        self.fit['rms'][0],self.fit['rms'][1]))
+                print('RMS_RA: %g (deg)   RMS_DEC: %g (deg)\n'%(
                         self.fit['rms_keys']['RMS_RA'],
-                        self.fit['rms_keys']['RMS_DEC'])
-                print 'Final solution based on ',self.fit['rms_keys']['NMATCH'],' objects.'
+                        self.fit['rms_keys']['RMS_DEC']))
+                print('Final solution based on ',self.fit['rms_keys']['NMATCH'],' objects.')
 
                 self.write_fit_catalog()
 
@@ -749,7 +755,13 @@ class Image(object):
                         ylimit=pars['ylimit'], labelsize=pars['labelsize'],
                         plotname=resid_name, title=title_str)
                     if self.interactive:
-                        a = raw_input("Press ENTER for next image, \n     'n' to continue without updating header or \n     'q' to quit immediately...\n")
+                        prompt = ("Press ENTER for next image, \n" +
+                                  "      'n' to continue without updating header or \n" +
+                                  "      'q' to quit immediately...\n")
+                        if sys.version_info[0] >= 3:
+                            a = input(prompt)
+                        else:
+                            a = raw_input(prompt)
                     else:
                         a = ' '
                     if 'n' in a.lower():
@@ -944,7 +956,7 @@ class Image(object):
         f.write("#Sky positions for: "+self.name+'\n')
         f.write("#RA        Dec\n")
         f.write("#(deg)     (deg)\n")
-        for i in xrange(len(ralist)):
+        for i in range(len(ralist)):
             f.write('%0.12f  %0.12f\n'%(ralist[i],declist[i]))
         f.close()
 
@@ -1036,7 +1048,7 @@ class Image(object):
         f.write("#Pixel positions for: "+self.name+'\n')
         f.write("#X           Y\n")
         f.write("#(pix)       (pix)\n")
-        for i in xrange(self.all_radec[0].shape[0]):
+        for i in range(self.all_radec[0].shape[0]):
             f.write('%f  %f\n'%(self.outxy[i,0],self.outxy[i,1]))
         f.close()
 
@@ -1225,7 +1237,7 @@ class RefImage(object):
 
             if self.use_sharp_round:
                 # if necessary, add sharpness and roundness columns:
-                for i in xrange(ncol, 7):
+                for i in range(ncol, 7):
                     self.xy_catalog.append(np.zeros(nobj, dtype=float))
                 ncol = len(self.xy_catalog)
 
@@ -1281,7 +1293,7 @@ class RefImage(object):
         # Compute bounding convex hull for the reference catalog:
         if (find_bounding_polygon or IMAGE_USE_CONVEX_HULL) and \
            self.outxy is not None:
-            xy_vertices = np.asarray(convex_hull(map(tuple,self.outxy)),
+            xy_vertices = np.asarray(convex_hull(list(map(tuple,self.outxy))),
                                      dtype=np.float64)
             if xy_vertices.shape[0] > 2:
                 rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
@@ -1291,7 +1303,8 @@ class RefImage(object):
 
             if IMGCLASSES_DEBUG:
                 _debug_write_region_fk5('dbg_tweakreg_refcat_bounding_polygon.reg',
-                    zip(*rdv.transpose()), zip(*self.all_radec), self.xy_catalog[-1])
+                    list(zip(*rdv.transpose())), list(zip(*self.all_radec)),
+                    self.xy_catalog[-1])
         else:
             self.skyline = SphericalPolygon([])
 
@@ -1329,7 +1342,7 @@ class RefImage(object):
             if show_id:
                 flux_end_char = '\t'
 
-        for i in xrange(self.all_radec[0].shape[0]):
+        for i in range(self.all_radec[0].shape[0]):
             src_line = "{:.7f}  {:.7f}" \
                 .format(self.all_radec[0][i], self.all_radec[1][i])
             if show_details:
@@ -1414,14 +1427,14 @@ class RefImage(object):
                                         np.asarray(image.xy_catalog[-1])[not_matched_mask], 0)
 
         #self.skyline = self.skyline.union(skyline)
-        xy_vertices = np.asarray(convex_hull(map(tuple,self.outxy)),
+        xy_vertices = np.asarray(convex_hull(list(map(tuple,self.outxy))),
                                  dtype=np.float64)
         rdv = self.wcs.wcs_pix2world(xy_vertices, 1)
         self.skyline = SphericalPolygon.from_radec(rdv[:,0], rdv[:,1])
         if IMGCLASSES_DEBUG:
             _debug_write_region_fk5('dbg_tweakreg_refcat_bounding_polygon.reg',
-                                    zip(*rdv.transpose()),
-                                    zip(*self.all_radec),
+                                    list(zip(*rdv.transpose())),
+                                    list(zip(*self.all_radec)),
                                     self.xy_catalog[-1])
 
         self.set_dirty()
@@ -1474,7 +1487,7 @@ def verify_hdrname(**pars):
         warnstr += '\n'
         warnstr += '    Please provide valid "hdrname" or "wcsname" value \n'
         warnstr += '        in your next run to write out headerlets.\n'
-        print textutil.textbox(warnstr)
+        print(textutil.textbox(warnstr))
         return
 
 

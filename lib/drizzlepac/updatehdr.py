@@ -5,6 +5,7 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import, division, print_function
 import re
 import math
 import warnings
@@ -20,8 +21,7 @@ from stwcs.wcsutil import wcscorr
 from stsci.skypac.utils import get_ext_list, ext2str
 
 from . import util
-
-import linearfit
+from . import linearfit
 
 __version__ = '0.2.0'
 __vdate__ = '10-Oct-2014'
@@ -61,7 +61,7 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
 
     """
     f = open(fileutil.osfn(shiftfile))
-    shift_lines = map(str.strip, f.readlines())
+    shift_lines = [x.strip() for x in f.readlines()]
     f.close()
 
     # interpret header of shift file
@@ -386,7 +386,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
 
     # Perform fixed-point iterations to improve the approximation
     # for CD matrix of the image WCS (actually for the U matrix).
-    for i in xrange(maxiter):
+    for i in range(maxiter):
         (U, u) = linearize(chip_wcs, chip_wcs, wcslin, chip_wcs.wcs.crpix,
                            cd_eye, zero_shift, hx=hx, hy=hy)
         err = np.amax(np.abs(U-cd_eye)).astype(np.float64)
@@ -473,7 +473,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
         if verbose:
             log.info('    with WCS of')
             new_wcs.printwcs()
-            print "WCSNAME  : ",wcsname
+            print("WCSNAME  : ",wcsname)
 
         # Insure that if a copy of the WCS has not been created yet, it will be now
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
@@ -527,7 +527,7 @@ def create_unique_wcsname(fimg, extnum, wcsname):
         Unique WCSNAME value
 
     """
-    wnames = wcsutil.altwcs.wcsnames(fimg, ext=extnum).values()
+    wnames = list(wcsutil.altwcs.wcsnames(fimg, ext=extnum).values())
     if wcsname not in wnames:
         uniqname = wcsname
     else:

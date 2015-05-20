@@ -141,7 +141,7 @@ PyWCSMap_dealloc(PyWCSMap* self)
   Py_XDECREF(self->py_output); self->py_output = NULL;
   wcsmap_param_free(&self->m);
 
-  self->ob_type->tp_free((PyObject*)self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -282,48 +282,46 @@ PyWCSMap_call(PyWCSMap* self, PyObject* args, PyObject* kwargs)
 }
 
 static PyTypeObject WCSMapType = {
-  PyObject_HEAD_INIT(NULL)
-  0,                            /*ob_size*/
-  "cdriz.DefaultWCSMapping",    /*tp_name*/
-  sizeof(PyWCSMap),            /*tp_basicsize*/
-  0,                            /*tp_itemsize*/
-  (destructor)PyWCSMap_dealloc, /*tp_dealloc*/
-  0,                            /*tp_print*/
-  0,                            /*tp_getattr*/
-  0,                            /*tp_setattr*/
-  0,                            /*tp_compare*/
-  0,                            /*tp_repr*/
-  0,                            /*tp_as_number*/
-  0,                            /*tp_as_sequence*/
-  0,                            /*tp_as_mapping*/
-  0,                            /*tp_hash */
-  (ternaryfunc)PyWCSMap_call,  /*tp_call*/
-  0,                            /*tp_str*/
-  0,                            /*tp_getattro*/
-  0,                            /*tp_setattro*/
-  0,                            /*tp_as_buffer*/
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-  "DefaultWCSMapping(input,output)",   /* tp_doc */
-  0,                            /* tp_traverse */
-  0,                            /* tp_clear */
-  0,                            /* tp_richcompare */
-  0,                            /* tp_weaklistoffset */
-  0,                            /* tp_iter */
-  0,                            /* tp_iternext */
-  0,                            /* tp_methods */
-  0,                            /* tp_members */
-  0,                            /* tp_getset */
-  0,                            /* tp_base */
-  0,                            /* tp_dict */
-  0,                            /* tp_descr_get */
-  0,                            /* tp_descr_set */
-  0,                            /* tp_dictoffset */
-  (initproc)PyWCSMap_init,      /* tp_init */
-  0,                            /* tp_alloc */
-  PyWCSMap_new,                /* tp_new */
+  PyVarObject_HEAD_INIT(NULL, 0)
+  (char *) "cdriz.DefaultWCSMapping",              /*tp_name*/
+  sizeof(PyWCSMap),                                /*tp_basicsize*/
+  0,                                               /*tp_itemsize*/
+  (destructor) PyWCSMap_dealloc,                   /*tp_dealloc*/
+  0,                                               /*tp_print*/
+  0,                                               /*tp_getattr*/
+  0,                                               /*tp_setattr*/
+  0,                                               /*tp_compare*/
+  0,                                               /*tp_repr*/
+  0,                                               /*tp_as_number*/
+  0,                                               /*tp_as_sequence*/
+  0,                                               /*tp_as_mapping*/
+  0,                                               /*tp_hash */
+  (ternaryfunc) PyWCSMap_call,                     /*tp_call*/
+  0,                                               /*tp_str*/
+  0,                                               /*tp_getattro*/
+  0,                                               /*tp_setattro*/
+  0,                                               /*tp_as_buffer*/
+  (long) Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+  (char *) "DefaultWCSMapping(input,output)",      /* tp_doc */
+  0,                                               /* tp_traverse */
+  0,                                               /* tp_clear */
+  0,                                               /* tp_richcompare */
+  0,                                               /* tp_weaklistoffset */
+  0,                                               /* tp_iter */
+  0,                                               /* tp_iternext */
+  0,                                               /* tp_methods */
+  0,                                               /* tp_members */
+  0,                                               /* tp_getset */
+  0,                                               /* tp_base */
+  0,                                               /* tp_dict */
+  0,                                               /* tp_descr_get */
+  0,                                               /* tp_descr_set */
+  0,                                               /* tp_dictoffset */
+  (initproc)PyWCSMap_init,                         /* tp_init */
+  0,                                               /* tp_alloc */
+  PyWCSMap_new,                                    /* tp_new */
 };
-
-
+ 
 static PyObject *
 tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 {
@@ -1184,22 +1182,52 @@ static PyMethodDef cdriz_methods[] =
     {0, 0, 0, 0}                             /* sentinel */
   };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "cdriz",
+    NULL,
+    -1,
+    cdriz_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+PyObject *PyInit_cdriz(void)
+#else
 void initcdriz(void)
+#endif
 {
   PyObject* m;
 
   driz_log_func = &cdriz_log_func;
 
+#if PY_MAJOR_VERSION >= 3
+  if (PyType_Ready(&WCSMapType) < 0)
+    return NULL;
+  m = PyModule_Create(&moduledef);
+  if (m == NULL)
+    return NULL;
+
+#else
   if (PyType_Ready(&WCSMapType) < 0)
     return;
-
   m = Py_InitModule("cdriz", cdriz_methods);
   if (m == NULL)
     return;
+#endif
 
   import_array();
   import_astropy_wcs();
 
   Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
+
+#if PY_MAJOR_VERSION >= 3
+  return m;
+#endif
 }

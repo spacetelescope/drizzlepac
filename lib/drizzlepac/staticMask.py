@@ -10,7 +10,7 @@ For `staticMask`, the user interface function is :py:func:`createMask`.
 
 """
 
-from __future__ import division  # confidence high
+from __future__ import absolute_import, division, print_function  # confidence high
 
 import os
 import sys
@@ -19,8 +19,8 @@ import numpy as np
 from stsci.tools import fileutil, teal, logutil
 from astropy.io import fits
 from stsci.imagestats import ImageStats
-import util
-import processInput
+from . import util
+from . import processInput
 
 
 __taskname__ = "drizzlepac.staticMask"
@@ -80,7 +80,7 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
 
     if (not isinstance(imageObjectList,list) or (len(imageObjectList) ==0)):
         msg = "Invalid image object list given to static mask"
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
         raise ValueError(msg)
 
     log.info('USER INPUT PARAMETERS for Static Mask Step:')
@@ -232,7 +232,7 @@ class staticMask(object):
         if(fileutil.checkFileExists(filename)):
             return filename
         else:
-            print >> sys.stderr, "\nmMask file for ", str(signature), " does not exist on disk"
+            print("\nmMask file for ", str(signature), " does not exist on disk", file=sys.stderr)
             return None
 
     def getMaskname(self,chipid):

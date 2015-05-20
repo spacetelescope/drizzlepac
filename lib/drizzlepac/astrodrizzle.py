@@ -29,7 +29,7 @@ aspects of each of the processing steps.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division  # confidence high
+from __future__ import absolute_import, division, print_function  # confidence high
 
 
 import os
@@ -97,7 +97,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
                                              input_dict,
                                              loadOnly=(not editpars))
     except ValueError:
-        print >> sys.stderr, "Problem with input parameters. Quitting..."
+        print("Problem with input parameters. Quitting...", file=sys.stderr)
         return
 
     if configObj is None:
@@ -149,16 +149,16 @@ def run(configobj, wcsmap=None):
     elif len(input_list) > 0:
         def_logname = input_list[0]
     else:
-        print >> sys.stderr, textutil.textbox(
+        print(textutil.textbox(
             'ERROR:\nNo valid input files found!   Please restart the task '
-            'and check the value for the "input" parameter.')
+            'and check the value for the "input" parameter.'), file=sys.stderr) 
         def_logname = None
         return
 
     stateObj = configobj['STATE OF INPUT FILES']
     procSteps = util.ProcSteps()
 
-    print ('AstroDrizzle Version %s(%s) started at: %s\n' %
+    print('AstroDrizzle Version %s(%s) started at: %s\n' %
            (__version__, __vdate__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
@@ -175,7 +175,7 @@ def run(configobj, wcsmap=None):
             errmsg = "No valid images found for processing!\n"
             errmsg += "Check log file for full details.\n"
             errmsg += "Exiting AstroDrizzle now..."
-            print textutil.textbox(errmsg,width=65)
+            print(textutil.textbox(errmsg,width=65))
             raise_status = DO_NOT_RAISE
             raise ValueError
 
@@ -214,15 +214,15 @@ def run(configobj, wcsmap=None):
         adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                            procSteps=procSteps)
 
-        print
-        print ' '.join(['AstroDrizzle Version', __version__,
+        print()
+        print(' '.join(['AstroDrizzle Version', __version__,
                         'is finished processing at ',
-                        util._ptime()[0]]) + '!\n'
+                        util._ptime()[0]]) + '!\n')
     except:
-        print >> sys.stderr, textutil.textbox(
+        print(textutil.textbox(
             'ERROR:\nAstroDrizzle Version %s encountered a problem!  '
             'Processing terminated at %s.' %
-            (__version__, util._ptime()[0]))
+            (__version__, util._ptime()[0])), file=sys.stderr)
         procSteps.reportTimes()
         if imgObjList:
             for image in imgObjList:

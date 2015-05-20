@@ -12,7 +12,7 @@ IS RETURNED BY :py:func:`quickderiv`.
 # VERSION:
 #   Version 0.1.0: created -- CJH
 #
-from __future__ import division # confidence high
+from __future__ import absolute_import, division # confidence high
 
 from .version import *
 # IMPORT EXTERNAL MODULES

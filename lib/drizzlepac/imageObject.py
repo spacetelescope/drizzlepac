@@ -6,7 +6,7 @@ A class which makes image objects for each input filename.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division  # confidence medium
+from __future__ import absolute_import, division, print_function  # confidence medium
 
 import copy, os, re, sys
 
@@ -15,9 +15,9 @@ from stwcs import distortion
 
 from stsci.tools import fileutil, logutil, textutil
 from astropy.io import fits
-import util
-import wcs_functions
-import buildmask
+from . import util
+from . import wcs_functions
+from . import buildmask
 
 
 IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
@@ -813,12 +813,12 @@ class baseImageObject(object):
                 # Print a generic warning message and continue on with the
                 # final drizzle step.
 
-                print >> sys.stderr, textutil.textbox(
+                print(textutil.textbox(
                     'WARNING: No ERR weighting will be applied to the mask '
                     'used in the final drizzle step!  Weighting will be only '
                     'by exposure time.\n\nThe data provided as input does not '
-                    'contain an ERR extension')
-                print >> sys.stderr, '\n Continue with final drizzle step...'
+                    'contain an ERR extension'), file=sys.stderr)
+                print('\n Continue with final drizzle step...', sys.stderr)
         else:
             # If we were unable to find an 'ERR' extension to apply, one
             # possible reason was that the input was a 'standard' WFPC2 data
@@ -826,15 +826,16 @@ class baseImageObject(object):
             # this condition and issue a Warning to the user and continue on to
             # the final drizzle.
 
-            print >> sys.stderr, textutil.textbox(
+            print(textutil.textbox(
                 "WARNING: No ERR weighting will be applied to the mask used "
                 "in the final drizzle step!  Weighting will be only by "
                 "exposure time.\n\nThe WFPC2 data provided as input does not "
                 "contain ERR arrays.  WFPC2 data is not supported by this "
                 "weighting type.\n\nA workaround would be to create inverse "
                 "variance maps and use 'IVM' as the final_wht_type.  See the "
-                "HELP file for more details on using inverse variance maps.")
-            print >> sys.stderr, "\n Continue with final drizzle step..."
+                "HELP file for more details on using inverse variance maps."),
+                file=sys.stderr)
+            print("\n Continue with final drizzle step...", file=sys.stderr)
 
         return errmask.astype(np.float32)
 
@@ -861,7 +862,7 @@ class baseImageObject(object):
         exptime = 1 #sci_chip._exptime
         _parval = 'unity'
         if wtscl_par != None:
-            if isinstance(wtscl_par, basestring):
+            if type(wtscl_par) == type(''):
                 if  wtscl_par.isdigit() == False :
                     # String passed in as value, check for 'exptime' or 'expsq'
                     _wtscl_float = None
@@ -914,7 +915,7 @@ class baseImageObject(object):
             value = None
         if (value != None and value != '')  and (keyword != None and keyword.strip() != ''):
             exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword)
-            raise ValueError, exceptionMessage
+            raise ValueError(exceptionMessage)
         elif value != None and value != '':
             return self._averageFromList(value)
         elif keyword != None and keyword.strip() != '':

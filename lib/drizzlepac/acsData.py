@@ -6,11 +6,11 @@ Class used to model ACS specific instrument data.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence high
+from __future__ import absolute_import, division, print_function # confidence high
 
 from stsci.tools import fileutil
 import numpy as np
-from imageObject import imageObject
+from .imageObject import imageObject
 
 
 class ACSInputImage(imageObject):
@@ -86,7 +86,7 @@ class ACSInputImage(imageObject):
             str += "# Error occured in the ACSInputImage class  #\n"
             str += "#                                           #\n"
             str += "#############################################\n"
-            raise ValueError, str
+            raise ValueError(str)
 
 
         return darkcurrent
@@ -144,7 +144,7 @@ class WFCInputImage(ACSInputImage):
             chip._effGain = 1.
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # Convert the science data to electrons if specified by the user.
@@ -204,7 +204,7 @@ class HRCInputImage (ACSInputImage):
             chip._effGain = chip._gain
 
             if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # Convert the science data to electrons if specified by the user.
@@ -257,7 +257,7 @@ class SBCInputImage (ACSInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
             if chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # We need to determine if the user has used the default readnoise/gain value

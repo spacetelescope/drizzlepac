@@ -12,6 +12,7 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import division, print_function
 import numpy as np
 from numpy import linalg as npla
 from stsci.tools import logutil
@@ -180,7 +181,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
     if mode == 'shift':
         logstr = 'Performing "shift" fit'
         if verbose:
-            print logstr
+            print(logstr)
         else:
             log.info(logstr)
         result = fit_shifts(xy, uv)
@@ -188,7 +189,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
     elif mode == 'general':
         logstr = 'Performing "general" fit'
         if verbose:
-            print logstr
+            print(logstr)
         else:
             log.info(logstr)
         result = fit_general(xy, uv)
@@ -196,7 +197,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
     else:
         logstr = 'Performing "rscale" fit'
         if verbose:
-            print logstr
+            print(logstr)
         else:
             log.info(logstr)
         result = geomap_rscale(xy, uv, center=center)
@@ -471,7 +472,7 @@ def apply_fit(xy,coeffs):
 def compute_resids(xy,uv,fit):
     """ Compute the residuals based on fit and input arrays to the fit
     """
-    print 'FIT coeffs: ',fit['coeffs']
+    print('FIT coeffs: ',fit['coeffs'])
     xn,yn = apply_fit(uv,fit['coeffs'])
     resids = xy - np.transpose([xn,yn])
     return resids

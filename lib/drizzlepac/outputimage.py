@@ -6,7 +6,7 @@ This module manages the creation of the output image FITS file.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 from astropy.io import fits
 from stsci.tools import fileutil, readgeis, logutil
@@ -334,7 +334,7 @@ class OutputImage:
         # Now, build the output file
         ##########
         if self.build:
-            print '-Generating multi-extension output file: ',self.output
+            print('-Generating multi-extension output file: ',self.output)
             fo = fits.HDUList()
 
             # Add primary header to output file...
@@ -402,7 +402,7 @@ class OutputImage:
                 fo.append(newtab)
 
             if not virtual:
-                print 'Writing out to disk:',self.output
+                print('Writing out to disk:',self.output)
                 # write out file to disk
                 fo.writeto(self.output)
                 fo.close()
@@ -453,7 +453,7 @@ class OutputImage:
                 fo.append(newtab)
 
             if not virtual:
-                print 'Writing out image to disk:',self.outdata
+                print('Writing out image to disk:',self.outdata)
                 # write out file to disk
                 fo.writeto(self.outdata)
                 del fo,hdu
@@ -493,7 +493,7 @@ class OutputImage:
                 wcs_functions.removeAllAltWCS(fwht,wcs_ext)
 
                 if not virtual:
-                    print 'Writing out image to disk:',self.outweight
+                    print('Writing out image to disk:',self.outweight)
                     fwht.writeto(self.outweight)
                     del fwht,hdu
                     fwht = None
@@ -534,7 +534,7 @@ class OutputImage:
                 # remove all alternate WCS solutions from headers of this product
                 wcs_functions.removeAllAltWCS(fctx,wcs_ext)
                 if not virtual:
-                    print 'Writing out image to disk:',self.outcontext
+                    print('Writing out image to disk:',self.outcontext)
                     fctx.writeto(self.outcontext)
                     del fctx,hdu
                     fctx = None
@@ -559,7 +559,7 @@ class OutputImage:
             if keyword in extn:
                 #indx = extn.ascard.index_of(keyword)
                 indx = extn.index(keyword)
-                kw_list = extn.keys()[:indx]
+                kw_list = list(extn.keys())[:indx]
                 break
         if kw_list:
             # find which keyword from this list exists in header to be updated
@@ -569,7 +569,7 @@ class OutputImage:
                     break
         # determine new value for the last keyword found before the HISTORY kws
         if last_kw is None:
-            hdrkeys = hdr.keys()
+            hdrkeys = list(hdr.keys())
             i = -1
             last_kw = hdrkeys[i]
             while last_kw == 'HISTORY':
