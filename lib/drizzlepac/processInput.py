@@ -802,18 +802,11 @@ def update_member_names(oldasndict, pydr_input):
     newkeys = [fileutil.buildNewRootname(file) for file in pydr_input]
     keys_map = list(zip(newkeys, pydr_input))
 
-    iterator = omembers.iter()
-    while True:
-        try:
-            if sys.version_info[0] >= 3:
-                okey, oval = next(iterator)
-            else:
-                okey, oval = iterator.next()
-            if okey in newkeys:
-                nkey = pydr_input[newkeys.index(okey)]
-                nmembers[nkey.split('.fits')[0]] = oval
-        except StopIteration:
-            break
+    for okey, oval in omembers.items():
+        if okey in newkeys:
+            nkey = pydr_input[newkeys.index(okey)]
+            nmembers[nkey.split('.fits')[0]] = oval
+
     oldasndict.pop('members')
     # replace should be always True to cover the case when flt files were removed
     # and the case when names were translated
