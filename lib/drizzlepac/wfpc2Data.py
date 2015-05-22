@@ -15,7 +15,7 @@ import numpy as np
 from stsci.tools import fileutil, readgeis
 
 from .imageObject import imageObject
-import buildmask
+from . import buildmask
 
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
