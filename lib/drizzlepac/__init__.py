@@ -61,6 +61,9 @@ from . import buildwcs
 # This module supports applying WCS from _drz to _flt files
 from . import tweakback
 
+# This module enables users to replace NaNs in images with another value easily
+from . import pixreplace
+
 # These lines allow TEAL to print out the names of TEAL-enabled tasks
 # upon importing this package.
 from stsci.tools import teal
