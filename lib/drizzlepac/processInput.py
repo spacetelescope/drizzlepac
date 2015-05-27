@@ -416,13 +416,13 @@ def _getInputImage (input,group=None):
         """
         if _instrument == 'STIS':
             from . import stisData
-            if _detector == 'CCD': return stisData.CCDInputImage(input)
-            if _detector == 'FUV-MAMA': return stisData.FUVInputImage(input)
-            if _detector == 'NUV-MAMA': return stisData.NUVInputImage(input)
+            if _detector == 'CCD': return stisData.CCDInputImage(input,group=group)
+            if _detector == 'FUV-MAMA': return stisData.FUVInputImage(input,group=group)
+            if _detector == 'NUV-MAMA': return stisData.NUVInputImage(input,group=group)
         if _instrument == 'WFC3':
             from . import wfc3Data
-            if _detector == 'UVIS': return wfc3Data.WFC3UVISInputImage(input)
-            if _detector == 'IR': return wfc3Data.WFC3IRInputImage(input)
+            if _detector == 'UVIS': return wfc3Data.WFC3UVISInputImage(input,group=group)
+            if _detector == 'IR': return wfc3Data.WFC3IRInputImage(input,group=group)
 
     except ImportError:
         msg = 'No module implemented for '+str(_instrument)+'!'
