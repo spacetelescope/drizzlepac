@@ -112,7 +112,16 @@ exclusions: string (Default = '')
     *See notes below for more information.*
 
 updatewcs : bool (Default = No)
-    Update WCS keywords of input images?
+    This parameter specifies whether the WCS keywords are to be updated by
+    running updatewcs on the input data, or left alone. The update performed
+    by updatewcs not only recomputes the WCS based on the currently
+    used ``IDCTAB``, but also populates the header with
+    the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
+    correction will also be applied to the ``WCS`` and ``SIP`` keywords.
+    This parameter should be set to 'No' (`False`) when the WCS keywords
+    have been carefully set by some other method, and need to be passed
+    through to drizzle 'as is', otherwise those updates will be over-written
+    by this update.
 
 writecat : bool (Default = Yes)
     Specify whether or not to write out the source catalogs generated for
