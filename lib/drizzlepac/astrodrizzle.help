@@ -97,6 +97,8 @@ group : int (Default = None)
     number, a GEIS group number (such as '1'), or a FITS extension name
     (such as 'sci,1') may be specified.
 
+    .. note::
+        This parameter is not supported for NICMOS images.
 
 build : bool (Default = No)
     When this parameter is set to 'Yes' (True), AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'No' (False), a separate simple FITS file will be created for each aforementioned extension.
