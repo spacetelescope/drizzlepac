@@ -287,7 +287,7 @@ def radec_hmstodd(ra,dec):
         rastr = ':'.join(ra)
     elif ra.find(':') < 0:
         # convert any non-numeric characters to spaces (we already know the units)
-        rastr = string.translate(ra,hmstrans).strip()
+        rastr = ra.translate(hmstrans).strip()
         rastr = rastr.replace('  ',' ')
         # convert 'nn nn nn.nn' to final 'nn:nn:nn.nn' string
         rastr = rastr.replace(' ',':')
@@ -297,7 +297,7 @@ def radec_hmstodd(ra,dec):
     if isinstance(dec,list):
         decstr = ':'.join(dec)
     elif dec.find(':') < 0:
-        decstr = string.translate(dec,hmstrans).strip()
+        decstr = dec.translate(hmstrans).strip()
         decstr = decstr.replace('  ',' ')
         decstr = decstr.replace(' ',':')
     else:
