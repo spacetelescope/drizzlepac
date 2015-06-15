@@ -103,8 +103,12 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         cols = util.parse_colnames(colnames,coords)
         # read in columns from input coordinates file
         xyvals = np.loadtxt(coords,usecols=cols,delimiter=separator)
-        xlist = xyvals[:,0].copy()
-        ylist = xyvals[:,1].copy()
+        if xyvals.ndim == 1:  # only 1 entry in coords
+            xlist = [xyvals[0].copy()]
+            ylist = [xyvals[1].copy()]
+        else:
+            xlist = xyvals[:,0].copy()
+            ylist = xyvals[:,1].copy()
         del xyvals
     else:
         if not isinstance(x,list):
