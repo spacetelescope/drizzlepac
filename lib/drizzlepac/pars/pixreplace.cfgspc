@@ -1,0 +1,6 @@
+_task_name_ = string_kw(default="pixreplace")
+input = string_kw(default="", comment="Input filename(s)")
+pixvalue = float_or_none_kw(default=None, comment= "Pixel value to be replaced")
+newvalue = float_or_none_kw(default=0, comment= "New pixel value")
+ext = string_kw(default="", comment="Extensions to be processed")
+[ _RULES_ ]

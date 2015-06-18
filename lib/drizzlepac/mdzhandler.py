@@ -7,7 +7,7 @@ processing as used in the pipeline.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence high
+from __future__ import division, print_function # confidence high
 
 import string, os
 
@@ -31,7 +31,7 @@ def getMdriztabParameters(files):
     if 'MDRIZTAB' in _header:
         _tableName = _header['MDRIZTAB']
     else:
-        raise KeyError, "No MDRIZTAB found in file " + _fileName
+        raise KeyError("No MDRIZTAB found in file " + _fileName)
 
     _tableName = fileutil.osfn(_tableName)
 
@@ -41,15 +41,15 @@ def getMdriztabParameters(files):
     # Specifically check to see whether the MDRIZTAB file can be found
     mtab_path = os.path.split(_tableName)[0] # protect against no path given for _tableName
     if mtab_path and not os.path.exists(mtab_path): # check path first, if given
-        raise IOError, "Directory for MDRIZTAB '%s' could not be accessed!"%mtab_path
+        raise IOError("Directory for MDRIZTAB '%s' could not be accessed!"%mtab_path)
     if not os.path.exists(_tableName): # then check for the table itself
-        raise IOError, "MDRIZTAB table '%s' could not be found!"%_tableName
+        raise IOError("MDRIZTAB table '%s' could not be found!"%_tableName)
 
     # Open MDRIZTAB file.
     try:
         _mdriztab = fits.open(_tableName)
     except:
-        raise IOError,"MDRIZTAB table '%s' not valid!" % _tableName
+        raise IOError("MDRIZTAB table '%s' not valid!" % _tableName)
 
     # Look for matching rows based on filter name. If no
     # match, pick up rows for the default filter.
@@ -66,7 +66,7 @@ def getMdriztabParameters(files):
         _numimages = _mdriztab[1].data.field('numimages')[i]
         if _nimages >= _numimages:
             _row = i
-    print '- MDRIZTAB: AstroDrizzle parameters read from row %s.'%(_row+1)
+    print('- MDRIZTAB: AstroDrizzle parameters read from row %s.'%(_row+1))
 
     mpars = _mdriztab[1].data[_row]
     _mdriztab.close()
@@ -80,7 +80,7 @@ def getMdriztabParameters(files):
 
 def _getRowsByFilter(table, filters):
     rows = []
-    for i in xrange(table[1].data.shape[0]):
+    for i in range(table[1].data.shape[0]):
         _tfilters = table[1].data.field('filter')[i]
         if _tfilters == filters:
             rows.append(i)
@@ -97,7 +97,7 @@ def _interpretMdriztabPars(rec):
     """
     tabdict = {}
     # for each entry in the record...
-    for indx in xrange(len(rec.array.names)):
+    for indx in range(len(rec.array.names)):
         # ... get the name, format, and value.
         _name = rec.array.names[indx]
         _format = rec.array.formats[indx]
@@ -144,7 +144,7 @@ def _interpretMdriztabPars(rec):
             elif ('E' in _format) or (_format == 'f4') :
                 _val = cleanNaN(_value)
             else:
-                print 'MDRIZTAB column ',_name,' has unrecognized format',_format
+                print('MDRIZTAB column ',_name,' has unrecognized format',_format)
                 raise ValueError
             if _name in ['ra','dec']:
                 for dnames in drizstep_names:

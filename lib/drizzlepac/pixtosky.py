@@ -71,14 +71,14 @@
        ...                      colnames=['c3','c4'], output="radec_sci1.dat")
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 import os,copy
 import numpy as np
 
 from stsci.tools import fileutil, teal
-import util
-import wcs_functions
+from . import util
+from . import wcs_functions
 import stwcs
 from stwcs import distortion, wcsutil
 
@@ -103,8 +103,12 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         cols = util.parse_colnames(colnames,coords)
         # read in columns from input coordinates file
         xyvals = np.loadtxt(coords,usecols=cols,delimiter=separator)
-        xlist = xyvals[:,0].copy()
-        ylist = xyvals[:,1].copy()
+        if xyvals.ndim == 1:  # only 1 entry in coords
+            xlist = [xyvals[0].copy()]
+            ylist = [xyvals[1].copy()]
+        else:
+            xlist = xyvals[:,0].copy()
+            ylist = xyvals[:,1].copy()
         del xyvals
     else:
         if not isinstance(x,list):
@@ -138,10 +142,10 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         dec = ddec
 
     if verbose or (not verbose and util.is_blank(output)):
-        print '# Coordinate transformations for ',input
-        print '# X      Y         RA             Dec\n'
+        print('# Coordinate transformations for ',input)
+        print('# X      Y         RA             Dec\n')
         for x,y,r,d in zip(xlist,ylist,rastr,decstr):
-            print "%.4f  %.4f    %s  %s"%(x,y,r,d)
+            print("%.4f  %.4f    %s  %s"%(x,y,r,d))
 
     # Create output file, if specified
     if output:
@@ -150,7 +154,7 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         for r,d in zip(rastr,decstr):
             f.write('%s    %s\n'%(r,d))
         f.close()
-        print 'Wrote out results to: ',output
+        print('Wrote out results to: ',output)
 
     return ra,dec
 

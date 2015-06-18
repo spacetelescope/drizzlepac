@@ -64,7 +64,7 @@
 
 """
 
-from __future__ import division
+from __future__ import absolute_import, division, print_function
 import os
 import numpy as np
 from stsci.tools import stpyfits as fits
@@ -169,10 +169,10 @@ def main():
 
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'h')
-    except getopt.error, e:
-        print str(e)
-        print __doc__
-        print "\t", __version__
+    except getopt.error as e:
+        print(str(e))
+        print(__doc__)
+        print("\t", __version__)
 
     # initialize default values
     help = 0
@@ -188,8 +188,8 @@ def main():
         args.append('dq')
 
     if (help):
-        print __doc__
-        print "\t", __version__+'('+__vdate__+')'
+        print(__doc__)
+        print("\t", __version__+'('+__vdate__+')')
     else:
         reset_dq_bits(args[0],args[1],args[2], args[3])
 

@@ -69,14 +69,14 @@
                 colnames=['c3','c4'], output="xy_sci1.dat")
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 import os,copy
 import numpy as np
 
 from astropy.io import fits
 from stsci.tools import fileutil, teal
-import util,wcs_functions,tweakutils
+from . import util,wcs_functions,tweakutils
 import stwcs
 from stwcs import distortion,wcsutil
 
@@ -124,10 +124,10 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         ystr.append(fmt%y)
 
     if verbose or (not verbose and util.is_blank(output)):
-        print '# Coordinate transformations for ',input
-        print '# X      Y         RA             Dec\n'
+        print ('# Coordinate transformations for ',input)
+        print('# X      Y         RA             Dec\n')
         for x,y,r,d in zip(xstr,ystr,xlist,ylist):
-            print "%s  %s    %s  %s"%(x,y,r,d)
+            print("%s  %s    %s  %s"%(x,y,r,d))
 
     # Create output file, if specified
     if output:
@@ -136,7 +136,7 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         for x,y in zip(xstr,ystr):
             f.write('%s    %s\n'%(x,y))
         f.close()
-        print 'Wrote out results to: ',output
+        print('Wrote out results to: ',output)
 
     return outx,outy
 
@@ -157,12 +157,12 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
                 cnames = extn.columns.names
                 if colnames is not None:
                     for c in colnames:
-                        for name,i in zip(cnames,xrange(len(cnames))):
+                        for name,i in zip(cnames,list(range(len(cnames)))):
                             if c == name.lower(): cols.append(i)
                     if len(cols) < len(colnames):
                         errmsg = "Not all input columns found in table..."
                         ftab.close()
-                        raise ValueError, errmsg
+                        raise ValueError(errmsg)
                 else:
                     cols = cnames[:2]
                 break
@@ -178,7 +178,7 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
                     cols.append(c)
                 else:
                     errmsg = "Unsupported column names..."
-                    raise ValueError, errmsg
+                    raise ValueError(errmsg)
     return cols
 
 

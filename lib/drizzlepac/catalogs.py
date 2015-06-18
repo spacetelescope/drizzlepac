@@ -4,6 +4,7 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import, division, print_function
 import os, sys
 import numpy as np
 #import pywcs
@@ -17,7 +18,7 @@ from astropy.io import fits
 import stsci.imagestats as imagestats
 
 #import idlphot
-import tweakutils, util
+from . import tweakutils, util
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
@@ -132,8 +133,9 @@ class Catalog(object):
         """ Convert XY positions into sky coordinates using STWCS methods
         """
         if not isinstance(self.wcs,pywcs.WCS):
-            print >> sys.stderr,textutil.textbox(
-            'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...')
+            print(textutil.textbox(
+            'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'),
+            file=sys.stderr)
             raise ValueError
         if self.xypos is None or len(self.xypos[0]) == 0:
             self.xypos = None
@@ -164,7 +166,7 @@ class Catalog(object):
             return
 
         excluded_list = []
-        radec_indx = range(len(self.radec[0]))
+        radec_indx = list(range(len(self.radec[0])))
         for ra,dec,indx in zip(self.radec[0],self.radec[1],radec_indx):
             src_pos = coords.Position((ra,dec))
             # check to see whether this source is within an exclusion region
@@ -399,7 +401,10 @@ class ImageCatalog(Catalog):
 
 
     def _compute_sigma(self):
-        istats = imagestats.ImageStats(self.source,nclip=3,
+        src_vals = self.source
+        if np.any(np.isnan(self.source)):
+            src_vals = self.source[np.where(np.isnan(self.source)==False)]
+        istats = imagestats.ImageStats(src_vals,nclip=3,
                                         fields='mode,stddev',binwidth=0.01)
         sigma = np.sqrt(2.0 * np.abs(istats.mode))
         return sigma
@@ -479,7 +484,7 @@ class UserCatalog(Catalog):
             self.xypos.append(np.arange(self.num_objects)+self.start_id)
 
         if self.use_sharp_round:
-            for i in xrange(len(self.xypos), 7):
+            for i in range(len(self.xypos), 7):
                 self.xypos.append(np.zeros(self.num_objects, dtype=float))
 
 

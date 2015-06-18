@@ -8,25 +8,25 @@ cosmic-rays.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division  # confidence medium
+from __future__ import absolute_import, division, print_function  # confidence medium
 
 import os
 import sys
-import util
+from . import util
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
-import outputimage, wcs_functions, processInput
+from . import outputimage, wcs_functions, processInput
 import stwcs
 from stwcs import distortion
 
 from .version import *
 
 try:
-    import cdriz
+    from . import cdriz
 except ImportError:
     cdriz = None
-    print '\n Coordinate transformation and image resampling library NOT found!'
-    print '\n Please check the installation of this package to insure C code was built successfully.'
+    print('\n Coordinate transformation and image resampling library NOT found!')
+    print('\n Please check the installation of this package to insure C code was built successfully.')
     raise ImportError
 
 
@@ -248,7 +248,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
         for chip in img.returnAllChips(extname=img.scienceExt):
 
-            print '    Blot: creating blotted image: ',chip.outputNames['data']
+            print('    Blot: creating blotted image: ',chip.outputNames['data'])
 
             #### Check to see what names need to be included here for use in _hdrlist
             chip.outputNames['driz_version'] = _versions['AstroDrizzle']
@@ -360,7 +360,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         """
         Use default C mapping function.
         """
-        print 'Using default C-based coordinate transformation...'
+        print('Using default C-based coordinate transformation...')
         mapping = cdriz.DefaultWCSMapping(blot_wcs,source_wcs,int(blot_wcs._naxis1),int(blot_wcs._naxis2),stepsize)
         pix_ratio = source_wcs.pscale/wcslin.pscale
     else:
@@ -368,7 +368,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         ##Using the Python class for the WCS-based transformation
         #
         # Use user provided mapping function
-        print 'Using coordinate transformation defined by user...'
+        print('Using coordinate transformation defined by user...')
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
         wmap = wcsmap(blot_wcs,source_wcs)

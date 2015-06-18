@@ -6,7 +6,7 @@ A suite of functions for finding sources in images.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division
+from __future__ import absolute_import, division, print_function
 import sys
 
 import math
@@ -68,7 +68,7 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
             b = 0.0
             c = 1/xsigma**2
         else:
-            print 'Unable to construct 1D Gaussian with these parameters\n'
+            print('Unable to construct 1D Gaussian with these parameters\n')
             raise ValueError
 
         nx = 2 * int(max(2, (xsigma*nsigma*np.abs(cost))))+1
@@ -227,7 +227,7 @@ def findstars(jdata, fwhm, threshold, skymode,
     fluxes = []
     fitind = []
     if nobj < 2:
-        print 'No objects found for this image. Please check value of "threshold".'
+        print('No objects found for this image. Please check value of "threshold".')
         return fitind,fluxes
 
     # determine center of each source, while removing spurious sources or
@@ -477,8 +477,8 @@ def roundness(im):
     return 4*np.pi*area/perimeter**2
 
 def immoments(im, p,q):
-    x = range(im.shape[1])
-    y = range(im.shape[0])
+    x = list(range(im.shape[1]))
+    y = list(range(im.shape[0]))
     #coord=np.array([x.flatten(),y.flatten()]).T
     """
     moment = 0
@@ -522,8 +522,8 @@ def centroid(im):
 def cmoment(im,p,q):
     xcen,ycen = centroid(im)
     #x,y=np.meshgrid(range(403,412),range(423,432))
-    x = range(im.shape[1])
-    y = range(im.shape[0])
+    x = list(range(im.shape[1]))
+    y = list(range(im.shape[0]))
     mu = np.sum([(i-xcen)**p * (j-ycen)**q * im[i,j] for i in y for j in x],
                 dtype=np.float64)
     return mu

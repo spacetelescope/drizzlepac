@@ -5,6 +5,7 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import, division, print_function
 import os
 import sys
 import numpy as np
@@ -15,7 +16,7 @@ from stsci.tools import logutil, textutil
 from stsci.tools.cfgpars import DuplicateKeyError
 from stwcs import updatewcs
 
-import util
+from . import util
 
 # __version__ and __vdate__ are defined here, prior to the importing
 # of the modules below, so that those modules can use the values
@@ -26,11 +27,11 @@ import util
 __version__ = '1.4.2'
 __vdate__ = '22-Sep-2014'
 
-import tweakutils
-import imgclasses
-import catalogs
-import imagefindpars
-import refimagefindpars
+from . import tweakutils
+from . import imgclasses
+from . import catalogs
+from . import imagefindpars
+from . import refimagefindpars
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 
@@ -57,7 +58,7 @@ def _managePsets(configobj, section_name, task_name, iparsobj=None, input_dict=N
     # Identify optional parameters in input_dicts that are from this
     # PSET and add it to iparsobj:
     if input_dict is not None:
-        for key in input_dict.keys():
+        for key in list(input_dict.keys()):
             if key in iparsobj_cfg:
                 if iparsobj is not None and key in iparsobj:
                     raise DuplicateKeyError("Duplicate parameter '{:s}' "
@@ -96,8 +97,8 @@ def run(configobj):
     """ Primary Python interface for image registration code
         This task replaces 'tweakshifts'
     """
-    print 'TweakReg Version %s(%s) started at: %s \n'%(
-                    __version__,__vdate__,util._ptime()[0])
+    print('TweakReg Version %s(%s) started at: %s \n'%(
+                    __version__,__vdate__,util._ptime()[0]))
     util.print_pkg_versions()
 
     # Check to see whether or not the imagefindpars parameters have
@@ -128,7 +129,7 @@ def run(configobj):
     )
 
     if not filenames:
-        print 'No filenames matching input %r were found.' % input
+        print('No filenames matching input %r were found.' % input)
         raise IOError
 
     # Verify that files are writable (based on file permissions) so that
@@ -149,11 +150,11 @@ def run(configobj):
                     errstr = 'WCSNAME "%s" already present in "%s".  '%(wname,fname)+\
                     'A unique value for the "wcsname" parameter needs to be ' + \
                     'specified. \n\nQuitting!'
-                    print textutil.textbox(errstr,width=60)
+                    print(textutil.textbox(errstr,width=60))
                     raise IOError
 
     if configobj['updatewcs']:
-        print '\nRestoring WCS solutions to original state using updatewcs...\n'
+        print('\nRestoring WCS solutions to original state using updatewcs...\n')
         updatewcs.updatewcs(filenames)
 
     if catnames in [None,'',' ','INDEF'] or len(catnames) == 0:
@@ -174,7 +175,7 @@ def run(configobj):
             exclusion_files = tweakutils.parse_atfile_cat(
                 '@'+configobj['exclusions'])
         else:
-            print 'Could not find specified exclusions file "%s"'%(configobj['exclusions'])
+            print('Could not find specified exclusions file "%s"'%(configobj['exclusions']))
             raise IOError
     else:
         exclusion_files = [None]*len(filenames)
@@ -183,11 +184,11 @@ def run(configobj):
     if catnames is not None and (len(catnames) > 0):
         rcat = configobj['REFERENCE CATALOG DESCRIPTION']['refcat']
         if (len(catnames) != len(filenames)):
-            print 'The number of input catalogs does not match the number of input images'
-            print 'Catalog files specified were:'
-            print catnames
-            print 'Input images specified were:'
-            print filenames
+            print('The number of input catalogs does not match the number of input images')
+            print('Catalog files specified were:')
+            print(catnames)
+            print('Input images specified were:')
+            print(filenames)
             raise IOError
     else:
         # setup array of None values as input to catalog parameter for Image class
@@ -225,10 +226,10 @@ def run(configobj):
     # verify a valid hdrname was provided, if headerlet was set to True
     imgclasses.verify_hdrname(**hdrlet_par)
 
-    print '\nFinding shifts for: '
+    print('\nFinding shifts for: ')
     for f in filenames:
-        print '    ',f
-    print '\n'
+        print('    ',f)
+    print('\n')
 
     log.info("USER INPUT PARAMETERS for finding sources for each input image:")
     util.printParams(catfile_kwargs, log=log)
@@ -237,7 +238,7 @@ def run(configobj):
         minsources = max(1, catfit_pars['minobj'])
         omitted_images = []
         all_input_images = []
-        for imgnum in xrange(len(filenames)):
+        for imgnum in range(len(filenames)):
             # Create Image instances for all input images
             img = imgclasses.Image(filenames[imgnum],
                                    input_catalogs=catnames[imgnum],
@@ -257,7 +258,7 @@ def run(configobj):
     except KeyboardInterrupt:
         for img in input_images:
             img.close()
-        print 'Quitting as a result of user request (Ctrl-C)...'
+        print('Quitting as a result of user request (Ctrl-C)...')
         return
     # create set of parameters to pass to RefImage class
     kwargs = tweakutils.get_configobj_root(configobj)
@@ -317,7 +318,7 @@ def run(configobj):
             refimage.close()
             for img in input_images:
                 img.close()
-            print 'Quitting as a result of user request (Ctrl-C)...'
+            print('Quitting as a result of user request (Ctrl-C)...')
             return
 
         if len(input_images) < 1:
@@ -383,7 +384,7 @@ def run(configobj):
             refimage.close()
             for img in input_images:
                 img.close()
-            print 'Quitting as a result of user request (Ctrl-C)...'
+            print('Quitting as a result of user request (Ctrl-C)...')
             return
 
     else:
@@ -424,7 +425,7 @@ def run(configobj):
             refimage.close()
             for img in input_images:
                 img.close()
-            print 'Quitting as a result of user request (Ctrl-C)...'
+            print('Quitting as a result of user request (Ctrl-C)...')
             return
 
         omitted_images.insert(0, refimg) # refimage *must* be first
@@ -609,8 +610,8 @@ def run(configobj):
 def _overlap_matrix(images):
     nimg = len(images)
     m = np.zeros((nimg,nimg), dtype=np.float)
-    for i in xrange(nimg):
-        for j in xrange(i+1,nimg):
+    for i in range(nimg):
+        for j in range(i+1,nimg):
             p = images[i].skyline.intersection(images[j].skyline)
             area = p.area()
             m[j,i] = area
@@ -657,7 +658,7 @@ def _max_overlap_pair(images, expand_refcat, enforce_user_order):
     images_arr = np.asarray(images)[sorting_indices]
     while len(images) > 0:
         del images[0]
-    for k in xrange(images_arr.shape[0]):
+    for k in range(images_arr.shape[0]):
         images.append(images_arr[k])
 
     return (im1, im2)
@@ -671,7 +672,7 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
         return images.pop(0)
 
     area = np.zeros(nimg, dtype=np.float)
-    for i in xrange(nimg):
+    for i in range(nimg):
         area[i] = refimage.skyline.intersection(images[i].skyline).area()
 
     # Sort the remaining of the input list of images by overlap area
@@ -680,7 +681,7 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
     images_arr = np.asarray(images)[sorting_indices]
     while len(images) > 0:
         del images[0]
-    for k in xrange(images_arr.shape[0]):
+    for k in range(images_arr.shape[0]):
         images.append(images_arr[k])
 
     return images.pop(0)
@@ -706,7 +707,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     # Get default or user-specified configobj for primary task
     if isinstance(configobj, str):
         if not os.path.exists(configobj):
-            print 'Cannot find .cfg file: '+configobj
+            print('Cannot find .cfg file: '+configobj)
             return
         configobj = teal.load(configobj, strict=False)
 
@@ -727,8 +728,8 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         idkeys = input_dict.keys()
         for i in idkeys:
             if i in configobj[PSET_SECTION]:
-                print 'WARNING: ignoring imagefindpars setting "'+i+ \
-                     '='+str(input_dict[i])+'", for now please enter directly into TEAL.'
+                print('WARNING: ignoring imagefindpars setting "'+i+ 
+                     '='+str(input_dict[i])+'", for now please enter directly into TEAL.')
                 input_dict.pop(i)
         del configobj[PSET_SECTION] # force run() to pull it again after GUI use
         del configobj[PSET_SECTION_REFIMG] # force run() to pull it again after GUI use
@@ -743,7 +744,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
                                             input_dict,
                                             loadOnly=(not editpars))
     except ValueError:
-        print "Problem with input parameters. Quitting..."
+        print("Problem with input parameters. Quitting...")
         return
 
     if configObj is None:

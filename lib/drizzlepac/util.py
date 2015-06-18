@@ -9,7 +9,7 @@ A library of utility functions
 
 """
 
-from __future__ import division  # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 import logging
 import functools
 import os
@@ -46,7 +46,7 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
         except:
             can_parallel = False
     except ImportError:
-        print '\nCould not import multiprocessing, will only take advantage of a single CPU core'
+        print('\nCould not import multiprocessing, will only take advantage of a single CPU core')
 
 
 def get_pool_size(usr_config_value, num_tasks):
@@ -138,14 +138,14 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
             logging.Formatter('[%(levelname)-8s] %(message)s'))
         root_logger.addHandler(_log_file_handler)
 
-        print 'Setting up logfile : ', logname
+        print('Setting up logfile : ', logname)
 
         stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
         # Disable display of prints to stdout from all packages except
         # drizzlepac
         stdout_logger.addFilter(logutil.EchoFilter(include=['drizzlepac']))
     else:
-        print 'No trailer file created...'
+        print('No trailer file created...')
 
 
 def end_logging(filename=None):
@@ -155,15 +155,15 @@ def end_logging(filename=None):
 
     if logutil.global_logging_started:
         if filename:
-            print 'Trailer file written to: ', filename
+            print('Trailer file written to: ', filename)
         else:
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
-            print 'No trailer file saved...'
+            print('No trailer file saved...')
 
         logutil.teardown_global_logging()
     else:
-        print 'No trailer file saved...'
+        print('No trailer file saved...')
 
 
 class WithLogging(object):
@@ -240,7 +240,7 @@ def print_pkg_versions(packages=None, svn=False, log=None):
             log.info(msg)
     else:
         def output(msg):
-            print msg
+            print(msg)
 
     pkgs = ['numpy', 'astropy', 'stwcs']
     if packages is not None:
@@ -299,7 +299,7 @@ class ProcSteps(object):
         step.
         """
         ptime = _ptime()
-        print '==== Processing Step ',key,' started at ',ptime[0]
+        print('==== Processing Step ',key,' started at ',ptime[0])
         self.steps[key] = {'start':ptime}
         self.order.append(key)
 
@@ -316,7 +316,7 @@ class ProcSteps(object):
             self.steps[key]['elapsed'] = ptime[1] - self.steps[key]['start'][1]
         self.end = ptime
 
-        print'==== Processing Step ',key,' finished at ',ptime[0]
+        print('==== Processing Step ',key,' finished at ',ptime[0])
 
     def reportTimes(self):
         """
@@ -326,17 +326,17 @@ class ProcSteps(object):
 
         self.end = _ptime()
         total_time = 0
-        print ProcSteps.__report_header
+        print(ProcSteps.__report_header)
         for step in self.order:
             if 'elapsed' in self.steps[step]:
                 _time = self.steps[step]['elapsed']
             else:
                 _time = 0.0
             total_time += _time
-            print '   %20s          %0.4f sec.' % (step, _time)
+            print('   %20s          %0.4f sec.' % (step, _time))
 
-        print '   %20s          %s' % ('=' * 20, '=' * 20)
-        print '   %20s          %0.4f sec.' % ('Total', total_time)
+        print('   %20s          %s' % ('=' * 20, '=' * 20))
+        print('   %20s          %0.4f sec.' % ('Total', total_time))
 
         # Compute overall runtime of entire program, including overhead
         #total = self.end[1] - self.start[1]
@@ -369,7 +369,10 @@ def findrootname(filename):
     """
 
     puncloc = [filename.find(char) for char in string.punctuation]
-    val = sys.maxint
+    if sys.version_info[0] >= 3:
+        val = sys.maxsize
+    else:
+        val = sys.maxint
     for num in puncloc:
         if num !=-1 and num < val:
             val = num
@@ -385,18 +388,24 @@ def removeFileSafely(filename,clobber=True):
 def displayEmptyInputWarningBox(display=True, parent=None):
     """ Displays a warning box for the 'input' parameter.
     """
-    import tkMessageBox
+    if sys.version_info[0] >= 3:
+        from tkinter.messagebox import showwarning
+    else:
+        from tkMessageBox import showwarning
 
     if display:
         msg = 'No valid input files found! '+\
         'Please check the value for the "input" parameter.'
-        tkMessageBox.showwarning(parent=parent,message=msg, title="No valid inputs!")
+        showwarning(parent=parent,message=msg, title="No valid inputs!")
     return "yes"
 
 def displayBadRefimageWarningBox(display=True, parent=None):
     """ Displays a warning box for the 'input' parameter.
     """
-    import tkMessageBox
+    if sys.version_info[0] >= 3:
+        from tkinter.messagebox import showwarning
+    else:
+        from tkMessageBox import showwarning
 
     if display:
         msg = 'No refimage with WCS found!\n '+\
@@ -405,7 +414,7 @@ def displayBadRefimageWarningBox(display=True, parent=None):
         '   * can not find the file.\n'+\
         'Please check the filename specified in the "refimage" parameter.'
 
-        tkMessageBox.showwarning(parent=parent,message=msg, title="No valid inputs!")
+        showwarning(parent=parent,message=msg, title="No valid inputs!")
     return "yes"
 
 def updateNEXTENDKw(fobj):
@@ -518,23 +527,23 @@ def verifyFilePermissions(filelist, chmod=True):
     num_bad = len(badfiles)
     if num_bad > 0:
         if archive_dir:
-            print '\n'
-            print '#'*40
-            print '    Working in "OrIg_files" (archive) directory. '
-            print '    This directory has been created to serve as an archive'
-            print '    for the original input images. '
-            print '\n    These files should be copied into another directory'
-            print '     for processing. '
-            print '#'*40
+            print('\n')
+            print('#'*40)
+            print('    Working in "OrIg_files" (archive) directory. ')
+            print('    This directory has been created to serve as an archive')
+            print('    for the original input images. ')
+            print('\n    These files should be copied into another directory')
+            print('     for processing. ')
+            print('#'*40)
 
-        print '\n'
-        print '#'*40
-        print 'Found %d files which can not be updated!'%(num_bad)
+        print('\n')
+        print('#'*40)
+        print('Found %d files which can not be updated!'%(num_bad))
         for img in badfiles:
-            print '    %s'%(img)
-        print '\nPlease reset permissions for these files and restart...'
-        print '#'*40
-        print '\n'
+            print('    %s'%(img))
+        print('\nPlease reset permissions for these files and restart...')
+        print('#'*40)
+        print('\n')
         filelist = None
 
     return filelist
@@ -545,7 +554,7 @@ def getFullParList(configObj):
     regardless of which section the parameter was stored
     """
     plist = []
-    for par in configObj.iterkeys():
+    for par in configObj.keys():
         if isinstance(configObj[par],configobj.Section):
             plist.extend(getFullParList(configObj[par]))
         else:
@@ -569,12 +578,12 @@ def validateUserPars(configObj,input_dict):
         if kw not in plist:
             extra_pars.append(kw)
     if len(extra_pars) > 0:
-        print '='*40
-        print 'The following input parameters were not recognized as valid inputs:'
+        print ('='*40)
+        print ('The following input parameters were not recognized as valid inputs:')
         for p in extra_pars:
-            print "    %s"%(p)
-        print '\nPlease check the spelling of the parameter(s) and try again...'
-        print '='*40
+            print("    %s"%(p))
+        print('\nPlease check the spelling of the parameter(s) and try again...')
+        print('='*40)
         raise ValueError
 
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
@@ -658,14 +667,17 @@ def getConfigObjPar(configObj, parname):
 def displayMakewcsWarningBox(display=True, parent=None):
     """ Displays a warning box for the 'makewcs' parameter.
     """
-    import tkMessageBox
+    if sys.version_info[0] >= 3:
+        from tkinter.messagebox import showwarning
+    else:
+        from tkMessageBox import showwarning
 
     ans = {'yes':True,'no':False}
     if ans[display]:
         msg = 'Setting "updatewcs=yes" will result '+ \
               'in all input WCS values to be recomputed '+ \
               'using the original distortion model and alignment.'
-        tkMessageBox.showwarning(parent=parent,message=msg, title="WCS will be overwritten!")
+        showwarning(parent=parent,message=msg, title="WCS will be overwritten!")
     return True
 
 """
@@ -703,7 +715,7 @@ def printParams(paramDictionary, all=False, log=None):
             log.info(msg)
     else:
         def output(msg):
-            print msg
+            print(msg)
 
     if not paramDictionary:
         output('No parameters were supplied')
@@ -872,7 +884,7 @@ def update_input(filelist, ivmlist=None, removed_files=None):
     if removed_files == []:
         return filelist, ivmlist
     else:
-        sci_ivm = zip(filelist, ivmlist)
+        sci_ivm = list(zip(filelist, ivmlist))
         for f in removed_files:
             result=[sci_ivm.remove(t) for t in sci_ivm if t[0] == f ]
         ivmlist = [el[1] for el in sci_ivm]
@@ -1009,7 +1021,7 @@ def readcols(infile,cols=[0,1,2,3],hms=False):
         if len(outarr) == 0:
             for c in range(len(cols)): outarr.append([])
 
-        for c,n in zip(cols,range(len(cols))):
+        for c,n in zip(cols,list(range(len(cols)))):
             if not hms:
                 val = float(lspl[c])
             else:
@@ -1037,12 +1049,12 @@ def parse_colnames(colnames,coords=None):
                 cnames = extn.columns.names
                 if colnames is not None:
                     for c in colnames:
-                        for name,i in zip(cnames,xrange(len(cnames))):
+                        for name,i in zip(cnames,list(range(len(cnames)))):
                             if c == name.lower(): cols.append(i)
                     if len(cols) < len(colnames):
                         errmsg = "Not all input columns found in table..."
                         ftab.close()
-                        raise ValueError, errmsg
+                        raise ValueError(errmsg)
                 else:
                     cols = cnames[:2]
                 break
@@ -1058,7 +1070,7 @@ def parse_colnames(colnames,coords=None):
                     cols.append(c)
                 else:
                     errmsg = "Unsupported column names..."
-                    raise ValueError, errmsg
+                    raise ValueError(errmsg)
     return cols
 
 

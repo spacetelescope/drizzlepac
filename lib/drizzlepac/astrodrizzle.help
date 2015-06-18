@@ -45,8 +45,8 @@ runfile : str (Default = 'astrodrizzle.log')
 
 updatewcs : bool  (Default = No)
     This parameter specifies whether the WCS keywords are to be updated by
-    running makewcs on the input data, or left alone. The update performed
-    by makewcs not only recomputes the WCS based on the currently
+    running updatewcs on the input data, or left alone. The update performed
+    by updatewcs not only recomputes the WCS based on the currently
     used ``IDCTAB``, but also populates the header with
     the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
     correction will also be applied to the ``WCS`` and ``SIP`` keywords.
@@ -97,8 +97,6 @@ group : int (Default = None)
     number, a GEIS group number (such as '1'), or a FITS extension name
     (such as 'sci,1') may be specified.
 
-    .. note::
-        This parameter is not supported for NICMOS images.
 
 build : bool (Default = No)
     When this parameter is set to 'Yes' (True), AstroDrizzle will combine the separate 'drizzle' output files into a single multi-extension format FITS file. This combined output file will contain seperate SCI (science), WHT (weight), and CTX (context) extensions. If this parameter is set to 'No' (False), a separate simple FITS file will be created for each aforementioned extension.

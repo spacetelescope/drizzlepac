@@ -4,6 +4,7 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import, division, print_function
 import string,os
 
 import numpy as np
@@ -39,7 +40,7 @@ def parse_input(input, prodonly=False, sort_wildcards=True):
         f.close()
         # Parse the @-file with irafglob to extract the input filename
         filelist = irafglob.irafglob(input, atfile=atfile_sci)
-        print line
+        print(line)
         # If there are additional columns for catalog files...
         if len(line.split()) > 1:
             # ...parse out the names of the catalog files as well
@@ -115,7 +116,7 @@ def ndfind(array, hmin, fwhm, skymode,
                     sharplo=sharplim[0], sharphi=sharplim[1],
                     roundlo=roundlim[0], roundhi=roundlim[1])
     if len(star_list) == 0:
-        print 'No valid sources found...'
+        print('No valid sources found...')
         return tuple([[] for i in range(7 if use_sharp_round else 4)])
     star_arr = np.array(star_list)
     fluxes = np.array(fluxes,np.float32)
@@ -286,7 +287,7 @@ def radec_hmstodd(ra,dec):
         rastr = ':'.join(ra)
     elif ra.find(':') < 0:
         # convert any non-numeric characters to spaces (we already know the units)
-        rastr = string.translate(ra,hmstrans).strip()
+        rastr = ra.translate(hmstrans).strip()
         rastr = rastr.replace('  ',' ')
         # convert 'nn nn nn.nn' to final 'nn:nn:nn.nn' string
         rastr = rastr.replace(' ',':')
@@ -296,7 +297,7 @@ def radec_hmstodd(ra,dec):
     if isinstance(dec,list):
         decstr = ':'.join(dec)
     elif dec.find(':') < 0:
-        decstr = string.translate(dec,hmstrans).strip()
+        decstr = dec.translate(hmstrans).strip()
         decstr = decstr.replace('  ',' ')
         decstr = decstr.replace(' ',':')
     else:
@@ -315,8 +316,8 @@ def parse_exclusions(exclusions):
         flines = fobj.readlines()
         fobj.close()
     else:
-        print 'No valid exclusions file "',fname,'" could be found!'
-        print 'Skipping application of exclusions files to source catalogs.'
+        print('No valid exclusions file "',fname,'" could be found!')
+        print('Skipping application of exclusions files to source catalogs.')
         return None
 
     # Parse out lines which can be interpreted as positions and distances
@@ -413,7 +414,7 @@ def parse_colname(colname):
         ctok = ':'
     if ctok is not None:
         cnums = cname.split(ctok)
-        c = range(int(cnums[0]),int(cnums[1])+1)
+        c = list(range(int(cnums[0]),int(cnums[1])+1))
         cols = []
         for i in c:
             cols.append(str(i))
@@ -466,7 +467,7 @@ def read_FITS_cols(infile,cols=None):
             break
         extnum += 1
     if not extfound:
-        print 'ERROR: No catalog table found in ',infile
+        print('ERROR: No catalog table found in ',infile)
         ftab.close()
         raise ValueError
     # Now, read columns from the table in this extension
@@ -541,7 +542,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
         nsplit = len(lspl)
 
         # For each 'column' requested by user, pull data from row
-        for c,i in zip(cols,range(numcols)):
+        for c,i in zip(cols,list(range(numcols))):
             cnames = parse_colname(c)
             if len(cnames) > 1:
                 # interpret multi-column specification as one value
@@ -613,7 +614,7 @@ def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     f.write('# units: pixels\n')
     f.write(rows)
     f.close()
-    print 'Writing out shiftfile :',filename
+    print('Writing out shiftfile :',filename)
 
 def createWcsHDU(wcs):
     """ Generate a WCS header object that can be used to populate a reference WCS HDU.
@@ -722,7 +723,7 @@ def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
 
     if sigma_x is None:
         if fwhm is None:
-            print 'A value for either "fwhm" or "sigma_x" needs to be specified!'
+            print('A value for either "fwhm" or "sigma_x" needs to be specified!')
             raise ValueError
         else:
             # Convert input FWHM into sigma
@@ -845,7 +846,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
     dx *= scale
     dy *= scale
 
-    print 'Total # points: ',len(dx)
+    print('Total # points: ',len(dx))
     if limit is not None:
         indx = (np.sqrt(dx**2 + dy**2) <= limit)
         dx = dx[indx].copy()
@@ -858,7 +859,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         dy = dy[xindx].copy()
         xy1x = xy1x[xindx].copy()
         xy1y = xy1y[xindx].copy()
-    print '# of points after clipping: ',len(dx)
+    print('# of points after clipping: ',len(dx))
 
     dr = np.sqrt(dx**2 + dy**2)
     max_vector = dr.max()
@@ -1005,7 +1006,7 @@ def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
                 outstr += fmts%(cols[col][row])
         fout1.write(outstr+"\n")
     fout1.close()
-    print 'wrote XY data to: ',outname
+    print('wrote XY data to: ',outname)
 
 def find_xy_peak(img,center=None,sigma=3.0):
     """ Find the center of the peak of offsets
@@ -1105,7 +1106,7 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
     """ Create a matrix which contains the delta between each XY position and
         each UV position.
     """
-    print 'Computing initial guess for X and Y shifts...'
+    print('Computing initial guess for X and Y shifts...')
 
     # run C function to create ZP matrix
     xyshape = int(searchrad*2)+1
@@ -1113,20 +1114,20 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
 
     xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad))
     if zpqual is not None:
-        print 'Found initial X and Y shifts of ',xp,yp
-        print '    with significance of ',zpqual, 'and ',flux,' matches'
+        print('Found initial X and Y shifts of ',xp,yp)
+        print('    with significance of ',zpqual, 'and ',flux,' matches')
     else:
         # try with a lower sigma to detect a peak in a sparse set of sources
         xp,yp,flux,zpqual = find_xy_peak(zpmat,center=(searchrad,searchrad),sigma=1.0)
         if zpqual:
-            print 'Found initial X and Y shifts of ',xp,yp
-            print '    with significance of ',zpqual, 'and ',flux,' matches'
+            print('Found initial X and Y shifts of ',xp,yp)
+            print('    with significance of ',zpqual, 'and ',flux,' matches')
         else:
-            print '!'*80
-            print '!'
-            print '! WARNING: No valid shift found within a search radius of ',searchrad,' pixels.'
-            print '!'
-            print '!'*80
+            print('!'*80)
+            print('!')
+            print('! WARNING: No valid shift found within a search radius of ',searchrad,' pixels.')
+            print('!')
+            print('!'*80)
 
     if histplot:
         zpstd = flux//5

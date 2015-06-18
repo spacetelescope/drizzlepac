@@ -8,19 +8,19 @@ Create a median image from the singly drizzled images.
 """
 
 # Import external packages
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 import sys
 import numpy as np
 from astropy.io import fits
 import os, math
-import imageObject
+from . import imageObject
 from stsci.imagestats import ImageStats
-import util
+from . import util
 from stsci.image import numcombine
 from stsci.tools import iterfile, nimageiter, teal, logutil
-from minmed import minmed
-import processInput
+from .minmed import minmed
+from . import processInput
 from .adrizzle import _single_step_num_
 
 
@@ -71,7 +71,7 @@ def createMedian(imgObjList,configObj,procSteps=None):
     """
     if imgObjList is None:
         msg = "Please provide a list of imageObjects to the median step"
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
         raise ValueError(msg)
 
     if procSteps is not None:
@@ -275,7 +275,7 @@ def _median(imageObjectList, paramDict):
             #sci_chip = image._image[image.scienceExt,1]
             #readnoiseList.append(sci_chip._rdnoise) #verify this is calculated correctly in the image object
 
-            print "reference sky value for image ",image._filename," is ", backgroundValueList[-1]
+            print("reference sky value for image ",image._filename," is ", backgroundValueList[-1])
         #
         # END Loop over input image list
         #
@@ -292,7 +292,7 @@ def _median(imageObjectList, paramDict):
     masterList.extend(singleDrizList)
     masterList.extend(singleWeightList)
 
-    print '\n'
+    print('\n')
 
     # Specify the location of the drz image sections
     startDrz = 0
@@ -430,11 +430,11 @@ def _median(imageObjectList, paramDict):
             img.saveVirtualOutputs(mediandict)
     else:
         try:
-            print "Saving output median image to: ",medianfile
+            print("Saving output median image to: ",medianfile)
             _pf.writeto(medianfile)
         except IOError:
             msg = "Problem writing file: "+medianfile
-            print msg
+            print(msg)
             raise IOError(msg)
 
     del _pf

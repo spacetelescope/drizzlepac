@@ -91,14 +91,14 @@
                     output="xy_flt1.dat")
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 import os,copy
 import numpy as np
 
 from stsci.tools import fileutil, teal
-import wcs_functions
-import util
+from . import wcs_functions
+from . import util
 from stwcs import wcsutil, distortion
 
 # This is specifically NOT intended to match the package-wide version information.
@@ -121,8 +121,12 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         cols = util.parse_colnames(colnames,coords)
         # read in columns from input coordinates file
         xyvals = np.loadtxt(coords,usecols=cols,delimiter=separator)
-        xlist = xyvals[:,0].copy()
-        ylist = xyvals[:,1].copy()
+        if xyvals.ndim == 1: # only 1 entry in coords
+            xlist = [xyvals[0].copy()]
+            ylist = [xyvals[1].copy()]
+        else:
+            xlist = xyvals[:,0].copy()
+            ylist = xyvals[:,1].copy()
         del xyvals
     else:
         if not isinstance(x,list):
@@ -164,10 +168,10 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         ystr.append(fmt%y)
 
     if verbose or (not verbose and util.is_blank(output)):
-        print '# Coordinate transformations for ',inimage
-        print '# X(in)      Y(in)             X(out)         Y(out)\n'
+        print('# Coordinate transformations for ',inimage)
+        print('# X(in)      Y(in)             X(out)         Y(out)\n')
         for x,y,a,b in zip(xlist,ylist,xstr,ystr):
-            print "%.4f  %.4f    %s  %s"%(x,y,a,b)
+            print("%.4f  %.4f    %s  %s"%(x,y,a,b))
 
     # Create output file, if specified
     if output:
@@ -176,7 +180,7 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         for x,y in zip(xstr,ystr):
             f.write('%s    %s\n'%(x,y))
         f.close()
-        print 'Wrote out results to: ',output
+        print('Wrote out results to: ',output)
 
     return outx,outy
 

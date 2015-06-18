@@ -15,7 +15,7 @@ cosmic-ray cleaned, and combined image as a FITS file.
 
 """
 
-from __future__ import division  # confidence high
+from __future__ import absolute_import, division, print_function  # confidence high
 
 import os
 
@@ -50,9 +50,9 @@ try:
     from . import tweakreg, catalogs, imgclasses, tweakutils, mapreg, \
                   imagefindpars, refimagefindpars
 except ImportError as e :
-    print 'The libraries needed for "tweakreg" were not available!'
-    print 'None of the code related to that task can be used at this time.'
-    print '   (If you want to report this error, the details are "%s")'%(str(e))
+    print('The libraries needed for "tweakreg" were not available!')
+    print('None of the code related to that task can be used at this time.')
+    print('   (If you want to report this error, the details are "%s")'%(str(e)))
 
 # Add updatenpol to the list of tasks imported automatically here
 from . import updatenpol
@@ -60,6 +60,9 @@ from . import buildwcs
 
 # This module supports applying WCS from _drz to _flt files
 from . import tweakback
+
+# This module enables users to replace NaNs in images with another value easily
+from . import pixreplace
 
 # These lines allow TEAL to print out the names of TEAL-enabled tasks
 # upon importing this package.
@@ -99,4 +102,4 @@ stwcs:
     write_headerlet - save a WCS solution as a separate headerlet FITS file
           updatewcs - recompute the WCS keywords and import the distortion model from the reference files
 """
-    print msg
+    print(msg)

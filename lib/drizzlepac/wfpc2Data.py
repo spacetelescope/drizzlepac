@@ -6,7 +6,7 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 import os
 
 from astropy.io import fits
@@ -14,8 +14,8 @@ import numpy as np
 
 from stsci.tools import fileutil, readgeis
 
-from imageObject import imageObject
-import buildmask
+from .imageObject import imageObject
+from . import buildmask
 
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
@@ -143,7 +143,7 @@ class WFPC2InputImage (imageObject):
                 chip._rdnoise = None
 
             if chip._headergain == None or chip._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # We need to determine if the user has used the default readnoise/gain value
@@ -163,14 +163,14 @@ class WFPC2InputImage (imageObject):
         if usingDefaultReadnoise and usingDefaultGain:
             self._setchippars()
         elif usingDefaultReadnoise and not usingDefaultGain:
-            raise ValueError, "ERROR: You need to supply readnoise information\n when not using the default gain for WFPC2."
+            raise ValueError("ERROR: You need to supply readnoise information\n when not using the default gain for WFPC2.")
         elif not usingDefaultReadnoise and usingDefaultGain:
-            raise ValueError, "ERROR: You need to supply gain information when\n not using the default readnoise for WFPC2."
+            raise ValueError("ERROR: You need to supply gain information when\n not using the default readnoise for WFPC2.")
         else:
             # In this case, the user has specified both a gain and readnoise values.  Just use them as is.
             for chip in self.returnAllChips(extname=self.scienceExt):
                 chip._gain = chip._headergain
-            print "Using user defined values for gain and readnoise"
+            print("Using user defined values for gain and readnoise")
 
         # Convert the science data to electrons
         self.doUnitConversions()
@@ -232,7 +232,7 @@ class WFPC2InputImage (imageObject):
 
             else:
                 msg = "Invalid gain value for data, no conversion done"
-                print msg
+                print(msg)
                 raise ValueError(msg)
 
         # Close the files and clean-up
@@ -273,7 +273,7 @@ class WFPC2InputImage (imageObject):
             str += "# Error occured in the WFPC2InputImage class#\n"
             str += "#                                           #\n"
             str += "#############################################\n"
-            raise ValueError, str
+            raise ValueError(str)
 
 
         return darkcurrent
@@ -332,4 +332,4 @@ class WFPC2InputImage (imageObject):
             try:
                 chip._gain,chip._rdnoise = WFPC2_GAINS[chip.detnum][chip._headergain]
             except KeyError:
-                raise ValueError, "! Header gain value is not valid for WFPC2"
+                raise ValueError("! Header gain value is not valid for WFPC2")

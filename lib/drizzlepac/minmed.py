@@ -21,7 +21,7 @@ or median image based up bad pixel identification.
 #       convolution step fails.  --CJH -- 10/13/04
 #      Version 0.2.0: The creation of the median image will now more closesly replicate
 #       the IRAF IMCOMBINE behavior of nkeep = 1 and nhigh = 1. -- CJH -- 03/29/05
-from __future__ import division # confidence medium
+from __future__ import division, print_function # confidence medium
 
 import numpy as np
 import stsci.convolve as NC
@@ -133,7 +133,7 @@ class minmed:
             # when the sci images are summed, the value of the sum will only come from the "good"
             # pixels.
             tmpList = []
-            for image in xrange(len(self.__imageList)):
+            for image in range(len(self.__imageList)):
                 tmp =np.where(self.__weightMaskList[image] == 1, 0, self.__imageList[image])
                 tmpList.append(tmp)
 
@@ -161,7 +161,7 @@ class minmed:
                 _maxValue = _newMax
 
         # For each image, set pixels masked as "bad" to the "super-maximum" value.
-        for image in xrange(len(self.__imageList)):
+        for image in range(len(self.__imageList)):
             self.__imageList[image] = np.where(self.__weightMaskList[image] == 1,_maxValue+1,self.__imageList[image])
 
         # Call numcombine throwing out the highest N - 1 pixels.
@@ -174,7 +174,7 @@ class minmed:
 
         # Scale the weight images by the background values and add them to the bk
         __backgroundFileList = []
-        for image in xrange(len(self.__weightImageList)):
+        for image in range(len(self.__weightImageList)):
             __tmp = self.__weightImageList[image] * (self.__backgroundValueList[image]/(self.__exposureTimeList[image]))
             __backgroundFileList.append(__tmp)
 
@@ -188,7 +188,7 @@ class minmed:
         # Scale the weight mask images by the square of the readnoise values
         #
         __readnoiseFileList = []
-        for image in xrange(len(self.__weightMaskList)):
+        for image in range(len(self.__weightMaskList)):
             __tmp = np.logical_not(self.__weightMaskList[image]) * (self.__readnoiseList[image] * self.__readnoiseList[image])
             __readnoiseFileList.append(__tmp)
 
@@ -269,7 +269,7 @@ class minmed:
                 errormsg1 += "# specified an input value for the 'grow' parameter of:    #\n"
                 errormsg1 += "        combine_grow: " + str(self.__combine_grow)+'\n'
                 errormsg1 += "############################################################\n"
-                raise ValueError,errormsg1
+                raise ValueError(errormsg1)
             if (__boxsize > self.__imageList[0].shape[0]):
                 errormsg2 =  "############################################################\n"
                 errormsg2 += "# The boxcar convolution in minmed has failed.  The 'grow' #\n"
@@ -278,8 +278,8 @@ class minmed:
                 errormsg2 += "# specified an input value for the 'grow' parameter of:    #\n"
                 errormsg2 += "        combine_grow: " +str(self.__combine_grow)+'\n'
                 errormsg2 += "############################################################\n"
-                print self.__imageList[0].shape
-                raise ValueError,errormsg2
+                print(self.__imageList[0].shape)
+                raise ValueError(errormsg2)
 
             # Attempt the boxcar convolution using the boxshape based upon the user input value of "grow"
             NC.boxcar(__minimum_flag_file,__boxshape,output=__minimum_grow_file,mode='constant',cval=0)

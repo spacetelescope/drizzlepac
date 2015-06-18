@@ -64,7 +64,7 @@ C version of MultiDrizzle (astrodrizzle).
 
 """
 
-from __future__ import division
+from __future__ import absolute_import, division, print_function
 __docformat__ = 'restructuredtext'
 
 __taskname__ = "updatenpol"
@@ -81,7 +81,7 @@ from stsci.tools import parseinput
 from stsci.tools import teal
 
 from stwcs import updatewcs
-import util
+from . import util
 
 
 def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
@@ -158,7 +158,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     that can be sorted out later if we get into that situation at all.
 
     """
-    print 'UPDATENPOL Version',__version__+'('+__vdate__+')'
+    print('UPDATENPOL Version',__version__+'('+__vdate__+')')
     # expand (as needed) the list of input files
     files,fcol = parseinput.parseinput(input)
 
@@ -174,7 +174,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     # to use for selecting the appropriate new reference file from the
     # refdir directory.
     for f in files:
-        print 'Updating: ',f
+        print('Updating: ',f)
         fdir = os.path.split(f)[0]
         # Open each file...
         fimg = fits.open(f, mode='update')
@@ -190,13 +190,16 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                 # search all new NPOLFILEs for one that matches current DGEOFILE config
                 npol = find_npolfile(ngeofiles,fdet,[phdr['filter1'],phdr['filter2']])
             else:
-                npol = raw_input("Enter name of NPOLFILE for %s:"%f)
+                if sys.version_info[0] >= 3:
+                    npol = input("Enter name of NPOLFILE for %s:"%f)
+                else:
+                    npol = raw_input("Enter name of NPOLFILE for %s:"%f)
                 if npol == "": npol = None
 
             if npol is None:
                 errstr =  "No valid NPOLFILE found in "+rdir+" for detector="+fdet+"\n"
                 errstr += " filters = "+phdr['filter1']+","+phdr['filter2']
-                raise ValueError,errstr
+                raise ValueError(errstr)
 
             npolname = os.path.split(npol)[1]
             if local:
@@ -217,14 +220,17 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         if not interactive:
             d2i = find_d2ifile(d2ifiles,fdet)
         else:
-            d2i = raw_input("Enter name of D2IMFILE for %s:"%f)
+            if sys.version_info[0] >= 3:
+                d2i = input("Enter name of D2IMFILE for %s:"%f)
+            else:
+                d2i = raw_input("Enter name of D2IMFILE for %s:"%f)
             if d2i == "": d2i = None
 
         if d2i is None:
-            print '=============\nWARNING:'
-            print "    No valid D2IMFILE found in "+rdir+" for detector ="+fdet
-            print "    D2IMFILE correction will not be applied."
-            print '=============\n'
+            print('=============\nWARNING:')
+            print("    No valid D2IMFILE found in "+rdir+" for detector ="+fdet)
+            print("    D2IMFILE correction will not be applied.")
+            print('=============\n')
             d2iname = ""
         else:
             d2iname = os.path.split(d2i)[1]
@@ -297,10 +303,10 @@ def main():
 
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'hli')
-    except getopt.error, e:
-        print str(e)
-        print __doc__
-        print "\t", __version__
+    except getopt.error as e:
+        print(str(e))
+        print(__doc__)
+        print("\t", __version__)
 
     # initialize default values
     help = 0
@@ -318,8 +324,8 @@ def main():
     if len(args) < 2:
         args.append('jref$')
     if (help):
-        print __doc__
-        print "\t", __version__+'('+__vdate__+')'
+        print(__doc__)
+        print("\t", __version__+'('+__vdate__+')')
     else:
         update(args[:-1],args[-1],local=local,interactive=interactive)
 

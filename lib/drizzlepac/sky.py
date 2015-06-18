@@ -9,12 +9,12 @@ input image while recording the subtracted value in the image header.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division  # confidence medium
+from __future__ import absolute_import, division, print_function  # confidence medium
 
 import os, sys
 
 import logging
-from imageObject import imageObject
+from .imageObject import imageObject
 from stsci.tools import fileutil, teal, logutil
 
 from stsci.skypac.skymatch import skymatch
@@ -22,7 +22,7 @@ from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
      file_name_components, in_memory_mask, temp_mask_file, openImageEx
 from stsci.skypac.parseat import FileExtMaskInfo, parse_at_file
 
-import processInput
+from . import processInput
 import stsci.imagestats as imagestats
 import numpy as np
 
@@ -95,7 +95,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         inputDict['updatewcs']=False
         inputDict['group']=group
     else:
-        print >> sys.stderr, "Please supply an input image"
+        print("Please supply an input image", file=sys.stderr)
         raise ValueError
 
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
@@ -434,7 +434,7 @@ def _skyUserFromFile(imageObjList,skyFile):
             appliedstr = line.split(linesep)[1].strip()
             if appliedstr.lower() in ['yes','true','y','t']:
                 skyapplied = True
-                print '...Sky values already applied by user...'
+                print('...Sky values already applied by user...')
 
         if not util.is_blank(line) and line[0] != '#':
             lspl = line.split()
@@ -449,7 +449,7 @@ def _skyUserFromFile(imageObjList,skyFile):
         numchips=imageSet._numchips
         sciExt=imageSet.scienceExt
         if fname in skyvals:
-            print "    ...updating MDRIZSKY with user-supplied value."
+            print("    ...updating MDRIZSKY with user-supplied value.")
             for chip in range(1,numchips+1,1):
                 if len(skyvals[fname]) == 1:
                     _skyValue = skyvals[fname][0]
@@ -470,15 +470,15 @@ def _skyUserFromFile(imageObjList,skyFile):
                 else:
                     imageSet[chipext].computedSky = _skyValue
                 imageSet[chipext].subtractedSky = _skyValue
-                print "Setting ",skyKW,"=",_skyValue
+                print("Setting ",skyKW,"=",_skyValue)
         else:
-            print "*"*40
-            print "*"
-            print "WARNING:"
-            print "    .... NO user-supplied sky value found for ",fname
-            print "    .... Setting sky to a value of 0.0! "
-            print "*"
-            print "*"*40
+            print("*"*40)
+            print("*")
+            print("WARNING:")
+            print("    .... NO user-supplied sky value found for ",fname)
+            print("    .... Setting sky to a value of 0.0! ")
+            print("*")
+            print("*"*40)
 
 def _skyUserFromHeaderKwd(imageSet,paramDict):
     """
@@ -510,10 +510,10 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
     skyuser=paramDict["skyuser"]
 
     if skyuser != '':
-        print "User has computed their own sky values..."
+        print("User has computed their own sky values...")
 
         if skyuser != skyKW:
-            print "    ...updating MDRIZSKY with supplied value."
+            print("    ...updating MDRIZSKY with supplied value.")
             for chip in range(1,numchips+1,1):
                 chipext = '%s,%d'%(sciExt,chip)
                 if not imageSet[chipext].group_member:
@@ -522,11 +522,11 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
                 try:
                     _skyValue = imageSet[chipext].header[skyuser]
                 except:
-                    print "**************************************************************"
-                    print "*"
-                    print "*  Cannot find keyword ",skyuser," in ",imageSet._filename
-                    print "*"
-                    print "**************************************************************\n\n\n"
+                    print("**************************************************************")
+                    print("*")
+                    print("*  Cannot find keyword ",skyuser," in ",imageSet._filename)
+                    print("*")
+                    print("**************************************************************\n\n\n")
                     raise KeyError
 
                 _updateKW(imageSet[sciExt+','+str(chip)],
@@ -535,7 +535,7 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
                 imageSet[chipext].computedSky = 0.0
-                print "Setting ",skyKW,"=",_skyValue
+                print("Setting ",skyKW,"=",_skyValue)
 
 #this is the main function that does all the real work in computing the
 # statistical sky value for each image (set of chips)
@@ -577,21 +577,21 @@ def _skySub(imageSet,paramDict,saveFile=False):
     skyuser=paramDict["skyuser"]
 
     if skyuser != '':
-        print "User has computed their own sky values..."
+        print("User has computed their own sky values...")
 
         if skyuser != skyKW:
-            print "    ...updating MDRIZSKY with supplied value."
+            print("    ...updating MDRIZSKY with supplied value.")
             for chip in range(1,numchips+1,1):
                 try:
                     chipext = '%s,%d'%(sciExt,chip)
                     _skyValue = imageSet[chipext].header[skyuser]
 
                 except:
-                    print "**************************************************************"
-                    print "*"
-                    print "*  Cannot find keyword ",skyuser," in ",imageSet._filename
-                    print "*"
-                    print "**************************************************************\n\n\n"
+                    print("**************************************************************")
+                    print("*")
+                    print("*  Cannot find keyword ",skyuser," in ",imageSet._filename)
+                    print("*")
+                    print("**************************************************************\n\n\n")
                     raise KeyError
 
                 _updateKW(imageSet[sciExt+','+str(chip)],imageSet._filename,(sciExt,chip),skyKW,_skyValue)
@@ -599,7 +599,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
                 imageSet[chipext].computedSky = 0.0
-                print "Setting ",skyKW,"=",_skyValue
+                print("Setting ",skyKW,"=",_skyValue)
 
     else:
         # Compute our own sky values and record the values for use later.
@@ -710,7 +710,7 @@ def _subtractSky(image,skyValue,memmap=0):
         np.subtract(image.data,skyValue,image.data)
 
     except IOError:
-        print "Unable to perform sky subtraction on data array"
+        print("Unable to perform sky subtraction on data array")
         raise IOError
 
 

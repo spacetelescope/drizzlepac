@@ -6,7 +6,7 @@ expand_refcat = boolean_kw(default=False, triggers="_rule3_", comment="Expand re
 enforce_user_order = boolean_kw(default=True, active_if="_rule3_", comment="Align images in user specified order?")
 _editirefpars_btn_ = action_kw(default='refimagefind Parameters', executes='_rule2_',active_if='_rule2a_',comment='Edit refimagefind parameters')
 exclusions = string_kw(default="",comment="Filename for source exclusions catalogs")
-updatewcs = boolean_kw(default=False, comment="Update WCS keywords of input images?")
+updatewcs = boolean_kw(default=False, comment="Recompute WCS with new distortion??")
 writecat = boolean_kw(default=True, comment="Write out source catalogs?")
 clean = boolean_kw(default=False, comment="Remove intermediate files?")
 interactive = boolean_kw(default=True, comment="Allow interactive display of plots?")

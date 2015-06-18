@@ -6,9 +6,9 @@ Class used to model IR specific instrument data.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence high
+from __future__ import absolute_import, division # confidence high
 
-from imageObject import imageObject
+from .imageObject import imageObject
 
 class IRInputImage(imageObject):
     """

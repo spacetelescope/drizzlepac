@@ -29,7 +29,7 @@ steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
 
-from __future__ import division  # confidence high
+from __future__ import absolute_import, division, print_function  # confidence high
 import datetime
 import os
 import shutil
@@ -45,11 +45,10 @@ from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
 from stwcs import updatewcs as uw
 from stwcs.wcsutil import altwcs, wcscorr
 
-import wcs_functions
-import util
-import resetbits
-import mdzhandler
-import imageObject
+from . import wcs_functions
+from . import util
+from . import resetbits
+from . import mdzhandler
 
 log = logutil.create_logger(__name__)
 
@@ -164,7 +163,7 @@ def setCommonInput(configObj, createOutwcs=True):
         '   * filename does not specify an extension with a valid WCS.\n'+\
         '   * can not find the file.\n'+\
         'Please check the filename specified in the "refimage" parameter.'
-        print textutil.textbox(msg)
+        print(textutil.textbox(msg))
         return None,None
     step7aname = util.getSectionName(configObj,'7a')
     if not util.verifyRefimage(configObj[step7aname]['final_refimage']):
@@ -173,7 +172,7 @@ def setCommonInput(configObj, createOutwcs=True):
         '   * filename does not specify an extension with a valid WCS.\n'+\
         '   * can not find the file.\n'+\
         'Please check the filename specified in the "refimage" parameter.'
-        print textutil.textbox(msg)
+        print(textutil.textbox(msg))
         return None,None
 
 
@@ -231,6 +230,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     usage (primarily memory) for this run.
     """
 
+    from . import imageObject
     if outwcs is None:
         output_mem = 0
     else:
@@ -261,18 +261,21 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
                 chip_mem = cmem
     max_mem = (input_mem + output_mem*pool_size + chip_mem*2)//(1024*1024)
 
-    print '*'*80
-    print '*'
-    print '*  Estimated memory usage:  up to %d Mb.'%(max_mem)
-    print '*  Output image size:       %d X %d pixels. '%(owcs._naxis1,owcs._naxis2)
-    print '*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024))
-    print '*  Cores available:         %d'%(pool_size)
-    print '*'
-    print '*'*80
+    print('*'*80)
+    print('*')
+    print('*  Estimated memory usage:  up to %d Mb.'%(max_mem))
+    print('*  Output image size:       %d X %d pixels. '%(owcs._naxis1,owcs._naxis2))
+    print('*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024)))
+    print('*  Cores available:         %d'%(pool_size))
+    print('*')
+    print('*'*80)
 
     if interactive:
-        print 'Continue with processing?'
-        k = raw_input("(y)es or (n)o")
+        print('Continue with processing?')
+        if sys.version_info[0] >= 3:
+            k = input("(y)es or (n)o")
+        else:
+            k = raw_input("(y)es or (n)o")
         if 'n' in k.lower():
             raise ValueError
 
@@ -287,7 +290,7 @@ def getMdriztabPars(input):
     try:
         mdrizdict = mdzhandler.getMdriztabParameters(filelist)
     except KeyError:
-        print 'No MDRIZTAB found for "%s". Parameters remain unchanged.'%(filelist[0])
+        print('No MDRIZTAB found for "%s". Parameters remain unchanged.'%(filelist[0]))
         mdrizdict = {}
 
     return mdrizdict
@@ -332,7 +335,7 @@ def createImageObjectList(files,instrpars,group=None,
         else:
             mtflag = False
         if mtflag is True:
-            print "#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n"
+            print("#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n")
             if mt_refimg is None:
                 mt_refimg = image
             else:
@@ -391,19 +394,19 @@ def _getInputImage (input,group=None):
     # only importing the instrument modules as needed.
     try:
         if _instrument == 'ACS':
-            import acsData
+            from . import acsData
             if _detector == 'HRC': return acsData.HRCInputImage(input,group=group)
             if _detector == 'WFC': return acsData.WFCInputImage(input,group=group)
             if _detector == 'SBC': return acsData.SBCInputImage(input,group=group)
         if _instrument == 'NICMOS':
-            import nicmosData
+            from . import nicmosData
             if _detector == 1: return nicmosData.NIC1InputImage(input)
             if _detector == 2: return nicmosData.NIC2InputImage(input)
             if _detector == 3: return nicmosData.NIC3InputImage(input)
 
 
         if _instrument == 'WFPC2':
-            import wfpc2Data
+            from . import wfpc2Data
             return wfpc2Data.WFPC2InputImage(input,group=group)
         """
             if _detector == 1: return wfpc2Data.PCInputImage(input)
@@ -412,22 +415,22 @@ def _getInputImage (input,group=None):
             if _detector == 4: return wfpc2Data.WF4InputImage(input)
         """
         if _instrument == 'STIS':
-            import stisData
+            from . import stisData
             if _detector == 'CCD': return stisData.CCDInputImage(input,group=group)
             if _detector == 'FUV-MAMA': return stisData.FUVInputImage(input,group=group)
             if _detector == 'NUV-MAMA': return stisData.NUVInputImage(input,group=group)
         if _instrument == 'WFC3':
-            import wfc3Data
+            from . import wfc3Data
             if _detector == 'UVIS': return wfc3Data.WFC3UVISInputImage(input,group=group)
             if _detector == 'IR': return wfc3Data.WFC3IRInputImage(input,group=group)
 
     except ImportError:
         msg = 'No module implemented for '+str(_instrument)+'!'
-        raise ValueError,msg
+        raise ValueError(msg)
     # If a supported instrument is not detected, print the following error message
     # and raise an exception.
     msg = 'Instrument: ' + str(_instrument) + '/' + str(_detector) + ' not yet supported!'
-    raise ValueError, msg
+    raise ValueError(msg)
 
 #### Remaining functions support process_input()
 def processFilenames(input=None,output=None,infilesOnly=False):
@@ -438,7 +441,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     oldasndict = None
 
     if input is None:
-        print "No input files provided to processInput"
+        print("No input files provided to processInput")
         raise ValueError
 
     if (isinstance(input, list) == False) and \
@@ -598,7 +601,7 @@ def _process_input_wcs_single(fname, wcskey, updatewcs):
     else:
         numext = fileutil.countExtn(fname)
         extlist = []
-        for extn in xrange(1, numext + 1):
+        for extn in range(1, numext + 1):
             extlist.append(('SCI', extn))
         if wcskey in string.uppercase:
             wkey = wcskey
@@ -656,7 +659,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
         ivmlist = len(filelist)*[None]
     else:
         assert(len(filelist) == len(ivmlist)) #TODO: remove after debugging
-    ivmlist = zip(ivmlist,filelist)
+    ivmlist = list(zip(ivmlist,filelist))
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
@@ -669,7 +672,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
-    ivmlist, filelist = zip(*ivmlist)
+    ivmlist, filelist = list(zip(*ivmlist))
 
     return newfilelist, ivmlist, output, oldasndict, filelist
 
@@ -698,7 +701,7 @@ def buildASNList(rootnames, asnname):
                    'use widlcards for the input to only select one type of '
                    'input file.' % (dupasn, origasn))
 
-        print >> sys.stderr, textutil.textbox(errstr)
+        print(textutil.textbox(errstr), file=sys.stderr)
 
         # generate new ASN files for each case,
         # report this case of duplicate inputs to the user then quit
@@ -721,7 +724,7 @@ def changeSuffixinASN(asnfile, suffix):
 
     # Open up the new copy and convert all MEMNAME's to lower-case
     fasn = fits.open(_new_asn,'update')
-    for i in xrange(len(fasn[1].data)):
+    for i in range(len(fasn[1].data)):
         if "prod" not in fasn[1].data[i].field('MEMTYPE').lower():
             fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME')+'_'+suffix)
     fasn.close()
@@ -797,17 +800,13 @@ def update_member_names(oldasndict, pydr_input):
     translated_names = [f.split('.fits')[0] for f in pydr_input]
 
     newkeys = [fileutil.buildNewRootname(file) for file in pydr_input]
-    keys_map = zip(newkeys, pydr_input)
+    keys_map = list(zip(newkeys, pydr_input))
 
-    iter = omembers.iteritems()
-    while True:
-        try:
-            okey, oval = iter.next()
-            if okey in newkeys:
-                nkey = pydr_input[newkeys.index(okey)]
-                nmembers[nkey.split('.fits')[0]] = oval
-        except StopIteration:
-            break
+    for okey, oval in omembers.items():
+        if okey in newkeys:
+            nkey = pydr_input[newkeys.index(okey)]
+            nmembers[nkey.split('.fits')[0]] = oval
+
     oldasndict.pop('members')
     # replace should be always True to cover the case when flt files were removed
     # and the case when names were translated
@@ -844,32 +843,32 @@ def manageInputCopies(filelist, **workinplace):
         copyname = os.path.join(origdir,fname)
         short_copyname = os.path.join('OrIg_files',fname)
         if workinplace['overwrite']:
-            print 'Forcibly archiving original of: ',fname, 'as ',short_copyname
+            print('Forcibly archiving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
-            if os.path.exists(copyname): os.chmod(copyname, 0666)
+            if os.path.exists(copyname): os.chmod(copyname, 438) # octal 666
             shutil.copy(fname,copyname)
-            os.chmod(copyname,0444) # make files read-only
+            os.chmod(copyname,292) # octal 444 makes files read-only
             if printMsg:
-                print '\nTurning OFF "preserve" and "restore" actions...\n'
+                print('\nTurning OFF "preserve" and "restore" actions...\n')
                 printMsg = False # We only need to print this one time...
             copymade = True
 
         if (workinplace['preserve'] and not os.path.exists(copyname)) \
                 and not workinplace['overwrite']:
             # Preserving a copy of the input, but only if not already archived
-            print 'Preserving original of: ',fname, 'as ',short_copyname
+            print('Preserving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
-            os.chmod(copyname,0444) # make files read-only
+            os.chmod(copyname,292) # octal 444 makes files read-only
             copymade = True
 
         if 'restore' in workinplace and not copymade:
             if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['overwrite']:
-                print 'Restoring original input for ',fname,' from ',short_copyname
+                print('Restoring original input for ',fname,' from ',short_copyname)
                 # replace current files with original version
-                os.chmod(fname, 0666)
+                os.chmod(fname, 438) # octal 666
                 shutil.copy(copyname, fname)
-                os.chmod(fname, 0666)
+                os.chmod(fname, 438) # octal 666
 
 
 def buildEmptyDRZ(input, output):
@@ -892,12 +891,12 @@ def buildEmptyDRZ(input, output):
     # Identify the first input image
     inputfile = parseinput.parseinput(input)[0]
     if not inputfile:
-        print >> sys.stderr, '\n******* ERROR *******'
-        print >> sys.stderr, (
-               'No input file found!  Check specification of parameter '
-               '"input". ')
-        print >> sys.stderr, 'Quitting...'
-        print >> sys.stderr, '******* ***** *******\n'
+        print('\n******* ERROR *******', file=sys.stderr)
+        print(
+              'No input file found!  Check specification of parameter '
+              '"input". ', file=sys.stderr)
+        print('Quitting...',  file=sys.stderr)
+        print('******* ***** *******\n',  file=sys.stderr)
         return # raise IOError, "No input file found!"
 
     # Set up output file here...
@@ -979,10 +978,10 @@ def buildEmptyDRZ(input, output):
     # Write out the empty DRZ file
     fitsobj.writeto(output)
 
-    print >> sys.stderr, textutil.textbox(
+    print(textutil.textbox(
         'ERROR:\nAstroDrizzle has created an empty DRZ product because all '
         'input images were excluded from processing or a user requested the '
-        'program to stop.') + '\n'
+        'program to stop.') + '\n', file=sys.stderr) 
 
     return
 
@@ -1058,7 +1057,10 @@ def checkDGEOFile(filenames):
     return filenames
 
 def userStop(message):
-    user_input = raw_input(message)
+    if sys.version_info[0] >= 3:
+        user_input = input(message)
+    else:
+        user_input = raw_input(message)
     if user_input == 'q':
         return True
     elif user_input == 'c':
@@ -1265,7 +1267,7 @@ def _setDefaults(input_dict={}):
 
     paramDict.update(input_dict)
 
-    print '\nUser Input Parameters for Init Step:'
+    print('\nUser Input Parameters for Init Step:')
     util.printParams(paramDict)
 
     return paramDict

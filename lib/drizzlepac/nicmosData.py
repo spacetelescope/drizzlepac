@@ -6,12 +6,12 @@ Class used to model NICMOS specific instrument data.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 from stsci.tools import fileutil
 from nictools import readTDD
 import numpy as np
-from imageObject import imageObject
+from .imageObject import imageObject
 
 class NICMOSInputImage(imageObject):
 
@@ -83,7 +83,7 @@ class NICMOSInputImage(imageObject):
                     counts_str = 'COUNTS'
 
                 # Multiply the values of the sci extension pixels by the gain.
-                print "Converting %s[%s,%d] from %s to ELECTRONS"%(self._filename,self.scienceExt,det,counts_str)
+                print("Converting %s[%s,%d] from %s to ELECTRONS"%(self._filename,self.scienceExt,det,counts_str))
                 """
                 # If the exptime is 0 the science image will be zeroed out.
                 np.multiply(_handle[self.scienceExt,det].data,conversionFactor,_handle[self.scienceExt,det].data)
@@ -103,7 +103,7 @@ class NICMOSInputImage(imageObject):
                 chip._conversionFactor = conversionFactor
             else:
                 msg = "Invalid gain value for data, no conversion done"
-                print msg
+                print(msg)
                 raise ValueError(msg)
 
         # Close the files and clean-up
@@ -167,7 +167,7 @@ class NICMOSInputImage(imageObject):
             str += "#Error occured in the NICMOSInputImage class#\n"
             str += "#                                           #\n"
             str += "#############################################\n"
-            raise ValueError, str
+            raise ValueError(str)
 
         return darkcurrent
 
@@ -265,7 +265,7 @@ class NIC1InputImage(NICMOSInputImage):
                                                      instrpars['expkeyword'])
 
             if chip._gain == None or self._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             # We need to treat Read Noise as a special case since it is
@@ -332,7 +332,7 @@ class NIC2InputImage(NICMOSInputImage):
                                                      instrpars['expkeyword'])
 
             if chip._gain == None or self._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             # We need to treat Read Noise as a special case since it is
@@ -403,7 +403,7 @@ class NIC3InputImage(NICMOSInputImage):
                                                      instrpars['expkeyword'])
 
             if chip._gain == None or self._exptime == None:
-                print 'ERROR: invalid instrument task parameter'
+                print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             # We need to treat Read Noise as a special case since it is

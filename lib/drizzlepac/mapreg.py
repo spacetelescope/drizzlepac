@@ -8,13 +8,14 @@ of multiple images using the WCS information from the images.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
+from __future__ import absolute_import, division, print_function
 from astropy.io import fits
 import pyregion, stwcs
 import os
 from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
-import util
-from regfilter import fast_filter_outer_regions
+from . import util
+from .regfilter import fast_filter_outer_regions
 
 
 # This is specifically NOT intended to match the package-wide version information.
@@ -52,8 +53,8 @@ class _AuxSTWCS(object):
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
            chip_reg='', outpath='./regions', filter='', catfname='', iteractive=False,
            append=False, verbose=True):
-    from util import check_blank
-    from tweakutils import parse_input
+    from .util import check_blank
+    from .tweakutils import parse_input
 
     input_reg       = _simple_parse_teal_fname( check_blank(input_reg),
                                                 parse_at = True )
@@ -113,7 +114,7 @@ def _simple_parse_teal_fname(fnamestr, parse_at=False):
 
 def _simple_parse_teal_extn(extnstr):
     if extnstr and isinstance(extnstr, str) and extnstr.strip():
-        extlst = map(str.strip,extnstr.split(';'))
+        extlst = list(map(str.strip,extnstr.split(';')))
         if len(extlst) == 1:
             return extlst[0]
         else:
@@ -274,7 +275,7 @@ def remove_header_tdd(hdr):
 
     # Remove paper IV related keywords related to the
     #   DGEO correction here
-    for k in hdr.items():
+    for k in list(hdr.items()):
         if (k[0][:2] == 'DP'):
             del hdr[k[0]+'*']
             del hdr[k[0]+'.*']
@@ -327,9 +328,9 @@ def _regwrite(shapelist,outfile):
                                   if a!='text' ] )
 
         # first line is globals
-        print >>outf, "global", defaultline
+        print("global", defaultline, file=outf)
         # second line must be a coordinate format
-        print >>outf, prev_cs
+        print(prev_cs, file=outf)
 
         for shape in shapelist:
             shape_attr = '' if prev_cs == shape.coord_format \
@@ -342,7 +343,7 @@ def _regwrite(shapelist,outfile):
             shape_str = shape_attr + shape_excl + shape.name + shape_coords + \
                         shape_comment
 
-            print >>outf, shape_str
+            print(shape_str, file=outf)
 
     except IOError as e:
         cmsg = "Unable to create region file \'%s\'." % outfile
@@ -410,7 +411,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
         # assume that (if no extension name is provided) the WCS is located in
         # "extensions" of the input reference FITS file (as opposite to the
         # primary header).
-        ref_wcs_exts = range(1, len(input_regfnames)+1)
+        ref_wcs_exts = list(range(1, len(input_regfnames)+1))
 
         # Filter out elements of ref_wcs_exts and input_regfnames that
         # correspond to None elements in input_regfnames:
@@ -561,7 +562,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
     # Return a list of pairs of the form [region, header] with missing regions
     # (i.e., region = None) filtered out. (We do not need to keep order anymore)
-    return [ p for p in map(list, zip(region_lists, ref_wcs_headers)) \
+    return [ p for p in map(list, list(zip(region_lists, ref_wcs_headers))) \
              if p[0] != None ]
 
 
@@ -651,7 +652,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
 
     # Warn users if some regions will be dropped out:
     if nreg > nexts:
-        print ""
+        print("")
         _print_warning("The number of region files provided through " \
                        "'chip_reg' is larger than the number of extensions " \
                        "derived based on 'img_wcs_ext' that were found " \
@@ -667,7 +668,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
         chip_reg = nexts * [ None ]
 
     elif nreg < nexts:
-        print ""
+        print("")
         _print_warning("The number of region files provided through " \
                        "'chip_reg' is smaller than the number of extensions " \
                        "derived based on 'img_wcs_ext' that were found " \
@@ -711,26 +712,26 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
 
     # Print the list of pairs extension->chip region:
     if verbose and nreg > 0:
-        print ""
+        print("")
         _print_important("Please verify that the following association "  \
               "between the commanded FITS extensions and provided \"fixed\" " \
               "region files is correct:")
-        print "-----------------------------"
-        print "EXTENSION:   -->   REGION FILE:"
+        print("-----------------------------")
+        print("EXTENSION:   -->   REGION FILE:")
         for i in range(nexts):
-            print "{!s:<18.18s} {}".format(extensions[i], chip_reg[i])
+            print("{!s:<18.18s} {}".format(extensions[i], chip_reg[i]))
 
     # Return a list of image file names (with any extensions removed!) to which
     # regions will be mapped AND a list of pairs of the form
     # [region, extension].
-    return imgfnames, map(list, zip(region_lists, extensions))
+    return imgfnames, list(map(list, list(zip(region_lists, extensions))))
 
 
 def _print_warning(msg):
-    print "\033[1m"+"WARNING: "+"\33[0m"+msg
+    print("\033[1m"+"WARNING: "+"\33[0m"+msg)
 
 def _print_important(msg):
-    print "\033[1mIMPORTANT: \33[0m{}".format(msg)
+    print("\033[1mIMPORTANT: \33[0m{}".format(msg))
 
 def _needs_ref_WCS(reglist):
     """ Check if the region list contains shapes in image-like coordinates
@@ -928,7 +929,7 @@ def count_extensions(img, extname='SCI'):
     n = 0
     for e in img:
         #if isinstance(e, fits.ImageHDU): continue
-        if 'EXTNAME' in map(str.upper, e.header.keys()) \
+        if 'EXTNAME' in list(map(str.upper, list(e.header.keys()))) \
             and e.header['extname'].upper() == extname:
             n += 1
 
@@ -948,7 +949,7 @@ def get_extver_list(img, extname='SCI'):
 
     # when extver is None - return the range of all FITS extensions
     if extname is None:
-        extver = range(len(img))
+        extver = list(range(len(img)))
         return extver
 
     if not isinstance(extname, str):
@@ -962,7 +963,7 @@ def get_extver_list(img, extname='SCI'):
     extver = []
     for e in img:
         #if not isinstance(e, fits.ImageHDU): continue
-        hkeys = map(str.upper, e.header.keys())
+        hkeys = list(map(str.upper, list(e.header.keys())))
         if 'EXTNAME' in hkeys and e.header['EXTNAME'].upper() == extname:
             extver.append(e.header['EXTVER'] if 'EXTVER' in hkeys else 1)
 

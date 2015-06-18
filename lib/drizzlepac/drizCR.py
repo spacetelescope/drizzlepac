@@ -7,14 +7,14 @@ image and the derivative of the model image.
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-from __future__ import division # confidence medium
+from __future__ import absolute_import, division, print_function # confidence medium
 
 import numpy as np
 import stsci.convolve as NC
 from astropy.io import fits
 import os
-import quickDeriv
-import util
+from . import quickDeriv
+from . import util
 from stsci.tools import fileutil, logutil, mputil, teal
 
 
@@ -160,13 +160,13 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
                 try:
                     os.access(blotImageName,os.F_OK)
                 except IOError:
-                    print "Could not find the Blotted image on disk:",blotImageName
+                    print("Could not find the Blotted image on disk:",blotImageName)
                     raise # raise orig error
 
                 try:
                     __blotImage = fits.open(blotImageName,mode="readonly") # !!! ,memmap=False) ?
                 except IOError:
-                    print "Problem opening blot images"
+                    print("Problem opening blot images")
                     raise
 
             #blotImageName=scienceChip.outputNames["blotImage"] # input file
@@ -331,10 +331,10 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
                 # Remove the existing mask file if it exists
                 if(os.access(crMaskImage, os.F_OK)):
                     os.remove(crMaskImage)
-                    print "Removed old cosmic ray mask file:",crMaskImage
-                print 'Creating output : ',outfile
+                    print("Removed old cosmic ray mask file:",crMaskImage)
+                print('Creating output : ',outfile)
             else:
-                print 'Creating in-memory(virtual) FITS file...'
+                print('Creating in-memory(virtual) FITS file...')
                 outfile = None
 
             _pf = util.createFile(_cr_file, outfile=outfile, header = None)
@@ -362,7 +362,7 @@ def createCorrFile(outfile, arrlist, template):
     # Remove the existing cor file if it exists
     if(os.access(outfile, os.F_OK)):
         os.remove(outfile)
-        print "Removing old corr file:",outfile
+        print("Removing old corr file:",outfile)
 
     ftemplate = fits.open(template)
     for arr in arrlist:
@@ -370,7 +370,7 @@ def createCorrFile(outfile, arrlist, template):
         if arr['dqext'][0] != arr['sciext'][0]:
             ftemplate[arr['dqext']].data = arr['dqMask']
     ftemplate.writeto(outfile)
-    print 'Created CR corrected file: ',outfile
+    print('Created CR corrected file: ',outfile)
 
 def setDefaults(configObj={}):
     """ Return a dictionary of the default parameters
