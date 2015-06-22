@@ -27,7 +27,7 @@ from stwcs.wcsutil import headerlet
 from stwcs.wcsutil import altwcs
 from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
-from stsci.tools import logutil,textutil
+from stsci.tools import logutil, textutil, bitmask
 
 from . import catalogs
 from . import linearfit
@@ -65,7 +65,7 @@ class Image(object):
         """
         self._im = spu.ImageRef()
         self._dq = spu.ImageRef()
-        self.dqbits = util.interpret_bits_value(kwargs['dqbits'])
+        self.dqbits = bitmask.interpret_bits_value(kwargs['dqbits'])
 
         if 'use_sharp_round' in kwargs:
             self.use_sharp_round = kwargs['use_sharp_round']
