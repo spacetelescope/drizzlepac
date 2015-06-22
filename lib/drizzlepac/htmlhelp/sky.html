@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 3: Subtracting the Sky &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
+    <title>Step 3: Subtracting the Sky &mdash; DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
+        VERSION:     '2.0.2.dev41407 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" />
     <link rel="prev" title="Step 2: Generate a Static Mask" href="static.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -175,92 +175,58 @@ specified in <em class="xref py py-obj">inputDict</em>.</p>
 <col width="83%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><p class="first last">Name</p>
-</th>
-<th class="head"><p class="first last">Definition</p>
-</th>
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Definition</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">skyuser</em></p>
-</td>
-<td><p class="first last">&#8216;KEYWORD in header which indicates a sky subtraction value to use&#8217;.</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">skyuser</em></td>
+<td>&#8216;KEYWORD in header which indicates a sky subtraction value to use&#8217;.</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">skymethod</em></p>
-</td>
-<td><p class="first last">&#8216;Sky computation method&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">skymethod</em></td>
+<td>&#8216;Sky computation method&#8217;</td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">skysub</em></p>
-</td>
-<td><p class="first last">&#8216;Perform sky subtraction?&#8217;</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">skysub</em></td>
+<td>&#8216;Perform sky subtraction?&#8217;</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">skywidth</em></p>
-</td>
-<td><p class="first last">&#8216;Bin width of histogram for sampling sky statistics (in sigma)&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">skywidth</em></td>
+<td>&#8216;Bin width of histogram for sampling sky statistics (in sigma)&#8217;</td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">skystat</em></p>
-</td>
-<td><p class="first last">&#8216;Sky correction statistics parameter&#8217;</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">skystat</em></td>
+<td>&#8216;Sky correction statistics parameter&#8217;</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">skylower</em></p>
-</td>
-<td><p class="first last">&#8216;Lower limit of usable data for sky (always in electrons)&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">skylower</em></td>
+<td>&#8216;Lower limit of usable data for sky (always in electrons)&#8217;</td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">skyupper</em></p>
-</td>
-<td><p class="first last">&#8216;Upper limit of usable data for sky (always in electrons)&#8217;</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">skyupper</em></td>
+<td>&#8216;Upper limit of usable data for sky (always in electrons)&#8217;</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">skyclip</em></p>
-</td>
-<td><p class="first last">&#8216;Number of clipping iterations&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">skyclip</em></td>
+<td>&#8216;Number of clipping iterations&#8217;</td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">skylsigma</em></p>
-</td>
-<td><p class="first last">&#8216;Lower side clipping factor (in sigma)&#8217;</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">skylsigma</em></td>
+<td>&#8216;Lower side clipping factor (in sigma)&#8217;</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">skyusigma</em></p>
-</td>
-<td><p class="first last">&#8216;Upper side clipping factor (in sigma)&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">skyusigma</em></td>
+<td>&#8216;Upper side clipping factor (in sigma)&#8217;</td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">skymask_cat</em></p>
-</td>
-<td><p class="first last">&#8216;Catalog file listing image masks&#8217;</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">skymask_cat</em></td>
+<td>&#8216;Catalog file listing image masks&#8217;</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">use_static</em></p>
-</td>
-<td><p class="first last">&#8216;Use static mask for skymatch computations?&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">use_static</em></td>
+<td>&#8216;Use static mask for skymatch computations?&#8217;</td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">sky_bits</em></p>
-</td>
-<td><p class="first last">&#8216;Bit flags for identifying bad pixels in DQ array&#8217;</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">sky_bits</em></td>
+<td>&#8216;Bit flags for identifying bad pixels in DQ array&#8217;</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">skyuser</em></p>
-</td>
-<td><p class="first last">&#8216;KEYWORD indicating a sky subtraction value if done by user&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">skyuser</em></td>
+<td>&#8216;KEYWORD indicating a sky subtraction value if done by user&#8217;</td>
 </tr>
-<tr class="row-even"><td><p class="first last"><em class="xref py py-obj">skyfile</em></p>
-</td>
-<td><p class="first last">&#8216;Name of file with user-computed sky values&#8217;</p>
-</td>
+<tr class="row-even"><td><em class="xref py py-obj">skyfile</em></td>
+<td>&#8216;Name of file with user-computed sky values&#8217;</td>
 </tr>
-<tr class="row-odd"><td><p class="first last"><em class="xref py py-obj">in_memory</em></p>
-</td>
-<td><p class="first last">&#8216;Optimize for speed or for memory use&#8217;</p>
-</td>
+<tr class="row-odd"><td><em class="xref py py-obj">in_memory</em></td>
+<td>&#8216;Optimize for speed or for memory use&#8217;</td>
 </tr>
 </tbody>
 </table>
@@ -628,7 +594,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

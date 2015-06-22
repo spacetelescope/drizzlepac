@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
+        VERSION:     '2.0.2.dev41407 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
-    <link rel="next" title="Imagefindpars: Source finding parameters" href="refimagefindpars.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation" href="index.html" />
+    <link rel="next" title="Refmagefindpars: Source finding parameters for the reference image" href="refimagefindpars.html" />
     <link rel="prev" title="DrizzlePac v2.0.0 Release Notes" href="release_v2_0_0_notes.html" /> 
   </head>
   <body>
@@ -38,12 +38,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
+          <a href="refimagefindpars.html" title="Refmagefindpars: Source finding parameters for the reference image"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -56,7 +56,7 @@
                         title="previous chapter">DrizzlePac v2.0.0 Release Notes</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="refimagefindpars.html"
-                        title="next chapter">Imagefindpars: Source finding parameters</a></p>
+                        title="next chapter">Refmagefindpars: Source finding parameters for the reference image</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/tweakreg.txt"
@@ -210,7 +210,7 @@ cannot be aligned in which case <a class="reference internal" href="#drizzlepac.
 alignment order. Alignment order optimization is available <em>only</em>
 when <em class="xref py py-obj">expand_refcat</em> = <em class="xref py py-obj">True</em>.</p>
 </div></blockquote>
-<p><strong>exclusions: string (Default = &#8216;&#8217;)</strong> :</p>
+<p><strong>exclusions: string (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>This parameter allows the user to specify a set of files which contain
 regions in the image to ignore when finding sources.  This file MUST
@@ -236,7 +236,16 @@ be provided in <em>image</em> coordinates. The task <em class="xref py py-obj">M
 </div></blockquote>
 <p><strong>updatewcs</strong> : bool (Default = No)</p>
 <blockquote>
-<div><p>Update WCS keywords of input images?</p>
+<div><p>This parameter specifies whether the WCS keywords are to be updated by
+running updatewcs on the input data, or left alone. The update performed
+by updatewcs not only recomputes the WCS based on the currently
+used <tt class="docutils literal"><span class="pre">IDCTAB</span></tt>, but also populates the header with
+the <tt class="docutils literal"><span class="pre">SIP</span></tt> coefficients. For <tt class="docutils literal"><span class="pre">ACS/WFC</span></tt> images, the time-dependence
+correction will also be applied to the <tt class="docutils literal"><span class="pre">WCS</span></tt> and <tt class="docutils literal"><span class="pre">SIP</span></tt> keywords.
+This parameter should be set to &#8216;No&#8217; (<em class="xref py py-obj">False</em>) when the WCS keywords
+have been carefully set by some other method, and need to be passed
+through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written
+by this update.</p>
 </div></blockquote>
 <p><strong>writecat</strong> : bool (Default = Yes)</p>
 <blockquote>
@@ -266,7 +275,7 @@ processing.</p>
 <blockquote>
 <div><p>Specify the filename of the processing log.</p>
 </div></blockquote>
-<p><strong>*UPDATE HEADER*</strong> :</p>
+<p><strong>*UPDATE HEADER*</strong></p>
 <p><strong>updatehdr</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Specify whether or not to update the headers of each input image
@@ -283,20 +292,20 @@ the shiftfile as well.</p>
 <div><p>Allows overwriting of an existing WCS with the same name as
 specified by <em class="xref py py-obj">wcsname</em> parameter.</p>
 </div></blockquote>
-<p><strong>*HEADERLET CREATION*</strong> :</p>
-<p><strong>headerlet: bool (Default = No)</strong> :</p>
+<p><strong>*HEADERLET CREATION*</strong></p>
+<p><strong>headerlet: bool (Default = No)</strong></p>
 <blockquote>
 <div><p>Specify whether or not to generate a headerlet from the images at
 the end of the task? If turned on, this will create a headerlet
 from the images regardless of the value of the <em class="xref py py-obj">updatehdr</em>
 parameter.</p>
 </div></blockquote>
-<p><strong>attach: bool (Default = Yes)</strong> :</p>
+<p><strong>attach: bool (Default = Yes)</strong></p>
 <blockquote>
 <div><p>If creating a headerlet, choose whether or not to attach the new
 headerlet to the input image as a new extension.</p>
 </div></blockquote>
-<p><strong>hdrfile: string (Default = &#8216;&#8217;)</strong> :</p>
+<p><strong>hdrfile: string (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>Filename to use for writing out headerlet to a separate file. If the name
 does not contain <tt class="docutils literal"><span class="pre">.fits</span></tt>, it will create a filename from the
@@ -305,31 +314,31 @@ in <tt class="docutils literal"><span class="pre">'_hlet.fits'</span></tt>. For 
 full filename created will be <tt class="docutils literal"><span class="pre">'j99da1f2q_hdrlet1_hlet.fits'</span></tt> when
 creating a headerlet for image <tt class="docutils literal"><span class="pre">'j99da1f2q_flt.fits'</span></tt>.</p>
 </div></blockquote>
-<p><strong>clobber: bool (Default = No)</strong> :</p>
+<p><strong>clobber: bool (Default = No)</strong></p>
 <blockquote>
 <div><p>If a headerlet with &#8216;hdrfile&#8217; already exists on disk, specify
 whether or not to overwrite that previous file.</p>
 </div></blockquote>
-<p><strong>hdrname: string (Default = &#8216;&#8217;)</strong> :</p>
+<p><strong>hdrname: string (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>Unique name to give to headerlet solution. This name will be used to
 identify this specific WCS alignment solution contained in the headerlet.</p>
 </div></blockquote>
-<p><strong>author: string, optional (Default = &#8216;&#8217;)</strong> :</p>
+<p><strong>author: string, optional (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>Name of the creator of the headerlet.</p>
 </div></blockquote>
-<p><strong>descrip: string, optional (Default = &#8216;&#8217;)</strong> :</p>
+<p><strong>descrip: string, optional (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>Short (1-line) description to be included in headerlet as <tt class="docutils literal"><span class="pre">DESCRIP</span></tt> keyword.
 This can be used to provide a quick look description of the WCS alignment
 contained in the headerlet.</p>
 </div></blockquote>
-<p><strong>catalog: string, optional (Default = &#8216;&#8217;)</strong> :</p>
+<p><strong>catalog: string, optional (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>Name of reference catalog used as the basis for the image alignment.</p>
 </div></blockquote>
-<p><strong>history: string, optional (Default = &#8216;&#8217;)</strong> :</p>
+<p><strong>history: string, optional (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>Filename of a file containing detailed information regarding the history
 of the WCS solution contained in the headerlet. This can include information
@@ -337,7 +346,7 @@ on the catalog used for the alignment, or notes on processing that went
 into finalizing the WCS alignment stored in this headerlet. This information
 will be reformatted as 70-character wide FITS HISTORY keyword section.</p>
 </div></blockquote>
-<p><strong>*OPTIONAL SHIFTFILE OUTPUT*</strong> :</p>
+<p><strong>*OPTIONAL SHIFTFILE OUTPUT*</strong></p>
 <p><strong>shiftfile</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Create output shiftfile?</p>
@@ -357,7 +366,7 @@ only contains the WCS keywords in a Primary header with no image
 data itself. The values will be derived from the FIRST input image
 specified.</p>
 </div></blockquote>
-<p><strong>*COORDINATE FILE DESCRIPTION*</strong> :</p>
+<p><strong>*COORDINATE FILE DESCRIPTION*</strong></p>
 <p><strong>catfile</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of file that contains a list of input images and associated
@@ -422,7 +431,7 @@ positions, or whether they need to be transformed to the sky.</p>
 <div><p>The number of brightest objects to keep after sorting the full object
 list. If nbright is set equal to <em class="xref py py-obj">None</em>, all objects will be used.</p>
 </div></blockquote>
-<p><strong>*REFERENCE CATALOG DESCRIPTION*</strong> :</p>
+<p><strong>*REFERENCE CATALOG DESCRIPTION*</strong></p>
 <p><strong>refcat</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of the external reference catalog file to be used in place of the
@@ -480,7 +489,7 @@ of fainter objects.</p>
 list. If refnbright is set to <em class="xref py py-obj">None</em>, all objects will be used. Used in
 conjunction with refcat.</p>
 </div></blockquote>
-<p><strong>*OBJECT MATCHING PARAMETERS*</strong> :</p>
+<p><strong>*OBJECT MATCHING PARAMETERS*</strong></p>
 <p><strong>minobj</strong> : int (Default = 15)</p>
 <blockquote>
 <div><p>Minimum number of identified objects from each input image to use
@@ -532,7 +541,7 @@ reference frame. This offset will be used for all input images
 provided.If the parameter value is set to None, no offset will
 be assumed in matching sources in <em class="xref py py-obj">xyxymatch</em>.</p>
 </div></blockquote>
-<p><strong>*CATALOG FITTING PARAMETERS*</strong> :</p>
+<p><strong>*CATALOG FITTING PARAMETERS*</strong></p>
 <p><strong>fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;, &#8216;general&#8217;} (Default = &#8216;rscale&#8217;)</p>
 <blockquote>
 <div><p>The fitting geometry to be used in fitting the matched object lists.
@@ -824,12 +833,12 @@ writing out the help.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="refimagefindpars.html" title="Imagefindpars: Source finding parameters"
+          <a href="refimagefindpars.html" title="Refmagefindpars: Source finding parameters for the reference image"
              >next</a> |</li>
         <li class="right" >
           <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

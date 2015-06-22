@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
+        VERSION:     '2.0.2.dev41407 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -192,8 +192,8 @@ during processing.</p>
 <p><strong id="updatewcs">updatewcs</strong> : bool  (Default = No)</p>
 <blockquote>
 <div><p>This parameter specifies whether the WCS keywords are to be updated by
-running makewcs on the input data, or left alone. The update performed
-by makewcs not only recomputes the WCS based on the currently
+running updatewcs on the input data, or left alone. The update performed
+by updatewcs not only recomputes the WCS based on the currently
 used <tt class="docutils literal"><span class="pre">IDCTAB</span></tt>, but also populates the header with
 the <tt class="docutils literal"><span class="pre">SIP</span></tt> coefficients. For <tt class="docutils literal"><span class="pre">ACS/WFC</span></tt> images, the time-dependence
 correction will also be applied to the <tt class="docutils literal"><span class="pre">WCS</span></tt> and <tt class="docutils literal"><span class="pre">SIP</span></tt> keywords.
@@ -268,16 +268,16 @@ number, a GEIS group number (such as &#8216;1&#8217;), or a FITS extension name
 <blockquote>
 <div><p>This parameter allows the user to specify which DQ bits of each input image DQ array should be reset to a value of 0. This operation is performed on the copy of the input data after updating the headers based on the &#8216;updatewcs&#8217; parameter, and prior to starting any of the AstroDrizzle processing steps (static mask, sky subtraction, and so on).</p>
 </div></blockquote>
-<p><strong id="num_cores: int (Default = None)">num_cores: int (Default = None)</strong> :</p>
+<p><strong id="num_cores: int (Default = None)">num_cores: int (Default = None)</strong></p>
 <blockquote>
 <div><p>This specifies the number of CPU cores to use during processing. Any value less than 2 will disable all use of parallel processing.</p>
 </div></blockquote>
-<p><strong id="in_memory: bool (Default = False)">in_memory: bool (Default = False)</strong> :</p>
+<p><strong id="in_memory: bool (Default = False)">in_memory: bool (Default = False)</strong></p>
 <blockquote>
 <div><p>This parameter sets whether or not to keep all intermediate products in memory when processing. This includes all single drizzle products (<em>single_sci and *single_wht), median image, blot images, and crmask images.  The use of this option will therefore require significantly more memory than usual to process the data while reducing the overall processing time by eliminating most of the disk activity. *Only</em> the products of the final drizzle step will get written out when this parameter gets specified as &#8216;True&#8217;.</p>
 </div></blockquote>
-<p><strong id="*STATE OF INPUT FILES*">*STATE OF INPUT FILES*</strong> :</p>
-<p><strong id="restore: bool (Default = No)">restore: bool (Default = No)</strong> :</p>
+<p><strong id="*STATE OF INPUT FILES*">*STATE OF INPUT FILES*</strong></p>
+<p><strong id="restore: bool (Default = No)">restore: bool (Default = No)</strong></p>
 <blockquote>
 <div><p>Setting this to &#8216;Yes&#8217; (True) directs AstroDrizzle to copy the input images from the &#8216;OrIg_files&#8217; sub-directory and use them for processing, if they had been archived by AstroDrizzle using the &#8216;preserve&#8217; or &#8216;overwrite&#8217; parameters already.  If set to &#8216;Yes&#8217; and the input files had not been archived already, it will simply ignore this and work with the current input images.</p>
 </div></blockquote>
@@ -293,7 +293,7 @@ number, a GEIS group number (such as &#8216;1&#8217;), or a FITS extension name
 <blockquote>
 <div><p>The temporary files created by AstroDrizzle can be automatically removed by setting this parameter to &#8216;Yes&#8217; (True). The affected files include the coefficient and static mask files created by PyDrizzle, in addition to other intermediate files created by AstroDrizzle. It is often useful to retain the intermediate files and examine them when first learning how to run AstroDrizzle. However, when running AstroDrizzle routinely, or on a small disk drive, these files can be removed to conserve space.</p>
 </div></blockquote>
-<p><strong id="*STEP 1: STATIC MASK*">*STEP 1: STATIC MASK*</strong> :</p>
+<p><strong id="*STEP 1: STATIC MASK*">*STEP 1: STATIC MASK*</strong></p>
 <p><strong id="static">static</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Create a static bad-pixel mask from the data?  This mask flags all pixels that deviate by more than a value of &#8216;static_sig&#8217; sigma below the image median, since these pixels are typically the result of bad pixel oversubtraction in the dark image during calibration.</p>
@@ -302,7 +302,7 @@ number, a GEIS group number (such as &#8216;1&#8217;), or a FITS extension name
 <blockquote>
 <div><p>The number of sigma below the RMS to use as the clipping limit for creating the static mask.</p>
 </div></blockquote>
-<p><strong id="*STEP 2: SKY SUBTRACTION*">*STEP 2: SKY SUBTRACTION*</strong> :</p>
+<p><strong id="*STEP 2: SKY SUBTRACTION*">*STEP 2: SKY SUBTRACTION*</strong></p>
 <p><strong id="skymethod">skymethod</strong> : {&#8216;localmin&#8217;, &#8216;globalmin+match&#8217;, &#8216;globalmin&#8217;, &#8216;match&#8217;} (Default = &#8216;localmin&#8217;)</p>
 <blockquote>
 <div><p>Select the algorithm for sky computation:</p>
@@ -447,7 +447,7 @@ in the input &#64;-file.</p>
 <blockquote>
 <div><p>Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.</p>
 </div></blockquote>
-<p><strong id="*STEP 3: DRIZZLE SEPARATE IMAGES*">*STEP 3: DRIZZLE SEPARATE IMAGES*</strong> :</p>
+<p><strong id="*STEP 3: DRIZZLE SEPARATE IMAGES*">*STEP 3: DRIZZLE SEPARATE IMAGES*</strong></p>
 <p><strong id="driz_separate">driz_separate</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.</p>
@@ -500,7 +500,7 @@ Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.
 For possible input formats, see the description for <em class="xref py py-obj">sky_bits</em>
 parameter.</p>
 </div></blockquote>
-<p><strong id="*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*">*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*</strong> :</p>
+<p><strong id="*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*">*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*</strong></p>
 <p><strong id="driz_sep_wcs">driz_sep_wcs</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Define custom WCS for seperate output images?</p>
@@ -533,7 +533,7 @@ parameter.</p>
 <blockquote>
 <div><p>Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.</p>
 </div></blockquote>
-<p><strong id="*STEP 4: CREATE MEDIAN IMAGE*">*STEP 4: CREATE MEDIAN IMAGE*</strong> :</p>
+<p><strong id="*STEP 4: CREATE MEDIAN IMAGE*">*STEP 4: CREATE MEDIAN IMAGE*</strong></p>
 <p><strong id="median">median</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not to create a median image. This median image will be used as the comparison &#8216;truth&#8217; image :in the cosmic ray rejection step.</p>
@@ -580,7 +580,7 @@ parameter.</p>
 <blockquote>
 <div><p>Size of buffer, in Mb, to use when reading in each section of each input image.  The default buffer size is 1Mb.  The larger the buffer size, the fewer times the code needs to open each input image and the more memory will be required to create the median image.  A larger buffer can be helpful when using compression, since slower copies need to be made of each set of rows from each input image instead of using memory-mapping.</p>
 </div></blockquote>
-<p><strong id="*STEP 5: BLOT BACK THE MEDIAN IMAGE*">*STEP 5: BLOT BACK THE MEDIAN IMAGE*</strong> :</p>
+<p><strong id="*STEP 5: BLOT BACK THE MEDIAN IMAGE*">*STEP 5: BLOT BACK THE MEDIAN IMAGE*</strong></p>
 <p><strong id="blot">blot</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Perform the blot operation on the median image? If set to &#8216;Yes&#8217; (True), the output will be median smoothed images that match each input chips location, and will be used in the cosmic ray rejection step.</p>
@@ -612,7 +612,7 @@ parameter.</p>
 <blockquote>
 <div><p>This is a user-specified custom sky value to be added to the blot image.  This is only used if blot_addsky is &#8216;No&#8217; (False).</p>
 </div></blockquote>
-<p><strong id="*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*">*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*</strong> :</p>
+<p><strong id="*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*">*STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR*</strong></p>
 <p><strong id="driz_cr">driz_cr</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Perform cosmic-ray detection? If set to &#8216;Yes&#8217; (True), cosmic-rays will be detected and used to create cosmic-ray masks based on the algorithms from &#8216;deriv&#8217; and &#8216;driz_cr&#8217;.</p>
@@ -637,7 +637,7 @@ parameter.</p>
 <blockquote>
 <div><p>Scaling factor applied to the derivative in &#8216;driz_cr&#8217; when detecting cosmic-rays. See the help file for &#8216;driz_cr&#8217; for further discussion of this parameter.</p>
 </div></blockquote>
-<p><strong id="*STEP 7: DRIZZLE FINAL COMBINED IMAGE*">*STEP 7: DRIZZLE FINAL COMBINED IMAGE*</strong> :</p>
+<p><strong id="*STEP 7: DRIZZLE FINAL COMBINED IMAGE*">*STEP 7: DRIZZLE FINAL COMBINED IMAGE*</strong></p>
 <p><strong id="driz_combine">driz_combine</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not to drizzle each input image onto the final output image. This applies the generated cosmic-ray masks to the input images and creates a final, cleaned, distortion-corrected image.</p>
@@ -646,7 +646,7 @@ parameter.</p>
 <blockquote>
 <div><p>Specify the type of weighting image to apply with the bad pixel mask</p>
 </div></blockquote>
-<p><strong id="for the final drizzle step.  The options for this parameter include:">for the final drizzle step.  The options for this parameter include:</strong> :</p>
+<p><strong id="for the final drizzle step.  The options for this parameter include:">for the final drizzle step.  The options for this parameter include:</strong></p>
 <blockquote>
 <div><ul class="simple">
 <li><strong>EXP</strong>: The default of &#8216;EXP&#8217; indicates that the images will be weighted according to their exposure time, which is the standard behavior for drizzle. This weighting is a good approximation in the regime where the noise is dominated by photon counts from the sources, while contributions from sky background, read-noise and dark current are negligible. This option is provided as the default since it produces reliable weighting for all types of data, including older instruments (eg., WFPC2), where more sophisticated options may not be available.</li>
@@ -705,7 +705,7 @@ parameter.</p>
 <blockquote>
 <div><p>This parameter determines the units of the final drizzle-combined image, and can either be &#8216;counts&#8217; or &#8216;cps&#8217;. It is passed through to &#8216;drizzle&#8217; in the final drizzle step.</p>
 </div></blockquote>
-<p><strong id="*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*">*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*</strong> :</p>
+<p><strong id="*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*">*STEP 7a: CUSTOM WCS FOR FINAL OUTPUT*</strong></p>
 <p><strong id="final_wcs">final_wcs</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>Obtain the WCS solution from a user-designated reference image?</p>
@@ -738,7 +738,7 @@ parameter.</p>
 <blockquote>
 <div><p>Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.</p>
 </div></blockquote>
-<p><strong id="*INSTRUMENT PARAMETERS*">*INSTRUMENT PARAMETERS*</strong> :</p>
+<p><strong id="*INSTRUMENT PARAMETERS*">*INSTRUMENT PARAMETERS*</strong></p>
 <p><strong id="gain">gain</strong> : float (Default = None)</p>
 <blockquote>
 <div><p>Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count.  This parameter should not be populated if the &#8216;&#8217;gainkeyword&#8217;&#8217; parameter is in use.</p>
@@ -865,7 +865,7 @@ to a text file:</p>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
