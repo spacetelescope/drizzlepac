@@ -5,12 +5,10 @@
 :License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
 
 """
-##from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import os
 from stsci.tools import teal
-##from . import tweakreg, util
-##from .version import *
-import tweakreg, util
+from . import util
 from .version import *
 
 
