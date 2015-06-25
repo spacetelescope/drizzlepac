@@ -212,12 +212,10 @@ def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datam
 def isfloat(value):
     """ Return True if all characters are part of a floating point value
     """
-    tab = string.maketrans('','')
-    # Check to see if everything but '-+.e' in string are numbers
-    # as these characters would be used for floating-point/exponential numbers
-    if (value.translate(tab.lower(),'-.+e').isdigit()):
+    try:
+        x = float(value)
         return True
-    else:
+    except ValueError:
         return False
 
 def parse_skypos(ra,dec):

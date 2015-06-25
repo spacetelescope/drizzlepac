@@ -11,7 +11,6 @@ from stsci.tools import teal
 from . import util
 from .version import *
 
-
 __taskname__ = 'drizzlepac.refimagefindpars'
 
 
