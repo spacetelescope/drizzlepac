@@ -34,7 +34,7 @@ from __future__ import absolute_import, division, print_function # confidence hi
 
 import os
 
-from stsci.tools import fileutil, readgeis
+from stsci.tools import fileutil, readgeis, bitmask
 
 from astropy.io import fits
 import numpy as np
@@ -80,7 +80,7 @@ def buildDQMasks(imageObjectList,configObj):
 def buildMask(dqarr,bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
 
-    bitvalue = util.interpret_bits_value(bitvalue)
+    bitvalue = bitmask.interpret_bits_value(bitvalue)
 
     #if bitvalue == None:
         #return ((dqarr * 0.0) + 1.0).astype(np.uint8)

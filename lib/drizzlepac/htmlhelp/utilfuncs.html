@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utility Functions &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
+    <title>Utility Functions &mdash; DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
+        VERSION:     '2.0.2.dev41407 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="WCS Utilities" href="wcsutils.html" />
     <link rel="prev" title="Utilities" href="util.html" /> 
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="util.html" title="Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -193,7 +193,7 @@ no such check will be performed.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Raises:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>AssertionError</strong> :</p>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>AssertionError</strong></p>
 <blockquote class="last">
 <div><p>Raised when package name derived from the input <em class="xref py py-obj">taskname</em> does not
 match the supplied <em class="xref py py-obj">packagename</em></p>
@@ -368,56 +368,6 @@ Consolidate all such logic here, not in the caller.</p>
 <tt class="descclassname">drizzlepac.util.</tt><tt class="descname">init_logging</tt><big>(</big><em>logfile='astrodrizzle.log'</em>, <em>default=None</em>, <em>level=20</em><big>)</big><a class="headerlink" href="#drizzlepac.util.init_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set up logger for capturing stdout/stderr messages.</p>
 <p>Must be called prior to writing any messages that you want to log.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="drizzlepac.util.interpret_bits_value">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">interpret_bits_value</tt><big>(</big><em>val</em><big>)</big><a class="headerlink" href="#drizzlepac.util.interpret_bits_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts input bits value from string to a single integer value or None.
-If a comma- or &#8216;+&#8217;-separated set of values are provided, they are summed.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">In order to flip the bits of the final result (after summation),
-for input of <em class="xref py py-obj">str</em> type, prepend &#8216;~&#8217; to the input string. &#8216;~&#8217; must
-be prepended to the <em>entire string</em> and not to each bit flag!</p>
-</div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="val">val</strong> : int, str, None</p>
-<blockquote>
-<div><p>An integer bit mask or flag, <em class="xref py py-obj">None</em>, or a comma- or &#8216;+&#8217;-separated
-string list of integer bit val. If <em class="xref py py-obj">val</em> is a <em class="xref py py-obj">str</em> and if
-it is prepended with &#8216;~&#8217;, then the output bit mask will have its
-bits flipped (compared to simple sum of input val).</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>bitmask</strong> : int or None</p>
-<blockquote class="last">
-<div><p>Returns and integer bit mask formed from the input bit val
-or <em class="xref py py-obj">None</em> if input <em class="xref py py-obj">val</em> parameter is <em class="xref py py-obj">None</em> or an empty string.
-If input string value was prepended with &#8216;~&#8217;, then returned
-value will have its bits flipped (inverse mask).</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Examples</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="s">&quot;{0:016b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0xFFFF</span> <span class="o">&amp;</span> <span class="n">interpret_bit_flags</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span> <span class="p">)</span>
-<span class="go">&#39;0000000000011100&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="s">&quot;{0:016b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0xFFFF</span> <span class="o">&amp;</span> <span class="n">interpret_bit_flags</span><span class="p">(</span><span class="s">&#39;4,8,16&#39;</span><span class="p">)</span> <span class="p">)</span>
-<span class="go">&#39;0000000000011100&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="s">&quot;{0:016b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0xFFFF</span> <span class="o">&amp;</span> <span class="n">interpret_bit_flags</span><span class="p">(</span><span class="s">&#39;~4,8,16&#39;</span><span class="p">)</span> <span class="p">)</span>
-<span class="go">&#39;1111111111100011&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="s">&quot;{0:016b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0xFFFF</span> <span class="o">&amp;</span> <span class="n">interpret_bit_flags</span><span class="p">(</span><span class="s">&#39;~(4+8+16)&#39;</span><span class="p">)</span> <span class="p">)</span>
-<span class="go">&#39;1111111111100011&#39;</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="function">
@@ -611,7 +561,7 @@ was found in all SCI extensions.</p>
         <li class="right" >
           <a href="util.html" title="Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Functions to Manage WCS Table Extension &mdash; DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</title>
+    <title>Functions to Manage WCS Table Extension &mdash; DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0.dev36307 (18-Nov-2014)',
+        VERSION:     '2.0.2.dev41407 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" />
     <link rel="prev" title="Classes to manage Catalogs and WCS’s" href="catalogs.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -125,16 +125,16 @@ ability to update the table with new rows again without resizing the table.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong></p>
 <blockquote>
 <div><p>PyFITS binTable object for WCSCORR table</p>
 </div></blockquote>
-<p><strong id="selections: dict">selections: dict</strong> :</p>
+<p><strong id="selections: dict">selections: dict</strong></p>
 <blockquote>
 <div><p>Dictionary of wcscorr column names and values to be used to select
 the row or set of rows to erase</p>
 </div></blockquote>
-<p><strong id="rows: int, list">rows: int, list</strong> :</p>
+<p><strong id="rows: int, list">rows: int, list</strong></p>
 <blockquote class="last">
 <div><p>If specified, will specify what rows from the table to erase regardless
 of the value of &#8216;selections&#8217;</p>
@@ -207,7 +207,7 @@ version.</p>
 <div><p>The name of the WCS to add, as in the WCSNAMEa keyword.  If
 unspecified, all the WCSs in the specified extensions are added.</p>
 </div></blockquote>
-<p><strong id="active: bool, optional">active: bool, optional</strong> :</p>
+<p><strong id="active: bool, optional">active: bool, optional</strong></p>
 <blockquote class="last">
 <div><p>When True, indicates that the update should reflect an update of the
 active WCS information, not just appending the WCS to the file as a
@@ -228,24 +228,24 @@ headerlet</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong> :</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcstab: object">wcstab: object</strong></p>
 <blockquote>
 <div><p>PyFITS binTable object for WCSCORR table</p>
 </div></blockquote>
-<p><strong id="column: string">column: string</strong> :</p>
+<p><strong id="column: string">column: string</strong></p>
 <blockquote>
 <div><p>Name of table column with values that need to be updated</p>
 </div></blockquote>
-<p><strong id="values: string, int, or list">values: string, int, or list</strong> :</p>
+<p><strong id="values: string, int, or list">values: string, int, or list</strong></p>
 <blockquote>
 <div><p>Value or set of values to copy into the selected rows for the column</p>
 </div></blockquote>
-<p><strong id="selections: dict">selections: dict</strong> :</p>
+<p><strong id="selections: dict">selections: dict</strong></p>
 <blockquote>
 <div><p>Dictionary of wcscorr column names and values to be used to select
 the row or set of rows to erase</p>
 </div></blockquote>
-<p><strong id="rows: int, list">rows: int, list</strong> :</p>
+<p><strong id="rows: int, list">rows: int, list</strong></p>
 <blockquote class="last">
 <div><p>If specified, will specify what rows from the table to erase regardless
 of the value of &#8216;selections&#8217;</p>
@@ -309,7 +309,7 @@ to work with old MultiDrizzle.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Raises:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>IOError:</strong> :</p>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>IOError:</strong></p>
 <blockquote class="last">
 <div><p>if input FITS object was not opened in &#8216;update&#8217; mode</p>
 </div></blockquote>
@@ -342,7 +342,7 @@ to work with old MultiDrizzle.</p>
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.0.dev36307 (18-Nov-2014) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

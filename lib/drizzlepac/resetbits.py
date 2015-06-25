@@ -68,7 +68,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import numpy as np
 from stsci.tools import stpyfits as fits
-from stsci.tools import parseinput, logutil
+from stsci.tools import parseinput, logutil, bitmask
 
 from . import util
 
@@ -121,7 +121,7 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
 
     """
     # Interpret bits value
-    bits = util.interpret_bits_value(bits)
+    bits = bitmask.interpret_bits_value(bits)
 
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
