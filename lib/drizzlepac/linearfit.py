@@ -436,7 +436,7 @@ def buildFitMatrix(rot, scale=1):
     m = np.array(
         [
             [ sx*np.cos(np.deg2rad(rx)), -sx*np.sin(np.deg2rad(rx)) ],
-            [ sx*np.sin(np.deg2rad(ry)),  sy*np.cos(np.deg2rad(ry)) ]
+            [ sy*np.sin(np.deg2rad(ry)),  sy*np.cos(np.deg2rad(ry)) ]
         ]
     )
     return m
