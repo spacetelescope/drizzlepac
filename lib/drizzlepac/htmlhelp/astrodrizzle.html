@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev41407 (27-May-2015)',
+        VERSION:     '2.0.2.dev42303 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -303,6 +303,18 @@ number, a GEIS group number (such as &#8216;1&#8217;), or a FITS extension name
 <div><p>The number of sigma below the RMS to use as the clipping limit for creating the static mask.</p>
 </div></blockquote>
 <p><strong id="*STEP 2: SKY SUBTRACTION*">*STEP 2: SKY SUBTRACTION*</strong></p>
+<p><strong id="skysub">skysub</strong> : bool (Default = Yes)</p>
+<blockquote>
+<div><p>Turn on or off sky subtraction on the input data. When <em class="xref py py-obj">skysub</em> is set
+to <em class="xref py py-obj">no</em>, then <em class="xref py py-obj">skyuser</em> field will be enabled and if user specifies a header
+keyword showing the sky value in the image, then that value will be used for
+CR-rejection but it will not be subtracted from the (drizzled) image data.
+If user sets <em class="xref py py-obj">skysub</em> to <em class="xref py py-obj">yes</em> then <em class="xref py py-obj">skyuser</em> field will be disabled
+(and if it is not empty - it will be ignored) and user can use one of the
+methods available through the <em class="xref py py-obj">skymethod</em> parameter to compute the sky
+or provide a file (see <em class="xref py py-obj">skyfile</em> parameter) with values that should be
+subtracted from (single) drizzled images.</p>
+</div></blockquote>
 <p><strong id="skymethod">skymethod</strong> : {&#8216;localmin&#8217;, &#8216;globalmin+match&#8217;, &#8216;globalmin&#8217;, &#8216;match&#8217;} (Default = &#8216;localmin&#8217;)</p>
 <blockquote>
 <div><p>Select the algorithm for sky computation:</p>
@@ -356,10 +368,6 @@ covering significant parts of the image.</p>
 </div>
 </li>
 </ul>
-</div></blockquote>
-<p><strong id="skysub">skysub</strong> : bool (Default = Yes)</p>
-<blockquote>
-<div><p>Turn on or off sky subtraction on the input data.</p>
 </div></blockquote>
 <p><strong id="skywidth">skywidth</strong> : float (Default = 0.3)</p>
 <blockquote>
@@ -439,13 +447,20 @@ setting <tt class="docutils literal"><span class="pre">sky_bits=None</span></tt>
 in the input &#64;-file.</p>
 </div>
 </div></blockquote>
-<p><strong id="skyuser">skyuser</strong> : str (Default = &#8216;&#8217;)</p>
-<blockquote>
-<div><p>Name of header keyword which records the sky value already subtracted from the image by the user.</p>
-</div></blockquote>
 <p><strong id="skyfile">skyfile</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.</p>
+</div></blockquote>
+<p><strong id="skyuser">skyuser</strong> : str (Default = &#8216;&#8217;)</p>
+<blockquote>
+<div><p>Name of header keyword which records the sky value already subtracted
+from the image by the user. The <em class="xref py py-obj">skyuser</em> parameter is ignored when
+<em class="xref py py-obj">skysub</em> is set to <em class="xref py py-obj">yes</em>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When <em class="xref py py-obj">skysub`=`no</em> and <em class="xref py py-obj">skyuser</em> field is empty, then <a class="reference internal" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="drizzlepac.astrodrizzle.AstroDrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></tt></a> will
+assume that sky background is 0.0 for the purpose of cosmic-ray rejection.</p>
+</div>
 </div></blockquote>
 <p><strong id="*STEP 3: DRIZZLE SEPARATE IMAGES*">*STEP 3: DRIZZLE SEPARATE IMAGES*</strong></p>
 <p><strong id="driz_separate">driz_separate</strong> : bool (Default = Yes)</p>
@@ -865,7 +880,7 @@ to a text file:</p>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev41407 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
