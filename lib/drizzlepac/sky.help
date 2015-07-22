@@ -90,6 +90,16 @@ inputDict : dict, optional
 
 Other Parameters
 ----------------
+skysub : bool (Default = Yes)
+    Turn on or off sky subtraction on the input data. When `skysub` is set
+    to `no`, then `skyuser` field will be enabled and if user specifies a header
+    keyword showing the sky value in the image, then that value will be used for
+    CR-rejection but it will not be subtracted from the (drizzled) image data.
+    If user sets `skysub` to `yes` then `skyuser` field will be disabled
+    (and if it is not empty - it will be ignored) and user can use one of the
+    methods available through the `skymethod` parameter to compute the sky
+    or provide a file (see `skyfile` parameter) with values that should be
+    subtracted from (single) drizzled images.
 
 skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'}, optional (Default = 'localmin')
 
@@ -140,10 +150,6 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'}, optional (Def
         containing diffuse sources (e.g., galaxies, nebulae)
         covering significant parts of the image.
 
-skysub : bool, optional (Default Value = Yes)
-    Turn on or off sky subtraction on the input data.
-
-
 skywidth : float, optional (Default Value = 0.1)
     Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.
 
@@ -191,12 +197,18 @@ sky_bits : int, None, optional (Default = 0)
         DQ masks (if used), *will* *be* combined with user masks specified in the input @-file.
 
 
-skyuser : str, optional (Default Value = '')
-    Name of header keyword which records the sky value already subtracted from the image by the user.
-
-
 skyfile : str, optional (Default Value = '')
     Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.
+
+
+skyuser : str (Default = '')
+    Name of header keyword which records the sky value already subtracted
+    from the image by the user. The `skyuser` parameter is ignored when
+    `skysub` is set to `yes`.
+
+    .. note::
+      When `skysub`=`no` and `skyuser` field is empty, then `AstroDrizzle` will
+      assume that sky background is 0.0 for the purpose of cosmic-ray rejection.
 
 
 in_memory : bool, optional (Default Value = False)
