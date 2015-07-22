@@ -18,6 +18,7 @@ The most significant updates to the DrizzlePac code include:
   - Added a full set of source detection parameters for reference image to support multi-instrument alignment in tweakreg
   - Added support for new (simpler, more robust) ACS calibration of time-dependent distortion
   - A full 6-parameter general linear fit can now be performed using tweakreg, in addition to shift and rscale
+  - Cleaned up logic for sky-subtraction: user can now turn off sky-subtraction with skysub=no, and still specify a user-defined sky value as the skyuser keyword.  This will reduce(eliminate?) the need to manually set MDRIZSKY=0. 
   
 In addition to these major updates/changes, numerous smaller bugs were fixed and other revisions were implemented which affected a small portion of the use cases, such as:
   - headerlet code now accepts lists of files to be updated
