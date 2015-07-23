@@ -64,7 +64,6 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     ==========  ===================================================================
     Name        Definition
     ==========  ===================================================================
-    skyuser		'KEYWORD in header which indicates a sky subtraction value to use'.
     skymethod   'Sky computation method'
     skysub		'Perform sky subtraction?'
     skywidth	'Bin width of histogram for sampling sky statistics (in sigma)'
@@ -77,8 +76,8 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     skymask_cat 'Catalog file listing image masks'
     use_static  'Use static mask for skymatch computations?'
     sky_bits    'Integer mask bit values considered good pixels in DQ array'
-    skyuser     'KEYWORD indicating a sky subtraction value if done by user'
     skyfile     'Name of file with user-computed sky values'
+    skyuser     'KEYWORD indicating a sky subtraction value if done by user'
     in_memory   'Optimize for speed or for memory use'
 
     ==========  ===================================================================
@@ -138,25 +137,30 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Subtract Sky')
 
+    #General values to use
+    step_name=util.getSectionName(configObj,_step_num_)
+    paramDict = configObj[step_name]
+
     if not util.getConfigObjPar(configObj, 'skysub'):
         log.info('Sky Subtraction step not performed.')
         _addDefaultSkyKW(imageObjList)
+        if 'skyuser' in paramDict and not util.is_blank(paramDict['skyuser']):
+            log.info("Retrieving user computed sky values from image headers ")
+            log.info("recorded in the '{:s}' header keywords."
+                     .format(paramDict['skyuser']))
+            for image in imageObjList:
+                log.info('Working on sky for: %s' % image._filename)
+                _skyUserFromHeaderKwd(image,paramDict)
+
         if procSteps is not None:
             procSteps.endStep('Subtract Sky')
         return
 
-    #General values to use
-    step_name=util.getSectionName(configObj,_step_num_)
-    paramDict = configObj[step_name]
     #get the sub-dictionary of values for this step alone and print them out
     log.info('USER INPUT PARAMETERS for Sky Subtraction Step:')
     util.printParams(paramDict, log=log)
     if 'skyfile' in paramDict and not util.is_blank(paramDict['skyfile']):
         _skyUserFromFile(imageObjList,paramDict['skyfile'])
-    elif 'skyuser' in paramDict and not util.is_blank(paramDict['skyuser']):
-        for image in imageObjList:
-            log.info('Working on sky for: %s' % image._filename)
-            _skyUserFromHeaderKwd(image,paramDict)
     else:
         # in_memory:
         if 'in_memory' in configObj:
