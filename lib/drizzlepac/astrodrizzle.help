@@ -297,13 +297,24 @@ sky_bits : int, str, None (Default = 0)
           * String: ~4,8,512 or ~(4,8,512)
 
 skyfile : str (Default = '')
-    Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.
-
+    Name of file containing user-computed sky values to be used with each input
+    image. This ASCII file should only contain 2 columns: image filename in
+    column 1 and sky value in column 2 (and higher hor multi-chip images).
+    The sky value should be provided in units that match the units of the input
+    image and for multi-chip images, if only one sky value was provided
+    in column 2, the same value will be applied to all chips. If more than one
+    sky value are provided (in columns 2, 3, ...) then the number of sky values
+    should match the number of SCI extensions in the images.
 
 skyuser : str (Default = '')
     Name of header keyword which records the sky value already subtracted
     from the image by the user. The `skyuser` parameter is ignored when
     `skysub` is set to `yes`.
+
+    Alternatively, user can enter the name of a file that contains user-computed
+    sky values. To distinguish a file name from a header keyword, prepend
+    '@' to the file name. For example '@my_sky_values.txt'. The format of the
+    file with user-supplied sky values is the same as that of a `skyfile`.
 
     .. note::
       When `skysub`=`no` and `skyuser` field is empty, then `AstroDrizzle` will
