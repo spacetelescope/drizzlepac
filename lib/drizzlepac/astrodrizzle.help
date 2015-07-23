@@ -279,6 +279,22 @@ sky_bits : int, str, None (Default = 0)
         DQ masks (if used), *will be* combined with user masks specified
         in the input @-file.
 
+    .. note::
+        To summarize, below are provided allowable syntaxes for `sky_bits`:
+
+        * Specify that bits 4,8, and 512 be considered "good" bits
+          and that all other bits be considered "bad" bits:
+
+          * Integer: 524 [numerically: 4+8+512=524]
+          * String: 4+8+512
+          * String: 4,8,512
+
+        * Specify that only bits 4,8, and 512 be considered "bad" bits
+          and that all other bits be considered "good" bits:
+
+          * Integer: -525 [numerically: ~(4+8+512)=~524=-(524+1)=-525]
+          * String: ~4+8+512 or ~(4+8+512)
+          * String: ~4,8,512 or ~(4,8,512)
 
 skyfile : str (Default = '')
     Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.
@@ -331,9 +347,8 @@ driz_sep_bits : int, str, or None (Default = 0)
     that should be considered 'good' when building the weighting mask.
     This can also be used to reset pixels to good if they had been flagged
     as cosmic rays during a previous run of AstroDrizzle, by adding the value
-    4096 for ACS and WFPC2 data. Please see the section on
-    Selecting the 'Bits' Parameter for a more detailed discussion.
-    For possible input formats, see the description for `sky_bits`
+    4096 for ACS and WFPC2 data. For possible input formats,
+    see the description for `sky_bits`
     parameter.
 
 
@@ -525,10 +540,8 @@ final_bits : int, str, or None (Default = 0)
     that should be considered 'good' when building the weight mask.
     This can also be used to reset pixels to good if they had been flagged
     as cosmic rays during a previous run of AstroDrizzle, by adding the value
-    4096 for ACS and WFPC2 data. Please see the section on
-    Selecting the 'Bits' Parameter for a more detailed discussion.
-    For possible input formats, see the description for `sky_bits`
-    parameter.
+    4096 for ACS and WFPC2 data. For possible input formats, see the
+    description for `sky_bits` parameter.
 
 
 final_units : str (Default = 'cps')
