@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from distutils.core import Extension
 import sys, os.path, os
 from distutils import sysconfig
@@ -8,7 +10,7 @@ BUILD = 'release'
 try:
     import numpy
 except ImportError:
-    print "Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Multidrizzle requires numpy v 1.0.2 or later.\n"
+    print("Numpy was not found. It may not be installed or it may not be on your PYTHONPATH. Multidrizzle requires numpy v 1.0.2 or later.\n")
     raise
 
 # This is the case for building as part of stsci_python
@@ -35,7 +37,7 @@ else:
 if numpy.__version__ < "1.0.2":
     raise SystemExit, "Numpy 1.0.2 or later required to build Multidrizzle."
 
-print "Building C extensions using NUMPY."
+print("Building C extensions using NUMPY.")
 
 numpyinc = numpy.get_include()
 
