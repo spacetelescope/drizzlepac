@@ -145,12 +145,21 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
         log.info('Sky Subtraction step not performed.')
         _addDefaultSkyKW(imageObjList)
         if 'skyuser' in paramDict and not util.is_blank(paramDict['skyuser']):
-            log.info("Retrieving user computed sky values from image headers ")
-            log.info("recorded in the '{:s}' header keywords."
-                     .format(paramDict['skyuser']))
-            for image in imageObjList:
-                log.info('Working on sky for: %s' % image._filename)
-                _skyUserFromHeaderKwd(image,paramDict)
+            kwd = paramDict['skyuser'].lstrip()
+            if kwd[0] == '@':
+                # user's sky values are in a file:
+                log.info("Retrieving user computed sky values from file '{}'"
+                         .format(kwd[1:]))
+                _skyUserFromFile(imageObjList, kwd[1:],apply_sky=False)
+            else:
+                # user's sky values are stored in a header keyword:
+                log.info("Retrieving user computed sky values from image "
+                         "headers ")
+                log.info("recorded in the '{:s}' header keywords."
+                         .format(paramDict['skyuser']))
+                for image in imageObjList:
+                    log.info('Working on sky for: %s' % image._filename)
+                    _skyUserFromHeaderKwd(image,paramDict)
 
         if procSteps is not None:
             procSteps.endStep('Subtract Sky')
@@ -421,7 +430,7 @@ def _buildStaticDQUserMask(img, ext, sky_bits, use_static, umask,
     return (tmpmask, 0)
 
 # this function applies user supplied sky values from an input file
-def _skyUserFromFile(imageObjList,skyFile):
+def _skyUserFromFile(imageObjList, skyFile, apply_sky=None):
     """
     Apply sky value as read in from a user-supplied input file.
 
@@ -430,9 +439,13 @@ def _skyUserFromFile(imageObjList,skyFile):
 
     # create dict of fname=sky pairs
     skyvals = {}
-    skyapplied = False # flag whether sky has already been applied to images
+    if apply_sky is None:
+        skyapplied = False # flag whether sky has already been applied to images
+    else:
+        skyapplied = apply_sky
+
     for line in open(skyFile):
-        if line[0] == '#' and 'applied' in line:
+        if apply_sky is None and line[0] == '#' and 'applied' in line:
             if '=' in line: linesep = '='
             if ':' in line: linesep = ':'
             appliedstr = line.split(linesep)[1].strip()

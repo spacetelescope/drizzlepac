@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev42303 (27-May-2015)',
+        VERSION:     '2.0.2.dev42417 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -446,16 +446,47 @@ setting <tt class="docutils literal"><span class="pre">sky_bits=None</span></tt>
 <p class="last">DQ masks (if used), <em>will be</em> combined with user masks specified
 in the input &#64;-file.</p>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>To summarize, below are provided allowable syntaxes for <em class="xref py py-obj">sky_bits</em>:</p>
+<ul class="last simple">
+<li>Specify that bits 4,8, and 512 be considered &#8220;good&#8221; bits
+and that all other bits be considered &#8220;bad&#8221; bits:<ul>
+<li>Integer: 524 [numerically: 4+8+512=524]</li>
+<li>String: 4+8+512</li>
+<li>String: 4,8,512</li>
+</ul>
+</li>
+<li>Specify that only bits 4,8, and 512 be considered &#8220;bad&#8221; bits
+and that all other bits be considered &#8220;good&#8221; bits:<ul>
+<li>Integer: -525 [numerically: ~(4+8+512)=~524=-(524+1)=-525]</li>
+<li>String: ~4+8+512 or ~(4+8+512)</li>
+<li>String: ~4,8,512 or ~(4,8,512)</li>
+</ul>
+</li>
+</ul>
+</div>
 </div></blockquote>
 <p><strong id="skyfile">skyfile</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
-<div><p>Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.</p>
+<div><p>Name of file containing user-computed sky values to be used with each input
+image. This ASCII file should only contain 2 columns: image filename in
+column 1 and sky value in column 2 (and higher hor multi-chip images).
+The sky value should be provided in units that match the units of the input
+image and for multi-chip images, if only one sky value was provided
+in column 2, the same value will be applied to all chips. If more than one
+sky value are provided (in columns 2, 3, ...) then the number of sky values
+should match the number of SCI extensions in the images.</p>
 </div></blockquote>
 <p><strong id="skyuser">skyuser</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of header keyword which records the sky value already subtracted
 from the image by the user. The <em class="xref py py-obj">skyuser</em> parameter is ignored when
 <em class="xref py py-obj">skysub</em> is set to <em class="xref py py-obj">yes</em>.</p>
+<p>Alternatively, user can enter the name of a file that contains user-computed
+sky values. To distinguish a file name from a header keyword, prepend
+&#8216;&#64;&#8217; to the file name. For example <a class="reference external" href="mailto:'&#37;&#52;&#48;my_sky_values&#46;txt">'<span>&#64;</span>my_sky_values<span>&#46;</span>txt</a>&#8216;. The format of the
+file with user-supplied sky values is the same as that of a <em class="xref py py-obj">skyfile</em>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">When <em class="xref py py-obj">skysub`=`no</em> and <em class="xref py py-obj">skyuser</em> field is empty, then <a class="reference internal" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="drizzlepac.astrodrizzle.AstroDrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></tt></a> will
@@ -510,9 +541,8 @@ assume that sky background is 0.0 for the purpose of cosmic-ray rejection.</p>
 that should be considered &#8216;good&#8217; when building the weighting mask.
 This can also be used to reset pixels to good if they had been flagged
 as cosmic rays during a previous run of AstroDrizzle, by adding the value
-4096 for ACS and WFPC2 data. Please see the section on
-Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.
-For possible input formats, see the description for <em class="xref py py-obj">sky_bits</em>
+4096 for ACS and WFPC2 data. For possible input formats,
+see the description for <em class="xref py py-obj">sky_bits</em>
 parameter.</p>
 </div></blockquote>
 <p><strong id="*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*">*STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS*</strong></p>
@@ -711,10 +741,8 @@ parameter.</p>
 that should be considered &#8216;good&#8217; when building the weight mask.
 This can also be used to reset pixels to good if they had been flagged
 as cosmic rays during a previous run of AstroDrizzle, by adding the value
-4096 for ACS and WFPC2 data. Please see the section on
-Selecting the &#8216;Bits&#8217; Parameter for a more detailed discussion.
-For possible input formats, see the description for <em class="xref py py-obj">sky_bits</em>
-parameter.</p>
+4096 for ACS and WFPC2 data. For possible input formats, see the
+description for <em class="xref py py-obj">sky_bits</em> parameter.</p>
 </div></blockquote>
 <p><strong id="final_units">final_units</strong> : str (Default = &#8216;cps&#8217;)</p>
 <blockquote>
@@ -880,7 +908,7 @@ to a text file:</p>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev42303 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
