@@ -578,12 +578,12 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
         chip_reg = [ chip_reg ]
         multireg = False
     elif isinstance(chip_reg, list):
-        chip_reg = chipreg[:]
+        chip_reg = chip_reg[:]
         nreg     = len(chip_reg)
         multireg = True
         # check that all elements of the list are either strings or None:
         if [ True for reg in chip_reg
-             if reg != None or not isinstance(reg, str) ]:
+             if reg is not None and not isinstance(reg, str) ]:
             raise TypeError("Argument 'chip_reg' can be either None, " \
                             "a string, or a list of stings and/or None.")
     else:
