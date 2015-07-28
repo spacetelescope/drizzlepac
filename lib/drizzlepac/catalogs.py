@@ -133,9 +133,8 @@ class Catalog(object):
         """ Convert XY positions into sky coordinates using STWCS methods
         """
         if not isinstance(self.wcs,pywcs.WCS):
-            print(textutil.textbox(
-            'WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'),
-            file=sys.stderr)
+            print(textutil.textbox('WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'),
+                  file=sys.stderr)
             raise ValueError
         if self.xypos is None or len(self.xypos[0]) == 0:
             self.xypos = None

@@ -24,7 +24,7 @@ if os.path.exists('pywcs'):
     if len(candidates) == 1:
         pywcsincludes.append(os.path.join('pywcs', candidates[0], 'C'))
     else:
-        raise SystemExit, "No suitable version of wcslib found in the current distribution of pywcs"
+        raise SystemExit("No suitable version of wcslib found in the current distribution of pywcs")
 else:
     try:
         import pywcs
@@ -35,7 +35,7 @@ else:
         raise ImportError("PyWCS was not found. It may not be installed or it may not be on your PYTHONPATH. \nPydrizzle requires pywcs 1.4 or later.\n")
 
 if numpy.__version__ < "1.0.2":
-    raise SystemExit, "Numpy 1.0.2 or later required to build Multidrizzle."
+    raise SystemExit("Numpy 1.0.2 or later required to build Multidrizzle.")
 
 print("Building C extensions using NUMPY.")
 
