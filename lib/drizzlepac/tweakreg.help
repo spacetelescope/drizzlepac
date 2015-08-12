@@ -111,18 +111,6 @@ exclusions: string (Default = '')
     "master" region file provided in sky coordinates.
     *See notes below for more information.*
 
-updatewcs : bool (Default = No)
-    This parameter specifies whether the WCS keywords are to be updated by
-    running updatewcs on the input data, or left alone. The update performed
-    by updatewcs not only recomputes the WCS based on the currently
-    used ``IDCTAB``, but also populates the header with
-    the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
-    correction will also be applied to the ``WCS`` and ``SIP`` keywords.
-    This parameter should be set to 'No' (`False`) when the WCS keywords
-    have been carefully set by some other method, and need to be passed
-    through to drizzle 'as is', otherwise those updates will be over-written
-    by this update.
-
 writecat : bool (Default = Yes)
     Specify whether or not to write out the source catalogs generated for
     each input image by the built-in source extraction algorithm.
@@ -394,6 +382,29 @@ sigma : float (Default = 3.0)
     Clipping limit in sigma units.
 
 
+*ADVANCED PARAMETERS AVAILABLE FROM COMMAND LINE*
+
+updatewcs : bool  (Default = No)
+    This parameter specifies whether the WCS keywords are to be updated by
+    running updatewcs on the input data, or left alone. The update performed
+    by updatewcs not only recomputes the WCS based on the currently
+    used ``IDCTAB``, but also populates the header with
+    the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
+    correction will also be applied to the ``WCS`` and ``SIP`` keywords.
+    This parameter should be set to 'No' (`False`) when the WCS keywords
+    have been carefully set by some other method, and need to be passed
+    through to drizzle 'as is', otherwise those updates will be over-written
+    by this update.
+
+    .. note::
+      This parameter was preserved in the API for compatibility purposes with
+      existing user processing pipe-lines. However, it has been removed from the
+      TEAL interface because it is easy to have it set to 'yes'
+      (especially between consecutive runs of `AstroDrizzle`) with potentially
+      disastrous effects on input image WCS (for example it could wipe-out
+      previously aligned WCS).
+
+
 Notes
 -----
 Tweakreg supports the use of calibrated, distorted images (such as FLT
@@ -405,8 +416,11 @@ eliminates the need to run 'astrodrizzle' on the input images prior to
 running `tweakreg`.
 
 .. note:: All calibrated input images must have been updated using
-          `updatewcs` from the `STWCS` package, or as run by `astrodrizzle`,
-          to include the full distortion model in the header.
+          `updatewcs` from the `STWCS` package, to include the full
+          distortion model in the header. Alternatively, one can set
+          `updatewcs` parameter to `True` when running either `TweakReg`
+          or `AstroDrizzle` from command line (Python interpreter)
+          **the first time** on such images.
 
 This task will use catalogs, and catalog-matching, based on the `xyxymatch`
 algorithm to determine the offset between the input images. The primary

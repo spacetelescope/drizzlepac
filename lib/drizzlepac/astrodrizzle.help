@@ -43,18 +43,6 @@ runfile : str (Default = 'astrodrizzle.log')
    These messages will be a super-set of those reported to the screen
    during processing.
 
-updatewcs : bool  (Default = No)
-    This parameter specifies whether the WCS keywords are to be updated by
-    running updatewcs on the input data, or left alone. The update performed
-    by updatewcs not only recomputes the WCS based on the currently
-    used ``IDCTAB``, but also populates the header with
-    the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
-    correction will also be applied to the ``WCS`` and ``SIP`` keywords.
-    This parameter should be set to 'No' (`False`) when the WCS keywords
-    have been carefully set by some other method, and need to be passed
-    through to drizzle 'as is', otherwise those updates will be over-written
-    by this update.
-
 wcskey : str (Default = '')
     This parameter corresponds to the *key* for the WCS being selected by
     the user. It allows the user to select which WCS solution should be used
@@ -616,6 +604,28 @@ exptime : float (Default = None)
 expkeyword : str (Default = '')
     Keyword used to specify a value, which is used to override the default exposure time image header values.  The value is assumed to be in units of seconds. This parameter should not be populated if the ''exptime'' parameter is in use.
 
+*ADVANCED PARAMETERS AVAILABLE FROM COMMAND LINE*
+
+updatewcs : bool  (Default = No)
+    This parameter specifies whether the WCS keywords are to be updated by
+    running updatewcs on the input data, or left alone. The update performed
+    by updatewcs not only recomputes the WCS based on the currently
+    used ``IDCTAB``, but also populates the header with
+    the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
+    correction will also be applied to the ``WCS`` and ``SIP`` keywords.
+    This parameter should be set to 'No' (`False`) when the WCS keywords
+    have been carefully set by some other method, and need to be passed
+    through to drizzle 'as is', otherwise those updates will be over-written
+    by this update.
+
+    .. note::
+      This parameter was preserved in the API for compatibility purposes with
+      existing user processing pipe-lines. However, it has been removed from the
+      TEAL interface because it is easy to have it set to 'yes'
+      (especially between consecutive runs of `AstroDrizzle`) with potentially
+      disastrous effects on input image WCS (for example it could wipe-out
+      previously aligned WCS).
+
 
 See Also
 --------
@@ -633,6 +643,12 @@ Something to keep in mind is that the full AstroDrizzle interface will
 make backup copies of your original files and place them in the
 ``OrIg_files/`` directory of you current working directory.
 
+All calibrated input images must have been updated using
+`updatewcs` from the `STWCS` package, to include the full
+distortion model in the header. Alternatively, one can set
+`updatewcs` parameter to `True` when running either `TweakReg`
+or `AstroDrizzle` from command line (Python interpreter)
+**the first time** on such images.
 
 EXAMPLES
 --------
