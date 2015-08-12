@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev42417 (27-May-2015)',
+        VERSION:     '2.0.2.dev43005 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="Refmagefindpars: Source finding parameters for the reference image" href="refimagefindpars.html" />
     <link rel="prev" title="DrizzlePac v2.0.0 Release Notes" href="release_v2_0_0_notes.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -233,19 +233,6 @@ be provided in <em>image</em> coordinates. The task <em class="xref py py-obj">M
 (semi-)automated generation of region files in &#8216;image&#8217; coordinates from a
 &#8220;master&#8221; region file provided in sky coordinates.
 <em>See notes below for more information.</em></p>
-</div></blockquote>
-<p><strong>updatewcs</strong> : bool (Default = No)</p>
-<blockquote>
-<div><p>This parameter specifies whether the WCS keywords are to be updated by
-running updatewcs on the input data, or left alone. The update performed
-by updatewcs not only recomputes the WCS based on the currently
-used <tt class="docutils literal"><span class="pre">IDCTAB</span></tt>, but also populates the header with
-the <tt class="docutils literal"><span class="pre">SIP</span></tt> coefficients. For <tt class="docutils literal"><span class="pre">ACS/WFC</span></tt> images, the time-dependence
-correction will also be applied to the <tt class="docutils literal"><span class="pre">WCS</span></tt> and <tt class="docutils literal"><span class="pre">SIP</span></tt> keywords.
-This parameter should be set to &#8216;No&#8217; (<em class="xref py py-obj">False</em>) when the WCS keywords
-have been carefully set by some other method, and need to be passed
-through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written
-by this update.</p>
 </div></blockquote>
 <p><strong>writecat</strong> : bool (Default = Yes)</p>
 <blockquote>
@@ -560,8 +547,31 @@ the same time.</p>
 <div><p>Number of clipping iterations in fit.</p>
 </div></blockquote>
 <p><strong>sigma</strong> : float (Default = 3.0)</p>
-<blockquote class="last">
+<blockquote>
 <div><p>Clipping limit in sigma units.</p>
+</div></blockquote>
+<p><strong>*ADVANCED PARAMETERS AVAILABLE FROM COMMAND LINE*</strong></p>
+<p><strong>updatewcs</strong> : bool  (Default = No)</p>
+<blockquote class="last">
+<div><p>This parameter specifies whether the WCS keywords are to be updated by
+running updatewcs on the input data, or left alone. The update performed
+by updatewcs not only recomputes the WCS based on the currently
+used <tt class="docutils literal"><span class="pre">IDCTAB</span></tt>, but also populates the header with
+the <tt class="docutils literal"><span class="pre">SIP</span></tt> coefficients. For <tt class="docutils literal"><span class="pre">ACS/WFC</span></tt> images, the time-dependence
+correction will also be applied to the <tt class="docutils literal"><span class="pre">WCS</span></tt> and <tt class="docutils literal"><span class="pre">SIP</span></tt> keywords.
+This parameter should be set to &#8216;No&#8217; (<em class="xref py py-obj">False</em>) when the WCS keywords
+have been carefully set by some other method, and need to be passed
+through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written
+by this update.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This parameter was preserved in the API for compatibility purposes with
+existing user processing pipe-lines. However, it has been removed from the
+TEAL interface because it is easy to have it set to &#8216;yes&#8217;
+(especially between consecutive runs of <em class="xref py py-obj">AstroDrizzle</em>) with potentially
+disastrous effects on input image WCS (for example it could wipe-out
+previously aligned WCS).</p>
+</div>
 </div></blockquote>
 </td>
 </tr>
@@ -582,8 +592,11 @@ running <em class="xref py py-obj">tweakreg</em>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">All calibrated input images must have been updated using
-<tt class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></tt> from the <em class="xref py py-obj">STWCS</em> package, or as run by <em class="xref py py-obj">astrodrizzle</em>,
-to include the full distortion model in the header.</p>
+<tt class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></tt> from the <em class="xref py py-obj">STWCS</em> package, to include the full
+distortion model in the header. Alternatively, one can set
+<tt class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></tt> parameter to <em class="xref py py-obj">True</em> when running either <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a>
+or <em class="xref py py-obj">AstroDrizzle</em> from command line (Python interpreter)
+<strong>the first time</strong> on such images.</p>
 </div>
 <p>This task will use catalogs, and catalog-matching, based on the <em class="xref py py-obj">xyxymatch</em>
 algorithm to determine the offset between the input images. The primary
@@ -838,7 +851,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
