@@ -96,6 +96,10 @@ def setCommonInput(configObj, createOutwcs=True):
 
 
     """
+    # make sure 'updatewcs' is set to False when running from GUI or if missing
+    # from configObj:
+    if 'updatewcs' not in configobj:
+        configobj['updatewcs'] = False
 
     if not createOutwcs or not configObj['coeffs']:
         # we're probably just working on single images here
