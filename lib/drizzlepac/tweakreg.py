@@ -101,6 +101,11 @@ def run(configobj):
                     __version__,__vdate__,util._ptime()[0]))
     util.print_pkg_versions()
 
+    # make sure 'updatewcs' is set to False when running from GUI or if missing
+    # from configObj:
+    if 'updatewcs' not in configobj:
+        configobj['updatewcs'] = False
+
     # Check to see whether or not the imagefindpars parameters have
     # already been loaded, as done through the python interface.
     # Repeat for refimagefindpars
@@ -728,7 +733,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         idkeys = input_dict.keys()
         for i in idkeys:
             if i in configobj[PSET_SECTION]:
-                print('WARNING: ignoring imagefindpars setting "'+i+ 
+                print('WARNING: ignoring imagefindpars setting "'+i+
                      '='+str(input_dict[i])+'", for now please enter directly into TEAL.')
                 input_dict.pop(i)
         del configobj[PSET_SECTION] # force run() to pull it again after GUI use

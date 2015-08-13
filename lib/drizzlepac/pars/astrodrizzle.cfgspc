@@ -3,7 +3,6 @@ input = string_kw(default="*flt.fits", triggers='_rule1_', comment="Input files 
 output = string_kw(default='', comment="Rootname for output drizzled products")
 _mdriztab_btn_ = action_kw(default='Update From MDRIZTAB', executes='_rule2_', comment='Immediately read and use the values from the MDRIZTAB')
 runfile = string_kw(default="astrodrizzle.log", comment="File for logging the processing")
-updatewcs = boolean_kw(default=False, triggers='_rule1a_',comment="Recompute WCS with new distortion?")
 wcskey = string_kw(default="",comment="WCS version to use in processing")
 proc_unit = option_kw("native", "electrons", default="native", comment="Units used during processing")
 coeffs = boolean_kw(default=True, comment="Use header-based distortion coefficients?")

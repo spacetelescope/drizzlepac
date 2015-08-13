@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev42417 (27-May-2015)',
+        VERSION:     '2.0.2.dev43005 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -164,7 +164,7 @@ in the creation of several files, including:</p>
 <div><ul class="simple">
 <li>copies of each input image as a <tt class="docutils literal"><span class="pre">FITS</span></tt> image, if <em class="xref py py-obj">workinplace`=`Yes</em>
 and/or input images are in <tt class="docutils literal"><span class="pre">GEIS</span></tt> format.</li>
-<li>mask files and coeffs files created by <em class="xref py py-obj">PyDrizzle</em> for use by <em class="xref py py-obj">drizzle</em>.</li>
+<li>mask files and coeffs files created by <em class="xref py py-obj">PyDrizzle</em> for use by <tt class="xref py py-obj docutils literal"><span class="pre">drizzle</span></tt>.</li>
 </ul>
 </div></blockquote>
 <p>If an association file has been given as input, the specified filename
@@ -188,19 +188,6 @@ be available locally.</p>
 processing, including full details of any errors/exceptions.
 These messages will be a super-set of those reported to the screen
 during processing.</p>
-</div></blockquote>
-<p><strong id="updatewcs">updatewcs</strong> : bool  (Default = No)</p>
-<blockquote>
-<div><p>This parameter specifies whether the WCS keywords are to be updated by
-running updatewcs on the input data, or left alone. The update performed
-by updatewcs not only recomputes the WCS based on the currently
-used <tt class="docutils literal"><span class="pre">IDCTAB</span></tt>, but also populates the header with
-the <tt class="docutils literal"><span class="pre">SIP</span></tt> coefficients. For <tt class="docutils literal"><span class="pre">ACS/WFC</span></tt> images, the time-dependence
-correction will also be applied to the <tt class="docutils literal"><span class="pre">WCS</span></tt> and <tt class="docutils literal"><span class="pre">SIP</span></tt> keywords.
-This parameter should be set to &#8216;No&#8217; (<em class="xref py py-obj">False</em>) when the WCS keywords
-have been carefully set by some other method, and need to be passed
-through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written
-by this update.</p>
 </div></blockquote>
 <p><strong id="wcskey">wcskey</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
@@ -803,8 +790,31 @@ description for <em class="xref py py-obj">sky_bits</em> parameter.</p>
 <div><p>Value used to override default exposure time image header values.  The value is assumed to be in units of seconds.  This parameter should not be populated if the &#8216;&#8217;expkeyword&#8217;&#8217; parameter is in use.</p>
 </div></blockquote>
 <p><strong id="expkeyword">expkeyword</strong> : str (Default = &#8216;&#8217;)</p>
-<blockquote class="last">
+<blockquote>
 <div><p>Keyword used to specify a value, which is used to override the default exposure time image header values.  The value is assumed to be in units of seconds. This parameter should not be populated if the &#8216;&#8217;exptime&#8217;&#8217; parameter is in use.</p>
+</div></blockquote>
+<p><strong id="*ADVANCED PARAMETERS AVAILABLE FROM COMMAND LINE*">*ADVANCED PARAMETERS AVAILABLE FROM COMMAND LINE*</strong></p>
+<p><strong id="updatewcs">updatewcs</strong> : bool  (Default = No)</p>
+<blockquote class="last">
+<div><p>This parameter specifies whether the WCS keywords are to be updated by
+running updatewcs on the input data, or left alone. The update performed
+by updatewcs not only recomputes the WCS based on the currently
+used <tt class="docutils literal"><span class="pre">IDCTAB</span></tt>, but also populates the header with
+the <tt class="docutils literal"><span class="pre">SIP</span></tt> coefficients. For <tt class="docutils literal"><span class="pre">ACS/WFC</span></tt> images, the time-dependence
+correction will also be applied to the <tt class="docutils literal"><span class="pre">WCS</span></tt> and <tt class="docutils literal"><span class="pre">SIP</span></tt> keywords.
+This parameter should be set to &#8216;No&#8217; (<em class="xref py py-obj">False</em>) when the WCS keywords
+have been carefully set by some other method, and need to be passed
+through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written
+by this update.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This parameter was preserved in the API for compatibility purposes with
+existing user processing pipe-lines. However, it has been removed from the
+TEAL interface because it is easy to have it set to &#8216;yes&#8217;
+(especially between consecutive runs of <a class="reference internal" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="drizzlepac.astrodrizzle.AstroDrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></tt></a>) with potentially
+disastrous effects on input image WCS (for example it could wipe-out
+previously aligned WCS).</p>
+</div>
 </div></blockquote>
 </td>
 </tr>
@@ -831,6 +841,12 @@ description for <em class="xref py py-obj">sky_bits</em> parameter.</p>
 <p>Something to keep in mind is that the full AstroDrizzle interface will
 make backup copies of your original files and place them in the
 <tt class="docutils literal"><span class="pre">OrIg_files/</span></tt> directory of you current working directory.</p>
+<p>All calibrated input images must have been updated using
+<em class="xref py py-obj">updatewcs</em> from the <em class="xref py py-obj">STWCS</em> package, to include the full
+distortion model in the header. Alternatively, one can set
+<em class="xref py py-obj">updatewcs</em> parameter to <em class="xref py py-obj">True</em> when running either <em class="xref py py-obj">TweakReg</em>
+or <a class="reference internal" href="#drizzlepac.astrodrizzle.AstroDrizzle" title="drizzlepac.astrodrizzle.AstroDrizzle"><tt class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></tt></a> from command line (Python interpreter)
+<strong>the first time</strong> on such images.</p>
 <p class="rubric">Examples</p>
 <p>The astrodrizzle task can be run from either the TEAL GUI or from the command-line
 using PyRAF or Python. These examples illustrate the various syntax options available.</p>
@@ -908,7 +924,7 @@ to a text file:</p>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev42417 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
