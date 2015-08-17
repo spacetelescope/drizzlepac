@@ -78,8 +78,7 @@ def setCommonInput(configObj, createOutwcs=True):
     Notes
     -----
     At a minimum, the configObj instance (dictionary) should contain:
-        configObj = {'input':None,'output':None,
-                    'updatewcs':None}
+        configObj = {'input':None,'output':None }
 
     If provided, the configObj should contain the values of all the multidrizzle parameters
     as set by the user with TEAL. If no configObj is given, it will retrieve
@@ -98,8 +97,8 @@ def setCommonInput(configObj, createOutwcs=True):
     """
     # make sure 'updatewcs' is set to False when running from GUI or if missing
     # from configObj:
-    if 'updatewcs' not in configobj:
-        configobj['updatewcs'] = False
+    if 'updatewcs' not in configObj:
+        configObj['updatewcs'] = False
 
     if not createOutwcs or not configObj['coeffs']:
         # we're probably just working on single images here
