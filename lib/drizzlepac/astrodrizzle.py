@@ -100,7 +100,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         print("Problem with input parameters. Quitting...", file=sys.stderr)
         return
 
-    if configObj is None:
+    if not configObj:
         return
 
     configObj['mdriztab'] = mdriztab
