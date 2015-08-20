@@ -288,6 +288,7 @@ def run(configobj):
             tweakutils.get_configobj_root(configobj[PSET_SECTION_REFIMG])
         ref_catfile_kwargs = catfile_kwargs.copy()
         ref_catfile_kwargs.update(ref_sourcefind_pars)
+        ref_catfile_kwargs['updatehdr'] = False
 
         log.info("USER INPUT PARAMETERS for finding sources for "
                  "the reference image:")
@@ -366,6 +367,7 @@ def run(configobj):
             tweakutils.get_configobj_root(configobj[PSET_SECTION_REFIMG])
         ref_catfile_kwargs = catfile_kwargs.copy()
         ref_catfile_kwargs.update(ref_sourcefind_pars)
+        ref_catfile_kwargs['updatehdr'] = False
 
         log.info("USER INPUT PARAMETERS for finding sources for "
                  "the reference image (not used):")

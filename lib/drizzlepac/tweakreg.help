@@ -111,6 +111,19 @@ exclusions: string (Default = '')
     "master" region file provided in sky coordinates.
     *See notes below for more information.*
 
+    .. note::
+      Exclusions apply **only** to input images and not to the reference image.
+      Thus, if a reference catalog is not provided, then `TweakReg` will
+      attempt to find sources in the reference image specified in the `refimage`
+      parameter without using any "include only" or "exclude"
+      regions. If there is need to use `TweakReg` source finding algorithm
+      on the reference image, then the workaround to this limitation is to make
+      a copy of the reference image and provide it to `TweakReg` as an input
+      image with an `exclusions` parameter pointing to the corresponding
+      regions while having `writecat` set to `True`. This will create
+      reference source catalog that can be used on the second run of
+      `TweakReg`.
+
 writecat : bool (Default = Yes)
     Specify whether or not to write out the source catalogs generated for
     each input image by the built-in source extraction algorithm.
