@@ -65,7 +65,7 @@ log = logutil.create_logger(__name__)
 #### Interactive user interface (functional form)
 #
 def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
-                 wcsmap=None, **input_dict):
+                 wcsmap=None, updatewcs=False, **input_dict):
     """ AstroDrizzle command-line interface
     """
     # support input of filenames from command-line without a parameter name
@@ -151,7 +151,7 @@ def run(configobj, wcsmap=None):
     else:
         print(textutil.textbox(
             'ERROR:\nNo valid input files found!   Please restart the task '
-            'and check the value for the "input" parameter.'), file=sys.stderr) 
+            'and check the value for the "input" parameter.'), file=sys.stderr)
         def_logname = None
         return
 
