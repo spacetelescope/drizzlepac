@@ -187,8 +187,12 @@ def run(configObj, wcsmap=None):
             outcon = np.zeros((1,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
         else:
             outcon = outcon.astype(np.int32)
-            
-    # TODO: add code to expand outcon as necessary
+            planeid = int((uniqid - 1)/ 32)
+
+            # Add a new plane to the context image if planeid overflows
+            while outcon.shape[0] <= planeid:
+                plane = np.zeros_like(outcon[0])
+                outcon = np.append(outcon, plane, axis=0)
 
     # Interpret wt_scl parameter
     if configObj['wt_scl'] == 'exptime':
