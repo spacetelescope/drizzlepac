@@ -187,6 +187,13 @@ def run(configObj, wcsmap=None):
             outcon = np.zeros((1,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
         else:
             outcon = outcon.astype(np.int32)
+            planeid = int((uniqid - 1)/ 32)
+
+            # Add a new plane to the context image if planeid overflows
+            while outcon.shape[0] <= planeid:
+                plane = np.zeros_like(outcon[0])
+                outcon = np.append(outcon, plane, axis=0)
+
     # Interpret wt_scl parameter
     if configObj['wt_scl'] == 'exptime':
         wt_scl = expin
@@ -1004,34 +1011,24 @@ def do_driz(insci, input_wcs, inwht,
 
     # Compute what plane of the context image this input would
     # correspond to:
-    _planeid = int((uniqid-1) /32)
-    # Compute how many planes will be needed for the context image.
-    _nplanes = _planeid + 1
+    planeid = int((uniqid-1) / 32)
 
-    if outcon is not None and (outcon.ndim < 3 or (outcon.ndim == 3 and outcon.shape[0] < _nplanes)):
-        # convert context image to 3-D array and pass along correct plane for drizzling
-        if outcon.ndim == 3:
-            nplanes = outcon.shape[0]+1
-        else:
-            nplanes = 1
-        # We need to expand the context image here to accomodate the addition of
-        # this new image
-        newcon = np.zeros((nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
-        # now copy original outcon arrays into new array
-        if outcon.ndim == 3:
-            for n in range(outcon.shape[0]):
-                newcon[n] = outcon[n].copy()
-        else:
-            newcon[0] = outcon.copy()
+    # Check if the context image has this many planes
+    if outcon.ndim == 3:
+        nplanes = outcon.shape[0]
+    elif outcon.ndim == 2:
+        nplanes = 1
     else:
-        if outcon is None:
-            outcon = np.zeros((1,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
-            _planeid = 0
-        newcon = outcon
+        nplanes = 0
+        
+    if nplanes <= planeid:
+        raise IndexError("Not enough planes in drizzle context image")
 
-    # At this point, newcon will always be a 3-D array, so only pass in
-    # correct plane to drizzle code
-    outctx = newcon[_planeid]
+    # Alias context image to the requested plane if 3d
+    if outcon.ndim == 2:
+        outctx = outcon
+    else:
+        outctx = outcon[planeid]
 
     pix_ratio = output_wcs.pscale/wcslin_pscale
 

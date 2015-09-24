@@ -12,10 +12,13 @@ from __future__ import absolute_import, division, print_function  # confidence m
 
 import os
 import sys
-from . import util
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
-from . import outputimage, wcs_functions, processInput
+from . import wcs_functions
+from . import processInput
+from . import outputimage
+from . import util
+
 import stwcs
 from stwcs import distortion
 
@@ -42,6 +45,7 @@ log = logutil.create_logger(__name__)
 
 def blot(data, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
          editpars=False, **input_dict):
+
     if input_dict is None:
         input_dict = {}
     input_dict['data'] = data
@@ -160,6 +164,7 @@ def runBlot(imageObjectList, output_wcs, configObj={},
     runBlot(imageObjectList, output_wcs, configObj={},
             wcsmap=wcs_functions.WCSMap, procSteps=None)
     """
+
     if procSteps is not None:
         procSteps.addStep('Blot')
 

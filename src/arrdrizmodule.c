@@ -7,7 +7,6 @@
 #include <string.h>
 #include <time.h>
 #include <float.h>
-
 #include <numpy/arrayobject.h>
 
 #include "astropy_wcs_api.h"
@@ -1203,15 +1202,16 @@ void initcdriz(void)
 #endif
 {
   PyObject* m;
-
   driz_log_func = &cdriz_log_func;
 
 #if PY_MAJOR_VERSION >= 3
-  if (PyType_Ready(&WCSMapType) < 0)
+  if (PyType_Ready(&WCSMapType) < 0) {
     return NULL;
+  }
   m = PyModule_Create(&moduledef);
-  if (m == NULL)
+  if (m == NULL) {
     return NULL;
+  }
 
 #else
   if (PyType_Ready(&WCSMapType) < 0)
@@ -1226,7 +1226,7 @@ void initcdriz(void)
 
   Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
-
+  
 #if PY_MAJOR_VERSION >= 3
   return m;
 #endif
