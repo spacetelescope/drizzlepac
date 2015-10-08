@@ -12,8 +12,9 @@ import stsci.ndimage as ndimage
 
 from stsci.tools import asnutil, irafglob, parseinput, fileutil
 from astropy.io import fits
-import astrolib.coords as coords
-
+#import astrolib.coords as coords
+import astropy.coordinates as coords
+import astropy.units as u
 
 import stsci.imagestats as imagestats
 
@@ -250,7 +251,7 @@ def make_val_float(val):
 def radec_hmstodd(ra,dec):
     """ Function to convert HMS values into decimal degrees.
 
-        This function relies on the astrolib.coords package to perform the
+        This function relies on the astropy.coordinates package to perform the
         conversion to decimal degrees.
 
         Parameters
@@ -267,7 +268,8 @@ def radec_hmstodd(ra,dec):
 
         Notes
         -----
-        Formats of ra and dec inputs supported::
+        This function supports any specification of RA and Dec as HMS or DMS;
+        specifically, the formats::
 
             ["nn","nn","nn.nn"]
             "nn nn nn.nnn"
@@ -276,13 +278,16 @@ def radec_hmstodd(ra,dec):
 
         See Also
         --------
-        astrolib.coords
+        astropy.coordinates
 
     """
     hmstrans = string.maketrans(string.letters,' '*len(string.letters))
 
     if isinstance(ra,list):
         rastr = ':'.join(ra)
+    elif isinstance(ra,float):
+        rastr = None
+        pos_ra = ra
     elif ra.find(':') < 0:
         # convert any non-numeric characters to spaces (we already know the units)
         rastr = ra.translate(hmstrans).strip()
@@ -294,6 +299,9 @@ def radec_hmstodd(ra,dec):
 
     if isinstance(dec,list):
         decstr = ':'.join(dec)
+    elif isinstance(dec,float):
+        decstr = None
+        pos_dec = dec
     elif dec.find(':') < 0:
         decstr = dec.translate(hmstrans).strip()
         decstr = decstr.replace('  ',' ')
@@ -301,8 +309,15 @@ def radec_hmstodd(ra,dec):
     else:
         decstr = dec
 
-    pos = coords.Position(rastr+' '+decstr,units='hours')
-    return pos.dd()
+    if rastr is None:
+        pos = (pos_ra,pos_dec)
+    else:
+        #pos = coords.Position(rastr+' '+decstr,units='hours')
+        #return pos.dd()
+        pos_coord = coords.SkyCoord(rastr+' '+decstr,unit=(u.hourangle,u.deg))
+        pos = (pos_coord.ra.deg,pos_coord.dec.deg)
+    return pos
+
 
 def parse_exclusions(exclusions):
     """ Read in exclusion definitions from file named by 'exclusions'

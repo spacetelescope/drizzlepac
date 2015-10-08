@@ -29,15 +29,15 @@
         X position from image
     y : float, optional
         Y position from image
-    coords : str, optional
+    coordfile : str, optional
         full filename with path of file with starting x,y coordinates
     colnames : str, optional
-        comma separated list of column names from 'coords' files
+        comma separated list of column names from 'coordfile' files
         containing x,y coordinates, respectively. Will default to
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
     separator : str, optional
-        non-blank separator used as the column delimiter in the coords file
+        non-blank separator used as the column delimiter in the coordfile file
     precision : int, optional
         Number of floating-point digits in output values
     output : str, optional
@@ -87,7 +87,7 @@
 
             >>> from drizzlepac import pixtopix
             >>> x,y = pixtopix.tran("input_flt.fits[sci,1]", "output_drz.fits[sci,1]",
-                    "backward", coords='xy_sci1.dat', colnames=['c3','c4'],
+                    "backward", coordfile='xy_sci1.dat', colnames=['c3','c4'],
                     output="xy_flt1.dat")
 
 """
@@ -108,20 +108,21 @@ __vdate__ = '1-Mar-2011'
 __taskname__ = 'pixtopix'
 
 def tran(inimage,outimage,direction='forward',x=None,y=None,
-        coords=None,colnames=None,separator=None,
+        coordfile=None,colnames=None,separator=None,
         precision=6, output=None,verbose=True):
     """ Primary interface to perform coordinate transformations in pixel
         coordinates between 2 images using STWCS and full distortion models
         read from each image's header.
     """
-    if coords is not None:
+    single_coord = False
+    if coordfile is not None:
         if colnames in util.blank_list:
             colnames = ['c1','c2']
         # Determine columns which contain pixel positions
-        cols = util.parse_colnames(colnames,coords)
+        cols = util.parse_colnames(colnames,coordfile)
         # read in columns from input coordinates file
-        xyvals = np.loadtxt(coords,usecols=cols,delimiter=separator)
-        if xyvals.ndim == 1: # only 1 entry in coords
+        xyvals = np.loadtxt(coordfile,usecols=cols,delimiter=separator)
+        if xyvals.ndim == 1: # only 1 entry in coordfile
             xlist = [xyvals[0].copy()]
             ylist = [xyvals[1].copy()]
         else:
@@ -129,9 +130,13 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
             ylist = xyvals[:,1].copy()
         del xyvals
     else:
-        if not isinstance(x,list):
+        if isinstance(x,np.ndarray):
+            xlist = x.tolist()
+            ylist = y.tolist()
+        elif not isinstance(x,list):
             xlist = [x]
             ylist = [y]
+            single_coord = True
         else:
             xlist = x
             ylist = y
@@ -159,29 +164,36 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
     else:
         outx,outy = p2p.backward(xlist,ylist)
 
+    if isinstance(outx,np.ndarray):
+        outx = outx.tolist()
+        outy = outy.tolist()
+
     # add formatting based on precision here...
     xstr = []
     ystr = []
     fmt = "%."+repr(precision)+"f"
-    for x,y in zip(outx,outy):
-        xstr.append(fmt%x)
-        ystr.append(fmt%y)
+    for ox,oy in zip(outx,outy):
+        xstr.append(fmt%ox)
+        ystr.append(fmt%oy)
 
     if verbose or (not verbose and util.is_blank(output)):
         print('# Coordinate transformations for ',inimage)
         print('# X(in)      Y(in)             X(out)         Y(out)\n')
-        for x,y,a,b in zip(xlist,ylist,xstr,ystr):
-            print("%.4f  %.4f    %s  %s"%(x,y,a,b))
+        for xs,ys,a,b in zip(xlist,ylist,xstr,ystr):
+            print("%.4f  %.4f    %s  %s"%(xs,ys,a,b))
 
     # Create output file, if specified
     if output:
         f = open(output,mode='w')
         f.write("# Coordinates converted from %s\n"%inimage)
-        for x,y in zip(xstr,ystr):
-            f.write('%s    %s\n'%(x,y))
+        for xs,ys in zip(xstr,ystr):
+            f.write('%s    %s\n'%(xs,ys))
         f.close()
         print('Wrote out results to: ',output)
 
+    if single_coord:
+        outx = outx[0]
+        outy = outy[0]
     return outx,outy
 
 
@@ -190,7 +202,7 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
 #--------------------------
 def run(configObj):
 
-    coords = util.check_blank(configObj['coords'])
+    coordfile = util.check_blank(configObj['coordfile'])
     colnames = util.check_blank(configObj['colnames'])
     sep = util.check_blank(configObj['separator'])
     outfile = util.check_blank(configObj['output'])
@@ -198,7 +210,7 @@ def run(configObj):
     outimage = util.check_blank(configObj['outimage'])
     tran(configObj['inimage'], outimage,direction=configObj['direction'],
             x = configObj['x'], y = configObj['y'],
-            coords = coords, colnames = colnames,
+            coordfile = coordfile, colnames = colnames,
             separator= sep, precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
 

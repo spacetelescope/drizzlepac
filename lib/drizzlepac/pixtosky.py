@@ -12,19 +12,20 @@
 
     Optional Parameters
     -------------------
-    x : float, optional
-        X position from input image
-    y : float, optional
-        Y position from input image
-    coords : str, optional
+    x : float or list or array, optional
+        X position from input image for a single or multiple sources
+    y : float or list or array, optional
+        Y position from input image for a single or multiple sources
+    coordfile : str, optional
         full filename with path of file with x,y coordinates
     colnames : str, optional
-        comma separated list of column names from 'coords' files
-        containing x,y coordinates, respectively. Will default to
-        first two columns if None are specified. Column names for ASCII
-        files will use 'c1','c2',... convention.
+        comma separated list of column names or list of column name strings
+        from 'coordfile' files containing x,y coordinates, respectively.
+        This parameter will default to first two columns if None are specified.
+        Column names for ASCII files will use 'c1','c2',... convention.
+        Valid syntax: ['c1','c3'] or 'c1,c3'
     separator : str, optional
-        non-blank separator used as the column delimiter in the coords file
+        non-blank separator used as the column delimiter in the coordfile file
     hms : bool, optional
         Produce output in HH:MM:SS.S format instead of decimal degrees? (default: False)
     precision : int, optional
@@ -36,10 +37,10 @@
 
     RETURNS
     -------
-    ra : float
+    ra : float or array
         Right Ascension of pixel. If more than 1 input value, then it will be a
         numpy array.
-    dec : float
+    dec : float or array
         Declination of pixel. If more than 1 input value, then it will be a
         numpy array.
 
@@ -67,7 +68,7 @@
        will be transformed and written out to 'radec_sci1.dat' using::
 
        >>> from drizzlepac import pixtosky
-       >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coords='xy_sci1.dat',
+       >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
        ...                      colnames=['c3','c4'], output="radec_sci1.dat")
 
 """
@@ -90,20 +91,21 @@ __taskname__ = 'pixtosky'
 
 blank_list = [None, '', ' ']
 
-def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
+def xy2rd(input,x=None,y=None,coordfile=None,colnames=None,separator=None,
             hms=True, precision=6,output=None,verbose=True):
     """ Primary interface to perform coordinate transformations from
         pixel to sky coordinates using STWCS and full distortion models
         read from the input image header.
     """
-    if coords is not None:
+    single_coord = False
+    if coordfile is not None:
         if colnames in blank_list:
             colnames = ['c1','c2']
         # Determine columns which contain pixel positions
-        cols = util.parse_colnames(colnames,coords)
+        cols = util.parse_colnames(colnames,coordfile)
         # read in columns from input coordinates file
-        xyvals = np.loadtxt(coords,usecols=cols,delimiter=separator)
-        if xyvals.ndim == 1:  # only 1 entry in coords
+        xyvals = np.loadtxt(coordfile,usecols=cols,delimiter=separator)
+        if xyvals.ndim == 1:  # only 1 entry in coordfile
             xlist = [xyvals[0].copy()]
             ylist = [xyvals[1].copy()]
         else:
@@ -111,9 +113,13 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
             ylist = xyvals[:,1].copy()
         del xyvals
     else:
-        if not isinstance(x,list):
+        if isinstance(x, np.ndarray):
+            xlist = x.tolist()
+            ylist = y.tolist()
+        elif not isinstance(x,list):
             xlist = [x]
             ylist = [y]
+            single_coord = True
         else:
             xlist = x
             ylist = y
@@ -156,6 +162,10 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
         f.close()
         print('Wrote out results to: ',output)
 
+    if single_coord:
+        ra = ra[0]
+        dec = dec[0]
+
     return ra,dec
 
 #--------------------------
@@ -163,14 +173,14 @@ def xy2rd(input,x=None,y=None,coords=None,colnames=None,separator=None,
 #--------------------------
 def run(configObj):
 
-    coords = util.check_blank(configObj['coords'])
+    coordfile = util.check_blank(configObj['coordfile'])
     colnames = util.check_blank(configObj['colnames'])
     sep = util.check_blank(configObj['separator'])
     outfile = util.check_blank(configObj['output'])
 
     xy2rd(configObj['input'],
             x = configObj['x'], y = configObj['y'],
-            coords = coords, colnames = colnames,
+            coordfile = coordfile, colnames = colnames,
             separator= sep, hms = configObj['hms'], precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
 

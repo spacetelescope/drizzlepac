@@ -14,17 +14,18 @@
 
     Optional Parameters
     -------------------
-    ra : string, optional
-        RA from input image
-    dec : string, optional
-        Dec from input image
+    ra : string or list or array, optional
+        RA from input image for a single or multiple positions
+    dec : string or list or array, optional
+        Dec from input image for a single or multiple positions
     coordfile : str, optional
         full filename with path of file with sky coordinates
     colnames : str, optional
-        comma separated list of column names from 'coordfile' files
-        containing x,y coordinates, respectively. Will default to
-        first two columns if None are specified. Column names for ASCII
-        files will use 'c1','c2',... convention.
+        comma separated list of column names or list of column name strings
+        from 'coordfile' files containing x,y coordinates, respectively.
+        This parameter will default to first two columns if None are specified.
+        Column names for ASCII files will use 'c1','c2',... convention.
+        Valid syntax: ['c1','c3'] or 'c1,c3'
     separator : str, optional
         non-blank separator used as the column delimiter in the coords file
     precision : int, optional
@@ -36,10 +37,10 @@
 
     RETURNS
     -------
-    x : float
+    x : float or array
         X position of pixel. If more than 1 input value, then it will be a
         numpy array.
-    y : float
+    y : float or array
         Y position of pixel. If more than 1 input value, then it will be a
         numpy array.
 
@@ -94,18 +95,33 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         pixel to sky coordinates using STWCS and full distortion models
         read from the input image header.
     """
+    single_coord = False
     if coordfile is not None:
         if colnames in blank_list:
             colnames = ['c1','c2']
-        else:
+        elif isinstance(colnames,type('a')):
             colnames = colnames.split(',')
         # convert input file coordinates to lists of decimal degrees values
         xlist,ylist = tweakutils.readcols(coordfile,cols=colnames)
     else:
-        # convert input value into decimal degrees value
-        xval,yval = tweakutils.parse_skypos(ra,dec)
-        xlist = [xval]
-        ylist = [yval]
+        if isinstance(ra,np.ndarray):
+            ralist = ra.tolist()
+            declist = dec.tolist()
+        elif not isinstance(ra, list):
+            ralist = [ra]
+            declist = [dec]
+        else:
+            ralist = ra
+            declist = dec
+        xlist  = [0]*len(ralist)
+        ylist = [0]*len(ralist)
+        if len(xlist) == 1:
+            single_coord = True
+        for i,(r,d) in enumerate(zip(ralist,declist)):
+            # convert input value into decimal degrees value
+            xval,yval = tweakutils.parse_skypos(r,d)
+            xlist[i] = xval
+            ylist[i] = yval
 
     # start by reading in WCS+distortion info for input image
     inwcs = wcsutil.HSTWCS(input)
@@ -138,6 +154,9 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         f.close()
         print('Wrote out results to: ',output)
 
+    if single_coord:
+        outx = outx[0]
+        outy = outy[0]
     return outx,outy
 
     """ Convert colnames input into list of column numbers
@@ -170,7 +189,8 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     else:
         for c in colnames:
             if isinstance(c, str):
-                if c[0].lower() == 'c': cols.append(int(c[1:])-1)
+                if c[0].lower() == 'c':
+                    cols.append(int(c[1:])-1)
                 else:
                     cols.append(int(c))
             else:
