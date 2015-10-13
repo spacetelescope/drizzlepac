@@ -462,7 +462,7 @@ def sharp_round(data, density, kskip, xc, yc, s2m, s4m, nxk, nyk,
 
 def roundness(im):
     """
-    import pyfits
+    from astropy.io import fits as pyfits
     data=pyfits.getdata('j94f05bgq_flt.fits',ext=1)
     star0=data[403:412,423:432]
     star=data[396:432,3522:3558]
