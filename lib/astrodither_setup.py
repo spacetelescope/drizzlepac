@@ -26,7 +26,7 @@ def setup_hook(config):
         # TODO: Maybe we can eventually make pywcs a setup requirement for
         # drizzlepac, so long as pywcs itself installs easily enough...
         try:
-            import pywcs
+            from astropy import wcs as pywcs
             # TODO: It would be nice if pywcs had a get_includes() function a
             # la numpy
             pywcslib = pywcs.__path__[0]

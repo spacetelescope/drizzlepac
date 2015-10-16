@@ -27,7 +27,7 @@ if os.path.exists('pywcs'):
         raise SystemExit("No suitable version of wcslib found in the current distribution of pywcs")
 else:
     try:
-        import pywcs
+        from astropy import wcs as pywcs
         pywcslib = pywcs.__path__[0]
         pywcsincludes = [os.path.join(pywcslib, 'include'),
                          os.path.join(pywcslib, 'include', 'wcslib')]
