@@ -29,6 +29,10 @@
         X position from image
     y : float, optional
         Y position from image
+    coords : str, deprecated
+        [DEPRECATED] full filename with path of file with x,y coordinates
+        Filename given here will be *ignored* if a file has been specified
+        in `coordfile` parameter.
     coordfile : str, optional
         full filename with path of file with starting x,y coordinates
     colnames : str, optional
@@ -94,6 +98,7 @@
 from __future__ import absolute_import, division, print_function # confidence medium
 
 import os,copy
+import warnings
 import numpy as np
 
 from stsci.tools import fileutil, teal
@@ -108,13 +113,22 @@ __vdate__ = '1-Mar-2011'
 __taskname__ = 'pixtopix'
 
 def tran(inimage,outimage,direction='forward',x=None,y=None,
-        coordfile=None,colnames=None,separator=None,
+        coords=None, coordfile=None,colnames=None,separator=None,
         precision=6, output=None,verbose=True):
     """ Primary interface to perform coordinate transformations in pixel
         coordinates between 2 images using STWCS and full distortion models
         read from each image's header.
     """
     single_coord = False
+
+    # Only use value provided in `coords` if nothing has been specified for coordfile
+    if coords is not None and coordfile is None:
+        coordfile = coords
+        warnings.simplefilter('always',DeprecationWarning)
+        warnings.warn("Please update calling code to pass in `coordfile` instead of `coords`.",
+            category=DeprecationWarning)
+        warnings.simplefilter('default',DeprecationWarning)
+
     if coordfile is not None:
         if colnames in util.blank_list:
             colnames = ['c1','c2']
@@ -143,6 +157,8 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
 
     # start by reading in WCS+distortion info for each image
     im1wcs = wcsutil.HSTWCS(inimage)
+    if im1wcs.wcs.is_unity():
+        print("####\nNo valid input WCS found in {}.\n  Results may be invalid.\n####\n".format(inimage))
 
     if util.is_blank(outimage):
         fname,fextn = fileutil.parseFilename(inimage)
@@ -155,6 +171,9 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
         im2wcs = distortion.utils.output_wcs(chips)
     else:
         im2wcs = wcsutil.HSTWCS(outimage)
+
+    if im2wcs.wcs.is_unity():
+        print("####\nNo valid output WCS found in {}.\n  Results may be invalid.\n####\n".format(outimage))
 
     # Setup the transformation
     p2p = wcs_functions.WCSMap(im1wcs,im2wcs)
@@ -202,6 +221,11 @@ def tran(inimage,outimage,direction='forward',x=None,y=None,
 #--------------------------
 def run(configObj):
 
+    if 'coords' in configObj:
+        coords = util.check_blank(configObj['coords'])
+    else:
+        coords = None
+
     coordfile = util.check_blank(configObj['coordfile'])
     colnames = util.check_blank(configObj['colnames'])
     sep = util.check_blank(configObj['separator'])
@@ -209,7 +233,7 @@ def run(configObj):
 
     outimage = util.check_blank(configObj['outimage'])
     tran(configObj['inimage'], outimage,direction=configObj['direction'],
-            x = configObj['x'], y = configObj['y'],
+            x = configObj['x'], y = configObj['y'], coords=coords,
             coordfile = coordfile, colnames = colnames,
             separator= sep, precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])

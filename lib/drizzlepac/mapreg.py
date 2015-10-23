@@ -271,17 +271,23 @@ def remove_header_tdd(hdr):
     # does not try to look for non-existent extensions
     for kw in distortion_kws:
         if kw in hdr:
-            del hdr[kw]
+            try:
+                del hdr[kw]
+            except KeyError:
+                pass
 
     # Remove paper IV related keywords related to the
     #   DGEO correction here
     for k in list(hdr.items()):
-        if (k[0][:2] == 'DP'):
-            del hdr[k[0]+'*']
-            del hdr[k[0]+'.*']
-            del hdr[k[0]+'.*.*']
-        if (k[0][:2] == 'CP'):
-            del hdr[k[0]]
+        try:
+            if (k[0][:2] == 'DP'):
+                del hdr[k[0]+'*']
+                del hdr[k[0]+'.*']
+                del hdr[k[0]+'.*.*']
+            if (k[0][:2] == 'CP'):
+                del hdr[k[0]]
+        except KeyError:
+            pass
 
 
 def _regwrite(shapelist,outfile):

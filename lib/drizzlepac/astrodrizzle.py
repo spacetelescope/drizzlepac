@@ -65,7 +65,7 @@ log = logutil.create_logger(__name__)
 #### Interactive user interface (functional form)
 #
 def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
-                 wcsmap=None, updatewcs=False, **input_dict):
+                 wcsmap=None, **input_dict):
     """ AstroDrizzle command-line interface
     """
     # support input of filenames from command-line without a parameter name
@@ -86,6 +86,10 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         if not os.path.exists(configobj):
             raise RuntimeError('Cannot find .cfg file: '+configobj)
         configobj = teal.load(configobj, strict=False)
+
+    if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
+        configobj['updatewcs'] = input_dict['updatewcs']
+        del input_dict['updatewcs']
 
     # If called from interactive user-interface, configObj will not be
     # defined yet, so get defaults using EPAR/TEAL.

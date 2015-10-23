@@ -1008,21 +1008,27 @@ def createFile(dataArray=None, outfile=None, header=None):
         # Create the output file
         fitsobj = fits.HDUList()
         if (header != None):
-            del(header['NAXIS1'])
-            del(header['NAXIS2'])
-            if 'XTENSION' in header:
-                del(header['XTENSION'])
-            if 'EXTNAME' in header:
-                del(header['EXTNAME'])
-            if 'EXTVER' in header:
-                del(header['EXTVER'])
+            try:
+                del(header['NAXIS1'])
+                del(header['NAXIS2'])
+                if 'XTENSION' in header:
+                    del(header['XTENSION'])
+                if 'EXTNAME' in header:
+                    del(header['EXTNAME'])
+                if 'EXTVER' in header:
+                    del(header['EXTVER'])
+            except KeyError:
+                pass
 
             if 'NEXTEND' in header:
                 header['NEXTEND'] = 0
 
             hdu = fits.PrimaryHDU(data=dataArray, header=header)
-            del hdu.header['PCOUNT']
-            del hdu.header['GCOUNT']
+            try:
+                del hdu.header['PCOUNT']
+                del hdu.header['GCOUNT']
+            except KeyError:
+                pass
 
         else:
             hdu = fits.PrimaryHDU(data=dataArray)

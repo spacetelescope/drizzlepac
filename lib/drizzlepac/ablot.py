@@ -14,11 +14,10 @@ import os
 import sys
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
+from . import outputimage
 from . import wcs_functions
 from . import processInput
-from . import outputimage
 from . import util
-
 import stwcs
 from stwcs import distortion
 
@@ -45,7 +44,6 @@ log = logutil.create_logger(__name__)
 
 def blot(data, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
          editpars=False, **input_dict):
-
     if input_dict is None:
         input_dict = {}
     input_dict['data'] = data
@@ -156,7 +154,7 @@ def run(configObj,wcsmap=None):
 
 
 #
-#### Top-level interface from inside MultiDrizzle
+#### Top-level interface from inside AstroDrizzle
 #
 def runBlot(imageObjectList, output_wcs, configObj={},
             wcsmap=wcs_functions.WCSMap, procSteps=None):
@@ -164,7 +162,6 @@ def runBlot(imageObjectList, output_wcs, configObj={},
     runBlot(imageObjectList, output_wcs, configObj={},
             wcsmap=wcs_functions.WCSMap, procSteps=None)
     """
-
     if procSteps is not None:
         procSteps.addStep('Blot')
 

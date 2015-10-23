@@ -6,10 +6,13 @@
 """
 from __future__ import absolute_import, division, print_function
 import os, sys
+import copy
+
 import numpy as np
 #import pywcs
 from astropy import wcs as pywcs
-import astrolib.coords as coords
+import astropy.coordinates as coords
+from astropy import units as u
 from stsci.tools import logutil, textutil
 
 import stwcs
@@ -25,6 +28,10 @@ CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxuni
 
 REFCOL_PARS = ['refxcol','refycol','rfluxcol']
 REFCAT_ARGS = ['rmaxflux','rminflux','rfluxunits','refnbright']+REFCOL_PARS
+
+sortKeys = ['minflux','maxflux','nbright','fluxunits']
+sortKeysDict = {'minflux': 'fluxmin', 'maxflux':'fluxmax', 'nbright':None, 'fluxunits': None}
+
 
 log = logutil.create_logger(__name__)
 
@@ -66,6 +73,8 @@ class Catalog(object):
         .. warning:: This class should never be instantiated by itself,
                      as necessary methods are not defined yet.
     """
+    PAR_PREFIX = " "
+
     def __init__(self,wcs,catalog_source,**kwargs):
         """
         This class requires the input of a WCS and a source for the catalog,
@@ -90,6 +99,10 @@ class Catalog(object):
         self.round1 = None
         self.round2 = None
         self.numcols = None
+
+        self.flux_col = True # keep track of whether fluxes were read in
+        self.sharp_col = True # keep track of whether sharpness was read in
+
         self.origin = 1 # X,Y coords will ALWAYS be FITS 1-based, not numpy 0-based
         self.pars = kwargs
         if 'use_sharp_round' in self.pars:
@@ -132,6 +145,8 @@ class Catalog(object):
     def generateRaDec(self):
         """ Convert XY positions into sky coordinates using STWCS methods
         """
+        self.prefix = self.PAR_PREFIX
+
         if not isinstance(self.wcs,pywcs.WCS):
             print(textutil.textbox('WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'),
                   file=sys.stderr)
@@ -167,19 +182,20 @@ class Catalog(object):
         excluded_list = []
         radec_indx = list(range(len(self.radec[0])))
         for ra,dec,indx in zip(self.radec[0],self.radec[1],radec_indx):
-            src_pos = coords.Position((ra,dec))
+            src_pos = coords.SkyCoord(ra=ra,dec=dec,unit=(u.hourangle,u.deg))
+
             # check to see whether this source is within an exclusion region
             for reg in exclusion_coords:
                 if reg['units'] == 'sky':
                     regpos = reg['pos']
-                    regdist = reg['distance']
+                    regdist = reg['distance'] # units: arcsec
                 else:
                     regradec = self.wcs.all_pix2world([reg['pos']],1)[0]
                     regpos = (regradec[0],regradec[1])
-                    regdist = reg['distance']*self.wcs.pscale
+                    regdist = reg['distance']*self.wcs.pscale # units: arcsec
 
-                epos = coords.Position(regpos)
-                if src_pos.within(epos,regdist):
+                epos = coords.SkyCoord(ra=regpos[0],dec=regpos[1],unit=(u.hourangle,u.deg))
+                if float(epos.separation(src_pos).to_string(unit=u.arcsec,decimal=True)) <= regdist:
                     excluded_list.append(indx)
                     break
         # create a list of all 'good' sources outside all exclusion regions
@@ -198,6 +214,118 @@ class Catalog(object):
             self.xypos = xypos_trimmed
             log.info('Excluded %d sources from catalog.'%num_excluded)
 
+    def apply_flux_limits(self):
+        """ Apply any user-specified limits on source selection
+            Limits based on fluxes
+        """
+        if 'computesig' in self.pars: # limits already applied by ndfind()
+            return
+
+        limits = {}
+        clip_prefix = ""
+        for k in sortKeys:
+            k_name = "{}{}".format(self.prefix.strip(),k)
+            k0_name = "{}{}".format(self.prefix[0].strip(),k)
+
+            if k_name in self.pars:
+                key_name = k_name
+                clip_prefix = self.prefix.strip()
+
+            elif k0_name in self.pars:
+                key_name = k0_name
+                clip_prefix = self.prefix[0].strip()
+            else:
+                continue
+
+            val = self.pars[key_name]
+            if val not in [None,'',' ']:
+                limits[k] = val
+
+        # Only if limits are set should they be applied
+        if len(limits) > 1 and 'fluxunits' in limits:
+            # start by checking to see whether fluxes were read in to use for
+            # applying the limits
+            if not self.flux_col:
+                print("Catalog did not contain fluxes for use in trimming...")
+                return
+
+            print("Applying flux limits to catalog...")
+            # keep a copy of the full catalog before applying limits
+            self.radec_full = [None] * 4
+
+            self.radec_full[0] = copy.deepcopy(self.radec[0])
+            self.radec_full[1] = copy.deepcopy(self.radec[1])
+            if self.xypos is None:
+                if len(self.radec) > 2:
+                    self.radec_full[2] = copy.deepcopy(self.radec[2])
+
+                else:
+                    print("No fluxes read in for catalog for use in trimming...")
+                    return
+                if len(self.radec) > 3:
+                    self.radec_full[3] = copy.deepcopy(self.radec[3])
+                else:
+                    self.radec_full[3] = np.arange(len(self.radec[0]),dtype=np.int32)
+            else:
+                self.radec_full[2] = copy.deepcopy(self.xypos[2])
+                self.radec_full[3] = copy.deepcopy(self.xypos[3])
+
+            # apply limits equally to all .radec and .xypos entries
+            # Start by clipping by any specified flux range
+
+            if 'minflux' in limits:
+                fluxmin = limits['minflux']
+            else:
+                fluxmin = self.radec_full[2].min()
+
+            if 'maxflux' in limits:
+                fluxmax = limits['maxflux']
+            else:
+                fluxmax = self.radec_full[2].max()
+
+            # apply flux limit clipping
+            if limits['fluxunits'] == 'counts':
+                minindx = self.radec_full[2] >= fluxmin
+                maxindx = self.radec_full[2] <= fluxmax
+            else:
+                minindx = self.radec_full[2] <= fluxmin
+                maxindx = self.radec_full[2] >= fluxmax
+
+            flux_indx = np.bitwise_and(minindx,maxindx)
+
+            all_radec = []
+            all_radec.append(self.radec_full[0][flux_indx])
+            all_radec.append(self.radec_full[1][flux_indx])
+            all_radec.append(self.radec_full[2][flux_indx])
+            all_radec.append(np.arange(len(self.radec_full[0][flux_indx])))
+
+            if 'nbright' in limits:
+                print("Selecting catalog based on {} brightest sources".format(limits['nbright']))
+
+                # pick out only the brightest 'nbright' sources
+                if limits['fluxunits'] == 'mag':
+                    nbslice = slice(None,limits['nbright'])
+                else:
+                    nbslice = slice(limits['nbright'],None)
+
+                if all_radec is None:
+                    # work on copy of all original data
+                    all_radec = copy.deepcopy(self.radec_full)
+                # find indices of brightest
+                nbright_indx = np.argsort(all_radec[2])[nbslice]
+                self.radec = []
+                self.radec.append(all_radec[0][nbright_indx])
+                self.radec.append(all_radec[1][nbright_indx])
+                self.radec.append(all_radec[2][nbright_indx])
+                self.radec.append(np.arange(len(all_radec[0][nbright_indx])))
+
+            else:
+                if all_radec is not None:
+                    self.radec = copy.deepcopy(all_radec)
+        print(" Catalog trimmed to {} objects".format(len(self.radec[0])))
+        if len(self.radec[0]) == 0:
+            print("Trimming of catalog resulted in NO valid sources! ")
+            raise ValueError
 
     def buildCatalogs(self,exclusions=None,**kwargs):
         """ Primary interface to build catalogs based on user inputs.
@@ -206,6 +334,8 @@ class Catalog(object):
         self.generateRaDec()
         if exclusions:
             self.apply_exclusions(exclusions)
+
+        self.apply_flux_limits() # apply selection limits as specified by the user
 
 
     def plotXYCatalog(self, **kwargs):
@@ -462,6 +592,7 @@ class UserCatalog(Catalog):
         """
         self.num_objects = 0
         xycols = self._readCatalog()
+
         if xycols is not None:
             # convert the catalog into attribute
             self.xypos = xycols[:3]
@@ -478,6 +609,7 @@ class UserCatalog(Catalog):
 
         if self.numcols < 3: # account for flux column
             self.xypos.append(np.zeros(self.num_objects, dtype=float))
+            self.flux_col = False
 
         if self.numcols < 4: # add source ID column
             self.xypos.append(np.arange(self.num_objects)+self.start_id)
@@ -485,7 +617,7 @@ class UserCatalog(Catalog):
         if self.use_sharp_round:
             for i in range(len(self.xypos), 7):
                 self.xypos.append(np.zeros(self.num_objects, dtype=float))
-
+            self.sharp_col = False
 
     def plotXYCatalog(self,**kwargs):
         """
@@ -520,12 +652,14 @@ class RefCatalog(UserCatalog):
     """
     COLNAMES = REFCOL_PARS
     IN_UNITS = 'degrees'
+    PAR_PREFIX = "ref"
 
     def generateXY(self, **kwargs):
         pass
 
 
     def generateRaDec(self):
+        self.prefix = self.PAR_PREFIX
         if isinstance(self.source,list):
             self.radec = self.source
         else:

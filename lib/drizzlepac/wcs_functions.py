@@ -266,7 +266,7 @@ def build_pixel_transform(chip,output_wcs):
 # Possibly need to generate a stand-alone interface for this function.
 #
 #### Primary interface for creating the output WCS from a list of HSTWCS objects
-def make_outputwcs(imageObjectList, output, configObj=None):
+def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
     """ Computes the full output WCS based on the set of input imageObjects
         provided as input, along with the pre-determined output name from
         process_input.  The user specified output parameters are then used to
@@ -299,6 +299,9 @@ def make_outputwcs(imageObjectList, output, configObj=None):
         default_wcs = hstwcs_list[0].deepcopy()
     else:
         default_wcs = utils.output_wcs(hstwcs_list, undistort=undistort)
+
+    if perfect:
+        default_wcs.wcs.cd = make_perfect_cd(default_wcs)
 
     # Turn WCS instances into WCSObject instances
     outwcs = createWCSObject(output, default_wcs, imageObjectList)
@@ -356,6 +359,18 @@ def make_outputwcs(imageObjectList, output, configObj=None):
 
     return outwcs
 
+
+def make_perfect_cd(wcs):
+    """ Create a perfect (square, orthogonal, undistorted) CD matrix from the
+        input WCS.
+    """
+
+    # create a perfectly square, orthogonal WCS
+    def_scale = (wcs.pscale)/3600.
+    def_orientat = np.deg2rad(wcs.orientat)
+    perfect_cd = np.array([[-np.cos(def_orientat),np.sin(def_orientat)],
+                          [np.sin(def_orientat),np.cos(def_orientat)]])*def_scale
+    return perfect_cd
 
 def calcNewEdges(wcs, shape):
     """
@@ -478,7 +493,11 @@ def removeAllAltWCS(hdulist,extlist):
             continue
         for k in hwcs.keys():
             if k not in ['DATE-OBS','MJD-OBS'] and k in hdr:
-                del hdr[k]
+                try:
+                    del hdr[k]
+                except KeyError:
+                    pass
+
 
 def updateImageWCS(imageObjectList, output_wcs):
 
