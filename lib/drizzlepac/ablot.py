@@ -42,11 +42,12 @@ log = logutil.create_logger(__name__)
 #### User level interface run from TEAL
 #
 
-def blot(data, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
+def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
          editpars=False, **input_dict):
     if input_dict is None:
         input_dict = {}
     input_dict['data'] = data
+    input_dict['reference'] = reference
     input_dict['outdata'] = outdata
 
     # If called from interactive user-interface, configObj will not be
@@ -100,44 +101,48 @@ def run(configObj,wcsmap=None):
         np.divide(_insci, _inexptime, _insci)
 
     _inimg.close()
-    del _inimg, _scihdu
+    del _inimg
 
     # read in WCS from source (drizzled) image
     source_wcs = stwcs.wcsutil.HSTWCS(configObj['data'])
+    if source_wcs.wcs.is_unity():
+        print("WARNING: No valid WCS found for input drizzled image: {}!".format(configObj['data']))
 
     # define blot_wcs
     blot_wcs = None
-    if os.path.exists(configObj['outdata']):
+    _refname,_refextn = fileutil.parseFilename(configObj['reference'])
+    if os.path.exists(_refname):
         # read in WCS from pre-existing output image
-        blot_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
-    else:
-        # define blot WCS based on input images or specified reference WCS values
-        if not util.is_blank(user_wcs_pars['refimage']):
-            blot_wcs = stwcs.wcsutil.HSTWCS(user_wcs_pars['refimage'])
-        else:
-            if not util.is_blank(user_wcs_pars['outscale']):
-                blot_wcs = wcs_functions.build_hstwcs(
-                    user_wcs_pars['raref'], user_wcs_pars['decref'],
-                    user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'],
-                    user_wcs_pars['outnx'], user_wcs_pars['outny'],
-                    user_wcs_pars['outscale'], user_wcs_pars['orient'] )
-                configObj['coeffs'] = None
+        blot_wcs = stwcs.wcsutil.HSTWCS(configObj['reference'])
+        if blot_wcs.wcs.is_unity():
+            print("WARNING: No valid WCS found for output image: {} !".format(configObj['reference']))
 
-        # If blot_wcs is still not defined at this point, we have a problem...
-        if blot_wcs is None:
-            blot_wcs = stwcs.distortion.utils.output_wcs([source_wcs],undistort=False)
+    # define blot WCS based on input images or specified reference WCS values
+    if user_wcs_pars['user_wcs']:
+        blot_wcs = wcs_functions.build_hstwcs(
+            user_wcs_pars['raref'], user_wcs_pars['decref'],
+            user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'],
+            user_wcs_pars['outnx'], user_wcs_pars['outny'],
+            user_wcs_pars['outscale'], user_wcs_pars['orient'] )
+        configObj['coeffs'] = None
 
+    # If blot_wcs is still not defined at this point, we have a problem...
+    if blot_wcs is None:
+        blot_wcs = stwcs.distortion.utils.output_wcs([source_wcs],undistort=False)
+
+    out_wcs = blot_wcs.copy()
     # perform blotting operation now
-    _outsci = do_blot(_insci, source_wcs, blot_wcs, _expin, coeffs=configObj['coeffs'],
+    _outsci = do_blot(_insci, source_wcs, out_wcs, _expin, coeffs=configObj['coeffs'],
                     interp=configObj['interpol'], sinscl=configObj['sinscl'],
             stepsize=configObj['stepsize'], wcsmap=wcsmap)
-
     # create output with proper units and exptime-scaling
     if scale_pars['out_units'] == 'counts':
         if scale_pars['expout'] == 'input':
-            _outscale = _expin
+            _outscale = fileutil.getKeyword(configObj['reference'],scale_pars['expkey'])
+            #_outscale = _expin
         else:
             _outscale = float(scale_pars['expout'])
+        print("Output blotted images scaled by exptime of {}".format(_outscale))
         np.multiply(_outsci, _outscale, _outsci)
 
     # Add sky back in to the blotted image, as specified by the user
@@ -145,12 +150,15 @@ def run(configObj,wcsmap=None):
         skyval = _scihdu.header['MDRIZSKY']
     else:
         skyval = configObj['skyval']
+    print("Added {} counts back in to blotted image as sky.".format(skyval))
     _outsci += skyval
+
+    del _scihdu
 
     # Write output Numpy objects to a PyFITS file
     # Blotting only occurs from a drizzled SCI extension
     # to a blotted SCI extension...
-    outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['data'],blot=True)
+    outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['reference'])
 
 
 #
@@ -325,15 +333,35 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         All distortion information is assumed to be included in the WCS specification
         of the 'output' blotted image given in 'blot_wcs'.
 
+        This is the simplest interface that can be called for stand-alone
+        use of the blotting function.
+
         Parameters
         ----------
         source
             Input numpy array of undistorted source image in units of 'cps'.
         source_wcs
-            HSTWCS object representing source image WCS.
+            HSTWCS object representing source image distortion-corrected WCS.
         blot_wcs
             (py)wcs.WCS object representing the blotted image WCS.
         exptime
+            exptime to use for scaling output blot image. A value of 1 will
+            result in output blot image in units of 'cps'.
+        coeffs
+            Flag to specify whether or not to use distortion coefficients
+            associated with blot_wcs. If False, do not apply any distortion
+            model.
+        interp
+            Form of interpolation to use when blotting pixels. Valid options::
+                "nearest","linear","poly3", "poly5"(default), "spline3", "sinc"
+        sinscl
+            Scale for sinc interpolation kernel (in output, blotted pixels)
+        stepsize
+            Number of pixels for WCS interpolation
+        wcsmap
+            Custom mapping class to use to provide transformation from
+            drizzled to blotted WCS.  Default will be to use
+            `drizzlepac.wcs_functions.WCSMap'.
 
     """
     _outsci = np.zeros((blot_wcs._naxis2,blot_wcs._naxis1),dtype=np.float32)
@@ -350,7 +378,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
 
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
-        wcslin = distortion.utils.undistortWCS(blot_wcs)
+        wcslin = distortion.utils.make_orthogonal_cd(blot_wcs)
     else:
         wcslin = blot_wcs
         blot_wcs.sip = None

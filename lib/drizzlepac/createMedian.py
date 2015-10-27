@@ -14,11 +14,13 @@ import sys
 import numpy as np
 from astropy.io import fits
 import os, math
-from . import imageObject
+
 from stsci.imagestats import ImageStats
-from . import util
 from stsci.image import numcombine
 from stsci.tools import iterfile, nimageiter, teal, logutil
+
+from . import imageObject
+from . import util
 from .minmed import minmed
 from . import processInput
 from .adrizzle import _single_step_num_
@@ -152,6 +154,7 @@ def _median(imageObjectList, paramDict):
     #skylist=[] #the list of platescale values for the images
     _wht_mean = [] # Compute the mean value of each wht image
 
+    _single_hdr = None
     virtual = None
 
     #for each image object
@@ -200,6 +203,10 @@ def _median(imageObjectList, paramDict):
         else:
             iter_singleDriz = singleDriz_name + wcs_ext
             iter_singleWeight = singleWeight_name + wcs_ext
+
+        # read in WCS from first single drizzle image to use as WCS for median image
+        if _single_hdr is None:
+            _single_hdr = fits.getheader(singleDriz_name,ext=wcs_extnum)
 
         _singleImage=iterfile.IterFitsFile(iter_singleDriz)
         if virtual:
@@ -421,7 +428,7 @@ def _median(imageObjectList, paramDict):
     # Write out the combined image
     # use the header from the first single drizzled image in the list
     #header=fits.getheader(imageObjectList[0].outputNames["outSingle"])
-    _pf = _writeImage(medianImageArray, inputHeader=None, outputFilename=medianfile)
+    _pf = _writeImage(medianImageArray, inputHeader=_single_hdr)
 
     if virtual:
         mediandict = {}
@@ -463,20 +470,28 @@ def _median(imageObjectList, paramDict):
     del masterList
     del medianImageArray
 
-def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
+def _writeImage( dataArray=None, inputHeader=None):
     """ Writes out the result of the combination step.
         The header of the first 'outsingle' file in the
         association parlist is used as the header of the
         new image.
 
-        inputFilename is the fits file you want to steal the header from
-        outputFilename is the name of the output median image file
+        Parameters
+        ----------
+        dataArray : arr
+            Array of data to be written to a fits.PrimaryHDU object
+
+        inputHeader : obj
+            fits.header.Header object to use as basis for the PrimaryHDU header
+
     """
 
     #_fname =inputFilename
     #_file = fits.open(_fname, mode='readonly')
     #_prihdu = fits.PrimaryHDU(header=_file[0].header,data=dataArray)
 
+    _prihdu = fits.PrimaryHDU(data=dataArray, header=inputHeader)
+    """
     if (inputHeader == None):
         #use a general primary HDU
         _prihdu = fits.PrimaryHDU(data=dataArray)
@@ -484,7 +499,7 @@ def _writeImage( dataArray=None, inputHeader=None, outputFilename=None):
     else:
         _prihdu = inputHeader
         _prihdu.data=dataArray
-
+    """
     _pf = fits.HDUList()
     _pf.append(_prihdu)
 
