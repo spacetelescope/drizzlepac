@@ -1,6 +1,27 @@
 .. _release_2.0.0_notes:
 
 **************************************
+DrizzlePac v2.1.0 Release Notes
+**************************************
+This version builds upon the major set of changes implemented in v2.0.0 by not
+only fixing some bugs, but also cleaning up/changing/revising some APIs and 
+docstrings.  The complete list of changes includes:
+
+- The 'updatewcs' parameter was removed from both the 'astrodrizzle' and 'tweakreg' interactive TEAL interfaces.  The 'updatewcs' parameter can still be used with the Python interface for both the astrodrizzle.Astrodrizzle() and tweakreg.TweakReg() functions instead of calling the 'stwcs.updatewcs.updatewcs()' function separately before running 'astrodrizzle' or 'tweakreg'. 
+- The stand-alone interface for the blot routine (ablot.blot()) has been revised to work seamlessly with astrodrizzle-generated products while being more obvious how to call it correctly. The help file for this task was also heavily revised to document all the input parameters and to provide an example of how to use the task.
+- Both astrodrizzle and tweakreg now return an output CD matrix which has identical cross-terms indicating the same scale and orientation in each axis. This relies on a revision to the stwcs.distortion.utils.output_wcs() function.
+- The user interfaces to all 3 coordinate transformation tasks now use 'coordfile' as the input file of coordinates to transform. The use of 'coords' has been deprecated, but still can be used if needed. However, use of 'coordfile' will always override any input provided simultaneously with 'coords' parameter.  Help files have been updated to document this as clearly as possible for users. 
+- User-provided list of input catalogs no longer needs to be matched exactly with input files. As long as all input images are included in input catalog list in any order, tweakreg will apply the correct catalog to the correct file.
+- Tweakreg has been updated to correctly and fully apply source selection criteria for both input source catalogs and reference source catalogs based on fluxmin,fluxmax and nbright for each.
+- All use of keyword deletion has been updated in drizzlepac (and fitsblender) to avoid warnings from astropy.
+- All 3 coordinate transformation tasks rely on the input of valid WCS information for the calculations. These tasks now warn the user when it could not find a valid WCS and instead defaulted to using a unity WCS, so that the user can understand what input needs to be checked/revised to get the correct results.
+- The reported fit as written out to a file has been slightly modified to report more appropriate numbers of significant digits for the results. 
+- Use of astrolib.coords was removed from drizzlepac and replaced by use of astropy functions instead. This eliminated one more obsolete dependency in our software.
+- Code was revised to rely entirely on astropy.wcs instead of stand-alone pywcs.
+- Code was revised to rely entirely on astropy.io.fits instead of stand-alone pyfits.
+
+
+**************************************
 DrizzlePac v2.0.0 Release Notes
 **************************************
 This version encompasses a large number of updates and revisions to the DrizzlePac code, including several parameter name changes and additions.  The scope of these changes indicates the level of effort that went into improving the DrizzlePac code to make it easier and more productive for users. 
@@ -8,6 +29,8 @@ This version encompasses a large number of updates and revisions to the DrizzleP
 Summary of Revisions
 =====================
 The most significant updates to the DrizzlePac code include:
+
+  - The Python code has been updated to work identically (without change) under both Python 2.7 and Python 3.x.
   - Implementing sky matching, a new algorithm for matching the sky across a set of images being combined by astrodrizzle 
   - Updating tweakreg to now align full mosaics where some images may not overlap others in the mosaic
   - Added the option to write out single drizzle step images as compressed images (to save disk space for large mosaics, and I/O time for single drizzle step)

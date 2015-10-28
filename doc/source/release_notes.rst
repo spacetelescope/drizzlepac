@@ -8,8 +8,41 @@ The code for this package gets released through a number of methods: namely,
   - SSB's semi-annual `public release of the stsci_python package <http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/installation>`_, and
   - a weekly beta release of the development version as part of the `IRAFX download <http://stsdas.stsci.edu/irafx/>`_.
 
+Identifying the DrizzlePac Version
+----------------------------------
+The version of DrizzlePac can be identified using::
+
+> pyraf
+>>> import drizzlepac
+>>> drizzlepac.__version__
+
+
+NOTES for each version
+======================
 The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).
+
+DrizzlePac(astrodrizzle) v2.1.0
+-------------------------------
+**Publicly Released :** [TBD]
+
+**available under SSBX/IRAFX starting:** Nov 2, 2015
+
+This release builds upon the major set of changes implemented in v2.0.0 with 
+a number of bug fixes and API changes.  The most significant changes include:
+
+- **[API change]** The 'updatewcs' parameter has been removed from the TEAL interface for both 'astrodrizzle' and 'tweakreg'.  Python scripts calling these tasks directly can still explicitly set the 'updatewcs' parameter if necessary.
+- **[API change]** Stand-alone interface for the blot routine (ablot.blot()) revised to work seamlessly with astrodrizzle-generated products while being more obvious how to call it correctly. The help file for this task was also heavily revised to document all the input parameters and to provide an example of how to use the task.
+- **[API change]** Coordinate transformation task (pixtopix/pixtosky/skytopix) interfaces changed to be more consistent, yet remain backward-compatible for now.
+- Both astrodrizzle and tweakreg now return an output CD matrix which has identical cross-terms indicating the same scale and orientation in each axis.
+
+The complete list of updates for v2.1.0 can be found at:
+
+.. toctree::
+    :maxdepth: 1
+
+    release_v2_0_0_notes
+ 
 
 DrizzlePac(astrodrizzle) v2.0.0
 ---------------------------------
