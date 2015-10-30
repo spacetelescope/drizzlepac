@@ -255,10 +255,16 @@ def run(configobj):
         all_input_images = []
         for imgnum in range(len(filenames)):
             # Create Image instances for all input images
+            try:
+                regexcl = exclusion_dict[filenames[imgnum]]
+            except KeyError:
+                regexcl = None
+
             img = imgclasses.Image(filenames[imgnum],
                                    input_catalogs=catdict[filenames[imgnum]],
-                                   exclusions=exclusion_dict[filenames[imgnum]],
+                                   exclusions=regexcl,
                                    **catfile_kwargs)
+
             all_input_images.append(img)
             if img.num_sources < minsources:
                 warn_str = "Image '{}' will not be aligned " \
@@ -313,7 +319,13 @@ def run(configobj):
             xycat = None
             cat_src_type = 'catalog'
         else:
+            try:
+                regexcl = exclusion_dict[configobj['refimage']]
+            except KeyError:
+                regexcl = None
+
             refimg = imgclasses.Image(configobj['refimage'],
+                                      exclusions=regexcl,
                                       **ref_catfile_kwargs)
             ref_source = refimg.all_radec
             cat_src = None

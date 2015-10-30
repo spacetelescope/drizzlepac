@@ -143,33 +143,12 @@ class Image(object):
         self.num_sources = 0
 
         # Analyze exclusion file list:
-        reg_mode = "exclude only"
         if exclusions is not None:
             nexclusions = len(exclusions)
-            # see if region file mode description is present and if so,
-            # trim the list at that position:
-            try:
-                iregmode = map(str.upper,exclusions).index('[CONFORMDS9]')
-                reg_mode = "normal"
-                if iregmode >= self.nvers:
-                    iregmode = self.nvers
-                exclusions = exclusions[:iregmode]
-                nexclusions = len(exclusions)
-                if nexclusions < self.nvers:
-                    exclusions += (self.nvers-nexclusions) * [ None ]
-            except ValueError:
-                nexclusions = len(exclusions)
-                if nexclusions >= self.nvers:
-                    exclusions = exclusions[:self.nvers]
-                else:
-                    exclusions += (self.nvers-nexclusions) * [ None ]
-            except BaseException as e:
-                cmsg = "Unknown error while interpreting 'exclusions' file list."
-                if e.args:
-                    e.args = (e.args[0] + "\n" + cmsg,) + e.args[1:]
-                else:
-                    e.args=(cmsg,)
-                raise e
+            if nexclusions >= self.nvers:
+                exclusions = exclusions[:self.nvers]
+            else:
+                exclusions += (self.nvers-nexclusions) * [ None ]
         else:
             exclusions = self.nvers * [ None ]
 
@@ -199,8 +178,7 @@ class Image(object):
                 catalog_mode='user'
 
             if exclusions[sci_extn-1] not in [ None, 'None', '', ' ', 'INDEF' ]:
-                excludefile = { 'region_file': exclusions[sci_extn-1], \
-                                'region_file_mode': reg_mode }
+                excludefile = { 'region_file': exclusions[sci_extn-1] }
             else:
                 excludefile = None
 

@@ -11,11 +11,13 @@ import sys
 
 import math
 import numpy as np
+
 from stsci import convolve
 from stsci import ndimage as ndim
 
 import stsci.imagestats as imagestats
 from . import cdriz
+
 
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):
 #from numpy import *
@@ -132,12 +134,10 @@ def errfunc(p, *args):
 
 def findstars(jdata, fwhm, threshold, skymode,
               peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
-              nsigma=1.5, ratio=1.0, theta=0.0, src_find_filters=None,
+              nsigma=1.5, ratio=1.0, theta=0.0,
               use_sharp_round=False,mask=None,
               sharplo=0.2,sharphi=1.0,roundlo=-1.0,roundhi=1.0):
-    import pyregion
-    from os import path
-    import matplotlib.pyplot as plt
+
     # store input image size:
     (img_ny, img_nx) = jdata.shape
 
@@ -148,7 +148,8 @@ def findstars(jdata, fwhm, threshold, skymode,
     yc = ny//2
 
     yin, xin = np.mgrid[0:ny, 0:nx]
-    kernel = gaussian1(1.0, xc, yc, a, b, c)(xin,yin)  #+np.random.random(xin.shape)
+    kernel = gaussian1(1.0, xc, yc, a, b, c)(xin,yin)
+
     # define size of extraction box for each source based on kernel size
     grx = xc
     gry = yc
@@ -177,46 +178,12 @@ def findstars(jdata, fwhm, threshold, skymode,
     # convolve image with gaussian kernel
     convdata = convolve.convolve2d(jdata, nkern).astype(np.float32)
 
-    # create masks from exclude/include regions:
-    regmask = None
-    if src_find_filters is not None and 'region_file' in src_find_filters and \
-                                   'region_file_mode' in src_find_filters:
-        if not path.isfile(src_find_filters['region_file']):
-            raise IOError("The 'exclude' region file \'%s\' does not exist." % \
-                          src_find_filters['region_file'])
-        reglist = pyregion.open(src_find_filters['region_file'])
-        #TODO: Add checking that regions are in image-like coordinates???
-
-        # depending on the region file interpretation mode, remove "exclude"
-        # regions (to have the same behavior as the previous release of the code):
-        if src_find_filters['region_file_mode'].lower() == 'exclude only':
-            # select only regular (not exclude - "-") regions:
-            reglist = pyregion.ShapeList([ reg for reg in reglist
-                                           if not reg.exclude ])
-            # create a mask from regions:
-            regmask = np.invert(np.asarray(
-                reglist.get_mask(shape=(img_ny,img_nx)), dtype=bool))
-        elif src_find_filters['region_file_mode'].lower() == 'normal':
-            # create a mask from regions:
-            regmask = np.asarray(reglist.get_mask(shape=(img_ny,img_nx)), dtype=bool)
-        else:
-            raise TypeError("The value of 'region_file_mode' in the "     \
-                            "'src_find_filters' argument must be either " \
-                            "'normal' or 'exclude only'.")
-
-        # combine regmask with mask (if any)
-        if mask is not None:
-            regmask = np.logical_and(regmask, mask)
-    elif mask is not None:
-        # use mask (if any) instead of regmask:
-        regmask = np.asarray(mask, dtype=bool)
-
     # clip image to create regions around each source for segmentation
-    if regmask is None:
+    if mask is None:
         #tdata=np.where(convdata > skymode*2.0, convdata, 0)
         tdata=np.where(convdata > threshold, convdata, 0)
     else:
-        tdata=np.where((convdata > threshold) & regmask, convdata, 0)
+        tdata=np.where((convdata > threshold) & mask, convdata, 0)
 
     # segment image and find sources
     s = ndim.generate_binary_structure(2,2)

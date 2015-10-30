@@ -109,12 +109,11 @@ def ndfind(array, hmin, fwhm, skymode,
            sharplim=[0.2,1.0], roundlim=[-1,1], minpix=5,
            peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
            nsigma=1.5, ratio=1.0, theta=0.0,
-           src_find_filters=None, mask=None, use_sharp_round=False):
+           mask=None, use_sharp_round=False):
     star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode,
                     peakmin=peakmin, peakmax=peakmax,
                     fluxmin=fluxmin, fluxmax=fluxmax,
                     ratio=ratio, nsigma=nsigma, theta=theta,
-                    src_find_filters=src_find_filters,
                     use_sharp_round=use_sharp_round,
                     mask=mask,
                     sharplo=sharplim[0], sharphi=sharplim[1],
