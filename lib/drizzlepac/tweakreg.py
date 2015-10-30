@@ -259,6 +259,7 @@ def run(configobj):
                 regexcl = exclusion_dict[filenames[imgnum]]
             except KeyError:
                 regexcl = None
+                pass
 
             img = imgclasses.Image(filenames[imgnum],
                                    input_catalogs=catdict[filenames[imgnum]],
@@ -323,6 +324,7 @@ def run(configobj):
                 regexcl = exclusion_dict[configobj['refimage']]
             except KeyError:
                 regexcl = None
+                pass
 
             refimg = imgclasses.Image(configobj['refimage'],
                                       exclusions=regexcl,
