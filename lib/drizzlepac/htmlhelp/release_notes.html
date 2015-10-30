@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>DrizzlePac Release Notes &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>DrizzlePac Release Notes &mdash; DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45925 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
-    <link rel="next" title="DrizzlePac v2.0.0 Release Notes" href="release_v2_0_0_notes.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation" href="index.html" />
+    <link rel="next" title="DrizzlePac v2.1.0 Release Notes" href="release_v2_0_0_notes.html" />
     <link rel="prev" title="Tweakback" href="tweakback.html" /> 
   </head>
   <body>
@@ -38,12 +38,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
+          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.1.0 Release Notes"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="tweakback.html" title="Tweakback"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -54,6 +54,11 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">DrizzlePac Release Notes</a><ul>
+<li><a class="reference internal" href="#identifying-the-drizzlepac-version">Identifying the DrizzlePac Version</a><ul>
+<li><a class="reference internal" href="#notes-for-each-version">NOTES for each version</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#drizzlepac-astrodrizzle-v2-1-0">DrizzlePac(astrodrizzle) v2.1.0</a></li>
 <li><a class="reference internal" href="#drizzlepac-astrodrizzle-v2-0-0">DrizzlePac(astrodrizzle) v2.0.0</a></li>
 <li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-16">DrizzlePac(astrodrizzle) v1.1.16</a></li>
 <li><a class="reference internal" href="#drizzlepac-astrodrizzle-v1-1-15-30-dec-2013">DrizzlePac(astrodrizzle) v1.1.15(30-Dec-2013)</a></li>
@@ -88,7 +93,7 @@
                         title="previous chapter">Tweakback</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="release_v2_0_0_notes.html"
-                        title="next chapter">DrizzlePac v2.0.0 Release Notes</a></p>
+                        title="next chapter">DrizzlePac v2.1.0 Release Notes</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/release_notes.txt"
@@ -126,8 +131,40 @@
 </ul>
 </dd>
 </dl>
+<div class="section" id="identifying-the-drizzlepac-version">
+<h2>Identifying the DrizzlePac Version<a class="headerlink" href="#identifying-the-drizzlepac-version" title="Permalink to this headline">¶</a></h2>
+<p>The version of DrizzlePac can be identified using:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt; pyraf
+&gt;&gt;&gt; import drizzlepac
+&gt;&gt;&gt; drizzlepac.__version__
+</pre></div>
+</div>
+<div class="section" id="notes-for-each-version">
+<h3>NOTES for each version<a class="headerlink" href="#notes-for-each-version" title="Permalink to this headline">¶</a></h3>
 <p>The following notes provide some details on what has been revised for each version in
 reverse chronological order (most recent version at the top of the list).</p>
+</div>
+</div>
+<div class="section" id="drizzlepac-astrodrizzle-v2-1-0">
+<h2>DrizzlePac(astrodrizzle) v2.1.0<a class="headerlink" href="#drizzlepac-astrodrizzle-v2-1-0" title="Permalink to this headline">¶</a></h2>
+<p><strong>Publicly Released :</strong> [TBD]</p>
+<p><strong>available under SSBX/IRAFX starting:</strong> Nov 2, 2015</p>
+<p>This release builds upon the major set of changes implemented in v2.0.0 with
+a number of bug fixes and API changes.  The most significant changes include:</p>
+<ul class="simple">
+<li><strong>[API change]</strong> The &#8216;updatewcs&#8217; parameter has been removed from the TEAL interface for both &#8216;astrodrizzle&#8217; and &#8216;tweakreg&#8217;.  Python scripts calling these tasks directly can still explicitly set the &#8216;updatewcs&#8217; parameter if necessary.</li>
+<li><strong>[API change]</strong> Stand-alone interface for the blot routine (ablot.blot()) revised to work seamlessly with astrodrizzle-generated products while being more obvious how to call it correctly. The help file for this task was also heavily revised to document all the input parameters and to provide an example of how to use the task.</li>
+<li><strong>[API change]</strong> Coordinate transformation task (pixtopix/pixtosky/skytopix) interfaces changed to be more consistent, yet remain backward-compatible for now.</li>
+<li>Both astrodrizzle and tweakreg now return an output CD matrix which has identical cross-terms indicating the same scale and orientation in each axis.</li>
+</ul>
+<p>The complete list of updates for v2.1.0 can be found at:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="release_v2_0_0_notes.html">DrizzlePac v2.1.0 Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_v2_0_0_notes.html#drizzlepac-v2-0-0-release-notes">DrizzlePac v2.0.0 Release Notes</a></li>
+</ul>
+</div>
+</div>
 <div class="section" id="drizzlepac-astrodrizzle-v2-0-0">
 <h2>DrizzlePac(astrodrizzle) v2.0.0<a class="headerlink" href="#drizzlepac-astrodrizzle-v2-0-0" title="Permalink to this headline">¶</a></h2>
 <p><strong>Publicly Released through PyPI:</strong> [TBD]</p>
@@ -135,7 +172,8 @@ reverse chronological order (most recent version at the top of the list).</p>
 <p>This major release includes a large number of revisions and bug fixes, including the addition of new tasks and parameters. The full description of all the changes included in this new release:</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="release_v2_0_0_notes.html">DrizzlePac v2.0.0 Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_v2_0_0_notes.html">DrizzlePac v2.1.0 Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_v2_0_0_notes.html#drizzlepac-v2-0-0-release-notes">DrizzlePac v2.0.0 Release Notes</a></li>
 </ul>
 </div>
 </div>
@@ -358,12 +396,12 @@ reverse chronological order (most recent version at the top of the list).</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
+          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.1.0 Release Notes"
              >next</a> |</li>
         <li class="right" >
           <a href="tweakback.html" title="Tweakback"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

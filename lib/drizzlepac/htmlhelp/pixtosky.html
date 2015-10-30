@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pixtosky: Coordinate transformation to sky coordinates &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>pixtosky: Coordinate transformation to sky coordinates &mdash; DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45925 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="skytopix: Coordinate transformation from sky coordinates" href="skytopix.html" />
     <link rel="prev" title="pixtopix: Coordinate transformation to/from drizzled images" href="pixtopix.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="pixtopix.html" title="pixtopix: Coordinate transformation to/from drizzled images"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -139,7 +139,11 @@ FITS file.</dd>
 <dd>X position from input image</dd>
 <dt>y <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
 <dd>Y position from input image</dd>
-<dt>coords <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dt>coords <span class="classifier-delimiter">:</span> <span class="classifier">str, deprecated</span></dt>
+<dd>[DEPRECATED] full filename with path of file with x,y coordinates
+Filename given here will be <em>ignored</em> if a file has been specified
+in <em class="xref py py-obj">coordfile</em> parameter.</dd>
+<dt>coordfile <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
 <dd>full filename with path of file with x,y coordinates</dd>
 <dt>colnames <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
 <dd>comma separated list of column names from &#8216;coords&#8217; files
@@ -210,7 +214,7 @@ without using the TEAL GUI:</p>
 calibrated ACS image (<tt class="docutils literal"><span class="pre">j8bt06nyq_flt.fits</span></tt>) into undistorted sky
 positions and write out the result to the file &#8216;radec.dat&#8217;
 without using the TEAL GUI:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="p">,</span><span class="n">d</span> <span class="o">=</span> <span class="n">pixtosky</span><span class="o">.</span><span class="n">xy2rd</span><span class="p">(</span><span class="s">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="s">&quot;xyfile.dat&quot;</span><span class="p">,</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="p">,</span><span class="n">d</span> <span class="o">=</span> <span class="n">pixtosky</span><span class="o">.</span><span class="n">xy2rd</span><span class="p">(</span><span class="s">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span> <span class="n">coordfile</span><span class="o">=</span><span class="s">&quot;xyfile.dat&quot;</span><span class="p">,</span>
 <span class="gp">... </span>      <span class="n">output</span><span class="o">=</span><span class="s">&quot;radec.dat&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -219,7 +223,7 @@ without using the TEAL GUI:</p>
 the 3rd and 4th columns from the ASCII file <tt class="docutils literal"><span class="pre">'xy_sci1.dat'</span></tt>
 will be transformed and written out to <tt class="docutils literal"><span class="pre">'radec_sci1.dat'</span></tt> using:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">pixtosky</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="p">,</span><span class="n">d</span> <span class="o">=</span> <span class="n">pixtosky</span><span class="o">.</span><span class="n">xy2rd</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="s">&#39;xy_sci1.dat&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="p">,</span><span class="n">d</span> <span class="o">=</span> <span class="n">pixtosky</span><span class="o">.</span><span class="n">xy2rd</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span> <span class="n">coordfile</span><span class="o">=</span><span class="s">&#39;xy_sci1.dat&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                     <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;c3&#39;</span><span class="p">,</span><span class="s">&#39;c4&#39;</span><span class="p">],</span> <span class="n">output</span><span class="o">=</span><span class="s">&quot;radec_sci1.dat&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -228,7 +232,7 @@ will be transformed and written out to <tt class="docutils literal"><span class=
 </div>
 <dl class="function">
 <dt id="drizzlepac.pixtosky.xy2rd">
-<tt class="descclassname">drizzlepac.pixtosky.</tt><tt class="descname">xy2rd</tt><big>(</big><em>input</em>, <em>x=None</em>, <em>y=None</em>, <em>coords=None</em>, <em>colnames=None</em>, <em>separator=None</em>, <em>hms=True</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.pixtosky.xy2rd" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.pixtosky.</tt><tt class="descname">xy2rd</tt><big>(</big><em>input</em>, <em>x=None</em>, <em>y=None</em>, <em>coords=None</em>, <em>coordfile=None</em>, <em>colnames=None</em>, <em>separator=None</em>, <em>hms=True</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.pixtosky.xy2rd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary interface to perform coordinate transformations from
 pixel to sky coordinates using STWCS and full distortion models
 read from the input image header.</p>
@@ -257,7 +261,7 @@ read from the input image header.</p>
         <li class="right" >
           <a href="pixtopix.html" title="pixtopix: Coordinate transformation to/from drizzled images"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

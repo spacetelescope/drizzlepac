@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Classes to manage Catalogs and WCS’s &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>Classes to manage Catalogs and WCS’s &mdash; DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45925 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="Functions to Manage WCS Table Extension" href="wcscorr.html" />
     <link rel="prev" title="Image Class" href="image.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="image.html" title="Image Class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -294,6 +294,11 @@ the type of catalog being instantiated.</p>
 <tt class="descname">IN_UNITS</tt><em class="property"> = 'degrees'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.IN_UNITS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="drizzlepac.catalogs.RefCatalog.PAR_PREFIX">
+<tt class="descname">PAR_PREFIX</tt><em class="property"> = 'ref'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -339,6 +344,13 @@ exclusions file</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="drizzlepac.catalogs.Catalog.apply_flux_limits">
+<tt class="descname">apply_flux_limits</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.apply_flux_limits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply any user-specified limits on source selection
+Limits based on fluxes</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.buildCatalogs">
 <tt class="descname">buildCatalogs</tt><big>(</big><em>exclusions=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.buildCatalogs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary interface to build catalogs based on user inputs.</p>
@@ -381,6 +393,11 @@ Only needed when provided a source catalog as input</p>
 <dd><p>Write out the X,Y catalog to a file</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="drizzlepac.catalogs.Catalog.PAR_PREFIX">
+<tt class="descname">PAR_PREFIX</tt><em class="property"> = ' '</em><a class="headerlink" href="#drizzlepac.catalogs.Catalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
@@ -406,7 +423,7 @@ Only needed when provided a source catalog as input</p>
         <li class="right" >
           <a href="image.html" title="Image Class"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

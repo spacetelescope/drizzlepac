@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pixtopix: Coordinate transformation to/from drizzled images &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>pixtopix: Coordinate transformation to/from drizzled images &mdash; DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45925 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="pixtosky: Coordinate transformation to sky coordinates" href="pixtosky.html" />
     <link rel="prev" title="Region mapping for TweakReg" href="mapreg.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -147,7 +147,11 @@ transform converts the pixel positions (assumed to be from the
 <dd>X position from image</dd>
 <dt>y <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
 <dd>Y position from image</dd>
-<dt>coords <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dt>coords <span class="classifier-delimiter">:</span> <span class="classifier">str, deprecated</span></dt>
+<dd>[DEPRECATED] full filename with path of file with x,y coordinates
+Filename given here will be <em>ignored</em> if a file has been specified
+in <em class="xref py py-obj">coordfile</em> parameter.</dd>
+<dt>coordfile <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
 <dd>full filename with path of file with starting x,y coordinates</dd>
 <dt>colnames <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
 <dd>comma separated list of column names from &#8216;coords&#8217; files
@@ -224,7 +228,7 @@ and written out to <tt class="docutils literal"><span class="pre">xy_flt1.dat</s
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">pixtopix</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span>
 <span class="gp">... </span>         <span class="s">&quot;output_drz.fits[sci,1]&quot;</span><span class="p">,</span> <span class="s">&quot;backward&quot;</span><span class="p">,</span>
-<span class="gp">... </span>         <span class="n">coords</span><span class="o">=</span><span class="s">&#39;xy_sci1.dat&#39;</span><span class="p">,</span> <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;c3&#39;</span><span class="p">,</span><span class="s">&#39;c4&#39;</span><span class="p">],</span>
+<span class="gp">... </span>         <span class="n">coordfile</span><span class="o">=</span><span class="s">&#39;xy_sci1.dat&#39;</span><span class="p">,</span> <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;c3&#39;</span><span class="p">,</span><span class="s">&#39;c4&#39;</span><span class="p">],</span>
 <span class="gp">... </span>         <span class="n">output</span><span class="o">=</span><span class="s">&quot;xy_flt1.dat&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -233,7 +237,7 @@ and written out to <tt class="docutils literal"><span class="pre">xy_flt1.dat</s
 </div>
 <dl class="function">
 <dt id="drizzlepac.pixtopix.tran">
-<tt class="descclassname">drizzlepac.pixtopix.</tt><tt class="descname">tran</tt><big>(</big><em>inimage</em>, <em>outimage</em>, <em>direction='forward'</em>, <em>x=None</em>, <em>y=None</em>, <em>coords=None</em>, <em>colnames=None</em>, <em>separator=None</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.pixtopix.tran" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.pixtopix.</tt><tt class="descname">tran</tt><big>(</big><em>inimage</em>, <em>outimage</em>, <em>direction='forward'</em>, <em>x=None</em>, <em>y=None</em>, <em>coords=None</em>, <em>coordfile=None</em>, <em>colnames=None</em>, <em>separator=None</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.pixtopix.tran" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary interface to perform coordinate transformations in pixel
 coordinates between 2 images using STWCS and full distortion models
 read from each image&#8217;s header.</p>
@@ -262,7 +266,7 @@ read from each image&#8217;s header.</p>
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
