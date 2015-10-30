@@ -35,7 +35,12 @@ Optional Parameters
   y : float, optional
     Y position from image
 
-  coords : str, optional
+  coords : str, deprecated
+    [DEPRECATED] full filename with path of file with x,y coordinates
+    Filename given here will be *ignored* if a file has been specified
+    in `coordfile` parameter.
+
+  coordfile : str, optional
     full filename with path of file with starting x,y coordinates
 
   colnames : str, optional
@@ -112,5 +117,5 @@ to run the task in a couple of common modes.
    >>> from drizzlepac import pixtopix
    >>> x,y = pixtopix.tran("input_flt.fits[sci,1]",
    ...          "output_drz.fits[sci,1]", "backward",
-   ...          coords='xy_sci1.dat', colnames=['c3','c4'],
+   ...          coordfile='xy_sci1.dat', colnames=['c3','c4'],
    ...          output="xy_flt1.dat")

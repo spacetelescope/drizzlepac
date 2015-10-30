@@ -125,6 +125,9 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
 
     # start by reading in WCS+distortion info for input image
     inwcs = wcsutil.HSTWCS(input)
+    if inwcs.wcs.is_unity():
+        print("####\nNo valid WCS found in {}.\n  Results may be invalid.\n####\n".format(input))
+
     # Now, convert pixel coordinates into sky coordinates
     try:
         outx,outy = inwcs.all_world2pix(xlist,ylist,1)

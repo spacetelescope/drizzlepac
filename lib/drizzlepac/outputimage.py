@@ -134,7 +134,7 @@ class OutputImage:
             _outweight = plist[0]['outSWeight']
             _outcontext = plist[0]['outSContext']
             # Only report values appropriate for single exposure
-            self.texptime = plist[0]['exptime']
+            self.texptime = 1.0 # plist[0]['exptime']
             self.expstart = plist[0]['expstart']
             self.expend = plist[0]['expend']
         else:
@@ -300,7 +300,11 @@ class OutputImage:
             self.addDrizKeywords(prihdu.header,versions)
 
         if scihdr:
-            del scihdr['OBJECT']
+            try:
+                del scihdr['OBJECT']
+            except KeyError:
+                pass
+
             if 'CCDCHIP' in scihdr: scihdr['CCDCHIP'] = '-999'
             if 'NCOMBINE' in scihdr:
                 scihdr['NCOMBINE'] = self.parlist[0]['nimages']
@@ -731,9 +735,13 @@ def deleteDistortionKeywords(hdr):
     """
     dist_kws = ['D2IMERR1','D2IMERR2','D2IMDIS1','D2IMDIS2','D2IM1.*','D2IM2.*','D2IMEXT']
     for kw in dist_kws:
-        if kw in hdr: del hdr[kw]
+        try:
+            del hdr[kw]
+        except KeyError as e:
+            pass
 
-def writeSingleFITS(data,wcs,output,template,blot=False,clobber=True,verbose=True):
+
+def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.
     """

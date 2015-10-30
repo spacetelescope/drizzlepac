@@ -22,7 +22,12 @@ Optional Parameters
     y : float, optional
         Y position from input image
 
-    coords : str, optional
+    coords : str, deprecated
+        [DEPRECATED] full filename with path of file with x,y coordinates
+        Filename given here will be *ignored* if a file has been specified
+        in `coordfile` parameter.
+
+    coordfile : str, optional
         full filename with path of file with x,y coordinates
 
     colnames : str, optional
@@ -96,7 +101,7 @@ to run the task in a couple of common modes.
    positions and write out the result to the file 'radec.dat'
    without using the TEAL GUI:
 
-   >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", coords="xyfile.dat",
+   >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", coordfile="xyfile.dat",
    ...       output="radec.dat")
 
 4. The set of X,Y positions from ``'input_flt.fits[sci,1]'`` stored as
@@ -104,5 +109,5 @@ to run the task in a couple of common modes.
    will be transformed and written out to ``'radec_sci1.dat'`` using:
 
    >>> from drizzlepac import pixtosky
-   >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coords='xy_sci1.dat',
+   >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
    ...                      colnames=['c3','c4'], output="radec_sci1.dat")

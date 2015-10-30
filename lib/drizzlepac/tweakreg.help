@@ -53,6 +53,9 @@ inputDict : dict, optional
     An optional list of parameters specified by the user, which can also
     be used to override the defaults.
 
+    .. note:: This list of parameters **can** include the `updatewcs` parameter,
+    even though this parameter no longer can be set through the TEAL GUI.
+
     .. note:: This list of parameters **can** contain parameters specific
        to the `TweakReg` task itself described here in the "Other Parameters"
        section and **may not** contain parameters from the `refimagefindpars`
@@ -123,6 +126,13 @@ exclusions: string (Default = '')
       regions while having `writecat` set to `True`. This will create
       reference source catalog that can be used on the second run of
       `TweakReg`.
+
+updatewcs : bool (Default = No)
+    **NOT available through TEAL GUI interface.**
+    This parameter can only be set through the Python interface to Tweakreg by
+    passing it in as part of the input_dict in order to insure that running
+    `updatewcs` **does not overwrite** a previously determined solution written out
+    to the input file headers.
 
 writecat : bool (Default = Yes)
     Specify whether or not to write out the source catalogs generated for

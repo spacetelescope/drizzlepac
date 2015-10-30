@@ -210,7 +210,7 @@ def setCommonInput(configObj, createOutwcs=True):
 
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList, output,
-                                              configObj=configObj)
+                                              configObj=configObj, perfect=True)
         outwcs.final_wcs.printwcs()
     else:
         outwcs = None
@@ -670,14 +670,16 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     # check for non-polynomial distortion correction
     filelist = checkDGEOFile(filelist)
 
+    newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
+
     # run all WCS updating
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
 
-    newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
+    #newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
     ivmlist, filelist = list(zip(*ivmlist))
 
-    return newfilelist, ivmlist, output, oldasndict, filelist
+    return updated_input, ivmlist, output, oldasndict, filelist
 
 
 def buildASNList(rootnames, asnname):

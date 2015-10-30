@@ -45,7 +45,7 @@ def parse_input(input, prodonly=False, sort_wildcards=True):
         # If there are additional columns for catalog files...
         if len(line.split()) > 1:
             # ...parse out the names of the catalog files as well
-            catlist = parse_atfile_cat(input)
+            catlist,catdict = parse_atfile_cat(input)
     elif (isinstance(input, list)):
         # input a python list
         filelist = []
@@ -79,16 +79,19 @@ def parse_atfile_cat(input):
     # input is an @ file
     f = open(input[1:])
     catlist = []
+    catdict = {}
     for line in f.readlines():
         if line[0] == '#' or len(line.strip()) == 0:
             continue
         lspl = line.split()
         if len(lspl) > 1:
+            catdict[lspl[0]] = lspl[1:]
             catlist.append(lspl[1:])
         else:
+            catdict[lspl[0]] = None
             catlist.append(None)
     f.close()
-    return catlist
+    return catlist,catdict
 
 #
 # functions to help work with configobj input

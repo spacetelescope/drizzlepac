@@ -133,6 +133,13 @@ def run(configobj):
         input, sort_wildcards=not enforce_user_order
     )
 
+    catdict = {}
+    for indx,f in enumerate(filenames):
+        if catnames is not None and len(catnames) > 0:
+            catdict[f] = catnames[indx]
+        else:
+            catdict[f] = None
+
     if not filenames:
         print('No filenames matching input %r were found.' % input)
         raise IOError
@@ -167,7 +174,7 @@ def run(configobj):
         # check to see whether the user specified input catalogs through other parameters
         if catfile_par not in [None,'',' ','INDEF']:
             # read in catalog file list provided by user
-            catnames = tweakutils.parse_atfile_cat('@'+catfile_par)
+            catnames,catdict = tweakutils.parse_atfile_cat('@'+catfile_par)
         else:
             use_catfile = False
 
@@ -177,24 +184,28 @@ def run(configobj):
             #TODO: It may be useful to check that the image file names in the exclusions
             # catalog are the same as the names specified in filenames.
             # this way it will be easier to detect and report an incorrect exclusions file (format)
-            exclusion_files = tweakutils.parse_atfile_cat(
+            exclusion_files,exclusion_dict = tweakutils.parse_atfile_cat(
                 '@'+configobj['exclusions'])
         else:
             print('Could not find specified exclusions file "%s"'%(configobj['exclusions']))
             raise IOError
     else:
         exclusion_files = [None]*len(filenames)
+        exclusion_dict = {}
+        for f in filenames: exclusion_dict[f] = None
 
     # Verify that we have the same number of catalog files as input images
     if catnames is not None and (len(catnames) > 0):
         rcat = configobj['REFERENCE CATALOG DESCRIPTION']['refcat']
-        if (len(catnames) != len(filenames)):
-            print('The number of input catalogs does not match the number of input images')
-            print('Catalog files specified were:')
-            print(catnames)
-            print('Input images specified were:')
-            print(filenames)
-            raise IOError
+        missed_files = []
+
+        for f in filenames:
+            if f not in catdict:
+                missed_files.append(f)
+            if len(missed_files) > 0:
+                print('The input catalogs does not contain entries for the following images:')
+                print(missed_files)
+                raise IOError
     else:
         # setup array of None values as input to catalog parameter for Image class
         catnames = [None]*len(filenames)
@@ -233,8 +244,7 @@ def run(configobj):
 
     print('\nFinding shifts for: ')
     for f in filenames:
-        print('    ',f)
-    print('\n')
+        print('    {}'.format(f))
 
     log.info("USER INPUT PARAMETERS for finding sources for each input image:")
     util.printParams(catfile_kwargs, log=log)
@@ -246,8 +256,8 @@ def run(configobj):
         for imgnum in range(len(filenames)):
             # Create Image instances for all input images
             img = imgclasses.Image(filenames[imgnum],
-                                   input_catalogs=catnames[imgnum],
-                                   exclusions=exclusion_files[imgnum],
+                                   input_catalogs=catdict[filenames[imgnum]],
+                                   exclusions=exclusion_dict[filenames[imgnum]],
                                    **catfile_kwargs)
             all_input_images.append(img)
             if img.num_sources < minsources:
@@ -717,6 +727,10 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
             print('Cannot find .cfg file: '+configobj)
             return
         configobj = teal.load(configobj, strict=False)
+
+    if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
+        configobj['updatewcs'] = input_dict['updatewcs']
+        del input_dict['updatewcs']
 
     if configobj is None:
         configobj = teal.load(__taskname__)

@@ -34,6 +34,7 @@ from . import linearfit
 from . import updatehdr
 from . import util
 from . import tweakutils
+from . import wcs_functions
 
 # DEBUG
 IMGCLASSES_DEBUG = False
@@ -236,6 +237,7 @@ class Image(object):
 
             # read in and convert all catalog positions to RA/Dec
             catalog.buildCatalogs(exclusions=None, mask=mask)
+
             self.num_sources += catalog.num_objects
             self.chip_catalogs[sci_extn] = {'catalog':catalog,'wcs':wcs}
 
@@ -374,6 +376,9 @@ class Image(object):
                 if len(xycat) > 2:
                     fluxlist.append(xycat[2])
                     idlist.append(xycat[3])
+                if len(skycat) > 2:
+                    fluxlist.append(skycat[2])
+                    idlist.append(skycat[3])
                 else:
                     fluxlist.append([999.0]*len(skycat[0]))
                     idlist.append(np.arange(len(skycat[0])))
@@ -438,6 +443,7 @@ class Image(object):
             if clip_catalog:
                 break
         all_radec = None
+
         if clip_catalog:
 
             # Start by clipping by any specified flux range
@@ -506,7 +512,7 @@ class Image(object):
             print("Matching sources from \'{}\' with sources from "
                   "reference {} \'{}\'"
                   .format(self.name, cat_src_type, refname))
-        self.sortSkyCatalog() # apply any catalog sorting specified by the user
+        #self.sortSkyCatalog() # apply any catalog sorting specified by the user
         self.transformToRef(refWCS)
         self.refWCS = refWCS
         # extract xyxymatch parameters from input parameters
@@ -979,9 +985,9 @@ class Image(object):
             f = open(self.catalog_names['fitmatch'],'w')
             f.write('# Input image: %s\n'%self.rootname)
             f.write('# Coordinate mapping parameters: \n')
-            f.write('#    X and Y rms: %15.6g  %15.6g\n'%(self.fit['rms'][0],
+            f.write('#    X and Y rms: %15.4g  %15.4g\n'%(self.fit['rms'][0],
                                                         self.fit['rms'][1]))
-            f.write('#    X and Y shift: %15.6g  %15.6g\n'%(self.fit['offset'][0],
+            f.write('#    X and Y shift: %15.4g  %15.4g\n'%(self.fit['offset'][0],
                                                             self.fit['offset'][1]))
             f.write('#    X and Y scale: %15.6g  %15.6g\n'%(self.fit['scale'][1],
                                                             self.fit['scale'][2]))
@@ -1150,6 +1156,8 @@ class RefImage(object):
                                  "are not supported.")
 
             self.wcs = utils.output_wcs(wcs_list, undistort=undistort)
+            self.wcs.cd = wcs_functions.make_perfect_cd(self.wcs)
+
             if 'ref_wcs_name' in kwargs:
                 self.wcs.filename = kwargs['ref_wcs_name']
             else:
@@ -1204,6 +1212,7 @@ class RefImage(object):
         # Interpret the provided catalog
         self.catalog = catalogs.RefCatalog(None, catalog,**kwargs)
         self.catalog.buildCatalogs()
+
         self.all_radec = self.catalog.radec
         nradec = self.all_radec[0].shape[0]
         nradec_col = len(self.all_radec)

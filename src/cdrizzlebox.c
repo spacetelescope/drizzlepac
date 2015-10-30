@@ -757,10 +757,10 @@ do_kernel_lanczos(struct driz_param_t* p, const integer_t j,
     xx = *mapping_ptr(p, xo, i) - dx;
     yy = *mapping_ptr(p, yo, i) - dy;
 
-    xxi = xx - dx - p->pfo;
-    xxa = xx - dx + p->pfo;
-    yyi = yy - dy - p->pfo;
-    yya = yy - dy + p->pfo;
+    xxi = xx - p->pfo;
+    xxa = xx + p->pfo;
+    yyi = yy - p->pfo;
+    yya = yy + p->pfo;
 
     nxi = MAX(fortran_round(xxi), 0);
     nxa = MIN(fortran_round(xxa), p->nsx - 1);
