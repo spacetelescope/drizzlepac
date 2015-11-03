@@ -78,12 +78,18 @@ class Image(object):
             self.open_mode = 'update'
         else:
             self.open_mode = 'readonly'
+
         self.name = filename
+        self.rootname,self.ext_root = fu.parseFilename(filename)
         self.openFile(openDQ=(self.dqbits is not None))
 
-        # try to verify whether or not this image has been updated with
-        # a full distortion model
-        num_sci = spu.count_extensions(self._im, extname='SCI')
+        if self.ext_root is not None:
+            num_sci = 1
+        else:
+            # try to verify whether or not this image has been updated with
+            # a full distortion model
+            num_sci = spu.count_extensions(self._im, extname='SCI')
+
         numwht = spu.count_extensions(self._im, extname='WHT')
 
         wnames = altwcs.wcsnames(self._im.hdu, ext=(('SCI',1) if num_sci > 0 else 0))
@@ -102,7 +108,7 @@ class Image(object):
             'aligning this image.\n', width=60
             ))
 
-        self.rootname = os.path.splitext(os.path.basename(filename))[0]
+        #self.rootname = os.path.splitext(os.path.basename(filename))[0]
         self.origin = 1
         self.pars = kwargs
         self.exclusions = exclusions
@@ -162,7 +168,7 @@ class Image(object):
             extnum = fu.findExtname(self._im.hdu, self.ext_name, extver=sci_extn)
             if extnum is None:
                 extnum = 0
-            chip_filenames[sci_extn] = "{:s}[{:d}]".format(filename, extnum)
+            chip_filenames[sci_extn] = "{:s}[{:d}]".format(self.rootname, extnum)
 
         for sci_extn in range(1,self.nvers+1):
             chip_filename = chip_filenames[sci_extn]
@@ -816,7 +822,10 @@ class Image(object):
                     altkeys.append(k)
             if len(altkeys) > 1 and ' ' in altkeys:
                 altkeys.remove(' ')
-            next_key = altkeys[-1]
+            if len(altkeys) == 0:
+                next_key = ' '
+            else:
+                next_key = altkeys[-1]
             if self.perform_update:
                 log.info('    Writing out new WCS to alternate WCS: "%s"'%next_key)
 

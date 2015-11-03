@@ -553,7 +553,7 @@ final_wcs : bool (Default = No)
 
 
 final_refimage : str (Default = '')
-    Reference image from which a WCS solution can be obtained.
+    Reference image from which a WCS solution can be obtained. If no extension is specified (such as 'sci,1' or '4'), then astrodrizzle will automatically look for the FIRST extension which contains a valid HSTWCS object to read in as the WCS. Otherwise, the user can explicitly provide the extension name for multi-extension FITS files. 
 
 
 final_rot : float (Default = None)

@@ -347,7 +347,10 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
 
         # Now, account for any user-specified reference image
         if finalParDict[keyname + 'refimage']:
-            default_wcs = wcsutil.HSTWCS(finalParDict[keyname + 'refimage'])
+            rootname,extnum = fileutil.parseFilename(finalParDict[keyname+'refimage'])
+            extnum = util.findWCSExtn(finalParDict[keyname+'refimage'])
+            print('Creating OUTPUT WCS from {}[{}]'.format(rootname,extnum))
+            default_wcs = wcsutil.HSTWCS('{}[{}]'.format(rootname,extnum))
 
         ### Create single_wcs instance based on user parameters
         outwcs.final_wcs = mergeWCS(default_wcs, final_pars)

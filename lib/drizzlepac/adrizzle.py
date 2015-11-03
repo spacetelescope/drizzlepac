@@ -146,9 +146,21 @@ def run(configObj, wcsmap=None):
                     applydist = False
                 output_wcs = stwcs.distortion.utils.output_wcs([input_wcs],undistort=applydist)
         else:
+            refimage = configObj['User WCS Parameters']['refimage']
+            refroot,extroot = fileutil.parseFilename(refimage)
+            if extroot is None:
+                fimg = fits.open(refroot)
+                for i,extn in enumerate(fimg):
+                    if 'CRVAL1' in extn.header: # Key on CRVAL1 for valid WCS
+                        refwcs = wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
+                        if refwcs.wcs.has_cd():
+                            extroot = i
+                            break
+                fimg.close()
+                # try to find extension with valid WCS
+                refimage = "{}[{}]".format(refroot,extroot)
             # Define the output WCS based on a user specified reference image WCS
-            output_wcs = stwcs.wcsutil.HSTWCS(configObj['User WCS Parameters']['refimage'])
-
+            output_wcs = stwcs.wcsutil.HSTWCS(refimage)
         # Initialize values used for combining results
         outexptime = 0.0
         uniqid = 1
