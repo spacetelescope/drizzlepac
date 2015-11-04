@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>DrizzlePac v2.1.0 Release Notes &mdash; DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</title>
+    <title>DrizzlePac v2.1.0 Release Notes &mdash; DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev45925 (27-May-2015)',
+        VERSION:     '2.1.0.dev45932 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation" href="index.html" />
     <link rel="up" title="DrizzlePac Release Notes" href="release_notes.html" />
     <link rel="next" title="TWEAKREG: Alignment of Images" href="tweakreg.html" />
     <link rel="prev" title="DrizzlePac v2.1.0 Release Notes" href="" /> 
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="#" title="DrizzlePac v2.1.0 Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="release_notes.html" accesskey="U">DrizzlePac Release Notes</a> &raquo;</li> 
       </ul>
     </div>
@@ -108,13 +108,14 @@ docstrings.  The complete list of changes includes:</p>
 <li>Tweakreg has been updated to correctly and fully apply source selection criteria for both input source catalogs and reference source catalogs based on fluxmin,fluxmax and nbright for each.</li>
 <li>All use of keyword deletion has been updated in drizzlepac (and fitsblender) to avoid warnings from astropy.</li>
 <li>All 3 coordinate transformation tasks rely on the input of valid WCS information for the calculations. These tasks now warn the user when it could not find a valid WCS and instead defaulted to using a unity WCS, so that the user can understand what input needs to be checked/revised to get the correct results.</li>
-<li>Exclusion/inclusion region files that can be used with &#8216;tweakreg&#8217; can only be specified in image coordinates, not sky coordinates and will only support files written out using</li>
+<li>Exclusion/inclusion region files that can be used with &#8216;tweakreg&#8217; can only be specified in image coordinates, not sky coordinates and will only support files written out using DS9-compatible format.</li>
+<li>The filename for &#8216;final_refimage&#8217; in astrodrizzle and &#8216;refimage&#8217; in tweakreg can now be specified with OR without an extension, such as &#8216;[sci,1]&#8217; or &#8216;[0]&#8217;.  If no extension is specified, it will automatically look for the first extension with a valid HSTWCS and use that. This makes the use of this parameter in both place consistent and more general than before.</li>
+<li>The reported fit as written out to a file has been slightly modified to report more appropriate numbers of significant digits for the results.</li>
+<li>Use of astrolib.coords was removed from drizzlepac and replaced by use of astropy functions instead. This eliminated one more obsolete dependency in our software.</li>
+<li>Code was revised to rely entirely on astropy.wcs instead of stand-alone pywcs.</li>
+<li>Code was revised to rely entirely on astropy.io.fits instead of stand-alone pyfits.</li>
 </ul>
-<p>DS9-compatible format.
-- The reported fit as written out to a file has been slightly modified to report more appropriate numbers of significant digits for the results.
-- Use of astrolib.coords was removed from drizzlepac and replaced by use of astropy functions instead. This eliminated one more obsolete dependency in our software.
-- Code was revised to rely entirely on astropy.wcs instead of stand-alone pywcs.
-- Code was revised to rely entirely on astropy.io.fits instead of stand-alone pyfits.</p>
+<p>This set of changes represents the last major development effort for DrizzlePac in support of HST.  Support of this code will continue throughout the lifetime of HST, but will be limited primarily to bug fixes to keep the code viable as Python libraries used by DrizzlePac continue to develop and evolve with the language.</p>
 </div>
 <div class="section" id="drizzlepac-v2-0-0-release-notes">
 <h1>DrizzlePac v2.0.0 Release Notes<a class="headerlink" href="#drizzlepac-v2-0-0-release-notes" title="Permalink to this headline">¶</a></h1>
@@ -176,7 +177,7 @@ docstrings.  The complete list of changes includes:</p>
         <li class="right" >
           <a href="#" title="DrizzlePac v2.1.0 Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="release_notes.html" >DrizzlePac Release Notes</a> &raquo;</li> 
       </ul>
     </div>

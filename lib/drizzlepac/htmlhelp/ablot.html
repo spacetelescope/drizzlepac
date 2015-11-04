@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 6: Blotting the Median Image &mdash; DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</title>
+    <title>Step 6: Blotting the Median Image &mdash; DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev45925 (27-May-2015)',
+        VERSION:     '2.1.0.dev45932 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="Step 7: Cosmic-ray identification" href="drizcr.html" />
     <link rel="prev" title="Step 5: Create a Median Image" href="median.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="median.html" title="Step 5: Create a Median Image"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -206,11 +206,12 @@ set to <strong>counts</strong>.</p>
 <blockquote>
 <div><p>Value of exposure time to use in scaling the output blotted image when
 <em class="xref py py-obj">out_units</em> is set to <strong>counts</strong>. If set to <strong>&#8216;input&#8217;</strong>, the value will be
-read in from the input image header keyword specified by <a href="#id1"><span class="problematic" id="id2">`</span></a>expkey&#8217;.</p>
-</div></blockquote>
-<p><strong id=".. note:: The following parameters, when set, will override any value determined">.. note:: The following parameters, when set, will override any value determined</strong></p>
-<blockquote>
-<div><p>from <em class="xref py py-obj">refimage</em> if a reference image was specified.</p>
+read in from the input image header keyword specified by <em class="xref py py-obj">expkey</em>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The following parameters, when set, will override any value determined
+from <em class="xref py py-obj">refimage</em> if a reference image was specified.</p>
+</div>
 </div></blockquote>
 <p><strong id="outscale">outscale</strong> : float,optional</p>
 <blockquote>
@@ -234,7 +235,7 @@ read in from the input image header keyword specified by <a href="#id1"><span cl
 </div></blockquote>
 <p><strong id="yrefpix">yrefpix</strong> : float</p>
 <blockquote>
-<div><p>Reference pixel Y position on output (CRPIX2)&#8221;</p>
+<div><p>Reference pixel Y position on output (CRPIX2)</p>
 </div></blockquote>
 <p><strong id="outnx">outnx</strong> : float</p>
 <blockquote>
@@ -332,11 +333,10 @@ model.</p>
 </div></blockquote>
 <p><strong id="interp">interp</strong></p>
 <blockquote>
-<div><dl class="docutils">
-<dt>Form of interpolation to use when blotting pixels. Valid options::</dt>
-<dd><p class="first last">&#8220;nearest&#8221;,&#8221;linear&#8221;,&#8221;poly3&#8221;, &#8220;poly5&#8221;(default), &#8220;spline3&#8221;, &#8220;sinc&#8221;</p>
-</dd>
-</dl>
+<div><p>Form of interpolation to use when blotting pixels. Valid options:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&quot;nearest&quot;</span><span class="p">,</span><span class="s">&quot;linear&quot;</span><span class="p">,</span><span class="s">&quot;poly3&quot;</span><span class="p">,</span> <span class="s">&quot;poly5&quot;</span><span class="p">(</span><span class="n">default</span><span class="p">),</span> <span class="s">&quot;spline3&quot;</span><span class="p">,</span> <span class="s">&quot;sinc&quot;</span>
+</pre></div>
+</div>
 </div></blockquote>
 <p><strong id="sinscl">sinscl</strong></p>
 <blockquote>
@@ -350,7 +350,7 @@ model.</p>
 <blockquote class="last">
 <div><p>Custom mapping class to use to provide transformation from
 drizzled to blotted WCS.  Default will be to use
-<a href="#id3"><span class="problematic" id="id4">`</span></a>drizzlepac.wcs_functions.WCSMap&#8217;.</p>
+<a class="reference internal" href="wcsutils.html#drizzlepac.wcs_functions.WCSMap" title="drizzlepac.wcs_functions.WCSMap"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.wcs_functions.WCSMap</span></tt></a>.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -426,7 +426,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="median.html" title="Step 5: Create a Median Image"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev45925 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
