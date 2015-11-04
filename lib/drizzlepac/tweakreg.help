@@ -54,7 +54,7 @@ inputDict : dict, optional
     be used to override the defaults.
 
     .. note:: This list of parameters **can** include the `updatewcs` parameter,
-    even though this parameter no longer can be set through the TEAL GUI.
+       even though this parameter no longer can be set through the TEAL GUI.
 
     .. note:: This list of parameters **can** contain parameters specific
        to the `TweakReg` task itself described here in the "Other Parameters"

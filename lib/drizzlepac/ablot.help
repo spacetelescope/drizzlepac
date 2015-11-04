@@ -91,10 +91,10 @@ expkey : str (Default Value = 'exptime)
 expout : str or float (Default Value = 'input')
     Value of exposure time to use in scaling the output blotted image when
     `out_units` is set to **counts**. If set to **'input'**, the value will be
-    read in from the input image header keyword specified by `expkey'.
+    read in from the input image header keyword specified by `expkey`.
 
-.. note:: The following parameters, when set, will override any value determined
-    from `refimage` if a reference image was specified.
+    .. note:: The following parameters, when set, will override any value determined
+        from `refimage` if a reference image was specified.
 
 outscale : float,optional
     Absolute size of output pixels in arcsec/pixel
@@ -112,7 +112,7 @@ xrefpix : float
     Reference pixel X position on output (CRPIX1)
 
 yrefpix : float
-    Reference pixel Y position on output (CRPIX2)"
+    Reference pixel Y position on output (CRPIX2)
 
 outnx : float
     Size of output image's X-axis (pixels)
