@@ -15,7 +15,7 @@ docstrings.  The complete list of changes includes:
 - Tweakreg has been updated to correctly and fully apply source selection criteria for both input source catalogs and reference source catalogs based on fluxmin,fluxmax and nbright for each.
 - All use of keyword deletion has been updated in drizzlepac (and fitsblender) to avoid warnings from astropy.
 - All 3 coordinate transformation tasks rely on the input of valid WCS information for the calculations. These tasks now warn the user when it could not find a valid WCS and instead defaulted to using a unity WCS, so that the user can understand what input needs to be checked/revised to get the correct results.
-- Exclusion/inclusion region files that can be used with 'tweakreg' can only be specified in image coordinates, not sky coordinates and will only support files written out using DS9-compatible format. 
+- Exclusion/inclusion region files that can be used with 'tweakreg' can now be specified in image coordinates and sky coordinates and will only support files written out using DS9-compatible format. 
 - The filename for 'final_refimage' in astrodrizzle and 'refimage' in tweakreg can now be specified with OR without an extension, such as '[sci,1]' or '[0]'.  If no extension is specified, it will automatically look for the first extension with a valid HSTWCS and use that. This makes the use of this parameter in both place consistent and more general than before.
 - The reported fit as written out to a file has been slightly modified to report more appropriate numbers of significant digits for the results. 
 - Use of astrolib.coords was removed from drizzlepac and replaced by use of astropy functions instead. This eliminated one more obsolete dependency in our software.
