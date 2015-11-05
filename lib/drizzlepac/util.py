@@ -512,10 +512,15 @@ def findWCSExtn(filename):
 
         Returns
         =======
-        extnum : str
+        extnum : str, None
             Value of extension name as a string either as provided by the user
             or based on the extension number for the first extension which
-            contains a valid HSTWCS object. This can be used as input to
+            contains a valid HSTWCS object.  Returns None if no extension can be
+            found with a valid WCS.
+
+        Notes
+        =====
+        The return value from this function can be used as input to
             create another HSTWCS with the syntax::
 
                 `HSTWCS('{}[{}]'.format(filename,extnum))

@@ -92,12 +92,14 @@ class Image(object):
 
         numwht = spu.count_extensions(self._im, extname='WHT')
 
-        wnames = altwcs.wcsnames(self._im.hdu, ext=(('SCI',1) if num_sci > 0 else 0))
+        wcsextn = util.findWCSExtn(filename)
+        #wnames = altwcs.wcsnames(self._im.hdu, ext=(('SCI',1) if num_sci > 0 else 0))
         # If no WCSNAME keywords were found, raise the possibility that
         # the images have not been updated fully and may result in inaccurate
         # alignment
         # use 'numwht' != 0 to indicate a DRZ file has been specified as input
-        if len(wnames) == 0 and numwht == 0:
+        #if len(wnames) == 0 and numwht == 0:
+        if wcsextn is None:
             print(textutil.textbox('WARNING:\n'
             'Image %s may not have the full correct '%filename+
             'WCS solution in the header as created by stwcs.updatewcs '
@@ -128,17 +130,8 @@ class Image(object):
         #  (assume a valid WCS with each SCI extension)
         #TODO: current check for a valid WCS may need a revision to
         # implement a more robust/rigurous check.
-        try:
-            ctypes = self._im.hdu[(self.ext_name,1)].header['CTYPE*']
-            if len(ctypes) > 0:
-                del ctypes
-            else:
-                raise KeyError()
-        except KeyError:
-            err_msg = "ERROR: No Valid WCS available for {:s}" \
-                .format(filename)
-            print(textutil.textbox(err_msg), file=sys.stderr)
-            raise ValueError(err_msg)
+        # This verification has already been done when finding 'wcsextn'
+
 
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
