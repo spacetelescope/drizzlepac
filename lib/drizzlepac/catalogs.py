@@ -14,14 +14,17 @@ from astropy import wcs as pywcs
 import astropy.coordinates as coords
 from astropy import units as u
 from stsci.tools import logutil, textutil
+from stsci.skypac.utils import basicFITScheck, get_extver_list
 
 import stwcs
 from stwcs import wcsutil
 from astropy.io import fits
 import stsci.imagestats as imagestats
+import pyregion
 
 #import idlphot
 from . import tweakutils, util
+from .mapreg import _AuxSTWCS
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
@@ -434,8 +437,101 @@ class ImageCatalog(Catalog):
         Catalog.__init__(self,wcs,catalog_source,**kwargs)
         extind = self.fname.rfind('[')
         self.fnamenoext = self.fname if extind < 0 else self.fname[:extind]
-        if self.wcs.extname == ('',None): self.wcs.extname = (0)
+        if self.wcs.extname == ('',None):
+            self.wcs.extname = (0)
         self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
+
+
+    def _combine_exclude_mask(self, mask):
+        # create masks from exclude/include regions and combine it with the
+        # input DQ mask:
+        #
+        regmask = None
+        if self.src_find_filters is not None and \
+           'region_file' in self.src_find_filters:
+            reg_file_name = self.src_find_filters['region_file']
+            if not os.path.isfile(reg_file_name):
+                raise IOError("The 'exclude' region file '{:s}' does not exist."
+                              .format(reg_file_name))
+        else:
+            return mask
+
+        # get data image size:
+        (img_ny, img_nx) = self.source.shape
+
+        # find out if user provided a region file or a mask FITS file:
+        reg_file_ext = os.path.splitext(reg_file_name)[-1]
+        if reg_file_ext.lower().strip() in ['.fits', '.fit'] and \
+           basicFITScheck(reg_file_name):
+            # likely we are dealing with a FITS file.
+            # check that the file is a simple with 2 axes:
+            hdulist = fits.open(reg_file_name)
+            extlist = get_extver_list(hdulist,extname=None)
+            for ext in extlist:
+                usermask = hdulist[ext].data
+                if usermask.shape == (img_ny, img_nx):
+                    regmask = usermask.astype(np.bool)
+                    break
+            hdulist.close()
+            if regmask is None:
+                raise ValueError("None of the image-like extensions in the "
+                                 "user-provided exclusion mask '{}' has a "
+                                 "correct shape".format(reg_file_name))
+
+        else:
+            # we are dealing with a region file:
+            reglist = pyregion.open(reg_file_name)
+
+            ## check that regions are in image-like coordinates:
+            ##TODO: remove the code below once 'pyregion' package can correctly
+            ##      (DS9-like) convert sky coordinates to image coordinates for all
+            ##      supported shapes.
+            #if not all([ (x.coord_format == 'image' or \
+            #              x.coord_format == 'physical') for x in reglist]):
+            #    print("WARNING: Some exclusion regions are in sky coordinates.\n"
+            #          "         These regions will be ignored.")
+            #    # filter out regions in sky coordinates:
+            #    reglist = pyregion.ShapeList(
+            #        [x for x in reglist if x.coord_format == 'image' or \
+            #         x.coord_format == 'physical']
+            #    )
+
+            #TODO: comment out next lines if we do not support region files
+            #      in sky coordinates and uncomment previous block:
+            # Convert regions from sky coordinates to image coordinates:
+            auxwcs    = _AuxSTWCS(self.wcs)
+            reglist = reglist.as_imagecoord(auxwcs, rot_wrt_axis=2)
+
+            # if all regions are exclude regions, then assume that the entire image
+            # should be included and that exclude regions exclude from this
+            # rectangular region representing the entire image:
+            if all([x.exclude for x in reglist]):
+                # we slightly widen the box to make sure that
+                # the entire image is covered:
+                imreg = pyregion.parse("image;box({:.1f},{:.1f},{:d},{:d},0)"
+                                       .format((img_nx+1)/2.0, (img_ny+1)/2.0,
+                                               img_nx+1, img_ny+1)
+                                       )
+
+                reglist = pyregion.ShapeList(imreg + reglist)
+
+            # create a mask from regions:
+            regmask = np.asarray(
+                reglist.get_mask(shape=(img_ny, img_nx)),
+                dtype=np.bool
+            )
+
+        if mask is not None and regmask is not None:
+            mask = np.logical_and(regmask, mask)
+        else:
+            mask = regmask
+
+        #DEBUG:
+        if mask is not None:
+            fn = os.path.splitext(self.fname)[0] + '_srcfind_mask.fits'
+            fits.writeto(fn, mask.astype(dtype=np.uint8), clobber=True)
+
+        return mask
 
 
     def generateXY(self, **kwargs):
@@ -457,10 +553,13 @@ class ImageCatalog(Catalog):
         else:
             hmin = sigma*self.pars['threshold']
 
-        if 'mask' in kwargs:
-            mask = kwargs['mask']
+        if 'mask' in kwargs and kwargs['mask'] is not None:
+            dqmask = np.asarray(kwargs['mask'], dtype=bool)
         else:
-            mask = None
+            dqmask = None
+
+        # get the mask for source finding:
+        mask = self._combine_exclude_mask(dqmask)
 
         x, y, flux, src_id, sharp, round1, round2 = tweakutils.ndfind(
             self.source,
@@ -476,9 +575,8 @@ class ImageCatalog(Catalog):
             nsigma=self.pars['nsigma'],
             ratio=self.pars['ratio'],
             theta=self.pars['theta'],
-            src_find_filters=self.src_find_filters,
-            mask = mask,
-            use_sharp_round = self.use_sharp_round
+            mask=mask,
+            use_sharp_round=self.use_sharp_round
         )
 
         if len(x) == 0:
@@ -500,7 +598,6 @@ class ImageCatalog(Catalog):
                     nsigma=self.pars['nsigma'],
                     ratio=self.pars['ratio'],
                     theta=self.pars['theta'],
-                    src_find_filters=self.src_find_filters,
                     mask = mask,
                     use_sharp_round = self.use_sharp_round
                 )

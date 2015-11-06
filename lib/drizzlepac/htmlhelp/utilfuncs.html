@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utility Functions &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>Utility Functions &mdash; DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45932 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="WCS Utilities" href="wcsutils.html" />
     <link rel="prev" title="Utilities" href="util.html" /> 
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="util.html" title="Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -265,6 +265,32 @@ None when the FITS file was written out to a file.</p>
 <dt id="drizzlepac.util.end_logging">
 <tt class="descclassname">drizzlepac.util.</tt><tt class="descname">end_logging</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.end_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close log file and restore system defaults.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.util.findWCSExtn">
+<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">findWCSExtn</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.util.findWCSExtn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return new filename with extension that points to an extension with a
+valid WCS.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>extnum</strong> : str</p>
+<blockquote class="last">
+<div><p>Value of extension name as a string either as provided by the user
+or based on the extension number for the first extension which
+contains a valid HSTWCS object. This can be used as input to
+create another HSTWCS with the syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre>`HSTWCS(&#39;{}[{}]&#39;.format(filename,extnum))
+</pre></div>
+</div>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -561,7 +587,7 @@ was found in all SCI extensions.</p>
         <li class="right" >
           <a href="util.html" title="Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>

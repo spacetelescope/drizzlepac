@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>TWEAKREG: Alignment of Images &mdash; DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45932 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,9 +23,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="Refmagefindpars: Source finding parameters for the reference image" href="refimagefindpars.html" />
-    <link rel="prev" title="DrizzlePac v2.0.0 Release Notes" href="release_v2_0_0_notes.html" /> 
+    <link rel="prev" title="DrizzlePac v2.1.0 Release Notes" href="release_v2_0_0_notes.html" /> 
   </head>
   <body>
     <div class="related">
@@ -41,9 +41,9 @@
           <a href="refimagefindpars.html" title="Refmagefindpars: Source finding parameters for the reference image"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
+          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.1.0 Release Notes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -53,7 +53,7 @@
             </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="release_v2_0_0_notes.html"
-                        title="previous chapter">DrizzlePac v2.0.0 Release Notes</a></p>
+                        title="previous chapter">DrizzlePac v2.1.0 Release Notes</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="refimagefindpars.html"
                         title="next chapter">Refmagefindpars: Source finding parameters for the reference image</a></p>
@@ -171,6 +171,11 @@ here.</p>
 be used to override the defaults.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
+<p class="last">This list of parameters <strong>can</strong> include the <tt class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></tt> parameter,
+even though this parameter no longer can be set through the TEAL GUI.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
 <p class="last">This list of parameters <strong>can</strong> contain parameters specific
 to the <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> task itself described here in the &#8220;Other Parameters&#8221;
 section and <strong>may not</strong> contain parameters from the <tt class="xref py py-obj docutils literal"><span class="pre">refimagefindpars</span></tt>
@@ -213,26 +218,64 @@ when <em class="xref py py-obj">expand_refcat</em> = <em class="xref py py-obj">
 <p><strong>exclusions: string (Default = &#8216;&#8217;)</strong></p>
 <blockquote>
 <div><p>This parameter allows the user to specify a set of files which contain
-regions in the image to ignore when finding sources.  This file MUST
-have 1 line for each input image with the name of the input file in the
-first column.  Subsequent columns would be used to specify an exclusion
-file for each chip in <tt class="docutils literal"><span class="pre">'SCI,&lt;n&gt;'</span></tt> index order. If a chip does not require
-an exclusion file, the string <em class="xref py py-obj">None</em> or <tt class="docutils literal"><span class="pre">INDEF</span></tt> can be used as a
-placeholder for that chip. The last <em>optional</em> column (after the last
-column with chip exclusion file name) can contain the string
-&#8216;[ConformDS9]&#8217; (without apostrophes). When present, this will indicate that
-region files can contain both regular and &#8220;exclude&#8221; regions and that they
-should be interpreted as such. If &#8216;[ConformDS9]&#8217; is not present then the
-normal regions will be interpreted as &#8220;exclude&#8221; regions and the
-DS9 exclude regions will be omitted.</p>
-<p>Each chip&#8217;s exclusion file should conform to the &#8216;region&#8217; file format
-generated by DS9. The region files can contain both regular regions
-as well as &#8220;exclude&#8221; regions. The &#8220;ruler&#8221;, &#8220;compass&#8221;, and &#8220;projection&#8221;
-regions are not supported (ignored). Currently these regions <strong>must</strong>
-be provided in <em>image</em> coordinates. The task <em class="xref py py-obj">MapReg</em> can be used for
-(semi-)automated generation of region files in &#8216;image&#8217; coordinates from a
-&#8220;master&#8221; region file provided in sky coordinates.
-<em>See notes below for more information.</em></p>
+regions in the image to ignore (or to include) when finding sources.
+This file MUST have 1 line for each input image with the name of the input
+file in the first column.  Subsequent columns would be used to specify an
+inclusion and/or exclusion file for each chip in <tt class="docutils literal"><span class="pre">'SCI,&lt;n&gt;'</span></tt> index order.
+If a chip does not require an exclusion file, the string <em class="xref py py-obj">None</em> or <tt class="docutils literal"><span class="pre">INDEF</span></tt>
+can be used as a placeholder for that chip. Each exclusion file can be
+either a mask provided as a simple FITS file or a region file in DS9-format.</p>
+<p>When a mask file is provided, <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> will look for the first image-like
+extension with image data of the same dimensions as the input image. Zeros
+in the mask will be interpreted as &#8220;bad&#8221; (excluded from search) pixels
+while non-zero pixels will be interpreted as &#8220;good&#8221; pixels. It is
+recommended that mask files be FITS files without extensions and mask data
+(preferably of integer type) reside in the primary HDU.</p>
+<p>If a region file is provided then it should conform to the &#8216;region&#8217; file
+format generated by DS9. The region files can contain both regular
+(&#8220;include&#8221;) regions as well as &#8220;exclude&#8221; regions. Regular (&#8220;include&#8221;)
+regions indicate the regions of the image that should be searched for
+sources while &#8220;exclude&#8221; regions indicate parts of the image that should
+not be used for source detection. The &#8220;ruler&#8221;, &#8220;compass&#8221;, and &#8220;projection&#8221;
+regions are not supported (ignored). When <strong>all regions</strong>
+in a region file are &#8220;exclude&#8221; regions, then it will be assumed that the
+entire image is &#8220;good&#8221; before the exclude regions are processed. In other
+words, an &#8220;include&#8221; region corresponding to the entire image will be
+<em>prepended</em> to the list of exclude regions.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Regions in a region file are processed in the order they appear in the
+region file. Thus, when region files contain <em>both</em> &#8220;include&#8221; and
+&#8220;exclude&#8221; regions, the order in which these regions appear may affect
+the results.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p><a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> relies on <tt class="xref py py-obj docutils literal"><span class="pre">pyregion</span></tt> package for work with region files. At the
+time of writing, <tt class="xref py py-obj docutils literal"><span class="pre">pyregion</span></tt> uses a different algorithm from DS9 for
+converting regions from sky coordinates to image coordinate
+(this conversion is performed before regions are converted to masks).
+For these reasons, regions provided in sky coordinates may not produce
+the expected (from DS9) results. While in most instances these
+discrepancies should be tolerable, it is important to keep this in mind.</p>
+<p class="last">During testing it was observed that conversion to image coordinates is
+most accurate for polygonal regions and less accurate for other regions
+Therefore, if one must provide regions in sky coordinates, it is
+types. recommended to use polygonal and circular regions and to avoid
+elliptical and rectangular regions as their conversion to image
+coordinates is less accurate. One may use <tt class="docutils literal"><span class="pre">mapreg</span></tt> task in the
+<tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac</span></tt> package to convert region files from sky coordinates to image
+coordinates. This will allow one to see the actual regions that will be
+used by source finding routine in <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a>.</p>
+</div>
+</div></blockquote>
+<p><strong>updatewcs</strong> : bool (Default = No)</p>
+<blockquote>
+<div><p><strong>NOT available through TEAL GUI interface.</strong>
+This parameter can only be set through the Python interface to Tweakreg by
+passing it in as part of the input_dict in order to insure that running
+<tt class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></tt> <strong>does not overwrite</strong> a previously determined solution written out
+to the input file headers.</p>
 </div></blockquote>
 <p><strong>writecat</strong> : bool (Default = Yes)</p>
 <blockquote>
@@ -671,9 +714,10 @@ j99da1f2q_flt.fits test_exclusion.reg
 </pre></div>
 </div>
 <p>This file specifies no exclusion files for the first image, and only
-an regions file for SCI,1 of the second image.  Should an exclusion
-regions file only be needed for the second chip in the second image,
-the file would need to look like:</p>
+an regions file for SCI,1 of the second image.  NOTE: The first file can be
+dropped completely from the exclusion catalog file.</p>
+<p>In the above example, should an exclusion regions file only be needed for the
+second chip in the second image, the file would need to look like:</p>
 <div class="highlight-python"><div class="highlight"><pre>j99da1emq_flt.fits
 j99da1f2q_flt.fits None test_sci2_exclusion.reg
 </pre></div>
@@ -681,28 +725,6 @@ j99da1f2q_flt.fits None test_sci2_exclusion.reg
 <p>The value <em class="xref py py-obj">None</em> could also be replaced by <tt class="docutils literal"><span class="pre">INDEF</span></tt> if desired, but either
 string needs to be present to signify no regions file for that chip while
 the code continues parsing the line to find a file for the second chip.</p>
-<p>With the format described above, the &#8220;normal&#8221; (see below) DS9 regions
-in the regions files will be interpreted as regions/parts of the image that
-should <strong>not</strong> be used by the source finding algorithm. So, these regions
-in fact act as &#8220;exclude&#8221; regions. The <em>real</em> DS9 exclude regions (i.e., the ones
-that have &#8220;-&#8221; in front of their shape name: -circle(...), -box(...)) are being
-ignored. This is useful if one desires to exclude some parts of the image
-(e.g., vecinity of a very bright/saturated source, diffraction spikes, etc.)
-from being used for source finding. This will improve <em>both</em> the efficiency
-<em>and</em> reliability of the matching algorithm by eliminating unreliable sources
-from the produced catalogs that could &#8220;confuse&#8221; the matching algorithm.</p>
-<p>However, for many problems it is easier and better to specify not the regions
-that need to be excluded from source finding but rather the regions that <em>must</em>
-be used for source finding. In order instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> to interpret &#8220;normal&#8221;
-DS9 regions as &#8220;include&#8221; regions and the true exclude DS9 regions (with &#8220;-&#8221;)
-as &#8220;exclude&#8221; regions, after the last region file name in the exclusion catalog,
-users should add the string &#8216;[ConformDS9]&#8217; (without apostrophes). The previous
-example will then become:</p>
-<div class="highlight-python"><div class="highlight"><pre>j99da1emq_flt.fits
-j99da1f2q_flt.fits None test_sci2_inclusion_and_exclusion.reg [ConformDS9]
-j99da1f2r_flt.fits test_sci1_exclusion.reg test_sci2_exclusion.reg
-</pre></div>
-</div>
 <p><strong>Format of Region Files</strong></p>
 <p>The format of the exclusions catalogs referenced in the &#8216;exclusions&#8217;
 file defaults to the format written out by DS9 using the &#8216;DS9/Funtools&#8217;
@@ -719,24 +741,10 @@ circle(200,200,50)  # outer circle
 -circle(200,200,30) # inner circle
 </pre></div>
 </div>
-<p>This region file can function both as an exclusion or as an inclusion region
-file depending on the presence of the [ConformDS9] string after the region list
-in the exclusion catalog (see above). If [ConformDS9] <strong>is not</strong> present in the
-exclusions catalog file, then the above region file will instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a>
-to find all sources in the image that are <strong>not inside</strong> the following regions:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">circle</span><span class="p">(</span><span class="mi">3170</span><span class="p">,</span><span class="mi">198</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">ellipse</span><span class="p">(</span><span class="mi">3269</span><span class="p">,</span><span class="mi">428</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">45</span><span class="p">)</span> <span class="c"># a rotated ellipse</span>
-<span class="n">box</span><span class="p">(</span><span class="mf">3241.1146</span><span class="p">,</span><span class="mf">219.78132</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">15</span><span class="p">)</span> <span class="c"># a rotated box</span>
-<span class="n">circle</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>  <span class="c"># outer circle</span>
-</pre></div>
-</div>
-<p>Notice that the &#8220;true&#8221; DS9 exclude region &#8216;-circle(200,200,30)&#8217; was ignored.
-On the other hand, if the [ConformDS9] string is present in the exclusions
-catalog file, then the original region file (first example in this section)
-will be interpreted as &#8220;find all sources in the image that <strong>are inside</strong>
-the four regions above but <strong>not inside</strong> the region -circle(200,200,30)&#8221;.
-Effectively we will instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a> to find all the sources <em>inside</em> the
-following regions:</p>
+<p>This region file will be interpreted as &#8220;find all sources in the image that
+<strong>are inside</strong> the four regions above but <strong>not inside</strong> the
+region -circle(200,200,30)&#8221;. Effectively we will instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><tt class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></tt></a>
+to find all the sources <em>inside</em> the following regions:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">circle</span><span class="p">(</span><span class="mi">3170</span><span class="p">,</span><span class="mi">198</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
 <span class="n">ellipse</span><span class="p">(</span><span class="mi">3269</span><span class="p">,</span><span class="mi">428</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">45</span><span class="p">)</span> <span class="c"># a rotated ellipse</span>
 <span class="n">box</span><span class="p">(</span><span class="mf">3241.1146</span><span class="p">,</span><span class="mf">219.78132</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">15</span><span class="p">)</span> <span class="c"># a rotated box</span>
@@ -849,9 +857,9 @@ writing out the help.</p>
           <a href="refimagefindpars.html" title="Refmagefindpars: Source finding parameters for the reference image"
              >next</a> |</li>
         <li class="right" >
-          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.0.0 Release Notes"
+          <a href="release_v2_0_0_notes.html" title="DrizzlePac v2.1.0 Release Notes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

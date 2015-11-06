@@ -166,6 +166,7 @@ def end_logging(filename=None):
         print('No trailer file saved...')
 
 
+
 class WithLogging(object):
     def __init__(self):
         self.depth = 0
@@ -481,27 +482,71 @@ def verifyRefimage(refimage):
         valid=True
         return valid
 
-    refroot = fileutil.parseFilename(refimage)[0]
+    refroot,extroot = fileutil.parseFilename(refimage)
     if not os.path.exists(refroot):
         valid = False
         return valid
 
-    # start by checking to make sure user specified an extension specified
-    # when using an MEF as refimage
-    ftype = fileutil.isFits(refimage)
-    if ftype[1] == 'mef' and '[' not in refimage:
-        valid = False
     # if a MEF has been specified, make sure extension contains a valid WCS
     if valid:
-        # check for CD matrix in WCS object
-        refwcs = wcsutil.HSTWCS(refimage)
-        if not refwcs.wcs.has_cd():
-            valid = False
+        if extroot is None:
+            extn = findWCSExtn(refimage)
+            if extn is None:
+                valid = False
+            else:
+                valid = True
         else:
-            valid = True
-        del refwcs
+            # check for CD matrix in WCS object
+            refwcs = wcsutil.HSTWCS(refimage)
+            if not refwcs.wcs.has_cd():
+                valid = False
+            else:
+                valid = True
+            del refwcs
 
     return valid
+
+def findWCSExtn(filename):
+    """ Return new filename with extension that points to an extension with a
+        valid WCS.
+
+        Returns
+        =======
+        extnum : str, None
+            Value of extension name as a string either as provided by the user
+            or based on the extension number for the first extension which
+            contains a valid HSTWCS object.  Returns None if no extension can be
+            found with a valid WCS.
+
+        Notes
+        =====
+        The return value from this function can be used as input to
+            create another HSTWCS with the syntax::
+
+                `HSTWCS('{}[{}]'.format(filename,extnum))
+
+    """
+    rootname,extroot = fileutil.parseFilename(filename)
+    extnum = None
+    if extroot is None:
+        fimg = fits.open(rootname)
+        for i,extn in enumerate(fimg):
+            if 'crval1' in extn.header:
+                refwcs = wcsutil.HSTWCS('{}[{}]'.format(rootname,i))
+                if refwcs.wcs.has_cd():
+                    extnum = '{}'.format(i)
+                    break
+        fimg.close()
+    else:
+        try:
+            refwcs = wcsutil.HSTWCS(filename)
+            if refwcs.wcs.has_cd():
+                extnum = extroot
+        except:
+            extnum = None
+
+    return extnum
+
 
 def verifyFilePermissions(filelist, chmod=True):
     """ Verify that images specified in 'filelist' can be updated.

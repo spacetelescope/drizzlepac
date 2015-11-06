@@ -506,16 +506,12 @@ for the final drizzle step.  The options for this parameter include:
 final_kernel : {'square','point','gaussian','turbo','tophat','lanczos3'} (Default = 'square')
     This parameter specifies the form of the kernel function used to distribute flux onto the separate output images, for the initial separate drizzling operation only. The value options for this parameter include:
 
-
-
         * **square**: original classic drizzling kernel
         * **point**: this kernel is a point so each input pixel can only contribute to the single pixel that is closest to the output position. It is equivalent to the limit as pixfrac -> 0, and is very fast.
         * **gaussian**: this kernel is a circular gaussian, measured in input pixels, with a FWHM value equal to the value of pixfrac.
         * **turbo**: this is similar to kernel="square", except that the box is always the same shape and size on the output grid, and is always aligned with the X and Y axes. This may result in a significant speed increase.
         * **tophat**: this kernel is a circular "top hat" shape of width pixfrac. It effects only output pixels within a radius of pixfrac/2 from the output position.
-
-
-      * **lanczos3**: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the "sinc" interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs.
+        * **lanczos3**: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the "sinc" interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs.
 
         .. warning:: The ''lanczos3'' kernel tends to result in much slower processing as compared to other kernel options. This option should never be used for pixfrac != 1.0, and is not recommended for scale != 1.0.
 
@@ -553,7 +549,7 @@ final_wcs : bool (Default = No)
 
 
 final_refimage : str (Default = '')
-    Reference image from which a WCS solution can be obtained.
+    Reference image from which a WCS solution can be obtained. If no extension is specified (such as 'sci,1' or '4'), then astrodrizzle will automatically look for the FIRST extension which contains a valid HSTWCS object to read in as the WCS. Otherwise, the user can explicitly provide the extension name for multi-extension FITS files.
 
 
 final_rot : float (Default = None)

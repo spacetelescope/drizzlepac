@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>WCS Utilities &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>WCS Utilities &mdash; DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45932 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation" href="index.html" />
     <link rel="up" title="Utilities" href="util.html" />
     <link rel="next" title="Output Image Generation" href="outimage.html" />
     <link rel="prev" title="Utility Functions" href="utilfuncs.html" /> 
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="utilfuncs.html" title="Utility Functions"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
       </ul>
     </div>
@@ -288,7 +288,7 @@ lists of positions &#8216;xy&#8217; (input) and &#8216;uv&#8217; (output).</p>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.make_outputwcs">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">make_outputwcs</tt><big>(</big><em>imageObjectList</em>, <em>output</em>, <em>configObj=None</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.make_outputwcs" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">make_outputwcs</tt><big>(</big><em>imageObjectList</em>, <em>output</em>, <em>configObj=None</em>, <em>perfect=False</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.make_outputwcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the full output WCS based on the set of input imageObjects
 provided as input, along with the pre-determined output name from
 process_input.  The user specified output parameters are then used to
@@ -297,6 +297,13 @@ The input imageObjectList has the outputValues dictionary
 updated with the information from the computed output WCS.
 It then returns this WCS as a WCSObject(imageObject)
 instance.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="drizzlepac.wcs_functions.make_perfect_cd">
+<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">make_perfect_cd</tt><big>(</big><em>wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.make_perfect_cd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a perfect (square, orthogonal, undistorted) CD matrix from the
+input WCS.</p>
 </dd></dl>
 
 <dl class="function">
@@ -394,7 +401,7 @@ distortion model and the coeffs used by &#8216;drizzle&#8217;.</p>
         <li class="right" >
           <a href="utilfuncs.html" title="Utility Functions"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li>
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li>
           <li><a href="util.html" >Utilities</a> &raquo;</li> 
       </ul>
     </div>

@@ -27,8 +27,11 @@ __author__ = 'Mihai Cara'
 
 class _AuxSTWCS(object):
     def __init__(self, fobj=None, ext=None, minerr=0.0, wcskey=" "):
-        self._stwcs = stwcs.wcsutil.HSTWCS(fobj=fobj, ext=ext,
-                                           minerr=minerr, wcskey=wcskey)
+        if isinstance(fobj, stwcs.wcsutil.HSTWCS):
+            self._stwcs = fobj
+        else:
+            self._stwcs = stwcs.wcsutil.HSTWCS(fobj=fobj, ext=ext,
+                                               minerr=minerr, wcskey=wcskey)
 
     @property
     def wcs(self):

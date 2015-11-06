@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 6: Blotting the Median Image &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>Step 6: Blotting the Median Image &mdash; DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45932 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="Step 7: Cosmic-ray identification" href="drizcr.html" />
     <link rel="prev" title="Step 5: Create a Median Image" href="median.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="median.html" title="Step 5: Create a Median Image"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -124,14 +124,27 @@ see the <a class="reference external" href="http://drizzlepac.stsci.edu">Drizzle
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="blot">blot</strong> : bool (Default = Yes)</p>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="data">data</strong> : str</p>
 <blockquote>
-<div><p>Perform the blot operation on the median image?
-If set to &#8216;Yes&#8217; (<em class="xref py py-obj">True</em>), the output will be median smoothed images
-that match each input chips location, and will be used in the cosmic
-ray rejection step.</p>
+<div><p>Input distortion-corrected (median or drizzled) image to be used as the
+source for creating blotted images.</p>
 </div></blockquote>
-<p><strong id="blot_interp">blot_interp</strong> : str{&#8216;nearest&#8217;, &#8216;linear&#8217;, &#8216;poly3&#8217;, &#8216;poly5&#8217;, &#8216;sinc&#8217;} (Default = &#8216;poly5&#8217;)</p>
+<p><strong id="reference">reference</strong> : str</p>
+<blockquote>
+<div><p>Filename of image to read to define the blotted WCS; image with distortion
+to be matched by output blotted image.</p>
+</div></blockquote>
+<p><strong id="outdata">outdata</strong> : str</p>
+<blockquote>
+<div><p>Filename for output blotted image.</p>
+</div></blockquote>
+<p><strong id="coeffs">coeffs</strong> : bool (Default Value = True)</p>
+<blockquote>
+<div><p>This parameters specifies whether or not to use the header-based distortion
+coefficients when creating the blotted, distorted image.  If False, no
+distortion will be applied at all, effectively working as a cut-out operation.</p>
+</div></blockquote>
+<p><strong id="interp">interp</strong> : str{&#8216;nearest&#8217;, &#8216;linear&#8217;, &#8216;poly3&#8217;, &#8216;poly5&#8217;, &#8216;sinc&#8217;} (Default = &#8216;poly5&#8217;)</p>
 <blockquote>
 <div><p>This parameter defines the method of interpolation to be used when
 blotting drizzled images back to their original WCS solution.
@@ -151,19 +164,86 @@ it is relatively fast and accurate.</p>
 for <em class="xref py py-obj">blot_sinscl</em> will be used to specify the size of the sinc
 interpolation kernel.</p>
 </div></blockquote>
-<p><strong id="blot_sinscl">blot_sinscl</strong> : float (Default Value = 1.0)</p>
+<p><strong id="sinscl">sinscl</strong> : float (Default Value = 1.0)</p>
 <blockquote>
 <div><p>Size of the sinc interpolation kernel in pixels.</p>
 </div></blockquote>
-<p><strong id="blot_addsky">blot_addsky</strong> : bool (Default Value = Yes)</p>
+<p><strong id="stepsize">stepsize</strong> : int (Default Value = 10)</p>
+<blockquote>
+<div><p>Number of pixels for WCS interpolation.  The distortion model will be sampled
+exactly and completely every <em class="xref py py-obj">stepsize</em> pixel with bi-linear interpolation
+being used to compute the distortion for intermediate pixels. This optimization
+speeds up the computation significantly when <em class="xref py py-obj">stepsize</em> &gt;&gt; 1 at the expense
+of interpolation errors for intermediate pixels.</p>
+</div></blockquote>
+<p><strong id="addsky">addsky</strong> : bool (Default Value = Yes)</p>
 <blockquote>
 <div><p>Add back a sky value using the <tt class="docutils literal"><span class="pre">MDRIZSKY</span></tt> value from the header.
 If &#8216;Yes&#8217; (<em class="xref py py-obj">True</em>), the <em class="xref py py-obj">blot_skyval</em> parameter is ignored.</p>
 </div></blockquote>
-<p><strong id="blot_skyval">blot_skyval</strong> : float (Default Value = 0.0)</p>
-<blockquote class="last">
+<p><strong id="skyval">skyval</strong> : float (Default Value = 0.0)</p>
+<blockquote>
 <div><p>This is a user-specified custom sky value to be added to the blot image.
 This is only used if <em class="xref py py-obj">blot_addsky</em> is &#8216;No&#8217; (<em class="xref py py-obj">False</em>).</p>
+</div></blockquote>
+<p><strong id="in_units">in_units</strong> : str{&#8216;cps&#8217;, &#8216;counts&#8217;} (Default Value= &#8216;cps&#8217;)</p>
+<blockquote>
+<div><p>Units of input (drizzled) image.
+Valid options are <strong>&#8216;cps&#8217;</strong> and <strong>&#8216;counts&#8217;</strong>.</p>
+</div></blockquote>
+<p><strong id="out_units">out_units</strong> : str{&#8216;cps&#8217;, &#8216;counts&#8217;} (Default Value = &#8216;counts&#8217;)</p>
+<blockquote>
+<div><p>Units of the ouput (blotted) image.
+Valid options are <strong>&#8216;cps&#8217;</strong> and <strong>&#8216;counts&#8217;</strong>.</p>
+</div></blockquote>
+<p><strong id="expkey">expkey</strong> : str (Default Value = &#8216;exptime)</p>
+<blockquote>
+<div><p>Name of keyword to use to extract exposure time value, which will be used to
+scale the blotted image to the final output flux values when <em class="xref py py-obj">out_units</em> is
+set to <strong>counts</strong>.</p>
+</div></blockquote>
+<p><strong id="expout">expout</strong> : str or float (Default Value = &#8216;input&#8217;)</p>
+<blockquote>
+<div><p>Value of exposure time to use in scaling the output blotted image when
+<em class="xref py py-obj">out_units</em> is set to <strong>counts</strong>. If set to <strong>&#8216;input&#8217;</strong>, the value will be
+read in from the input image header keyword specified by <em class="xref py py-obj">expkey</em>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The following parameters, when set, will override any value determined
+from <em class="xref py py-obj">refimage</em> if a reference image was specified.</p>
+</div>
+</div></blockquote>
+<p><strong id="outscale">outscale</strong> : float,optional</p>
+<blockquote>
+<div><p>Absolute size of output pixels in arcsec/pixel</p>
+</div></blockquote>
+<p><strong id="orient">orient</strong> : float</p>
+<blockquote>
+<div><p>Orientation of output (PA of Y axis, N through E)</p>
+</div></blockquote>
+<p><strong id="raref">raref</strong> : float</p>
+<blockquote>
+<div><p>RA of reference point on output image(CRVAL1,degrees)</p>
+</div></blockquote>
+<p><strong id="decref">decref</strong> : float</p>
+<blockquote>
+<div><p>Dec of reference point on output image (CRVAL2, degrees)</p>
+</div></blockquote>
+<p><strong id="xrefpix">xrefpix</strong> : float</p>
+<blockquote>
+<div><p>Reference pixel X position on output (CRPIX1)</p>
+</div></blockquote>
+<p><strong id="yrefpix">yrefpix</strong> : float</p>
+<blockquote>
+<div><p>Reference pixel Y position on output (CRPIX2)</p>
+</div></blockquote>
+<p><strong id="outnx">outnx</strong> : float</p>
+<blockquote>
+<div><p>Size of output image&#8217;s X-axis (pixels)</p>
+</div></blockquote>
+<p><strong id="outny">outny</strong> : float</p>
+<blockquote class="last">
+<div><p>Size of output image&#8217;s Y-axis (pixels)</p>
 </div></blockquote>
 </td>
 </tr>
@@ -183,10 +263,28 @@ the stand alone interfaces, it is assumed that the user has already
 taken care of backing up their original datafiles as the input file
 with be directly altered.</p>
 <p class="rubric">Examples</p>
-<p>Basic example of how to call <a class="reference internal" href="#drizzlepac.ablot.blot" title="drizzlepac.ablot.blot"><tt class="xref py py-func docutils literal"><span class="pre">blot</span></tt></a> yourself from a python
+<p>1. Basic example of how to call <a class="reference internal" href="#drizzlepac.ablot.blot" title="drizzlepac.ablot.blot"><tt class="xref py py-func docutils literal"><span class="pre">blot</span></tt></a> yourself from a python
 command line, using the default parameter settings:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">ablot</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ablot</span><span class="o">.</span><span class="n">blot</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>2. Creation of a blotted image from the products generated by running the
+<em class="xref py py-obj">astrodrizzle</em> task can be done for the median image
+&#8220;adriz_aligned_wcs_f814w_med.fits&#8221; to re-create the (SCI,1) chip from
+&#8220;j8c0d1bwq_flc.fits&#8221; using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">ablot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="kn">import</span> <span class="n">teal</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blotobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">&#39;ablot&#39;</span><span class="p">)</span> <span class="c"># get default values</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ablot</span><span class="o">.</span><span class="n">blot</span><span class="p">(</span><span class="s">&#39;adriz_aligned_wcs_f814w_med.fits&#39;</span><span class="p">,</span><span class="s">&#39;j8c0d1bwq_flc.fits[sci,1]&#39;</span><span class="p">,</span>
+<span class="go">&#39;aligned_f814w_sci1_blot.fits&#39;,configObj=blotobj)</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">teal</span><span class="p">(</span><span class="s">&#39;ablot&#39;</span><span class="p">)</span>
+<span class="go"># set data = adriz_aligned_wcs_f814w_med.fits</span>
+<span class="go"># set reference = j8c0d1bwq_flc.fits[sci,1]</span>
+<span class="go"># set outdata = aligned_f814w_sci1_blot.fits</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -203,6 +301,8 @@ command line, using the default parameter settings:</p>
 blotted image from a single source image.
 All distortion information is assumed to be included in the WCS specification
 of the &#8216;output&#8217; blotted image given in &#8216;blot_wcs&#8217;.</p>
+<p>This is the simplest interface that can be called for stand-alone
+use of the blotting function.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -214,13 +314,44 @@ of the &#8216;output&#8217; blotted image given in &#8216;blot_wcs&#8217;.</p>
 </div></blockquote>
 <p><strong id="source_wcs">source_wcs</strong></p>
 <blockquote>
-<div><p>HSTWCS object representing source image WCS.</p>
+<div><p>HSTWCS object representing source image distortion-corrected WCS.</p>
 </div></blockquote>
 <p><strong id="blot_wcs">blot_wcs</strong></p>
 <blockquote>
 <div><p>(py)wcs.WCS object representing the blotted image WCS.</p>
 </div></blockquote>
-<p class="last"><strong id="exptime">exptime</strong></p>
+<p><strong id="exptime">exptime</strong></p>
+<blockquote>
+<div><p>exptime to use for scaling output blot image. A value of 1 will
+result in output blot image in units of &#8216;cps&#8217;.</p>
+</div></blockquote>
+<p><strong id="coeffs">coeffs</strong></p>
+<blockquote>
+<div><p>Flag to specify whether or not to use distortion coefficients
+associated with blot_wcs. If False, do not apply any distortion
+model.</p>
+</div></blockquote>
+<p><strong id="interp">interp</strong></p>
+<blockquote>
+<div><p>Form of interpolation to use when blotting pixels. Valid options:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&quot;nearest&quot;</span><span class="p">,</span><span class="s">&quot;linear&quot;</span><span class="p">,</span><span class="s">&quot;poly3&quot;</span><span class="p">,</span> <span class="s">&quot;poly5&quot;</span><span class="p">(</span><span class="n">default</span><span class="p">),</span> <span class="s">&quot;spline3&quot;</span><span class="p">,</span> <span class="s">&quot;sinc&quot;</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><strong id="sinscl">sinscl</strong></p>
+<blockquote>
+<div><p>Scale for sinc interpolation kernel (in output, blotted pixels)</p>
+</div></blockquote>
+<p><strong id="stepsize">stepsize</strong></p>
+<blockquote>
+<div><p>Number of pixels for WCS interpolation</p>
+</div></blockquote>
+<p><strong id="wcsmap">wcsmap</strong></p>
+<blockquote class="last">
+<div><p>Custom mapping class to use to provide transformation from
+drizzled to blotted WCS.  Default will be to use
+<a class="reference internal" href="wcsutils.html#drizzlepac.wcs_functions.WCSMap" title="drizzlepac.wcs_functions.WCSMap"><tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac.wcs_functions.WCSMap</span></tt></a>.</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -295,7 +426,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="median.html" title="Step 5: Create a Median Image"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

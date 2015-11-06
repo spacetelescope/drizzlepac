@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</title>
+    <title>Primary User Interface: AstroDrizzle() &mdash; DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.2.dev43005 (27-May-2015)',
+        VERSION:     '2.1.0.dev45932 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="imageObject Classes" href="imageobject.html" />
     <link rel="prev" title="Welcome to drizzlepac’s API documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -690,23 +690,18 @@ parameter.</p>
 <blockquote>
 <div><p>This parameter specifies the form of the kernel function used to distribute flux onto the separate output images, for the initial separate drizzling operation only. The value options for this parameter include:</p>
 <blockquote>
-<div><blockquote>
 <div><ul class="simple">
 <li><strong>square</strong>: original classic drizzling kernel</li>
 <li><strong>point</strong>: this kernel is a point so each input pixel can only contribute to the single pixel that is closest to the output position. It is equivalent to the limit as pixfrac -&gt; 0, and is very fast.</li>
 <li><strong>gaussian</strong>: this kernel is a circular gaussian, measured in input pixels, with a FWHM value equal to the value of pixfrac.</li>
 <li><strong>turbo</strong>: this is similar to kernel=&#8221;square&#8221;, except that the box is always the same shape and size on the output grid, and is always aligned with the X and Y axes. This may result in a significant speed increase.</li>
 <li><strong>tophat</strong>: this kernel is a circular &#8220;top hat&#8221; shape of width pixfrac. It effects only output pixels within a radius of pixfrac/2 from the output position.</li>
+<li><strong>lanczos3</strong>: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the &#8220;sinc&#8221; interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs.</li>
 </ul>
-</div></blockquote>
-<ul>
-<li><p class="first"><strong>lanczos3</strong>: a Lanczos style kernel, extending a radius of 3 pixels from the center of the detection. The Lanczos kernel is a damped and bounded form of the &#8220;sinc&#8221; interpolator, and is very effective for resampling single images when scale=pixfrac=1. It leads to less resolution loss than other kernels, and typically results in reduced correlated noise in outputs.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">The &#8216;&#8217;lanczos3&#8217;&#8217; kernel tends to result in much slower processing as compared to other kernel options. This option should never be used for pixfrac != 1.0, and is not recommended for scale != 1.0.</p>
 </div>
-</li>
-</ul>
 </div></blockquote>
 <p>The default for this step is <strong>&#8220;turbo&#8221;</strong> since it is much faster than <strong>&#8220;square&#8221;</strong>, and it is quite satisfactory for the purposes of generating the median image. More information about the different kernels can be found in the help file for the drizzle task.</p>
 </div></blockquote>
@@ -742,7 +737,7 @@ description for <em class="xref py py-obj">sky_bits</em> parameter.</p>
 </div></blockquote>
 <p><strong id="final_refimage">final_refimage</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
-<div><p>Reference image from which a WCS solution can be obtained.</p>
+<div><p>Reference image from which a WCS solution can be obtained. If no extension is specified (such as &#8216;sci,1&#8217; or &#8216;4&#8217;), then astrodrizzle will automatically look for the FIRST extension which contains a valid HSTWCS object to read in as the WCS. Otherwise, the user can explicitly provide the extension name for multi-extension FITS files.</p>
 </div></blockquote>
 <p><strong id="final_rot">final_rot</strong> : float (Default = None)</p>
 <blockquote>
@@ -924,7 +919,7 @@ to a text file:</p>
         <li class="right" >
           <a href="index.html" title="Welcome to drizzlepac’s API documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.0.2.dev43005 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev45932 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

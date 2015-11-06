@@ -78,20 +78,28 @@ class Image(object):
             self.open_mode = 'update'
         else:
             self.open_mode = 'readonly'
+
         self.name = filename
+        self.rootname,self.ext_root = fu.parseFilename(filename)
         self.openFile(openDQ=(self.dqbits is not None))
 
-        # try to verify whether or not this image has been updated with
-        # a full distortion model
-        num_sci = spu.count_extensions(self._im, extname='SCI')
+        if self.ext_root is not None:
+            num_sci = 1
+        else:
+            # try to verify whether or not this image has been updated with
+            # a full distortion model
+            num_sci = spu.count_extensions(self._im, extname='SCI')
+
         numwht = spu.count_extensions(self._im, extname='WHT')
 
-        wnames = altwcs.wcsnames(self._im.hdu, ext=(('SCI',1) if num_sci > 0 else 0))
+        wcsextn = util.findWCSExtn(filename)
+        #wnames = altwcs.wcsnames(self._im.hdu, ext=(('SCI',1) if num_sci > 0 else 0))
         # If no WCSNAME keywords were found, raise the possibility that
         # the images have not been updated fully and may result in inaccurate
         # alignment
         # use 'numwht' != 0 to indicate a DRZ file has been specified as input
-        if len(wnames) == 0 and numwht == 0:
+        #if len(wnames) == 0 and numwht == 0:
+        if wcsextn is None:
             print(textutil.textbox('WARNING:\n'
             'Image %s may not have the full correct '%filename+
             'WCS solution in the header as created by stwcs.updatewcs '
@@ -102,7 +110,7 @@ class Image(object):
             'aligning this image.\n', width=60
             ))
 
-        self.rootname = os.path.splitext(os.path.basename(filename))[0]
+        #self.rootname = os.path.splitext(os.path.basename(filename))[0]
         self.origin = 1
         self.pars = kwargs
         self.exclusions = exclusions
@@ -122,17 +130,8 @@ class Image(object):
         #  (assume a valid WCS with each SCI extension)
         #TODO: current check for a valid WCS may need a revision to
         # implement a more robust/rigurous check.
-        try:
-            ctypes = self._im.hdu[(self.ext_name,1)].header['CTYPE*']
-            if len(ctypes) > 0:
-                del ctypes
-            else:
-                raise KeyError()
-        except KeyError:
-            err_msg = "ERROR: No Valid WCS available for {:s}" \
-                .format(filename)
-            print(textutil.textbox(err_msg), file=sys.stderr)
-            raise ValueError(err_msg)
+        # This verification has already been done when finding 'wcsextn'
+
 
         # Need to generate a separate catalog for each chip
         self.chip_catalogs = {}
@@ -143,33 +142,12 @@ class Image(object):
         self.num_sources = 0
 
         # Analyze exclusion file list:
-        reg_mode = "exclude only"
         if exclusions is not None:
             nexclusions = len(exclusions)
-            # see if region file mode description is present and if so,
-            # trim the list at that position:
-            try:
-                iregmode = map(str.upper,exclusions).index('[CONFORMDS9]')
-                reg_mode = "normal"
-                if iregmode >= self.nvers:
-                    iregmode = self.nvers
-                exclusions = exclusions[:iregmode]
-                nexclusions = len(exclusions)
-                if nexclusions < self.nvers:
-                    exclusions += (self.nvers-nexclusions) * [ None ]
-            except ValueError:
-                nexclusions = len(exclusions)
-                if nexclusions >= self.nvers:
-                    exclusions = exclusions[:self.nvers]
-                else:
-                    exclusions += (self.nvers-nexclusions) * [ None ]
-            except BaseException as e:
-                cmsg = "Unknown error while interpreting 'exclusions' file list."
-                if e.args:
-                    e.args = (e.args[0] + "\n" + cmsg,) + e.args[1:]
-                else:
-                    e.args=(cmsg,)
-                raise e
+            if nexclusions >= self.nvers:
+                exclusions = exclusions[:self.nvers]
+            else:
+                exclusions += (self.nvers-nexclusions) * [ None ]
         else:
             exclusions = self.nvers * [ None ]
 
@@ -183,7 +161,7 @@ class Image(object):
             extnum = fu.findExtname(self._im.hdu, self.ext_name, extver=sci_extn)
             if extnum is None:
                 extnum = 0
-            chip_filenames[sci_extn] = "{:s}[{:d}]".format(filename, extnum)
+            chip_filenames[sci_extn] = "{:s}[{:d}]".format(self.rootname, extnum)
 
         for sci_extn in range(1,self.nvers+1):
             chip_filename = chip_filenames[sci_extn]
@@ -199,8 +177,7 @@ class Image(object):
                 catalog_mode='user'
 
             if exclusions[sci_extn-1] not in [ None, 'None', '', ' ', 'INDEF' ]:
-                excludefile = { 'region_file': exclusions[sci_extn-1], \
-                                'region_file_mode': reg_mode }
+                excludefile = { 'region_file': exclusions[sci_extn-1] }
             else:
                 excludefile = None
 
@@ -838,7 +815,10 @@ class Image(object):
                     altkeys.append(k)
             if len(altkeys) > 1 and ' ' in altkeys:
                 altkeys.remove(' ')
-            next_key = altkeys[-1]
+            if len(altkeys) == 0:
+                next_key = ' '
+            else:
+                next_key = altkeys[-1]
             if self.perform_update:
                 log.info('    Writing out new WCS to alternate WCS: "%s"'%next_key)
 

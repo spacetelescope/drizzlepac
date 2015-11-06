@@ -353,6 +353,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
             model.
         interp
             Form of interpolation to use when blotting pixels. Valid options::
+
                 "nearest","linear","poly3", "poly5"(default), "spline3", "sinc"
         sinscl
             Scale for sinc interpolation kernel (in output, blotted pixels)
@@ -361,7 +362,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         wcsmap
             Custom mapping class to use to provide transformation from
             drizzled to blotted WCS.  Default will be to use
-            `drizzlepac.wcs_functions.WCSMap'.
+            `drizzlepac.wcs_functions.WCSMap`.
 
     """
     _outsci = np.zeros((blot_wcs._naxis2,blot_wcs._naxis1),dtype=np.float32)
