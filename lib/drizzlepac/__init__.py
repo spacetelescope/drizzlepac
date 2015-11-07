@@ -31,6 +31,7 @@ from . import imageObject
 from . import mapreg
 from . import mdzhandler
 from . import outputimage
+from . import photeq
 from . import processInput
 from . import resetbits
 from . import sky
@@ -47,7 +48,7 @@ from . import pixtopix
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
 try:
-    from . import tweakreg, catalogs, imgclasses, tweakutils, mapreg, \
+    from . import tweakreg, catalogs, imgclasses, tweakutils, mapreg, photeq, \
                   imagefindpars, refimagefindpars
 except ImportError as e :
     print('The libraries needed for "tweakreg" were not available!')
@@ -84,6 +85,7 @@ drizzlepac:
              mapreg - task to map a DS9 region file to multiple images based on the WCS information of each image.
            pixtopix - task to convert pixel positions from an input image to pixel positions in an output WCS or image
            pixtosky - task to convert pixel positions from an input image to sky coordinates with full distortion correction as appropriate
+           photeq   - task to equalize sensitivities of images across chips and epochs
            skytopix - task to convert sky positions to pixel positions in an image
           resetbits - sub-task to reset specified flt.fits data quality (DQ) values to 0
          updatenpol - task to add the names of the new ACS distortion reference files NPOLFILE and D2IMFILE then update headers to include residual distortion corrections as image extensions
