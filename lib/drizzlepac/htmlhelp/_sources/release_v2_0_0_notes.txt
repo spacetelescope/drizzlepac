@@ -4,23 +4,24 @@
 DrizzlePac v2.1.0 Release Notes
 **************************************
 This version builds upon the major set of changes implemented in v2.0.0 by not
-only fixing some bugs, but also cleaning up/changing/revising some APIs and 
+only fixing some bugs, but also cleaning up/changing/revising some APIs and
 docstrings.  The complete list of changes includes:
 
-- The 'updatewcs' parameter was removed from both the 'astrodrizzle' and 'tweakreg' interactive TEAL interfaces.  The 'updatewcs' parameter can still be used with the Python interface for both the astrodrizzle.Astrodrizzle() and tweakreg.TweakReg() functions instead of calling the 'stwcs.updatewcs.updatewcs()' function separately before running 'astrodrizzle' or 'tweakreg'. 
+- The 'updatewcs' parameter was removed from both the 'astrodrizzle' and 'tweakreg' interactive TEAL interfaces.  The 'updatewcs' parameter can still be used with the Python interface for both the astrodrizzle.Astrodrizzle() and tweakreg.TweakReg() functions instead of calling the 'stwcs.updatewcs.updatewcs()' function separately before running 'astrodrizzle' or 'tweakreg'.
 - The stand-alone interface for the blot routine (ablot.blot()) has been revised to work seamlessly with astrodrizzle-generated products while being more obvious how to call it correctly. The help file for this task was also heavily revised to document all the input parameters and to provide an example of how to use the task.
 - Both astrodrizzle and tweakreg now return an output CD matrix which has identical cross-terms indicating the same scale and orientation in each axis. This relies on a revision to the stwcs.distortion.utils.output_wcs() function.
-- The user interfaces to all 3 coordinate transformation tasks now use 'coordfile' as the input file of coordinates to transform. The use of 'coords' has been deprecated, but still can be used if needed. However, use of 'coordfile' will always override any input provided simultaneously with 'coords' parameter.  Help files have been updated to document this as clearly as possible for users. 
+- The user interfaces to all 3 coordinate transformation tasks now use 'coordfile' as the input file of coordinates to transform. The use of 'coords' has been deprecated, but still can be used if needed. However, use of 'coordfile' will always override any input provided simultaneously with 'coords' parameter.  Help files have been updated to document this as clearly as possible for users.
 - User-provided list of input catalogs no longer needs to be matched exactly with input files. As long as all input images are included in input catalog list in any order, tweakreg will apply the correct catalog to the correct file.
 - Tweakreg has been updated to correctly and fully apply source selection criteria for both input source catalogs and reference source catalogs based on fluxmin,fluxmax and nbright for each.
 - All use of keyword deletion has been updated in drizzlepac (and fitsblender) to avoid warnings from astropy.
 - All 3 coordinate transformation tasks rely on the input of valid WCS information for the calculations. These tasks now warn the user when it could not find a valid WCS and instead defaulted to using a unity WCS, so that the user can understand what input needs to be checked/revised to get the correct results.
-- Exclusion/inclusion region files that can be used with 'tweakreg' can only be specified in image coordinates, not sky coordinates and will only support files written out using DS9-compatible format. 
+- Exclusion/inclusion region files that can be used with 'tweakreg' can now be specified in image coordinates and sky coordinates and will only support files written out using DS9-compatible format.
 - The filename for 'final_refimage' in astrodrizzle and 'refimage' in tweakreg can now be specified with OR without an extension, such as '[sci,1]' or '[0]'.  If no extension is specified, it will automatically look for the first extension with a valid HSTWCS and use that. This makes the use of this parameter in both place consistent and more general than before.
-- The reported fit as written out to a file has been slightly modified to report more appropriate numbers of significant digits for the results. 
+- The reported fit as written out to a file has been slightly modified to report more appropriate numbers of significant digits for the results.
 - Use of astrolib.coords was removed from drizzlepac and replaced by use of astropy functions instead. This eliminated one more obsolete dependency in our software.
 - Code was revised to rely entirely on astropy.wcs instead of stand-alone pywcs.
 - Code was revised to rely entirely on astropy.io.fits instead of stand-alone pyfits.
+- Added `photeq` task to account for inverse sensitivity variations across detector chips and/or epochs.
 
 This set of changes represents the last major development effort for DrizzlePac in support of HST.  Support of this code will continue throughout the lifetime of HST, but will be limited primarily to bug fixes to keep the code viable as Python libraries used by DrizzlePac continue to develop and evolve with the language.
 
@@ -28,14 +29,14 @@ This set of changes represents the last major development effort for DrizzlePac 
 **************************************
 DrizzlePac v2.0.0 Release Notes
 **************************************
-This version encompasses a large number of updates and revisions to the DrizzlePac code, including several parameter name changes and additions.  The scope of these changes indicates the level of effort that went into improving the DrizzlePac code to make it easier and more productive for users. 
+This version encompasses a large number of updates and revisions to the DrizzlePac code, including several parameter name changes and additions.  The scope of these changes indicates the level of effort that went into improving the DrizzlePac code to make it easier and more productive for users.
 
 Summary of Revisions
 =====================
 The most significant updates to the DrizzlePac code include:
 
   - The Python code has been updated to work identically (without change) under both Python 2.7 and Python 3.x.
-  - Implementing sky matching, a new algorithm for matching the sky across a set of images being combined by astrodrizzle 
+  - Implementing sky matching, a new algorithm for matching the sky across a set of images being combined by astrodrizzle
   - Updating tweakreg to now align full mosaics where some images may not overlap others in the mosaic
   - Added the option to write out single drizzle step images as compressed images (to save disk space for large mosaics, and I/O time for single drizzle step)
   - Improved tweakreg residual plots visually while allowing them to be written out automatically when tweakreg gets run in non-interactive mode
@@ -45,8 +46,8 @@ The most significant updates to the DrizzlePac code include:
   - Added a full set of source detection parameters for reference image to support multi-instrument alignment in tweakreg
   - Added support for new (simpler, more robust) ACS calibration of time-dependent distortion
   - A full 6-parameter general linear fit can now be performed using tweakreg, in addition to shift and rscale
-  - Cleaned up logic for sky-subtraction: user can now turn off sky-subtraction with skysub=no, and still specify a user-defined sky value as the skyuser keyword.  This will reduce(eliminate?) the need to manually set MDRIZSKY=0. 
-  
+  - Cleaned up logic for sky-subtraction: user can now turn off sky-subtraction with skysub=no, and still specify a user-defined sky value as the skyuser keyword.  This will reduce(eliminate?) the need to manually set MDRIZSKY=0.
+
 In addition to these major updates/changes, numerous smaller bugs were fixed and other revisions were implemented which affected a small portion of the use cases, such as:
   - headerlet code now accepts lists of files to be updated
   - source sky positions (RA and Dec) now included in match file
