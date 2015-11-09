@@ -10,7 +10,7 @@ by `AstroDrizzle`.
 """
 
 __all__ = ['photeq']
-__taskname__ = 'photeq'
+__taskname__ = 'drizzlepac.photeq'
 __version__ = '0.2'
 __vdate__ = '06-Nov-2015'
 __author__ = 'Mihai Cara'
@@ -36,6 +36,7 @@ except ImportError:
 
 # LOCAL
 from stsci.skypac import parseat, utils
+from . import util
 from . util import check_blank
 
 # create logger
@@ -625,14 +626,33 @@ def _split_kwd_list(kwd_list):
         return newl
 
 
-def getHelpAsString(docstring=True):
-    helpString = ''
+def getHelpAsString(docstring = False, show_ver = True):
+    """
+    return useful help from a file in the script directory called
+    __taskname__.help
 
-    if helpString.strip() == '':
-        helpString += __doc__ + os.linesep + photeq.__doc__
+    """
+    install_dir = os.path.dirname(__file__)
+    taskname = util.base_taskname(__taskname__, __package__)
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or (not docstring and not os.path.exists(htmlfile)):
+        if show_ver:
+            helpString = os.linesep + \
+                ' '.join([__taskname__, 'Version', __version__,
+                ' updated on ', __vdate__]) + 2*os.linesep
+        else:
+            helpString = ''
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, __file__)
+        else:
+            if __doc__ is not None:
+                helpString += __doc__ + os.linesep
+    else:
+        helpString = 'file://' + htmlfile
 
     return helpString
-
 
 def help(file=None):
     """
