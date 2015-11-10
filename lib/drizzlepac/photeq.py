@@ -37,7 +37,6 @@ except ImportError:
 # LOCAL
 from stsci.skypac import parseat, utils
 from . import util
-from . util import check_blank
 
 # create logger
 logging.captureWarnings(capture=True)
@@ -183,8 +182,8 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
 
     .. note::
 
-       Default parameter values (except for `files`) should be acceptable for
-       most HST images.
+       Default parameter values (except for `files`, `readonly`, and `clobber`)
+       should be acceptable for most HST images.
 
     .. warning::
 
@@ -199,7 +198,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
     #. In most cases the default parameters should suffice:
 
            >>> from drizzlepac import photeq
-           >>> photeq.photeq(files='*_flt.fits')
+           >>> photeq.photeq(files='*_flt.fits', readonly=False)
 
     #. If the re-calibration needs to be done on PHOTFNU rather than
        PHOTFLAM, then:
@@ -601,7 +600,7 @@ def run(configObj):
            sciext=configObj['sciext'],
            errext=configObj['errext'],
            ref_phot=configObj['ref_phot'],
-           ref_phot_ext=check_blank(configObj['ref_phot_ext']),
+           ref_phot_ext=util.check_blank(configObj['ref_phot_ext']),
            phot_kwd=configObj['phot_kwd'],
            aux_phot_kwd=_split_kwd_list(configObj['aux_phot_kwd']),
            search_primary=configObj['search_primary'],
@@ -648,11 +647,12 @@ def getHelpAsString(docstring = False, show_ver = True):
             helpString += teal.getHelpFileAsString(taskname, __file__)
         else:
             if __doc__ is not None:
-                helpString += __doc__ + os.linesep
+                helpString += __doc__ + os.linesep + photeq.__doc__
     else:
         helpString = 'file://' + htmlfile
 
     return helpString
+
 
 def help(file=None):
     """
