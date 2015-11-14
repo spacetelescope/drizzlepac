@@ -1,0 +1,13 @@
+_task_name_ = string_kw(default="photeq")
+files = string_kw(default="*_flt.fits", comment="Input files (names, wild-cards, or @list)")
+sciext = string_kw(default="SCI", comment="Extension name of science data")
+errext = string_kw(default="ERR", comment="Extension name of error data")
+ref_phot = float_or_none_kw(default=None,comment="Forced PHOTFLAM/PHOTFNU value")
+ref_phot_ext = string_kw(default="", comment="Extension name for reference PHOTFLAM")
+phot_kwd = string_kw(default="PHOTFLAM", comment="Main inverse-sensitivity keyword")
+aux_phot_kwd = string_kw(default="PHOTFNU", comment="Secondary inverse-sensitivity keyword")
+search_primary = boolean_kw(default=True, comment="Search primary header?")
+readonly = boolean_kw(default=True, comment= "Run in read-only mode")
+clobber = boolean_kw(default=False, comment= "Overwrite existing MEF files?")
+logfile = string_kw(default="photeq.log", comment="Log file name")
+[ _RULES_ ]

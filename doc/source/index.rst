@@ -80,6 +80,7 @@ These algorithms will be upgraded as soon as replacements are available.
    tweakutils
    updatehdr
    mapreg
+   photeq
 
 Coordinate Transformation Tasks
 -------------------------------
