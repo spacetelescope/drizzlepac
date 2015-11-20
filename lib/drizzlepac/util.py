@@ -218,8 +218,8 @@ class WithLogging(object):
 
             try:
                 func(*args, **kwargs)
-            except Exception as errorobj:
-                pass
+            except Exception as e:
+                errorobj=e
             finally:
                 self.depth -= 1
                 if self.depth == 0:
