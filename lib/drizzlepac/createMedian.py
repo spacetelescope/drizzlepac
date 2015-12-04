@@ -206,7 +206,10 @@ def _median(imageObjectList, paramDict):
 
         # read in WCS from first single drizzle image to use as WCS for median image
         if _single_hdr is None:
-            _single_hdr = fits.getheader(singleDriz_name,ext=wcs_extnum)
+            if virtual:
+                _single_hdr = singleDriz[wcs_extnum].header
+            else:
+                _single_hdr = fits.getheader(singleDriz_name,ext=wcs_extnum)
 
         _singleImage=iterfile.IterFitsFile(iter_singleDriz)
         if virtual:
