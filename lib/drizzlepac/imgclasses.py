@@ -80,7 +80,7 @@ class Image(object):
             self.open_mode = 'readonly'
 
         self.name = filename
-        self.rootname,self.ext_root = fu.parseFilename(filename)
+        self.filename,self.ext_root = fu.parseFilename(filename)
         self.openFile(openDQ=(self.dqbits is not None))
 
         if self.ext_root is not None:
@@ -110,7 +110,7 @@ class Image(object):
             'aligning this image.\n', width=60
             ))
 
-        #self.rootname = os.path.splitext(os.path.basename(filename))[0]
+        self.rootname = os.path.splitext(os.path.basename(self.filename))[0]
         self.origin = 1
         self.pars = kwargs
         self.exclusions = exclusions
