@@ -283,7 +283,7 @@ def radec_hmstodd(ra,dec):
         astropy.coordinates
 
     """
-    hmstrans = string.maketrans(string.letters,' '*len(string.letters))
+    hmstrans = string.maketrans(string.ascii_letters,' '*len(string.ascii_letters))
 
     if isinstance(ra,list):
         rastr = ':'.join(ra)
