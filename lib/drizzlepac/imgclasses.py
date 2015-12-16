@@ -80,7 +80,7 @@ class Image(object):
             self.open_mode = 'readonly'
 
         self.name = filename
-        self.rootname,self.ext_root = fu.parseFilename(filename)
+        self.filename,self.ext_root = fu.parseFilename(filename)
         self.openFile(openDQ=(self.dqbits is not None))
 
         if self.ext_root is not None:
@@ -110,7 +110,7 @@ class Image(object):
             'aligning this image.\n', width=60
             ))
 
-        #self.rootname = os.path.splitext(os.path.basename(filename))[0]
+        self.rootname = os.path.splitext(os.path.basename(self.filename))[0]
         self.origin = 1
         self.pars = kwargs
         self.exclusions = exclusions
@@ -161,7 +161,7 @@ class Image(object):
             extnum = fu.findExtname(self._im.hdu, self.ext_name, extver=sci_extn)
             if extnum is None:
                 extnum = 0
-            chip_filenames[sci_extn] = "{:s}[{:d}]".format(self.rootname, extnum)
+            chip_filenames[sci_extn] = "{:s}[{:d}]".format(self.filename, extnum)
 
         for sci_extn in range(1,self.nvers+1):
             chip_filename = chip_filenames[sci_extn]
@@ -963,7 +963,7 @@ class Image(object):
         if self.pars['writecat']:
             log.info('Creating catalog for the fit: %s'%self.catalog_names['fitmatch'])
             f = open(self.catalog_names['fitmatch'],'w')
-            f.write('# Input image: %s\n'%self.rootname)
+            f.write('# Input image: %s\n'%self.filename)
             f.write('# Coordinate mapping parameters: \n')
             f.write('#    X and Y rms: %15.4g  %15.4g\n'%(self.fit['rms'][0],
                                                         self.fit['rms'][1]))
