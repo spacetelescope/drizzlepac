@@ -16,7 +16,6 @@ import numpy as np
 
 from stsci.tools import fileutil
 
-
 def getMdriztabParameters(files):
     """ Gets entry in MDRIZTAB where task parameters live.
         This method returns a record array mapping the selected
@@ -181,7 +180,7 @@ def cleanBlank(value):
 def findFormat(format):
     # Parses record array format string for type
     _fmt = None
-    for ltr in string.letters:
+    for ltr in string.ascii_letters:
         if format.find(ltr) > -1:
             _fmt = ltr
             break

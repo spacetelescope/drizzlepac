@@ -1040,25 +1040,22 @@ def checkDGEOFile(filenames):
             """
 
     for inputfile in filenames:
-        if fits.getval(inputfile, 'INSTRUME') == 'WFPC2':
-            update_wfpc2_d2geofile(inputfile)
-        else:
+        try:
+            dgeofile = fits.getval(inputfile, 'DGEOFILE')
+        except KeyError:
+            continue
+        if dgeofile not in ["N/A", "n/a", ""]:
+            message = msg % (inputfile, inputfile, inputfile)
             try:
-                dgeofile = fits.getval(inputfile, 'DGEOFILE')
+                npolfile = fits.getval(inputfile, 'NPOLFILE')
             except KeyError:
-                continue
-            if dgeofile not in ["N/A", "n/a", ""]:
-                message = msg % (inputfile, inputfile, inputfile)
-                try:
-                    npolfile = fits.getval(inputfile, 'NPOLFILE')
-                except KeyError:
+                ustop = userStop(message)
+                while ustop == None:
                     ustop = userStop(message)
-                    while ustop == None:
-                        ustop = userStop(message)
-                    if ustop == True:
-                        return None
-                    elif ustop == False:
-                        pass
+                if ustop == True:
+                    return None
+                elif ustop == False:
+                    pass
     return filenames
 
 def userStop(message):
@@ -1072,124 +1069,6 @@ def userStop(message):
         return False
     else:
         return None
-
-
-def update_wfpc2_d2geofile(filename, fhdu=None):
-    """
-    Creates a D2IMFILE from the DGEOFILE for a WFPC2 image (input), and
-    modifies the header to reflect the new usage.
-    """
-
-    close_fhdu = False
-    if fhdu is None:
-        fhdu = fileutil.openImage(filename, mode='update')
-        close_fhdu = True
-
-    dgeofile = fhdu['PRIMARY'].header.get('DGEOFILE', None)
-    if dgeofile not in [None, "N/A", "", " "]:
-        log.info('Converting DGEOFILE %s into D2IMFILE...' % dgeofile)
-        rootname = filename[:filename.find('.fits')]
-        d2imfile = convert_dgeo_to_d2im(dgeofile,rootname)
-        fhdu['PRIMARY'].header['ODGEOFIL'] = dgeofile
-        fhdu['PRIMARY'].header['DGEOFILE'] = 'N/A'
-        fhdu['PRIMARY'].header['D2IMFILE'] = d2imfile
-    else:
-        d2imfile = None
-        fhdu['PRIMARY'].header['DGEOFILE'] = 'N/A'
-        fhdu['PRIMARY'].header['D2IMFILE'] = 'N/A'
-
-    # Only close the file handle if opened in this function
-    if close_fhdu:
-        fhdu.close()
-
-    # return the d2imfile name so that calling routine can keep
-    # track of the new file created and delete it later if necessary
-    # (multidrizzle clean=True mode of operation)
-    return d2imfile
-
-
-def convert_dgeo_to_d2im_OLD(dgeofile,output,clobber=True):
-    """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
-    """
-    dgeo = fileutil.openImage(dgeofile)
-    outname = output+'_d2im.fits'
-
-    util.removeFileSafely(outname)
-
-    scihdu = fits.ImageHDU(data=dgeo['dy',1].data[:,0])
-    dgeo.close()
-    # add required keywords for D2IM header
-    scihdu.header['EXTNAME'] = ('DY', 'Extension name')
-    scihdu.header['EXTVER'] = (1, 'Extension version')
-    fits_str = 'PYFITS Version '+str(astropy.__version__)
-    scihdu.header['ORIGIN'] = (fits_str, 'FITS file originator')
-    scihdu.header['INHERIT'] = (False, 'Inherits global header')
-
-    dnow = datetime.datetime.now()
-    scihdu.header['DATE'] = (str(dnow).replace(' ','T'), 'Date FITS file was generated')
-
-    scihdu.header['CRPIX1'] = (0, 'Distortion array reference pixel')
-    scihdu.header['CDELT1'] = (0, 'Grid step size in first coordinate')
-    scihdu.header['CRVAL1'] = (0, 'Image array pixel coordinate')
-    scihdu.header['CRPIX2'] = (0, 'Distortion array reference pixel')
-    scihdu.header['CDELT2'] = (0, 'Grid step size in second coordinate')
-    scihdu.header['CRVAL2'] = (0, 'Image array pixel coordinate')
-
-    d2imhdu = fits.HDUList()
-    d2imhdu.append(fits.PrimaryHDU())
-    d2imhdu.append(scihdu)
-    d2imhdu.writeto(outname)
-    d2imhdu.close()
-
-    return outname
-
-def convert_dgeo_to_d2im(dgeofile,output,clobber=True):
-    """ Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.
-    """
-    dgeo = fileutil.openImage(dgeofile)
-    outname = output+'_d2im.fits'
-
-    util.removeFileSafely(outname)
-    data = np.array([dgeo['dy',1].data[:,0]])
-    scihdu = fits.ImageHDU(data=data)
-    dgeo.close()
-    # add required keywords for D2IM header
-    scihdu.header['EXTNAME'] = ('DY', 'Extension name')
-    scihdu.header['EXTVER'] = (1, 'Extension version')
-    fits_str = 'PYFITS Version '+str(astropy.__version__)
-    scihdu.header['ORIGIN'] = (fits_str, 'FITS file originator')
-    scihdu.header['INHERIT'] = (False, 'Inherits global header')
-
-    dnow = datetime.datetime.now()
-    scihdu.header['DATE'] = (str(dnow).replace(' ','T'),
-                             'Date FITS file was generated')
-
-    scihdu.header['CRPIX1'] = (0, 'Distortion array reference pixel')
-    scihdu.header['CDELT1'] = (1, 'Grid step size in first coordinate')
-    scihdu.header['CRVAL1'] = (0, 'Image array pixel coordinate')
-    scihdu.header['CRPIX2'] = (0, 'Distortion array reference pixel')
-    scihdu.header['CDELT2'] = (1, 'Grid step size in second coordinate')
-    scihdu.header['CRVAL2'] = (0, 'Image array pixel coordinate')
-
-    phdu = fits.PrimaryHDU()
-    phdu.header['INSTRUME'] = 'WFPC2'
-    d2imhdu = fits.HDUList()
-    d2imhdu.append(phdu)
-    scihdu.header['DETECTOR'] = (1, 'CCD number of the detector: PC 1, WFC 2-4 ')
-    d2imhdu.append(scihdu.copy())
-    scihdu.header['EXTVER'] = (2, 'Extension version')
-    scihdu.header['DETECTOR'] = (2, 'CCD number of the detector: PC 1, WFC 2-4 ')
-    d2imhdu.append(scihdu.copy())
-    scihdu.header['EXTVER'] = (3, 'Extension version')
-    scihdu.header['DETECTOR'] = (3, 'CCD number of the detector: PC 1, WFC 2-4 ')
-    d2imhdu.append(scihdu.copy())
-    scihdu.header['EXTVER'] = (4, 'Extension version')
-    scihdu.header['DETECTOR'] = (4, 'CCD number of the detector: PC 1, WFC 2-4 ')
-    d2imhdu.append(scihdu.copy())
-    d2imhdu.writeto(outname)
-    d2imhdu.close()
-
-    return outname
 
 def _setDefaults(input_dict={}):
     """ Define full set of default values for unit-testing this module.[OBSOLETE]"""
