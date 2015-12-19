@@ -65,6 +65,8 @@ from . import tweakback
 # This module enables users to replace NaNs in images with another value easily
 from . import pixreplace
 
+from . import runastrodriz
+
 # These lines allow TEAL to print out the names of TEAL-enabled tasks
 # upon importing this package.
 from stsci.tools import teal

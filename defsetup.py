@@ -115,7 +115,7 @@ setupargs = {
                            ( pkg+"/htmlhelp/_static", ['lib/drizzlepac/htmlhelp/_static/*']),
                            ( pkg+"/htmlhelp", ['lib/drizzlepac/htmlhelp/*.html']),
                            ( pkg, ['lib/drizzlepac/*.help'])],
-    'scripts' :         ["scripts/mdriz","scripts/resetbits","scripts/updatenpol"] ,
+    'scripts' :         ["scripts/mdriz","scripts/resetbits","scripts/updatenpol","scripts/runastrodriz"] ,
     'ext_modules' :     getNumpyExtensions(),
     'package_dir' :     { 'drizzlepac' : 'lib/drizzlepac', },
 

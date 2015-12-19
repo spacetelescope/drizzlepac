@@ -106,6 +106,15 @@ A task, 'updatenpol', has been written to automate the updating of ACS image hea
    updatenpol
 
 
+Reproducing Pipeline Processing
+-------------------------------
+The task 'runastrodriz' can be used to reproduce the same Drizzle processing that gets performed on HST data when retrieving data from the HST archive.
+
+.. toctree::
+   :maxdepth: 2
+   
+   runastrodriz 
+
 Indices and tables
 ==================
 
