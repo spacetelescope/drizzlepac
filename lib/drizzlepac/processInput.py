@@ -727,11 +727,28 @@ def changeSuffixinASN(asnfile, suffix):
     # copy original ASN table to new table
     shutil.copy(asnfile,_new_asn)
 
-    # Open up the new copy and convert all MEMNAME's to lower-case
+    # Open up the new copy and convert all MEMNAME's to include suffix
     fasn = fits.open(_new_asn,'update')
-    for i in range(len(fasn[1].data)):
-        if "prod" not in fasn[1].data[i].field('MEMTYPE').lower():
-            fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME')+'_'+suffix)
+    newdata = fasn[1].data.tolist()
+    for i in range(len(newdata)):
+        val = newdata[i][0].decode(encoding='UTF-8').strip()
+        if 'prod' not in newdata[i][1].decode(encoding='UTF-8').lower():
+            val += '_'+suffix
+        newdata[i] = (val,newdata[i][1].strip(),newdata[i][2])
+
+    # Redefine dtype to support longer strings for MEMNAME
+    new_dtype = []
+    d = fasn[1].data.dtype
+    msize = d.descr[0][1][1:]
+    new_size = int(msize[1:])+8
+    mtype = msize[0]
+    new_dtype.append((d.descr[0][0],d.descr[0][1].replace(msize,'{}{}'.format(mtype,new_size))))
+    new_dtype.append(d.descr[1])
+    new_dtype.append(d.descr[2])
+    
+    # Assign newly created, reformatted array to extension
+    newasn = np.array(newdata,dtype=new_dtype)
+    fasn[1].data = newasn
     fasn.close()
 
     return _new_asn
