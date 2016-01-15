@@ -276,9 +276,9 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     if interactive:
         print('Continue with processing?')
         if sys.version_info[0] >= 3:
-            k = input("(y)es or (n)o")
+            k = eval(input("(y)es or (n)o"))
         else:
-            k = raw_input("(y)es or (n)o")
+            k = input("(y)es or (n)o")
         if 'n' in k.lower():
             raise ValueError
 
@@ -455,7 +455,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 
         if not infilesOnly:
             if output in ["",None,"None"]:
-                output = oldasndict['output']
+                output = oldasndict['output'].lower() # insure output name is lower case
 
         #filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
         filelist = buildASNList(oldasndict['order'],input)
@@ -547,6 +547,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         elif drz_extn[:4] not in output.lower():
             output = fileutil.buildNewRootname(output, extn=drz_extn)
 
+        
     log.info('Setting up output name: %s' % output)
 
     return asndict, ivmlist, output
@@ -824,7 +825,7 @@ def update_member_names(oldasndict, pydr_input):
     newkeys = [fileutil.buildNewRootname(file) for file in pydr_input]
     keys_map = list(zip(newkeys, pydr_input))
 
-    for okey, oval in omembers.items():
+    for okey, oval in list(omembers.items()):
         if okey in newkeys:
             nkey = pydr_input[newkeys.index(okey)]
             nmembers[nkey.split('.fits')[0]] = oval
@@ -1077,9 +1078,9 @@ def checkDGEOFile(filenames):
 
 def userStop(message):
     if sys.version_info[0] >= 3:
-        user_input = input(message)
+        user_input = eval(input(message))
     else:
-        user_input = raw_input(message)
+        user_input = input(message)
     if user_input == 'q':
         return True
     elif user_input == 'c':

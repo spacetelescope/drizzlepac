@@ -113,7 +113,8 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
 .. toctree::
    :maxdepth: 2
    
-   runastrodriz 
+   Running Astrodriz <runastrodriz.rst>
+
 
 Indices and tables
 ==================
