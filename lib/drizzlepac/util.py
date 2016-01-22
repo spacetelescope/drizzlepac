@@ -631,6 +631,23 @@ def validateUserPars(configObj,input_dict):
         print('='*40)
         raise ValueError
 
+def applyUserPars_steps(configObj, input_dict, step='3a'):
+    """ Apply logic to turn on use of user-specified output WCS if user provides
+        any parameter on command-line regardless of how final_wcs was set.
+    """
+    step_kws = {'7a': 'final_wcs', '3a': 'driz_sep_wcs'}
+    stepname = getSectionName(configObj,step)
+    finalParDict = configObj[stepname].copy()
+    del finalParDict[step_kws[step]]
+    
+    # interpret input_dict to find any parameters for this step specified by the user
+    user_pars = {}
+    for kw in finalParDict:
+        if kw in input_dict: user_pars[kw] = input_dict[kw]
+    if len(user_pars) > 0:
+        configObj[stepname][step_kws[step]] = True
+        
+    
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated
         with user-specified values from input_dict.
@@ -681,6 +698,11 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # Any unexpected parameters provided on input should be reported and
         # the code should stop
         validateUserPars(configObj,input_dict)
+
+        # If user specifies optional parameter for final_wcs specification in input_dict,
+        #    insure that the final_wcs step gets turned on
+        applyUserPars_steps(configObj, input_dict, step='3a')
+        applyUserPars_steps(configObj, input_dict, step='7a')
 
         # If everything looks good, merge user inputs with configObj and continue
         cfgpars.mergeConfigObj(configObj, input_dict)
