@@ -124,6 +124,7 @@ def setCommonInput(configObj, createOutwcs=True):
     # This can be done here because MDRIZTAB does not include values for
     # input, output, or updatewcs.
     if 'mdriztab' in configObj and configObj['mdriztab']:
+        print("Reading in MDRIZTAB parameters for {} files".format(len(files)))
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
 
         # Update configObj with values from mpars
@@ -675,16 +676,14 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     # check for non-polynomial distortion correction
     filelist = checkDGEOFile(filelist)
 
-    newfilelist, ivmlist = check_files.checkFiles(filelist, ivmlist)
-
     # run all WCS updating
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
 
-    #newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
+    newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
     ivmlist, filelist = list(zip(*ivmlist))
 
-    return updated_input, ivmlist, output, oldasndict, filelist
+    return newfilelist, ivmlist, output, oldasndict, filelist
 
 
 def buildASNList(rootnames, asnname, check_for_duplicates=True):
