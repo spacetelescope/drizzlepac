@@ -457,8 +457,12 @@ def processFilenames(input=None,output=None,infilesOnly=False):
             if output in ["",None,"None"]:
                 output = oldasndict['output'].lower() # insure output name is lower case
 
+        asnhdr = fits.getheader(input)
+        # Only perform duplication check if not already completed...
+        dupcheck = asnhdr.get('DUPCHECK',default="PERFORM") == "PERFORM"
+        
         #filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
-        filelist = buildASNList(oldasndict['order'],input)
+        filelist = buildASNList(oldasndict['order'],input,check_for_duplicates=dupcheck)
 
     elif (not isinstance(input, list)) and \
        (input[0] == '@') :
@@ -683,7 +687,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     return updated_input, ivmlist, output, oldasndict, filelist
 
 
-def buildASNList(rootnames, asnname):
+def buildASNList(rootnames, asnname, check_for_duplicates=True):
     """
     Return the list of filenames for a given set of rootnames
     """
@@ -693,7 +697,7 @@ def buildASNList(rootnames, asnname):
     # products are in the same directory as an ASN table
     filelist, duplicates = checkForDuplicateInputs(rootnames)
 
-    if duplicates:
+    if check_for_duplicates and duplicates:
         # Build new ASN tables for each set of input files
         origasn = changeSuffixinASN(asnname, 'flt')
         dupasn = changeSuffixinASN(asnname, 'flc')
@@ -730,6 +734,7 @@ def changeSuffixinASN(asnfile, suffix):
 
     # Open up the new copy and convert all MEMNAME's to include suffix
     fasn = fits.open(_new_asn,'update')
+    fasn[0].header['DUPCHECK'] = "COMPLETE"
     newdata = fasn[1].data.tolist()
     for i in range(len(newdata)):
         val = newdata[i][0].decode(encoding='UTF-8').strip()

@@ -103,6 +103,12 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         configObj = util.getDefaultConfigObj(__taskname__, configobj,
                                              input_dict,
                                              loadOnly=(not editpars))
+        print("INPUT_DICT: {}".format(input_dict))
+        # If user specifies optional parameter for final_wcs specification in input_dict,
+        #    insure that the final_wcs step gets turned on
+        util.applyUserPars_steps(configObj, input_dict, step='3a')
+        util.applyUserPars_steps(configObj, input_dict, step='7a')
+
     except ValueError:
         print("Problem with input parameters. Quitting...", file=sys.stderr)
         return

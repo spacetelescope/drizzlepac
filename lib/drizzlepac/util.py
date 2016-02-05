@@ -699,11 +699,6 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # the code should stop
         validateUserPars(configObj,input_dict)
 
-        # If user specifies optional parameter for final_wcs specification in input_dict,
-        #    insure that the final_wcs step gets turned on
-        applyUserPars_steps(configObj, input_dict, step='3a')
-        applyUserPars_steps(configObj, input_dict, step='7a')
-
         # If everything looks good, merge user inputs with configObj and continue
         cfgpars.mergeConfigObj(configObj, input_dict)
         # Update the input .cfg file with the updated parameter values
