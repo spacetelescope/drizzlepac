@@ -672,7 +672,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
-
+    
     # check for non-polynomial distortion correction
     filelist = checkDGEOFile(filelist)
 
@@ -680,8 +680,11 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
-
-    ivmlist, filelist = list(zip(*ivmlist))
+    
+    if len(ivmlist) > 0:
+        ivmlist, filelist = list(zip(*ivmlist))
+    else:
+        filelist = [] # insure that both filelist and ivmlist are defined as empty lists
 
     return newfilelist, ivmlist, output, oldasndict, filelist
 
