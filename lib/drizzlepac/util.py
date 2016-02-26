@@ -208,18 +208,17 @@ class WithLogging(object):
                     pass
 
             self.depth += 1
-
+            
             # This looks utterly bizarre, but it seems to be the only way I can
             # ensure that any exceptions that occur in the wrapped function are
             # logged before teardown_global_logging() is called.  Unless the
             # except clause is explicitly included here, even with just 'pass'
             # under it, Python discards the sys.exc_info() data by the time the
             # finally clause is reached.
-
             try:
                 func(*args, **kwargs)
             except Exception as errorobj:
-                pass
+                raise
             finally:
                 self.depth -= 1
                 if self.depth == 0:
