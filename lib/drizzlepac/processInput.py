@@ -461,7 +461,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         asnhdr = fits.getheader(input)
         # Only perform duplication check if not already completed...
         dupcheck = asnhdr.get('DUPCHECK',default="PERFORM") == "PERFORM"
-        
+
         #filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
         filelist = buildASNList(oldasndict['order'],input,check_for_duplicates=dupcheck)
 
@@ -552,7 +552,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         elif drz_extn[:4] not in output.lower():
             output = fileutil.buildNewRootname(output, extn=drz_extn)
 
-        
+
     log.info('Setting up output name: %s' % output)
 
     return asndict, ivmlist, output
@@ -634,7 +634,7 @@ def buildFileList(input, output=None, ivmlist=None,
     newfilelist, ivmlist, output, oldasndict, filelist = \
         buildFileListOrig(input=input, output=output, ivmlist=ivmlist,
                     wcskey=wcskey, updatewcs=updatewcs, **workinplace)
-    return newfilelist,ivmlist,output,oldasndict
+    return newfilelist, ivmlist, output, oldasndict
 
 
 def buildFileListOrig(input, output=None, ivmlist=None,
@@ -650,12 +650,12 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     # user catalog files (e.g., user masks to be used with 'skymatch') with
     # corresponding imageObjects.
 
-    filelist,output,ivmlist,oldasndict=processFilenames(input,output)
+    filelist, output, ivmlist, oldasndict = processFilenames(input,output)
 
     # verify that all input images specified can be updated as needed
     filelist = util.verifyFilePermissions(filelist)
     if filelist is None or len(filelist) == 0:
-        return None, None, None, None
+        return None, None, None, None, None
 
     manageInputCopies(filelist,**workinplace)
 
@@ -672,7 +672,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
-    
+
     # check for non-polynomial distortion correction
     filelist = checkDGEOFile(filelist)
 
@@ -680,7 +680,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
-    
+
     if len(ivmlist) > 0:
         ivmlist, filelist = list(zip(*ivmlist))
     else:
@@ -753,7 +753,7 @@ def changeSuffixinASN(asnfile, suffix):
     new_dtype.append((d.descr[0][0],d.descr[0][1].replace(msize,'{}{}'.format(mtype,new_size))))
     new_dtype.append(d.descr[1])
     new_dtype.append(d.descr[2])
-    
+
     # Assign newly created, reformatted array to extension
     newasn = np.array(newdata,dtype=new_dtype)
     fasn[1].data = newasn
