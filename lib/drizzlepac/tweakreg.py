@@ -675,7 +675,7 @@ def _overlap_matrix(images):
     for i in range(nimg):
         for j in range(i+1,nimg):
             p = images[i].skyline.intersection(images[j].skyline)
-            area = p.area()
+            area = np.fabs(p.area())
             m[j,i] = area
             m[i,j] = area
     return m
@@ -735,7 +735,9 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
 
     area = np.zeros(nimg, dtype=np.float)
     for i in range(nimg):
-        area[i] = refimage.skyline.intersection(images[i].skyline).area()
+        area[i] = np.fabs(
+            refimage.skyline.intersection(images[i].skyline).area()
+        )
 
     # Sort the remaining of the input list of images by overlap area
     # with the reference image (in decreasing order):
