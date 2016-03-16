@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Photometric equalization for AstroDrizzle &mdash; DrizzlePac 2.1.0.dev46084 (27-May-2015) documentation</title>
+    <title>Photometric equalization for AstroDrizzle &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46084 (27-May-2015)',
+        VERSION:     '2.1.0.dev46088 (27-May-2015)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46084 (27-May-2015) documentation" href="index.html" />
+    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
     <link rel="next" title="pixtopix: Coordinate transformation to/from drizzled images" href="pixtopix.html" />
     <link rel="prev" title="Region mapping for TweakReg" href="mapreg.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46084 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -225,8 +225,8 @@ value to which all other images should be &#8220;equalized&#8221; through the
 parameter <em class="xref py py-obj">ref_phot</em>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Default parameter values (except for <em class="xref py py-obj">files</em>) should be acceptable for
-most HST images.</p>
+<p class="last">Default parameter values (except for <em class="xref py py-obj">files</em>, <em class="xref py py-obj">readonly</em>, and <em class="xref py py-obj">clobber</em>)
+should be acceptable for most HST images.</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -239,7 +239,7 @@ thus it cannot correct sky values already recorded in the headers.</p>
 <ol class="arabic">
 <li><p class="first">In most cases the default parameters should suffice:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">photeq</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s">&#39;*_flt.fits&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -303,7 +303,7 @@ writing out the help.</p>
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46084 (27-May-2015) documentation</a> &raquo;</li> 
+        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

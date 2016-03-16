@@ -634,7 +634,7 @@ def buildFileList(input, output=None, ivmlist=None,
     newfilelist, ivmlist, output, oldasndict, filelist = \
         buildFileListOrig(input=input, output=output, ivmlist=ivmlist,
                     wcskey=wcskey, updatewcs=updatewcs, **workinplace)
-    return newfilelist,ivmlist,output,oldasndict
+    return newfilelist, ivmlist, output, oldasndict
 
 
 def buildFileListOrig(input, output=None, ivmlist=None,
@@ -650,12 +650,12 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     # user catalog files (e.g., user masks to be used with 'skymatch') with
     # corresponding imageObjects.
 
-    filelist,output,ivmlist,oldasndict=processFilenames(input,output)
+    filelist, output, ivmlist, oldasndict = processFilenames(input,output)
 
     # verify that all input images specified can be updated as needed
     filelist = util.verifyFilePermissions(filelist)
     if filelist is None or len(filelist) == 0:
-        return None, None, None, None
+        return None, None, None, None, None
 
     manageInputCopies(filelist,**workinplace)
 

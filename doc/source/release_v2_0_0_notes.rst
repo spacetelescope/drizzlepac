@@ -22,6 +22,7 @@ docstrings.  The complete list of changes includes:
 - Code was revised to rely entirely on astropy.wcs instead of stand-alone pywcs.
 - Code was revised to rely entirely on astropy.io.fits instead of stand-alone pyfits.
 - Added `photeq` task to account for inverse sensitivity variations across detector chips and/or epochs.
+- WFPC2 data from the archive with DGEOFILE reference files will now need to be processed using 'stwcs.updatewcs' before running them through astrodrizzle or tweakreg.  This update converts the obsolete, unsupported DGEOFILE correction for the WFPC2 data into a D2IMFILE specific for each WFPC2 observation, then uses that to convert the WCS based on the new conventions used for ACS and WFC3.   
 
 This set of changes represents the last major development effort for DrizzlePac in support of HST.  Support of this code will continue throughout the lifetime of HST, but will be limited primarily to bug fixes to keep the code viable as Python libraries used by DrizzlePac continue to develop and evolve with the language.
 

@@ -178,21 +178,52 @@ def run(configobj):
         else:
             use_catfile = False
 
-    if 'exclusions' in configobj and \
-        configobj['exclusions'] not in [None,'',' ','INDEF']:
-        if os.path.exists(configobj['exclusions']):
-            #TODO: It may be useful to check that the image file names in the exclusions
-            # catalog are the same as the names specified in filenames.
-            # this way it will be easier to detect and report an incorrect exclusions file (format)
-            exclusion_files,exclusion_dict = tweakutils.parse_atfile_cat(
-                '@'+configobj['exclusions'])
+        if 'exclusions' in configobj and \
+            configobj['exclusions'] not in [None,'',' ','INDEF']:
+            if os.path.exists(configobj['exclusions']):
+                excl_files, excl_dict = tweakutils.parse_atfile_cat(
+                    '@'+configobj['exclusions'])
+
+                # make sure the dictionary is well formed and that keys are base
+                # file names and that exclusion files have been expanded:
+                exclusion_files = []
+                exclusion_dict = {}
+                rootpath = os.path.abspath(
+                    os.path.split(configobj['exclusions'])[0]
+                )
+
+                for f in excl_dict.keys():
+                    print(f)
+                    bf = os.path.basename(f)
+                    exclusion_files.append(bf)
+                    reglist = excl_dict[f]
+
+                    if reglist is None:
+                        exclusion_dict[bf] = None
+                        continue
+
+                    new_reglist = []
+                    for regfile in reglist:
+                        if regfile in [ None, 'None', '', ' ', 'INDEF' ]:
+                            new_reglist.append(None)
+                        else:
+                            abs_regfile = os.path.normpath(
+                                os.path.join(rootpath, regfile)
+                            )
+                            new_reglist.append(abs_regfile)
+
+                    exclusion_dict[bf] = new_reglist
+
+            else:
+                raise IOError('Could not find specified exclusions file "{:s}"'
+                      .format(configobj['exclusions']))
+
         else:
-            print('Could not find specified exclusions file "%s"'%(configobj['exclusions']))
-            raise IOError
-    else:
-        exclusion_files = [None]*len(filenames)
-        exclusion_dict = {}
-        for f in filenames: exclusion_dict[f] = None
+            exclusion_files = [None]*len(filenames)
+            exclusion_dict = {}
+
+            for f in filenames:
+                exclusion_dict[os.path.basename(f)] = None
 
     # Verify that we have the same number of catalog files as input images
     if catnames is not None and (len(catnames) > 0):
@@ -256,7 +287,7 @@ def run(configobj):
         for imgnum in range(len(filenames)):
             # Create Image instances for all input images
             try:
-                regexcl = exclusion_dict[filenames[imgnum]]
+                regexcl = exclusion_dict[os.path.basename(filenames[imgnum])]
             except KeyError:
                 regexcl = None
                 pass
@@ -644,7 +675,7 @@ def _overlap_matrix(images):
     for i in range(nimg):
         for j in range(i+1,nimg):
             p = images[i].skyline.intersection(images[j].skyline)
-            area = p.area()
+            area = np.fabs(p.area())
             m[j,i] = area
             m[i,j] = area
     return m
@@ -704,7 +735,9 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
 
     area = np.zeros(nimg, dtype=np.float)
     for i in range(nimg):
-        area[i] = refimage.skyline.intersection(images[i].skyline).area()
+        area[i] = np.fabs(
+            refimage.skyline.intersection(images[i].skyline).area()
+        )
 
     # Sort the remaining of the input list of images by overlap area
     # with the reference image (in decreasing order):
