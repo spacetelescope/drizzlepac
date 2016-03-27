@@ -71,7 +71,7 @@ __taskname__ = "updatenpol"
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.1.0'
-__vdate__ = '16-Aug-2011'
+__version_date__ = '16-Aug-2011'
 
 import os,sys,shutil
 
@@ -158,7 +158,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     that can be sorted out later if we get into that situation at all.
 
     """
-    print('UPDATENPOL Version',__version__+'('+__vdate__+')')
+    print('UPDATENPOL Version',__version__+'('+__version_date__+')')
     # expand (as needed) the list of input files
     files,fcol = parseinput.parseinput(input)
 
@@ -325,7 +325,7 @@ def main():
         args.append('jref$')
     if (help):
         print(__doc__)
-        print("\t", __version__+'('+__vdate__+')')
+        print("\t", __version__+'('+__version_date__+')')
     else:
         update(args[:-1],args[-1],local=local,interactive=interactive)
 
@@ -399,7 +399,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __vdate__]) + 2*os.linesep
+                ' updated on ', __version_date__]) + 2*os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):

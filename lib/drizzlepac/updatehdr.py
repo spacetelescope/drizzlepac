@@ -24,7 +24,7 @@ from . import util
 from . import linearfit
 
 __version__ = '0.2.0'
-__vdate__ = '10-Oct-2014'
+__version_date__ = '10-Oct-2014'
 
 
 log = logutil.create_logger(__name__)
