@@ -1,8 +1,11 @@
-.eggs/
-__pycache__/
+RELIC-INFO
+relic/
+lib/*/version.py
 build/
 dist/
-*.egg-info/
-*/*/version.py
+*.eggs
+*.pyc
+*.o
 *.so
-*.dylib
+*.egg-info
+*.swp

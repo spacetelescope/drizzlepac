@@ -234,7 +234,7 @@ class WithLogging(object):
 with_logging = WithLogging()
 
 
-def print_pkg_versions(packages=None, svn=False, log=None):
+def print_pkg_versions(packages=None, git=False, svn=False, log=None):
     if log is not None:
         def output(msg):
             log.info(msg)
@@ -260,8 +260,14 @@ def print_pkg_versions(packages=None, svn=False, log=None):
             except:
                 vstr += "No version defined.  "
             if svn:
+                git = True
+                #try:
+                #    vstr += "\n    SVN version -> "+package.__svn_version__.rstrip()
+                #except:
+                #    vstr += " "
+            if git:
                 try:
-                    vstr += "\n    SVN version -> "+package.__svn_version__.rstrip()
+                    vstr += "\n    GIT version -> " + '-'.join([package.__version__, package.__version_post__, package.__version_commit]).rstrip()
                 except:
                     vstr += " "
         except:

@@ -20,7 +20,7 @@ from stsci.tools import logutil
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.4.0'
-__vdate__ = '10-Oct-2014'
+__version_date__ = '10-Oct-2014'
 
 
 log = logutil.create_logger(__name__)
