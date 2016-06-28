@@ -476,7 +476,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
             print("WCSNAME  : ",wcsname)
 
         # Insure that if a copy of the WCS has not been created yet, it will be now
-        wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
+        wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr, relax=True)
 
         for key in wcs_hdr:
             hdr[key] = wcs_hdr[key]
