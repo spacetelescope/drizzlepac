@@ -404,17 +404,19 @@ def run(configobj):
                 img.close()
             return
 
-        image1, image2 = _max_overlap_pair(input_images, expand_refcat,
-                                           enforce_user_order)
-        input_images.insert(0, image2)
-        image = image1
+        if len(input_images) == 1:
+            image = input_images.pop(0)
+        else:
+            image, image2 = _max_overlap_pair(input_images, expand_refcat,
+                                              enforce_user_order)
+            input_images.insert(0, image2)
 
         # Workaround the defect described in ticket:
         # http://redink.stsci.edu/trac/ssb/stsci_python/ticket/1151
         refwcs = []
         for i in all_input_images:
             refwcs.extend(i.get_wcs())
-        kwargs['ref_wcs_name'] = image1.get_wcs()[0].filename
+        kwargs['ref_wcs_name'] = image.get_wcs()[0].filename
 
         # A hack to allow different source finding parameters for
         # the reference image:
