@@ -12,7 +12,6 @@ import stsci.ndimage as ndimage
 
 from stsci.tools import asnutil, irafglob, parseinput, fileutil
 from astropy.io import fits
-#import astrolib.coords as coords
 import astropy.coordinates as coords
 import astropy.units as u
 
