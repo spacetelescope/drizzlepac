@@ -49,9 +49,31 @@ combine_maskpt : float (Default = 0.7)
 
 
 combine_type : str {'average', 'median', 'sum', 'minmed'} (Default = 'minmed')
-    This parameter defines the method that will be used to create the median image.  The 'average', 'median', and 'sum' options set the calculation type when running 'numcombine', a numpy method for median-combining arrays to create the median image. The "minmed" option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, "minmed" will choose the minimum value. The sigma thresholds for this decision are provided by the "combine_nsigma" parameter. However, as the "combine_nsigma" parameter does not adjust for the larger probability of a single "nsigma" event with a greater number of images, "minmed" will bias the comparison image low for a large number of images. "minmed" is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images.
+    This parameter defines the method that will be used to create the median
+    image.  The 'average', 'median', and 'sum' options set the calculation
+    type when running 'numcombine', a numpy method for median-combining arrays
+    to create the median image. The "minmed" option will produce an image that
+    is generally the same as the median, except in cases where the median is
+    significantly higher than the minimum good pixel value. In this case,
+    "minmed" will choose the minimum value. The sigma thresholds for this
+    decision are provided by the "combine_nsigma" parameter. However, as
+    the "combine_nsigma" parameter does not adjust for the larger probability
+    of a single "nsigma" event with a greater number of images, "minmed" will
+    bias the comparison image low for a large number of images.
+    The value of sigma is computed as :math:`\sigma = \sqrt(M + S + R^2)`,
+    where *M* is the median image data (in electrons), *S* is the value of the
+    subtracted sky (in electrons), and *R* is the value of the readout noise
+    (in electrons). "minmed" is highly recommended for three images, and is
+    good for four to six images, but should be avoided for ten or more images.
 
-    A value of 'median' is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the "combine_nhigh" parameter to a value of 1 when using "median" with four images, and consider raising this parameter's value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus "combine_nhigh" odd when using "median".
+    A value of 'median' is the recommended method for a large number of images,
+    and works equally well as minmed down to approximately four images.
+    However, the user should set the "combine_nhigh" parameter to a value of 1
+    when using "median" with four images, and consider raising this parameter's
+    value for larger numbers of images. As a median averages the two inner
+    values when the number of values being considered is even, the user may
+    want to keep the total number of images minus "combine_nhigh" odd when
+    using "median".
 
 
 combine_nsigma : float (Default = '4 3')

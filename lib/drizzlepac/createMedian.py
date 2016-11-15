@@ -262,7 +262,7 @@ def _median(imageObjectList, paramDict):
             for chip in image.returnAllChips(extname=image.scienceExt):
                 # compute sky value as sky/pixel using the single_drz pixel scale
                 if bsky is None or bsky > chip.subtractedSky:
-                    bsky = chip.subtractedSky
+                    bsky = chip.subtractedSky * chip._conversionFactor
 
                 # Extract the readnoise value for the chip
                 rdnoise += (chip._rdnoise)**2
