@@ -282,7 +282,7 @@ class staticMask(object):
 
             else:
                 try:
-                    newHDU.writeto(filename, overwrite=True)
+                    newHDU.writeto(filename, clobber=True)
                     log.info("Saving static mask to disk: %s" % filename)
 
                 except IOError:
