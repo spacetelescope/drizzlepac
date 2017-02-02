@@ -84,7 +84,7 @@ class STISInputImage (imageObject):
         for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
-            if chip._gain != None:
+            if chip._gain is not None:
 
                 conversionFactor = chip._gain
                 chip._effGain = chip._gain #1.
@@ -188,7 +188,7 @@ class CCDInputImage(STISInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if chip._gain is None or chip._rdnoise is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
@@ -232,26 +232,21 @@ class NUVInputImage(STISInputImage):
 
        # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
-        usingDefaultGain = False
-        usingDefaultReadnoise = False
-        if (instrpars['gnkeyword'] == None):
-            usingDefaultGain = True
-        if (instrpars['rnkeyword'] == None):
-            usingDefaultReadnoise = True
-
+        usingDefaultGain = (instrpars['gnkeyword'] is None)
+        usingDefaultReadnoise = (instrpars['rnkeyword'] is None)
 
         for chip in self.returnAllChips(extname=self.scienceExt):
             #pri_header=chip.header
             chip.cte_dir=0
             # We need to treat Read Noise and Gain as a special case since it is
             # not populated in the STIS primary header for the MAMAs
-            if (instrpars['rnkeyword'] != None):
+            if (instrpars['rnkeyword'] is not None):
                 chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
                                                          instrpars['rnkeyword'])
             else:
                 chip._rdnoise = None
 
-            if (instrpars['gnkeyword'] != None):
+            if (instrpars['gnkeyword'] is not None):
                 chip._gain = self.getInstrParameter(instrpars['gain'], pri_header,
                                                          instrpars['gnkeyword'])
             else:
@@ -272,7 +267,7 @@ class NUVInputImage(STISInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
 
-            if chip._exptime == None:
+            if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
         # Convert the science data to electrons if specified by the user.
@@ -364,25 +359,25 @@ class FUVInputImage(STISInputImage):
 
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
-            if chip._exptime == None:
+            if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
-            if (instrpars['rnkeyword'] != None):
+            if (instrpars['rnkeyword'] is not None):
                 chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
                                                          instrpars['rnkeyword'])
             else:
                 chip._rdnoise = None
                 usingDefaultReadnoise = True
 
-            if (instrpars['gnkeyword'] != None):
+            if (instrpars['gnkeyword'] is not None):
                 chip._gain = self.getInstrParameter(instrpars['gain'], pri_header,
                                                          instrpars['gnkeyword'])
             else:
                 chip._gain = None
                 usingDefaultGain = True
 
-            if chip._exptime == None:
+            if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 

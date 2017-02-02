@@ -629,7 +629,7 @@ class ImageCatalog(Catalog):
     def _compute_sigma(self):
         src_vals = self.source
         if np.any(np.isnan(self.source)):
-            src_vals = self.source[np.where(np.isnan(self.source)==False)]
+            src_vals = self.source[np.where(np.isnan(self.source) == False)]
         istats = imagestats.ImageStats(src_vals,nclip=3,
                                         fields='mode,stddev',binwidth=0.01)
         sigma = np.sqrt(2.0 * np.abs(istats.mode))

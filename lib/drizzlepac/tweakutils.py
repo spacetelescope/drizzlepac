@@ -23,15 +23,13 @@ from . import cdriz
 def parse_input(input, prodonly=False, sort_wildcards=True):
     catlist = None
 
-    if (isinstance(input, list) == False) and \
-       ('_asn' in input or '_asc' in input) :
+    if not isinstance(input, list) and ('_asn' in input or '_asc' in input):
         # Input is an association table
         # Get the input files
         oldasndict = asnutil.readASNTable(input, prodonly=prodonly)
         filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
 
-    elif (isinstance(input, list) == False) and \
-       (input[0] == '@') :
+    elif not isinstance(input, list) and input[0] == '@':
         # input is an @ file
         f = open(input[1:])
         # Read the first line in order to determine whether
@@ -706,7 +704,7 @@ def idlgauss_convolve(image,fwhm):
 
     return h,c1
 
-def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
+def gauss_array(nx, ny=None, fwhm=1.0, sigma_x=None, sigma_y=None, zero_norm=False):
     """ Computes the 2D Gaussian with size nx*ny.
 
         Parameters
@@ -733,7 +731,8 @@ def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
 
     """
 
-    if ny == None: ny = nx
+    if ny is None:
+        ny = nx
 
     if sigma_x is None:
         if fwhm is None:
@@ -742,7 +741,7 @@ def gauss_array(nx,ny=None,fwhm=1.0,sigma_x=None,sigma_y=None,zero_norm=False):
         else:
             # Convert input FWHM into sigma
             sigma_x = fwhm/(2*np.sqrt(2*np.log(2)))
-    if sigma_y == None: sigma_y = sigma_x
+    if sigma_y is None: sigma_y = sigma_x
 
     xradius = nx//2
     yradius = ny//2
@@ -1089,7 +1088,7 @@ def plot_zeropoint(pars):
     plt.figure(num=pars['figure_id'])
     plt.clf()
 
-    if pars['interactive'] is True:
+    if pars['interactive']:
         plt.ion()
     else:
         plt.ioff()

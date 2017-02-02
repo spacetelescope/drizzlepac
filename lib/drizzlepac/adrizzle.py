@@ -416,7 +416,7 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
     if not isinstance(crmaskname, fits.HDUList) and not os.path.exists(crmaskname):
         log.warning('No CR mask file found! Input DQ array not updated.')
         return
-    if cr_bits_value == None:
+    if cr_bits_value is None:
         log.warning('Input DQ array not updated!')
         return
     if isinstance(crmaskname, fits.HDUList):
@@ -511,7 +511,7 @@ def interpret_maskval(paramDict):
     if 'maskval' not in paramDict:
         return 0
     maskval = paramDict['maskval']
-    if maskval == None:
+    if maskval is None:
         maskval = np.nan
     else:
         maskval = float(maskval) # just to be clear and absolutely sure...
@@ -552,8 +552,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     outwcs = copy.deepcopy(output_wcs)
 
     # Check for existance of output file.
-    if single == False and build == True and fileutil.findFile(
-                                imageObjectList[0].outputNames['outFinal']):
+    if (not single and build and
+        fileutil.findFile(imageObjectList[0].outputNames['outFinal'])):
         log.info('Removing previous output product...')
         os.remove(imageObjectList[0].outputNames['outFinal'])
 
@@ -696,7 +696,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
 
 
     # Check for unintialized inputs
-    here = _outsci==None and _outwht==None and _outctx==None
+    here = _outsci is None and _outwht is None and _outctx is None
     if _outsci is None:
         #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
@@ -862,7 +862,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     img.set_wtscl(chip._chip,paramDict['wt_scl'])
 
-    pix_ratio = outwcs.pscale/chip.wcslin_pscale
+    pix_ratio = outwcs.pscale / chip.wcslin_pscale
 
     # Convert mask to a datatype expected by 'tdriz'
     # Also, base weight mask on ERR or IVM file as requested by user
@@ -1032,7 +1032,7 @@ def do_driz(insci, input_wcs, inwht,
         nplanes = 1
     else:
         nplanes = 0
-        
+
     if nplanes <= planeid:
         raise IndexError("Not enough planes in drizzle context image")
 

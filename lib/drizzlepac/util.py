@@ -63,14 +63,14 @@ def get_pool_size(usr_config_value, num_tasks):
     if not can_parallel:
         return 1
     # Give priority to their specified cfg value, over the actual cpu count
-    if usr_config_value != None:
-        if num_tasks == None:
+    if usr_config_value is not None:
+        if num_tasks is None:
             return usr_config_value
         else:
             # usr_config_value may be needlessly high
             return min(usr_config_value, num_tasks)
     # they haven't specified a cfg value, so go with the cpu_count
-    if num_tasks == None:
+    if num_tasks is None:
         return _cpu_count
     else:
         # run no more workers than tasks
@@ -208,7 +208,7 @@ class WithLogging(object):
                     pass
 
             self.depth += 1
-            
+
             # This looks utterly bizarre, but it seems to be the only way I can
             # ensure that any exceptions that occur in the wrapped function are
             # logged before teardown_global_logging() is called.  Unless the
@@ -638,15 +638,15 @@ def applyUserPars_steps(configObj, input_dict, step='3a'):
     stepname = getSectionName(configObj,step)
     finalParDict = configObj[stepname].copy()
     del finalParDict[step_kws[step]]
-    
+
     # interpret input_dict to find any parameters for this step specified by the user
     user_pars = {}
     for kw in finalParDict:
         if kw in input_dict: user_pars[kw] = input_dict[kw]
     if len(user_pars) > 0:
         configObj[stepname][step_kws[step]] = True
-        
-    
+
+
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated
         with user-specified values from input_dict.
@@ -1063,12 +1063,12 @@ def createFile(dataArray=None, outfile=None, header=None):
     None when the FITS file was written out to a file.
     """
     # Insure that at least a data-array has been provided to create the file
-    assert(dataArray != None), "Please supply a data array for createFiles"
+    assert(dataArray is not None), "Please supply a data array for createFiles"
 
     try:
         # Create the output file
         fitsobj = fits.HDUList()
-        if (header != None):
+        if header is not None:
             try:
                 del(header['NAXIS1'])
                 del(header['NAXIS2'])
@@ -1095,13 +1095,13 @@ def createFile(dataArray=None, outfile=None, header=None):
             hdu = fits.PrimaryHDU(data=dataArray)
 
         fitsobj.append(hdu)
-        if outfile:
+        if outfile is not None:
             fitsobj.writeto(outfile)
     finally:
         # CLOSE THE IMAGE FILES
         fitsobj.close()
 
-        if outfile:
+        if outfile is not None:
             del fitsobj
             fitsobj = None
     return fitsobj

@@ -821,7 +821,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         return
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have
     # already called 'run()'.
-    if editpars == False:
+    if not editpars:
         # Pass full set of parameters on to the task
         run(configObj)
 

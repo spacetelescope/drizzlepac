@@ -75,7 +75,7 @@ def run(configObj,wcsmap=None):
 #
 
 def build(outname, wcsname, refimage, undistort=False,
-                applycoeffs=False, coeffsfile=None, **wcspars):
+          applycoeffs=False, coeffsfile=None, **wcspars):
     """ Core functionality to create a WCS instance from a reference image WCS,
         user supplied parameters or user adjusted reference WCS.
         The distortion information can either be read in as part of the reference

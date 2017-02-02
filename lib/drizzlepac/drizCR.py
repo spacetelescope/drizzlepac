@@ -43,7 +43,7 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     if configObj is None:
         return
 
-    if editpars == False:
+    if not editpars:
         run(configObj)
 
 
@@ -133,12 +133,12 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
 
     """
 
-    grow=paramDict["driz_cr_grow"]
-    ctegrow=paramDict["driz_cr_ctegrow"]
+    grow = paramDict["driz_cr_grow"]
+    ctegrow = paramDict["driz_cr_ctegrow"]
 
 #    try:
-#        assert(chip != None), 'Please specify a chip to process for blotting'
-#        assert(sciImage != None), 'Please specify a science image object for blotting'
+#        assert(chip is not None), 'Please specify a chip to process for blotting'
+#        assert(sciImage is not None), 'Please specify a science image object for blotting'
 
 #    except AssertionError:
 #        print "Problem with value of chip or sciImage to drizCR"
@@ -147,9 +147,9 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
     crcorr_list =[]
     crMaskDict = {}
 
-    for chip in range(1,sciImage._numchips+1,1):
-        exten=sciImage.scienceExt + ',' +str(chip)
-        scienceChip=sciImage[exten]
+    for chip in range(1, sciImage._numchips + 1, 1):
+        exten = sciImage.scienceExt + ',' +str(chip)
+        scienceChip = sciImage[exten]
 
         if scienceChip.group_member:
             blotImagePar = 'blotImage'
@@ -412,7 +412,7 @@ def help(file=None):
         If given, write out help to the filename specified by this parameter
         Any previously existing file with this name will be deleted before
         writing out the help.
-        
+
     """
     helpstr = getHelpAsString(docstring=True, show_ver = True)
     if file is None:
@@ -428,13 +428,13 @@ def getHelpAsString(docstring = False, show_ver = True):
     """
     return useful help from a file in the script directory called
     __taskname__.help
-    
+
     """
     install_dir = os.path.dirname(__file__)
     taskname = util.base_taskname(__taskname__, __package__)
     htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
     helpfile = os.path.join(install_dir, taskname + '.help')
-    
+
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
             helpString = os.linesep + \
@@ -448,7 +448,7 @@ def getHelpAsString(docstring = False, show_ver = True):
             if __doc__ is not None:
                 helpString += __doc__ + os.linesep
     else:
-        helpString = 'file://' + htmlfile        
+        helpString = 'file://' + htmlfile
 
     return helpString
 
