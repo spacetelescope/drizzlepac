@@ -28,7 +28,9 @@ from . import tweakutils, util
 from .mapreg import _AuxSTWCS
 
 # USE_FITS_OVERWRITE is necessary as long as we support astropy versions < 1.3
-USE_FITS_OVERWRITE = astropy.version.major >= 1 and astropy.version.minor >=3
+USE_FITS_OVERWRITE = ((astropy.version.major == 1 and
+                       astropy.version.minor >= 3) or
+                      astropy.version.major >= 2)
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
