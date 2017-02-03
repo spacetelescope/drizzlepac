@@ -10,6 +10,7 @@ import copy
 
 import numpy as np
 #import pywcs
+import astropy
 from astropy import wcs as pywcs
 import astropy.coordinates as coords
 from astropy import units as u
@@ -25,6 +26,9 @@ import pyregion
 #import idlphot
 from . import tweakutils, util
 from .mapreg import _AuxSTWCS
+
+# USE_FITS_OVERWRITE is necessary as long as we support astropy versions < 1.3
+USE_FITS_OVERWRITE = astropy.version.major >= 1 and astropy.version.minor >=3
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
@@ -529,7 +533,10 @@ class ImageCatalog(Catalog):
         #DEBUG:
         if mask is not None:
             fn = os.path.splitext(self.fname)[0] + '_srcfind_mask.fits'
-            fits.writeto(fn, mask.astype(dtype=np.uint8), clobber=True)
+            if USE_FITS_OVERWRITE:
+                fits.writeto(fn, mask.astype(dtype=np.uint8), overwrite=True)
+            else:
+                fits.writeto(fn, mask.astype(dtype=np.uint8), clobber=True)
 
         return mask
 

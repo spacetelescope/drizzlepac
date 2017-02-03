@@ -17,11 +17,14 @@ import sys
 
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
+import astropy
 from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util
 from . import processInput
 
+# USE_FITS_OVERWRITE is necessary as long as we support astropy versions < 1.3
+USE_FITS_OVERWRITE = astropy.version.major >= 1 and astropy.version.minor >=3
 
 __taskname__ = "drizzlepac.staticMask"
 _step_num_ = 1
@@ -279,7 +282,10 @@ class staticMask(object):
             if not virtual:
                 if not(fileutil.checkFileExists(filename)):
                     try:
-                        newHDU.writeto(filename, clobber=True)
+                        if USE_FITS_OVERWRITE:
+                            newHDU.writeto(filename, overwrite=True)
+                        else:
+                            newHDU.writeto(filename, clobber=True)
                         log.info("Saving static mask to disk: %s" % filename)
 
                     except IOError:
