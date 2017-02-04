@@ -14,14 +14,17 @@ from __future__ import absolute_import, division, print_function  # confidence h
 
 import os
 import sys
+from distutils.version import LooseVersion
 
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
+import astropy
 from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util
 from . import processInput
 
+ASTROPY_VER_GE13 = LooseVersion(astropy.__version__) >= LooseVersion('1.3')
 
 __taskname__ = "drizzlepac.staticMask"
 _step_num_ = 1
