@@ -136,11 +136,12 @@ class WFPC2InputImage (imageObject):
 
             # We need to treat Read Noise as a special case since it is
             # not populated in the WFPC2 primary header
-            if (instrpars['rnkeyword'] is not None):
-                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                         instrpars['rnkeyword'])
-            else:
+            if instrpars['rnkeyword'] is None:
                 chip._rdnoise = None
+            else:
+                chip._rdnoise   = self.getInstrParameter(
+                    instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+                )
 
             if chip._headergain is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
@@ -149,9 +150,8 @@ class WFPC2InputImage (imageObject):
         # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
 
-        usingDefaultGain = (instrpars['gnkeyword'] == 'ATODGAIN')
-        usingDefaultReadnoise = (instrpars['rnkeyword'] is None or
-                                 instrpars['rnkeyword'] == 'None')
+        usingDefaultGain = instrpars['gnkeyword'] == 'ATODGAIN'
+        usingDefaultReadnoise = instrpars['rnkeyword'] in [None, 'None']
 
         # If the user has specified either the readnoise or the gain, we need to make sure
         # that they have actually specified both values.  In the default case, the readnoise

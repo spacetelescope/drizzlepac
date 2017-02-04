@@ -845,10 +845,10 @@ def parse_ext(extn, default_extver=None):
 
     if extn and (extn[0]  in forced_string_delim) and \
                 (extn[-1] in forced_string_delim):
-        if default_extver is not None:
-            return (extn[1:-1],default_extver)
-        else:
+        if default_extver is None:
             return extn[1:-1]
+        else:
+            return (extn[1:-1], default_extver)
 
     #TODO: Add support for strings like '(SCI,1)' that *include* parentheses?
 

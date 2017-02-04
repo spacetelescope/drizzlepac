@@ -240,15 +240,17 @@ class NUVInputImage(STISInputImage):
             chip.cte_dir=0
             # We need to treat Read Noise and Gain as a special case since it is
             # not populated in the STIS primary header for the MAMAs
-            if (instrpars['rnkeyword'] is not None):
-                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                         instrpars['rnkeyword'])
+            if instrpars['rnkeyword'] is not None:
+                chip._rdnoise   = self.getInstrParameter(
+                    instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+                )
             else:
                 chip._rdnoise = None
 
-            if (instrpars['gnkeyword'] is not None):
-                chip._gain = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                         instrpars['gnkeyword'])
+            if instrpars['gnkeyword'] is not None:
+                chip._gain = self.getInstrParameter(
+                    instrpars['gain'], pri_header, instrpars['gnkeyword']
+                )
             else:
                 chip._gain = None
 
@@ -357,22 +359,26 @@ class FUVInputImage(STISInputImage):
 
             chip.cte_dir=0
 
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
-                                                     instrpars['expkeyword'])
+            chip._exptime = self.getInstrParameter(
+                instrpars['exptime'], chip.header, instrpars['expkeyword']
+            )
+
             if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
-            if (instrpars['rnkeyword'] is not None):
-                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                         instrpars['rnkeyword'])
+            if instrpars['rnkeyword'] is not None:
+                chip._rdnoise   = self.getInstrParameter(
+                    instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+                )
             else:
                 chip._rdnoise = None
                 usingDefaultReadnoise = True
 
-            if (instrpars['gnkeyword'] is not None):
-                chip._gain = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                         instrpars['gnkeyword'])
+            if instrpars['gnkeyword'] is not None:
+                chip._gain = self.getInstrParameter(
+                    instrpars['gain'], pri_header, instrpars['gnkeyword']
+                )
             else:
                 chip._gain = None
                 usingDefaultGain = True

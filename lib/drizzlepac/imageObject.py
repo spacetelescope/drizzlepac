@@ -911,11 +911,10 @@ class baseImageObject(object):
               - if both are blank, or if the header keyword is not
                 found, return None.
         """
-        if isinstance(value,str) and value in ['None','',' ','INDEF']:
+        if isinstance(value, str) and value in ['None', '', ' ', 'INDEF']:
             value = None
 
-        if (value is not None and value != '')  and (keyword is not None and
-                                                     keyword.strip() != ''):
+        if value and (keyword is not None and keyword.strip() != ''):
             exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword)
             raise ValueError(exceptionMessage)
 
