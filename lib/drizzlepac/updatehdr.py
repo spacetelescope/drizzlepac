@@ -318,12 +318,12 @@ def _inv2x2(x):
     det = inv[0,0]*inv[1,1] - inv[0,1]*inv[1,0]
     if np.abs(det) < np.finfo(np.float64).tiny:
         raise ArithmeticError('Singular matrix.')
-    a = inv[0.0]
-    d = inv[1,1]
-    inv[1,0] *= -1.0
-    inv[0,1] *= -1.0
-    inv[0,0] = d
-    inv[1,1] = d
+    a = inv[0, 0]
+    d = inv[1, 1]
+    inv[1, 0] *= -1.0
+    inv[0, 1] *= -1.0
+    inv[0, 0] = d
+    inv[1, 1] = a
     inv /= det
     inv = inv.astype(np.float64)
     if not np.all(np.isfinite(inv)):
