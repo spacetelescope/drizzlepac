@@ -232,8 +232,8 @@ class NUVInputImage(STISInputImage):
 
        # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
-        usingDefaultGain = (instrpars['gnkeyword'] is None)
-        usingDefaultReadnoise = (instrpars['rnkeyword'] is None)
+        usingDefaultGain = instrpars['gnkeyword'] is None
+        usingDefaultReadnoise = instrpars['rnkeyword'] is None
 
         for chip in self.returnAllChips(extname=self.scienceExt):
             #pri_header=chip.header

@@ -124,12 +124,12 @@ def _median(imageObjectList, paramDict):
 
     #print "Checking parameters:"
     #print comb_type,nlow,nhigh,grow,maskpt,nsigma1,nsigma2
-    if (paramDict['combine_lthresh'] is None):
+    if paramDict['combine_lthresh'] is None:
         lthresh = None
     else:
         lthresh = float(paramDict['combine_lthresh'])
 
-    if (paramDict['combine_hthresh'] is None):
+    if paramDict['combine_hthresh'] is None:
         hthresh = None
     else:
         hthresh = float(paramDict['combine_hthresh'])

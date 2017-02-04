@@ -202,7 +202,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
     if fileutil.findFile(maskname):
         fileutil.removeFile(maskname)
 
-    _use_inmask = (not fileutil.findFile(dqfile) or bitvalue is None)
+    _use_inmask = not fileutil.findFile(dqfile) or bitvalue is None
 
     # Check for existance of input .c1h file for use in making inmask file
     if not fileutil.findFile(dqfile) or bitvalue is None:

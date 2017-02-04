@@ -264,8 +264,8 @@ class SBCInputImage (ACSInputImage):
 
         # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
-        usingDefaultGain = (instrpars['gnkeyword'] is None)
-        usingDefaultReadnoise = (instrpars['rnkeyword'] is None)
+        usingDefaultGain = instrpars['gnkeyword'] is None
+        usingDefaultReadnoise = instrpars['rnkeyword'] is None
 
         # Set the default readnoise or gain values based upon the amount of user input given.
 
