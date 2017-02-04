@@ -84,8 +84,8 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
 
 def _simple_parse_teal_fname(fnamestr, parse_at=False):
     if not fnamestr: return None
-    fnames = [ fname if fname else None \
-              for fname in map(str.strip,fnamestr.split(',')) ]
+    fnames = [fname if fname else None \
+              for fname in map(str.strip,fnamestr.split(','))]
     if not parse_at:
         if ',' in fnamestr:
             return fnames
@@ -333,8 +333,8 @@ def _regwrite(shapelist,outfile):
         outf = open(outfile,'w')
 
         attr0 = shapelist[0].attr[1]
-        defaultline = " ".join( [ "%s=%s" % (a,attr0[a]) for a in attr0 \
-                                  if a!='text' ] )
+        defaultline = " ".join(["%s=%s" % (a,attr0[a]) for a in attr0 \
+                                if a!='text'])
 
         # first line is globals
         print("global", defaultline, file=outf)
@@ -345,7 +345,7 @@ def _regwrite(shapelist,outfile):
             shape_attr = '' if prev_cs == shape.coord_format \
                             else shape.coord_format+"; "
             shape_excl = '-' if shape.exclude else ''
-            text_coordlist = [ "%f" % f for f in shape.coord_list ]
+            text_coordlist = ["%f" % f for f in shape.coord_list]
             shape_coords = "(" + ",".join(text_coordlist) + ")"
             shape_comment = " # " + shape.comment if shape.comment else ''
 
@@ -393,8 +393,8 @@ def shapes_img2sky(reglist, wcs):
     #TODO: implement shapes_img2sky to do something useful
     # (like real CS transformation)
     from pyregion.wcs_helper import image_like_coordformats
-    return [ r for r in reglist
-             if r.coord_format not in image_like_coordformats]
+    return [r for r in reglist
+            if r.coord_format not in image_like_coordformats]
 
 
 def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
@@ -404,15 +404,15 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
     if isinstance(input_reg, str) and len(input_reg) > 0: # a single region file
         single_inp_reg  = True
-        input_regfnames = [ input_reg ]
-        ref_wcs_exts    = [ 0 ] # for a single input region we assume that the
-                                # default location of the WCS is in the primary
-                                # header (if nothing else specified)
+        input_regfnames = [input_reg]
+        ref_wcs_exts    = [0] # for a single input region we assume that the
+                              # default location of the WCS is in the primary
+                              # header (if nothing else specified)
 
     elif isinstance(input_reg, list) and input_reg: # a non-empty list of files
         # select non-zero length file names;replace all other elements with None
-        input_regfnames = [ fname if isinstance(fname,str) and \
-                            len(fname)>0 else None for fname in input_reg ]
+        input_regfnames = [fname if isinstance(fname,str) and \
+                           len(fname)>0 else None for fname in input_reg]
 
         # Populate ref_wcs_exts with "default" FITS extension numbers according
         # to the input region position in the input_regfnames list
@@ -424,9 +424,9 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
         # Filter out elements of ref_wcs_exts and input_regfnames that
         # correspond to None elements in input_regfnames:
-        ref_wcs_exts = [ ext for reg,ext in zip(input_regfnames,ref_wcs_exts) \
-                         if reg != None ]
-        input_regfnames = [ reg for reg in input_regfnames if reg != None ]
+        ref_wcs_exts = [ext for reg,ext in zip(input_regfnames,ref_wcs_exts) \
+                        if reg is not None]
+        input_regfnames = [reg for reg in input_regfnames if reg is not None]
 
     else:
         input_regfnames = []
@@ -469,7 +469,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
     # FITS extension based either on extension specified in the input reference
     # image 'refimg', optional input argument 'ref_wcs_ext', and/or position of
     # the region file in the input region list 'input_reg'
-    if [ True for ireg in ref_wcs_exts if ireg != None ]:
+    if [True for ireg in ref_wcs_exts if ireg is not None]:
         # A reference WCS is required. Check that 'refimg' is an existing file:
         if refimg is None:
             raise ValueError("Argument 'refimg' cannot be None when some " \
@@ -493,9 +493,9 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
             if single_inp_reg:
 
                 if isinstance(refext, tuple) or isinstance(refext, int):
-                    ref_wcs_exts = [ refext ]
+                    ref_wcs_exts = [refext]
                 elif isinstance(refext, str): # it is a string:
-                    ref_wcs_exts = [ (refext,1) ]
+                    ref_wcs_exts = [(refext, 1)]
                 else:
                     raise RuntimeError("Logical error in the code.")
 
@@ -517,8 +517,8 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
                     "provided as input. Only extension name ('EXTNAME') is "   \
                     "allowed (e.g., [SCI], [DQ], etc.)")
 
-                ref_wcs_exts = [ None if extn is None else (refext, extn) \
-                                 for extn in ref_wcs_exts ]
+                ref_wcs_exts = [None if extn is None else (refext, extn) \
+                                for extn in ref_wcs_exts]
 
         elif ref_wcs_ext:
             # Try to determine the extension name from the 'ref_wcs_ext'
@@ -527,9 +527,9 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
             if single_inp_reg:
                 if isinstance(refext, tuple) or isinstance(refext, int):
-                    ref_wcs_exts = [ refext ]
+                    ref_wcs_exts = [refext]
                 elif isinstance(refext, str): # it is a string:
-                    ref_wcs_exts = [ (refext,1) ]
+                    ref_wcs_exts = [(refext, 1)]
                 else:
                     raise RuntimeError("Logical error in the code.")
 
@@ -551,28 +551,29 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
                     "provided as input. Only extension name ('EXTNAME') is "   \
                     "allowed (e.g., [SCI], [DQ], etc.)")
 
-                ref_wcs_exts = [ None if extn is None else (refext, extn) \
-                                 for extn in ref_wcs_exts ]
+                ref_wcs_exts = [None if extn is None else (refext, extn) \
+                                for extn in ref_wcs_exts]
         # check if the extensions found above are present
         # in the reference WCS FITS file:
-        if refimg != None and not _check_FITS_extensions(refimg, ref_wcs_exts):
+        if (refimg is not None and
+            not _check_FITS_extensions(refimg, ref_wcs_exts)):
             raise RuntimeError("Not all FITS extensions derived based on the " \
                 "input region(s) and extension names have been found in the "  \
                 "input reference WCS file. Unable to proceed.")
 
         # load headers containing WCS from the reference input FITS file:
-        ref_wcs_headers = [ None if extn is None \
-                            else fits.getheader(refimg_fname, ext=extn) \
-                            for extn in ref_wcs_exts ] #TODO: return WCS instead of header
+        ref_wcs_headers = [None if extn is None \
+                           else fits.getheader(refimg_fname, ext=extn) \
+                           for extn in ref_wcs_exts ] #TODO: return WCS instead of header
 
     else:
         # no WCS is needed (regions are already in sky coordinates):
-        ref_wcs_headers = [ None for reg in region_lists ]
+        ref_wcs_headers = [None for reg in region_lists]
 
     # Return a list of pairs of the form [region, header] with missing regions
     # (i.e., region = None) filtered out. (We do not need to keep order anymore)
-    return [ p for p in map(list, list(zip(region_lists, ref_wcs_headers))) \
-             if p[0] != None ]
+    return [p for p in map(list, list(zip(region_lists, ref_wcs_headers))) \
+            if p[0] is not None]
 
 
 def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
@@ -581,18 +582,18 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
     if chip_reg is None:
         nreg     = 0
         multireg = False
-        chip_reg = [ ]
+        chip_reg = []
     elif isinstance(chip_reg, str):
         nreg = 1
-        chip_reg = [ chip_reg ]
+        chip_reg = [chip_reg]
         multireg = False
     elif isinstance(chip_reg, list):
         chip_reg = chip_reg[:]
         nreg     = len(chip_reg)
         multireg = True
         # check that all elements of the list are either strings or None:
-        if [ True for reg in chip_reg
-             if reg is not None and not isinstance(reg, str) ]:
+        if [True for reg in chip_reg
+            if reg is not None and not isinstance(reg, str)]:
             raise TypeError("Argument 'chip_reg' can be either None, " \
                             "a string, or a list of stings and/or None.")
     else:
@@ -606,7 +607,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
         raise TypeError("Argument 'images' cannot be an empty list or None.")
 
     if not isinstance(images, list):
-        images = [ images ]
+        images = [images]
 
     for fname in images:
         if not isinstance(fname, str):
@@ -636,7 +637,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
     # initial processing of extensions (get a list of integers, str, or tuples):
     exts = parse_ext(img_wcs_ext, default_extver=None)
     if not isinstance(exts, list):
-        exts = [ exts ]
+        exts = [exts]
 
     # for each string extension in the extension list 'exts', find out how many
     # extension versions exist and create a new list of extensions in which the
@@ -674,7 +675,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
 
     # Warn users if there are more extensions than "chip" regions:
     if nreg == 0:
-        chip_reg = nexts * [ None ]
+        chip_reg = nexts * [None]
 
     elif nreg < nexts:
         print("")
@@ -793,15 +794,15 @@ def extension_from_filename(filename):
         _fname = filename
         _extn = None
 
-    return _fname,_extn
+    return _fname, _extn
 
 
 def parse_ext(extn, default_extver=None):
 
     if isinstance(extn, list):
-        return [ parse_ext(ext, default_extver) for ext in extn ]
+        return [parse_ext(ext, default_extver) for ext in extn]
 
-    if default_extver != None and not isinstance(default_extver, int):
+    if default_extver is not None and not isinstance(default_extver, int):
         raise TypeError("Argument 'default_extver' must be an integer or None.")
 
     if extn is None:
@@ -822,7 +823,7 @@ def parse_ext(extn, default_extver=None):
                 "with the extension name ('EXTNAME').")
 
         if len(extn) == 1:
-            return (extname, default_extver) if default_extver != None \
+            return (extname, default_extver) if default_extver is not None \
                                              else extname
 
         if len(extn) > 1:
@@ -830,9 +831,9 @@ def parse_ext(extn, default_extver=None):
                 raise TypeError("The second element of a tuple must be an " \
                     "integer number corresponding to the extension " \
                     "version ('EXTVER').")
-            extver = extn[1] if extn[1] != None else default_extver
+            extver = default_extver if extn[1] is None else extn[1]
 
-        return (extname, extver) if extver != None else extname
+        return (extname if extver is None else (extname, extver))
 
     if not isinstance(extn, str):
         raise TypeError("Input extension name/number is not of any of the "\
@@ -844,10 +845,10 @@ def parse_ext(extn, default_extver=None):
 
     if extn and (extn[0]  in forced_string_delim) and \
                 (extn[-1] in forced_string_delim):
-        if default_extver != None:
-            return (extn[1:-1],default_extver)
-        else:
+        if default_extver is None:
             return extn[1:-1]
+        else:
+            return (extn[1:-1], default_extver)
 
     #TODO: Add support for strings like '(SCI,1)' that *include* parentheses?
 
@@ -871,7 +872,7 @@ def parse_ext(extn, default_extver=None):
 
         extname = extn[:commapos]
 
-        return (extname, extver) if extver != None else extname
+        return (extname if extver is None else (extname, extver))
 
     else:
         # no extver present. However, check if the 'extn' string can be
@@ -883,10 +884,10 @@ def parse_ext(extn, default_extver=None):
             pass
 
         # assume default extver if present:
-        if default_extver != None:
-            return (extn[:],default_extver)
-        else:
+        if default_extver is None:
             return extn[:]
+        else:
+            return (extn[:], default_extver)
 #
 # Tests of 'parse_ext':
 #
@@ -988,9 +989,9 @@ def _check_FITS_extvers(img, extname, extvers):
     default_extn = 1 if isinstance(extname, str) else 0
 
     if isinstance(extvers, list):
-        extv = [ ext if ext != None else default_extn for ext in extvers ]
+        extv = [default_extn if ext is None else ext for ext in extvers]
     else:
-        extv = [ extvers if extvers != None else default_extn ]
+        extv = [default_extn if extvers is None else extvers]
 
     extv_in_fits = get_extver_list(img, extname)
 
@@ -1001,7 +1002,7 @@ def _check_FITS_extensions(img, extensions):
     """
     """
     if not isinstance(extensions, list):
-        extensions = [ extensions ]
+        extensions = [extensions]
 
     int_ext  = []
     ext_dict = { }
@@ -1025,13 +1026,13 @@ def _check_FITS_extensions(img, extensions):
             if extn[0] in ext_dict:
                 ext_dict[extn[0]].append(extn[1])
             else:
-                ext_dict.update({ extn[0] : [ extn[1] ] })
+                ext_dict.update({extn[0]: [extn[1]]})
 
         elif isinstance(extn, str):
             if extn in ext_dict:
                 ext_dict[extn].append(1)
             else:
-                ext_dict.update({ extn : [ 1 ] })
+                ext_dict.update({extn: [1]})
 
         elif extn is None:
             int_ext.append(0)

@@ -143,7 +143,8 @@ class WFCInputImage(ACSInputImage):
                                                      instrpars['expkeyword'])
             chip._effGain = 1.
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if (chip._gain is None or chip._rdnoise is None or
+                chip._exptime is None):
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
@@ -203,7 +204,8 @@ class HRCInputImage (ACSInputImage):
                                                      instrpars['expkeyword'])
             chip._effGain = chip._gain
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if (chip._gain is None or chip._rdnoise is None or
+                chip._exptime is None):
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
@@ -256,18 +258,14 @@ class SBCInputImage (ACSInputImage):
                                   #                   instrpars['rnkeyword'])
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
-            if chip._exptime == None:
+            if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
-        usingDefaultGain = False
-        usingDefaultReadnoise = False
-        if (instrpars['gnkeyword'] == None):
-            usingDefaultGain = True
-        if (instrpars['rnkeyword'] == None):
-            usingDefaultReadnoise = True
+        usingDefaultGain = instrpars['gnkeyword'] is None
+        usingDefaultReadnoise = instrpars['rnkeyword'] is None
 
         # Set the default readnoise or gain values based upon the amount of user input given.
 

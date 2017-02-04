@@ -171,7 +171,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         # drizzle: calibrated product name.
         inFilename = _mname
 
-        if _mname == None:
+        if _mname is None:
             errorMsg = 'Could not find calibrated product!'
             raise Exception(errorMsg)
 
@@ -330,7 +330,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     _appendTrlFile(_trlfile,_tmptrl)
 
     # If we created a new ASN table, we need to remove it
-    if _new_asn != None:
+    if _new_asn is not None:
         for _name in _new_asn: fileutil.removeFile(_name)
 
     # Clean up any generated OrIg_files directory
@@ -377,7 +377,7 @@ def _lowerAsn(asnfile):
     # Start by creating a new name for the ASN table
     _indx = asnfile.find('_asn.fits')
     _new_asn = asnfile[:_indx]+'_pipeline'+asnfile[_indx:]
-    if os.path.exists(_new_asn) == True:
+    if os.path.exists(_new_asn):
         os.remove(_new_asn)
     # copy original ASN table to new table
     shutil.copy(asnfile,_new_asn)

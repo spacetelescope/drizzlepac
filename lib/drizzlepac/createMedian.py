@@ -50,7 +50,7 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
     if configObj is None:
         return
 
-    if editpars == False:
+    if not editpars:
         run(configObj)
 
 
@@ -124,11 +124,12 @@ def _median(imageObjectList, paramDict):
 
     #print "Checking parameters:"
     #print comb_type,nlow,nhigh,grow,maskpt,nsigma1,nsigma2
-    if (paramDict['combine_lthresh'] == None):
+    if paramDict['combine_lthresh'] is None:
         lthresh = None
     else:
         lthresh = float(paramDict['combine_lthresh'])
-    if (paramDict['combine_hthresh'] == None):
+
+    if paramDict['combine_hthresh'] is None:
         hthresh = None
     else:
         hthresh = float(paramDict['combine_hthresh'])
@@ -495,7 +496,7 @@ def _writeImage( dataArray=None, inputHeader=None):
 
     _prihdu = fits.PrimaryHDU(data=dataArray, header=inputHeader)
     """
-    if (inputHeader == None):
+    if inputHeader is None:
         #use a general primary HDU
         _prihdu = fits.PrimaryHDU(data=dataArray)
 

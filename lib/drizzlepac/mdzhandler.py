@@ -135,19 +135,25 @@ def _interpretMdriztabPars(rec):
             # Based on format type, apply proper conversion/cleaning
             if (_fmt == 'a') or (_fmt == 'A'):
                 _val = cleanBlank(_value)
-                if _val == None: _val = ''
+                if _val is None:
+                    _val = ''
+
             elif (_format == 'i1') or (_format=='1L'):
                 _val = toBoolean(_value)
+
             elif (_format == 'i4') or (_format == '1J'):
                 _val = cleanInt(_value)
+
             elif ('E' in _format) or (_format == 'f4') :
                 _val = cleanNaN(_value)
+
             else:
                 print('MDRIZTAB column ',_name,' has unrecognized format',_format)
                 raise ValueError
             if _name in ['ra','dec']:
                 for dnames in drizstep_names:
                     tabdict[dnames+_name] = _val
+
             else:
                 tabdict[_name] = _val
 

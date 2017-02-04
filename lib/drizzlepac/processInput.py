@@ -338,7 +338,8 @@ def createImageObjectList(files,instrpars,group=None,
                         mtflag = False
         else:
             mtflag = False
-        if mtflag is True:
+
+        if mtflag:
             print("#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n")
             if mt_refimg is None:
                 mt_refimg = image
@@ -448,8 +449,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         print("No input files provided to processInput")
         raise ValueError
 
-    if (isinstance(input, list) == False) and \
-       ('_asn' in input or '_asc' in input) :
+    if not isinstance(input, list) and ('_asn' in input or '_asc' in input):
         # Input is an association table
         # Get the input files, and run makewcs on them
         oldasndict = asnutil.readASNTable(input, prodonly=infilesOnly)
@@ -461,7 +461,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         asnhdr = fits.getheader(input)
         # Only perform duplication check if not already completed...
         dupcheck = asnhdr.get('DUPCHECK',default="PERFORM") == "PERFORM"
-        
+
         #filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
         filelist = buildASNList(oldasndict['order'],input,check_for_duplicates=dupcheck)
 
@@ -552,7 +552,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         elif drz_extn[:4] not in output.lower():
             output = fileutil.buildNewRootname(output, extn=drz_extn)
 
-        
+
     log.info('Setting up output name: %s' % output)
 
     return asndict, ivmlist, output
@@ -672,7 +672,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
-    
+
     # check for non-polynomial distortion correction
     filelist = checkDGEOFile(filelist)
 
@@ -680,7 +680,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
-    
+
     if len(ivmlist) > 0:
         ivmlist, filelist = list(zip(*ivmlist))
     else:
@@ -729,7 +729,7 @@ def changeSuffixinASN(asnfile, suffix):
     """
     # Start by creating a new name for the ASN table
     _new_asn = asnfile.replace('_asn.fits','_'+suffix+'_asn.fits')
-    if os.path.exists(_new_asn) == True:
+    if os.path.exists(_new_asn):
         os.remove(_new_asn)
     # copy original ASN table to new table
     shutil.copy(asnfile,_new_asn)
@@ -753,7 +753,7 @@ def changeSuffixinASN(asnfile, suffix):
     new_dtype.append((d.descr[0][0],d.descr[0][1].replace(msize,'{}{}'.format(mtype,new_size))))
     new_dtype.append(d.descr[1])
     new_dtype.append(d.descr[2])
-    
+
     # Assign newly created, reformatted array to extension
     newasn = np.array(newdata,dtype=new_dtype)
     fasn[1].data = newasn
@@ -1075,12 +1075,10 @@ def checkDGEOFile(filenames):
                 npolfile = fits.getval(inputfile, 'NPOLFILE')
             except KeyError:
                 ustop = userStop(message)
-                while ustop == None:
+                while ustop is None:
                     ustop = userStop(message)
-                if ustop == True:
+                if ustop:
                     return None
-                elif ustop == False:
-                    pass
     return filenames
 
 def userStop(message):

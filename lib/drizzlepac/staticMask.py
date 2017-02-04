@@ -56,7 +56,7 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
     if configObj is None:
         return
 
-    if editpars == False:
+    if not editpars:
         run(configObj)
 
 #this is called by the TEAL interface

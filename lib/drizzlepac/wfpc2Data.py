@@ -136,25 +136,22 @@ class WFPC2InputImage (imageObject):
 
             # We need to treat Read Noise as a special case since it is
             # not populated in the WFPC2 primary header
-            if (instrpars['rnkeyword'] != None):
-                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                         instrpars['rnkeyword'])
-            else:
+            if instrpars['rnkeyword'] is None:
                 chip._rdnoise = None
+            else:
+                chip._rdnoise   = self.getInstrParameter(
+                    instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+                )
 
-            if chip._headergain == None or chip._exptime == None:
+            if chip._headergain is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
 
-        usingDefaultGain = False
-        usingDefaultReadnoise = False
-        if (instrpars['gnkeyword'] == 'ATODGAIN'):
-            usingDefaultGain = True
-        if (instrpars['rnkeyword'] == None or instrpars['rnkeyword'] == 'None'):
-            usingDefaultReadnoise = True
+        usingDefaultGain = instrpars['gnkeyword'] == 'ATODGAIN'
+        usingDefaultReadnoise = instrpars['rnkeyword'] in [None, 'None']
 
         # If the user has specified either the readnoise or the gain, we need to make sure
         # that they have actually specified both values.  In the default case, the readnoise
@@ -208,7 +205,7 @@ class WFPC2InputImage (imageObject):
             if 'D2IMFILE' in _handle[0].header and _handle[0].header['D2IMFILE'] not in ["","N/A"]:
                 chip.outputNames['d2imfile'] = _handle[0].header['D2IMFILE']
 
-            if chip._gain != None:
+            if chip._gain is not None:
                 """
                 # Multiply the values of the sci extension pixels by the gain.
                 print "Converting %s[%d] from COUNTS to ELECTRONS"%(self._filename,det)

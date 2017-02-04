@@ -109,7 +109,7 @@ class WFC3UVISInputImage(WFC3InputImage):
                                                      instrpars['expkeyword'])
             chip._effGain=chip._gain
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if chip._gain is None or chip._rdnoise is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
@@ -230,7 +230,7 @@ class WFC3IRInputImage(WFC3InputImage):
                                                      instrpars['expkeyword'])
             chip._effGain= 1
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if chip._gain is None or chip._rdnoise is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
