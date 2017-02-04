@@ -101,7 +101,20 @@ class baseImageObject(object):
             the data array returned for future use. You can use
             putData to reattach a new data array to the imageObject.
         """
+        if self._image is None:
+            return
+
+        # mcara: I think the code below is not necessary but in order to
+        #        preserve the same functionality as the code removed below,
+        #        I make an empty copy of the image object:
+        empty_image = fits.HDUList()
+        for u in self._image:
+            empty_image.append(u.__class__(data=None, header=None))
+        # mcara: END unnecessary code
+
         self._image.close()  #calls fits.close()
+
+        self._image = empty_image
 
         #we actuallly want to make sure that all the
         #data extensions have been closed and deleted
@@ -109,13 +122,15 @@ class baseImageObject(object):
         #at this point, but I'd like there to be something
         #valid there afterwards that I can play with
 
-        if not self._isSimpleFits:
-            for ext,hdu in enumerate(self._image):
-                #use the datatype for the extension
-                #dtype=self.getNumpyType(hdu.header["BITPIX"])
-                hdu.data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet
-        else:
-            self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
+        # mcara: REMOVED unnecessary code:
+        #
+        # if not self._isSimpleFits:
+        #     for ext,hdu in enumerate(self._image):
+        #         #use the datatype for the extension
+        #         #dtype=self.getNumpyType(hdu.header["BITPIX"])
+        #         hdu.data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet
+        # else:
+        #     self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
 
     def clean(self):
         """ Deletes intermediate products generated for this imageObject.
