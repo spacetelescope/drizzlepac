@@ -521,6 +521,16 @@ def restoreDefaultWCS(imageObjectList, output_wcs):
     updateImageWCS(imageObjectList, output_wcs)
 
 
+def _rotateCD(cd, theta):
+    # This is the old (pre-astropy PR #5189 -
+    # see https://github.com/astropy/astropy/pull/5189) as this the version
+    # of the rotateCD expected in 'mergeWCS' below
+    theta = np.deg2rad(theta)
+    cth = np.cos(theta)
+    sth = np.sin(theta)
+    return np.dot(cd, [[cth, sth], [-sth, cth]])
+
+
 def mergeWCS(default_wcs,user_pars):
     """ Merges the user specified WCS values given as dictionary derived from
         the input configObj object with the output PyWCS object computed
@@ -589,7 +599,7 @@ def mergeWCS(default_wcs,user_pars):
     outwcs.wcs.cd = outwcs.wcs.cd / _ratio
     outwcs.pscale /= _ratio
     #Update orientation
-    outwcs.rotateCD(_delta_rot)
+    outwcs.wcs.cd = _rotateCD(outwcs.wcs.cd, _delta_rot)
     outwcs.orientat += -_delta_rot
     # Update size
     outwcs._naxis1 =  int(shape[0])
