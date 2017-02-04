@@ -285,7 +285,10 @@ class staticMask(object):
 
             else:
                 try:
-                    newHDU.writeto(filename, clobber=True)
+                    if ASTROPY_VER_GE13:
+                        newHDU.writeto(filename, overwrite=True)
+                    else:
+                        newHDU.writeto(filename, clobber=True)
                     log.info("Saving static mask to disk: %s" % filename)
 
                 except IOError:
