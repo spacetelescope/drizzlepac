@@ -273,28 +273,28 @@ class staticMask(object):
 
         for key in self.masklist.keys():
             #check to see if the file already exists on disk
-            filename=self.masknames[key]
+            filename = self.masknames[key]
             #create a new fits image with the mask array and a standard header
             #open a new header and data unit
             newHDU = fits.PrimaryHDU()
             newHDU.data = self.masklist[key]
 
-            if not virtual:
-                if not(fileutil.checkFileExists(filename)):
-                    try:
-                        if ASTROPY_VER_GE13:
-                            newHDU.writeto(filename, overwrite=True)
-                        else:
-                            newHDU.writeto(filename, clobber=True)
-                        log.info("Saving static mask to disk: %s" % filename)
-
-                    except IOError:
-                        log.error("Problem saving static mask file: %s to "
-                                  "disk!\n" % filename)
-                        raise IOError
-            else:
+            if virtual:
                 for img in imageObjectList:
                     img.saveVirtualOutputs({filename:newHDU})
+
+            else:
+                try:
+                    if ASTROPY_VER_GE13:
+                        newHDU.writeto(filename, overwrite=True)
+                    else:
+                        newHDU.writeto(filename, clobber=True)
+                    log.info("Saving static mask to disk: %s" % filename)
+
+                except IOError:
+                    log.error("Problem saving static mask file: %s to "
+                              "disk!\n" % filename)
+                    raise IOError
 
 
 def help(file=None):
