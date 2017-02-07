@@ -12,10 +12,10 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import datetime
-import importlib
-import sys
-import os
+import sys, os
+import stsci_sphinx_theme
+
+# Check Sphinx version
 import sphinx
 from distutils.version import LooseVersion
 try:
@@ -175,7 +175,7 @@ default_role = 'obj'
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-#html_theme = 'sphinxdoc'
+html_theme = 'stsci_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -183,8 +183,7 @@ default_role = 'obj'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
-html_static_path = ['_static']
+html_theme_path = [stsci_sphinx_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
