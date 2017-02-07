@@ -488,6 +488,8 @@ def removeAllAltWCS(hdulist,extlist):
         wkeys.remove(' ')
     for extn in extlist:
         for wkey in wkeys:
+            if wkey == 'O':
+                continue
             altwcs.deleteWCS(hdulist,extn,wkey)
 
         # Forcibly remove OPUS WCS Keywords, since deleteWCS will not do it
