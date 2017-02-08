@@ -210,7 +210,7 @@ class NUVInputImage(STISInputImage):
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
         # no cte correction for STIS/NUV-MAMA so set cte_dir=0.
-        print('\nWARNING: No cte correction will be made for this STIS/NUV-MAMA data.\n')
+        print('WARNING: No cte correction will be made for this STIS/NUV-MAMA data.')
 
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0
@@ -333,7 +333,7 @@ class FUVInputImage(STISInputImage):
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
         # no cte correction for STIS/FUV-MAMA so set cte_dir=0.
-        print('\nWARNING: No cte correction will be made for this STIS/FUV-MAMA data.\n')
+        print('WARNING: No cte correction will be made for this STIS/FUV-MAMA data.')
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0
             self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()

@@ -220,10 +220,10 @@ class SBCInputImage (ACSInputImage):
         self.full_shape = (1024,1024)
         self._detector=self._image['PRIMARY'].header["DETECTOR"]
 
+        # no cte correction for SBC so set cte_dir=0.
+        print('WARNING: No cte correction will be made for this SBC data.')
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
-            # no cte correction for SBC so set cte_dir=0.
-            print('\nWARNING: No cte correction will be made for this SBC data.\n')
             self._image[self.scienceExt,chip].cte_dir = 0
 
 
