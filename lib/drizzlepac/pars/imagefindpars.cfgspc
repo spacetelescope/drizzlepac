@@ -10,7 +10,7 @@ ratio = float_kw(default=1.0,comment="Ratio of minor to major axis of Gaussian k
 theta = float_kw(default=0.0,comment="Position angle of major axis of Gaussian kernel")
 fluxmin = float_or_none_kw(default=None,comment="Min good total source flux")
 fluxmax = float_or_none_kw(default=None,comment="Max good total source flux")
-dqbits = string_kw(default=None, comment="Integer mask bit values considered good pixels in DQ array")
+dqbits = string_kw(default="", comment="Integer mask bit values considered good pixels in DQ array")
 use_sharp_round = boolean_kw(default=False,triggers="_rule2_",comment="Use sharpness/roundness for feature detection")
 sharplo = float_or_none_kw(default=0.2,active_if='_rule2_',comment="Lower bound on sharpness for feature detection")
 sharphi = float_or_none_kw(default=1.0,active_if='_rule2_',comment="Upper bound on sharpness for feature detection")
