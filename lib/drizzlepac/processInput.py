@@ -152,12 +152,12 @@ def setCommonInput(configObj, createOutwcs=True):
                 break
 
     # interpret all 'bits' related parameters and convert them to integers
-    configObj['resetbits'] = bitmask.interpret_bits_value(configObj['resetbits'])
+    configObj['resetbits'] = bitmask.interpret_bit_flags(configObj['resetbits'])
     step3name = util.getSectionName(configObj,3)
-    configObj[step3name]['driz_sep_bits'] = bitmask.interpret_bits_value(
+    configObj[step3name]['driz_sep_bits'] = bitmask.interpret_bit_flags(
                                         configObj[step3name]['driz_sep_bits'])
     step7name = util.getSectionName(configObj,7)
-    configObj[step7name]['final_bits'] = bitmask.interpret_bits_value(
+    configObj[step7name]['final_bits'] = bitmask.interpret_bit_flags(
                                         configObj[step7name]['final_bits'])
     # Verify any refimage parameters to be used
     step3aname = util.getSectionName(configObj,'3a')

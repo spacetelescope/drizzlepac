@@ -121,7 +121,7 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
 
     """
     # Interpret bits value
-    bits = bitmask.interpret_bits_value(bits)
+    bits = bitmask.interpret_bit_flags(bits)
 
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:

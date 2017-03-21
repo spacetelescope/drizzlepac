@@ -66,7 +66,7 @@ class Image(object):
         """
         self._im = spu.ImageRef()
         self._dq = spu.ImageRef()
-        self.dqbits = bitmask.interpret_bits_value(kwargs['dqbits'])
+        self.dqbits = bitmask.interpret_bit_flags(kwargs['dqbits'])
 
         if 'use_sharp_round' in kwargs:
             self.use_sharp_round = kwargs['use_sharp_round']

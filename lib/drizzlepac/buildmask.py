@@ -80,7 +80,7 @@ def buildDQMasks(imageObjectList,configObj):
 def buildMask(dqarr, bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag """
 
-    bitvalue = bitmask.interpret_bits_value(bitvalue)
+    bitvalue = bitmask.interpret_bit_flags(bitvalue)
 
     if bitvalue is None:
         return (np.ones(dqarr.shape, dtype=np.uint8))
