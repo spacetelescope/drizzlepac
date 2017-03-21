@@ -612,7 +612,7 @@ def _process_input_wcs_single(fname, wcskey, updatewcs):
         extlist = []
         for extn in range(1, numext + 1):
             extlist.append(('SCI', extn))
-        if wcskey in string.uppercase:
+        if wcskey in string.ascii_uppercase:
             wkey = wcskey
             wname = ' '
         else:
