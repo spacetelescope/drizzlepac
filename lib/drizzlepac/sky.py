@@ -15,7 +15,12 @@ import os, sys
 
 import logging
 from .imageObject import imageObject
-from stsci.tools import fileutil, teal, logutil, bitmask
+from stsci.tools import fileutil, teal, logutil
+try:
+    from stsci.tools.bitmask import interpret_bit_flags
+except ImportError:
+    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
+
 
 from stsci.skypac.skymatch import skymatch
 from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
@@ -246,7 +251,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
     # reason is that we want to combine user supplied masks with DQ+static
     # masks provided by astrodrizzle.
     new_fi = []
-    sky_bits = bitmask.interpret_bit_flags(paramDict['sky_bits'])
+    sky_bits = interpret_bit_flags(paramDict['sky_bits'])
     for i in range(nimg):
         # extract extension information:
         extname = imageList[i].scienceExt
