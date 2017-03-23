@@ -34,7 +34,11 @@ from __future__ import absolute_import, division, print_function # confidence hi
 
 import os
 
-from stsci.tools import fileutil, readgeis, bitmask
+from stsci.tools import fileutil, readgeis
+try:
+    from stsci.tools.bitmask import bitfield_to_boolean_mask
+except ImportError:
+    from stsci.tools.bitmask import bitmask2mask as bitfield_to_boolean_mask
 
 from astropy.io import fits
 import numpy as np
@@ -79,13 +83,9 @@ def buildDQMasks(imageObjectList,configObj):
 
 def buildMask(dqarr, bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag """
+    return bitfield_to_boolean_mask(dqarr, ignore_bits=bitvalue,
+                                    good_mask_value=1, dtype=np.uint8)
 
-    bitvalue = bitmask.interpret_bit_flags(bitvalue)
-
-    if bitvalue is None:
-        return (np.ones(dqarr.shape, dtype=np.uint8))
-
-    return np.logical_not(np.bitwise_and(dqarr, ~bitvalue)).astype(np.uint8)
 
 def buildMaskImage(rootname, bitvalue, output, extname='DQ', extver=1):
     """ Builds mask image from rootname's DQ array
