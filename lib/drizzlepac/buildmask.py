@@ -83,8 +83,8 @@ def buildDQMasks(imageObjectList,configObj):
 
 def buildMask(dqarr, bitvalue):
     """ Builds a bit-mask from an input DQ array and a bitvalue flag """
-    return bitfield_to_boolean_mask(dqarr, ignore_bits=bitvalue,
-                                    good_mask_value=1, dtype=np.uint8)
+    return bitfield_to_boolean_mask(dqarr, bitvalue, good_mask_value=1,
+                                    dtype=np.uint8)
 
 
 def buildMaskImage(rootname, bitvalue, output, extname='DQ', extver=1):
