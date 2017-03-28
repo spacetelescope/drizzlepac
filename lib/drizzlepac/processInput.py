@@ -284,12 +284,17 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
 
     if interactive:
         print('Continue with processing?')
-        if sys.version_info[0] >= 3:
-            k = eval(input("(y)es or (n)o"))
-        else:
-            k = input("(y)es or (n)o")
-        if 'n' in k.lower():
-            raise ValueError
+        while True:
+            if sys.version_info[0] >= 3:
+                k = input("(y)es or (n)o").strip()[0].lower()
+            else:
+                k = raw_input("(y)es or (n)o").strip()[0].lower()
+
+            if k not in ['n', 'y']:
+                continue
+
+            if k == 'n':
+                raise KeyboardInterrupt("Execution aborted")
 
 
 def getMdriztabPars(input):
@@ -1056,15 +1061,15 @@ def checkDGEOFile(filenames):
             The names of these files must be added to the primary header either using the task XXXX
             or manually, for example:
 
-            hedit %s[0] npolfile fname_npl.fits add+
-            hedit %s[0] d2imfile fname_d2i.fits add+
+            hedit {0:s}[0] npolfile fname_npl.fits add+
+            hedit {0:s}[0] d2imfile fname_d2i.fits add+
 
             where fname_npl.fits is the name of the new style dgeo file and fname_d2i.fits is
             the name of the detector to image correction. After adding these keywords to the
             primary header, updatewcs must be run to update the science files:
 
             from stwcs import updatewcs
-            updatewcs.updatewcs(%s)
+            updatewcs.updatewcs("{0:s}")
 
             Alternatively you may choose to run astrodrizzle without DGEO and detector to image correction.
 
@@ -1072,28 +1077,36 @@ def checkDGEOFile(filenames):
             To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
             """
 
+    short_msg = """
+            To stop astrodrizzle and update the dgeo files, type 'q'.
+            To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
+    """
+
     for inputfile in filenames:
         try:
             dgeofile = fits.getval(inputfile, 'DGEOFILE')
         except KeyError:
             continue
         if dgeofile not in ["N/A", "n/a", ""]:
-            message = msg % (inputfile, inputfile, inputfile)
+            message = msg.format(inputfile)
             try:
                 npolfile = fits.getval(inputfile, 'NPOLFILE')
             except KeyError:
                 ustop = userStop(message)
                 while ustop is None:
-                    ustop = userStop(message)
-                if ustop:
-                    return None
+                    ustop = userStop(short_msg)
+
+    if ustop:
+        return None
+
     return filenames
 
 def userStop(message):
     if sys.version_info[0] >= 3:
-        user_input = eval(input(message))
-    else:
         user_input = input(message)
+    else:
+        user_input = raw_input(message)
+
     if user_input == 'q':
         return True
     elif user_input == 'c':
