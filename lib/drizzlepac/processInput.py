@@ -1095,9 +1095,8 @@ def checkDGEOFile(filenames):
                 ustop = userStop(message)
                 while ustop is None:
                     ustop = userStop(short_msg)
-
-    if ustop:
-        return None
+                if ustop:
+                    return None
 
     return filenames
 
