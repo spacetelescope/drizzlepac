@@ -694,6 +694,9 @@ def buildFileListOrig(input, output=None, ivmlist=None,
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
+    if updatewcs:
+        uw.updatewcs(','.join(set(newfilelist) - set(filelist)))
+
     if len(ivmlist) > 0:
         ivmlist, filelist = list(zip(*ivmlist))
     else:
