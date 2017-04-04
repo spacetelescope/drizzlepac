@@ -43,28 +43,26 @@ class STISInputImage (imageObject):
 
         # Try to open the file in the location specified by LFLTFILE.
         try:
-            handle = fileutil.openImage(lflatfile,mode='readonly',memmap=0)
+            handle = fileutil.openImage(lflatfile, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn=exten)
             lfltdata = hdu.data
             if lfltdata.shape != self.full_shape:
                 lfltdata = interp2d.expand2d(lfltdata,self.full_shape)
-        except:
-            lfltdata = np.ones(self.full_shape,dtype=sci_chip.image_dtype)
-            str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-            print(str)
+        except IOError:
+            lfltdata = np.ones(self.full_shape, dtype=sci_chip.data.dtype)
+            print("Cannot find file '{:s}'. Treating flatfield constant value "
+                  "of '1'.\n".format(lflatfile))
 
         # Try to open the file in the location specified by PFLTFILE.
         try:
-            handle = fileutil.openImage(pflatfile,mode='readonly',memmap=0)
+            handle = fileutil.openImage(pflatfile, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn=exten)
             pfltdata = hdu.data
-        except:
-            pfltdata = np.ones(self.image_shape,dtype=sci_chip.image_dtype)
-            str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-            print(str)
+        except IOError:
+            pfltdata = np.ones(self.full_shape, dtype=sci_chip.data.dtype)
+            print("Cannot find file '{:s}'. Treating flatfield constant value "
+                  "of '1'.\n".format(pflatfile))
 
-        print("lfltdata shape: ",lfltdata.shape)
-        print("pfltdata shape: ",pfltdata.shape)
         flat = lfltdata * pfltdata
 
         return flat
