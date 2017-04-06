@@ -259,19 +259,18 @@ class WFPC2InputImage (imageObject):
             darkcurrent = chip.header['DARKTIME'] * darkrate
 
         except:
-            str =  "#############################################\n"
-            str += "#                                           #\n"
-            str += "# Error:                                    #\n"
-            str += "#   Cannot find the value for 'DARKTIME'    #\n"
-            str += "#   in the image header.  WFPC2 input       #\n"
-            str += "#   images are expected to have this header #\n"
-            str += "#   keyword.                                #\n"
-            str += "#                                           #\n"
-            str += "# Error occured in the WFPC2InputImage class#\n"
-            str += "#                                           #\n"
-            str += "#############################################\n"
-            raise ValueError(str)
-
+            msg =  "#############################################\n"
+            msg += "#                                           #\n"
+            msg += "# Error:                                    #\n"
+            msg += "#   Cannot find the value for 'DARKTIME'    #\n"
+            msg += "#   in the image header.  WFPC2 input       #\n"
+            msg += "#   images are expected to have this header #\n"
+            msg += "#   keyword.                                #\n"
+            msg += "#                                           #\n"
+            msg += "# Error occured in the WFPC2InputImage class#\n"
+            msg += "#                                           #\n"
+            msg += "#############################################\n"
+            raise ValueError(msg)
 
         return darkcurrent
 

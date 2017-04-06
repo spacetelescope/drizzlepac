@@ -116,7 +116,6 @@ class WFC3UVISInputImage(WFC3InputImage):
         # Convert the science data to electrons.
         self.doUnitConversions()
 
-
     def getdarkcurrent(self,chip):
         """
         Return the dark current for the WFC3 UVIS detector.  This value
@@ -127,29 +126,26 @@ class WFC3UVISInputImage(WFC3InputImage):
         darkcurrent: float
             The dark current value with **units of electrons**.
         """
-
         darkcurrent = 0.
 
         try:
-            darkcurrent = self._image[self.scienceExt,chip].header['MEANDARK']
-        except:
-            str =  "#############################################\n"
-            str += "#                                           #\n"
-            str += "# Error:                                    #\n"
-            str += "#   Cannot find the value for 'MEANDARK'    #\n"
-            str += "#   in the image header.  WFC3 input images #\n"
-            str += "#   are expected to have this header        #\n"
-            str += "#   keyword.                                #\n"
-            str += "#                                           #\n"
-            str += "# Error occured in WFC3UVISInputImage class #\n"
-            str += "#                                           #\n"
-            str += "#############################################\n"
-            raise ValueError(str)
+            darkcurrent = self._image[self.scienceExt, chip].header['MEANDARK']
 
+        except:
+            msg =  "#############################################\n"
+            msg += "#                                           #\n"
+            msg += "# Error:                                    #\n"
+            msg += "#   Cannot find the value for 'MEANDARK'    #\n"
+            msg += "#   in the image header.  WFC3 input images #\n"
+            msg += "#   are expected to have this header        #\n"
+            msg += "#   keyword.                                #\n"
+            msg += "#                                           #\n"
+            msg += "# Error occured in WFC3UVISInputImage class #\n"
+            msg += "#                                           #\n"
+            msg += "#############################################\n"
+            raise ValueError(msg)
 
         return darkcurrent
-
-
 
 
 class WFC3IRInputImage(WFC3InputImage):
