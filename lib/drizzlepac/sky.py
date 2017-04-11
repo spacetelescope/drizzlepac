@@ -164,7 +164,17 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
                          .format(paramDict['skyuser']))
                 for image in imageObjList:
                     log.info('Working on sky for: %s' % image._filename)
-                    _skyUserFromHeaderKwd(image,paramDict)
+                    _skyUserFromHeaderKwd(image, paramDict)
+        else:
+            # reset "computedSky" chip's attribute:
+            for image in imageObjList:
+                numchips    = image._numchips
+                extname     = image.scienceExt
+                for extver in range(1, numchips + 1, 1):
+                    chip = image[extname, extver]
+                    if not chip.group_member:
+                        continue
+                    chip.computedSky = None
 
         if procSteps is not None:
             procSteps.endStep('Subtract Sky')
@@ -488,7 +498,7 @@ def _skyUserFromFile(imageObjList, skyFile, apply_sky=None):
                 # .subtractedSky: value already (or will be by adrizzle/ablot)
                 #                 subtracted from the image
                 if skyapplied:
-                    imageSet[chipext].computedSky = 0.0 # used by adrizzle/ablot
+                    imageSet[chipext].computedSky = None # used by adrizzle/ablot
                 else:
                     imageSet[chipext].computedSky = _skyValue
                 imageSet[chipext].subtractedSky = _skyValue
@@ -556,7 +566,7 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
 
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
-                imageSet[chipext].computedSky = 0.0
+                imageSet[chipext].computedSky = None
                 print("Setting ",skyKW,"=",_skyValue)
 
 #this is the main function that does all the real work in computing the
@@ -620,7 +630,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
 
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
-                imageSet[chipext].computedSky = 0.0
+                imageSet[chipext].computedSky = None
                 print("Setting ",skyKW,"=",_skyValue)
 
     else:

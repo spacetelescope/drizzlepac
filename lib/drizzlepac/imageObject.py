@@ -69,20 +69,14 @@ class baseImageObject(object):
         """ Overload the comparison operator
             just to check the filename of the object?
         """
-        if isinstance(other,imageObject):
-            if (self._filename == other._filename):
-                return True
-        return False
+        return (isinstance(other, imageObject) and self._filename == other._filename)
 
     def _isNotValid(self, par1, par2):
         """ Method used to determine if a value or keyword is
             supplied as input for instrument specific parameters.
         """
         invalidValues = [None,'None','INDEF','']
-        if (par1 in invalidValues) and (par2 in invalidValues):
-            return True
-        else:
-            return False
+        return (par1 in invalidValues and par2 in invalidValues)
 
     def info(self):
         """ Return fits information on the _image.
@@ -1115,17 +1109,20 @@ class imageObject(baseImageObject):
                 # Keep track of the sky value that should be subtracted from this chip
                 # Read in value from image header, in case user has already
                 # determined the sky level
-                if "MDRIZSKY" in sci_chip.header:
-                    subsky = sci_chip.header['MDRIZSKY']
-                    log.info('Reading in MDRIZSKY of %s' % subsky)
-                else:
-                    subsky = 0.0
+                #
                 # .computedSky:   value to be applied by the
                 #                 adrizzle/ablot steps.
                 # .subtractedSky: value already (or will be by adrizzle/ablot)
                 #                 subtracted from the image
-                sci_chip.subtractedSky = subsky
-                sci_chip.computedSky = subsky
+                #
+                if "MDRIZSKY" in sci_chip.header:
+                    subsky = sci_chip.header['MDRIZSKY']
+                    log.info('Reading in MDRIZSKY of %s' % subsky)
+                    sci_chip.subtractedSky = subsky
+                    sci_chip.computedSky = subsky
+                else:
+                    sci_chip.subtractedSky = 0.0
+                    sci_chip.computedSky = None
 
                 sci_chip.darkcurrent = 0.0
 

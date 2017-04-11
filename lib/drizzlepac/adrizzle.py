@@ -771,8 +771,11 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
     # Apply sky subtraction and unit conversion to input array
-    log.info("Applying sky value of %0.6f to %s"%(chip.computedSky,_expname))
-    _insci = _sciext.data - chip.computedSky
+    if chip.computedSky is None:
+        _insci = _sciext.data
+    else:
+        log.info("Applying sky value of %0.6f to %s"%(chip.computedSky,_expname))
+        _insci = _sciext.data - chip.computedSky
     _insci *= chip._effGain
 
     # Set additional parameters needed by 'drizzle'
