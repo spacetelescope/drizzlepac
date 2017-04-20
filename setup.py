@@ -17,7 +17,7 @@ else:
         import relic.release
     except ImportError:
         try:
-            subprocess.check_call(['git', 'clone', 
+            subprocess.check_call(['git', 'clone',
                 'https://github.com/jhunkeler/relic.git'])
             sys.path.insert(1, 'relic')
             import relic.release
@@ -27,7 +27,7 @@ else:
 
 
 version = relic.release.get_info()
-relic.release.write_template(version, 'lib/drizzlepac')
+relic.release.write_template(version, 'drizzlepac')
 
 numpy_includes = numpy.get_include()
 wcs_includes = [
@@ -79,12 +79,9 @@ setup(
         'stwcs',
     ],
 
-    package_dir = {
-        '': 'lib'
-    },
-    packages = find_packages('lib'),
+    packages = find_packages(),
     package_data = {
-        'drizzlepac': [
+        '': [
             'pars/*',
             '*.help',
         ]
