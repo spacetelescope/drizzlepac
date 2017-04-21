@@ -1,6 +1,6 @@
 RELIC-INFO
 relic/
-lib/*/version.py
+*/version.py
 build/
 dist/
 *.eggs
