@@ -80,7 +80,7 @@ __taskname__ = "drizzlepac.resetbits"
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.0.1'
-__vdate__ = '23-March-2017'
+__version_date__ = '23-March-2017'
 
 
 log = logutil.create_logger(__name__)
