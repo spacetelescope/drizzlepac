@@ -160,7 +160,7 @@ def run(configObj,wcsmap=None):
     # to a blotted SCI extension...
     outputimage.writeSingleFITS(_outsci,blot_wcs, configObj['outdata'],configObj['reference'])
 
-
+    
 #
 #### Top-level interface from inside AstroDrizzle
 #

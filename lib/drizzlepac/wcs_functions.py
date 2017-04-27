@@ -14,17 +14,17 @@ from numpy import linalg
 from stsci.tools import fileutil, asnutil, logutil
 from . import util
 import stwcs
-#import pywcs
+
 from astropy import wcs as pywcs
 from stwcs import distortion, wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'scale':None,'rot':None,
-                     'outnx':None,'outny':None,
+                    'outnx':None,'outny':None,
                     'crpix1':None,'crpix2':None}
 
-
+import logging
 log = logutil.create_logger(__name__)
 
 
@@ -482,6 +482,7 @@ def removeAllAltWCS(hdulist,extlist):
     """
     Removes all alternate WCS solutions from the header
     """
+    log.setLevel(logging.WARNING)
     hdr = hdulist[extlist[0]].header
     wkeys = altwcs.wcskeys(hdr)
     if ' ' in wkeys:
@@ -493,7 +494,8 @@ def removeAllAltWCS(hdulist,extlist):
             altwcs.deleteWCS(hdulist,extn,wkey)
 
         # Forcibly remove OPUS WCS Keywords, since deleteWCS will not do it
-        hwcs = altwcs.readAltWCS(hdulist,extn,wcskey='O')
+        hwcs = readAltWCS(hdulist,extn,wcskey='O')
+
         if hwcs is None:
             continue
         for k in hwcs.keys():
@@ -502,6 +504,7 @@ def removeAllAltWCS(hdulist,extlist):
                     del hdr[k]
                 except KeyError:
                     pass
+    log.setLevel(logging.INFO)
 
 
 def updateImageWCS(imageObjectList, output_wcs):
@@ -895,3 +898,43 @@ def apply_fitlin(data,P,Q):
         xy1x = xy1[:,0] + xsh
         xy1y = xy1[:,1] + ysh
     return xy1x,xy1y
+
+
+def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
+    """       
+    Reads in alternate primary WCS from specified extension.
+
+    Parameters
+    ----------
+    fobj : str, `astropy.io.fits.HDUList`
+        fits filename or fits file object
+        containing alternate/primary WCS(s) to be converted       
+    wcskey : str        
+        [" ",A-Z]                                                       
+        alternate/primary WCS key that will be replaced by the new key
+    ext : int
+        fits extension number
+    Returns
+    -------
+    hdr: fits.Header    
+        header object with ONLY the keywords for specified alternate WCS
+    """
+    log.setLevel(logging.WARNING)
+    if isinstance(fobj, str):
+        fobj = fits.open(fobj)
+
+    hdr = altwcs._getheader(fobj, ext)
+    try:
+        nwcs = pywcs.WCS(hdr, fobj=fobj, key=wcskey)
+    except KeyError:
+        if verbose:
+            print('readAltWCS: Could not read WCS with key %s' % wcskey)
+            print('            Skipping %s[%s]' % (fobj.filename(), str(ext)))
+        return None
+
+    hwcs = nwcs.to_header()
+
+    if nwcs.wcs.has_cd():
+        hwcs = altwcs.pc2cd(hwcs, key=wcskey)
+    log.setLevel(logging.INFO)
+    return hwcs
