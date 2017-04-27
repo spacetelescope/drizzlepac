@@ -50,7 +50,7 @@ DRIZ_KEYWORDS = {
                 'WKEY':{'value':"",'comment':'Input image WCS Version used'}
                 }
 
-
+import logging
 log = logutil.create_logger(__name__)
 
 
@@ -450,8 +450,11 @@ class OutputImage:
             fo.append(hdu)
 
             # remove all alternate WCS solutions from headers of this product
-            wcs_functions.removeAllAltWCS(fo,wcs_ext)
 
+            logging.disable(logging.INFO)
+            wcs_functions.removeAllAltWCS(fo,wcs_ext)
+            logging.disable(logging.NOTSET)
+ 
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
