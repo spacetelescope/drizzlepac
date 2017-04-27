@@ -35,7 +35,6 @@ except ImportError:
 __taskname__ = 'drizzlepac.ablot'
 _blot_step_num_ = 5
 
-import logging
 log = logutil.create_logger(__name__)
 
 
@@ -106,7 +105,6 @@ def run(configObj,wcsmap=None):
 
     # read in WCS from source (drizzled) image
     source_wcs = stwcs.wcsutil.HSTWCS(configObj['data'])
-
     if source_wcs.wcs.is_unity():
         print("WARNING: No valid WCS found for input drizzled image: {}!".format(configObj['data']))
 
