@@ -947,29 +947,30 @@ def compute_texptime(imageObjectList):
 
     return (exptime,expstart,expend)
 
+
 def computeRange(corners):
     """ Determine the range spanned by an array of pixel positions. """
-    _xrange = (np.minimum.reduce(corners[:,0]),np.maximum.reduce(corners[:,0]))
-    _yrange = (np.minimum.reduce(corners[:,1]),np.maximum.reduce(corners[:,1]))
-    return _xrange,_yrange
+    x = corners[:, 0]
+    y = corners[:, 1]
+    _xrange = (np.minimum.reduce(x), np.maximum.reduce(x))
+    _yrange = (np.minimum.reduce(y), np.maximum.reduce(y))
+    return _xrange, _yrange
 
-def getRotatedSize(corners,angle):
+
+def getRotatedSize(corners, angle):
     """ Determine the size of a rotated (meta)image."""
-    # If there is no rotation, simply return original values
-    if angle == 0.:
-        _corners = corners
-    else:
-        # Find center
-        #_xr,_yr = computeRange(corners)
-        #_cen = ( ((_xr[1] - _xr[0])/2.)+_xr[0],((_yr[1]-_yr[0])/2.)+_yr[0])
+    if angle:
         _rotm = fileutil.buildRotMatrix(angle)
         # Rotate about the center
-        #_corners = N.dot(corners - _cen,_rotm)
-        _corners = np.dot(corners,_rotm)
+        _corners = np.dot(corners, _rotm)
+    else:
+        # If there is no rotation, simply return original values
+        _corners = corners
 
     return computeRange(_corners)
 
-def readcols(infile,cols=[0,1,2,3],hms=False):
+
+def readcols(infile, cols=[0, 1, 2, 3], hms=False):
     """
     Read the columns from an ASCII file as numpy arrays.
 
