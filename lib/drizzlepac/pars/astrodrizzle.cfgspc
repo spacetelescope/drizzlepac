@@ -60,6 +60,8 @@ driz_sep_outnx = integer_or_none_kw(default=None, comment="Size of separate outp
 driz_sep_outny = integer_or_none_kw(default=None, comment="Size of separate output frame's Y-axis (pixels)")
 driz_sep_ra = float_or_none_kw(default=None, comment="right ascension output frame center in decimal degrees")
 driz_sep_dec = float_or_none_kw(default=None, comment="declination output frame center in decimal degrees")
+driz_sep_crpix1 = float_or_none_kw(default=None, comment="Reference pixel X position on output (CRPIX1)")
+driz_sep_crpix2 = float_or_none_kw(default=None, comment="Reference pixel Y position on output (CRPIX2)")
 
 [STEP 4: CREATE MEDIAN IMAGE]
 median = boolean_kw(default=True, triggers='_section_switch_', is_set_by='_rule1_', comment= "Create a median image?")
@@ -107,8 +109,10 @@ final_rot = float_or_none_kw(default=None, comment= "Position Angle of drizzled 
 final_scale = float_or_none_kw(default=None, comment="Absolute size of output pixels in arcsec/pixel")
 final_outnx = integer_or_none_kw(default=None, comment= "Size of FINAL output frame X-axis (pixels)")
 final_outny = integer_or_none_kw(default=None, comment="Size of FINAL output frame Y-axis (pixels)")
-final_ra = float_or_none_kw(default=None, comment="right ascension output frame center in decimal degrees")
-final_dec = float_or_none_kw(default=None, comment="declination output frame center in decimal degrees")
+final_ra = float_or_none_kw(default=None, comment="Right ascension output frame center in decimal degrees")
+final_dec = float_or_none_kw(default=None, comment="Declination output frame center in decimal degrees")
+final_crpix1 = float_or_none_kw(default=None, comment="Reference pixel X position on output (CRPIX1)")
+final_crpix2 = float_or_none_kw(default=None, comment="Reference pixel Y position on output (CRPIX2)")
 
 [INSTRUMENT PARAMETERS]
 gain = string_kw(default="")
