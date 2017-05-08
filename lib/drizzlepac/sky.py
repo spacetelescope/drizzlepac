@@ -399,10 +399,18 @@ def _buildStaticDQUserMask(img, ext, sky_bits, use_static, umask,
                 smask = img.virtualOutputs[staticMaskName].data
         else:
             if staticMaskName is not None and os.path.isfile(staticMaskName):
-                sm, dq = openImageEx(staticMaskName, mode='readonly',
-                            saveAsMEF=False, clobber=False,
-                            imageOnly=True, openImageHDU=True, openDQHDU=False,
-                            preferMEF=False, verbose=False)
+                sm, dq = openImageEx(
+                    staticMaskName,
+                    mode='readonly',
+                    memmap=False,
+                    saveAsMEF=False,
+                    clobber=False,
+                    imageOnly=True,
+                    openImageHDU=True,
+                    openDQHDU=False,
+                    preferMEF=False,
+                    verbose=False
+                )
                 if sm.hdu is not None:
                     smask = sm.hdu[0].data
                     sm.release()
