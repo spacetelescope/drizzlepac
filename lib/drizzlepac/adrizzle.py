@@ -99,7 +99,7 @@ def run(configObj, wcsmap=None):
     # read file to get science array
     insci = get_data(configObj['input'])
     expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'])
-    in_sci_phdr = fits.getheader(fileutil.parseFilename(configObj['input'])[0])
+    in_sci_phdr = fits.getheader(fileutil.parseFilename(configObj['input'])[0], memmap=False)
 
     # we need to read in the input WCS
     input_wcs = stwcs.wcsutil.HSTWCS(configObj['input'],wcskey=_wcskey)
@@ -121,7 +121,7 @@ def run(configObj, wcsmap=None):
         # we also need to read in the output WCS from pre-existing output
         output_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
 
-        out_sci_hdr = fits.getheader(outname)
+        out_sci_hdr = fits.getheader(outname, memmap=False)
         outexptime = out_sci_hdr['DRIZEXPT']
         if 'ndrizim' in out_sci_hdr:
             uniqid = out_sci_hdr['ndrizim']+1
@@ -149,7 +149,7 @@ def run(configObj, wcsmap=None):
             refimage = configObj['User WCS Parameters']['refimage']
             refroot,extroot = fileutil.parseFilename(refimage)
             if extroot is None:
-                fimg = fits.open(refroot)
+                fimg = fits.open(refroot, memmap=False)
                 for i,extn in enumerate(fimg):
                     if 'CRVAL1' in extn.header: # Key on CRVAL1 for valid WCS
                         refwcs = wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
@@ -398,7 +398,7 @@ def mergeDQarray(maskname,dqarr):
         if isinstance(maskname, str):
             # working with file on disk (default case)
             if os.path.exists(maskname):
-                mask = fileutil.openImage(maskname)
+                mask = fileutil.openImage(maskname, memmap=False)
                 maskarr = mask[0].data.astype(np.bool)
                 mask.close()
         else:
@@ -423,11 +423,11 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
         # in_memory case
         crmask = crmaskname
     else:
-        crmask = fileutil.openImage(crmaskname)
+        crmask = fileutil.openImage(crmaskname, memmap=False)
 
     if os.path.exists(dqfile):
         fullext=dqfile+"["+dq_extn+str(chip)+"]"
-        infile = fileutil.openImage(fullext,mode='update')
+        infile = fileutil.openImage(fullext, mode='update', memmap=False)
         __bitarray = np.logical_not(crmask[0].data).astype(np.int16) * cr_bits_value
         np.bitwise_or(infile[dq_extn,chip].data,__bitarray,infile[dq_extn,chip].data)
         infile.close()
@@ -767,7 +767,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     log.info('-Drizzle input: %s' % _expname)
 
     # Open the SCI image
-    _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
+    _handle = fileutil.openImage(_expname, mode='readonly', memmap=False)
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
     # Apply sky subtraction and unit conversion to input array
@@ -1095,7 +1095,7 @@ def get_data(filename):
     extname = fileutil.parseExtn(extn)
     if extname[0] == '': extname = "PRIMARY"
     if os.path.exists(fileroot):
-        handle = fileutil.openImage(filename)
+        handle = fileutil.openImage(filename, memmap=False)
         data = handle[extname].data
         handle.close()
     else:
@@ -1125,7 +1125,7 @@ def create_output(filename):
     else:
         log.info('Updating existing output file: %s' % fileroot)
 
-    handle = fits.open(fileroot, mode='update')
+    handle = fits.open(fileroot, mode='update', memmap=False)
 
     return handle,extname
 

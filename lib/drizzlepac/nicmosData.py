@@ -65,8 +65,7 @@ class NICMOSInputImage(imageObject):
         """
 
          # Image information
-        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0)
-        _handle = fileutil.openImage(self._filename,mode='readonly')
+        _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         for det in range(1,self._numchips+1,1):
 

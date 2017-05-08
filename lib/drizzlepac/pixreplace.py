@@ -78,7 +78,7 @@ def replace(input, **pars):
     files = parseinput.parseinput(input)[0]
 
     for f in files:
-        fimg = fits.open(f, mode='update')
+        fimg = fits.open(f, mode='update', memmap=False)
 
         if ext is None:
             # replace pixels in ALL extensions

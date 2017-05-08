@@ -130,7 +130,7 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
         # open input file in write mode to allow updating the DQ array in-place
-        p = fits.open(filename,mode='update')
+        p = fits.open(filename, mode='update', memmap=False)
 
         # Identify the DQ array to be updated
         # If no extver is specified, build a list of all DQ arrays in the file

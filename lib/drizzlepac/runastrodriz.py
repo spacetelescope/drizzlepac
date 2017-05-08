@@ -151,7 +151,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         _fname = fileutil.buildRootname(_cal_prodname,ext=['_drz.fits'])
 
         # Retrieve the first member's rootname for possible use later
-        _fimg = fits.open(inFilename)
+        _fimg = fits.open(inFilename, memmap=False)
         for name in _fimg[1].data.field('MEMNAME'):
             if name[-1] != '*':
                 _mname = name.split('\0', 1)[0].lower()
@@ -203,7 +203,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     if force: dcorr = 'PERFORM'
     else:
         if _mname :
-            _fimg = fits.open(fileutil.buildRootname(_mname,ext=['_raw.fits']))
+            _fimg = fits.open(fileutil.buildRootname(_mname,ext=['_raw.fits']), memmap=False)
             _phdr = _fimg['PRIMARY'].header
             if dkey in _phdr:
                 dcorr = _phdr[dkey]
@@ -290,7 +290,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
-        _fimg = fits.open(_cal_prodname, mode='update')
+        _fimg = fits.open(_cal_prodname, mode='update', memmap=False)
         _fimg['PRIMARY'].header[dkey] = 'COMPLETE'
         _fimg.close()
         del _fimg
@@ -383,7 +383,7 @@ def _lowerAsn(asnfile):
     shutil.copy(asnfile,_new_asn)
 
     # Open up the new copy and convert all MEMNAME's to lower-case
-    fasn = fits.open(_new_asn,'update')
+    fasn = fits.open(_new_asn, mode='update', memmap=False)
     for i in range(len(fasn[1].data)):
         fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME').lower())
     fasn.close()

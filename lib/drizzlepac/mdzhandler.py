@@ -46,7 +46,7 @@ def getMdriztabParameters(files):
 
     # Open MDRIZTAB file.
     try:
-        _mdriztab = fits.open(_tableName)
+        _mdriztab = fits.open(_tableName, memmap=False)
     except:
         raise IOError("MDRIZTAB table '%s' not valid!" % _tableName)
 

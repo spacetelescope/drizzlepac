@@ -1009,7 +1009,7 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
     """
     log.setLevel(logging.WARNING)
     if isinstance(fobj, str):
-        fobj = fits.open(fobj)
+        fobj = fits.open(fobj, memmap=False)
 
     hdr = altwcs._getheader(fobj, ext)
     try:

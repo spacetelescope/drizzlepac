@@ -443,7 +443,7 @@ class ImageCatalog(Catalog):
         self.fnamenoext = self.fname if extind < 0 else self.fname[:extind]
         if self.wcs.extname == ('',None):
             self.wcs.extname = (0)
-        self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
+        self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname, memmap=False)
 
 
     def _combine_exclude_mask(self, mask):
@@ -469,7 +469,7 @@ class ImageCatalog(Catalog):
            basicFITScheck(reg_file_name):
             # likely we are dealing with a FITS file.
             # check that the file is a simple with 2 axes:
-            hdulist = fits.open(reg_file_name)
+            hdulist = fits.open(reg_file_name, memmap=False)
             extlist = get_extver_list(hdulist,extname=None)
             for ext in extlist:
                 usermask = hdulist[ext].data

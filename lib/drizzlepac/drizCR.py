@@ -164,7 +164,7 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
                     raise # raise orig error
 
                 try:
-                    __blotImage = fits.open(blotImageName,mode="readonly") # !!! ,memmap=False) ?
+                    __blotImage = fits.open(blotImageName, mode="readonly", memmap=False)
                 except IOError:
                     print("Problem opening blot images")
                     raise
@@ -364,7 +364,7 @@ def createCorrFile(outfile, arrlist, template):
         os.remove(outfile)
         print("Removing old corr file:",outfile)
 
-    ftemplate = fits.open(template)
+    ftemplate = fits.open(template, memmap=False)
     for arr in arrlist:
         ftemplate[arr['sciext']].data = arr['corrFile']
         if arr['dqext'][0] != arr['sciext'][0]:

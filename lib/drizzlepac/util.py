@@ -429,12 +429,18 @@ def count_sci_extensions(filename):
     """
     num_sci = 0
     extname = 'SCI'
-    for extn in fileutil.openImage(filename):
+
+    hdu_list = fileutil.openImage(filename, memmap=False)
+
+    for extn in hdu_list:
         if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
+
     if num_sci == 0:
         extname = 'PRIMARY'
         num_sci = 1
+
+    hdu_list.close()
 
     return num_sci,extname
 
@@ -460,7 +466,7 @@ def verifyUpdatewcs(fname):
     updated = True
     numsci,extname = count_sci_extensions(fname)
     for n in range(1,numsci+1):
-        hdr = fits.getheader(fname, extname=extname, extver=n)
+        hdr = fits.getheader(fname, extname=extname, extver=n, memmap=False)
         if 'wcsname' not in hdr:
             updated = False
             break
@@ -528,7 +534,7 @@ def findWCSExtn(filename):
     rootname,extroot = fileutil.parseFilename(filename)
     extnum = None
     if extroot is None:
-        fimg = fits.open(rootname)
+        fimg = fits.open(rootname, memmap=False)
         for i,extn in enumerate(fimg):
             if 'crval1' in extn.header:
                 refwcs = wcsutil.HSTWCS('{}[{}]'.format(rootname,i))
@@ -1024,7 +1030,7 @@ def parse_colnames(colnames,coords=None):
     # parse column names from coords file and match to input values
     if coords is not None and fileutil.isFits(coords)[0]:
         # Open FITS file with table
-        ftab = fits.open(coords)
+        ftab = fits.open(coords, memmap=False)
         # determine which extension has the table
         for extn in ftab:
             if isinstance(extn, fits.BinTableHDU):
