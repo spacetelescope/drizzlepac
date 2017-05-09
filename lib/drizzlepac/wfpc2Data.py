@@ -93,7 +93,7 @@ class WFPC2InputImage (imageObject):
 
         #dq_suffix = DQ_EXTNS[suffix[1:]]
         if os.path.exists(dqfile):
-            dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1)
+            dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1, memmap=False)
         else:
             dq_suffix = "SCI"
 
@@ -193,8 +193,7 @@ class WFPC2InputImage (imageObject):
             gets done, even if only 1 chip was specified to be processed.
         """
          # Image information
-        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0)
-        _handle = fileutil.openImage(self._filename,mode='readonly')
+        _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         # Now convert the SCI array(s) units
         for det in range(1,self._numchips+1):
@@ -302,7 +301,7 @@ class WFPC2InputImage (imageObject):
         sci_chip.dqmaskname = dqmask_name
         sci_chip.outputNames['dqmask'] = dqmask_name
         sci_chip.outputNames['tmpmask'] = 'wfpc2_inmask%d.fits'%(sci_chip.detnum)
-        dqmask = fits.getdata(dqmask_name, 0)
+        dqmask = fits.getdata(dqmask_name, ext=0, memmap=False)
         return dqmask
 
     def _assignSignature(self, chip):

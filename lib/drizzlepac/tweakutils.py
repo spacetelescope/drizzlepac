@@ -470,7 +470,7 @@ def readcols(infile, cols=None):
 def read_FITS_cols(infile,cols=None):
     """ Read columns from FITS table
     """
-    ftab = fits.open(infile)
+    ftab = fits.open(infile, memmap=False)
     extnum = 0
     extfound = False
     for extn in ftab:

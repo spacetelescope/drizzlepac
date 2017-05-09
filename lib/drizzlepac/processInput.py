@@ -376,7 +376,7 @@ def _getInputImage (input,group=None):
     sci_ext = 'SCI'
     if group in [None,'']:
         exten = '[sci,1]'
-        phdu = fits.getheader(input)
+        phdu = fits.getheader(input, memmap=False)
     else:
         # change to use fits more directly here?
         if group.find(',') > 0:
@@ -387,8 +387,8 @@ def _getInputImage (input,group=None):
                 grp = int(grp[0])
         else:
             grp = int(group)
-        phdu = fits.getheader(input)
-        phdu.extend(fits.getheader(input, ext=grp))
+        phdu = fits.getheader(input, memmap=False)
+        phdu.extend(fits.getheader(input, ext=grp, memmap=False))
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
     _instrument = phdu['INSTRUME']
@@ -471,7 +471,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
             if output in ["",None,"None"]:
                 output = oldasndict['output'].lower() # insure output name is lower case
 
-        asnhdr = fits.getheader(input)
+        asnhdr = fits.getheader(input, memmap=False)
         # Only perform duplication check if not already completed...
         dupcheck = asnhdr.get('DUPCHECK',default="PERFORM") == "PERFORM"
 
@@ -751,7 +751,7 @@ def changeSuffixinASN(asnfile, suffix):
     shutil.copy(asnfile,_new_asn)
 
     # Open up the new copy and convert all MEMNAME's to include suffix
-    fasn = fits.open(_new_asn,'update')
+    fasn = fits.open(_new_asn, mode='update', memmap=False)
     fasn[0].header['DUPCHECK'] = "COMPLETE"
     newdata = fasn[1].data.tolist()
     for i in range(len(newdata)):
@@ -962,7 +962,7 @@ def buildEmptyDRZ(input, output):
     # the DRZ file.
     try :
         log.info('Building empty DRZ file from %s' % inputfile[0])
-        img = fits.open(inputfile[0])
+        img = fits.open(inputfile[0], memmap=False)
     except:
         raise IOError('Unable to open file %s \n' % inputfile)
 
@@ -1087,13 +1087,13 @@ def checkDGEOFile(filenames):
 
     for inputfile in filenames:
         try:
-            dgeofile = fits.getval(inputfile, 'DGEOFILE')
+            dgeofile = fits.getval(inputfile, 'DGEOFILE', memmap=False)
         except KeyError:
             continue
         if dgeofile not in ["N/A", "n/a", ""]:
             message = msg.format(inputfile)
             try:
-                npolfile = fits.getval(inputfile, 'NPOLFILE')
+                npolfile = fits.getval(inputfile, 'NPOLFILE', memmap=False)
             except KeyError:
                 ustop = userStop(message)
                 while ustop is None:

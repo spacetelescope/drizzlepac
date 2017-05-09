@@ -210,7 +210,7 @@ def _median(imageObjectList, paramDict):
             if virtual:
                 _single_hdr = singleDriz[wcs_extnum].header
             else:
-                _single_hdr = fits.getheader(singleDriz_name,ext=wcs_extnum)
+                _single_hdr = fits.getheader(singleDriz_name, ext=wcs_extnum, memmap=False)
 
         _singleImage=iterfile.IterFitsFile(iter_singleDriz)
         if virtual:

@@ -399,10 +399,18 @@ def _buildStaticDQUserMask(img, ext, sky_bits, use_static, umask,
                 smask = img.virtualOutputs[staticMaskName].data
         else:
             if staticMaskName is not None and os.path.isfile(staticMaskName):
-                sm, dq = openImageEx(staticMaskName, mode='readonly',
-                            saveAsMEF=False, clobber=False,
-                            imageOnly=True, openImageHDU=True, openDQHDU=False,
-                            preferMEF=False, verbose=False)
+                sm, dq = openImageEx(
+                    staticMaskName,
+                    mode='readonly',
+                    memmap=False,
+                    saveAsMEF=False,
+                    clobber=False,
+                    imageOnly=True,
+                    openImageHDU=True,
+                    openDQHDU=False,
+                    preferMEF=False,
+                    verbose=False
+                )
                 if sm.hdu is not None:
                     smask = sm.hdu[0].data
                     sm.release()
@@ -649,7 +657,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             imageSet[myext].data=imageSet.getData(myext)
 
             image=imageSet[myext]
-            _skyValue= _computeSky(image, paramDict, memmap=0)
+            _skyValue= _computeSky(image, paramDict, memmap=False)
             #scale the sky value by the area on sky
             # account for the case where no IDCSCALE has been set, due to a
             # lack of IDCTAB or to 'coeffs=False'.
@@ -691,7 +699,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
 ##  Helper functions follow  ##
 ###############################
 
-def _computeSky(image, skypars, memmap=0):
+def _computeSky(image, skypars, memmap=False):
 
     """
     Compute the sky value for the data array passed to the function
@@ -732,7 +740,7 @@ def _extractSkyValue(imstatObject,skystat):
 
 
 
-def _subtractSky(image,skyValue,memmap=0):
+def _subtractSky(image,skyValue,memmap=False):
     """
     subtract the given sky value from each the data array
     that has been passed. image is a fits object that
@@ -757,7 +765,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
     else:
         strexten = '[%s]'%(exten)
     log.info('Updating keyword %s in %s' % (skyKW, filename + strexten))
-    fobj = fileutil.openImage(filename, mode='update')
+    fobj = fileutil.openImage(filename, mode='update', memmap=False)
     fobj[exten].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
     fobj.close()
 
@@ -771,7 +779,7 @@ def _addDefaultSkyKW(imageObjList):
         fname = imageSet._filename
         numchips=imageSet._numchips
         sciExt=imageSet.scienceExt
-        fobj = fileutil.openImage(fname, mode='update')
+        fobj = fileutil.openImage(fname, mode='update', memmap=False)
         for chip in range(1,numchips+1,1):
             ext = (sciExt,chip)
             if not imageSet[ext].group_member:

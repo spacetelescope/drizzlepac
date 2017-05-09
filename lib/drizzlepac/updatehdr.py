@@ -205,7 +205,7 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
     if isinstance(reference, wcsutil.HSTWCS) or isinstance(reference, pywcs.WCS):
         wref = reference
     else:
-        refimg = fits.open(reference)
+        refimg = fits.open(reference, memmap=False)
         wref = None
         for extn in refimg:
             if 'extname' in extn.header and extn.header['extname'] == 'WCS':
@@ -249,7 +249,7 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
     # insure that input PRIMARY WCS has been archived before overwriting
     # with new solution
     if open_image:
-        fimg = fits.open(image, mode='update')
+        fimg = fits.open(image, mode='update', memmap=False)
         image_update = True
     else:
         fimg = image
@@ -440,7 +440,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
 
     fimg_open=False
     if not isinstance(image, fits.HDUList):
-        fimg = fits.open(image, mode='update')
+        fimg = fits.open(image, mode='update', memmap=False)
         fimg_open = True
         fimg_update = True
     else:

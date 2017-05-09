@@ -160,49 +160,8 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     if single_coord:
         outx = outx[0]
         outy = outy[0]
-    return outx,outy
 
-    """ Convert colnames input into list of column numbers
-    """
-    cols = []
-    if not isinstance(colnames,list):
-        colnames = colnames.split(',')
-
-    # parse column names from coords file and match to input values
-    if coordfile is not None and fileutil.isFits(coordfile)[0]:
-        # Open FITS file with table
-        ftab = fits.open(coordfile)
-        # determine which extension has the table
-        for extn in ftab:
-            if isinstance(extn, fits.BinTableHDU):
-                # parse column names from table and match to inputs
-                cnames = extn.columns.names
-                if colnames is not None:
-                    for c in colnames:
-                        for name,i in zip(cnames,list(range(len(cnames)))):
-                            if c == name.lower(): cols.append(i)
-                    if len(cols) < len(colnames):
-                        errmsg = "Not all input columns found in table..."
-                        ftab.close()
-                        raise ValueError(errmsg)
-                else:
-                    cols = cnames[:2]
-                break
-        ftab.close()
-    else:
-        for c in colnames:
-            if isinstance(c, str):
-                if c[0].lower() == 'c':
-                    cols.append(int(c[1:])-1)
-                else:
-                    cols.append(int(c))
-            else:
-                if isinstance(c, int):
-                    cols.append(c)
-                else:
-                    errmsg = "Unsupported column names..."
-                    raise ValueError(errmsg)
-    return cols
+    return outx, outy
 
 
 #--------------------------

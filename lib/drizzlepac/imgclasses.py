@@ -858,7 +858,7 @@ class Image(object):
                         wnames[' '] = ''
                     pri_wcsname = wnames[' ']
 
-                next_pkey = altwcs.getKeyFromName(fits.getheader(self.name,extlist[0]),pri_wcsname)
+                next_pkey = altwcs.getKeyFromName(fits.getheader(self.name, extlist[0], memmap=False),pri_wcsname)
                 log.info('    Saving Primary WCS to alternate WCS: "%s"'%next_pkey)
 
                 altwcs.archiveWCS(self._im.hdu, extlist,

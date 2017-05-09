@@ -173,7 +173,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
     # image extension from the input_reg and chip_reg regions
     for fname in imgfnames:
         imghdu = None
-        imghdu = fits.open(fname)
+        imghdu = fits.open(fname, memmap=False)
         catreg = []
         try:
             for extp in cregext:
@@ -563,7 +563,7 @@ def build_reg_refwcs_header_list(input_reg, refimg, ref_wcs_ext, verbose):
 
         # load headers containing WCS from the reference input FITS file:
         ref_wcs_headers = [None if extn is None \
-                           else fits.getheader(refimg_fname, ext=extn) \
+                           else fits.getheader(refimg_fname, ext=extn, memmap=False) \
                            for extn in ref_wcs_exts ] #TODO: return WCS instead of header
 
     else:
@@ -621,7 +621,7 @@ def build_img_ext_reg_list(images, chip_reg=None, img_wcs_ext='sci',
     # Get the HDU list of the first file in the list of images. This will be
     # re-used to check available extensions.
     try:
-        hdulist = fits.open(imgfnames[0])
+        hdulist = fits.open(imgfnames[0], memmap=False)
         hdulist.close()
     except IOError as e:
         cmsg = "Unable to open the image file \'%s\'." % imgfnames[0]
@@ -919,7 +919,7 @@ def count_extensions(img, extname='SCI'):
     HDU headers.
     """
     if isinstance(img, str):
-        img = fits.open(img)
+        img = fits.open(img, memmap=False)
         img.close()
     elif not isinstance(img, fits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) " \
@@ -951,7 +951,7 @@ def get_extver_list(img, extname='SCI'):
     'img' can be either a file name or a HDU List object (from fits).
     """
     if isinstance(img, str):
-        img = fits.open(img)
+        img = fits.open(img, memmap=False)
         img.close()
     elif not isinstance(img, fits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) "  \
@@ -1046,7 +1046,7 @@ def _check_FITS_extensions(img, extensions):
 
     # if 'img' is a file name - open the FITS file:
     if isinstance(img, str):
-        img = fits.open(img)
+        img = fits.open(img, memmap=False)
         img.close()
     elif not isinstance(img, fits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) " \

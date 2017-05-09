@@ -164,8 +164,8 @@ class baseImageObject(object):
         extnum = self._interpretExten(exten)
         if self._image[extnum].data is None:
             if os.path.exists(fname):
-                _image=fileutil.openImage(fname,clobber=False,memmap=0)
-                _data=fileutil.getExtn(_image,extn=exten).data
+                _image=fileutil.openImage(fname, clobber=False, memmap=False)
+                _data=fileutil.getExtn(_image, extn=exten).data
                 _image.close()
                 del _image
                 self._image[extnum].data = _data
@@ -181,7 +181,7 @@ class baseImageObject(object):
             is used instead of fits to account for non-FITS
             input images. openImage returns a fits object.
         """
-        _image=fileutil.openImage(self._filename,clobber=False,memmap=0)
+        _image=fileutil.openImage(self._filename, clobber=False, memmap=False)
         _header=fileutil.getExtn(_image,extn=exten).header
         _image.close()
         del _image
@@ -212,7 +212,7 @@ class baseImageObject(object):
             the original input file for this object.
         """
         _extnum=self._interpretExten(exten)
-        fimg = fileutil.openImage(self._filename,mode='update')
+        fimg = fileutil.openImage(self._filename, mode='update', memmap=False)
         fimg[_extnum].data = data
         fimg[_extnum].header = self._image[_extnum].header
         fimg.close()
@@ -542,7 +542,7 @@ class baseImageObject(object):
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
 
         try:
-            handle = fileutil.openImage(filename, mode='readonly', memmap=0)
+            handle = fileutil.openImage(filename, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn=exten)
             if hdu.data.shape[0] != sci_chip.image_shape[0]:
                 _ltv2 = np.round(sci_chip.ltv2)
@@ -754,7 +754,7 @@ class baseImageObject(object):
             extn = "IVM,{}".format(chip)
 
             #Open the mask image for updating and the IVM image
-            ivm =  fileutil.openImage(ivmname, mode='readonly')
+            ivm =  fileutil.openImage(ivmname, mode='readonly', memmap=False)
             ivmfile = fileutil.getExtn(ivm, extn)
 
             # Multiply the IVM file by the input mask in place.
@@ -981,7 +981,7 @@ class imageObject(baseImageObject):
 
         #filutil open returns a fits object
         try:
-            self._image=fileutil.openImage(filename,clobber=False,memmap=0)
+            self._image=fileutil.openImage(filename, clobber=False, memmap=False)
 
         except IOError:
             raise IOError("Unable to open file: %s" % filename)
@@ -1025,7 +1025,7 @@ class imageObject(baseImageObject):
         self._isSimpleFits = False
 
         # Clean out any stray MDRIZSKY keywords from PRIMARY headers
-        fimg = fileutil.openImage(filename,mode='update')
+        fimg = fileutil.openImage(filename, mode='update', memmap=False)
         if 'MDRIZSKY' in fimg['PRIMARY'].header:
             del fimg['PRIMARY'].header['MDRIZSKY']
         fimg.close()

@@ -107,7 +107,7 @@ def buildMaskImage(rootname, bitvalue, output, extname='DQ', extver=1):
         fileutil.removeFile(maskname)
 
     # Open input file with DQ array
-    fdq = fileutil.openImage(rootname, memmap=0, mode='readonly')
+    fdq = fileutil.openImage(rootname, mode='readonly', memmap=False)
     try:
         _extn = fileutil.findExtname(fdq, extname, extver=extver)
         if _extn is not None:
@@ -130,7 +130,7 @@ def buildMaskImage(rootname, bitvalue, output, extname='DQ', extver=1):
         # Build mask array from DQ array
         maskarr = buildMask(dqarr,bitvalue)
         #Write out the mask file as simple FITS file
-        fmask = fits.open(maskname, 'append')
+        fmask = fits.open(maskname, mode='append', memmap=False)
         maskhdu = fits.PrimaryHDU(data = maskarr)
         fmask.append(maskhdu)
 
@@ -230,7 +230,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
                     del bmaskarr
 
                 #Write out the mask file as simple FITS file
-                fmask = fits.open(_mask,'append')
+                fmask = fits.open(_mask, mode='append', memmap=False)
                 maskhdu = fits.PrimaryHDU(data=maskarr)
                 fmask.append(maskhdu)
 
@@ -244,8 +244,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
         #
         # Build full mask based on .c1h and shadow mask
         #
-        fdq = fileutil.openImage(dqfile)
-        #fsmask = fits.open(_mask,memmap=1,mode='readonly')
+        fdq = fileutil.openImage(dqfile, mode='readonly', memmap=False)
         try:
             # Read in DQ array from .c1h and from shadow mask files
             dqarr = fdq[int(extnum)].data
@@ -255,7 +254,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             dqmaskarr = buildMask(dqarr,bitvalue)
 
             #Write out the mask file as simple FITS file
-            fdqmask = fits.open(maskname,'append')
+            fdqmask = fits.open(maskname, mode='append', memmap=False)
             maskhdu = fits.PrimaryHDU(data=dqmaskarr)
             fdqmask.append(maskhdu)
 

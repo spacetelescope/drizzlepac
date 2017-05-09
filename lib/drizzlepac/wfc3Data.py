@@ -174,8 +174,7 @@ class WFC3IRInputImage(WFC3InputImage):
          photometry keywords will be calculated as such, so no image
          manipulation needs be done between native and electrons """
          # Image information
-        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0)
-        _handle = fileutil.openImage(self._filename,mode='readonly')
+        _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         for chip in self.returnAllChips(extname=self.scienceExt):
             conversionFactor = 1.0
@@ -263,7 +262,7 @@ class WFC3IRInputImage(WFC3InputImage):
         # keyword in the primary keyword of the science data.
         try:
             filename = self.header["DARKFILE"]
-            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
+            handle = fileutil.openImage(filename, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn="sci,1")
             darkobj = hdu.data[sci_chip.ltv2:sci_chip.size2,sci_chip.ltv1:sci_chip.size1]
 
