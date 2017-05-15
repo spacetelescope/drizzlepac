@@ -23,7 +23,7 @@ __taskname__ = 'buildwcs'
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1.0'
-__vdate__ = '22-June-2011'
+__version_date__ = '22-June-2011'
 
 # These default parameter values have the same keys as the parameters from
 # the configObj interface
@@ -436,7 +436,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __vdate__]) + 2*os.linesep
+                ' updated on ', __version_date__]) + 2*os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):

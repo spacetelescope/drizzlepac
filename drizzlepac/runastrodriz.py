@@ -67,7 +67,7 @@ __taskname__ = "runastrodriz"
 
 # Local variables
 __version__ = "1.5.2"
-__vdate__ = "(03-Apr-2013)"
+__version_date__ = "(03-Apr-2013)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -79,7 +79,7 @@ pipeline_pars = {'mdriztab':True,
                  'resetbits':4096}
 
 #default marker for trailer files
-__trlmarker__ = '*** astrodrizzle Processing Version '+__version__+__vdate__+'***\n'
+__trlmarker__ = '*** astrodrizzle Processing Version '+__version__+__version_date__+'***\n'
 
 # History:
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
@@ -87,7 +87,7 @@ __trlmarker__ = '*** astrodrizzle Processing Version '+__version__+__vdate__+'**
 
 #### TEAL Interfaces
 def getHelpAsString():
-    helpString = 'runastrodriz Version '+__version__+__vdate__+'\n'
+    helpString = 'runastrodriz Version '+__version__+__version_date__+'\n'
     helpString += __doc__+'\n'
 
     return helpString
@@ -514,7 +514,7 @@ def main():
         newdir = args[-1]
     if (help):
         print(__doc__)
-        print("\t", __version__+'('+__vdate__+')')
+        print("\t", __version__+'('+__version_date__+')')
     else:
         try:
             process(args[0],force=force,newpath=newdir, inmemory=inmemory,

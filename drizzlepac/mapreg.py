@@ -20,7 +20,7 @@ from .regfilter import fast_filter_outer_regions
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
-__vdate__ = '11-Nov-2013'
+__version_date__ = '11-Nov-2013'
 __taskname__ = 'mapreg'
 __author__ = 'Mihai Cara'
 
@@ -1121,7 +1121,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __vdate__]) + 2*os.linesep
+                ' updated on ', __version_date__]) + 2*os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):

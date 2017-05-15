@@ -172,7 +172,7 @@ def run(configobj, wcsmap=None):
     procSteps = util.ProcSteps()
 
     print('AstroDrizzle Version %s(%s) started at: %s\n' %
-           (__version__, __vdate__, util._ptime()[0]))
+           (__version__, __version_date__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
     #try:
@@ -298,7 +298,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __vdate__]) + 2*os.linesep
+                ' updated on ', __version_date__]) + 2*os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):

@@ -24,7 +24,7 @@ from . import util
 from . import linearfit
 
 __version__ = '0.2.0'
-__vdate__ = '10-Oct-2014'
+__version_date__ = '10-Oct-2014'
 
 
 log = logutil.create_logger(__name__)
@@ -283,7 +283,9 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
 
 
 def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
-    # linearization using 5-point formula for first order derivative
+    """ linearization using 5-point formula for first order derivative
+
+    """
     x0 = imcrpix[0]
     y0 = imcrpix[1]
     p = np.asarray([[x0, y0],
@@ -332,8 +334,42 @@ def _inv2x2(x):
 
 
 def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
-                            rot=0.0, scale=1.0, xsh=0.0, ysh=0.0,
-                            fit=None, xrms=None, yrms=None):
+                              rot=0.0, scale=1.0, xsh=0.0, ysh=0.0,
+                              fit=None, xrms=None, yrms=None):
+    """ Compute the matrix for the scale and rotation correction
+
+    Parameters
+    ----------
+    chip_wcs: wcs object
+        HST of the input image
+    wcslin: wcs object
+        Reference WCS from which the offsets/rotations are determined
+    fitgeom: str
+        NOT USED
+    rot : float
+        Amount of rotation measured in fit to be applied.
+        [Default=0.0]
+    scale : float
+        Amount of scale change measured in fit to be applied.
+        [Default=1.0]
+    xsh : float
+        Offset in X pixels from defined tangent plane to be applied to image.
+        [Default=0.0]
+    ysh : float
+        Offset in Y pixels from defined tangent plane to be applied to image.
+        [Default=0.0]
+    fit : arr
+        Linear coefficients for fit
+        [Default = None]
+    xrms : float
+        RMS of fit in RA (in decimal degrees) that will be recorded as
+        CRDER1 in WCS and header
+        [Default = None]
+    yrms : float
+        RMS of fit in Dec (in decimal degrees) that will be recorded as
+        CRDER2 in WCS and header
+        [Default = None]
+        """
     # compute the matrix for the scale and rotation correction
     if fit is None:
         fit = linearfit.buildFitMatrix(rot, scale)

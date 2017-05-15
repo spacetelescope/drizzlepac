@@ -4,3 +4,4 @@ prune doc/build
 prune build
 prune dist
 exclude *.pyc *.pyo
+exclude .git
