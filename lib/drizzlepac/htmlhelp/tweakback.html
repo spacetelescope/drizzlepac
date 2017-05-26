@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tweakback &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Tweakback &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.15 (26-May-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="DrizzlePac Release Notes" href="release_notes.html" />
     <link rel="prev" title="MultiDrizzle Reference Table" href="mdztab.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="mdztab.html" title="MultiDrizzle Reference Table"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -57,22 +59,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="release_notes.html"
                         title="next chapter">DrizzlePac Release Notes</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/tweakback.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/tweakback.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -81,11 +82,11 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="tweakback">
 <span id="id1"></span><h1>Tweakback<a class="headerlink" href="#tweakback" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-drizzlepac.tweakback"></span><p><a class="reference internal" href="#drizzlepac.tweakback.tweakback" title="drizzlepac.tweakback.tweakback"><tt class="xref py py-obj docutils literal"><span class="pre">tweakback</span></tt></a> - propagate the &#8220;tweaked&#8221; solutions back to the original
+<span class="target" id="module-drizzlepac.tweakback"></span><p><a class="reference internal" href="#drizzlepac.tweakback.tweakback" title="drizzlepac.tweakback.tweakback"><code class="xref py py-obj docutils literal"><span class="pre">tweakback</span></code></a> - propagate the &#8220;tweaked&#8221; solutions back to the original
 input files.</p>
 <p>Version 0.4.0 - replaced previous algorithm that used fitting of WCS
 footprints to reconstruct the transformation that was applied to the
@@ -97,48 +98,45 @@ the &#8220;aligned&#8221; (to the new drizzled WCS) image coordinates.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Mihai Cara</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack, Mihai Cara</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="function">
 <dt id="drizzlepac.tweakback.determine_extnum">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">determine_extnum</tt><big>(</big><em>drzfile</em>, <em>extname='SCI'</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.determine_extnum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">determine_extnum</code><span class="sig-paren">(</span><em>drzfile</em>, <em>extname='SCI'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#determine_extnum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.determine_extnum" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.determine_orig_wcsname">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">determine_orig_wcsname</tt><big>(</big><em>header</em>, <em>wnames</em>, <em>wkeys</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.determine_orig_wcsname" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">determine_orig_wcsname</code><span class="sig-paren">(</span><em>header</em>, <em>wnames</em>, <em>wkeys</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#determine_orig_wcsname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.determine_orig_wcsname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine the name of the original, unmodified WCS solution</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.extract_input_filenames">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">extract_input_filenames</tt><big>(</big><em>drzfile</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.extract_input_filenames" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">extract_input_filenames</code><span class="sig-paren">(</span><em>drzfile</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#extract_input_filenames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.extract_input_filenames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a list of filenames from a drizzled image&#8217;s header</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.getHelpAsString">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">getHelpAsString</code><span class="sig-paren">(</span><em>docstring=False</em>, <em>show_ver=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#getHelpAsString"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>return useful help from a file in the script directory called
 __taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.help">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.help" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">help</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.help" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out syntax help for running astrodrizzle</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
 Any previously existing file with this name will be deleted before
@@ -152,72 +150,71 @@ writing out the help.</p>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.linearize">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">linearize</tt><big>(</big><em>wcsim</em>, <em>wcsima</em>, <em>wcs_olddrz</em>, <em>wcs_newdrz</em>, <em>imcrpix</em>, <em>hx=1.0</em>, <em>hy=1.0</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.linearize" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">linearize</code><span class="sig-paren">(</span><em>wcsim</em>, <em>wcsima</em>, <em>wcs_olddrz</em>, <em>wcs_newdrz</em>, <em>imcrpix</em>, <em>hx=1.0</em>, <em>hy=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#linearize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.linearize" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.run">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">run</tt><big>(</big><em>configobj</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.run" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">run</code><span class="sig-paren">(</span><em>configobj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.tweakback">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">tweakback</tt><big>(</big><em>drzfile</em>, <em>input=None</em>, <em>origwcs=None</em>, <em>newname=None</em>, <em>wcsname=None</em>, <em>extname='SCI'</em>, <em>force=False</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.tweakback" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">tweakback</code><span class="sig-paren">(</span><em>drzfile</em>, <em>input=None</em>, <em>origwcs=None</em>, <em>newname=None</em>, <em>wcsname=None</em>, <em>extname='SCI'</em>, <em>force=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#tweakback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.tweakback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply WCS solution recorded in drizzled file to distorted input images
-(<tt class="docutils literal"><span class="pre">_flt.fits</span></tt> files) used to create the drizzled file.  This task relies on
+(<code class="docutils literal"><span class="pre">_flt.fits</span></code> files) used to create the drizzled file.  This task relies on
 the original WCS and updated WCS to be recorded in the drizzled image&#8217;s
 header as the last 2 alternate WCSs.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="drzfile">drzfile</strong> : str (Default = &#8216;&#8217;)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="drzfile">drzfile</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>filename of undistorted image which contains the new WCS
 and WCS prior to being updated</p>
 </div></blockquote>
 <p><strong id="newname">newname</strong> : str (Default = None)</p>
 <blockquote>
-<div><p>Value of <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> to be used to label the updated solution in the
-output (eq., <tt class="docutils literal"><span class="pre">_flt.fits</span></tt>) files.  If left blank or None, it will
-default to using the current <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> value from the input drzfile.</p>
+<div><p>Value of <code class="docutils literal"><span class="pre">WCSNAME</span></code> to be used to label the updated solution in the
+output (eq., <code class="docutils literal"><span class="pre">_flt.fits</span></code>) files.  If left blank or None, it will
+default to using the current <code class="docutils literal"><span class="pre">WCSNAME</span></code> value from the input drzfile.</p>
 </div></blockquote>
 <p><strong id="input">input</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>filenames of distorted images to be updated using new WCS
-from &#8216;drzfile&#8217;.  These can be provided either as an <tt class="docutils literal"><span class="pre">&#64;-file</span></tt>,
+from &#8216;drzfile&#8217;.  These can be provided either as an <code class="docutils literal"><span class="pre">&#64;-file</span></code>,
 a comma-separated list of filenames or using wildcards.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">A blank value will indicate that the task should derive the
 filenames from the &#8216;drzfile&#8217; itself, if possible. The filenames will be
-derived from the <tt class="docutils literal"><span class="pre">D*DATA</span></tt> keywords written out by astrodrizzle
+derived from the <code class="docutils literal"><span class="pre">D*DATA</span></code> keywords written out by astrodrizzle
 (or MultiDrizzle or drizzle).
 If they can not be found, the task will quit.</p>
 </div>
 </div></blockquote>
 <p><strong id="origwcs">origwcs</strong> : str (Default = None)</p>
 <blockquote>
-<div><p>Value of <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> keyword prior to the drzfile image being updated
+<div><p>Value of <code class="docutils literal"><span class="pre">WCSNAME</span></code> keyword prior to the drzfile image being updated
 by tweakreg.  If left blank or None, it will default to using the
-second to last <tt class="docutils literal"><span class="pre">WCSNAME*</span></tt> keyword value found in the header.</p>
+second to last <code class="docutils literal"><span class="pre">WCSNAME*</span></code> keyword value found in the header.</p>
 </div></blockquote>
 <p><strong id="wcsname">wcsname</strong> : str (Default = None)</p>
 <blockquote>
-<div><p>Value of WCSNAME for updated solution written out by <em class="xref py py-obj">tweakreg</em> as
-specified by the <em class="xref py py-obj">wcsname</em> parameter from <em class="xref py py-obj">tweakreg</em>.  If this is
-left blank or <em class="xref py py-obj">None</em>, it will default to the current <tt class="docutils literal"><span class="pre">WCSNAME</span></tt>
+<div><p>Value of WCSNAME for updated solution written out by <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code> as
+specified by the <code class="xref py py-obj docutils literal"><span class="pre">wcsname</span></code> parameter from <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code>.  If this is
+left blank or <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, it will default to the current <code class="docutils literal"><span class="pre">WCSNAME</span></code>
 value from the input drzfile.</p>
 </div></blockquote>
 <p><strong id="extname">extname</strong> : str (Default = &#8216;SCI&#8217;)</p>
 <blockquote>
-<div><p>Name of extension in <em class="xref py py-obj">input</em> files to be updated with new WCS</p>
+<div><p>Name of extension in <a class="reference external" href="https://docs.python.org/2/library/functions.html#input" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a> files to be updated with new WCS</p>
 </div></blockquote>
 <p><strong id="force">force</strong> : bool  (Default = False)</p>
 <blockquote>
 <div><p>This parameters specified whether or not to force an update of the WCS
-even though WCS already exists with this solution or <em class="xref py py-obj">wcsname</em>?</p>
+even though WCS already exists with this solution or <code class="xref py py-obj docutils literal"><span class="pre">wcsname</span></code>?</p>
 </div></blockquote>
 <p><strong id="verbose">verbose</strong> : bool (Default = False)</p>
 <blockquote class="last">
@@ -231,7 +228,7 @@ messages during processing.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <dl class="last docutils">
-<dt><tt class="xref py py-obj docutils literal"><span class="pre">stwcs.wcsutil.altwcs</span></tt></dt>
+<dt><code class="xref py py-obj docutils literal"><span class="pre">stwcs.wcsutil.altwcs</span></code></dt>
 <dd>Alternate WCS implementation</dd>
 </dl>
 </div>
@@ -244,86 +241,85 @@ alignment with the new drizzled image WCS.</p>
 to generate the list of filenames from the drizzled input file&#8217;s own
 header.</p>
 <p class="rubric">Examples</p>
-<p>An image named <tt class="docutils literal"><span class="pre">acswfc_mos2_drz.fits</span></tt> was created from 4 images using
+<p>An image named <code class="docutils literal"><span class="pre">acswfc_mos2_drz.fits</span></code> was created from 4 images using
 astrodrizzle. This drizzled image was then aligned to another image using
-tweakreg and the header was updated using the <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> = <tt class="docutils literal"><span class="pre">TWEAK_DRZ</span></tt>.
+tweakreg and the header was updated using the <code class="docutils literal"><span class="pre">WCSNAME</span></code> = <code class="docutils literal"><span class="pre">TWEAK_DRZ</span></code>.
 The new WCS can then be used to update each of the 4 images that were
 combined to make up this drizzled image using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakback</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">tweakback</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s1">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>If the same WCS should be applied to a specific set of images, those images
 can be updated using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">,</span>
-<span class="gp">... </span>                    <span class="nb">input</span><span class="o">=</span><span class="s">&#39;img_mos2a_flt.fits,img_mos2e_flt.fits&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s1">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                    <span class="nb">input</span><span class="o">=</span><span class="s1">&#39;img_mos2a_flt.fits,img_mos2e_flt.fits&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.tweakback.update_chip_wcs">
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">update_chip_wcs</tt><big>(</big><em>chip_wcs</em>, <em>drz_old_wcs</em>, <em>drz_new_wcs</em>, <em>xrms=None</em>, <em>yrms=None</em><big>)</big><a class="headerlink" href="#drizzlepac.tweakback.update_chip_wcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">update_chip_wcs</code><span class="sig-paren">(</span><em>chip_wcs</em>, <em>drz_old_wcs</em>, <em>drz_new_wcs</em>, <em>xrms=None</em>, <em>yrms=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#update_chip_wcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakback.update_chip_wcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt>
-<tt class="descclassname">drizzlepac.tweakback.</tt><tt class="descname">tweakback</tt><big>(</big><em>drzfile</em>, <em>input=None</em>, <em>origwcs=None</em>, <em>newname=None</em>, <em>wcsname=None</em>, <em>extname='SCI'</em>, <em>force=False</em>, <em>verbose=False</em><big>)</big></dt>
+<code class="descclassname">drizzlepac.tweakback.</code><code class="descname">tweakback</code><span class="sig-paren">(</span><em>drzfile</em>, <em>input=None</em>, <em>origwcs=None</em>, <em>newname=None</em>, <em>wcsname=None</em>, <em>extname='SCI'</em>, <em>force=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakback.html#tweakback"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Apply WCS solution recorded in drizzled file to distorted input images
-(<tt class="docutils literal"><span class="pre">_flt.fits</span></tt> files) used to create the drizzled file.  This task relies on
+(<code class="docutils literal"><span class="pre">_flt.fits</span></code> files) used to create the drizzled file.  This task relies on
 the original WCS and updated WCS to be recorded in the drizzled image&#8217;s
 header as the last 2 alternate WCSs.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="drzfile">drzfile</strong> : str (Default = &#8216;&#8217;)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="drzfile">drzfile</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>filename of undistorted image which contains the new WCS
 and WCS prior to being updated</p>
 </div></blockquote>
 <p><strong id="newname">newname</strong> : str (Default = None)</p>
 <blockquote>
-<div><p>Value of <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> to be used to label the updated solution in the
-output (eq., <tt class="docutils literal"><span class="pre">_flt.fits</span></tt>) files.  If left blank or None, it will
-default to using the current <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> value from the input drzfile.</p>
+<div><p>Value of <code class="docutils literal"><span class="pre">WCSNAME</span></code> to be used to label the updated solution in the
+output (eq., <code class="docutils literal"><span class="pre">_flt.fits</span></code>) files.  If left blank or None, it will
+default to using the current <code class="docutils literal"><span class="pre">WCSNAME</span></code> value from the input drzfile.</p>
 </div></blockquote>
 <p><strong id="input">input</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>filenames of distorted images to be updated using new WCS
-from &#8216;drzfile&#8217;.  These can be provided either as an <tt class="docutils literal"><span class="pre">&#64;-file</span></tt>,
+from &#8216;drzfile&#8217;.  These can be provided either as an <code class="docutils literal"><span class="pre">&#64;-file</span></code>,
 a comma-separated list of filenames or using wildcards.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">A blank value will indicate that the task should derive the
 filenames from the &#8216;drzfile&#8217; itself, if possible. The filenames will be
-derived from the <tt class="docutils literal"><span class="pre">D*DATA</span></tt> keywords written out by astrodrizzle
+derived from the <code class="docutils literal"><span class="pre">D*DATA</span></code> keywords written out by astrodrizzle
 (or MultiDrizzle or drizzle).
 If they can not be found, the task will quit.</p>
 </div>
 </div></blockquote>
 <p><strong id="origwcs">origwcs</strong> : str (Default = None)</p>
 <blockquote>
-<div><p>Value of <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> keyword prior to the drzfile image being updated
+<div><p>Value of <code class="docutils literal"><span class="pre">WCSNAME</span></code> keyword prior to the drzfile image being updated
 by tweakreg.  If left blank or None, it will default to using the
-second to last <tt class="docutils literal"><span class="pre">WCSNAME*</span></tt> keyword value found in the header.</p>
+second to last <code class="docutils literal"><span class="pre">WCSNAME*</span></code> keyword value found in the header.</p>
 </div></blockquote>
 <p><strong id="wcsname">wcsname</strong> : str (Default = None)</p>
 <blockquote>
-<div><p>Value of WCSNAME for updated solution written out by <em class="xref py py-obj">tweakreg</em> as
-specified by the <em class="xref py py-obj">wcsname</em> parameter from <em class="xref py py-obj">tweakreg</em>.  If this is
-left blank or <em class="xref py py-obj">None</em>, it will default to the current <tt class="docutils literal"><span class="pre">WCSNAME</span></tt>
+<div><p>Value of WCSNAME for updated solution written out by <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code> as
+specified by the <code class="xref py py-obj docutils literal"><span class="pre">wcsname</span></code> parameter from <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code>.  If this is
+left blank or <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, it will default to the current <code class="docutils literal"><span class="pre">WCSNAME</span></code>
 value from the input drzfile.</p>
 </div></blockquote>
 <p><strong id="extname">extname</strong> : str (Default = &#8216;SCI&#8217;)</p>
 <blockquote>
-<div><p>Name of extension in <em class="xref py py-obj">input</em> files to be updated with new WCS</p>
+<div><p>Name of extension in <a class="reference external" href="https://docs.python.org/2/library/functions.html#input" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a> files to be updated with new WCS</p>
 </div></blockquote>
 <p><strong id="force">force</strong> : bool  (Default = False)</p>
 <blockquote>
 <div><p>This parameters specified whether or not to force an update of the WCS
-even though WCS already exists with this solution or <em class="xref py py-obj">wcsname</em>?</p>
+even though WCS already exists with this solution or <code class="xref py py-obj docutils literal"><span class="pre">wcsname</span></code>?</p>
 </div></blockquote>
 <p><strong id="verbose">verbose</strong> : bool (Default = False)</p>
 <blockquote class="last">
@@ -337,7 +333,7 @@ messages during processing.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <dl class="last docutils">
-<dt><tt class="xref py py-obj docutils literal"><span class="pre">stwcs.wcsutil.altwcs</span></tt></dt>
+<dt><code class="xref py py-obj docutils literal"><span class="pre">stwcs.wcsutil.altwcs</span></code></dt>
 <dd>Alternate WCS implementation</dd>
 </dl>
 </div>
@@ -350,19 +346,19 @@ alignment with the new drizzled image WCS.</p>
 to generate the list of filenames from the drizzled input file&#8217;s own
 header.</p>
 <p class="rubric">Examples</p>
-<p>An image named <tt class="docutils literal"><span class="pre">acswfc_mos2_drz.fits</span></tt> was created from 4 images using
+<p>An image named <code class="docutils literal"><span class="pre">acswfc_mos2_drz.fits</span></code> was created from 4 images using
 astrodrizzle. This drizzled image was then aligned to another image using
-tweakreg and the header was updated using the <tt class="docutils literal"><span class="pre">WCSNAME</span></tt> = <tt class="docutils literal"><span class="pre">TWEAK_DRZ</span></tt>.
+tweakreg and the header was updated using the <code class="docutils literal"><span class="pre">WCSNAME</span></code> = <code class="docutils literal"><span class="pre">TWEAK_DRZ</span></code>.
 The new WCS can then be used to update each of the 4 images that were
 combined to make up this drizzled image using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">tweakback</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">tweakback</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s1">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>If the same WCS should be applied to a specific set of images, those images
 can be updated using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">,</span>
-<span class="gp">... </span>                    <span class="nb">input</span><span class="o">=</span><span class="s">&#39;img_mos2a_flt.fits,img_mos2e_flt.fits&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakback</span><span class="o">.</span><span class="n">tweakback</span><span class="p">(</span><span class="s1">&#39;acswfc_mos2_drz.fits&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                    <span class="nb">input</span><span class="o">=</span><span class="s1">&#39;img_mos2a_flt.fits,img_mos2e_flt.fits&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -375,7 +371,7 @@ can be updated using:</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -390,12 +386,12 @@ can be updated using:</p>
         <li class="right" >
           <a href="mdztab.html" title="MultiDrizzle Reference Table"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

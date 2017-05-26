@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.mdzhandler &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.mdzhandler</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module supports the interpretation of the ``MDRIZTAB`` for</span>
+<span class="sd">processing as used in the pipeline.</span>
+
+<span class="sd">:Authors: Warren Hack, Ivo Busko, Christopher Hanley</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span> <span class="c1"># confidence high</span>
+
+<span class="kn">import</span> <span class="nn">string</span><span class="o">,</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span>
+
+<div class="viewcode-block" id="getMdriztabParameters"><a class="viewcode-back" href="../../mdztab.html#drizzlepac.mdzhandler.getMdriztabParameters">[docs]</a><span class="k">def</span> <span class="nf">getMdriztabParameters</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Gets entry in MDRIZTAB where task parameters live.</span>
+<span class="sd">        This method returns a record array mapping the selected</span>
+<span class="sd">        row.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Get the MDRIZTAB table file name from the primary header.</span>
+    <span class="c1"># It is gotten from the first file in the input list. No</span>
+    <span class="c1"># consistency checks are performed.</span>
+    <span class="n">_fileName</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">_header</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">getHeader</span><span class="p">(</span><span class="n">_fileName</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;MDRIZTAB&#39;</span> <span class="ow">in</span> <span class="n">_header</span><span class="p">:</span>
+        <span class="n">_tableName</span> <span class="o">=</span> <span class="n">_header</span><span class="p">[</span><span class="s1">&#39;MDRIZTAB&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;No MDRIZTAB found in file &quot;</span> <span class="o">+</span> <span class="n">_fileName</span><span class="p">)</span>
+
+    <span class="n">_tableName</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">osfn</span><span class="p">(</span><span class="n">_tableName</span><span class="p">)</span>
+
+    <span class="c1"># Now get the filters from the primary header.</span>
+    <span class="n">_filters</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">getFilterNames</span><span class="p">(</span><span class="n">_header</span><span class="p">)</span>
+
+    <span class="c1"># Specifically check to see whether the MDRIZTAB file can be found</span>
+    <span class="n">mtab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">_tableName</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># protect against no path given for _tableName</span>
+    <span class="k">if</span> <span class="n">mtab_path</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">mtab_path</span><span class="p">):</span> <span class="c1"># check path first, if given</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Directory for MDRIZTAB &#39;</span><span class="si">%s</span><span class="s2">&#39; could not be accessed!&quot;</span><span class="o">%</span><span class="n">mtab_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_tableName</span><span class="p">):</span> <span class="c1"># then check for the table itself</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;MDRIZTAB table &#39;</span><span class="si">%s</span><span class="s2">&#39; could not be found!&quot;</span><span class="o">%</span><span class="n">_tableName</span><span class="p">)</span>
+
+    <span class="c1"># Open MDRIZTAB file.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_mdriztab</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">_tableName</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;MDRIZTAB table &#39;</span><span class="si">%s</span><span class="s2">&#39; not valid!&quot;</span> <span class="o">%</span> <span class="n">_tableName</span><span class="p">)</span>
+
+    <span class="c1"># Look for matching rows based on filter name. If no</span>
+    <span class="c1"># match, pick up rows for the default filter.</span>
+    <span class="n">_rows</span> <span class="o">=</span> <span class="n">_getRowsByFilter</span><span class="p">(</span><span class="n">_mdriztab</span><span class="p">,</span> <span class="n">_filters</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_rows</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="n">_rows</span> <span class="o">=</span> <span class="n">_getRowsByFilter</span><span class="p">(</span><span class="n">_mdriztab</span><span class="p">,</span> <span class="s1">&#39;ANY&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Now look for the row that matches the number of images.</span>
+    <span class="c1"># The logic below assumes that rows for a given filter</span>
+    <span class="c1"># are arranged in ascending order of the &#39;numimage&#39; field.</span>
+    <span class="n">_nimages</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+    <span class="n">_row</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_rows</span><span class="p">:</span>
+        <span class="n">_numimages</span> <span class="o">=</span> <span class="n">_mdriztab</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;numimages&#39;</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_nimages</span> <span class="o">&gt;=</span> <span class="n">_numimages</span><span class="p">:</span>
+            <span class="n">_row</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;- MDRIZTAB: AstroDrizzle parameters read from row </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">_row</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">mpars</span> <span class="o">=</span> <span class="n">_mdriztab</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">_row</span><span class="p">]</span>
+    <span class="n">_mdriztab</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">interpreted</span> <span class="o">=</span> <span class="n">_interpretMdriztabPars</span><span class="p">(</span><span class="n">mpars</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;staticfile&quot;</span> <span class="ow">in</span> <span class="n">interpreted</span><span class="p">:</span>
+        <span class="n">interpreted</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;staticfile&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">interpreted</span></div>
+
+<span class="k">def</span> <span class="nf">_getRowsByFilter</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">_tfilters</span> <span class="o">=</span> <span class="n">table</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;filter&#39;</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_tfilters</span> <span class="o">==</span> <span class="n">filters</span><span class="p">:</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rows</span>
+
+<span class="k">def</span> <span class="nf">_interpretMdriztabPars</span><span class="p">(</span><span class="n">rec</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect task parameters from the MDRIZTAB record and</span>
+<span class="sd">    update the master parameters list with those values</span>
+
+<span class="sd">    Note that parameters read from the MDRIZTAB record must</span>
+<span class="sd">    be cleaned up in a similar way that parameters read</span>
+<span class="sd">    from the user interface are.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tabdict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># for each entry in the record...</span>
+    <span class="k">for</span> <span class="n">indx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">names</span><span class="p">)):</span>
+        <span class="c1"># ... get the name, format, and value.</span>
+        <span class="n">_name</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span>
+        <span class="n">_format</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">formats</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span>
+        <span class="n">_value</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">_name</span><span class="p">)</span>
+
+        <span class="c1"># Translate names from MDRIZTAB columns names to</span>
+        <span class="c1"># input parameter names found in IRAF par file.</span>
+        <span class="c1">#</span>
+        <span class="c1">#if _name.find(&#39;final&#39;) &gt; -1: _name = &#39;driz_&#39;+_name</span>
+        <span class="k">if</span> <span class="n">_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;shiftfile&#39;</span><span class="p">,</span><span class="s1">&#39;mdriztab&#39;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="n">drizstep_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;driz_sep_&#39;</span><span class="p">,</span><span class="s1">&#39;final_&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;refimage&#39;</span><span class="p">,</span><span class="s1">&#39;bits&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">dnames</span> <span class="ow">in</span> <span class="n">drizstep_names</span><span class="p">:</span>
+                <span class="n">tabdict</span><span class="p">[</span><span class="n">dnames</span><span class="o">+</span><span class="n">_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_value</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;driz_sep_bits&#39;</span><span class="p">,</span><span class="s1">&#39;final_bits&#39;</span><span class="p">]:</span>
+            <span class="n">tabdict</span><span class="p">[</span><span class="n">_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">_name</span> <span class="o">==</span> <span class="s1">&#39;coeffs&#39;</span><span class="p">:</span>
+            <span class="n">_val</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">_value</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;INDEF&#39;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="s2">&quot;None&quot;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">]:</span> <span class="n">_val</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">tabdict</span><span class="p">[</span><span class="n">_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_val</span>
+            <span class="k">continue</span>
+
+        <span class="n">par_table</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;subsky&#39;</span><span class="p">:</span><span class="s1">&#39;skysub&#39;</span><span class="p">,</span><span class="s1">&#39;crbitval&#39;</span><span class="p">:</span><span class="s1">&#39;crbit&#39;</span><span class="p">,</span><span class="s1">&#39;readnoise&#39;</span><span class="p">:</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">_name</span> <span class="ow">in</span> <span class="n">par_table</span><span class="p">:</span>
+            <span class="n">_name</span> <span class="o">=</span> <span class="n">par_table</span><span class="p">[</span><span class="n">_name</span><span class="p">]</span>
+
+        <span class="c1"># We do not care about the first two columns at this point</span>
+        <span class="c1"># as they are only used for selecting the rows</span>
+        <span class="k">if</span> <span class="n">_name</span> <span class="o">!=</span> <span class="s1">&#39;filter&#39;</span> <span class="ow">and</span> <span class="n">_name</span> <span class="o">!=</span> <span class="s1">&#39;numimages&#39;</span><span class="p">:</span>
+            <span class="c1"># start by determining the format type of the parameter</span>
+            <span class="n">_fmt</span> <span class="o">=</span> <span class="n">findFormat</span><span class="p">(</span><span class="n">_format</span><span class="p">)</span>
+
+            <span class="c1"># Based on format type, apply proper conversion/cleaning</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">_fmt</span> <span class="o">==</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">_fmt</span> <span class="o">==</span> <span class="s1">&#39;A&#39;</span><span class="p">):</span>
+                <span class="n">_val</span> <span class="o">=</span> <span class="n">cleanBlank</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">_val</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+            <span class="k">elif</span> <span class="p">(</span><span class="n">_format</span> <span class="o">==</span> <span class="s1">&#39;i1&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">_format</span><span class="o">==</span><span class="s1">&#39;1L&#39;</span><span class="p">):</span>
+                <span class="n">_val</span> <span class="o">=</span> <span class="n">toBoolean</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="p">(</span><span class="n">_format</span> <span class="o">==</span> <span class="s1">&#39;i4&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">_format</span> <span class="o">==</span> <span class="s1">&#39;1J&#39;</span><span class="p">):</span>
+                <span class="n">_val</span> <span class="o">=</span> <span class="n">cleanInt</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="p">(</span><span class="s1">&#39;E&#39;</span> <span class="ow">in</span> <span class="n">_format</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">_format</span> <span class="o">==</span> <span class="s1">&#39;f4&#39;</span><span class="p">)</span> <span class="p">:</span>
+                <span class="n">_val</span> <span class="o">=</span> <span class="n">cleanNaN</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;MDRIZTAB column &#39;</span><span class="p">,</span><span class="n">_name</span><span class="p">,</span><span class="s1">&#39; has unrecognized format&#39;</span><span class="p">,</span><span class="n">_format</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+            <span class="k">if</span> <span class="n">_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span><span class="s1">&#39;dec&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">dnames</span> <span class="ow">in</span> <span class="n">drizstep_names</span><span class="p">:</span>
+                    <span class="n">tabdict</span><span class="p">[</span><span class="n">dnames</span><span class="o">+</span><span class="n">_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_val</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tabdict</span><span class="p">[</span><span class="n">_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_val</span>
+
+    <span class="k">return</span> <span class="n">tabdict</span>
+
+<div class="viewcode-block" id="toBoolean"><a class="viewcode-back" href="../../mdztab.html#drizzlepac.mdzhandler.toBoolean">[docs]</a><span class="k">def</span> <span class="nf">toBoolean</span><span class="p">(</span><span class="n">flag</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">flag</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="cleanNaN"><a class="viewcode-back" href="../../mdztab.html#drizzlepac.mdzhandler.cleanNaN">[docs]</a><span class="k">def</span> <span class="nf">cleanNaN</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<span class="c1">#    b = np.where(np.isnan(a))</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a</span><span class="p">)):</span> <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="cleanInt"><a class="viewcode-back" href="../../mdztab.html#drizzlepac.mdzhandler.cleanInt">[docs]</a><span class="k">def</span> <span class="nf">cleanInt</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="c1"># THIS MAY BE MACHINE-DEPENDENT !!!</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2147483647</span><span class="p">:</span>
+    <span class="c1"># Try to use &#39;sys.maxint&#39; as value (WJH)</span>
+    <span class="c1">#if value == -sys.maxint:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="cleanBlank"><a class="viewcode-back" href="../../mdztab.html#drizzlepac.mdzhandler.cleanBlank">[docs]</a><span class="k">def</span> <span class="nf">cleanBlank</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="findFormat"><a class="viewcode-back" href="../../mdztab.html#drizzlepac.mdzhandler.findFormat">[docs]</a><span class="k">def</span> <span class="nf">findFormat</span><span class="p">(</span><span class="nb">format</span><span class="p">):</span>
+    <span class="c1"># Parses record array format string for type</span>
+    <span class="n">_fmt</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">ltr</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_letters</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">format</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">ltr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">_fmt</span> <span class="o">=</span> <span class="n">ltr</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">_fmt</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

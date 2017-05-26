@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pixtopix: Coordinate transformation to/from drizzled images &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>pixtopix: Coordinate transformation to/from drizzled images &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.15 (26-May-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="pixtosky: Coordinate transformation to sky coordinates" href="pixtosky.html" />
     <link rel="prev" title="Photometric equalization for AstroDrizzle" href="photeq.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="photeq.html" title="Photometric equalization for AstroDrizzle"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -70,22 +72,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="pixtosky.html"
                         title="next chapter">pixtosky: Coordinate transformation to sky coordinates</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/pixtopix.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pixtopix.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -94,7 +95,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="pixtopix-coordinate-transformation-to-from-drizzled-images">
 <span id="pixtopix"></span><h1>pixtopix: Coordinate transformation to/from drizzled images<a class="headerlink" href="#pixtopix-coordinate-transformation-to-from-drizzled-images" title="Permalink to this headline">¶</a></h1>
@@ -102,18 +103,16 @@
 with the full WCS and distortion model to and from drizzled image
 positions. This task serves as a replacement for the STSDAS.dither
 task &#8216;tran&#8217;.</p>
-<span class="target" id="module-drizzlepac.pixtopix"></span><p><em class="xref py py-obj">pixtopix</em> transforms pixel positions given as X,Y values into
+<span class="target" id="module-drizzlepac.pixtopix"></span><p><code class="xref py py-obj docutils literal"><span class="pre">pixtopix</span></code> transforms pixel positions given as X,Y values into
 positions in another WCS frame based on the WCS information and any
 recognized distortion keywords from the input image header.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
@@ -121,17 +120,17 @@ recognized distortion keywords from the input image header.</p>
 <h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>inimage <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>full filename with path of input image, an extension name <tt class="docutils literal"><span class="pre">['sci',1]</span></tt>
-should be provided if input is a multi-extension <tt class="docutils literal"><span class="pre">FITS</span></tt> file</dd>
-<dt>outimage <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>full filename with path of output image, an extension name <tt class="docutils literal"><span class="pre">['sci',1]</span></tt>
-should be provided if output is a multi-extension <tt class="docutils literal"><span class="pre">FITS</span></tt> file.
+<dt>inimage</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>full filename with path of input image, an extension name <code class="docutils literal"><span class="pre">['sci',1]</span></code>
+should be provided if input is a multi-extension <code class="docutils literal"><span class="pre">FITS</span></code> file</dd>
+<dt>outimage</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>full filename with path of output image, an extension name <code class="docutils literal"><span class="pre">['sci',1]</span></code>
+should be provided if output is a multi-extension <code class="docutils literal"><span class="pre">FITS</span></code> file.
 If no image gets specified, the input image will be used to
 generate a default output WCS
-using <tt class="xref py py-func docutils literal"><span class="pre">stwcs.distortion.util.output_wcs</span></tt>.</dd>
-<dt>direction <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Direction of transform (forward or backward). The &#8216;forward&#8217; transform
+using <code class="xref py py-func docutils literal"><span class="pre">stwcs.distortion.util.output_wcs</span></code>.</dd>
+<dt>direction</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>Direction of transform (forward or backward). The &#8216;forward&#8217; transform
 takes the pixel positions (assumed to be from the &#8216;input&#8217; image) and
 determines their position in the &#8216;output&#8217; image. The &#8216;backward&#8217;
 transform converts the pixel positions (assumed to be from the
@@ -143,29 +142,29 @@ transform converts the pixel positions (assumed to be from the
 <h2>Optional Parameters<a class="headerlink" href="#optional-parameters" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
-<dd>X position from image</dd>
-<dt>y <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
-<dd>Y position from image</dd>
-<dt>coords <span class="classifier-delimiter">:</span> <span class="classifier">str, deprecated</span></dt>
-<dd>[DEPRECATED] full filename with path of file with x,y coordinates
+<dt>x</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span><dd>X position from image</dd>
+<dt>y</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span><dd>Y position from image</dd>
+<dt>coords</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, deprecated</span><dd>[DEPRECATED] full filename with path of file with x,y coordinates
 Filename given here will be <em>ignored</em> if a file has been specified
-in <em class="xref py py-obj">coordfile</em> parameter.</dd>
-<dt>coordfile <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>full filename with path of file with starting x,y coordinates</dd>
-<dt>colnames <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>comma separated list of column names from &#8216;coords&#8217; files
+in <code class="xref py py-obj docutils literal"><span class="pre">coordfile</span></code> parameter.</dd>
+<dt>coordfile</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>full filename with path of file with starting x,y coordinates</dd>
+<dt>colnames</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>comma separated list of column names from &#8216;coords&#8217; files
 containing x,y coordinates, respectively. Will default to
 first two columns if None are specified. Column names for ASCII
 files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
-<dt>separator <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>non-blank separator used as the column delimiter in the coords file</dd>
-<dt>precision <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
-<dd>Number of floating-point digits in output values</dd>
-<dt>output <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>Name of output file with results, if desired</dd>
-<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Print out full list of transformation results (default: False)</dd>
+<dt>separator</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>non-blank separator used as the column delimiter in the coords file</dd>
+<dt>precision</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span><dd>Number of floating-point digits in output values</dd>
+<dt>output</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>Name of output file with results, if desired</dd>
+<dt>verbose</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Print out full list of transformation results (default: False)</dd>
 </dl>
 </div></blockquote>
 </div>
@@ -173,11 +172,11 @@ files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
 <h2>RETURNS<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>outx <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>X position of transformed pixel. If more than 1 input value, then it
+<dt>outx</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>X position of transformed pixel. If more than 1 input value, then it
 will be a numpy array.</dd>
-<dt>outy <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>Y position of transformed pixel. If more than 1 input value, then it
+<dt>outy</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>Y position of transformed pixel. If more than 1 input value, then it
 will be a numpy array.</dd>
 </dl>
 </div></blockquote>
@@ -189,11 +188,11 @@ based on all WCS keywords and any recognized distortion keywords from the
 input image header.  The transformation recognizes the conventions for
 describing distortion implemented as part of the SIP and Paper IV conventions
 used with AstroDrizzle.  Input images can be updated to use these conventions
-through the use of the &#8216;updatewcs&#8217; module the <em class="xref py py-obj">STWCS</em> package.</p>
+through the use of the &#8216;updatewcs&#8217; module the <code class="xref py py-obj docutils literal"><span class="pre">STWCS</span></code> package.</p>
 </div>
 <div class="section" id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
-<p><tt class="xref py py-obj docutils literal"><span class="pre">stwcs</span></tt></p>
+<p><code class="xref py py-obj docutils literal"><span class="pre">stwcs</span></code></p>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
@@ -202,34 +201,34 @@ command-line. These examples illustrate the syntax that can be used
 to run the task in a couple of common modes.</p>
 <ol class="arabic">
 <li><p class="first">Run the task using the TEAL GUI under PyRAF:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">epar</span> <span class="n">pixtopix</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">Convert the position 256,256 from &#8216;input_flt.fits[sci,1]&#8217;
 into a position on the output image &#8216;output_drz.fits[sci,1]&#8217; using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">pixtopix</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">outx</span><span class="p">,</span><span class="n">outy</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits[sci,1]&quot;</span><span class="p">,</span>
-<span class="gp">... </span>                          <span class="s">&quot;output_drz.fits[sci,1],&quot;</span><span class="n">forward</span><span class="s">&quot;, 256,256)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">pixtopix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outx</span><span class="p">,</span><span class="n">outy</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s2">&quot;input_file_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                          <span class="s2">&quot;output_drz.fits[sci,1],&quot;</span><span class="n">forward</span><span class="s2">&quot;, 256,256)</span>
 </pre></div>
 </div>
 <p>or if you the default direction of &#8216;forward&#8217; is already appropriate and
 you don&#8217;t want to explicitly set that value:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">outx</span><span class="p">,</span><span class="n">outy</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits[sci,1]&quot;</span><span class="p">,</span>
-<span class="gp">... </span>                          <span class="s">&quot;output_drz.fits[sci,1],x=256,y=256)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">outx</span><span class="p">,</span><span class="n">outy</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s2">&quot;input_file_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                          <span class="s2">&quot;output_drz.fits[sci,1],x=256,y=256)</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">The set of X,Y positions from &#8216;output_drz.fits[sci,1]&#8217; stored as
-the 3rd and 4th columns from the ASCII file <tt class="docutils literal"><span class="pre">xy_sci1.dat</span></tt>
+the 3rd and 4th columns from the ASCII file <code class="docutils literal"><span class="pre">xy_sci1.dat</span></code>
 will be transformed into pixel positions from &#8216;input_flt.fits[sci,1]&#8217;
-and written out to <tt class="docutils literal"><span class="pre">xy_flt1.dat</span></tt> using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">pixtopix</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span>
-<span class="gp">... </span>         <span class="s">&quot;output_drz.fits[sci,1]&quot;</span><span class="p">,</span> <span class="s">&quot;backward&quot;</span><span class="p">,</span>
-<span class="gp">... </span>         <span class="n">coordfile</span><span class="o">=</span><span class="s">&#39;xy_sci1.dat&#39;</span><span class="p">,</span> <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;c3&#39;</span><span class="p">,</span><span class="s">&#39;c4&#39;</span><span class="p">],</span>
-<span class="gp">... </span>         <span class="n">output</span><span class="o">=</span><span class="s">&quot;xy_flt1.dat&quot;</span><span class="p">)</span>
+and written out to <code class="docutils literal"><span class="pre">xy_flt1.dat</span></code> using:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">pixtopix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">pixtopix</span><span class="o">.</span><span class="n">tran</span><span class="p">(</span><span class="s2">&quot;input_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>         <span class="s2">&quot;output_drz.fits[sci,1]&quot;</span><span class="p">,</span> <span class="s2">&quot;backward&quot;</span><span class="p">,</span>
+<span class="gp">... </span>         <span class="n">coordfile</span><span class="o">=</span><span class="s1">&#39;xy_sci1.dat&#39;</span><span class="p">,</span> <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;c3&#39;</span><span class="p">,</span><span class="s1">&#39;c4&#39;</span><span class="p">],</span>
+<span class="gp">... </span>         <span class="n">output</span><span class="o">=</span><span class="s2">&quot;xy_flt1.dat&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -237,7 +236,7 @@ and written out to <tt class="docutils literal"><span class="pre">xy_flt1.dat</s
 </div>
 <dl class="function">
 <dt id="drizzlepac.pixtopix.tran">
-<tt class="descclassname">drizzlepac.pixtopix.</tt><tt class="descname">tran</tt><big>(</big><em>inimage</em>, <em>outimage</em>, <em>direction='forward'</em>, <em>x=None</em>, <em>y=None</em>, <em>coords=None</em>, <em>coordfile=None</em>, <em>colnames=None</em>, <em>separator=None</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.pixtopix.tran" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.pixtopix.</code><code class="descname">tran</code><span class="sig-paren">(</span><em>inimage</em>, <em>outimage</em>, <em>direction='forward'</em>, <em>x=None</em>, <em>y=None</em>, <em>coords=None</em>, <em>coordfile=None</em>, <em>colnames=None</em>, <em>separator=None</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/pixtopix.html#tran"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.pixtopix.tran" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary interface to perform coordinate transformations in pixel
 coordinates between 2 images using STWCS and full distortion models
 read from each image&#8217;s header.</p>
@@ -251,7 +250,7 @@ read from each image&#8217;s header.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -266,12 +265,12 @@ read from each image&#8217;s header.</p>
         <li class="right" >
           <a href="photeq.html" title="Photometric equalization for AstroDrizzle"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

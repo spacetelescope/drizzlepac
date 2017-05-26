@@ -1,0 +1,514 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.nicmosData &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.nicmosData</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Class used to model NICMOS specific instrument data.</span>
+
+<span class="sd">:Authors: Christopher Hanley, David Grumm, Megan Sosey</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span> <span class="c1"># confidence medium</span>
+
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span>
+<span class="kn">from</span> <span class="nn">nictools</span> <span class="k">import</span> <span class="n">readTDD</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.imageObject</span> <span class="k">import</span> <span class="n">imageObject</span>
+
+<div class="viewcode-block" id="NICMOSInputImage"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage">[docs]</a><span class="k">class</span> <span class="nc">NICMOSInputImage</span><span class="p">(</span><span class="n">imageObject</span><span class="p">):</span>
+
+    <span class="n">SEPARATOR</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">imageObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeExt</span> <span class="o">=</span> <span class="s1">&#39;TIME&#39;</span>
+
+        <span class="c1"># define the cosmic ray bits value to use in the dq array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cr_bits_value</span> <span class="o">=</span> <span class="mi">4096</span>
+
+        <span class="c1"># Detector parameters, nic only has 1 detector in each file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span><span class="mi">256</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;PRIMARY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;INSTRUME&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">native_units</span> <span class="o">=</span> <span class="s1">&#39;COUNTS/S&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">flatkey</span> <span class="o">=</span> <span class="s1">&#39;FLATFILE&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">cte_dir</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c1">#no correction for nicmos</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mf">1.</span> <span class="c1">#get the specific gain from the detector subclass</span>
+
+    <span class="k">def</span> <span class="nf">_assignSignature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;assign a unique signature for the image based</span>
+<span class="sd">           on the  instrument, detector, chip, and size</span>
+<span class="sd">           this will be used to uniquely identify the appropriate</span>
+<span class="sd">           static mask for the image</span>
+
+<span class="sd">           this also records the filename for the static mask to the outputNames dictionary</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sci_chip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span>
+        <span class="n">ny</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">_naxis1</span>
+        <span class="n">nx</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">_naxis2</span>
+        <span class="n">detnum</span> <span class="o">=</span> <span class="n">sci_chip</span><span class="o">.</span><span class="n">detnum</span>
+        <span class="n">instr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span>
+
+        <span class="n">sig</span><span class="o">=</span><span class="p">(</span><span class="n">instr</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="p">),(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">detnum</span><span class="p">))</span> <span class="c1">#signature is a tuple</span>
+        <span class="n">sci_chip</span><span class="o">.</span><span class="n">signature</span><span class="o">=</span><span class="n">sig</span> <span class="c1">#signature is a tuple</span>
+
+
+<div class="viewcode-block" id="NICMOSInputImage.doUnitConversions"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage.doUnitConversions">[docs]</a>    <span class="k">def</span> <span class="nf">doUnitConversions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the data to electrons</span>
+
+<span class="sd">        This converts all science data extensions and saves</span>
+<span class="sd">        the results back to disk. We need to make sure</span>
+<span class="sd">        the data inside the chips already in memory is altered as well.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+         <span class="c1"># Image information</span>
+        <span class="n">_handle</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;readonly&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+
+            <span class="n">chip</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">det</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="c1">#conversionFactor = (self.getExpTime() * self.getGain())</span>
+                <span class="n">conversionFactor</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isCountRate</span><span class="p">():</span>
+                    <span class="n">conversionFactor</span> <span class="o">*=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>
+                    <span class="n">counts_str</span> <span class="o">=</span> <span class="s1">&#39;COUNTS/S&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">counts_str</span> <span class="o">=</span> <span class="s1">&#39;COUNTS&#39;</span>
+
+                <span class="c1"># Multiply the values of the sci extension pixels by the gain.</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Converting </span><span class="si">%s</span><span class="s2">[</span><span class="si">%s</span><span class="s2">,</span><span class="si">%d</span><span class="s2">] from </span><span class="si">%s</span><span class="s2"> to ELECTRONS&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">det</span><span class="p">,</span><span class="n">counts_str</span><span class="p">))</span>
+                <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                # If the exptime is 0 the science image will be zeroed out.</span>
+<span class="sd">                np.multiply(_handle[self.scienceExt,det].data,conversionFactor,_handle[self.scienceExt,det].data)</span>
+<span class="sd">                #chip.data=_handle[self.scienceExt,det].data.copy()</span>
+
+<span class="sd">                # Set the BUNIT keyword to &#39;electrons&#39;</span>
+<span class="sd">                chip.header.update(&#39;BUNIT&#39;,&#39;ELECTRONS&#39;)</span>
+<span class="sd">                _handle[0].header.update(&#39;BUNIT&#39;,&#39;ELECTRONS&#39;)</span>
+
+<span class="sd">                # Update the PHOTFLAM value</span>
+<span class="sd">                photflam = _handle[0].header[&#39;PHOTFLAM&#39;]</span>
+<span class="sd">                _handle[0].header.update(&#39;PHOTFLAM&#39;,(photflam/chip._gain))</span>
+
+<span class="sd">                chip._effGain = 1.0</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_conversionFactor</span> <span class="o">=</span> <span class="n">conversionFactor</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Invalid gain value for data, no conversion done&quot;</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="c1"># Close the files and clean-up</span>
+        <span class="n">_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">conversionFactor</span> <span class="c1">#1.0</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_setchippars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setDefaultReadnoise</span><span class="p">()</span>
+
+<div class="viewcode-block" id="NICMOSInputImage.getexptimeimg"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage.getexptimeimg">[docs]</a>    <span class="k">def</span> <span class="nf">getexptimeimg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array representing the exposure time per pixel for the detector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dark: array</span>
+<span class="sd">            Exposure time array in the same shape as the input image</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">timeExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">data</span></div>
+
+<div class="viewcode-block" id="NICMOSInputImage.getflat"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage.getflat">[docs]</a>    <span class="k">def</span> <span class="nf">getflat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method for retrieving a detector&#39;s flat field.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        flat : array</span>
+<span class="sd">            The flat field array in the same shape as the input image with **units of cps**.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flat</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="nb">super</span><span class="p">(</span><span class="n">NICMOSInputImage</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">getflat</span><span class="p">(</span><span class="n">chip</span><span class="p">))</span><span class="c1"># The reference flat field is inverted</span>
+        <span class="k">return</span> <span class="n">flat</span></div>
+
+
+<div class="viewcode-block" id="NICMOSInputImage.getdarkcurrent"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage.getdarkcurrent">[docs]</a>    <span class="k">def</span> <span class="nf">getdarkcurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the dark current for the NICMOS detectors.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        darkcurrent : float</span>
+<span class="sd">            Dark current value with **units of cps**.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">darkcurrent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span> <span class="o">*</span> \
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_darkrate</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">str</span> <span class="o">=</span>  <span class="s2">&quot;#############################################</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;# Error:                                    #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   Cannot find the value for &#39;EXPTIME&#39;     #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   in the image header.  NICMOS input      #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   images are expected to have this header #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   keyword.                                #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#Error occured in the NICMOSInputImage class#</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#############################################</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">darkcurrent</span></div>
+
+<div class="viewcode-block" id="NICMOSInputImage.getdarkimg"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage.getdarkimg">[docs]</a>    <span class="k">def</span> <span class="nf">getdarkimg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array representing the dark image for the detector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dark : array</span>
+<span class="sd">            The dark array in the same shape as the image with **units of cps**.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Read the temperature dependeant dark file.  The name for the file is taken from</span>
+        <span class="c1"># the TEMPFILE keyword in the primary header.</span>
+        <span class="n">tddobj</span> <span class="o">=</span> <span class="n">readTDD</span><span class="o">.</span><span class="n">fromcalfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tddobj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_dtype</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">getdarkcurrent</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Create Dark Object from AMPGLOW and Lineark Dark components</span>
+            <span class="n">darkobj</span> <span class="o">=</span> <span class="n">tddobj</span><span class="o">.</span><span class="n">getampglow</span><span class="p">()</span> <span class="o">+</span> <span class="n">tddobj</span><span class="o">.</span><span class="n">getlindark</span><span class="p">()</span>
+
+            <span class="c1"># Return the darkimage taking into account an subarray information available</span>
+            <span class="k">return</span> <span class="n">darkobj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ltv2</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">size2</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ltv1</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">size1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="NICMOSInputImage.isCountRate"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NICMOSInputImage.isCountRate">[docs]</a>    <span class="k">def</span> <span class="nf">isCountRate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        isCountRate: Method or IRInputObject used to indicate if the</span>
+<span class="sd">        science data is in units of counts or count rate.  This method</span>
+<span class="sd">        assumes that the keyword &#39;BUNIT&#39; is in the header of the input</span>
+<span class="sd">        FITS file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">has_bunit</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;BUNIT&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span> <span class="p">:</span>
+            <span class="n">has_bunit</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">countrate</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;UNITCORR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;PERFORM&#39;</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="p">(</span><span class="n">has_bunit</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;bunit&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">countrate</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">countrate</span></div></div>
+
+
+<div class="viewcode-block" id="NIC1InputImage"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC1InputImage">[docs]</a><span class="k">class</span> <span class="nc">NIC1InputImage</span><span class="p">(</span><span class="n">NICMOSInputImage</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mf">1.</span> <span class="c1">#get the gain from the detector subclass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;CAMERA&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="s2">&quot;native&quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">_getDarkRate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_darkrate</span> <span class="o">=</span> <span class="mf">0.08</span> <span class="c1">#electrons/s</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">_darkrate</span> <span class="o">=</span> <span class="n">_darkrate</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="c1"># DN/s</span>
+
+        <span class="k">return</span> <span class="n">_darkrate</span>
+
+    <span class="k">def</span> <span class="nf">_getDefaultReadnoise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This could be updated to calculate the readnoise from the NOISFILE.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_rdnoise</span> <span class="o">=</span> <span class="mf">26.0</span> <span class="c1"># electrons</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">_rdnoise</span> <span class="o">=</span> <span class="n">_rdnoise</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="c1"># ADU</span>
+
+        <span class="k">return</span> <span class="n">_rdnoise</span>
+
+<div class="viewcode-block" id="NIC1InputImage.setInstrumentParameters"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC1InputImage.setInstrumentParameters">[docs]</a>    <span class="k">def</span> <span class="nf">setInstrumentParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instrpars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This method overrides the superclass to set default values into</span>
+<span class="sd">            the parameter dictionary, in case empty entries are provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pri_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ADCGAIN&#39;</span> <span class="c1">#gain has been hardcoded below</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EXPTIME&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span><span class="o">=</span> <span class="mf">5.4</span> <span class="c1">#measured gain</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: invalid instrument task parameter&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+            <span class="c1"># We need to treat Read Noise as a special case since it is</span>
+            <span class="c1"># not populated in the NICMOS primary header</span>
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getDefaultReadnoise</span><span class="p">()</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_darkrate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getDarkRate</span><span class="p">()</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">darkcurrent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getdarkcurrent</span><span class="p">()</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assignSignature</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">)</span> <span class="c1">#this is used in the static mask, static mask name also defined here, must be done after outputNames</span>
+
+
+        <span class="c1"># Convert the science data to electrons if specified by the user.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doUnitConversions</span><span class="p">()</span></div></div>
+
+
+
+<div class="viewcode-block" id="NIC2InputImage"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage">[docs]</a><span class="k">class</span> <span class="nc">NIC2InputImage</span><span class="p">(</span><span class="n">NICMOSInputImage</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span><span class="o">=</span><span class="mf">1.</span> <span class="c1">#measured</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;CAMERA&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="s2">&quot;native&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_getDarkRate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_darkrate</span> <span class="o">=</span> <span class="mf">0.08</span> <span class="c1">#electrons/s</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">_darkrate</span> <span class="o">=</span> <span class="n">_darkrate</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="c1"># DN/s</span>
+
+        <span class="k">return</span> <span class="n">_darkrate</span>
+
+    <span class="k">def</span> <span class="nf">_getDefaultReadnoise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_rdnoise</span> <span class="o">=</span> <span class="mf">26.0</span> <span class="c1">#electrons</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">_rdnoise</span> <span class="o">=</span> <span class="n">_rdnoise</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="c1">#ADU</span>
+
+        <span class="k">return</span> <span class="n">_rdnoise</span>
+
+<div class="viewcode-block" id="NIC2InputImage.setInstrumentParameters"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage.setInstrumentParameters">[docs]</a>    <span class="k">def</span> <span class="nf">setInstrumentParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instrpars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This method overrides the superclass to set default values into</span>
+<span class="sd">            the parameter dictionary, in case empty entries are provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pri_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ADCGAIN&#39;</span> <span class="c1">#gain has been hardcoded below</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EXPTIME&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span><span class="o">=</span> <span class="mf">5.4</span> <span class="c1">#measured gain</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: invalid instrument task parameter&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+            <span class="c1"># We need to treat Read Noise as a special case since it is</span>
+            <span class="c1"># not populated in the NICMOS primary header</span>
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getDefaultReadnoise</span><span class="p">()</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_darkrate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getDarkRate</span><span class="p">()</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">darkcurrent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getdarkcurrent</span><span class="p">()</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assignSignature</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">)</span> <span class="c1">#this is used in the static mask, static mask name also defined here, must be done after outputNames</span>
+
+
+        <span class="c1"># Convert the science data to electrons if specified by the user.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doUnitConversions</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="NIC2InputImage.createHoleMask"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage.createHoleMask">[docs]</a>    <span class="k">def</span> <span class="nf">createHoleMask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add in a mask for the coronographic hole to the general static pixel mask.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="NIC3InputImage"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC3InputImage">[docs]</a><span class="k">class</span> <span class="nc">NIC3InputImage</span><span class="p">(</span><span class="n">NICMOSInputImage</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;CAMERA&quot;</span><span class="p">]</span> <span class="c1">#returns 1,2,3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="s2">&quot;native&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_getDarkRate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_darkrate</span> <span class="o">=</span> <span class="mf">0.15</span> <span class="c1">#electrons/s</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">_darkrate</span> <span class="o">=</span> <span class="n">_darkrate</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="c1">#DN/s</span>
+
+        <span class="k">return</span> <span class="n">_darkrate</span>
+
+    <span class="k">def</span> <span class="nf">_getDefaultReadnoise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_rdnoise</span> <span class="o">=</span> <span class="mf">29.0</span> <span class="c1"># electrons</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">_rdnoise</span> <span class="o">=</span> <span class="n">_rdnoise</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="c1">#ADU</span>
+
+        <span class="k">return</span> <span class="n">_rdnoise</span>
+
+<div class="viewcode-block" id="NIC3InputImage.setInstrumentParameters"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC3InputImage.setInstrumentParameters">[docs]</a>    <span class="k">def</span> <span class="nf">setInstrumentParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instrpars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This method overrides the superclass to set default values into</span>
+<span class="sd">            the parameter dictionary, in case empty entries are provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pri_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ADCGAIN&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EXPTIME&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span><span class="o">=</span> <span class="mf">6.5</span> <span class="c1">#measured gain</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: invalid instrument task parameter&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+            <span class="c1"># We need to treat Read Noise as a special case since it is</span>
+            <span class="c1"># not populated in the NICMOS primary header</span>
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getDefaultReadnoise</span><span class="p">()</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_darkrate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_getDarkRate</span><span class="p">()</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">darkcurrent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getdarkcurrent</span><span class="p">()</span>
+
+            <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assignSignature</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">)</span> <span class="c1">#this is used in the static mask, static mask name also defined here, must be done after outputNames</span>
+
+
+        <span class="c1"># Convert the science data to electrons if specified by the user.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doUnitConversions</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

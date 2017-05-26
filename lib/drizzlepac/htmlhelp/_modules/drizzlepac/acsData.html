@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.acsData &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.acsData</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Class used to model ACS specific instrument data.</span>
+
+<span class="sd">:Authors: Christopher Hanley, Warren Hack, Ivo Busko, David Grumm</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span> <span class="c1"># confidence high</span>
+
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.imageObject</span> <span class="k">import</span> <span class="n">imageObject</span>
+
+
+<div class="viewcode-block" id="ACSInputImage"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.ACSInputImage">[docs]</a><span class="k">class</span> <span class="nc">ACSInputImage</span><span class="p">(</span><span class="n">imageObject</span><span class="p">):</span>
+
+    <span class="n">SEPARATOR</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">imageObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="c1"># define the cosmic ray bits value to use in the dq array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cr_bits_value</span> <span class="o">=</span> <span class="mi">4096</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;INSTRUME&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span><span class="o">=</span><span class="mf">1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flatkey</span> <span class="o">=</span> <span class="s1">&#39;PFLTFILE&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">group_member</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">darkcurrent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getdarkcurrent</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ACSInputImage.doUnitConversions"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.ACSInputImage.doUnitConversions">[docs]</a>    <span class="k">def</span> <span class="nf">doUnitConversions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Effective gain to be used in the driz_cr step.  Since the</span>
+        <span class="c1"># ACS images have already been converted to electrons,</span>
+        <span class="c1"># the effective gain is 1.</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c1">#chip._effGain is was drizCr uses</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_conversionFactor</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span><span class="o">=</span><span class="mf">1.0</span></div>
+
+    <span class="k">def</span> <span class="nf">_assignSignature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;assign a unique signature for the image based</span>
+<span class="sd">           on the  instrument, detector, chip, and size</span>
+<span class="sd">           this will be used to uniquely identify the appropriate</span>
+<span class="sd">           static mask for the image</span>
+
+<span class="sd">           this also records the filename for the static mask to the outputNames dictionary</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sci_chip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span>
+        <span class="n">ny</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">_naxis1</span>
+        <span class="n">nx</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">_naxis2</span>
+        <span class="n">detnum</span> <span class="o">=</span> <span class="n">sci_chip</span><span class="o">.</span><span class="n">detnum</span>
+        <span class="n">instr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span>
+
+        <span class="n">sig</span><span class="o">=</span><span class="p">(</span><span class="n">instr</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="p">,(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">chip</span><span class="p">))</span> <span class="c1">#signature is a tuple</span>
+        <span class="n">sci_chip</span><span class="o">.</span><span class="n">signature</span><span class="o">=</span><span class="n">sig</span> <span class="c1">#signature is a tuple</span>
+
+<div class="viewcode-block" id="ACSInputImage.getdarkcurrent"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.ACSInputImage.getdarkcurrent">[docs]</a>    <span class="k">def</span> <span class="nf">getdarkcurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">extver</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the dark current for the ACS detector.  This value</span>
+<span class="sd">        will be contained within an instrument specific keyword.</span>
+<span class="sd">        The value in the image header will be converted to units</span>
+<span class="sd">        of electrons.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        darkcurrent: float</span>
+<span class="sd">            Dark current value for the ACS detector in **units of electrons**.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">darkcurrent</span><span class="o">=</span><span class="mf">0.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">darkcurrent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">extver</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;MEANDARK&#39;</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">str</span> <span class="o">=</span>  <span class="s2">&quot;#############################################</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;# Error:                                    #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   Cannot find the value for &#39;MEANDARK&#39;    #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   in the image header.  ACS input images  #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   are expected to have this header        #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#   keyword.                                #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;# Error occured in the ACSInputImage class  #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">str</span> <span class="o">+=</span> <span class="s2">&quot;#############################################</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+
+        <span class="k">return</span> <span class="n">darkcurrent</span></div></div>
+
+
+<div class="viewcode-block" id="WFCInputImage"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.WFCInputImage">[docs]</a><span class="k">class</span> <span class="nc">WFCInputImage</span><span class="p">(</span><span class="n">ACSInputImage</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">ACSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4096</span><span class="p">,</span><span class="mi">2048</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;DETECTOR&quot;</span><span class="p">]</span>
+
+        <span class="c1"># get cte direction, which depends on which chip but is independent of amp</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assignSignature</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span> <span class="c1">#this is used in the static mask</span>
+
+            <span class="k">if</span> <span class="p">(</span> <span class="n">chip</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">cte_dir</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">chip</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">cte_dir</span> <span class="o">=</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="WFCInputImage.setInstrumentParameters"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.WFCInputImage.setInstrumentParameters">[docs]</a>    <span class="k">def</span> <span class="nf">setInstrumentParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">instrpars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This method overrides the superclass to set default values into</span>
+<span class="sd">            the parameter dictionary, in case empty entries are provided.</span>
+
+<span class="sd">            This method gets called from processInput.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pri_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instrpars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;native&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ATODGNA,ATODGNB,ATODGNC,ATODGND&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;READNSEA,READNSEB,READNSEC,READNSED&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EXPTIME&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>      <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mf">1.</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: invalid instrument task parameter&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+        <span class="c1"># Convert the science data to electrons if specified by the user.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doUnitConversions</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="HRCInputImage"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.HRCInputImage">[docs]</a><span class="k">class</span> <span class="nc">HRCInputImage</span> <span class="p">(</span><span class="n">ACSInputImage</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">ACSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;PRIMARY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;DETECTOR&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1024</span><span class="p">,</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">amp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;PRIMARY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;CCDAMP&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;PRIMARY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;DETECTOR&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assignSignature</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span> <span class="c1">#this is used in the static mask</span>
+
+            <span class="k">if</span> <span class="p">(</span> <span class="n">amp</span> <span class="o">==</span> <span class="s1">&#39;A&#39;</span> <span class="ow">or</span> <span class="n">amp</span> <span class="o">==</span> <span class="s1">&#39;B&#39;</span> <span class="p">)</span> <span class="p">:</span> <span class="c1"># cte direction depends on amp (but is independent of chip)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">cte_dir</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">amp</span> <span class="o">==</span> <span class="s1">&#39;C&#39;</span> <span class="ow">or</span> <span class="n">amp</span> <span class="o">==</span> <span class="s1">&#39;D&#39;</span> <span class="p">)</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">cte_dir</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<div class="viewcode-block" id="HRCInputImage.setInstrumentParameters"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.HRCInputImage.setInstrumentParameters">[docs]</a>    <span class="k">def</span> <span class="nf">setInstrumentParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">instrpars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This method overrides the superclass to set default values into</span>
+<span class="sd">            the parameter dictionary, in case empty entries are provided.</span>
+
+<span class="sd">            This method gets called from processInput.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pri_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instrpars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;native&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ATODGNA,ATODGNB,ATODGNC,ATODGND&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;READNSEA,READNSEB,READNSEC,READNSED&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EXPTIME&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>      <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: invalid instrument task parameter&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+        <span class="c1"># Convert the science data to electrons if specified by the user.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doUnitConversions</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="SBCInputImage"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.SBCInputImage">[docs]</a><span class="k">class</span> <span class="nc">SBCInputImage</span> <span class="p">(</span><span class="n">ACSInputImage</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">ACSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1024</span><span class="p">,</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;PRIMARY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;DETECTOR&quot;</span><span class="p">]</span>
+
+        <span class="c1"># no cte correction for SBC so set cte_dir=0.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: No cte correction will be made for this SBC data.&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assignSignature</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span> <span class="c1">#this is used in the static mask</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">cte_dir</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+    <span class="k">def</span> <span class="nf">_setSBCchippars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setDefaultSBCGain</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setDefaultSBCReadnoise</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_setDefaultSBCGain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gain</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_setDefaultSBCReadnoise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="SBCInputImage.setInstrumentParameters"><a class="viewcode-back" href="../../acsobjects.html#drizzlepac.acsData.SBCInputImage.setInstrumentParameters">[docs]</a>    <span class="k">def</span> <span class="nf">setInstrumentParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">instrpars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sets the instrument parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pri_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EXPTIME&#39;</span>
+
+        <span class="c1"># We need to treat Read Noise and Gain as a special case since it is</span>
+        <span class="c1"># not populated in the SBC primary header for the MAMA</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>      <span class="o">=</span> <span class="mf">1.0</span> <span class="c1">#self.getInstrParameter(&quot;&quot;, pri_header,</span>
+                                  <span class="c1">#                  instrpars[&#39;gnkeyword&#39;])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span>   <span class="o">=</span> <span class="mf">0.0</span> <span class="c1">#self.getInstrParameter(&quot;&quot;, pri_header,</span>
+                                  <span class="c1">#                   instrpars[&#39;rnkeyword&#39;])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: invalid instrument task parameter&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+        <span class="c1"># We need to determine if the user has used the default readnoise/gain value</span>
+        <span class="c1"># since if not, they will need to supply a gain/readnoise value as well</span>
+        <span class="n">usingDefaultGain</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="n">usingDefaultReadnoise</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+
+        <span class="c1"># Set the default readnoise or gain values based upon the amount of user input given.</span>
+
+        <span class="c1"># Case 1: User supplied no gain or readnoise information</span>
+        <span class="k">if</span> <span class="n">usingDefaultReadnoise</span> <span class="ow">and</span> <span class="n">usingDefaultGain</span><span class="p">:</span>
+            <span class="c1"># Set the default gain and readnoise values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setSBCchippars</span><span class="p">()</span>
+        <span class="c1"># Case 2: The user has supplied a value for gain</span>
+        <span class="k">elif</span> <span class="n">usingDefaultReadnoise</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">usingDefaultGain</span><span class="p">:</span>
+            <span class="c1"># Set the default readnoise value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setDefaultSBCReadnoise</span><span class="p">()</span>
+        <span class="c1"># Case 3: The user has supplied a value for readnoise</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">usingDefaultReadnoise</span> <span class="ow">and</span> <span class="n">usingDefaultGain</span><span class="p">:</span>
+            <span class="c1"># Set the default gain value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setDefaultSBCGain</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># In this case, the user has specified both a gain and readnoise values.  Just use them as is.</span>
+            <span class="k">pass</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

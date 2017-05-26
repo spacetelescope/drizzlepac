@@ -1,0 +1,1277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.adrizzle &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.adrizzle</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Interfaces to main drizzle functions.</span>
+
+<span class="sd">:Authors: Warren Hack</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span> <span class="c1"># confidence medium</span>
+
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span><span class="nn">os</span><span class="o">,</span><span class="nn">copy</span><span class="o">,</span><span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span><span class="p">,</span> <span class="n">logutil</span><span class="p">,</span> <span class="n">mputil</span><span class="p">,</span> <span class="n">teal</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">outputimage</span><span class="p">,</span> <span class="n">wcs_functions</span><span class="p">,</span> <span class="n">processInput</span><span class="p">,</span> <span class="n">util</span>
+<span class="kn">import</span> <span class="nn">stwcs</span>
+<span class="kn">from</span> <span class="nn">stwcs</span> <span class="k">import</span> <span class="n">distortion</span>
+
+<span class="kn">from</span> <span class="nn">.version</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">cdriz</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">cdriz</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1"> Coordinate transformation and image resampling library, cdriz, NOT found!&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1"> Please check the installation of this package to insure C code was built successfully.&#39;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span>
+
+<span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">can_parallel</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">multiprocessing</span>
+
+<span class="n">__taskname__</span> <span class="o">=</span> <span class="s2">&quot;drizzlepac.adrizzle&quot;</span>
+<span class="n">_single_step_num_</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">_final_step_num_</span> <span class="o">=</span> <span class="mi">7</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="n">time_pre_all</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">time_driz_all</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">time_post_all</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">time_write_all</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1">#</span>
+<span class="c1">#### Interactive interface for running drizzle tasks separately</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="drizzle"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.drizzle">[docs]</a><span class="k">def</span> <span class="nf">drizzle</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">outdata</span><span class="p">,</span> <span class="n">wcsmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">configObj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">input_dict</span><span class="p">):</span>
+
+    <span class="c1"># Pass along values of input and outdata as members of input_dict</span>
+    <span class="k">if</span> <span class="n">input_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">input_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">input</span>
+    <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outdata</span>
+
+    <span class="c1"># If called from interactive user-interface, configObj will not be</span>
+    <span class="c1"># defined yet, so get defaults using EPAR/TEAL.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Also insure that the input_dict (user-specified values) are folded in</span>
+    <span class="c1"># with a fully populated configObj instance.</span>
+    <span class="n">configObj</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getDefaultConfigObj</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span><span class="n">configObj</span><span class="p">,</span><span class="n">input_dict</span><span class="p">,</span><span class="n">loadOnly</span><span class="o">=</span><span class="p">(</span><span class="ow">not</span> <span class="n">editpars</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">configObj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">editpars</span><span class="p">:</span>
+        <span class="n">run</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">wcsmap</span><span class="o">=</span><span class="n">wcsmap</span><span class="p">)</span></div>
+
+
+<span class="c1">#</span>
+<span class="c1">####  User level interface to run drizzle tasks from TEAL</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span> <span class="n">wcsmap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Interface for running `wdrizzle` from TEAL or Python command-line.</span>
+
+<span class="sd">    This code performs all file ``I/O`` to set up the use of the drizzle code for</span>
+<span class="sd">    a single exposure to replicate the functionality of the original `wdrizzle`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Insure all output filenames specified have .fits extensions</span>
+    <span class="k">if</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">!=</span> <span class="s1">&#39;.fits&#39;</span><span class="p">:</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.fits&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">!=</span> <span class="s1">&#39;.fits&#39;</span><span class="p">:</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.fits&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outcontext&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outcontext&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">!=</span> <span class="s1">&#39;.fits&#39;</span><span class="p">:</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outcontext&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;.fits&#39;</span>
+
+    <span class="c1"># Keep track of any files we need to open</span>
+    <span class="n">in_sci_handle</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">in_wht_handle</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">out_sci_handle</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">out_wht_handle</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">out_con_handle</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">_wcskey</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;wcskey&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">_wcskey</span><span class="p">):</span>
+        <span class="n">_wcskey</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
+
+    <span class="n">scale_pars</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;Data Scaling Parameters&#39;</span><span class="p">]</span>
+    <span class="n">user_wcs_pars</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;User WCS Parameters&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Open the SCI (and WHT?) image</span>
+    <span class="c1"># read file to get science array</span>
+    <span class="n">insci</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">])</span>
+    <span class="n">expin</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">getKeyword</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">],</span><span class="n">scale_pars</span><span class="p">[</span><span class="s1">&#39;expkey&#39;</span><span class="p">])</span>
+    <span class="n">in_sci_phdr</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="n">fileutil</span><span class="o">.</span><span class="n">parseFilename</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># we need to read in the input WCS</span>
+    <span class="n">input_wcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">],</span><span class="n">wcskey</span><span class="o">=</span><span class="n">_wcskey</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;inweight&#39;</span><span class="p">]):</span>
+        <span class="n">inwht</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;inweight&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Generate a default weight map of all good pixels</span>
+        <span class="n">inwht</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">insci</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">insci</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="n">output_exists</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">outname</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">osfn</span><span class="p">(</span><span class="n">fileutil</span><span class="o">.</span><span class="n">parseFilename</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outname</span><span class="p">):</span>
+        <span class="n">output_exists</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># Output was specified as a filename, so open it in &#39;update&#39; mode</span>
+    <span class="n">outsci</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">output_exists</span><span class="p">:</span>
+        <span class="c1"># we also need to read in the output WCS from pre-existing output</span>
+        <span class="n">output_wcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">])</span>
+
+        <span class="n">out_sci_hdr</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">outexptime</span> <span class="o">=</span> <span class="n">out_sci_hdr</span><span class="p">[</span><span class="s1">&#39;DRIZEXPT&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;ndrizim&#39;</span> <span class="ow">in</span> <span class="n">out_sci_hdr</span><span class="p">:</span>
+            <span class="n">uniqid</span> <span class="o">=</span> <span class="n">out_sci_hdr</span><span class="p">[</span><span class="s1">&#39;ndrizim&#39;</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">uniqid</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># otherwise, define the output WCS either from user pars or refimage</span>
+        <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;User WCS Parameters&#39;</span><span class="p">][</span><span class="s1">&#39;refimage&#39;</span><span class="p">]):</span>
+            <span class="c1"># Define a WCS based on user provided WCS values</span>
+            <span class="c1"># NOTE:</span>
+            <span class="c1">#   All parameters must be specified, not just one or a few</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;outscale&#39;</span><span class="p">]):</span>
+                <span class="n">output_wcs</span> <span class="o">=</span> <span class="n">wcs_functions</span><span class="o">.</span><span class="n">build_hstwcs</span><span class="p">(</span>
+                    <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;raref&#39;</span><span class="p">],</span> <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;decref&#39;</span><span class="p">],</span>
+                    <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;xrefpix&#39;</span><span class="p">],</span> <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;yrefpix&#39;</span><span class="p">],</span>
+                    <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;outnx&#39;</span><span class="p">],</span> <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;outny&#39;</span><span class="p">],</span>
+                    <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;outscale&#39;</span><span class="p">],</span> <span class="n">user_wcs_pars</span><span class="p">[</span><span class="s1">&#39;orient&#39;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Define default WCS based on input image</span>
+                <span class="n">applydist</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">input_wcs</span><span class="o">.</span><span class="n">sip</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">input_wcs</span><span class="o">.</span><span class="n">instrument</span><span class="o">==</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">:</span>
+                    <span class="n">applydist</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">output_wcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">distortion</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">output_wcs</span><span class="p">([</span><span class="n">input_wcs</span><span class="p">],</span><span class="n">undistort</span><span class="o">=</span><span class="n">applydist</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">refimage</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;User WCS Parameters&#39;</span><span class="p">][</span><span class="s1">&#39;refimage&#39;</span><span class="p">]</span>
+            <span class="n">refroot</span><span class="p">,</span><span class="n">extroot</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseFilename</span><span class="p">(</span><span class="n">refimage</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">extroot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">refroot</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">extn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fimg</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="s1">&#39;CRVAL1&#39;</span> <span class="ow">in</span> <span class="n">extn</span><span class="o">.</span><span class="n">header</span><span class="p">:</span> <span class="c1"># Key on CRVAL1 for valid WCS</span>
+                        <span class="n">refwcs</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">[</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">refroot</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">refwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">has_cd</span><span class="p">():</span>
+                            <span class="n">extroot</span> <span class="o">=</span> <span class="n">i</span>
+                            <span class="k">break</span>
+                <span class="n">fimg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="c1"># try to find extension with valid WCS</span>
+                <span class="n">refimage</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">[</span><span class="si">{}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">refroot</span><span class="p">,</span><span class="n">extroot</span><span class="p">)</span>
+            <span class="c1"># Define the output WCS based on a user specified reference image WCS</span>
+            <span class="n">output_wcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">refimage</span><span class="p">)</span>
+        <span class="c1"># Initialize values used for combining results</span>
+        <span class="n">outexptime</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">uniqid</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># Set up the output data array and insure that the units for that array is &#39;cps&#39;</span>
+    <span class="k">if</span> <span class="n">outsci</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Define a default blank array based on definition of output_wcs</span>
+        <span class="c1">#outsci = np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)</span>
+        <span class="n">outsci</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">outsci</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Convert array to units of &#39;cps&#39;, if needed</span>
+        <span class="k">if</span> <span class="n">outexptime</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">outsci</span><span class="p">,</span> <span class="n">outexptime</span><span class="p">,</span> <span class="n">outsci</span><span class="p">)</span>
+        <span class="n">outsci</span> <span class="o">=</span> <span class="n">outsci</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Now update output exposure time for additional input file</span>
+    <span class="n">outexptime</span> <span class="o">+=</span> <span class="n">expin</span>
+
+    <span class="n">outwht</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">]):</span>
+        <span class="n">outwht</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">outwht</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outwht</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outwht</span> <span class="o">=</span> <span class="n">outwht</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">outcon</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">keep_con</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outcontext&#39;</span><span class="p">]):</span>
+        <span class="n">outcon</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outcontext&#39;</span><span class="p">])</span>
+        <span class="n">keep_con</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">outcon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outcon</span> <span class="o">=</span> <span class="n">outcon</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">planeid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">uniqid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
+
+            <span class="c1"># Add a new plane to the context image if planeid overflows</span>
+            <span class="k">while</span> <span class="n">outcon</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">planeid</span><span class="p">:</span>
+                <span class="n">plane</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">outcon</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">outcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outcon</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Interpret wt_scl parameter</span>
+    <span class="k">if</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;exptime&#39;</span><span class="p">:</span>
+        <span class="n">wt_scl</span> <span class="o">=</span> <span class="n">expin</span>
+    <span class="k">elif</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;expsq&#39;</span><span class="p">:</span>
+        <span class="n">wt_scl</span> <span class="o">=</span> <span class="n">expin</span><span class="o">*</span><span class="n">expin</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">wt_scl</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Interpret coeffs parameter to determine whether to apply coeffs or not</span>
+    <span class="n">undistort</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">input_wcs</span><span class="o">.</span><span class="n">sip</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">input_wcs</span><span class="o">.</span><span class="n">instrument</span> <span class="o">==</span> <span class="s1">&#39;DEFAULT&#39;</span><span class="p">:</span>
+        <span class="n">undistort</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># turn off use of coefficients if undistort is False (coeffs == False)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">undistort</span><span class="p">:</span>
+        <span class="n">input_wcs</span><span class="o">.</span><span class="n">sip</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">input_wcs</span><span class="o">.</span><span class="n">cpdis1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">input_wcs</span><span class="o">.</span><span class="n">cpdis2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">input_wcs</span><span class="o">.</span><span class="n">det2im</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">wcslin</span> <span class="o">=</span> <span class="n">distortion</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">output_wcs</span><span class="p">([</span><span class="n">input_wcs</span><span class="p">],</span><span class="n">undistort</span><span class="o">=</span><span class="n">undistort</span><span class="p">)</span>
+
+    <span class="c1"># Perform actual drizzling now...</span>
+    <span class="n">_vers</span> <span class="o">=</span> <span class="n">do_driz</span><span class="p">(</span><span class="n">insci</span><span class="p">,</span> <span class="n">input_wcs</span><span class="p">,</span> <span class="n">inwht</span><span class="p">,</span>
+            <span class="n">output_wcs</span><span class="p">,</span> <span class="n">outsci</span><span class="p">,</span> <span class="n">outwht</span><span class="p">,</span> <span class="n">outcon</span><span class="p">,</span>
+            <span class="n">expin</span><span class="p">,</span> <span class="n">scale_pars</span><span class="p">[</span><span class="s1">&#39;in_units&#39;</span><span class="p">],</span>
+            <span class="n">wt_scl</span><span class="p">,</span> <span class="n">wcslin_pscale</span><span class="o">=</span><span class="n">wcslin</span><span class="o">.</span><span class="n">pscale</span> <span class="p">,</span><span class="n">uniqid</span><span class="o">=</span><span class="n">uniqid</span><span class="p">,</span>
+            <span class="n">pixfrac</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;pixfrac&#39;</span><span class="p">],</span> <span class="n">kernel</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;kernel&#39;</span><span class="p">],</span>
+            <span class="n">fillval</span><span class="o">=</span><span class="n">scale_pars</span><span class="p">[</span><span class="s1">&#39;fillval&#39;</span><span class="p">],</span> <span class="n">stepsize</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;stepsize&#39;</span><span class="p">],</span>
+            <span class="n">wcsmap</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">out_sci_handle</span><span class="p">,</span><span class="n">outextn</span> <span class="o">=</span> <span class="n">create_output</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">output_exists</span><span class="p">:</span>
+        <span class="c1"># Also, define default header based on input image Primary header</span>
+        <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">in_sci_phdr</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Update header of output image with exptime used to scale the output data</span>
+    <span class="c1"># if out_units is not counts, this will simply be a value of 1.0</span>
+    <span class="c1"># the keyword &#39;exptime&#39; will always contain the total exposure time</span>
+    <span class="c1"># of all input image regardless of the output units</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXPTIME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outexptime</span>
+
+    <span class="c1"># create CTYPE strings</span>
+    <span class="n">ctype1</span> <span class="o">=</span> <span class="n">input_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ctype2</span> <span class="o">=</span> <span class="n">input_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ctype1</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;-SIP&#39;</span><span class="p">):</span> <span class="n">ctype1</span> <span class="o">=</span> <span class="n">ctype1</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-SIP&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ctype2</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;-SIP&#39;</span><span class="p">):</span> <span class="n">ctype2</span> <span class="o">=</span> <span class="n">ctype2</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-SIP&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Update header with WCS keywords</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;ORIENTAT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">orientat</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CD1_2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CD2_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CD2_2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRVAL2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRPIX1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRPIX2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CTYPE1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ctype1</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CTYPE2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ctype2</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;VAFACTOR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+
+    <span class="k">if</span> <span class="n">scale_pars</span><span class="p">[</span><span class="s1">&#39;out_units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;counts&#39;</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">outsci</span><span class="p">,</span> <span class="n">outexptime</span><span class="p">,</span> <span class="n">outsci</span><span class="p">)</span>
+        <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;DRIZEXPT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outexptime</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;DRIZEXPT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="c1"># Update header keyword NDRIZIM to keep track of how many images have</span>
+    <span class="c1"># been combined in this product so far</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;NDRIZIM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uniqid</span>
+
+    <span class="c1">#define keywords to be written out to product header</span>
+    <span class="n">drizdict</span> <span class="o">=</span> <span class="n">outputimage</span><span class="o">.</span><span class="n">DRIZ_KEYWORDS</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Update drizdict with current values</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;VER&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_vers</span><span class="p">[:</span><span class="mi">44</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;DATA&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;DEXP&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expin</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUDA&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUWE&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUCO&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outcontext&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;MASK&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;inweight&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;WTSC&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wt_scl</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;KERN&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;kernel&#39;</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;PIXF&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;pixfrac&#39;</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUUN&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_pars</span><span class="p">[</span><span class="s1">&#39;out_units&#39;</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;FVAL&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_pars</span><span class="p">[</span><span class="s1">&#39;fillval&#39;</span><span class="p">]</span>
+    <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;WKEY&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;wcskey&#39;</span><span class="p">]</span>
+    <span class="n">outputimage</span><span class="o">.</span><span class="n">writeDrizKeywords</span><span class="p">(</span><span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="n">uniqid</span><span class="p">,</span><span class="n">drizdict</span><span class="p">)</span>
+
+    <span class="c1"># add output array to output file</span>
+    <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">outsci</span>
+    <span class="n">out_sci_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">]):</span>
+        <span class="n">out_wht_handle</span><span class="p">,</span><span class="n">outwhtext</span> <span class="o">=</span> <span class="n">create_output</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">])</span>
+        <span class="n">out_wht_handle</span><span class="p">[</span><span class="n">outwhtext</span><span class="p">]</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">out_sci_handle</span><span class="p">[</span><span class="n">outextn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">out_wht_handle</span><span class="p">[</span><span class="n">outwhtext</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">outwht</span>
+        <span class="n">out_wht_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">keep_con</span><span class="p">:</span>
+        <span class="n">out_con_handle</span><span class="p">,</span><span class="n">outconext</span> <span class="o">=</span> <span class="n">create_output</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outcontext&#39;</span><span class="p">])</span>
+        <span class="n">out_con_handle</span><span class="p">[</span><span class="n">outconext</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">outcon</span>
+        <span class="n">out_con_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<span class="c1">#</span>
+<span class="c1"># drizzlepac based interfaces: relying on imageObject instances and drizzlepac internals</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#### Top-level interface from inside MultiDrizzle</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="drizSeparate"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.drizSeparate">[docs]</a><span class="k">def</span> <span class="nf">drizSeparate</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="n">configObj</span><span class="p">,</span><span class="n">wcsmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">procSteps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">procSteps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">procSteps</span><span class="o">.</span><span class="n">addStep</span><span class="p">(</span><span class="s1">&#39;Separate Drizzle&#39;</span><span class="p">)</span>
+
+    <span class="c1"># ConfigObj needs to be parsed specifically for driz_separate set of parameters</span>
+    <span class="n">single_step</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">_single_step_num_</span><span class="p">)</span>
+    <span class="c1"># This can be called directly from MultiDrizle, so only execute if</span>
+    <span class="c1"># switch has been turned on (no guarantee MD will check before calling).</span>
+    <span class="k">if</span> <span class="n">configObj</span><span class="p">[</span><span class="n">single_step</span><span class="p">][</span><span class="s1">&#39;driz_separate&#39;</span><span class="p">]:</span>
+        <span class="n">paramDict</span> <span class="o">=</span> <span class="n">buildDrizParamDict</span><span class="p">(</span><span class="n">configObj</span><span class="p">)</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;crbit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;electrons&#39;</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;wht_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Force &#39;build&#39; to always be False, so that this step always generates</span>
+        <span class="c1"># simple FITS files as output for compatibility with &#39;createMedian&#39;</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;build&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Record whether or not intermediate files should be deleted when finished</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;clean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;STATE OF INPUT FILES&#39;</span><span class="p">][</span><span class="s1">&#39;clean&#39;</span><span class="p">]</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;num_cores&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_cores&#39;</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;USER INPUT PARAMETERS for Separate Drizzle Step:&#39;</span><span class="p">)</span>
+        <span class="n">util</span><span class="o">.</span><span class="n">printParams</span><span class="p">(</span><span class="n">paramDict</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
+
+        <span class="c1"># override configObj[build] value with the value of the build parameter</span>
+        <span class="c1"># this is necessary in order for MultiDrizzle to always have build=False</span>
+        <span class="c1"># for single-drizzle step when called from the top-level.</span>
+        <span class="n">run_driz</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">single_wcs</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">,</span> <span class="n">single</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">build</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">wcsmap</span><span class="o">=</span><span class="n">wcsmap</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Single drizzle step not performed.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">procSteps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">procSteps</span><span class="o">.</span><span class="n">endStep</span><span class="p">(</span><span class="s1">&#39;Separate Drizzle&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="drizFinal"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.drizFinal">[docs]</a><span class="k">def</span> <span class="nf">drizFinal</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output_wcs</span><span class="p">,</span> <span class="n">configObj</span><span class="p">,</span><span class="n">build</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">wcsmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">procSteps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">procSteps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">procSteps</span><span class="o">.</span><span class="n">addStep</span><span class="p">(</span><span class="s1">&#39;Final Drizzle&#39;</span><span class="p">)</span>
+    <span class="c1"># ConfigObj needs to be parsed specifically for driz_final set of parameters</span>
+    <span class="n">final_step</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">_final_step_num_</span><span class="p">)</span>
+    <span class="c1"># This can be called directly from MultiDrizle, so only execute if</span>
+    <span class="c1"># switch has been turned on (no guarantee MD will check before calling).</span>
+    <span class="k">if</span> <span class="n">configObj</span><span class="p">[</span><span class="n">final_step</span><span class="p">][</span><span class="s1">&#39;driz_combine&#39;</span><span class="p">]:</span>
+        <span class="n">paramDict</span> <span class="o">=</span> <span class="n">buildDrizParamDict</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">single</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;crbit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;crbit&#39;</span><span class="p">]</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;wht_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="n">final_step</span><span class="p">][</span><span class="s1">&#39;final_wht_type&#39;</span><span class="p">]</span>
+
+        <span class="c1"># override configObj[build] value with the value of the build parameter</span>
+        <span class="c1"># this is necessary in order for MultiDrizzle to always have build=False</span>
+        <span class="c1"># for single-drizzle step when called from the top-level.</span>
+        <span class="k">if</span> <span class="n">build</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">build</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;build&#39;</span><span class="p">]</span>
+        <span class="c1"># Record whether or not intermediate files should be deleted when finished</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;clean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;STATE OF INPUT FILES&#39;</span><span class="p">][</span><span class="s1">&#39;clean&#39;</span><span class="p">]</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;USER INPUT PARAMETERS for Final Drizzle Step:&#39;</span><span class="p">)</span>
+        <span class="n">util</span><span class="o">.</span><span class="n">printParams</span><span class="p">(</span><span class="n">paramDict</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
+
+        <span class="n">run_driz</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">final_wcs</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">,</span> <span class="n">single</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">build</span><span class="o">=</span><span class="n">build</span><span class="p">,</span> <span class="n">wcsmap</span><span class="o">=</span><span class="n">wcsmap</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Final drizzle step not performed.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">procSteps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">procSteps</span><span class="o">.</span><span class="n">endStep</span><span class="p">(</span><span class="s1">&#39;Final Drizzle&#39;</span><span class="p">)</span></div>
+
+<span class="c1"># Run &#39;drizzle&#39; here...</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="mergeDQarray"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.mergeDQarray">[docs]</a><span class="k">def</span> <span class="nf">mergeDQarray</span><span class="p">(</span><span class="n">maskname</span><span class="p">,</span><span class="n">dqarr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Merge static or CR mask with mask created from DQ array on-the-fly here.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">maskarr</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">maskname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maskname</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="c1"># working with file on disk (default case)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">maskname</span><span class="p">):</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="n">maskname</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">maskarr</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+                <span class="n">mask</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maskname</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+                <span class="c1"># working with a virtual input file</span>
+                <span class="n">maskarr</span> <span class="o">=</span> <span class="n">maskname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">maskarr</span> <span class="o">=</span> <span class="n">maskname</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">maskarr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># merge array with dqarr now</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">dqarr</span><span class="p">,</span><span class="n">maskarr</span><span class="p">,</span><span class="n">dqarr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="updateInputDQArray"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.updateInputDQArray">[docs]</a><span class="k">def</span> <span class="nf">updateInputDQArray</span><span class="p">(</span><span class="n">dqfile</span><span class="p">,</span><span class="n">dq_extn</span><span class="p">,</span><span class="n">chip</span><span class="p">,</span> <span class="n">crmaskname</span><span class="p">,</span><span class="n">cr_bits_value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">crmaskname</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">crmaskname</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;No CR mask file found! Input DQ array not updated.&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">cr_bits_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Input DQ array not updated!&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">crmaskname</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="c1"># in_memory case</span>
+        <span class="n">crmask</span> <span class="o">=</span> <span class="n">crmaskname</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">crmask</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="n">crmaskname</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dqfile</span><span class="p">):</span>
+        <span class="n">fullext</span><span class="o">=</span><span class="n">dqfile</span><span class="o">+</span><span class="s2">&quot;[&quot;</span><span class="o">+</span><span class="n">dq_extn</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;]&quot;</span>
+        <span class="n">infile</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="n">fullext</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">__bitarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">crmask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">*</span> <span class="n">cr_bits_value</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">bitwise_or</span><span class="p">(</span><span class="n">infile</span><span class="p">[</span><span class="n">dq_extn</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span><span class="n">__bitarray</span><span class="p">,</span><span class="n">infile</span><span class="p">[</span><span class="n">dq_extn</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">infile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">crmask</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="buildDrizParamDict"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.buildDrizParamDict">[docs]</a><span class="k">def</span> <span class="nf">buildDrizParamDict</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">single</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">chip_pars</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">,</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">,</span><span class="s1">&#39;pixfrac&#39;</span><span class="p">,</span><span class="s1">&#39;kernel&#39;</span><span class="p">,</span><span class="s1">&#39;fillval&#39;</span><span class="p">,</span><span class="s1">&#39;bits&#39;</span><span class="p">,</span><span class="s1">&#39;maskval&#39;</span><span class="p">]</span>
+    <span class="n">cfunc_pars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pixfrac&#39;</span><span class="p">:</span><span class="nb">float</span><span class="p">}</span>
+
+    <span class="c1"># Initialize paramDict with global parameter(s)</span>
+    <span class="n">paramDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;build&#39;</span><span class="p">:</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;build&#39;</span><span class="p">],</span><span class="s1">&#39;stepsize&#39;</span><span class="p">:</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;stepsize&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;coeffs&#39;</span><span class="p">:</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">],</span><span class="s1">&#39;wcskey&#39;</span><span class="p">:</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;wcskey&#39;</span><span class="p">]}</span>
+
+    <span class="c1"># build appro</span>
+    <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+        <span class="n">driz_prefix</span> <span class="o">=</span> <span class="s1">&#39;driz_sep_&#39;</span>
+        <span class="n">stepnum</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">driz_prefix</span> <span class="o">=</span> <span class="s1">&#39;final_&#39;</span>
+        <span class="n">stepnum</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">section_name</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">stepnum</span><span class="p">)</span>
+    <span class="c1"># Copy values from configObj for the appropriate step to paramDict</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">+</span><span class="p">[</span><span class="n">driz_prefix</span><span class="o">+</span><span class="s1">&#39;units&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">driz_prefix</span><span class="p">):</span>
+            <span class="n">par</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">driz_prefix</span><span class="p">):]</span>
+            <span class="k">if</span> <span class="n">par</span> <span class="o">==</span> <span class="s1">&#39;units&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+                    <span class="c1"># Hard-code single-drizzle to always returns &#39;cps&#39;</span>
+                    <span class="n">paramDict</span><span class="p">[</span><span class="n">par</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;cps&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">paramDict</span><span class="p">[</span><span class="n">par</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="n">section_name</span><span class="p">][</span><span class="n">driz_prefix</span><span class="o">+</span><span class="n">par</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="n">section_name</span><span class="p">][</span><span class="n">driz_prefix</span><span class="o">+</span><span class="n">par</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">cfunc_pars</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">cfunc_pars</span><span class="p">[</span><span class="n">par</span><span class="p">](</span><span class="n">val</span><span class="p">)</span>
+                <span class="n">paramDict</span><span class="p">[</span><span class="n">par</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Interpreted paramDict with single=</span><span class="si">{}</span><span class="s2"> as:</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">single</span><span class="p">,</span><span class="n">paramDict</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">paramDict</span></div>
+
+<span class="k">def</span> <span class="nf">_setDefaults</span><span class="p">(</span><span class="n">configObj</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;set up the default parameters to run drizzle</span>
+<span class="sd">       build,single,units,wt_scl,pixfrac,kernel,fillval,</span>
+<span class="sd">       rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data</span>
+
+<span class="sd">       Used exclusively for unit-testing, if any are defined.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">paramDict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;build&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+              <span class="s2">&quot;single&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+              <span class="s2">&quot;stepsize&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span>
+              <span class="s2">&quot;in_units&quot;</span><span class="p">:</span><span class="s2">&quot;cps&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;wt_scl&quot;</span><span class="p">:</span><span class="mf">1.</span><span class="p">,</span>
+              <span class="s2">&quot;pixfrac&quot;</span><span class="p">:</span><span class="mf">1.</span><span class="p">,</span>
+              <span class="s2">&quot;kernel&quot;</span><span class="p">:</span><span class="s2">&quot;square&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;fillval&quot;</span><span class="p">:</span><span class="mf">999.</span><span class="p">,</span>
+              <span class="s2">&quot;maskval&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="s2">&quot;rot&quot;</span><span class="p">:</span><span class="mf">0.</span><span class="p">,</span>
+              <span class="s2">&quot;scale&quot;</span><span class="p">:</span><span class="mf">1.</span><span class="p">,</span>
+              <span class="s2">&quot;xsh&quot;</span><span class="p">:</span><span class="mf">0.</span><span class="p">,</span>
+              <span class="s2">&quot;ysh&quot;</span><span class="p">:</span><span class="mf">0.</span><span class="p">,</span>
+              <span class="s2">&quot;blotnx&quot;</span><span class="p">:</span><span class="mi">2048</span><span class="p">,</span>
+              <span class="s2">&quot;blotny&quot;</span><span class="p">:</span><span class="mi">2048</span><span class="p">,</span>
+              <span class="s2">&quot;outnx&quot;</span><span class="p">:</span><span class="mi">4096</span><span class="p">,</span>
+              <span class="s2">&quot;outny&quot;</span><span class="p">:</span><span class="mi">4096</span><span class="p">,</span>
+              <span class="s2">&quot;data&quot;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+              <span class="s2">&quot;driz_separate&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+              <span class="s2">&quot;driz_combine&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">configObj</span><span class="p">)</span> <span class="o">!=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">configObj</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">paramDict</span>
+
+<div class="viewcode-block" id="interpret_maskval"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.interpret_maskval">[docs]</a><span class="k">def</span> <span class="nf">interpret_maskval</span><span class="p">(</span><span class="n">paramDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Apply logic for interpreting final_maskval value...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># interpret user specified final_maskval value to use for initializing</span>
+    <span class="c1"># output SCI array...</span>
+    <span class="k">if</span> <span class="s1">&#39;maskval&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="n">maskval</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;maskval&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">maskval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">maskval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">maskval</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">maskval</span><span class="p">)</span> <span class="c1"># just to be clear and absolutely sure...</span>
+    <span class="k">return</span> <span class="n">maskval</span></div>
+
+<div class="viewcode-block" id="run_driz"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.run_driz">[docs]</a><span class="k">def</span> <span class="nf">run_driz</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="n">paramDict</span><span class="p">,</span><span class="n">single</span><span class="p">,</span><span class="n">build</span><span class="p">,</span><span class="n">wcsmap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Perform drizzle operation on input to create output.</span>
+<span class="sd">    The input parameters originally was a list</span>
+<span class="sd">    of dictionaries, one for each input, that matches the</span>
+<span class="sd">    primary parameters for an ``IRAF`` `drizzle` task.</span>
+
+<span class="sd">    This method would then loop over all the entries in the</span>
+<span class="sd">    list and run `drizzle` for each entry.</span>
+
+<span class="sd">    Parameters required for input in paramDict:</span>
+<span class="sd">        build,single,units,wt_scl,pixfrac,kernel,fillval,</span>
+<span class="sd">        rot,scale,xsh,ysh,blotnx,blotny,outnx,outny,data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Insure that input imageObject is a list</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">imageObjectList</span> <span class="o">=</span> <span class="p">[</span><span class="n">imageObjectList</span><span class="p">]</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Setup the versions info dictionary for output to PRIMARY header</span>
+    <span class="c1"># The keys will be used as the name reported in the header, as-is</span>
+    <span class="c1">#</span>
+    <span class="n">_versions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;AstroDrizzle&#39;</span><span class="p">:</span><span class="n">__version__</span><span class="p">,</span>
+                 <span class="s1">&#39;PyFITS&#39;</span><span class="p">:</span><span class="n">util</span><span class="o">.</span><span class="n">__fits_version__</span><span class="p">,</span>
+                 <span class="s1">&#39;Numpy&#39;</span><span class="p">:</span><span class="n">util</span><span class="o">.</span><span class="n">__numpy_version__</span><span class="p">}</span>
+
+    <span class="c1"># Set sub-sampling rate for drizzling</span>
+    <span class="c1">#stepsize = 2.0</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;  **Using sub-sampling value of </span><span class="si">%s</span><span class="s1"> for kernel </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+             <span class="p">(</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;stepsize&#39;</span><span class="p">],</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;kernel&#39;</span><span class="p">]))</span>
+
+    <span class="n">maskval</span> <span class="o">=</span> <span class="n">interpret_maskval</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+
+    <span class="n">outwcs</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">output_wcs</span><span class="p">)</span>
+
+    <span class="c1"># Check for existance of output file.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">single</span> <span class="ow">and</span> <span class="n">build</span> <span class="ow">and</span>
+        <span class="n">fileutil</span><span class="o">.</span><span class="n">findFile</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;outFinal&#39;</span><span class="p">])):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Removing previous output product...&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;outFinal&#39;</span><span class="p">])</span>
+
+    <span class="c1"># print out parameters being used for drizzling</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running Drizzle to create output frame with WCS of: &quot;</span><span class="p">)</span>
+    <span class="n">output_wcs</span><span class="o">.</span><span class="n">printwcs</span><span class="p">()</span>
+
+    <span class="c1"># Will we be running in parallel?</span>
+    <span class="n">pool_size</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">get_pool_size</span><span class="p">(</span><span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_cores&#39;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">))</span>
+    <span class="n">will_parallel</span> <span class="o">=</span> <span class="n">single</span> <span class="ow">and</span> <span class="n">pool_size</span> <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">will_parallel</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Executing </span><span class="si">%d</span><span class="s1"> parallel workers&#39;</span> <span class="o">%</span> <span class="n">pool_size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">single</span><span class="p">:</span> <span class="c1"># not yet an option for final drizzle, msg would confuse</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Executing serially&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Set parameters for each input and run drizzle on it here.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Perform drizzling...</span>
+
+    <span class="n">numctx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="n">numctx</span> <span class="o">+=</span> <span class="n">img</span><span class="o">.</span><span class="n">_nmembers</span>
+    <span class="n">_numctx</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;all&#39;</span><span class="p">:</span><span class="n">numctx</span><span class="p">}</span>
+
+    <span class="c1">#            if single:</span>
+    <span class="c1"># Determine how many chips make up each single image</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="n">img</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+            <span class="n">plsingle</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;outSingle&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">plsingle</span> <span class="ow">in</span> <span class="n">_numctx</span><span class="p">:</span> <span class="n">_numctx</span><span class="p">[</span><span class="n">plsingle</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">_numctx</span><span class="p">[</span><span class="n">plsingle</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># Compute how many planes will be needed for the context image.</span>
+    <span class="n">_nplanes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">_numctx</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="c1"># For single drizzling or when context is turned off,</span>
+    <span class="c1"># minimize to 1 plane only...</span>
+    <span class="k">if</span> <span class="n">single</span> <span class="ow">or</span> <span class="n">imageObjectList</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;outContext&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">]:</span>
+        <span class="n">_nplanes</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># An image buffer needs to be setup for converting the input</span>
+    <span class="c1"># arrays (sci and wht) from FITS format to native format</span>
+    <span class="c1"># with respect to byteorder and byteswapping.</span>
+    <span class="c1"># This buffer should be reused for each input if possible.</span>
+    <span class="c1">#</span>
+    <span class="n">_outsci</span> <span class="o">=</span> <span class="n">_outwht</span> <span class="o">=</span> <span class="n">_outctx</span> <span class="o">=</span> <span class="n">_hdrlist</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">single</span><span class="p">)</span> <span class="ow">or</span> \
+       <span class="p">(</span> <span class="p">(</span><span class="n">single</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">will_parallel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">imageObjectList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">inmemory</span><span class="p">)</span> <span class="p">):</span>
+        <span class="c1"># Note there are four cases/combinations for single drizzle alone here:</span>
+        <span class="c1"># (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)</span>
+        <span class="c1">#_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)</span>
+        <span class="n">_outsci</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">_outsci</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">maskval</span><span class="p">)</span>
+        <span class="n">_outwht</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="c1"># initialize context to 3-D array but only pass appropriate plane to drizzle as needed</span>
+        <span class="n">_outctx</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">_nplanes</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">_hdrlist</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Keep track of how many chips have been processed</span>
+    <span class="c1"># For single case, this will determine when to close</span>
+    <span class="c1"># one product and open the next.</span>
+    <span class="n">_chipIdx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Remember the name of the 1st image that goes into this particular product</span>
+    <span class="c1"># Insure that the header reports the proper values for the start of the</span>
+    <span class="c1"># exposure time used to make this; in particular, TIME-OBS and DATE-OBS.</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Work on each image</span>
+    <span class="c1">#</span>
+    <span class="n">subprocs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+
+        <span class="n">chiplist</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">)</span>
+
+        <span class="c1"># How many inputs should go into this product?</span>
+        <span class="n">num_in_prod</span> <span class="o">=</span> <span class="n">_numctx</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+            <span class="n">num_in_prod</span> <span class="o">=</span> <span class="n">_numctx</span><span class="p">[</span><span class="n">chiplist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;outSingle&#39;</span><span class="p">]]</span>
+
+        <span class="c1"># The name of the 1st image</span>
+        <span class="n">fnames</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="n">chiplist</span><span class="p">:</span>
+            <span class="n">fnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">_chipIdx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">fnames</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">template</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fnames</span><span class="p">)</span>
+
+        <span class="c1"># Work each image, possibly in parallel</span>
+        <span class="k">if</span> <span class="n">will_parallel</span><span class="p">:</span>
+            <span class="c1"># use multiprocessing.Manager only if in parallel and in memory</span>
+            <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">inmemory</span><span class="p">:</span>
+                <span class="n">manager</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Manager</span><span class="p">()</span>
+                <span class="n">dproxy</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">virtualOutputs</span><span class="p">)</span> <span class="c1"># copy &amp; wrap it in proxy</span>
+                <span class="n">img</span><span class="o">.</span><span class="n">virtualOutputs</span> <span class="o">=</span> <span class="n">dproxy</span>
+
+            <span class="c1"># parallelize run_driz_img (currently for separate drizzle only)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">run_driz_img</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s1">&#39;adrizzle.run_driz_img()&#39;</span><span class="p">,</span> <span class="c1"># for err msgs</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">chiplist</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="n">outwcs</span><span class="p">,</span><span class="n">template</span><span class="p">,</span><span class="n">paramDict</span><span class="p">,</span>
+                      <span class="n">single</span><span class="p">,</span><span class="n">num_in_prod</span><span class="p">,</span><span class="n">build</span><span class="p">,</span><span class="n">_versions</span><span class="p">,</span><span class="n">_numctx</span><span class="p">,</span><span class="n">_nplanes</span><span class="p">,</span>
+                      <span class="n">_chipIdx</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="n">wcsmap</span><span class="p">))</span>
+            <span class="n">subprocs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># serial run_driz_img run (either separate drizzle or final drizzle)</span>
+            <span class="n">run_driz_img</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">chiplist</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="n">outwcs</span><span class="p">,</span><span class="n">template</span><span class="p">,</span><span class="n">paramDict</span><span class="p">,</span>
+                         <span class="n">single</span><span class="p">,</span><span class="n">num_in_prod</span><span class="p">,</span><span class="n">build</span><span class="p">,</span><span class="n">_versions</span><span class="p">,</span><span class="n">_numctx</span><span class="p">,</span><span class="n">_nplanes</span><span class="p">,</span>
+                         <span class="n">_chipIdx</span><span class="p">,</span><span class="n">_outsci</span><span class="p">,</span><span class="n">_outwht</span><span class="p">,</span><span class="n">_outctx</span><span class="p">,</span><span class="n">_hdrlist</span><span class="p">,</span><span class="n">wcsmap</span><span class="p">)</span>
+
+        <span class="c1"># Increment/reset master chip counter</span>
+        <span class="n">_chipIdx</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chiplist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_chipIdx</span> <span class="o">==</span> <span class="n">num_in_prod</span><span class="p">:</span>
+            <span class="n">_chipIdx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># do the join if we spawned tasks</span>
+    <span class="k">if</span> <span class="n">will_parallel</span><span class="p">:</span>
+        <span class="n">mputil</span><span class="o">.</span><span class="n">launch_and_wait</span><span class="p">(</span><span class="n">subprocs</span><span class="p">,</span> <span class="n">pool_size</span><span class="p">)</span> <span class="c1"># blocks till all done</span>
+
+    <span class="k">del</span> <span class="n">_outsci</span><span class="p">,</span><span class="n">_outwht</span><span class="p">,</span><span class="n">_outctx</span><span class="p">,</span><span class="n">_hdrlist</span></div>
+    <span class="c1"># have looped over each img/chip</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># Still to check:</span>
+<span class="c1">#    - why have both output_wcs and outwcs?</span>
+
+<div class="viewcode-block" id="run_driz_img"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.run_driz_img">[docs]</a><span class="k">def</span> <span class="nf">run_driz_img</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">chiplist</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="n">outwcs</span><span class="p">,</span><span class="n">template</span><span class="p">,</span><span class="n">paramDict</span><span class="p">,</span><span class="n">single</span><span class="p">,</span>
+                 <span class="n">num_in_prod</span><span class="p">,</span><span class="n">build</span><span class="p">,</span><span class="n">_versions</span><span class="p">,</span><span class="n">_numctx</span><span class="p">,</span><span class="n">_nplanes</span><span class="p">,</span><span class="n">chipIdxCopy</span><span class="p">,</span>
+                 <span class="n">_outsci</span><span class="p">,</span><span class="n">_outwht</span><span class="p">,</span><span class="n">_outctx</span><span class="p">,</span><span class="n">_hdrlist</span><span class="p">,</span><span class="n">wcsmap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Perform the drizzle operation on a single image.</span>
+<span class="sd">    This is separated out from :py:func:`run_driz` so as to keep together</span>
+<span class="sd">    the entirety of the code which is inside the loop over</span>
+<span class="sd">    images.  See the :py:func:`run_driz` code for more documentation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">maskval</span> <span class="o">=</span> <span class="n">interpret_maskval</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+
+
+    <span class="c1"># Check for unintialized inputs</span>
+    <span class="n">here</span> <span class="o">=</span> <span class="n">_outsci</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_outwht</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_outctx</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">_outsci</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1">#_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)</span>
+        <span class="n">_outsci</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+            <span class="n">_outsci</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_outsci</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">maskval</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_outwht</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_outwht</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_outctx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_outctx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">_nplanes</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">,</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_hdrlist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_hdrlist</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Work on each chip - note that they share access to the arrays above</span>
+    <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="n">chiplist</span><span class="p">:</span>
+        <span class="c1"># See if we will be writing out data</span>
+        <span class="n">doWrite</span> <span class="o">=</span> <span class="n">chipIdxCopy</span> <span class="o">==</span> <span class="n">num_in_prod</span><span class="o">-</span><span class="mi">1</span>
+
+<span class="c1">#       debuglog(&#39;#chips=&#39;+str(chipIdxCopy)+&#39;, num_in_prod=&#39;+\</span>
+<span class="c1">#                 str(num_in_prod)+&#39;, single=&#39;+str(single)+&#39;, write=&#39;+\</span>
+<span class="c1">#                 str(doWrite)+&#39;, here=&#39;+str(here))</span>
+
+        <span class="c1"># run_driz_chip</span>
+        <span class="n">run_driz_chip</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">chip</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="n">outwcs</span><span class="p">,</span><span class="n">template</span><span class="p">,</span><span class="n">paramDict</span><span class="p">,</span>
+                      <span class="n">single</span><span class="p">,</span><span class="n">doWrite</span><span class="p">,</span><span class="n">build</span><span class="p">,</span><span class="n">_versions</span><span class="p">,</span><span class="n">_numctx</span><span class="p">,</span><span class="n">_nplanes</span><span class="p">,</span>
+                      <span class="n">chipIdxCopy</span><span class="p">,</span><span class="n">_outsci</span><span class="p">,</span><span class="n">_outwht</span><span class="p">,</span><span class="n">_outctx</span><span class="p">,</span><span class="n">_hdrlist</span><span class="p">,</span><span class="n">wcsmap</span><span class="p">)</span>
+
+        <span class="c1"># Increment chip counter (also done outside of this function)</span>
+        <span class="n">chipIdxCopy</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Reset for next output image...</span>
+    <span class="c1">#</span>
+    <span class="k">if</span> <span class="n">here</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">_outsci</span><span class="p">,</span><span class="n">_outwht</span><span class="p">,</span><span class="n">_outctx</span><span class="p">,</span><span class="n">_hdrlist</span>
+    <span class="k">elif</span> <span class="n">single</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">_outsci</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="n">_outsci</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">_outwht</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="n">_outwht</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">_outctx</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">_outctx</span><span class="p">)</span>
+        <span class="c1"># this was &quot;_hdrlist=[]&quot;, but we need to preserve the var ptr itself</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_hdrlist</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span> <span class="n">_hdrlist</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span></div>
+    <span class="c1"># else, these were intended to live and be used beyond this function call</span>
+
+    <span class="c1"># img.saveVirtualOutputs() has already been done in run_driz_chip (but</span>
+    <span class="c1"># only if single and doWrite)</span>
+
+
+<div class="viewcode-block" id="run_driz_chip"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.run_driz_chip">[docs]</a><span class="k">def</span> <span class="nf">run_driz_chip</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">chip</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="n">outwcs</span><span class="p">,</span><span class="n">template</span><span class="p">,</span><span class="n">paramDict</span><span class="p">,</span><span class="n">single</span><span class="p">,</span>
+                  <span class="n">doWrite</span><span class="p">,</span><span class="n">build</span><span class="p">,</span><span class="n">_versions</span><span class="p">,</span><span class="n">_numctx</span><span class="p">,</span><span class="n">_nplanes</span><span class="p">,</span><span class="n">_numchips</span><span class="p">,</span>
+                  <span class="n">_outsci</span><span class="p">,</span><span class="n">_outwht</span><span class="p">,</span><span class="n">_outctx</span><span class="p">,</span><span class="n">_hdrlist</span><span class="p">,</span><span class="n">wcsmap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Perform the drizzle operation on a single chip.</span>
+<span class="sd">    This is separated out from `run_driz_img` so as to keep together</span>
+<span class="sd">    the entirety of the code which is inside the loop over</span>
+<span class="sd">    chips.  See the `run_driz` code for more documentation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">time_pre_all</span><span class="p">,</span> <span class="n">time_driz_all</span><span class="p">,</span> <span class="n">time_post_all</span><span class="p">,</span> <span class="n">time_write_all</span>
+
+    <span class="n">epoch</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="c1"># Look for sky-subtracted product</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;outSky&#39;</span><span class="p">]):</span>
+        <span class="n">chipextn</span> <span class="o">=</span> <span class="s1">&#39;[&#39;</span><span class="o">+</span><span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extname&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extver&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39;]&#39;</span>
+        <span class="n">_expname</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;outSky&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">chipextn</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If sky-subtracted product does not exist, use regular input</span>
+        <span class="n">_expname</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;-Drizzle input: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">_expname</span><span class="p">)</span>
+
+    <span class="c1"># Open the SCI image</span>
+    <span class="n">_handle</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="n">_expname</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;readonly&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">_sciext</span> <span class="o">=</span> <span class="n">_handle</span><span class="p">[</span><span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extname&#39;</span><span class="p">],</span><span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extver&#39;</span><span class="p">]]</span>
+
+    <span class="c1"># Apply sky subtraction and unit conversion to input array</span>
+    <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">computedSky</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_insci</span> <span class="o">=</span> <span class="n">_sciext</span><span class="o">.</span><span class="n">data</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying sky value of </span><span class="si">%0.6f</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">computedSky</span><span class="p">,</span><span class="n">_expname</span><span class="p">))</span>
+        <span class="n">_insci</span> <span class="o">=</span> <span class="n">_sciext</span><span class="o">.</span><span class="n">data</span> <span class="o">-</span> <span class="n">chip</span><span class="o">.</span><span class="n">computedSky</span>
+    <span class="n">_insci</span> <span class="o">*=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span>
+
+    <span class="c1"># Set additional parameters needed by &#39;drizzle&#39;</span>
+    <span class="n">_in_units</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">in_units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">_in_units</span> <span class="o">==</span> <span class="s1">&#39;cps&#39;</span><span class="p">:</span>
+        <span class="n">_expin</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_expin</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>
+
+    <span class="c1">####</span>
+    <span class="c1">#</span>
+    <span class="c1"># Put the units keyword handling in the imageObject class</span>
+    <span class="c1">#</span>
+    <span class="c1">####</span>
+    <span class="c1"># Determine output value of BUNITS</span>
+    <span class="c1"># and make sure it is not specified as &#39;ergs/cm...&#39;</span>
+    <span class="n">_bunit</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_bunit</span>
+
+    <span class="n">_bindx</span> <span class="o">=</span> <span class="n">_bunit</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;cps&#39;</span><span class="p">:</span>
+        <span class="c1"># If BUNIT value does not specify count rate already...</span>
+        <span class="k">if</span> <span class="n">_bindx</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># ... append &#39;/SEC&#39; to value</span>
+            <span class="n">_bunit</span> <span class="o">+=</span> <span class="s1">&#39;/S&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># reset _bunit here to None so it does not</span>
+            <span class="c1">#    overwrite what is already in header</span>
+            <span class="n">_bunit</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_bindx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># remove &#39;/S&#39;</span>
+            <span class="n">_bunit</span> <span class="o">=</span> <span class="n">_bunit</span><span class="p">[:</span><span class="n">_bindx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># reset _bunit here to None so it does not</span>
+            <span class="c1">#    overwrite what is already in header</span>
+            <span class="n">_bunit</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">_uniqid</span> <span class="o">=</span> <span class="n">_numchips</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">_nplanes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># We need to reset what gets passed to TDRIZ</span>
+        <span class="c1"># when only 1 context image plane gets generated</span>
+        <span class="c1"># to prevent overflow problems with trying to access</span>
+        <span class="c1"># planes that weren&#39;t created for large numbers of inputs.</span>
+        <span class="n">_uniqid</span> <span class="o">=</span> <span class="p">((</span><span class="n">_uniqid</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">32</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># Select which mask needs to be read in for drizzling</span>
+    <span class="c1">####</span>
+    <span class="c1">#</span>
+    <span class="c1"># Actually need to generate mask file here &#39;on-demand&#39;</span>
+    <span class="c1"># and combine it with the static_mask for single_drizzle case...</span>
+    <span class="c1">#</span>
+    <span class="c1">####</span>
+    <span class="c1"># Build basic DQMask from DQ array and bits value</span>
+    <span class="n">dqarr</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">buildMask</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">,</span><span class="n">bits</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;bits&#39;</span><span class="p">])</span>
+
+    <span class="c1"># get correct mask filenames/objects</span>
+    <span class="n">staticMaskName</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;staticMask&#39;</span><span class="p">]</span>
+    <span class="n">crMaskName</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;crmaskImage&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">inmemory</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">staticMaskName</span> <span class="ow">in</span> <span class="n">img</span><span class="o">.</span><span class="n">virtualOutputs</span><span class="p">:</span>
+            <span class="n">staticMaskName</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">virtualOutputs</span><span class="p">[</span><span class="n">staticMaskName</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">crMaskName</span> <span class="ow">in</span> <span class="n">img</span><span class="o">.</span><span class="n">virtualOutputs</span><span class="p">:</span>
+            <span class="n">crMaskName</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">virtualOutputs</span><span class="p">[</span><span class="n">crMaskName</span><span class="p">]</span>
+
+    <span class="c1"># Merge appropriate additional mask(s) with DQ mask</span>
+    <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+        <span class="n">mergeDQarray</span><span class="p">(</span><span class="n">staticMaskName</span><span class="p">,</span><span class="n">dqarr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dqarr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;All pixels masked out when applying static mask!&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mergeDQarray</span><span class="p">(</span><span class="n">staticMaskName</span><span class="p">,</span><span class="n">dqarr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dqarr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;All pixels masked out when applying static mask!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Only apply cosmic-ray mask when some good pixels remain after</span>
+            <span class="c1"># applying the static mask</span>
+            <span class="n">mergeDQarray</span><span class="p">(</span><span class="n">crMaskName</span><span class="p">,</span><span class="n">dqarr</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dqarr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;WARNING: All pixels masked out when applying &#39;</span>
+                            <span class="s1">&#39;cosmic ray mask to </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">_expname</span><span class="p">)</span>
+        <span class="n">updateInputDQArray</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">dqfile</span><span class="p">,</span><span class="n">chip</span><span class="o">.</span><span class="n">dq_extn</span><span class="p">,</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">,</span>
+                           <span class="n">crMaskName</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;crbit&#39;</span><span class="p">])</span>
+
+    <span class="n">img</span><span class="o">.</span><span class="n">set_wtscl</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">,</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">])</span>
+
+    <span class="n">pix_ratio</span> <span class="o">=</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">pscale</span> <span class="o">/</span> <span class="n">chip</span><span class="o">.</span><span class="n">wcslin_pscale</span>
+
+    <span class="c1"># Convert mask to a datatype expected by &#39;tdriz&#39;</span>
+    <span class="c1"># Also, base weight mask on ERR or IVM file as requested by user</span>
+    <span class="n">wht_type</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;wht_type&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">wht_type</span> <span class="o">==</span> <span class="s1">&#39;ERR&#39;</span><span class="p">:</span>
+        <span class="n">_inwht</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">buildERRmask</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">,</span><span class="n">dqarr</span><span class="p">,</span><span class="n">pix_ratio</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">wht_type</span> <span class="o">==</span> <span class="s1">&#39;IVM&#39;</span><span class="p">:</span>
+        <span class="n">_inwht</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">buildIVMmask</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">,</span><span class="n">dqarr</span><span class="p">,</span><span class="n">pix_ratio</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">wht_type</span> <span class="o">==</span> <span class="s1">&#39;EXP&#39;</span><span class="p">:</span>
+        <span class="n">_inwht</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">buildEXPmask</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">_chip</span><span class="p">,</span><span class="n">dqarr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># wht_type == None, used for single drizzle images</span>
+        <span class="n">_inwht</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span> <span class="o">*</span> <span class="n">dqarr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;clean&#39;</span><span class="p">]):</span>
+        <span class="c1"># Write out mask file if &#39;clean&#39; has been turned off</span>
+        <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+            <span class="n">step_mask</span> <span class="o">=</span> <span class="s1">&#39;singleDrizMask&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">step_mask</span> <span class="o">=</span> <span class="s1">&#39;finalMask&#39;</span>
+
+        <span class="n">_outmaskname</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="n">step_mask</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_outmaskname</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_outmaskname</span><span class="p">)</span>
+        <span class="n">pimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">PrimaryHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">_inwht</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">saveVirtualOutputs</span><span class="p">({</span><span class="n">step_mask</span><span class="p">:</span><span class="n">pimg</span><span class="p">})</span>
+        <span class="c1"># Only write out mask files if in_memory=False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">img</span><span class="o">.</span><span class="n">inmemory</span><span class="p">:</span>
+            <span class="n">pimg</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">_outmaskname</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">pimg</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Writing out mask file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">_outmaskname</span><span class="p">)</span>
+
+    <span class="n">time_pre</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">epoch</span><span class="p">;</span> <span class="n">epoch</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="c1"># New interface to performing the drizzle operation on a single chip/image</span>
+    <span class="n">_vers</span> <span class="o">=</span> <span class="n">do_driz</span><span class="p">(</span><span class="n">_insci</span><span class="p">,</span> <span class="n">chip</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span> <span class="n">_inwht</span><span class="p">,</span> <span class="n">outwcs</span><span class="p">,</span> <span class="n">_outsci</span><span class="p">,</span> <span class="n">_outwht</span><span class="p">,</span> <span class="n">_outctx</span><span class="p">,</span>
+                <span class="n">_expin</span><span class="p">,</span> <span class="n">_in_units</span><span class="p">,</span> <span class="n">chip</span><span class="o">.</span><span class="n">_wtscl</span><span class="p">,</span>
+                <span class="n">wcslin_pscale</span><span class="o">=</span><span class="n">chip</span><span class="o">.</span><span class="n">wcslin_pscale</span><span class="p">,</span> <span class="n">uniqid</span><span class="o">=</span><span class="n">_uniqid</span><span class="p">,</span>
+                <span class="n">pixfrac</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;pixfrac&#39;</span><span class="p">],</span> <span class="n">kernel</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;kernel&#39;</span><span class="p">],</span>
+                <span class="n">fillval</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;fillval&#39;</span><span class="p">],</span> <span class="n">stepsize</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;stepsize&#39;</span><span class="p">],</span>
+                <span class="n">wcsmap</span><span class="o">=</span><span class="n">wcsmap</span><span class="p">)</span>
+    <span class="n">time_driz</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">epoch</span><span class="p">;</span> <span class="n">epoch</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="c1"># Set up information for generating output FITS image</span>
+    <span class="c1">#### Check to see what names need to be included here for use in _hdrlist</span>
+    <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;driz_version&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_vers</span>
+    <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;driz_wcskey&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;wcskey&#39;</span><span class="p">]</span>
+    <span class="n">outputvals</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Update entries for names/values based on final output</span>
+    <span class="n">outputvals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">outputValues</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">img</span><span class="o">.</span><span class="n">outputNames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kw</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;out&#39;</span><span class="p">:</span>
+            <span class="n">outputvals</span><span class="p">[</span><span class="n">kw</span><span class="p">]</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="n">kw</span><span class="p">]</span>
+    <span class="n">outputvals</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>
+    <span class="n">outputvals</span><span class="p">[</span><span class="s1">&#39;expstart&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_expstart</span>
+    <span class="n">outputvals</span><span class="p">[</span><span class="s1">&#39;expend&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_expend</span>
+
+    <span class="n">outputvals</span><span class="p">[</span><span class="s1">&#39;wt_scl_val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_wtscl</span>
+
+    <span class="n">_hdrlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outputvals</span><span class="p">)</span>
+    <span class="n">time_post</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">epoch</span><span class="p">;</span> <span class="n">epoch</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">doWrite</span><span class="p">:</span>
+        <span class="c1">###########################</span>
+        <span class="c1">#</span>
+        <span class="c1">#   IMPLEMENTATION REQUIREMENT:</span>
+        <span class="c1">#</span>
+        <span class="c1"># Need to implement scaling of the output image</span>
+        <span class="c1"># from &#39;cps&#39; to &#39;counts&#39; in the case where &#39;units&#39;</span>
+        <span class="c1"># was set to &#39;counts&#39;... 21-Mar-2005</span>
+        <span class="c1">#</span>
+        <span class="c1">###########################</span>
+
+        <span class="c1"># Convert output data from electrons/sec to counts/sec as specified</span>
+        <span class="n">native_units</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">native_units</span>
+        <span class="k">if</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span> <span class="ow">and</span> <span class="n">native_units</span><span class="o">.</span><span class="n">lower</span><span class="p">()[:</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;counts&#39;</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">_outsci</span><span class="p">,</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span><span class="p">,</span> <span class="n">_outsci</span><span class="p">)</span>
+            <span class="n">_bunit</span> <span class="o">=</span> <span class="n">native_units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;counts&#39;</span><span class="p">:</span>
+                <span class="n">indx</span> <span class="o">=</span> <span class="n">_bunit</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">indx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">_bunit</span> <span class="o">=</span> <span class="n">_bunit</span><span class="p">[:</span><span class="n">indx</span><span class="p">]</span>
+
+        <span class="c1"># record IDCSCALE for output to product header</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;idcscale&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">idcscale</span>
+        <span class="c1">#If output units were set to &#39;counts&#39;, rescale the array in-place</span>
+        <span class="k">if</span> <span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;counts&#39;</span><span class="p">:</span>
+            <span class="c1">#determine what exposure time needs to be used</span>
+            <span class="c1"># to rescale the product.</span>
+            <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+                <span class="n">_expscale</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_expscale</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">outputValues</span><span class="p">[</span><span class="s1">&#39;texptime&#39;</span><span class="p">]</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">_outsci</span><span class="p">,</span> <span class="n">_expscale</span><span class="p">,</span> <span class="n">_outsci</span><span class="p">)</span>
+        <span class="c1">#</span>
+        <span class="c1"># Write output arrays to FITS file(s)</span>
+        <span class="c1">#</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">single</span><span class="p">:</span>
+            <span class="n">img</span><span class="o">.</span><span class="n">inmemory</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">_outimg</span> <span class="o">=</span> <span class="n">outputimage</span><span class="o">.</span><span class="n">OutputImage</span><span class="p">(</span><span class="n">_hdrlist</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">,</span> <span class="n">build</span><span class="o">=</span><span class="n">build</span><span class="p">,</span>
+                                          <span class="n">wcs</span><span class="o">=</span><span class="n">output_wcs</span><span class="p">,</span> <span class="n">single</span><span class="o">=</span><span class="n">single</span><span class="p">)</span>
+        <span class="n">_outimg</span><span class="o">.</span><span class="n">set_bunit</span><span class="p">(</span><span class="n">_bunit</span><span class="p">)</span>
+        <span class="n">_outimg</span><span class="o">.</span><span class="n">set_units</span><span class="p">(</span><span class="n">paramDict</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">])</span>
+        <span class="n">outimgs</span> <span class="o">=</span> <span class="n">_outimg</span><span class="o">.</span><span class="n">writeFITS</span><span class="p">(</span><span class="n">template</span><span class="p">,</span><span class="n">_outsci</span><span class="p">,</span><span class="n">_outwht</span><span class="p">,</span><span class="n">ctxarr</span><span class="o">=</span><span class="n">_outctx</span><span class="p">,</span>
+                                        <span class="n">versions</span><span class="o">=</span><span class="n">_versions</span><span class="p">,</span><span class="n">virtual</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">inmemory</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">_outimg</span>
+
+        <span class="c1"># update imageObject with product in memory</span>
+        <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+            <span class="n">img</span><span class="o">.</span><span class="n">saveVirtualOutputs</span><span class="p">(</span><span class="n">outimgs</span><span class="p">)</span>
+
+    <span class="c1"># this is after the doWrite</span>
+    <span class="n">time_write</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">epoch</span><span class="p">;</span> <span class="n">epoch</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">if</span> <span class="kc">False</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">single</span><span class="p">:</span> <span class="c1"># turn off all this perf reporting for now</span>
+        <span class="n">time_pre_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_pre</span><span class="p">)</span>
+        <span class="n">time_driz_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_driz</span><span class="p">)</span>
+        <span class="n">time_post_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_post</span><span class="p">)</span>
+        <span class="n">time_write_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_write</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip time pre-drizzling:  </span><span class="si">%6.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">time_pre</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip time drizzling:      </span><span class="si">%6.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">time_driz</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip time post-drizzling: </span><span class="si">%6.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">time_post</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip time writing output: </span><span class="si">%6.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">time_write</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">doWrite</span><span class="p">:</span>
+            <span class="n">tot_pre</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">time_pre_all</span><span class="p">)</span>
+            <span class="n">tot_driz</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">time_driz_all</span><span class="p">)</span>
+            <span class="n">tot_post</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">time_post_all</span><span class="p">)</span>
+            <span class="n">tot_write</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">time_write_all</span><span class="p">)</span>
+            <span class="n">tot</span> <span class="o">=</span> <span class="n">tot_pre</span><span class="o">+</span><span class="n">tot_driz</span><span class="o">+</span><span class="n">tot_post</span><span class="o">+</span><span class="n">tot_write</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip total pre-drizzling:  </span><span class="si">%6.3f</span><span class="s1"> (</span><span class="si">%4.1f%%</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tot_pre</span><span class="p">,</span>   <span class="p">(</span><span class="mf">100.</span><span class="o">*</span><span class="n">tot_pre</span><span class="o">/</span><span class="n">tot</span><span class="p">)))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip total drizzling:      </span><span class="si">%6.3f</span><span class="s1"> (</span><span class="si">%4.1f%%</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tot_driz</span><span class="p">,</span>  <span class="p">(</span><span class="mf">100.</span><span class="o">*</span><span class="n">tot_driz</span><span class="o">/</span><span class="n">tot</span><span class="p">)))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip total post-drizzling: </span><span class="si">%6.3f</span><span class="s1"> (</span><span class="si">%4.1f%%</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tot_post</span><span class="p">,</span>  <span class="p">(</span><span class="mf">100.</span><span class="o">*</span><span class="n">tot_post</span><span class="o">/</span><span class="n">tot</span><span class="p">)))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;chip total writing output: </span><span class="si">%6.3f</span><span class="s1"> (</span><span class="si">%4.1f%%</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tot_write</span><span class="p">,</span> <span class="p">(</span><span class="mf">100.</span><span class="o">*</span><span class="n">tot_write</span><span class="o">/</span><span class="n">tot</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="do_driz"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.do_driz">[docs]</a><span class="k">def</span> <span class="nf">do_driz</span><span class="p">(</span><span class="n">insci</span><span class="p">,</span> <span class="n">input_wcs</span><span class="p">,</span> <span class="n">inwht</span><span class="p">,</span>
+            <span class="n">output_wcs</span><span class="p">,</span> <span class="n">outsci</span><span class="p">,</span> <span class="n">outwht</span><span class="p">,</span> <span class="n">outcon</span><span class="p">,</span>
+            <span class="n">expin</span><span class="p">,</span> <span class="n">in_units</span><span class="p">,</span> <span class="n">wt_scl</span><span class="p">,</span>
+            <span class="n">wcslin_pscale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">uniqid</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pixfrac</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="s1">&#39;square&#39;</span><span class="p">,</span>
+            <span class="n">fillval</span><span class="o">=</span><span class="s2">&quot;INDEF&quot;</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">wcsmap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Core routine for performing &#39;drizzle&#39; operation on a single input image</span>
+<span class="sd">    All input values will be Python objects such as ndarrays, instead</span>
+<span class="sd">    of filenames.</span>
+<span class="sd">    File handling (input and output) will be performed by calling routine.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Insure that the fillval parameter gets properly interpreted for use with tdriz</span>
+    <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">fillval</span><span class="p">):</span>
+        <span class="n">fillval</span> <span class="o">=</span> <span class="s1">&#39;INDEF&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fillval</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fillval</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">in_units</span> <span class="o">==</span> <span class="s1">&#39;cps&#39;</span><span class="p">:</span>
+        <span class="n">expscale</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">expscale</span> <span class="o">=</span> <span class="n">expin</span>
+
+    <span class="c1"># Compute what plane of the context image this input would</span>
+    <span class="c1"># correspond to:</span>
+    <span class="n">planeid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">uniqid</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
+
+    <span class="c1"># Check if the context image has this many planes</span>
+    <span class="k">if</span> <span class="n">outcon</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">nplanes</span> <span class="o">=</span> <span class="n">outcon</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">outcon</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">nplanes</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nplanes</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">nplanes</span> <span class="o">&lt;=</span> <span class="n">planeid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Not enough planes in drizzle context image&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Alias context image to the requested plane if 3d</span>
+    <span class="k">if</span> <span class="n">outcon</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">outctx</span> <span class="o">=</span> <span class="n">outcon</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outctx</span> <span class="o">=</span> <span class="n">outcon</span><span class="p">[</span><span class="n">planeid</span><span class="p">]</span>
+
+    <span class="n">pix_ratio</span> <span class="o">=</span> <span class="n">output_wcs</span><span class="o">.</span><span class="n">pscale</span><span class="o">/</span><span class="n">wcslin_pscale</span>
+
+    <span class="k">if</span> <span class="n">wcsmap</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cdriz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Using WCSLIB-based coordinate transformation...&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;stepsize = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">stepsize</span><span class="p">)</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="n">cdriz</span><span class="o">.</span><span class="n">DefaultWCSMapping</span><span class="p">(</span><span class="n">input_wcs</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">input_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">input_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">),</span><span class="n">stepsize</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1">#</span>
+        <span class="c1">##Using the Python class for the WCS-based transformation</span>
+        <span class="c1">#</span>
+        <span class="c1"># Use user provided mapping function</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Using coordinate transformation defined by user...&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">wcsmap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wcsmap</span> <span class="o">=</span> <span class="n">wcs_functions</span><span class="o">.</span><span class="n">WCSMap</span>
+        <span class="n">wmap</span> <span class="o">=</span> <span class="n">wcsmap</span><span class="p">(</span><span class="n">input_wcs</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">)</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="n">wmap</span><span class="o">.</span><span class="n">forward</span>
+
+    <span class="n">_shift_fr</span> <span class="o">=</span> <span class="s1">&#39;output&#39;</span>
+    <span class="n">_shift_un</span> <span class="o">=</span> <span class="s1">&#39;output&#39;</span>
+    <span class="n">ystart</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">nmiss</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">nskip</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#</span>
+    <span class="c1"># This call to &#39;cdriz.tdriz&#39; uses the new C syntax</span>
+    <span class="c1">#</span>
+    <span class="n">_dny</span> <span class="o">=</span> <span class="n">insci</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Call &#39;drizzle&#39; to perform image combination</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">insci</span><span class="o">.</span><span class="n">dtype</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">):</span>
+        <span class="c1">#WARNING: Input array recast as a float32 array</span>
+        <span class="n">insci</span> <span class="o">=</span> <span class="n">insci</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">_vers</span><span class="p">,</span><span class="n">nmiss</span><span class="p">,</span><span class="n">nskip</span> <span class="o">=</span> <span class="n">cdriz</span><span class="o">.</span><span class="n">tdriz</span><span class="p">(</span><span class="n">insci</span><span class="p">,</span> <span class="n">inwht</span><span class="p">,</span> <span class="n">outsci</span><span class="p">,</span> <span class="n">outwht</span><span class="p">,</span>
+        <span class="n">outctx</span><span class="p">,</span> <span class="n">uniqid</span><span class="p">,</span> <span class="n">ystart</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">_dny</span><span class="p">,</span>
+        <span class="n">pix_ratio</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">pixfrac</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">,</span> <span class="n">in_units</span><span class="p">,</span> <span class="n">expscale</span><span class="p">,</span> <span class="n">wt_scl</span><span class="p">,</span>
+        <span class="n">fillval</span><span class="p">,</span> <span class="n">nmiss</span><span class="p">,</span> <span class="n">nskip</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nmiss</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;! </span><span class="si">%s</span><span class="s1"> points were outside the output image.&#39;</span> <span class="o">%</span> <span class="n">nmiss</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nskip</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;! Note, </span><span class="si">%s</span><span class="s1"> input lines were skipped completely.&#39;</span> <span class="o">%</span> <span class="n">nskip</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_vers</span></div>
+
+
+<div class="viewcode-block" id="get_data"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.get_data">[docs]</a><span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">fileroot</span><span class="p">,</span><span class="n">extn</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseFilename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">extname</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseExtn</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span> <span class="n">extname</span> <span class="o">=</span> <span class="s2">&quot;PRIMARY&quot;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fileroot</span><span class="p">):</span>
+        <span class="n">handle</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">handle</span><span class="p">[</span><span class="n">extname</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="create_output"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.create_output">[docs]</a><span class="k">def</span> <span class="nf">create_output</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">fileroot</span><span class="p">,</span><span class="n">extn</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseFilename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">extname</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseExtn</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span> <span class="n">extname</span> <span class="o">=</span> <span class="s2">&quot;PRIMARY&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fileroot</span><span class="p">):</span>
+        <span class="c1"># We need to create the new file</span>
+        <span class="n">pimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">()</span>
+        <span class="n">phdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">PrimaryHDU</span><span class="p">()</span>
+        <span class="n">phdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;NDRIZIM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">pimg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phdu</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">extn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Create a MEF file with the specified extname</span>
+            <span class="n">ehdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">arr</span><span class="p">)</span>
+            <span class="n">ehdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ehdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extname</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">pimg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ehdu</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Creating new output file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">fileroot</span><span class="p">)</span>
+        <span class="n">pimg</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">fileroot</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">pimg</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Updating existing output file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">fileroot</span><span class="p">)</span>
+
+    <span class="n">handle</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fileroot</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">handle</span><span class="p">,</span><span class="n">extname</span></div>
+
+
+<div class="viewcode-block" id="help"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.help">[docs]</a><span class="k">def</span> <span class="nf">help</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print out syntax help for running astrodrizzle</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file : str (Default = None)</span>
+<span class="sd">        If given, write out help to the filename specified by this parameter</span>
+<span class="sd">        Any previously existing file with this name will be deleted before</span>
+<span class="sd">        writing out the help.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">helpstr</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="getHelpAsString"><a class="viewcode-back" href="../../adrizzle.html#drizzlepac.adrizzle.getHelpAsString">[docs]</a><span class="k">def</span> <span class="nf">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return useful help from a file in the script directory</span>
+<span class="sd">    called ``__taskname__.help``</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">__package__</span><span class="p">)</span>
+    <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
+    <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">docstring</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">docstring</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">htmlfile</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">show_ver</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="o">+</span> \
+                <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;Version&#39;</span><span class="p">,</span> <span class="n">__version__</span><span class="p">,</span>
+                <span class="s1">&#39; updated on &#39;</span><span class="p">,</span> <span class="n">__vdate__</span><span class="p">])</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
+
+    <span class="k">return</span> <span class="n">helpString</span></div>
+
+
+<span class="n">drizzle</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

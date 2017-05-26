@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utility Functions &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Utility Functions &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,22 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.15 (26-May-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
-    <link rel="up" title="Utilities" href="util.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="WCS Utilities" href="wcsutils.html" />
     <link rel="prev" title="Utilities" href="util.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,11 +45,11 @@
         <li class="right" >
           <a href="util.html" title="Utilities"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="util.html" accesskey="U">Utilities</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -59,22 +60,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="wcsutils.html"
                         title="next chapter">WCS Utilities</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/utilfuncs.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/utilfuncs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -83,27 +83,25 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="utility-functions">
 <h1>Utility Functions<a class="headerlink" href="#utility-functions" title="Permalink to this headline">¶</a></h1>
-<p>These functions perform various small operations within <em class="xref py py-obj">Multidrizzle</em>.</p>
+<p>These functions perform various small operations within <code class="xref py py-obj docutils literal"><span class="pre">Multidrizzle</span></code>.</p>
 <span class="target" id="module-drizzlepac.util"></span><p>A library of utility functions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="class">
 <dt id="drizzlepac.util.ProcSteps">
-<em class="property">class </em><tt class="descclassname">drizzlepac.util.</tt><tt class="descname">ProcSteps</tt><a class="headerlink" href="#drizzlepac.util.ProcSteps" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">drizzlepac.util.</code><code class="descname">ProcSteps</code><a class="reference internal" href="_modules/drizzlepac/util.html#ProcSteps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.ProcSteps" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class allows MultiDrizzle to keep track of the
 start and end times of each processing step that gets run
 as well as computing/reporting the elapsed time for each step.</p>
@@ -114,7 +112,7 @@ the &#8216;endStep()&#8217; method to record the end and elapsed times.</p>
 of all the elapsed times and total run time.</p>
 <dl class="method">
 <dt id="drizzlepac.util.ProcSteps.addStep">
-<tt class="descname">addStep</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#drizzlepac.util.ProcSteps.addStep" title="Permalink to this definition">¶</a></dt>
+<code class="descname">addStep</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#ProcSteps.addStep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.ProcSteps.addStep" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add information about a new step to the dict of steps
 The value &#8216;ptime&#8217; is the output from &#8216;_ptime()&#8217; containing
 both the formatted and unformatted time for the start of the
@@ -123,7 +121,7 @@ step.</p>
 
 <dl class="method">
 <dt id="drizzlepac.util.ProcSteps.endStep">
-<tt class="descname">endStep</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#drizzlepac.util.ProcSteps.endStep" title="Permalink to this definition">¶</a></dt>
+<code class="descname">endStep</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#ProcSteps.endStep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.ProcSteps.endStep" title="Permalink to this definition">¶</a></dt>
 <dd><p>Record the end time for the step.</p>
 <p>If key==None, simply record ptime as end time for class to represent
 the overall runtime since the initialization of the class.</p>
@@ -131,7 +129,7 @@ the overall runtime since the initialization of the class.</p>
 
 <dl class="method">
 <dt id="drizzlepac.util.ProcSteps.reportTimes">
-<tt class="descname">reportTimes</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.util.ProcSteps.reportTimes" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reportTimes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#ProcSteps.reportTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.ProcSteps.reportTimes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out a formatted summary of the elapsed times for all the
 performed steps.</p>
 </dd></dl>
@@ -140,12 +138,19 @@ performed steps.</p>
 
 <dl class="class">
 <dt id="drizzlepac.util.WithLogging">
-<em class="property">class </em><tt class="descclassname">drizzlepac.util.</tt><tt class="descname">WithLogging</tt><a class="headerlink" href="#drizzlepac.util.WithLogging" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">drizzlepac.util.</code><code class="descname">WithLogging</code><a class="reference internal" href="_modules/drizzlepac/util.html#WithLogging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.WithLogging" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="drizzlepac.util.applyUserPars_steps">
+<code class="descclassname">drizzlepac.util.</code><code class="descname">applyUserPars_steps</code><span class="sig-paren">(</span><em>configObj</em>, <em>input_dict</em>, <em>step='3a'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#applyUserPars_steps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.applyUserPars_steps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply logic to turn on use of user-specified output WCS if user provides
+any parameter on command-line regardless of how final_wcs was set.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="drizzlepac.util.atfile_ivm">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">atfile_ivm</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.util.atfile_ivm" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">atfile_ivm</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#atfile_ivm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.atfile_ivm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the filename of the IVM file
 which is assumed to be the second word
 in the atfile the user gave.</p>
@@ -153,7 +158,7 @@ in the atfile the user gave.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.atfile_sci">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">atfile_sci</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.util.atfile_sci" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">atfile_sci</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#atfile_sci"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.atfile_sci" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the filename of the science image
 which is assumed to be the first word
 in the atfile the user gave.</p>
@@ -161,42 +166,40 @@ in the atfile the user gave.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.base_taskname">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">base_taskname</tt><big>(</big><em>taskname</em>, <em>packagename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.base_taskname" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">base_taskname</code><span class="sig-paren">(</span><em>taskname</em>, <em>packagename=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#base_taskname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.base_taskname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract the base name of the task.</p>
-<p>Many tasks in the <tt class="xref py py-obj docutils literal"><span class="pre">drizzlepac</span></tt> have &#8220;compound&#8221; names such as
+<p>Many tasks in the <code class="xref py py-obj docutils literal"><span class="pre">drizzlepac</span></code> have &#8220;compound&#8221; names such as
 &#8216;drizzlepac.sky&#8217;. This function will search for the presence of a dot
-in the input <em class="xref py py-obj">taskname</em> and if found, it will return the string
+in the input <code class="xref py py-obj docutils literal"><span class="pre">taskname</span></code> and if found, it will return the string
 to the right of the right-most dot. If a dot is not found, it will return
 the input string.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : str, None</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : str, None</p>
 <blockquote>
-<div><p>Full task name. If it is <em class="xref py py-obj">None</em>, <a class="reference internal" href="#drizzlepac.util.base_taskname" title="drizzlepac.util.base_taskname"><tt class="xref py py-func docutils literal"><span class="pre">base_taskname</span></tt></a> will
-return <em class="xref py py-obj">None</em>.</p>
+<div><p>Full task name. If it is <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, <a class="reference internal" href="#drizzlepac.util.base_taskname" title="drizzlepac.util.base_taskname"><code class="xref py py-func docutils literal"><span class="pre">base_taskname</span></code></a> will
+return <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>.</p>
 </div></blockquote>
 <p><strong id="packagename">packagename</strong> : str, None (Default = None)</p>
 <blockquote>
 <div><p>Package name. It is assumed that a compound task name is formed by
-concatenating <em class="xref py py-obj">packagename</em> + &#8216;.&#8217; + <em class="xref py py-obj">taskname</em>. If <em class="xref py py-obj">packagename</em>
-is not <em class="xref py py-obj">None</em>, <a class="reference internal" href="#drizzlepac.util.base_taskname" title="drizzlepac.util.base_taskname"><tt class="xref py py-func docutils literal"><span class="pre">base_taskname</span></tt></a> will check that the string
-to the left of the right-most dot matches <em class="xref py py-obj">packagename</em> and will
-raise an <em class="xref py py-obj">AssertionError</em> if the package name derived from the
-input <em class="xref py py-obj">taskname</em> does not match the supplied <em class="xref py py-obj">packagename</em>. This
+concatenating <code class="xref py py-obj docutils literal"><span class="pre">packagename</span></code> + &#8216;.&#8217; + <code class="xref py py-obj docutils literal"><span class="pre">taskname</span></code>. If <code class="xref py py-obj docutils literal"><span class="pre">packagename</span></code>
+is not <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, <a class="reference internal" href="#drizzlepac.util.base_taskname" title="drizzlepac.util.base_taskname"><code class="xref py py-func docutils literal"><span class="pre">base_taskname</span></code></a> will check that the string
+to the left of the right-most dot matches <code class="xref py py-obj docutils literal"><span class="pre">packagename</span></code> and will
+raise an <code class="xref py py-obj docutils literal"><span class="pre">AssertionError</span></code> if the package name derived from the
+input <code class="xref py py-obj docutils literal"><span class="pre">taskname</span></code> does not match the supplied <code class="xref py py-obj docutils literal"><span class="pre">packagename</span></code>. This
 is intended as a check for discrepancies that may arise
-during the development of the tasks. If <em class="xref py py-obj">packagename</em> is <em class="xref py py-obj">None</em>,
+during the development of the tasks. If <code class="xref py py-obj docutils literal"><span class="pre">packagename</span></code> is <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>,
 no such check will be performed.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Raises:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>AssertionError</strong></p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>AssertionError</strong></p>
 <blockquote class="last">
-<div><p>Raised when package name derived from the input <em class="xref py py-obj">taskname</em> does not
-match the supplied <em class="xref py py-obj">packagename</em></p>
+<div><p>Raised when package name derived from the input <code class="xref py py-obj docutils literal"><span class="pre">taskname</span></code> does not
+match the supplied <code class="xref py py-obj docutils literal"><span class="pre">packagename</span></code></p>
 </div></blockquote>
 </td>
 </tr>
@@ -206,19 +209,19 @@ match the supplied <em class="xref py py-obj">packagename</em></p>
 
 <dl class="function">
 <dt id="drizzlepac.util.check_blank">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">check_blank</tt><big>(</big><em>cvar</em><big>)</big><a class="headerlink" href="#drizzlepac.util.check_blank" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">check_blank</code><span class="sig-paren">(</span><em>cvar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#check_blank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.check_blank" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts blank value (from configObj?) into a value of None.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.computeRange">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">computeRange</tt><big>(</big><em>corners</em><big>)</big><a class="headerlink" href="#drizzlepac.util.computeRange" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">computeRange</code><span class="sig-paren">(</span><em>corners</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#computeRange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.computeRange" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine the range spanned by an array of pixel positions.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.compute_texptime">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">compute_texptime</tt><big>(</big><em>imageObjectList</em><big>)</big><a class="headerlink" href="#drizzlepac.util.compute_texptime" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">compute_texptime</code><span class="sig-paren">(</span><em>imageObjectList</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#compute_texptime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.compute_texptime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add up the exposure time for all the members in
 the pattern, since &#8216;drizzle&#8217; doesn&#8217;t have the necessary
 information to correctly set this itself.</p>
@@ -226,18 +229,18 @@ information to correctly set this itself.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.countImages">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">countImages</tt><big>(</big><em>imageObjectList</em><big>)</big><a class="headerlink" href="#drizzlepac.util.countImages" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">countImages</code><span class="sig-paren">(</span><em>imageObjectList</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#countImages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.countImages" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.count_sci_extensions">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">count_sci_extensions</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.util.count_sci_extensions" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">count_sci_extensions</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#count_sci_extensions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.count_sci_extensions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the number of SCI extensions and the EXTNAME from a input MEF file.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.createFile">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">createFile</tt><big>(</big><em>dataArray=None</em>, <em>outfile=None</em>, <em>header=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.createFile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">createFile</code><span class="sig-paren">(</span><em>dataArray=None</em>, <em>outfile=None</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#createFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.createFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a simple fits file for the given data array and header.
 Returns either the FITS object in-membory when outfile==None or
 None when the FITS file was written out to a file.</p>
@@ -245,39 +248,38 @@ None when the FITS file was written out to a file.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.displayBadRefimageWarningBox">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">displayBadRefimageWarningBox</tt><big>(</big><em>display=True</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.displayBadRefimageWarningBox" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">displayBadRefimageWarningBox</code><span class="sig-paren">(</span><em>display=True</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#displayBadRefimageWarningBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.displayBadRefimageWarningBox" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays a warning box for the &#8216;input&#8217; parameter.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.displayEmptyInputWarningBox">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">displayEmptyInputWarningBox</tt><big>(</big><em>display=True</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.displayEmptyInputWarningBox" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">displayEmptyInputWarningBox</code><span class="sig-paren">(</span><em>display=True</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#displayEmptyInputWarningBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.displayEmptyInputWarningBox" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays a warning box for the &#8216;input&#8217; parameter.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.displayMakewcsWarningBox">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">displayMakewcsWarningBox</tt><big>(</big><em>display=True</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.displayMakewcsWarningBox" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">displayMakewcsWarningBox</code><span class="sig-paren">(</span><em>display=True</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#displayMakewcsWarningBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.displayMakewcsWarningBox" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays a warning box for the &#8216;makewcs&#8217; parameter.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.end_logging">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">end_logging</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.end_logging" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">end_logging</code><span class="sig-paren">(</span><em>filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#end_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.end_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close log file and restore system defaults.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.findWCSExtn">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">findWCSExtn</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.util.findWCSExtn" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">findWCSExtn</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#findWCSExtn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.findWCSExtn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return new filename with extension that points to an extension with a
 valid WCS.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>extnum</strong> : str, None</p>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>extnum</strong> : str, None</p>
 <blockquote class="last">
 <div><p>Value of extension name as a string either as provided by the user
 or based on the extension number for the first extension which
@@ -292,7 +294,7 @@ found with a valid WCS.</p>
 <dl class="docutils">
 <dt>The return value from this function can be used as input to</dt>
 <dd><p class="first">create another HSTWCS with the syntax:</p>
-<div class="last highlight-python"><div class="highlight"><pre>`HSTWCS(&#39;{}[{}]&#39;.format(filename,extnum))
+<div class="last highlight-default"><div class="highlight"><pre><span></span>`HSTWCS(&#39;{}[{}]&#39;.format(filename,extnum))
 </pre></div>
 </div>
 </dd>
@@ -301,37 +303,36 @@ found with a valid WCS.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.findrootname">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">findrootname</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.util.findrootname" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">findrootname</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#findrootname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.findrootname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the rootname of the given file.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.getConfigObjPar">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">getConfigObjPar</tt><big>(</big><em>configObj</em>, <em>parname</em><big>)</big><a class="headerlink" href="#drizzlepac.util.getConfigObjPar" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">getConfigObjPar</code><span class="sig-paren">(</span><em>configObj</em>, <em>parname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#getConfigObjPar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.getConfigObjPar" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return parameter value without having to specify which section
 holds the parameter.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.getDefaultConfigObj">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">getDefaultConfigObj</tt><big>(</big><em>taskname</em>, <em>configObj</em>, <em>input_dict={}</em>, <em>loadOnly=True</em><big>)</big><a class="headerlink" href="#drizzlepac.util.getDefaultConfigObj" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">getDefaultConfigObj</code><span class="sig-paren">(</span><em>taskname</em>, <em>configObj</em>, <em>input_dict={}</em>, <em>loadOnly=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#getDefaultConfigObj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.getDefaultConfigObj" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return default configObj instance for task updated
 with user-specified values from input_dict.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : string</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="taskname">taskname</strong> : string</p>
 <blockquote>
 <div><p>Name of task to load into TEAL</p>
 </div></blockquote>
 <p><strong id="configObj">configObj</strong> : string</p>
 <blockquote>
 <div><p>The valid values for &#8216;configObj&#8217; would be:</p>
-<div class="highlight-python"><div class="highlight"><pre>None                      - loads last saved user .cfg file
-&#39;defaults&#39;                - loads task default .cfg file
-name of .cfg file (string)- loads user-specified .cfg file
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kc">None</span>                      <span class="o">-</span> <span class="n">loads</span> <span class="n">last</span> <span class="n">saved</span> <span class="n">user</span> <span class="o">.</span><span class="n">cfg</span> <span class="n">file</span>
+<span class="s1">&#39;defaults&#39;</span>                <span class="o">-</span> <span class="n">loads</span> <span class="n">task</span> <span class="n">default</span> <span class="o">.</span><span class="n">cfg</span> <span class="n">file</span>
+<span class="n">name</span> <span class="n">of</span> <span class="o">.</span><span class="n">cfg</span> <span class="n">file</span> <span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">-</span> <span class="n">loads</span> <span class="n">user</span><span class="o">-</span><span class="n">specified</span> <span class="o">.</span><span class="n">cfg</span> <span class="n">file</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -353,37 +354,37 @@ user to edit the values further and then run the task if desired.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.getFullParList">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">getFullParList</tt><big>(</big><em>configObj</em><big>)</big><a class="headerlink" href="#drizzlepac.util.getFullParList" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">getFullParList</code><span class="sig-paren">(</span><em>configObj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#getFullParList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.getFullParList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a single list of all parameter names included in the configObj
 regardless of which section the parameter was stored</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.getRotatedSize">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">getRotatedSize</tt><big>(</big><em>corners</em>, <em>angle</em><big>)</big><a class="headerlink" href="#drizzlepac.util.getRotatedSize" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">getRotatedSize</code><span class="sig-paren">(</span><em>corners</em>, <em>angle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#getRotatedSize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.getRotatedSize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine the size of a rotated (meta)image.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.getSectionName">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">getSectionName</tt><big>(</big><em>configObj</em>, <em>stepnum</em><big>)</big><a class="headerlink" href="#drizzlepac.util.getSectionName" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">getSectionName</code><span class="sig-paren">(</span><em>configObj</em>, <em>stepnum</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#getSectionName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.getSectionName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return section label based on step number.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.get_detnum">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">get_detnum</tt><big>(</big><em>hstwcs</em>, <em>filename</em>, <em>extnum</em><big>)</big><a class="headerlink" href="#drizzlepac.util.get_detnum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">get_detnum</code><span class="sig-paren">(</span><em>hstwcs</em>, <em>filename</em>, <em>extnum</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#get_detnum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.get_detnum" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.get_expstart">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">get_expstart</tt><big>(</big><em>header</em>, <em>primary_hdr</em><big>)</big><a class="headerlink" href="#drizzlepac.util.get_expstart" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">get_expstart</code><span class="sig-paren">(</span><em>header</em>, <em>primary_hdr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#get_expstart"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.get_expstart" title="Permalink to this definition">¶</a></dt>
 <dd><p>shouldn&#8217;t this just be defined in the instrument subclass of imageobject?</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.get_pool_size">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">get_pool_size</tt><big>(</big><em>usr_config_value</em>, <em>num_tasks</em><big>)</big><a class="headerlink" href="#drizzlepac.util.get_pool_size" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">get_pool_size</code><span class="sig-paren">(</span><em>usr_config_value</em>, <em>num_tasks</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#get_pool_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.get_pool_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine size of thread/process-pool for parallel processing.
 This examines the cpu_count to decide and return the right pool
 size to use.  Also take into account the user&#8217;s wishes via the config
@@ -397,69 +398,68 @@ Consolidate all such logic here, not in the caller.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.init_logging">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">init_logging</tt><big>(</big><em>logfile='astrodrizzle.log'</em>, <em>default=None</em>, <em>level=20</em><big>)</big><a class="headerlink" href="#drizzlepac.util.init_logging" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">init_logging</code><span class="sig-paren">(</span><em>logfile='astrodrizzle.log'</em>, <em>default=None</em>, <em>level=20</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#init_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.init_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set up logger for capturing stdout/stderr messages.</p>
 <p>Must be called prior to writing any messages that you want to log.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.isASNTable">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">isASNTable</tt><big>(</big><em>inputFilelist</em><big>)</big><a class="headerlink" href="#drizzlepac.util.isASNTable" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">isASNTable</code><span class="sig-paren">(</span><em>inputFilelist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#isASNTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.isASNTable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return TRUE if inputFilelist is a fits ASN file.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.isCommaList">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">isCommaList</tt><big>(</big><em>inputFilelist</em><big>)</big><a class="headerlink" href="#drizzlepac.util.isCommaList" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">isCommaList</code><span class="sig-paren">(</span><em>inputFilelist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#isCommaList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.isCommaList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return True if the input is a comma separated list of names.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.is_blank">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">is_blank</tt><big>(</big><em>val</em><big>)</big><a class="headerlink" href="#drizzlepac.util.is_blank" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">is_blank</code><span class="sig-paren">(</span><em>val</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#is_blank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.is_blank" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines whether or not a value is considered &#8216;blank&#8217;.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.loadFileList">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">loadFileList</tt><big>(</big><em>inputFilelist</em><big>)</big><a class="headerlink" href="#drizzlepac.util.loadFileList" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">loadFileList</code><span class="sig-paren">(</span><em>inputFilelist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#loadFileList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.loadFileList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open up the &#8216;&#64; file&#8217; and read in the science and possible
 ivm filenames from the first two columns.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.parse_colnames">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">parse_colnames</tt><big>(</big><em>colnames</em>, <em>coords=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.parse_colnames" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">parse_colnames</code><span class="sig-paren">(</span><em>colnames</em>, <em>coords=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#parse_colnames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.parse_colnames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert colnames input into list of column numbers.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.printParams">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">printParams</tt><big>(</big><em>paramDictionary</em>, <em>all=False</em>, <em>log=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.printParams" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">printParams</code><span class="sig-paren">(</span><em>paramDictionary</em>, <em>all=False</em>, <em>log=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#printParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.printParams" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print nicely the parameters from the dictionary.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.print_pkg_versions">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">print_pkg_versions</tt><big>(</big><em>packages=None</em>, <em>svn=False</em>, <em>log=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.print_pkg_versions" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">print_pkg_versions</code><span class="sig-paren">(</span><em>packages=None</em>, <em>svn=False</em>, <em>log=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#print_pkg_versions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.print_pkg_versions" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.readCommaList">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">readCommaList</tt><big>(</big><em>fileList</em><big>)</big><a class="headerlink" href="#drizzlepac.util.readCommaList" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">readCommaList</code><span class="sig-paren">(</span><em>fileList</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#readCommaList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.readCommaList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of the files with the commas removed.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.readcols">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">readcols</tt><big>(</big><em>infile, cols=[0, 1, 2, 3], hms=False</em><big>)</big><a class="headerlink" href="#drizzlepac.util.readcols" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">readcols</code><span class="sig-paren">(</span><em>infile, cols=[0, 1, 2, 3], hms=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#readcols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.readcols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read the columns from an ASCII file as numpy arrays.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="infile">infile</strong> : str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="infile">infile</strong> : str</p>
 <blockquote>
 <div><p>Filename of ASCII file with array data as columns.</p>
 </div></blockquote>
@@ -470,8 +470,7 @@ ivm filenames from the first two columns.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>outarr</strong> : list of numpy arrays</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>outarr</strong> : list of numpy arrays</p>
 <blockquote class="last">
 <div><p>Simple list of numpy arrays in the order as specifed in the &#8216;cols&#8217; parameter.</p>
 </div></blockquote>
@@ -483,27 +482,25 @@ ivm filenames from the first two columns.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.removeFileSafely">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">removeFileSafely</tt><big>(</big><em>filename</em>, <em>clobber=True</em><big>)</big><a class="headerlink" href="#drizzlepac.util.removeFileSafely" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">removeFileSafely</code><span class="sig-paren">(</span><em>filename</em>, <em>clobber=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#removeFileSafely"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.removeFileSafely" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete the file specified, but only if it exists and clobber is True.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.runmakewcs">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">runmakewcs</tt><big>(</big><em>input</em><big>)</big><a class="headerlink" href="#drizzlepac.util.runmakewcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">runmakewcs</code><span class="sig-paren">(</span><em>input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#runmakewcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.runmakewcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs &#8216;updatewcs&#8217; to recompute the WCS keywords for the input image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : list of str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="input">input</strong> : list of str</p>
 <blockquote>
 <div><p>A list of file names.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
 <div><p>Returns a list of names of the modified files
 (For GEIS files returns the translated names).</p>
@@ -516,21 +513,21 @@ ivm filenames from the first two columns.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.updateNEXTENDKw">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">updateNEXTENDKw</tt><big>(</big><em>fobj</em><big>)</big><a class="headerlink" href="#drizzlepac.util.updateNEXTENDKw" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">updateNEXTENDKw</code><span class="sig-paren">(</span><em>fobj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#updateNEXTENDKw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.updateNEXTENDKw" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update NEXTEND keyword in PRIMARY header (if present) to accurately
 reflect the number of extensions in the MEF file.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.update_input">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">update_input</tt><big>(</big><em>filelist</em>, <em>ivmlist=None</em>, <em>removed_files=None</em><big>)</big><a class="headerlink" href="#drizzlepac.util.update_input" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">update_input</code><span class="sig-paren">(</span><em>filelist</em>, <em>ivmlist=None</em>, <em>removed_files=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#update_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.update_input" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes files flagged to be removed from the input filelist.
 Removes the corresponding ivm files if present.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.validateUserPars">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">validateUserPars</tt><big>(</big><em>configObj</em>, <em>input_dict</em><big>)</big><a class="headerlink" href="#drizzlepac.util.validateUserPars" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">validateUserPars</code><span class="sig-paren">(</span><em>configObj</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#validateUserPars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.validateUserPars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compares input parameter names specified by user with those already
 recognized by the task.</p>
 <p>Any parameters provided by the user that does not match a known
@@ -540,7 +537,7 @@ raised.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.verifyFilePermissions">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">verifyFilePermissions</tt><big>(</big><em>filelist</em>, <em>chmod=True</em><big>)</big><a class="headerlink" href="#drizzlepac.util.verifyFilePermissions" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">verifyFilePermissions</code><span class="sig-paren">(</span><em>filelist</em>, <em>chmod=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#verifyFilePermissions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.verifyFilePermissions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Verify that images specified in &#8216;filelist&#8217; can be updated.</p>
 <p>A message will be printed reporting the names of any images which
 do not have write-permission, then quit.</p>
@@ -548,7 +545,7 @@ do not have write-permission, then quit.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.verifyRefimage">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">verifyRefimage</tt><big>(</big><em>refimage</em><big>)</big><a class="headerlink" href="#drizzlepac.util.verifyRefimage" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">verifyRefimage</code><span class="sig-paren">(</span><em>refimage</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#verifyRefimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.verifyRefimage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Verify that the value of refimage specified by the user points to an
 extension with a proper WCS defined. It starts by making sure an extension gets
 specified by the user when using a MEF file. The final check comes by looking
@@ -558,13 +555,13 @@ a value of False.</p>
 
 <dl class="function">
 <dt id="drizzlepac.util.verifyUniqueWcsname">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">verifyUniqueWcsname</tt><big>(</big><em>fname</em>, <em>wcsname</em><big>)</big><a class="headerlink" href="#drizzlepac.util.verifyUniqueWcsname" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">verifyUniqueWcsname</code><span class="sig-paren">(</span><em>fname</em>, <em>wcsname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#verifyUniqueWcsname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.verifyUniqueWcsname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Report whether or not the specified WCSNAME already exists in the file</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.util.verifyUpdatewcs">
-<tt class="descclassname">drizzlepac.util.</tt><tt class="descname">verifyUpdatewcs</tt><big>(</big><em>fname</em><big>)</big><a class="headerlink" href="#drizzlepac.util.verifyUpdatewcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.util.</code><code class="descname">verifyUpdatewcs</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/util.html#verifyUpdatewcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.util.verifyUpdatewcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Verify the existence of WCSNAME in the file.  If it is not present,
 report this to the user and raise an exception.  Returns True if WCSNAME
 was found in all SCI extensions.</p>
@@ -578,7 +575,7 @@ was found in all SCI extensions.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -593,13 +590,13 @@ was found in all SCI extensions.</p>
         <li class="right" >
           <a href="util.html" title="Utilities"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="util.html" >Utilities</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="util.html" >Utilities</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

@@ -1,0 +1,761 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stwcs.wcsutil.wcscorr &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for stwcs.wcsutil.wcscorr</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+
+<span class="kn">import</span> <span class="nn">stwcs</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">altwcs</span>
+<span class="kn">from</span> <span class="nn">..updatewcs</span> <span class="k">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span>
+
+<span class="n">DEFAULT_WCS_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">,</span> <span class="s1">&#39;CRVAL2&#39;</span><span class="p">,</span> <span class="s1">&#39;CRPIX1&#39;</span><span class="p">,</span> <span class="s1">&#39;CRPIX2&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;CD1_1&#39;</span><span class="p">,</span> <span class="s1">&#39;CD1_2&#39;</span><span class="p">,</span> <span class="s1">&#39;CD2_1&#39;</span><span class="p">,</span> <span class="s1">&#39;CD2_2&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;CTYPE1&#39;</span><span class="p">,</span> <span class="s1">&#39;CTYPE2&#39;</span><span class="p">,</span> <span class="s1">&#39;ORIENTAT&#39;</span><span class="p">]</span>
+<span class="n">DEFAULT_PRI_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HDRNAME&#39;</span><span class="p">,</span> <span class="s1">&#39;SIPNAME&#39;</span><span class="p">,</span> <span class="s1">&#39;NPOLNAME&#39;</span><span class="p">,</span> <span class="s1">&#39;D2IMNAME&#39;</span><span class="p">,</span> <span class="s1">&#39;DESCRIP&#39;</span><span class="p">]</span>
+<span class="n">COL_FITSKW_DICT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;RMS_RA&#39;</span><span class="p">:</span> <span class="s1">&#39;sci.crder1&#39;</span><span class="p">,</span> <span class="s1">&#39;RMS_DEC&#39;</span><span class="p">:</span> <span class="s1">&#39;sci.crder2&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;NMatch&#39;</span><span class="p">:</span> <span class="s1">&#39;sci.nmatch&#39;</span><span class="p">,</span> <span class="s1">&#39;Catalog&#39;</span><span class="p">:</span> <span class="s1">&#39;sci.catalog&#39;</span><span class="p">}</span>
+
+<span class="c1">###</span>
+<span class="c1">### WCSEXT table related keyword archive functions</span>
+<span class="c1">###</span>
+<div class="viewcode-block" id="init_wcscorr"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.init_wcscorr">[docs]</a><span class="k">def</span> <span class="nf">init_wcscorr</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will initialize the WCSCORR table if it is not already present,</span>
+<span class="sd">    and look for WCS keywords with a prefix of &#39;O&#39; as the original OPUS</span>
+<span class="sd">    generated WCS as the initial row for the table or use the current WCS</span>
+<span class="sd">    keywords as initial row if no &#39;O&#39; prefix keywords are found.</span>
+
+<span class="sd">    This function will NOT overwrite any rows already present.</span>
+
+<span class="sd">    This function works on all SCI extensions at one time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: Create some sort of decorator or (for Python2.5) context for</span>
+    <span class="c1"># opening a FITS file and closing it when done, if necessary</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="c1"># input must be a filename, so open as `astropy.io.fits.HDUList` object</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">)</span>
+        <span class="n">need_to_close</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="nb">input</span>
+        <span class="n">need_to_close</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Do not try to generate a WCSCORR table for a simple FITS file</span>
+    <span class="n">numsci</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">countExtn</span><span class="p">(</span><span class="n">fimg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fimg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">numsci</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">enames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">fimg</span><span class="p">:</span> <span class="n">enames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;WCSCORR&#39;</span> <span class="ow">in</span> <span class="n">enames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">fimg</span><span class="p">[</span><span class="s1">&#39;wcscorr&#39;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing new WCSCORR table for &#39;</span><span class="p">,</span> <span class="n">fimg</span><span class="o">.</span><span class="n">filename</span><span class="p">())</span>
+
+    <span class="n">used_wcskeys</span> <span class="o">=</span> <span class="n">altwcs</span><span class="o">.</span><span class="n">wcskeys</span><span class="p">(</span><span class="n">fimg</span><span class="p">[</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+
+    <span class="c1"># define the primary columns of the WCSEXT table with initial rows for each</span>
+    <span class="c1"># SCI extension for the original OPUS solution</span>
+    <span class="n">numwcs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">used_wcskeys</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">numwcs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="n">numwcs</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># create new table with more rows than needed initially to make it easier to</span>
+    <span class="c1"># add new rows later</span>
+    <span class="n">wcsext</span> <span class="o">=</span> <span class="n">create_wcscorr</span><span class="p">(</span><span class="n">descrip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">numrows</span><span class="o">=</span><span class="n">numsci</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="p">(</span><span class="n">numsci</span> <span class="o">*</span> <span class="n">numwcs</span><span class="p">)</span> <span class="o">+</span> <span class="n">numsci</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="c1"># Assign the correct EXTNAME value to this table extension</span>
+    <span class="n">wcsext</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;TROWS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">numsci</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Number of updated rows in table&#39;</span><span class="p">)</span>
+    <span class="n">wcsext</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;WCSCORR&#39;</span><span class="p">,</span> <span class="s1">&#39;Table with WCS Update history&#39;</span><span class="p">)</span>
+    <span class="n">wcsext</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># define set of WCS keywords which need to be managed and copied to the table</span>
+    <span class="n">wcs1</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">idc2header</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">wcs1</span><span class="o">.</span><span class="n">idcscale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">idc2header</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">wcs_keywords</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">wcs1</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">(</span><span class="n">idc2hdr</span><span class="o">=</span><span class="n">idc2header</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="n">prihdr</span> <span class="o">=</span> <span class="n">fimg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+    <span class="n">prihdr_keys</span> <span class="o">=</span> <span class="n">DEFAULT_PRI_KEYS</span>
+    <span class="n">pri_funcs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;SIPNAME&#39;</span><span class="p">:</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">updatewcs</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_sipname</span><span class="p">,</span>
+                 <span class="s1">&#39;NPOLNAME&#39;</span><span class="p">:</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">updatewcs</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_npolname</span><span class="p">,</span>
+                 <span class="s1">&#39;D2IMNAME&#39;</span><span class="p">:</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">updatewcs</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">build_d2imname</span><span class="p">}</span>
+
+    <span class="c1"># Now copy original OPUS values into table</span>
+    <span class="k">for</span> <span class="n">extver</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numsci</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">rowind</span> <span class="o">=</span> <span class="n">find_wcscorr_row</span><span class="p">(</span><span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                                  <span class="p">{</span><span class="s1">&#39;WCS_ID&#39;</span><span class="p">:</span> <span class="s1">&#39;OPUS&#39;</span><span class="p">,</span> <span class="s1">&#39;EXTVER&#39;</span><span class="p">:</span> <span class="n">extver</span><span class="p">,</span>
+                                   <span class="s1">&#39;WCS_key&#39;</span><span class="p">:</span> <span class="s1">&#39;O&#39;</span><span class="p">})</span>
+        <span class="c1"># There should only EVER be a single row for each extension with OPUS values</span>
+        <span class="n">rownum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rowind</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># print &#39;Archiving OPUS WCS in row number &#39;,rownum,&#39; in WCSCORR table for SCI,&#39;,extver</span>
+
+        <span class="n">hdr</span> <span class="o">=</span> <span class="n">fimg</span><span class="p">[</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">extver</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+        <span class="c1"># define set of WCS keywords which need to be managed and copied to the table</span>
+        <span class="k">if</span> <span class="n">used_wcskeys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">used_wcskeys</span> <span class="o">=</span> <span class="n">altwcs</span><span class="o">.</span><span class="n">wcskeys</span><span class="p">(</span><span class="n">hdr</span><span class="p">)</span>
+        <span class="c1"># Check to see whether or not there is an OPUS alternate WCS present,</span>
+        <span class="c1"># if so, get its values directly, otherwise, archive the PRIMARY WCS</span>
+        <span class="c1"># as the OPUS values in the WCSCORR table</span>
+        <span class="k">if</span> <span class="s1">&#39;O&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">used_wcskeys</span><span class="p">:</span>
+            <span class="n">altwcs</span><span class="o">.</span><span class="n">archiveWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">extver</span><span class="p">),</span> <span class="n">wcskey</span><span class="o">=</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="n">wcsname</span><span class="o">=</span><span class="s1">&#39;OPUS&#39;</span><span class="p">)</span>
+        <span class="n">wkey</span> <span class="o">=</span> <span class="s1">&#39;O&#39;</span>
+
+        <span class="n">wcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">extver</span><span class="p">),</span> <span class="n">wcskey</span><span class="o">=</span><span class="n">wkey</span><span class="p">)</span>
+        <span class="n">wcshdr</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">(</span><span class="n">idc2hdr</span><span class="o">=</span><span class="n">idc2header</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># If we find values for these keywords already in the table, do not</span>
+            <span class="c1"># overwrite them again</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WCS keywords already updated...&#39;</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcs_keywords</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcshdr</span><span class="p">[(</span><span class="n">key</span> <span class="o">+</span> <span class="n">wkey</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]]</span>
+        <span class="c1"># Now get any keywords from PRIMARY header needed for WCS updates</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prihdr_keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prihdr</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">prihdr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="c1"># Now that we have archived the OPUS alternate WCS, remove it from the list</span>
+    <span class="c1"># of used_wcskeys</span>
+    <span class="k">if</span> <span class="s1">&#39;O&#39;</span> <span class="ow">in</span> <span class="n">used_wcskeys</span><span class="p">:</span>
+        <span class="n">used_wcskeys</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;O&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Now copy remaining alternate WCSs into table</span>
+    <span class="c1"># TODO: Much of this appears to be redundant with update_wcscorr; consider</span>
+    <span class="c1"># merging them...</span>
+    <span class="k">for</span> <span class="n">uwkey</span> <span class="ow">in</span> <span class="n">used_wcskeys</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">extver</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numsci</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">hdr</span> <span class="o">=</span> <span class="n">fimg</span><span class="p">[</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">extver</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+            <span class="n">wcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">extver</span><span class="p">),</span>
+                                       <span class="n">wcskey</span><span class="o">=</span><span class="n">uwkey</span><span class="p">)</span>
+            <span class="n">wcshdr</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;WCSNAME&#39;</span> <span class="o">+</span> <span class="n">uwkey</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wcshdr</span><span class="p">:</span>
+                <span class="n">wcsid</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">build_default_wcsname</span><span class="p">(</span><span class="n">fimg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;idctab&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wcsid</span> <span class="o">=</span> <span class="n">wcshdr</span><span class="p">[</span><span class="s1">&#39;WCSNAME&#39;</span> <span class="o">+</span> <span class="n">uwkey</span><span class="p">]</span>
+
+            <span class="c1"># identify next empty row</span>
+            <span class="n">rowind</span> <span class="o">=</span> <span class="n">find_wcscorr_row</span><span class="p">(</span><span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                                      <span class="n">selections</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;wcs_id&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;0.0&#39;</span><span class="p">]})</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rowind</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">rownum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rowind</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No available rows found for updating. &#39;</span><span class="p">)</span>
+
+            <span class="c1"># Update selection columns for this row with relevant values</span>
+            <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;WCS_ID&#39;</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcsid</span>
+            <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">=</span> <span class="n">extver</span>
+            <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;WCS_key&#39;</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">=</span> <span class="n">uwkey</span>
+
+            <span class="c1"># Look for standard WCS keyword values</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcs_keywords</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcshdr</span><span class="p">[</span><span class="n">key</span> <span class="o">+</span> <span class="n">uwkey</span><span class="p">]</span>
+            <span class="c1"># Now get any keywords from PRIMARY header needed for WCS updates</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prihdr_keys</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">pri_funcs</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">pri_funcs</span><span class="p">[</span><span class="n">key</span><span class="p">](</span><span class="n">fimg</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prihdr</span><span class="p">:</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="n">prihdr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="n">wcsext</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">rownum</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="c1"># Append this table to the image FITS file</span>
+    <span class="n">fimg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wcsext</span><span class="p">)</span>
+    <span class="c1"># force an update now</span>
+    <span class="c1"># set the verify flag to &#39;warn&#39; so that it will always succeed, but still</span>
+    <span class="c1"># tell the user if PyFITS detects any problems with the file as a whole</span>
+    <span class="n">utils</span><span class="o">.</span><span class="n">updateNEXTENDKw</span><span class="p">(</span><span class="n">fimg</span><span class="p">)</span>
+
+    <span class="n">fimg</span><span class="o">.</span><span class="n">flush</span><span class="p">(</span><span class="s1">&#39;warn&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">need_to_close</span><span class="p">:</span>
+        <span class="n">fimg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="find_wcscorr_row"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.find_wcscorr_row">[docs]</a><span class="k">def</span> <span class="nf">find_wcscorr_row</span><span class="p">(</span><span class="n">wcstab</span><span class="p">,</span> <span class="n">selections</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return an array of indices from the table (NOT HDU) &#39;wcstab&#39; that matches the</span>
+<span class="sd">    selections specified by the user.</span>
+
+<span class="sd">    The row selection criteria must be specified as a dictionary with</span>
+<span class="sd">    column name as key and value(s) representing the valid desired row values.</span>
+<span class="sd">    For example, {&#39;wcs_id&#39;:&#39;OPUS&#39;,&#39;extver&#39;:2}.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">selections</span><span class="p">:</span>
+        <span class="n">icol</span> <span class="o">=</span> <span class="n">wcstab</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">chararray</span><span class="p">):</span> <span class="n">icol</span> <span class="o">=</span> <span class="n">icol</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="n">selecti</span> <span class="o">=</span> <span class="n">selections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selecti</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selecti</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">selecti</span> <span class="o">=</span> <span class="n">selecti</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+            <span class="n">bmask</span> <span class="o">=</span> <span class="p">(</span><span class="n">icol</span> <span class="o">==</span> <span class="n">selecti</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">bmask</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">bmask</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">bmask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">si</span> <span class="ow">in</span> <span class="n">selecti</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">si</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+                <span class="n">bmask</span> <span class="o">=</span> <span class="p">(</span><span class="n">icol</span> <span class="o">==</span> <span class="n">si</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">bmask</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">bmask</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">bmask</span>
+
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+
+<div class="viewcode-block" id="archive_wcs_file"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.archive_wcs_file">[docs]</a><span class="k">def</span> <span class="nf">archive_wcs_file</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">wcs_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update WCSCORR table with rows for each SCI extension to record the</span>
+<span class="sd">    newly updated WCS keyword values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">)</span>
+        <span class="n">close_image</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="n">close_image</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">update_wcscorr</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">wcs_id</span><span class="o">=</span><span class="n">wcs_id</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">close_image</span><span class="p">:</span>
+        <span class="n">fimg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="update_wcscorr"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.update_wcscorr">[docs]</a><span class="k">def</span> <span class="nf">update_wcscorr</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">wcs_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update WCSCORR table with a new row or rows for this extension header. It</span>
+<span class="sd">    copies the current set of WCS keywords as a new row of the table based on</span>
+<span class="sd">    keyed WCSs as per Paper I Multiple WCS standard).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dest : HDUList</span>
+<span class="sd">        The HDU list whose WCSCORR table should be appended to (the WCSCORR HDU</span>
+<span class="sd">        must already exist)</span>
+<span class="sd">    source : HDUList, optional</span>
+<span class="sd">        The HDU list containing the extension from which to extract the WCS</span>
+<span class="sd">        keywords to add to the WCSCORR table.  If None, the dest is also used</span>
+<span class="sd">        as the source.</span>
+<span class="sd">    extname : str, optional</span>
+<span class="sd">        The extension name from which to take new WCS keywords.  If there are</span>
+<span class="sd">        multiple extensions with that name, rows are added for each extension</span>
+<span class="sd">        version.</span>
+<span class="sd">    wcs_id : str, optional</span>
+<span class="sd">        The name of the WCS to add, as in the WCSNAMEa keyword.  If</span>
+<span class="sd">        unspecified, all the WCSs in the specified extensions are added.</span>
+<span class="sd">    active: bool, optional</span>
+<span class="sd">        When True, indicates that the update should reflect an update of the</span>
+<span class="sd">        active WCS information, not just appending the WCS to the file as a</span>
+<span class="sd">        headerlet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">)</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">dest</span><span class="o">.</span><span class="n">filename</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">dest</span>
+
+    <span class="k">if</span> <span class="n">extname</span> <span class="o">==</span> <span class="s1">&#39;PRIMARY&#39;</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">numext</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">countExtn</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">extname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">numext</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No </span><span class="si">%s</span><span class="s1"> extensions found in the source HDU list.&#39;</span>
+                         <span class="o">%</span> <span class="n">extname</span><span class="p">)</span>
+    <span class="c1"># Initialize the WCSCORR table extension in dest if not already present</span>
+    <span class="n">init_wcscorr</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dest</span><span class="o">.</span><span class="n">index_of</span><span class="p">(</span><span class="s1">&#39;WCSCORR&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># check to see whether or not this is an up-to-date table</span>
+    <span class="c1"># replace with newly initialized table with current format</span>
+    <span class="n">old_table</span> <span class="o">=</span> <span class="n">dest</span><span class="p">[</span><span class="s1">&#39;WCSCORR&#39;</span><span class="p">]</span>
+    <span class="n">wcscorr_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;WCS_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;EXTVER&#39;</span><span class="p">,</span> <span class="s1">&#39;SIPNAME&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;HDRNAME&#39;</span><span class="p">,</span> <span class="s1">&#39;NPOLNAME&#39;</span><span class="p">,</span> <span class="s1">&#39;D2IMNAME&#39;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">wcscorr_cols</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">colname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">old_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING:    Replacing outdated WCSCORR table...&quot;</span><span class="p">)</span>
+            <span class="n">outdated_table</span> <span class="o">=</span> <span class="n">old_table</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">dest</span><span class="p">[</span><span class="s1">&#39;WCSCORR&#39;</span><span class="p">]</span>
+            <span class="n">init_wcscorr</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+            <span class="n">old_table</span> <span class="o">=</span> <span class="n">dest</span><span class="p">[</span><span class="s1">&#39;WCSCORR&#39;</span><span class="p">]</span>
+            <span class="k">break</span>
+
+    <span class="c1"># Current implementation assumes the same WCS keywords are in each</span>
+    <span class="c1"># extension version; if this should not be assumed then this can be</span>
+    <span class="c1"># modified...</span>
+    <span class="n">wcs_keys</span> <span class="o">=</span> <span class="n">altwcs</span><span class="o">.</span><span class="n">wcskeys</span><span class="p">(</span><span class="n">source</span><span class="p">[(</span><span class="n">extname</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+    <span class="n">wcs_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">kk</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="n">wcs_keys</span> <span class="k">if</span> <span class="n">kk</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wcs_keys</span><span class="p">:</span> <span class="n">wcs_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>  <span class="c1"># Insure that primary WCS gets used</span>
+    <span class="c1"># apply logic for only updating WCSCORR table with specified keywords</span>
+    <span class="c1"># corresponding to the WCS with WCSNAME=wcs_id</span>
+    <span class="k">if</span> <span class="n">wcs_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">wnames</span> <span class="o">=</span> <span class="n">altwcs</span><span class="o">.</span><span class="n">wcsnames</span><span class="p">(</span><span class="n">source</span><span class="p">[(</span><span class="n">extname</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">wkeys</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">wnames</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">wnames</span><span class="p">[</span><span class="n">letter</span><span class="p">]</span> <span class="o">==</span> <span class="n">wcs_id</span><span class="p">:</span>
+                <span class="n">wkeys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">letter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wkeys</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">wkeys</span><span class="p">:</span>
+            <span class="n">wkeys</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">wcs_keys</span> <span class="o">=</span> <span class="n">wkeys</span>
+    <span class="n">wcshdr</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">()</span>
+    <span class="n">wcs_keywords</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">wcshdr</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="s1">&#39;O&#39;</span> <span class="ow">in</span> <span class="n">wcs_keys</span><span class="p">:</span>
+        <span class="n">wcs_keys</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;O&#39;</span><span class="p">)</span>  <span class="c1"># &#39;O&#39; is reserved for original OPUS WCS</span>
+
+    <span class="c1"># create new table for hdr and populate it with the newly updated values</span>
+    <span class="n">new_table</span> <span class="o">=</span> <span class="n">create_wcscorr</span><span class="p">(</span><span class="n">descrip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">numrows</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">wcs_keys</span><span class="p">)</span> <span class="o">*</span> <span class="n">numext</span><span class="p">)</span>
+    <span class="n">prihdr</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+    <span class="c1"># Get headerlet related keywords here</span>
+    <span class="n">sipname</span><span class="p">,</span> <span class="n">idctab</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">build_sipname</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">)</span>
+    <span class="n">npolname</span><span class="p">,</span> <span class="n">npolfile</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">build_npolname</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">d2imname</span><span class="p">,</span> <span class="n">d2imfile</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">build_d2imname</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;hdrname&#39;</span> <span class="ow">in</span> <span class="n">prihdr</span><span class="p">:</span>
+        <span class="n">hdrname</span> <span class="o">=</span> <span class="n">prihdr</span><span class="p">[</span><span class="s1">&#39;hdrname&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hdrname</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">for</span> <span class="n">wcs_key</span> <span class="ow">in</span> <span class="n">wcs_keys</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">extver</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numext</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">extn</span> <span class="o">=</span> <span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="n">extver</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;SIPWCS&#39;</span> <span class="ow">in</span> <span class="n">extname</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">active</span><span class="p">:</span>
+                <span class="n">tab_extver</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Since it has not been added to the SCI header yet</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tab_extver</span> <span class="o">=</span> <span class="n">extver</span>
+            <span class="n">hdr</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="n">extn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+            <span class="k">if</span> <span class="s1">&#39;WCSNAME&#39;</span> <span class="o">+</span> <span class="n">wcs_key</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">:</span>
+                <span class="n">wcsname</span> <span class="o">=</span> <span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;WCSNAME&#39;</span> <span class="o">+</span> <span class="n">wcs_key</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wcsname</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">build_default_wcsname</span><span class="p">(</span><span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;idctab&#39;</span><span class="p">])</span>
+
+            <span class="n">selection</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;WCS_ID&#39;</span><span class="p">:</span> <span class="n">wcsname</span><span class="p">,</span> <span class="s1">&#39;EXTVER&#39;</span><span class="p">:</span> <span class="n">tab_extver</span><span class="p">,</span>
+                         <span class="s1">&#39;SIPNAME&#39;</span><span class="p">:</span> <span class="n">sipname</span><span class="p">,</span> <span class="s1">&#39;HDRNAME&#39;</span><span class="p">:</span> <span class="n">hdrname</span><span class="p">,</span>
+                         <span class="s1">&#39;NPOLNAME&#39;</span><span class="p">:</span> <span class="n">npolname</span><span class="p">,</span> <span class="s1">&#39;D2IMNAME&#39;</span><span class="p">:</span> <span class="n">d2imname</span>
+                         <span class="p">}</span>
+
+            <span class="c1"># Ensure that an entry for this WCS is not already in the dest</span>
+            <span class="c1"># table; if so just skip it</span>
+            <span class="n">rowind</span> <span class="o">=</span> <span class="n">find_wcscorr_row</span><span class="p">(</span><span class="n">old_table</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">rowind</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">wcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">extn</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="n">wcs_key</span><span class="p">)</span>
+            <span class="n">wcshdr</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">()</span>
+
+            <span class="c1"># Update selection column values</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">selection</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcs_keywords</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcshdr</span><span class="p">[</span><span class="n">key</span> <span class="o">+</span> <span class="n">wcs_key</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">DEFAULT_PRI_KEYS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prihdr</span><span class="p">:</span>
+                    <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">prihdr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="c1"># Now look for additional, non-WCS-keyword table column data</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">COL_FITSKW_DICT</span><span class="p">:</span>
+                <span class="n">fitkw</span> <span class="o">=</span> <span class="n">COL_FITSKW_DICT</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="c1"># Interpret any &#39;pri.hdrname&#39; or</span>
+                <span class="c1"># &#39;sci.crpix1&#39; formatted keyword names</span>
+                <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">fitkw</span><span class="p">:</span>
+                    <span class="n">srchdr</span><span class="p">,</span> <span class="n">fitkw</span> <span class="o">=</span> <span class="n">fitkw</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s1">&#39;pri&#39;</span> <span class="ow">in</span> <span class="n">srchdr</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">srchdr</span> <span class="o">=</span> <span class="n">prihdr</span>
+                    <span class="k">else</span><span class="p">:</span> <span class="n">srchdr</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="n">extn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">srchdr</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="n">extn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+                <span class="k">if</span> <span class="n">fitkw</span> <span class="o">+</span> <span class="n">wcs_key</span> <span class="ow">in</span> <span class="n">srchdr</span><span class="p">:</span>
+                    <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">srchdr</span><span class="p">[</span><span class="n">fitkw</span> <span class="o">+</span> <span class="n">wcs_key</span><span class="p">]</span>
+
+    <span class="c1"># If idx was never incremented, no rows were added, so there&#39;s nothing else</span>
+    <span class="c1"># to do...</span>
+    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Now, we need to merge this into the existing table</span>
+    <span class="n">rowind</span> <span class="o">=</span> <span class="n">find_wcscorr_row</span><span class="p">(</span><span class="n">old_table</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;wcs_id&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;0.0&#39;</span><span class="p">]})</span>
+    <span class="n">old_nrows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rowind</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">new_nrows</span> <span class="o">=</span> <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># check to see if there is room for the new row</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">old_nrows</span> <span class="o">+</span> <span class="n">new_nrows</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">old_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">pad_rows</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">new_nrows</span>
+        <span class="c1"># if not, create a new table with &#39;pad_rows&#39; new empty rows</span>
+        <span class="n">upd_table</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span><span class="n">old_table</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">old_table</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+                                                  <span class="n">nrows</span><span class="o">=</span><span class="n">old_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pad_rows</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">upd_table</span> <span class="o">=</span> <span class="n">old_table</span>
+        <span class="n">pad_rows</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># Now, add</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">old_table</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="c1"># reset the default values to ones specific to the row definitions</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pad_rows</span><span class="p">):</span>
+                <span class="n">upd_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">name</span><span class="p">)[</span><span class="n">old_nrows</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">name</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Now populate with values from new table</span>
+            <span class="n">upd_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">name</span><span class="p">)[</span><span class="n">old_nrows</span><span class="p">:</span><span class="n">old_nrows</span> <span class="o">+</span> <span class="n">new_nrows</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">new_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">upd_table</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;TROWS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_nrows</span> <span class="o">+</span> <span class="n">new_nrows</span>
+
+    <span class="c1"># replace old extension with newly updated table extension</span>
+    <span class="n">dest</span><span class="p">[</span><span class="s1">&#39;WCSCORR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">upd_table</span></div>
+
+
+<div class="viewcode-block" id="restore_file_from_wcscorr"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.restore_file_from_wcscorr">[docs]</a><span class="k">def</span> <span class="nf">restore_file_from_wcscorr</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;OPUS&#39;</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Copies the values of the WCS from the WCSCORR based on ID specified by user.</span>
+<span class="sd">    The default will be to restore the original OPUS-derived values to the Primary WCS.</span>
+<span class="sd">    If wcskey is specified, the WCS with that key will be updated instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">)</span>
+        <span class="n">close_image</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="n">close_image</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">numsci</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">countExtn</span><span class="p">(</span><span class="n">fimg</span><span class="p">)</span>
+    <span class="n">wcs_table</span> <span class="o">=</span> <span class="n">fimg</span><span class="p">[</span><span class="s1">&#39;WCSCORR&#39;</span><span class="p">]</span>
+    <span class="n">orig_rows</span> <span class="o">=</span> <span class="p">(</span><span class="n">wcs_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;WCS_ID&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;OPUS&#39;</span><span class="p">)</span>
+    <span class="c1"># create an HSTWCS object to figure out what WCS keywords need to be updated</span>
+    <span class="n">wcsobj</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">wcshdr</span> <span class="o">=</span> <span class="n">wcsobj</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numsci</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># find corresponding row from table</span>
+        <span class="n">ext_rows</span> <span class="o">=</span> <span class="p">(</span><span class="n">wcs_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">extn</span><span class="p">)</span>
+        <span class="n">erow</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">ext_rows</span><span class="p">,</span> <span class="n">orig_rows</span><span class="p">))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcshdr</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcs_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>  <span class="c1"># insure that keyword is column in table</span>
+                <span class="n">tkey</span> <span class="o">=</span> <span class="n">key</span>
+
+                <span class="k">if</span> <span class="s1">&#39;orient&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;ORIENT&#39;</span>
+                <span class="k">if</span> <span class="n">wcskey</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">skey</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">skey</span> <span class="o">=</span> <span class="n">key</span><span class="p">[:</span><span class="mi">7</span><span class="p">]</span> <span class="o">+</span> <span class="n">wcskey</span>
+                <span class="n">fimg</span><span class="p">[</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">extn</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">skey</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcs_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">tkey</span><span class="p">)[</span><span class="n">erow</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">DEFAULT_PRI_KEYS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcs_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">wcskey</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">pkey</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pkey</span> <span class="o">=</span> <span class="n">key</span><span class="p">[:</span> <span class="mi">7</span><span class="p">]</span> <span class="o">+</span> <span class="n">wcskey</span>
+                <span class="n">fimg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">pkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcs_table</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">key</span><span class="p">)[</span><span class="n">erow</span><span class="p">]</span>
+
+    <span class="n">utils</span><span class="o">.</span><span class="n">updateNEXTENDKw</span><span class="p">(</span><span class="n">fimg</span><span class="p">)</span>
+
+    <span class="c1"># close the image now that the update has been completed.</span>
+    <span class="k">if</span> <span class="n">close_image</span><span class="p">:</span>
+        <span class="n">fimg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="create_wcscorr"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.create_wcscorr">[docs]</a><span class="k">def</span> <span class="nf">create_wcscorr</span><span class="p">(</span><span class="n">descrip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">numrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the basic definitions for a WCSCORR table.</span>
+<span class="sd">    The dtype definitions for the string columns are set to the maximum allowed so</span>
+<span class="sd">    that all new elements will have the same max size which will be automatically</span>
+<span class="sd">    truncated to this limit upon updating (if needed).</span>
+
+<span class="sd">    The table is initialized with rows corresponding to the OPUS solution</span>
+<span class="sd">    for all the &#39;SCI&#39; extensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">trows</span> <span class="o">=</span> <span class="n">numrows</span> <span class="o">+</span> <span class="n">padding</span>
+    <span class="c1"># define initialized arrays as placeholders for column data</span>
+    <span class="c1"># TODO: I&#39;m certain there&#39;s an easier way to do this... for example, simply</span>
+    <span class="c1"># define the column names and formats, then create an empty array using</span>
+    <span class="c1"># them as a dtype, then create the new table from that array.</span>
+    <span class="n">def_float64_zeros</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">trows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">def_float64_ones</span> <span class="o">=</span> <span class="n">def_float64_zeros</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="n">def_float_col</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;array&#39;</span><span class="p">:</span> <span class="n">def_float64_zeros</span><span class="o">.</span><span class="n">copy</span><span class="p">()}</span>
+    <span class="n">def_float1_col</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;array&#39;</span><span class="p">:</span> <span class="n">def_float64_ones</span><span class="o">.</span><span class="n">copy</span><span class="p">()}</span>
+    <span class="n">def_str40_col</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;40A&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;array&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">trows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;S40&#39;</span><span class="p">)}</span>
+    <span class="n">def_str24_col</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;24A&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;array&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">trows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;S24&#39;</span><span class="p">)}</span>
+    <span class="n">def_int32_col</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;J&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;array&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">trows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)}</span>
+
+    <span class="c1"># If more columns are needed, simply add their definitions to this list</span>
+    <span class="n">col_names</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;HDRNAME&#39;</span><span class="p">,</span> <span class="n">def_str24_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;SIPNAME&#39;</span><span class="p">,</span> <span class="n">def_str24_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;NPOLNAME&#39;</span><span class="p">,</span> <span class="n">def_str24_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;D2IMNAME&#39;</span><span class="p">,</span> <span class="n">def_str24_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;CRVAL2&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;CRPIX1&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;CRPIX2&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;CD1_2&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;CD2_1&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;CD2_2&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;CTYPE1&#39;</span><span class="p">,</span> <span class="n">def_str24_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;CTYPE2&#39;</span><span class="p">,</span> <span class="n">def_str24_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;ORIENTAT&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;PA_V3&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;RMS_RA&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;RMS_Dec&#39;</span><span class="p">,</span> <span class="n">def_float_col</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s1">&#39;NMatch&#39;</span><span class="p">,</span> <span class="n">def_int32_col</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Catalog&#39;</span><span class="p">,</span> <span class="n">def_str40_col</span><span class="p">)]</span>
+
+    <span class="c1"># Define selector columns</span>
+    <span class="n">id_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;WCS_ID&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;40A&#39;</span><span class="p">,</span>
+                         <span class="n">array</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;OPUS&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">numrows</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">padding</span><span class="p">,</span>
+                                        <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;S24&#39;</span><span class="p">))</span>
+    <span class="n">extver_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span>
+                             <span class="n">array</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numrows</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)),</span>
+                                            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">))</span>
+    <span class="n">wcskey_col</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;WCS_key&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span>
+                             <span class="n">array</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;O&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">numrows</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">padding</span><span class="p">,</span>
+                                            <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;S&#39;</span><span class="p">))</span>
+    <span class="c1"># create list of remaining columns to be added to table</span>
+    <span class="n">col_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">id_col</span><span class="p">,</span> <span class="n">extver_col</span><span class="p">,</span> <span class="n">wcskey_col</span><span class="p">]</span>  <span class="c1"># start with selector columns</span>
+
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">:</span>
+        <span class="n">cdef</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">col_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="n">cdef</span><span class="p">[</span><span class="s1">&#39;format&#39;</span><span class="p">],</span>
+                        <span class="n">array</span><span class="o">=</span><span class="n">cdef</span><span class="p">[</span><span class="s1">&#39;array&#39;</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="n">descrip</span><span class="p">:</span>
+        <span class="n">col_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">fits</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;DESCRIP&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;128A&#39;</span><span class="p">,</span>
+                        <span class="n">array</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                            <span class="p">[</span><span class="s1">&#39;Original WCS computed by OPUS&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">numrows</span><span class="p">,</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;S128&#39;</span><span class="p">)))</span>
+
+    <span class="c1"># Now create the new table from the column definitions</span>
+    <span class="n">newtab</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="o">.</span><span class="n">from_columns</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">ColDefs</span><span class="p">(</span><span class="n">col_list</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="n">trows</span><span class="p">)</span>
+    <span class="c1"># The fact that setting .name is necessary should be considered a bug in</span>
+    <span class="c1"># pyfits.</span>
+    <span class="c1"># TODO: Make sure this is fixed in pyfits, then remove this</span>
+    <span class="n">newtab</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;WCSCORR&#39;</span>
+
+    <span class="k">return</span> <span class="n">newtab</span></div>
+
+
+<div class="viewcode-block" id="delete_wcscorr_row"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.delete_wcscorr_row">[docs]</a><span class="k">def</span> <span class="nf">delete_wcscorr_row</span><span class="p">(</span><span class="n">wcstab</span><span class="p">,</span> <span class="n">selections</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets all values in a specified row or set of rows to default values</span>
+
+<span class="sd">    This function will essentially erase the specified row from the table</span>
+<span class="sd">    without actually removing the row from the table. This avoids the problems</span>
+<span class="sd">    with trying to resize the number of rows in the table while preserving the</span>
+<span class="sd">    ability to update the table with new rows again without resizing the table.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    wcstab: object</span>
+<span class="sd">        PyFITS binTable object for WCSCORR table</span>
+<span class="sd">    selections: dict</span>
+<span class="sd">        Dictionary of wcscorr column names and values to be used to select</span>
+<span class="sd">        the row or set of rows to erase</span>
+<span class="sd">    rows: int, list</span>
+<span class="sd">        If specified, will specify what rows from the table to erase regardless</span>
+<span class="sd">        of the value of &#39;selections&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">selections</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: Some row selection information must be provided!&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;       Either a row numbers or &quot;selections&quot; must be provided.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+    <span class="n">delete_rows</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;wcs_id&#39;</span> <span class="ow">in</span> <span class="n">selections</span> <span class="ow">and</span> <span class="n">selections</span><span class="p">[</span><span class="s1">&#39;wcs_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;OPUS&#39;</span><span class="p">:</span>
+            <span class="n">delete_rows</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: OPUS WCS information can not be deleted from WCSCORR table.&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;         This row will not be deleted!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rowind</span> <span class="o">=</span> <span class="n">find_wcscorr_row</span><span class="p">(</span><span class="n">wcstab</span><span class="p">,</span> <span class="n">selections</span><span class="o">=</span><span class="n">selections</span><span class="p">)</span>
+            <span class="n">delete_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rowind</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">rows</span><span class="p">]</span>
+        <span class="n">delete_rows</span> <span class="o">=</span> <span class="n">rows</span>
+
+    <span class="c1"># Insure that rows pointing to OPUS WCS do not get deleted, even by accident</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">delete_rows</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">wcstab</span><span class="p">[</span><span class="s1">&#39;WCS_key&#39;</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;O&#39;</span> <span class="ow">or</span> <span class="n">wcstab</span><span class="p">[</span><span class="s1">&#39;WCS_ID&#39;</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;OPUS&#39;</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">delete_rows</span><span class="p">[</span><span class="n">delete_rows</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">row</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">delete_rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># identify next empty row</span>
+    <span class="n">rowind</span> <span class="o">=</span> <span class="n">find_wcscorr_row</span><span class="p">(</span><span class="n">wcstab</span><span class="p">,</span> <span class="n">selections</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;wcs_id&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;0.0&#39;</span><span class="p">]})</span>
+    <span class="n">last_blank_row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rowind</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># copy values from blank row into user-specified rows</span>
+    <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">wcstab</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+        <span class="n">wcstab</span><span class="p">[</span><span class="n">colname</span><span class="p">][</span><span class="n">delete_rows</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcstab</span><span class="p">[</span><span class="n">colname</span><span class="p">][</span><span class="n">last_blank_row</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="update_wcscorr_column"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.wcscorr.update_wcscorr_column">[docs]</a><span class="k">def</span> <span class="nf">update_wcscorr_column</span><span class="p">(</span><span class="n">wcstab</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">selections</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update the values in &#39;column&#39; with &#39;values&#39; for selected rows</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    wcstab: object</span>
+<span class="sd">        PyFITS binTable object for WCSCORR table</span>
+<span class="sd">    column: string</span>
+<span class="sd">        Name of table column with values that need to be updated</span>
+<span class="sd">    values: string, int, or list</span>
+<span class="sd">        Value or set of values to copy into the selected rows for the column</span>
+<span class="sd">    selections: dict</span>
+<span class="sd">        Dictionary of wcscorr column names and values to be used to select</span>
+<span class="sd">        the row or set of rows to erase</span>
+<span class="sd">    rows: int, list</span>
+<span class="sd">        If specified, will specify what rows from the table to erase regardless</span>
+<span class="sd">        of the value of &#39;selections&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">selections</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: Some row selection information must be provided!&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;       Either a row numbers or &quot;selections&quot; must be provided.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">values</span><span class="p">]</span>
+
+    <span class="n">update_rows</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;wcs_id&#39;</span> <span class="ow">in</span> <span class="n">selections</span> <span class="ow">and</span> <span class="n">selections</span><span class="p">[</span><span class="s1">&#39;wcs_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;OPUS&#39;</span><span class="p">:</span>
+            <span class="n">update_rows</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: OPUS WCS information can not be deleted from WCSCORR table.&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;         This row will not be deleted!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rowind</span> <span class="o">=</span> <span class="n">find_wcscorr_row</span><span class="p">(</span><span class="n">wcstab</span><span class="p">,</span> <span class="n">selections</span><span class="o">=</span><span class="n">selections</span><span class="p">)</span>
+            <span class="n">update_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rowind</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">rows</span><span class="p">]</span>
+        <span class="n">update_rows</span> <span class="o">=</span> <span class="n">rows</span>
+
+    <span class="k">if</span> <span class="n">update_rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Expand single input value to apply to all selected rows</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">update_rows</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: Number of new values&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;       does not match number of rows&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">update_rows</span><span class="p">),</span> <span class="s1">&#39; to be updated!&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;       Please enter either 1 value or the same number of values&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;       as there are rows to be updated.&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    Table will not be updated...&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">update_rows</span><span class="p">):</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">update_rows</span><span class="p">)</span>
+    <span class="c1"># copy values from blank row into user-specified rows</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">update_rows</span><span class="p">:</span>
+        <span class="n">wcstab</span><span class="p">[</span><span class="n">column</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">row</span><span class="p">]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

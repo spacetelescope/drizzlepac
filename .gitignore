@@ -6,3 +6,4 @@ dist/
 */*/version.py
 *.so
 *.dylib
+*.pyc

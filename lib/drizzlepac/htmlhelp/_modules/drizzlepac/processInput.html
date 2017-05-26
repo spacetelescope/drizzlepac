@@ -1,0 +1,1300 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.processInput &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.processInput</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Process input to MultiDrizzle/PyDrizzle.</span>
+
+<span class="sd">:Authors: Warren Hack</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">The input can be one of:</span>
+
+<span class="sd">    * a python list of files</span>
+<span class="sd">    * a comma separated string of filenames (including wild card characters)</span>
+<span class="sd">    * an association table</span>
+<span class="sd">    * an @file (can have a second column with names of ivm files)</span>
+
+<span class="sd">No mixture of instruments is allowed.</span>
+<span class="sd">No mixture of association tables, @files and regular fits files is allowed.</span>
+<span class="sd">Files can be in GEIS or MEF format (but not waiver fits).</span>
+
+<span class="sd">Runs some sanity checks on the input files.</span>
+<span class="sd">If necessary converts files to MEF format (this should not be left to `makewcs`</span>
+<span class="sd">because `updatewcs` may be `False`\ ).</span>
+<span class="sd">Runs makewcs.</span>
+<span class="sd">The function `process_input` returns an association table, ivmlist, output name</span>
+
+<span class="sd">The common interface interpreter for MultiDrizzle tasks, &#39;processCommonInput()&#39;,</span>
+<span class="sd">not only runs &#39;process_input()&#39; but &#39;createImageObject()&#39; and &#39;defineOutput()&#39;</span>
+<span class="sd">as well to fully setup all inputs for use with the rest of the MultiDrizzle</span>
+<span class="sd">steps either as stand-alone tasks or internally to MultiDrizzle itself.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>  <span class="c1"># confidence high</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+
+<span class="kn">from</span> <span class="nn">stwcs</span> <span class="k">import</span> <span class="n">updatewcs</span> <span class="k">as</span> <span class="n">uw</span>
+<span class="kn">from</span> <span class="nn">stwcs.wcsutil</span> <span class="k">import</span> <span class="n">altwcs</span><span class="p">,</span> <span class="n">wcscorr</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="p">(</span><span class="n">cfgpars</span><span class="p">,</span> <span class="n">parseinput</span><span class="p">,</span> <span class="n">fileutil</span><span class="p">,</span> <span class="n">asnutil</span><span class="p">,</span> <span class="n">irafglob</span><span class="p">,</span>
+                         <span class="n">check_files</span><span class="p">,</span> <span class="n">logutil</span><span class="p">,</span> <span class="n">mputil</span><span class="p">,</span> <span class="n">textutil</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">stsci.tools.bitmask</span> <span class="k">import</span> <span class="n">interpret_bit_flags</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">stsci.tools.bitmask</span> <span class="k">import</span> <span class="n">interpret_bits_value</span> <span class="k">as</span> <span class="n">interpret_bit_flags</span>
+
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">wcs_functions</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">resetbits</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">mdzhandler</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="c1"># list parameters which correspond to steps where multiprocessing can be used</span>
+<span class="n">parallel_steps</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">3</span><span class="p">,</span><span class="s1">&#39;driz_separate&#39;</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="s1">&#39;driz_cr&#39;</span><span class="p">)]</span>
+
+<span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">can_parallel</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">multiprocessing</span>
+
+
+<div class="viewcode-block" id="setCommonInput"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.setCommonInput">[docs]</a><span class="k">def</span> <span class="nf">setCommonInput</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span> <span class="n">createOutwcs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The common interface interpreter for MultiDrizzle tasks which not only runs</span>
+<span class="sd">    &#39;process_input()&#39; but &#39;createImageObject()&#39; and &#39;defineOutput()&#39; as well to</span>
+<span class="sd">    fully setup all inputs for use with the rest of the MultiDrizzle steps either</span>
+<span class="sd">    as stand-alone tasks or internally to MultiDrizzle itself.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    configObj : object</span>
+<span class="sd">        configObj instance or simple dictionary of input parameters</span>
+<span class="sd">    imageObjectList : list of imageObject objects</span>
+<span class="sd">        list of imageObject instances, 1 for each input exposure</span>
+<span class="sd">    outwcs : object</span>
+<span class="sd">        imageObject instance defining the final output frame</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    At a minimum, the configObj instance (dictionary) should contain:</span>
+<span class="sd">        configObj = {&#39;input&#39;:None,&#39;output&#39;:None }</span>
+
+<span class="sd">    If provided, the configObj should contain the values of all the multidrizzle parameters</span>
+<span class="sd">    as set by the user with TEAL. If no configObj is given, it will retrieve</span>
+<span class="sd">    the default values automatically.  In either case, the values from the input_dict</span>
+<span class="sd">    will be merged in with the configObj before being used by the rest of the</span>
+<span class="sd">    code.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    You can set *createOutwcs=False* for the cases where you only want the</span>
+<span class="sd">    images processed and no output wcs information in necessary; as in:</span>
+
+<span class="sd">    &gt;&gt;&gt;imageObjectList,outwcs = processInput.processCommonInput(configObj)</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure &#39;updatewcs&#39; is set to False when running from GUI or if missing</span>
+    <span class="c1"># from configObj:</span>
+    <span class="k">if</span> <span class="s1">&#39;updatewcs&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">configObj</span><span class="p">:</span>
+        <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;updatewcs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">createOutwcs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">]:</span>
+        <span class="c1"># we&#39;re probably just working on single images here</span>
+        <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;updatewcs&#39;</span><span class="p">]</span><span class="o">=</span><span class="kc">False</span>
+
+    <span class="c1"># maybe we can chunk this part up some more so that we can call just the</span>
+    <span class="c1"># parts we want</span>
+
+    <span class="c1"># Interpret input, read and convert and update input files, then return</span>
+    <span class="c1"># list of input filenames and derived output filename</span>
+    <span class="n">asndict</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">process_input</span><span class="p">(</span>
+            <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">],</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">],</span>
+            <span class="n">updatewcs</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;updatewcs&#39;</span><span class="p">],</span> <span class="n">wcskey</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;wcskey&#39;</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;STATE OF INPUT FILES&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">asndict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="c1"># convert the filenames from asndict into a list of full filenames</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">fileutil</span><span class="o">.</span><span class="n">buildRootname</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">asndict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]]</span>
+    <span class="n">original_files</span> <span class="o">=</span> <span class="n">asndict</span><span class="p">[</span><span class="s1">&#39;original_file_names&#39;</span><span class="p">]</span>
+
+    <span class="c1"># interpret MDRIZTAB, if specified, and update configObj accordingly</span>
+    <span class="c1"># This can be done here because MDRIZTAB does not include values for</span>
+    <span class="c1"># input, output, or updatewcs.</span>
+    <span class="k">if</span> <span class="s1">&#39;mdriztab&#39;</span> <span class="ow">in</span> <span class="n">configObj</span> <span class="ow">and</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;mdriztab&#39;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reading in MDRIZTAB parameters for </span><span class="si">{}</span><span class="s2"> files&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)))</span>
+        <span class="n">mdriztab_dict</span> <span class="o">=</span> <span class="n">mdzhandler</span><span class="o">.</span><span class="n">getMdriztabParameters</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+
+        <span class="c1"># Update configObj with values from mpars</span>
+        <span class="n">cfgpars</span><span class="o">.</span><span class="n">mergeConfigObj</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span> <span class="n">mdriztab_dict</span><span class="p">)</span>
+
+    <span class="c1"># Convert interpreted list of input files from process_input into a list</span>
+    <span class="c1"># of imageObject instances for use by the MultiDrizzle tasks.</span>
+    <span class="n">instrpars</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;INSTRUMENT PARAMETERS&#39;</span><span class="p">]</span>
+    <span class="c1"># pass in &#39;proc_unit&#39; to initialize unit conversions as necessary</span>
+    <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+
+    <span class="n">undistort</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">]:</span>
+        <span class="n">undistort</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># determine whether parallel processing will be performed</span>
+    <span class="n">use_parallel</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">can_parallel</span><span class="p">:</span>
+        <span class="c1"># look to see whether steps which can be run using multiprocessing</span>
+        <span class="c1"># have been turned on</span>
+        <span class="k">for</span> <span class="n">stepnum</span> <span class="ow">in</span> <span class="n">parallel_steps</span><span class="p">:</span>
+            <span class="n">sname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">stepnum</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">configObj</span><span class="p">[</span><span class="n">sname</span><span class="p">][</span><span class="n">stepnum</span><span class="p">[</span><span class="mi">1</span><span class="p">]]:</span>
+                <span class="n">use_parallel</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+    <span class="c1"># interpret all &#39;bits&#39; related parameters and convert them to integers</span>
+    <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;resetbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpret_bit_flags</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;resetbits&#39;</span><span class="p">])</span>
+    <span class="n">step3name</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">configObj</span><span class="p">[</span><span class="n">step3name</span><span class="p">][</span><span class="s1">&#39;driz_sep_bits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpret_bit_flags</span><span class="p">(</span>
+                                        <span class="n">configObj</span><span class="p">[</span><span class="n">step3name</span><span class="p">][</span><span class="s1">&#39;driz_sep_bits&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">step7name</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+    <span class="n">configObj</span><span class="p">[</span><span class="n">step7name</span><span class="p">][</span><span class="s1">&#39;final_bits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpret_bit_flags</span><span class="p">(</span>
+                                        <span class="n">configObj</span><span class="p">[</span><span class="n">step7name</span><span class="p">][</span><span class="s1">&#39;final_bits&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Verify any refimage parameters to be used</span>
+    <span class="n">step3aname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="s1">&#39;3a&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">verifyRefimage</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="n">step3aname</span><span class="p">][</span><span class="s1">&#39;driz_sep_refimage&#39;</span><span class="p">]):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;No refimage with WCS found!</span><span class="se">\n</span><span class="s1"> &#39;</span><span class="o">+</span>\
+        <span class="s1">&#39; This could be caused by one of 2 problems:</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span>\
+        <span class="s1">&#39;   * filename does not specify an extension with a valid WCS.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span>\
+        <span class="s1">&#39;   * can not find the file.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span>\
+        <span class="s1">&#39;Please check the filename specified in the &quot;refimage&quot; parameter.&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span><span class="kc">None</span>
+    <span class="n">step7aname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="s1">&#39;7a&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">verifyRefimage</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="n">step7aname</span><span class="p">][</span><span class="s1">&#39;final_refimage&#39;</span><span class="p">]):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;No refimage with WCS found!</span><span class="se">\n</span><span class="s1"> &#39;</span><span class="o">+</span>\
+        <span class="s1">&#39; This could be caused by one of 2 problems:</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span>\
+        <span class="s1">&#39;   * filename does not specify an extension with a valid WCS.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span>\
+        <span class="s1">&#39;   * can not find the file.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span>\
+        <span class="s1">&#39;Please check the filename specified in the &quot;refimage&quot; parameter.&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span><span class="kc">None</span>
+
+
+    <span class="c1"># Build imageObject list for all the valid, shift-updated input files</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;-Creating imageObject List as input for processing steps.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;in_memory&#39;</span> <span class="ow">in</span> <span class="n">configObj</span><span class="p">:</span>
+        <span class="n">virtual</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;in_memory&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">virtual</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">imageObjectList</span> <span class="o">=</span> <span class="n">createImageObjectList</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">instrpars</span><span class="p">,</span>
+                                            <span class="n">group</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;group&#39;</span><span class="p">],</span>
+                                            <span class="n">undistort</span><span class="o">=</span><span class="n">undistort</span><span class="p">,</span>
+                                            <span class="n">inmemory</span><span class="o">=</span><span class="n">virtual</span><span class="p">)</span>
+
+    <span class="c1"># Add original file names as &quot;hidden&quot; attributes of imageObject</span>
+    <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">original_files</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">))</span> <span class="c1">#TODO: remove after extensive testing</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">)):</span>
+        <span class="n">imageObjectList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">_original_file_name</span> <span class="o">=</span> <span class="n">original_files</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="c1"># apply context parameter</span>
+    <span class="n">applyContextPar</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">])</span>
+
+    <span class="c1"># reset DQ bits if requested by user</span>
+    <span class="n">resetDQBits</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">cr_bits_value</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;resetbits&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Add info about input IVM files at this point to the imageObjectList</span>
+    <span class="n">addIVMInputs</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">createOutwcs</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;-Creating output WCS.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Build output WCS and update imageObjectList with output WCS info</span>
+        <span class="n">outwcs</span> <span class="o">=</span> <span class="n">wcs_functions</span><span class="o">.</span><span class="n">make_outputwcs</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span>
+                                              <span class="n">configObj</span><span class="o">=</span><span class="n">configObj</span><span class="p">,</span> <span class="n">perfect</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">final_wcs</span><span class="o">.</span><span class="n">printwcs</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outwcs</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Provide user with some information on resource usage for this run</span>
+        <span class="c1"># raises ValueError Exception in interactive mode and user quits</span>
+        <span class="n">num_cores</span> <span class="o">=</span> <span class="n">configObj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_cores&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">use_parallel</span> <span class="k">else</span> <span class="mi">1</span>
+
+        <span class="n">reportResourceUsage</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">outwcs</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">imageObjectList</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">imageObjectList</span><span class="p">,</span> <span class="n">outwcs</span></div>
+
+
+<div class="viewcode-block" id="reportResourceUsage"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.reportResourceUsage">[docs]</a><span class="k">def</span> <span class="nf">reportResourceUsage</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">outwcs</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">,</span>
+                        <span class="n">interactive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Provide some information to the user on the estimated resource</span>
+<span class="sd">    usage (primarily memory) for this run.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">imageObject</span>
+    <span class="k">if</span> <span class="n">outwcs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">output_mem</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outwcs</span><span class="p">,</span><span class="n">imageObject</span><span class="o">.</span><span class="n">WCSObject</span><span class="p">):</span>
+            <span class="n">owcs</span> <span class="o">=</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">final_wcs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">owcs</span> <span class="o">=</span> <span class="n">outwcs</span>
+        <span class="n">output_mem</span> <span class="o">=</span> <span class="n">owcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="o">*</span><span class="n">owcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="o">*</span><span class="mi">4</span><span class="o">*</span><span class="mi">3</span> <span class="c1"># bytes used for output arrays</span>
+    <span class="n">img1</span> <span class="o">=</span> <span class="n">imageObjectList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">numchips</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">input_mem</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="n">numchips</span> <span class="o">+=</span> <span class="n">img</span><span class="o">.</span><span class="n">_nmembers</span> <span class="c1"># account for group parameter set by user</span>
+
+    <span class="c1"># if we have the cpus and s/w, ok, but still allow user to set pool size</span>
+    <span class="n">pool_size</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">get_pool_size</span><span class="p">(</span><span class="n">num_cores</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">pool_size</span> <span class="o">=</span> <span class="n">pool_size</span> <span class="k">if</span> <span class="p">(</span><span class="n">numchips</span> <span class="o">&gt;=</span> <span class="n">pool_size</span><span class="p">)</span> <span class="k">else</span> <span class="n">numchips</span>
+
+    <span class="n">inimg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">chip_mem</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">img</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">cmem</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">img</span><span class="p">[</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">4</span>
+            <span class="n">inimg</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">inimg</span> <span class="o">&lt;</span> <span class="n">pool_size</span><span class="p">:</span>
+                <span class="n">input_mem</span> <span class="o">+=</span> <span class="n">cmem</span><span class="o">*</span><span class="mi">2</span>
+            <span class="k">if</span> <span class="n">chip_mem</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">chip_mem</span> <span class="o">=</span> <span class="n">cmem</span>
+    <span class="n">max_mem</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_mem</span> <span class="o">+</span> <span class="n">output_mem</span><span class="o">*</span><span class="n">pool_size</span> <span class="o">+</span> <span class="n">chip_mem</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">//</span><span class="p">(</span><span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="o">*</span><span class="mi">80</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*  Estimated memory usage:  up to </span><span class="si">%d</span><span class="s1"> Mb.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">max_mem</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*  Output image size:       </span><span class="si">%d</span><span class="s1"> X </span><span class="si">%d</span><span class="s1"> pixels. &#39;</span><span class="o">%</span><span class="p">(</span><span class="n">owcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">,</span><span class="n">owcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*  Output image file:       ~ </span><span class="si">%d</span><span class="s1"> Mb. &#39;</span><span class="o">%</span><span class="p">(</span><span class="n">output_mem</span><span class="o">//</span><span class="p">(</span><span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*  Cores available:         </span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">pool_size</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="o">*</span><span class="mi">80</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Continue with processing?&#39;</span><span class="p">)</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;(y)es or (n)o&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s2">&quot;(y)es or (n)o&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyboardInterrupt</span><span class="p">(</span><span class="s2">&quot;Execution aborted&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="getMdriztabPars"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.getMdriztabPars">[docs]</a><span class="k">def</span> <span class="nf">getMdriztabPars</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; High-level function for getting the parameters from MDRIZTAB</span>
+
+<span class="sd">    Used primarily for TEAL interface.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">filelist</span><span class="p">,</span><span class="n">output</span><span class="p">,</span><span class="n">ivmlist</span><span class="p">,</span><span class="n">oldasndict</span><span class="o">=</span><span class="n">processFilenames</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mdrizdict</span> <span class="o">=</span> <span class="n">mdzhandler</span><span class="o">.</span><span class="n">getMdriztabParameters</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No MDRIZTAB found for &quot;</span><span class="si">%s</span><span class="s1">&quot;. Parameters remain unchanged.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">filelist</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">mdrizdict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">return</span> <span class="n">mdrizdict</span></div>
+
+<div class="viewcode-block" id="addIVMInputs"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.addIVMInputs">[docs]</a><span class="k">def</span> <span class="nf">addIVMInputs</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="n">ivmlist</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Add IVM filenames provided by user to outputNames dictionary for each input imageObject.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ivmlist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">for</span> <span class="n">img</span><span class="p">,</span><span class="n">ivmname</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="n">ivmlist</span><span class="p">):</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">updateIVMName</span><span class="p">(</span><span class="n">ivmname</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="checkMultipleFiles"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.checkMultipleFiles">[docs]</a><span class="k">def</span> <span class="nf">checkMultipleFiles</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Evaluates the input to determine whether there is 1 or more than 1 valid input file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">o</span><span class="p">,</span><span class="n">a</span><span class="o">=</span><span class="n">buildFileList</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="createImageObjectList"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.createImageObjectList">[docs]</a><span class="k">def</span> <span class="nf">createImageObjectList</span><span class="p">(</span><span class="n">files</span><span class="p">,</span><span class="n">instrpars</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">undistort</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inmemory</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns a list of imageObject instances, 1 for each input image in the list of input filenames.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">imageObjList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">mtflag</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">mt_refimg</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">_getInputImage</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">image</span><span class="o">.</span><span class="n">setInstrumentParameters</span><span class="p">(</span><span class="n">instrpars</span><span class="p">)</span>
+        <span class="n">image</span><span class="o">.</span><span class="n">compute_wcslin</span><span class="p">(</span><span class="n">undistort</span><span class="o">=</span><span class="n">undistort</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;MTFLAG&#39;</span> <span class="ow">in</span> <span class="n">image</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;PRIMARY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+            <span class="c1"># check to see whether we are dealing with moving target observations...</span>
+            <span class="n">_keyval</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s1">&#39;PRIMARY&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;MTFLAG&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">_keyval</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_keyval</span><span class="p">,</span><span class="nb">bool</span><span class="p">):</span>
+                    <span class="n">mtflag</span> <span class="o">=</span> <span class="n">_keyval</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;T&#39;</span> <span class="ow">in</span> <span class="n">_keyval</span><span class="p">:</span>
+                        <span class="n">mtflag</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">mtflag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mtflag</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">mtflag</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;#####</span><span class="se">\n</span><span class="s2">Processing Moving Target Observations using reference image as WCS for all inputs!</span><span class="se">\n</span><span class="s2">#####</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mt_refimg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mt_refimg</span> <span class="o">=</span> <span class="n">image</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">image</span><span class="o">.</span><span class="n">set_mt_wcs</span><span class="p">(</span><span class="n">mt_refimg</span><span class="p">)</span>
+        <span class="n">image</span><span class="o">.</span><span class="n">inmemory</span> <span class="o">=</span> <span class="n">inmemory</span> <span class="c1"># set flag for inmemory processing</span>
+        <span class="c1"># Now add (possibly updated) image object to list</span>
+        <span class="n">imageObjList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">imageObjList</span></div>
+
+<div class="viewcode-block" id="applyContextPar"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.applyContextPar">[docs]</a><span class="k">def</span> <span class="nf">applyContextPar</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="n">contextpar</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Apply the value of the parameter `context` to the input list, setting</span>
+<span class="sd">        the name of the output context image to None if `context` is False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">updateContextImage</span><span class="p">(</span><span class="n">contextpar</span><span class="p">)</span></div>
+
+<span class="k">def</span> <span class="nf">_getInputImage</span> <span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Factory function to return appropriate imageObject class instance&quot;&quot;&quot;</span>
+    <span class="c1"># extract primary header and SCI,1 header from input image</span>
+    <span class="n">sci_ext</span> <span class="o">=</span> <span class="s1">&#39;SCI&#39;</span>
+    <span class="k">if</span> <span class="n">group</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">]:</span>
+        <span class="n">exten</span> <span class="o">=</span> <span class="s1">&#39;[sci,1]&#39;</span>
+        <span class="n">phdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># change to use fits more directly here?</span>
+        <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">grp</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">grp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isalpha</span><span class="p">():</span>
+                <span class="n">grp</span> <span class="o">=</span> <span class="p">(</span><span class="n">grp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="nb">int</span><span class="p">(</span><span class="n">grp</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">grp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">grp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">grp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">phdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">phdu</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">grp</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+    <span class="c1"># Extract the instrument name for the data that is being processed by Multidrizzle</span>
+    <span class="n">_instrument</span> <span class="o">=</span> <span class="n">phdu</span><span class="p">[</span><span class="s1">&#39;INSTRUME&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Determine the instrument detector in use.  NICMOS is a special case because it does</span>
+    <span class="c1"># not use the &#39;DETECTOR&#39; keyword.  It instead used &#39;CAMERA&#39; to identify which of it&#39;s</span>
+    <span class="c1"># 3 camera&#39;s is in use.  All other instruments support the &#39;DETECTOR&#39; keyword.</span>
+    <span class="k">if</span> <span class="n">_instrument</span> <span class="o">==</span> <span class="s1">&#39;NICMOS&#39;</span><span class="p">:</span>
+        <span class="n">_detector</span> <span class="o">=</span> <span class="n">phdu</span><span class="p">[</span><span class="s1">&#39;CAMERA&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_detector</span> <span class="o">=</span> <span class="n">phdu</span><span class="p">[</span><span class="s1">&#39;DETECTOR&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># using the phdu as set above (fits.getheader) is MUCH faster and</span>
+            <span class="c1"># works for the majority of data; but fileutil handles waivered fits</span>
+            <span class="n">phdu</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">getHeader</span><span class="p">(</span><span class="nb">input</span><span class="o">+</span><span class="n">exten</span><span class="p">)</span>
+            <span class="n">_detector</span> <span class="o">=</span> <span class="n">phdu</span><span class="p">[</span><span class="s1">&#39;DETECTOR&#39;</span><span class="p">]</span> <span class="c1"># if this fails, let it throw</span>
+
+    <span class="k">del</span> <span class="n">phdu</span> <span class="c1"># just to keep clean</span>
+    <span class="c1"># Match up the instrument and detector with the right class</span>
+    <span class="c1"># only importing the instrument modules as needed.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_instrument</span> <span class="o">==</span> <span class="s1">&#39;ACS&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">acsData</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;HRC&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">acsData</span><span class="o">.</span><span class="n">HRCInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;WFC&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">acsData</span><span class="o">.</span><span class="n">WFCInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;SBC&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">acsData</span><span class="o">.</span><span class="n">SBCInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_instrument</span> <span class="o">==</span> <span class="s1">&#39;NICMOS&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">nicmosData</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">nicmosData</span><span class="o">.</span><span class="n">NIC1InputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="n">nicmosData</span><span class="o">.</span><span class="n">NIC2InputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span> <span class="k">return</span> <span class="n">nicmosData</span><span class="o">.</span><span class="n">NIC3InputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">_instrument</span> <span class="o">==</span> <span class="s1">&#39;WFPC2&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">wfpc2Data</span>
+            <span class="k">return</span> <span class="n">wfpc2Data</span><span class="o">.</span><span class="n">WFPC2InputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            if _detector == 1: return wfpc2Data.PCInputImage(input)</span>
+<span class="sd">            if _detector == 2: return wfpc2Data.WF2InputImage(input)</span>
+<span class="sd">            if _detector == 3: return wfpc2Data.WF3InputImage(input)</span>
+<span class="sd">            if _detector == 4: return wfpc2Data.WF4InputImage(input)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">_instrument</span> <span class="o">==</span> <span class="s1">&#39;STIS&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">stisData</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;CCD&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">stisData</span><span class="o">.</span><span class="n">CCDInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;FUV-MAMA&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">stisData</span><span class="o">.</span><span class="n">FUVInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;NUV-MAMA&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">stisData</span><span class="o">.</span><span class="n">NUVInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_instrument</span> <span class="o">==</span> <span class="s1">&#39;WFC3&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">wfc3Data</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;UVIS&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">wfc3Data</span><span class="o">.</span><span class="n">WFC3UVISInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_detector</span> <span class="o">==</span> <span class="s1">&#39;IR&#39;</span><span class="p">:</span> <span class="k">return</span> <span class="n">wfc3Data</span><span class="o">.</span><span class="n">WFC3IRInputImage</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;No module implemented for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">_instrument</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;!&#39;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="c1"># If a supported instrument is not detected, print the following error message</span>
+    <span class="c1"># and raise an exception.</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Instrument: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">_instrument</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">_detector</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; not yet supported!&#39;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="c1">#### Remaining functions support process_input()</span>
+<div class="viewcode-block" id="processFilenames"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.processFilenames">[docs]</a><span class="k">def</span> <span class="nf">processFilenames</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">infilesOnly</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Process the input string which contains the input file information and</span>
+<span class="sd">       return a filelist,output</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ivmlist</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">oldasndict</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">input</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No input files provided to processInput&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">&#39;_asn&#39;</span> <span class="ow">in</span> <span class="nb">input</span> <span class="ow">or</span> <span class="s1">&#39;_asc&#39;</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">):</span>
+        <span class="c1"># Input is an association table</span>
+        <span class="c1"># Get the input files, and run makewcs on them</span>
+        <span class="n">oldasndict</span> <span class="o">=</span> <span class="n">asnutil</span><span class="o">.</span><span class="n">readASNTable</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">prodonly</span><span class="o">=</span><span class="n">infilesOnly</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">infilesOnly</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="s2">&quot;None&quot;</span><span class="p">]:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">oldasndict</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="c1"># insure output name is lower case</span>
+
+        <span class="n">asnhdr</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Only perform duplication check if not already completed...</span>
+        <span class="n">dupcheck</span> <span class="o">=</span> <span class="n">asnhdr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DUPCHECK&#39;</span><span class="p">,</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;PERFORM&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;PERFORM&quot;</span>
+
+        <span class="c1">#filelist = [fileutil.buildRootname(fname) for fname in oldasndict[&#39;order&#39;]]</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="n">buildASNList</span><span class="p">(</span><span class="n">oldasndict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">],</span><span class="nb">input</span><span class="p">,</span><span class="n">check_for_duplicates</span><span class="o">=</span><span class="n">dupcheck</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="ow">and</span> \
+       <span class="p">(</span><span class="nb">input</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;@&#39;</span><span class="p">)</span> <span class="p">:</span>
+        <span class="c1"># input is an @ file</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="nb">input</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="c1"># Read the first line in order to determine whether</span>
+        <span class="c1"># IVM files have been specified in a second column...</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># Parse the @-file with irafglob to extract the input filename</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="n">irafglob</span><span class="o">.</span><span class="n">irafglob</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">atfile</span><span class="o">=</span><span class="n">util</span><span class="o">.</span><span class="n">atfile_sci</span><span class="p">)</span>
+        <span class="c1"># If there is a second column...</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># ...parse out the names of the IVM files as well</span>
+            <span class="n">ivmlist</span> <span class="o">=</span> <span class="n">irafglob</span><span class="o">.</span><span class="n">irafglob</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">atfile</span><span class="o">=</span><span class="n">util</span><span class="o">.</span><span class="n">atfile_ivm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="s2">&quot;None&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="n">filelist</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="s1">&#39;final&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1">#input is a string or a python list</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filelist</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">parseinput</span><span class="o">.</span><span class="n">parseinput</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">outputname</span><span class="o">=</span><span class="n">output</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">output</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="s2">&quot;None&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">output</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="n">filelist</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">output</span> <span class="o">=</span> <span class="s1">&#39;final&#39;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">filelist</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span> <span class="k">raise</span>
+
+    <span class="c1"># sort the list of input files</span>
+    <span class="c1"># this ensures the list of input files has the same order on all platforms</span>
+    <span class="c1"># it can have ifferent order because listdir() uses inode order, not unix type order</span>
+    <span class="c1">#filelist.sort()</span>
+
+
+
+    <span class="k">return</span> <span class="n">filelist</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">oldasndict</span></div>
+
+
+<div class="viewcode-block" id="process_input"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.process_input">[docs]</a><span class="k">def</span> <span class="nf">process_input</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ivmlist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">updatewcs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">prodonly</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="n">wcskey</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">workinplace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create the full input list of filenames after verifying and converting</span>
+<span class="sd">    files as needed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">newfilelist</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">oldasndict</span><span class="p">,</span> <span class="n">origflist</span> <span class="o">=</span> <span class="n">buildFileListOrig</span><span class="p">(</span>
+            <span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">ivmlist</span><span class="o">=</span><span class="n">ivmlist</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="n">wcskey</span><span class="p">,</span>
+            <span class="n">updatewcs</span><span class="o">=</span><span class="n">updatewcs</span><span class="p">,</span> <span class="o">**</span><span class="n">workinplace</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">newfilelist</span><span class="p">:</span>
+        <span class="n">buildEmptyDRZ</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output</span>
+
+    <span class="c1"># run all WCS updating -- Now done in buildFileList</span>
+    <span class="c1">#pydr_input = _process_input_wcs(newfilelist, wcskey, updatewcs)</span>
+    <span class="n">pydr_input</span> <span class="o">=</span> <span class="n">newfilelist</span>
+
+    <span class="c1"># AsnTable will handle the case when output==None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">oldasndict</span><span class="p">:</span><span class="c1"># and output is not None:</span>
+        <span class="n">oldasndict</span> <span class="o">=</span> <span class="n">asnutil</span><span class="o">.</span><span class="n">ASNTable</span><span class="p">(</span><span class="n">pydr_input</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">)</span>
+        <span class="n">oldasndict</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+
+    <span class="n">asndict</span> <span class="o">=</span> <span class="n">update_member_names</span><span class="p">(</span><span class="n">oldasndict</span><span class="p">,</span> <span class="n">pydr_input</span><span class="p">)</span>
+    <span class="n">asndict</span><span class="p">[</span><span class="s1">&#39;original_file_names&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">origflist</span>
+
+    <span class="c1"># Build output filename</span>
+    <span class="n">drz_extn</span> <span class="o">=</span> <span class="s1">&#39;_drz.fits&#39;</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">newfilelist</span><span class="p">:</span>
+        <span class="c1"># special case logic to automatically recognize when _flc.fits files</span>
+        <span class="c1"># are provided as input and produce a _drc.fits file instead</span>
+        <span class="k">if</span> <span class="s1">&#39;_flc.fits&#39;</span> <span class="ow">in</span> <span class="n">img</span><span class="p">:</span>
+            <span class="n">drz_extn</span> <span class="o">=</span> <span class="s1">&#39;_drc.fits&#39;</span>
+            <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">output</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">]:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="n">asndict</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">],</span>
+                                           <span class="n">extn</span><span class="o">=</span><span class="n">drz_extn</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;.fits&#39;</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">drz_extn</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">extn</span><span class="o">=</span><span class="n">drz_extn</span><span class="p">)</span>
+
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Setting up output name: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">asndict</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">output</span></div>
+
+
+<span class="k">def</span> <span class="nf">_process_input_wcs</span><span class="p">(</span><span class="n">infiles</span><span class="p">,</span> <span class="n">wcskey</span><span class="p">,</span> <span class="n">updatewcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a subset of process_input(), for internal use only.  This is the</span>
+<span class="sd">    portion of input handling which sets/updates WCS data, and is a performance</span>
+<span class="sd">    hit - a target for parallelization. Returns the expanded list of filenames.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Run parseinput though it&#39;s likely already been done in processFilenames</span>
+    <span class="n">outfiles</span> <span class="o">=</span> <span class="n">parseinput</span><span class="o">.</span><span class="n">parseinput</span><span class="p">(</span><span class="n">infiles</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Disable parallel processing here for now until hardware I/O gets &quot;wider&quot;.</span>
+    <span class="c1"># Since this part is IO bound, parallelizing doesn&#39;t help more than a little</span>
+    <span class="c1"># in most cases, and may actually slow this down on some desktop nodes.</span>
+<span class="c1">#   cfgval_num_cores = None # get this from paramDict</span>
+<span class="c1">#   pool_size = util.get_pool_size(cfgval_num_cores, len(outfiles))</span>
+    <span class="n">pool_size</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># do the WCS updating</span>
+    <span class="k">if</span> <span class="n">wcskey</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;INDEF&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">updatewcs</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Updating input WCS using &quot;updatewcs&quot;&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Resetting input WCS to be based on WCS key = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">wcskey</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pool_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Executing </span><span class="si">%d</span><span class="s1"> parallel workers&#39;</span> <span class="o">%</span> <span class="n">pool_size</span><span class="p">)</span>
+        <span class="n">subprocs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">outfiles</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_process_input_wcs_single</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s1">&#39;processInput._process_input_wcs()&#39;</span><span class="p">,</span> <span class="c1"># for err msgs</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">wcskey</span><span class="p">,</span> <span class="n">updatewcs</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">subprocs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">mputil</span><span class="o">.</span><span class="n">launch_and_wait</span><span class="p">(</span><span class="n">subprocs</span><span class="p">,</span> <span class="n">pool_size</span><span class="p">)</span> <span class="c1"># blocks till all done</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Executing serially&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">outfiles</span><span class="p">:</span>
+            <span class="n">_process_input_wcs_single</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">wcskey</span><span class="p">,</span> <span class="n">updatewcs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">outfiles</span>
+
+
+<span class="k">def</span> <span class="nf">_process_input_wcs_single</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">wcskey</span><span class="p">,</span> <span class="n">updatewcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    See docs for _process_input_wcs.</span>
+<span class="sd">    This is separated to be spawned in parallel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">wcskey</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;INDEF&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">updatewcs</span><span class="p">:</span>
+            <span class="n">uw</span><span class="o">.</span><span class="n">updatewcs</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">checkfiles</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">numext</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">countExtn</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="n">extlist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numext</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">extlist</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">extn</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">wcskey</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_uppercase</span><span class="p">:</span>
+            <span class="n">wkey</span> <span class="o">=</span> <span class="n">wcskey</span>
+            <span class="n">wname</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wname</span> <span class="o">=</span> <span class="n">wcskey</span>
+            <span class="n">wkey</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
+        <span class="n">altwcs</span><span class="o">.</span><span class="n">restoreWCS</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">extlist</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="n">wkey</span><span class="p">,</span> <span class="n">wcsname</span><span class="o">=</span><span class="n">wname</span><span class="p">)</span>
+    <span class="c1"># make an asn table at the end</span>
+    <span class="c1"># Make sure there is a WCSCORR table for each input image</span>
+    <span class="k">if</span> <span class="n">wcskey</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;INDEF&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="ow">or</span> <span class="n">updatewcs</span><span class="p">:</span>
+        <span class="n">wcscorr</span><span class="o">.</span><span class="n">init_wcscorr</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="buildFileList"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.buildFileList">[docs]</a><span class="k">def</span> <span class="nf">buildFileList</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ivmlist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">wcskey</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">updatewcs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">workinplace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a file list which has undergone various instrument-specific</span>
+<span class="sd">    checks for input to MultiDrizzle, including splitting STIS associations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newfilelist</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">oldasndict</span><span class="p">,</span> <span class="n">filelist</span> <span class="o">=</span> \
+        <span class="n">buildFileListOrig</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">ivmlist</span><span class="o">=</span><span class="n">ivmlist</span><span class="p">,</span>
+                    <span class="n">wcskey</span><span class="o">=</span><span class="n">wcskey</span><span class="p">,</span> <span class="n">updatewcs</span><span class="o">=</span><span class="n">updatewcs</span><span class="p">,</span> <span class="o">**</span><span class="n">workinplace</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">newfilelist</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">oldasndict</span></div>
+
+
+<div class="viewcode-block" id="buildFileListOrig"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.buildFileListOrig">[docs]</a><span class="k">def</span> <span class="nf">buildFileListOrig</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ivmlist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">wcskey</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">updatewcs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">workinplace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a file list which has undergone various instrument-specific</span>
+<span class="sd">    checks for input to MultiDrizzle, including splitting STIS associations.</span>
+<span class="sd">    Compared to buildFileList, this version returns the list of the</span>
+<span class="sd">    original file names as specified by the user (e.g., before GEIS-&gt;MEF, or</span>
+<span class="sd">    WAIVER FITS-&gt;MEF conversion).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># NOTE: original file name is required in order to correctly associate</span>
+    <span class="c1"># user catalog files (e.g., user masks to be used with &#39;skymatch&#39;) with</span>
+    <span class="c1"># corresponding imageObjects.</span>
+
+    <span class="n">filelist</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">oldasndict</span> <span class="o">=</span> <span class="n">processFilenames</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">output</span><span class="p">)</span>
+
+    <span class="c1"># verify that all input images specified can be updated as needed</span>
+    <span class="n">filelist</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">verifyFilePermissions</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">filelist</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">manageInputCopies</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span><span class="o">**</span><span class="n">workinplace</span><span class="p">)</span>
+
+    <span class="c1"># to keep track of the original file names we do the following trick:</span>
+    <span class="c1"># pack filelist with the ivmlist using zip and later unpack the zipped list.</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: this required a small modification of the checkStisFiles function</span>
+    <span class="c1"># in stsci.tools.check_files to be able to handle ivmlists that are tuples.</span>
+    <span class="k">if</span> <span class="n">ivmlist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ivmlist</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span><span class="o">*</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ivmlist</span><span class="p">))</span> <span class="c1">#TODO: remove after debugging</span>
+    <span class="n">ivmlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">ivmlist</span><span class="p">,</span><span class="n">filelist</span><span class="p">))</span>
+
+    <span class="c1"># Check format of FITS files - convert Waiver/GEIS to MEF if necessary</span>
+    <span class="n">filelist</span><span class="p">,</span> <span class="n">ivmlist</span> <span class="o">=</span> <span class="n">check_files</span><span class="o">.</span><span class="n">checkFITSFormat</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">)</span>
+
+    <span class="c1"># check for non-polynomial distortion correction</span>
+    <span class="n">filelist</span> <span class="o">=</span> <span class="n">checkDGEOFile</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span>
+
+    <span class="c1"># run all WCS updating</span>
+    <span class="n">updated_input</span> <span class="o">=</span> <span class="n">_process_input_wcs</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">wcskey</span><span class="p">,</span> <span class="n">updatewcs</span><span class="p">)</span>
+
+    <span class="n">newfilelist</span><span class="p">,</span> <span class="n">ivmlist</span> <span class="o">=</span> <span class="n">check_files</span><span class="o">.</span><span class="n">checkFiles</span><span class="p">(</span><span class="n">updated_input</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">updatewcs</span><span class="p">:</span>
+        <span class="n">uw</span><span class="o">.</span><span class="n">updatewcs</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">newfilelist</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">filelist</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ivmlist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ivmlist</span><span class="p">,</span> <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">ivmlist</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># insure that both filelist and ivmlist are defined as empty lists</span>
+
+    <span class="k">return</span> <span class="n">newfilelist</span><span class="p">,</span> <span class="n">ivmlist</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">oldasndict</span><span class="p">,</span> <span class="n">filelist</span></div>
+
+
+<div class="viewcode-block" id="buildASNList"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.buildASNList">[docs]</a><span class="k">def</span> <span class="nf">buildASNList</span><span class="p">(</span><span class="n">rootnames</span><span class="p">,</span> <span class="n">asnname</span><span class="p">,</span> <span class="n">check_for_duplicates</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the list of filenames for a given set of rootnames</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Recognize when multiple valid inputs with the same rootname are present</span>
+    <span class="c1"># this would happen when both CTE-corrected (_flc) and non-CTE-corrected (_flt)</span>
+    <span class="c1"># products are in the same directory as an ASN table</span>
+    <span class="n">filelist</span><span class="p">,</span> <span class="n">duplicates</span> <span class="o">=</span> <span class="n">checkForDuplicateInputs</span><span class="p">(</span><span class="n">rootnames</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">check_for_duplicates</span> <span class="ow">and</span> <span class="n">duplicates</span><span class="p">:</span>
+        <span class="c1"># Build new ASN tables for each set of input files</span>
+        <span class="n">origasn</span> <span class="o">=</span> <span class="n">changeSuffixinASN</span><span class="p">(</span><span class="n">asnname</span><span class="p">,</span> <span class="s1">&#39;flt&#39;</span><span class="p">)</span>
+        <span class="n">dupasn</span> <span class="o">=</span> <span class="n">changeSuffixinASN</span><span class="p">(</span><span class="n">asnname</span><span class="p">,</span> <span class="s1">&#39;flc&#39;</span><span class="p">)</span>
+
+        <span class="n">errstr</span> <span class="o">=</span> <span class="s1">&#39;ERROR:</span><span class="se">\n</span><span class="s1">Multiple valid input files found:</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="k">for</span> <span class="n">fname</span><span class="p">,</span> <span class="n">dname</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="n">duplicates</span><span class="p">):</span>
+            <span class="n">errstr</span> <span class="o">+=</span> <span class="s1">&#39;    </span><span class="si">%s</span><span class="s1">    </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">dname</span><span class="p">)</span>
+        <span class="n">errstr</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">New association files have been generated for each &#39;</span>
+                   <span class="s1">&#39;version of these files.</span><span class="se">\n</span><span class="s1">    </span><span class="si">%s</span><span class="se">\n</span><span class="s1">    </span><span class="si">%s</span><span class="se">\n\n</span><span class="s1">Please &#39;</span>
+                   <span class="s1">&#39;re-start astrodrizzle using of these new ASN files or &#39;</span>
+                   <span class="s1">&#39;use widlcards for the input to only select one type of &#39;</span>
+                   <span class="s1">&#39;input file.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dupasn</span><span class="p">,</span> <span class="n">origasn</span><span class="p">))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span><span class="n">errstr</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+
+        <span class="c1"># generate new ASN files for each case,</span>
+        <span class="c1"># report this case of duplicate inputs to the user then quit</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+    <span class="k">return</span> <span class="n">filelist</span></div>
+
+
+<div class="viewcode-block" id="changeSuffixinASN"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.changeSuffixinASN">[docs]</a><span class="k">def</span> <span class="nf">changeSuffixinASN</span><span class="p">(</span><span class="n">asnfile</span><span class="p">,</span> <span class="n">suffix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a copy of the original asn file and change the name of all members</span>
+<span class="sd">    to include the suffix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Start by creating a new name for the ASN table</span>
+    <span class="n">_new_asn</span> <span class="o">=</span> <span class="n">asnfile</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_asn.fits&#39;</span><span class="p">,</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s1">&#39;_asn.fits&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_new_asn</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_new_asn</span><span class="p">)</span>
+    <span class="c1"># copy original ASN table to new table</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">asnfile</span><span class="p">,</span><span class="n">_new_asn</span><span class="p">)</span>
+
+    <span class="c1"># Open up the new copy and convert all MEMNAME&#39;s to include suffix</span>
+    <span class="n">fasn</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">_new_asn</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">fasn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;DUPCHECK&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;COMPLETE&quot;</span>
+    <span class="n">newdata</span> <span class="o">=</span> <span class="n">fasn</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">newdata</span><span class="p">)):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">newdata</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s1">&#39;prod&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">newdata</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="n">val</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">suffix</span>
+        <span class="n">newdata</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="n">newdata</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="n">newdata</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="c1"># Redefine dtype to support longer strings for MEMNAME</span>
+    <span class="n">new_dtype</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">fasn</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="n">msize</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">new_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">msize</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">+</span><span class="mi">8</span>
+    <span class="n">mtype</span> <span class="o">=</span> <span class="n">msize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">new_dtype</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">d</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">d</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">msize</span><span class="p">,</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mtype</span><span class="p">,</span><span class="n">new_size</span><span class="p">))))</span>
+    <span class="n">new_dtype</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">new_dtype</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="c1"># Assign newly created, reformatted array to extension</span>
+    <span class="n">newasn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">newdata</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">new_dtype</span><span class="p">)</span>
+    <span class="n">fasn</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">newasn</span>
+    <span class="n">fasn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">_new_asn</span></div>
+
+
+<div class="viewcode-block" id="checkForDuplicateInputs"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.checkForDuplicateInputs">[docs]</a><span class="k">def</span> <span class="nf">checkForDuplicateInputs</span><span class="p">(</span><span class="n">rootnames</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check input files specified in ASN table for duplicate versions with</span>
+<span class="sd">    multiple valid suffixes (_flt and _flc, for example).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">flist</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">duplist</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">rootnames</span><span class="p">:</span>
+        <span class="c1"># Look for any recognized CTE-corrected products</span>
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildRootname</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;_flc.fits&#39;</span><span class="p">])</span>
+        <span class="n">f2</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildRootname</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="n">flist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">f1</span> <span class="o">!=</span> <span class="n">f2</span><span class="p">:</span>
+            <span class="c1"># More than 1 valid input found for this rootname</span>
+            <span class="n">duplist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">flist</span><span class="p">,</span><span class="n">duplist</span></div>
+
+
+<div class="viewcode-block" id="runmakewcs"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.runmakewcs">[docs]</a><span class="k">def</span> <span class="nf">runmakewcs</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Runs make wcs and recomputes the WCS keywords</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input : str or list of str</span>
+<span class="sd">        a list of files</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : list of str</span>
+<span class="sd">        returns a list of names of the modified files</span>
+<span class="sd">        (For GEIS files returns the translated names.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newNames</span> <span class="o">=</span> <span class="n">uw</span><span class="o">.</span><span class="n">updatewcs</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">checkfiles</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1">#newNames = makewcs.run(input)</span>
+    <span class="k">return</span> <span class="n">newNames</span></div>
+
+
+<div class="viewcode-block" id="resetDQBits"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.resetDQBits">[docs]</a><span class="k">def</span> <span class="nf">resetDQBits</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">cr_bits_value</span><span class="o">=</span><span class="mi">4096</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reset the CR bit in each input image&#39;s DQ array&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">cr_bits_value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">img</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">sci_chip</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="n">img</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span>
+                <span class="n">resetbits</span><span class="o">.</span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">dqfile</span><span class="p">,</span> <span class="n">cr_bits_value</span><span class="p">,</span>
+                                        <span class="n">extver</span><span class="o">=</span><span class="n">chip</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">dq_extn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="update_member_names"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.update_member_names">[docs]</a><span class="k">def</span> <span class="nf">update_member_names</span><span class="p">(</span><span class="n">oldasndict</span><span class="p">,</span> <span class="n">pydr_input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update names in a member dictionary.</span>
+
+<span class="sd">    Given an association dictionary with rootnames and a list of full</span>
+<span class="sd">    file names, it will update the names in the member dictionary to</span>
+<span class="sd">    contain &#39;_*&#39; extension. For example a rootname of &#39;u9600201m&#39; will</span>
+<span class="sd">    be replaced by &#39;u9600201m_c0h&#39; making sure that a MEf file is passed</span>
+<span class="sd">    as an input and not the corresponding GEIS file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">omembers</span> <span class="o">=</span> <span class="n">oldasndict</span><span class="p">[</span><span class="s1">&#39;members&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">nmembers</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">translated_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.fits&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">pydr_input</span><span class="p">]</span>
+
+    <span class="n">newkeys</span> <span class="o">=</span> <span class="p">[</span><span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">pydr_input</span><span class="p">]</span>
+    <span class="n">keys_map</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">newkeys</span><span class="p">,</span> <span class="n">pydr_input</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">okey</span><span class="p">,</span> <span class="n">oval</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">omembers</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">okey</span> <span class="ow">in</span> <span class="n">newkeys</span><span class="p">:</span>
+            <span class="n">nkey</span> <span class="o">=</span> <span class="n">pydr_input</span><span class="p">[</span><span class="n">newkeys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">okey</span><span class="p">)]</span>
+            <span class="n">nmembers</span><span class="p">[</span><span class="n">nkey</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.fits&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">oval</span>
+
+    <span class="n">oldasndict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;members&#39;</span><span class="p">)</span>
+    <span class="c1"># replace should be always True to cover the case when flt files were removed</span>
+    <span class="c1"># and the case when names were translated</span>
+
+    <span class="n">oldasndict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">members</span><span class="o">=</span><span class="n">nmembers</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">oldasndict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">translated_names</span>
+    <span class="k">return</span> <span class="n">oldasndict</span></div>
+
+
+<div class="viewcode-block" id="manageInputCopies"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.manageInputCopies">[docs]</a><span class="k">def</span> <span class="nf">manageInputCopies</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span> <span class="o">**</span><span class="n">workinplace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates copies of all input images in a sub-directory.</span>
+
+<span class="sd">    The copies are made prior to any processing being done to the images at all,</span>
+<span class="sd">    including updating the WCS keywords. If there are already copies present,</span>
+<span class="sd">    they will NOT be overwritten, but instead will be used to over-write the</span>
+<span class="sd">    current working copies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Find out what directory is being used for processing</span>
+    <span class="n">workingdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="c1"># Only create sub-directory for copies of inputs, if copies are requested</span>
+    <span class="c1"># Create name of sub-directory for copies</span>
+    <span class="n">origdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workingdir</span><span class="p">,</span><span class="s1">&#39;OrIg_files&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">workinplace</span><span class="p">[</span><span class="s1">&#39;overwrite&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">workinplace</span><span class="p">[</span><span class="s1">&#39;preserve&#39;</span><span class="p">]:</span>
+        <span class="c1"># if sub-directory does not exist yet, create it</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">origdir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">origdir</span><span class="p">)</span>
+
+    <span class="n">printMsg</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># check to see if copies already exist for each file</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">filelist</span><span class="p">:</span>
+        <span class="n">copymade</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># If a copy is made, no need to restore</span>
+        <span class="n">copyname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">origdir</span><span class="p">,</span><span class="n">fname</span><span class="p">)</span>
+        <span class="n">short_copyname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;OrIg_files&#39;</span><span class="p">,</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">workinplace</span><span class="p">[</span><span class="s1">&#39;overwrite&#39;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Forcibly archiving original of: &#39;</span><span class="p">,</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;as &#39;</span><span class="p">,</span><span class="n">short_copyname</span><span class="p">)</span>
+            <span class="c1"># make a copy of the file in the sub-directory</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">copyname</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">copyname</span><span class="p">,</span> <span class="mi">438</span><span class="p">)</span> <span class="c1"># octal 666</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">copyname</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">copyname</span><span class="p">,</span><span class="mi">292</span><span class="p">)</span> <span class="c1"># octal 444 makes files read-only</span>
+            <span class="k">if</span> <span class="n">printMsg</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Turning OFF &quot;preserve&quot; and &quot;restore&quot; actions...</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">printMsg</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># We only need to print this one time...</span>
+            <span class="n">copymade</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">workinplace</span><span class="p">[</span><span class="s1">&#39;preserve&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">copyname</span><span class="p">))</span> \
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">workinplace</span><span class="p">[</span><span class="s1">&#39;overwrite&#39;</span><span class="p">]:</span>
+            <span class="c1"># Preserving a copy of the input, but only if not already archived</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Preserving original of: &#39;</span><span class="p">,</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;as &#39;</span><span class="p">,</span><span class="n">short_copyname</span><span class="p">)</span>
+            <span class="c1"># make a copy of the file in the sub-directory</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">copyname</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">copyname</span><span class="p">,</span><span class="mi">292</span><span class="p">)</span> <span class="c1"># octal 444 makes files read-only</span>
+            <span class="n">copymade</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="s1">&#39;restore&#39;</span> <span class="ow">in</span> <span class="n">workinplace</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">copymade</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">copyname</span><span class="p">)</span> <span class="ow">and</span> <span class="n">workinplace</span><span class="p">[</span><span class="s1">&#39;restore&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">workinplace</span><span class="p">[</span><span class="s1">&#39;overwrite&#39;</span><span class="p">]:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Restoring original input for &#39;</span><span class="p">,</span><span class="n">fname</span><span class="p">,</span><span class="s1">&#39; from &#39;</span><span class="p">,</span><span class="n">short_copyname</span><span class="p">)</span>
+                <span class="c1"># replace current files with original version</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="mi">438</span><span class="p">)</span> <span class="c1"># octal 666</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">copyname</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="mi">438</span><span class="p">)</span> <span class="c1"># octal 666</span></div>
+
+
+<div class="viewcode-block" id="buildEmptyDRZ"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.buildEmptyDRZ">[docs]</a><span class="k">def</span> <span class="nf">buildEmptyDRZ</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an empty DRZ file.</span>
+
+<span class="sd">    This module creates an empty DRZ file in a valid FITS format so that the HST</span>
+<span class="sd">    pipeline can handle the Multidrizzle zero expossure time exception</span>
+<span class="sd">    where all data has been excluded from processing.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input : str</span>
+<span class="sd">        filename of the initial input to process_input</span>
+<span class="sd">    output : str</span>
+<span class="sd">        filename of the default empty _drz.fits file to be generated</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Identify the first input image</span>
+    <span class="n">inputfile</span> <span class="o">=</span> <span class="n">parseinput</span><span class="o">.</span><span class="n">parseinput</span><span class="p">(</span><span class="nb">input</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inputfile</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">******* ERROR *******&#39;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+              <span class="s1">&#39;No input file found!  Check specification of parameter &#39;</span>
+              <span class="s1">&#39;&quot;input&quot;. &#39;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Quitting...&#39;</span><span class="p">,</span>  <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;******* ***** *******</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span>  <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="c1"># raise IOError, &quot;No input file found!&quot;</span>
+
+    <span class="c1"># Set up output file here...</span>
+    <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">oname</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="nb">input</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">oname</span> <span class="o">=</span> <span class="s1">&#39;final&#39;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="n">oname</span><span class="p">,</span> <span class="n">extn</span><span class="o">=</span><span class="s1">&#39;_drz.fits&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;drz&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildNewRootname</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">extn</span><span class="o">=</span><span class="s1">&#39;_drz.fits&#39;</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Setting up output name: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+
+    <span class="c1"># Open the first image (of the excludedFileList?) to use as a template to build</span>
+    <span class="c1"># the DRZ file.</span>
+    <span class="k">try</span> <span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Building empty DRZ file from </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">inputfile</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">inputfile</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;Unable to open file </span><span class="si">%s</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">inputfile</span><span class="p">)</span>
+
+    <span class="c1"># Create the fitsobject</span>
+    <span class="n">fitsobj</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">()</span>
+    <span class="c1"># Copy the primary header</span>
+    <span class="n">hdu</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">fitsobj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+    <span class="c1"># Modify the &#39;NEXTEND&#39; keyword of the primary header to 3 for the</span>
+    <span class="c1">#&#39;sci, wht, and ctx&#39; extensions of the newly created file.</span>
+    <span class="n">fitsobj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;NEXTEND&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="c1"># Create the &#39;SCI&#39; extension</span>
+    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;SCI&#39;</span>
+    <span class="n">fitsobj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+    <span class="c1"># Create the &#39;WHT&#39; extension</span>
+    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;WHT&#39;</span>
+    <span class="n">fitsobj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+    <span class="c1"># Create the &#39;CTX&#39; extension</span>
+    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;CTX&#39;</span>
+    <span class="n">fitsobj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+    <span class="c1"># Add HISTORY comments explaining the creation of this file.</span>
+    <span class="n">fitsobj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s2">&quot;** AstroDrizzle has created this empty &quot;</span>
+                                  <span class="s2">&quot;DRZ product because**&quot;</span><span class="p">)</span>
+    <span class="n">fitsobj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s2">&quot;** all input images were excluded from &quot;</span>
+                                  <span class="s2">&quot;processing.**&quot;</span><span class="p">)</span>
+
+
+    <span class="c1"># Change the filename in the primary header to reflect the name of the output</span>
+    <span class="c1"># filename.</span>
+    <span class="n">fitsobj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;FILENAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>  <span class="c1"># +&quot;_drz.fits&quot;</span>
+
+    <span class="c1"># Change the ROOTNAME keyword to the ROOTNAME of the output PRODUCT</span>
+    <span class="n">fitsobj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;ROOTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_drz.fits&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># Modify the ASN_MTYP keyword to contain &quot;PROD-DTH&quot; so it can be properly</span>
+    <span class="c1"># ingested into the archive catalog.</span>
+
+    <span class="c1"># stis has this keyword in the [1] header, so I am directing the code</span>
+    <span class="c1">#t o first look in the primary, then the 1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">fitsobj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;ASN_MTYP&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;PROD-DTH&#39;</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">fitsobj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;ASN_MTYP&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;PROD-DTH&#39;</span>
+
+    <span class="c1"># If the file is already on disk delete it and replace it with the</span>
+    <span class="c1"># new file</span>
+    <span class="n">dirfiles</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">curdir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dirfiles</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;       Replacing </span><span class="si">%s</span><span class="s2">...&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+
+    <span class="c1"># Write out the empty DRZ file</span>
+    <span class="n">fitsobj</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span>
+        <span class="s1">&#39;ERROR:</span><span class="se">\n</span><span class="s1">AstroDrizzle has created an empty DRZ product because all &#39;</span>
+        <span class="s1">&#39;input images were excluded from processing or a user requested the &#39;</span>
+        <span class="s1">&#39;program to stop.&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="checkDGEOFile"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.checkDGEOFile">[docs]</a><span class="k">def</span> <span class="nf">checkDGEOFile</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Verify that input file has been updated with NPOLFILE</span>
+
+<span class="sd">    This function checks for the presence of &#39;NPOLFILE&#39; kw in the primary header</span>
+<span class="sd">    when &#39;DGEOFILE&#39; kw is present and valid (i.e. &#39;DGEOFILE&#39; is not blank or &#39;N/A&#39;).</span>
+<span class="sd">    It handles the case of science files downloaded from the archive before the new</span>
+<span class="sd">    software was installed there.</span>
+<span class="sd">    If &#39;DGEOFILE&#39; is present and &#39;NPOLFILE&#39; is missing, print a message and let the user</span>
+<span class="sd">    choose whether to (q)uit and update the headers or (c)ontinue and run astrodrizzle</span>
+<span class="sd">    without the non-polynomial correction.</span>
+<span class="sd">    &#39;NPOLFILE&#39; will be populated in the pipeline before astrodrizzle is run.</span>
+
+<span class="sd">    In the case of WFPC2 the old style dgeo files are used to create detector to image</span>
+<span class="sd">    correction at runtime.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filenames : list of str</span>
+<span class="sd">        file names of all images to be checked</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            A &#39;DGEOFILE&#39; keyword is present in the primary header but &#39;NPOLFILE&#39; keyword was not found.</span>
+<span class="s2">            This version of the software uses a new format for the residual distortion DGEO files.</span>
+<span class="s2">            Please consult the instrument web pages for which reference files to download.</span>
+<span class="s2">            A small (new style) dgeofile is needed (&#39;_npl.fits&#39; extension) and possibly a</span>
+<span class="s2">            detector to image correction file (&#39;_d2i.fits&#39; extension).</span>
+<span class="s2">            The names of these files must be added to the primary header either using the task XXXX</span>
+<span class="s2">            or manually, for example:</span>
+
+<span class="s2">            hedit </span><span class="si">{0:s}</span><span class="s2">[0] npolfile fname_npl.fits add+</span>
+<span class="s2">            hedit </span><span class="si">{0:s}</span><span class="s2">[0] d2imfile fname_d2i.fits add+</span>
+
+<span class="s2">            where fname_npl.fits is the name of the new style dgeo file and fname_d2i.fits is</span>
+<span class="s2">            the name of the detector to image correction. After adding these keywords to the</span>
+<span class="s2">            primary header, updatewcs must be run to update the science files:</span>
+
+<span class="s2">            from stwcs import updatewcs</span>
+<span class="s2">            updatewcs.updatewcs(&quot;</span><span class="si">{0:s}</span><span class="s2">&quot;)</span>
+
+<span class="s2">            Alternatively you may choose to run astrodrizzle without DGEO and detector to image correction.</span>
+
+<span class="s2">            To stop astrodrizzle and update the dgeo files, type &#39;q&#39;.</span>
+<span class="s2">            To continue running astrodrizzle without the non-polynomial distortion correction, type &#39;c&#39;:</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+
+    <span class="n">short_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            To stop astrodrizzle and update the dgeo files, type &#39;q&#39;.</span>
+<span class="s2">            To continue running astrodrizzle without the non-polynomial distortion correction, type &#39;c&#39;:</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">inputfile</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dgeofile</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getval</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="s1">&#39;DGEOFILE&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">dgeofile</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;N/A&quot;</span><span class="p">,</span> <span class="s2">&quot;n/a&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inputfile</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">npolfile</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getval</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="s1">&#39;NPOLFILE&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">ustop</span> <span class="o">=</span> <span class="n">userStop</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+                <span class="k">while</span> <span class="n">ustop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ustop</span> <span class="o">=</span> <span class="n">userStop</span><span class="p">(</span><span class="n">short_msg</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ustop</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">filenames</span></div>
+
+<div class="viewcode-block" id="userStop"><a class="viewcode-back" href="../../process.html#drizzlepac.processInput.userStop">[docs]</a><span class="k">def</span> <span class="nf">userStop</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">user_input</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">user_input</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">user_input</span> <span class="o">==</span> <span class="s1">&#39;q&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">user_input</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<span class="k">def</span> <span class="nf">_setDefaults</span><span class="p">(</span><span class="n">input_dict</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot; Define full set of default values for unit-testing this module.[OBSOLETE]&quot;&quot;&quot;</span>
+    <span class="n">paramDict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;input&#39;</span><span class="p">:</span><span class="s1">&#39;*flt.fits&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;output&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;mdriztab&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;refimage&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;runfile&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;workinplace&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;updatewcs&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;proc_unit&#39;</span><span class="p">:</span><span class="s1">&#39;native&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;coeffs&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;context&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;clean&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;group&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;ra&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;dec&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;build&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;gain&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;gnkeyword&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;readnoise&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;rnkeyword&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;exptime&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;expkeyword&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;crbitval&#39;</span><span class="p">:</span><span class="mi">4096</span><span class="p">,</span>
+        <span class="s1">&#39;static&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;static_sig&#39;</span><span class="p">:</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="s1">&#39;skysub&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;skymethod&#39;</span><span class="p">:</span><span class="s2">&quot;globalmin+match&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;skystat&#39;</span><span class="p">:</span><span class="s2">&quot;median&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;skywidth&#39;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="s1">&#39;skylower&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;skyupper&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;skyclip&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span>
+        <span class="s1">&#39;skylsigma&#39;</span><span class="p">:</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="s1">&#39;skyusigma&#39;</span><span class="p">:</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="s2">&quot;skymask_cat&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;use_static&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;sky_bits&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;skyuser&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;skyfile&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;driz_separate&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_outnx&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_outny&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_crpix1&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_crpix2&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_kernel&#39;</span><span class="p">:</span><span class="s1">&#39;turbo&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_scale&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_pixfrac&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_rot&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_fillval&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;driz_sep_bits&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;median&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;median_newmasks&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;combine_type&#39;</span><span class="p">:</span><span class="s2">&quot;minmed&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;combine_nsigma&#39;</span><span class="p">:</span><span class="s2">&quot;4 3&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;combine_nlow&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;combine_nhigh&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;combine_lthresh&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;combine_hthresh&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;combine_grow&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;blot&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;blot_interp&#39;</span><span class="p">:</span><span class="s1">&#39;poly5&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;blot_sinscl&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="s1">&#39;driz_cr&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;driz_cr_corr&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;driz_cr_snr&#39;</span><span class="p">:</span><span class="s2">&quot;3.5 3.0&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;driz_cr_scale&#39;</span><span class="p">:</span><span class="s2">&quot;1.2 0.7&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;driz_cr_cteg&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;driz_cr_grow&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;driz_combine&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;final_wht_type&#39;</span><span class="p">:</span><span class="s2">&quot;EXP&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;final_outnx&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;final_outny&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;final_crpix1&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;final_crpix2&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;final_kernel&#39;</span><span class="p">:</span><span class="s1">&#39;square&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;final_scale&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;final_pixfrac&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="s1">&#39;final_rot&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;final_fillval&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;final_bits&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+
+    <span class="n">paramDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_dict</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">User Input Parameters for Init Step:&#39;</span><span class="p">)</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">printParams</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">paramDict</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>
