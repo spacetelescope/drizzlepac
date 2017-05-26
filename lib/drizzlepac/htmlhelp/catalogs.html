@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Classes to manage Catalogs and WCS’s &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Classes to manage Catalogs and WCS’s &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.15 (26-May-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Functions to Manage WCS Table Extension" href="wcscorr.html" />
     <link rel="prev" title="Image Class" href="image.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="image.html" title="Image Class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -57,22 +59,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="wcscorr.html"
                         title="next chapter">Functions to Manage WCS Table Extension</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/catalogs.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/catalogs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -81,7 +82,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="classes-to-manage-catalogs-and-wcs-s">
 <span id="catalogs"></span><h1>Classes to manage Catalogs and WCS&#8217;s<a class="headerlink" href="#classes-to-manage-catalogs-and-wcs-s" title="Permalink to this headline">¶</a></h1>
@@ -93,26 +94,22 @@ for these classes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
-<p class="graphviz">
-<img src="_images/inheritance-fc4c0647b4aba39040a78bd71e496390116a423e.png" alt="Inheritance diagram of drizzlepac.catalogs" usemap="#inheritancee4936daf73" class="inheritance"/>
+<img src="_images/inheritance-d5d645696d4bcc0097998aff02fc9806e61d4f38.png" alt="Inheritance diagram of drizzlepac.catalogs" usemap="#inheritancee4936daf73" class="inheritance"/>
 <map id="inheritancee4936daf73" name="inheritancee4936daf73">
-<area shape="rect" id="node1" href="#drizzlepac.catalogs.Catalog" title="Base class for keeping track of a source catalog for an input WCS" alt="" coords="5,32,134,61"/>
-<area shape="rect" id="node2" href="#drizzlepac.catalogs.ImageCatalog" title="Class which generates a source catalog from an image using" alt="" coords="181,5,349,35"/>
-<area shape="rect" id="node4" href="#drizzlepac.catalogs.UserCatalog" title="Class to manage user&#45;supplied catalogs as inputs." alt="" coords="187,59,344,88"/>
-<area shape="rect" id="node3" href="#drizzlepac.catalogs.RefCatalog" title="Class which manages a reference catalog." alt="" coords="397,59,547,88"/>
+<area shape="rect" id="node1" href="#drizzlepac.catalogs.Catalog" target="_top" title="Base class for keeping track of a source catalog for an input WCS" alt="" coords="5,31,124,56"/>
+<area shape="rect" id="node2" href="#drizzlepac.catalogs.ImageCatalog" target="_top" title="Class which generates a source catalog from an image using" alt="" coords="172,5,327,31"/>
+<area shape="rect" id="node4" href="#drizzlepac.catalogs.UserCatalog" target="_top" title="Class to manage user&#45;supplied catalogs as inputs." alt="" coords="176,55,323,80"/>
+<area shape="rect" id="node3" href="#drizzlepac.catalogs.RefCatalog" target="_top" title="Class which manages a reference catalog." alt="" coords="375,55,513,80"/>
 </map>
-</p>
 <dl class="function">
 <dt id="drizzlepac.catalogs.generateCatalog">
-<tt class="descclassname">drizzlepac.catalogs.</tt><tt class="descname">generateCatalog</tt><big>(</big><em>wcs</em>, <em>mode='automatic'</em>, <em>catalog=None</em>, <em>src_find_filters=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.generateCatalog" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.catalogs.</code><code class="descname">generateCatalog</code><span class="sig-paren">(</span><em>wcs</em>, <em>mode='automatic'</em>, <em>catalog=None</em>, <em>src_find_filters=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#generateCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.generateCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function which determines what type of catalog object needs to be
 instantiated based on what type of source selection algorithm the user
 specified.</p>
@@ -120,8 +117,7 @@ specified.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
 <blockquote>
 <div><p>WCS object generated by STWCS or PyWCS</p>
 </div></blockquote>
@@ -132,12 +128,11 @@ specified.</p>
 <p><strong id="kwargs">kwargs</strong> : dict</p>
 <blockquote>
 <div><p>Parameters needed to interpret source catalog from input catalog
-with <em class="xref py py-obj">findmode</em> being required.</p>
+with <code class="xref py py-obj docutils literal"><span class="pre">findmode</span></code> being required.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>catalog</strong> : obj</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>catalog</strong> : obj</p>
 <blockquote class="last">
 <div><p>A Catalog-based class instance for keeping track of WCS and
 associated source catalog</p>
@@ -150,18 +145,18 @@ associated source catalog</p>
 
 <dl class="class">
 <dt id="drizzlepac.catalogs.ImageCatalog">
-<em class="property">class </em><tt class="descclassname">drizzlepac.catalogs.</tt><tt class="descname">ImageCatalog</tt><big>(</big><em>wcs</em>, <em>catalog_source</em>, <em>src_find_filters=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.ImageCatalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.catalogs.Catalog" title="drizzlepac.catalogs.Catalog"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.catalogs.Catalog</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.catalogs.</code><code class="descname">ImageCatalog</code><span class="sig-paren">(</span><em>wcs</em>, <em>catalog_source</em>, <em>src_find_filters=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#ImageCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.ImageCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.catalogs.Catalog" title="drizzlepac.catalogs.Catalog"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.catalogs.Catalog</span></code></a></p>
 <p>Class which generates a source catalog from an image using
 Python-based, daofind-like algorithms</p>
-<p>Required input <em class="xref py py-obj">kwargs</em> parameters:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">computesig</span><span class="p">,</span> <span class="n">skysigma</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">peakmin</span><span class="p">,</span> <span class="n">peakmax</span><span class="p">,</span>
+<p>Required input <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code> parameters:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">computesig</span><span class="p">,</span> <span class="n">skysigma</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">peakmin</span><span class="p">,</span> <span class="n">peakmax</span><span class="p">,</span>
 <span class="n">hmin</span><span class="p">,</span> <span class="n">conv_width</span><span class="p">,</span> <span class="p">[</span><span class="n">roundlim</span><span class="p">,</span> <span class="n">sharplim</span><span class="p">]</span>
 </pre></div>
 </div>
 <dl class="method">
 <dt id="drizzlepac.catalogs.ImageCatalog.generateXY">
-<tt class="descname">generateXY</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.ImageCatalog.generateXY" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generateXY</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#ImageCatalog.generateXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.ImageCatalog.generateXY" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate source catalog from input image using DAOFIND-style algorithm</p>
 </dd></dl>
 
@@ -169,11 +164,11 @@ Python-based, daofind-like algorithms</p>
 
 <dl class="class">
 <dt id="drizzlepac.catalogs.UserCatalog">
-<em class="property">class </em><tt class="descclassname">drizzlepac.catalogs.</tt><tt class="descname">UserCatalog</tt><big>(</big><em>wcs</em>, <em>catalog_source</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.catalogs.Catalog" title="drizzlepac.catalogs.Catalog"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.catalogs.Catalog</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.catalogs.</code><code class="descname">UserCatalog</code><span class="sig-paren">(</span><em>wcs</em>, <em>catalog_source</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#UserCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.catalogs.Catalog" title="drizzlepac.catalogs.Catalog"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.catalogs.Catalog</span></code></a></p>
 <p>Class to manage user-supplied catalogs as inputs.</p>
-<p>Required input <em class="xref py py-obj">kwargs</em> parameters:</p>
-<div class="highlight-python"><div class="highlight"><pre>xyunits, xcol, ycol[, fluxcol, [idcol]]
+<p>Required input <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code> parameters:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">xyunits</span><span class="p">,</span> <span class="n">xcol</span><span class="p">,</span> <span class="n">ycol</span><span class="p">[,</span> <span class="n">fluxcol</span><span class="p">,</span> <span class="p">[</span><span class="n">idcol</span><span class="p">]]</span>
 </pre></div>
 </div>
 <p>This class requires the input of a WCS and a source for the catalog,
@@ -182,8 +177,7 @@ along with any arguments necessary for interpreting the catalog.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
 <blockquote>
 <div><p>Input WCS object generated using STWCS or HSTWCS</p>
 </div></blockquote>
@@ -203,42 +197,42 @@ the type of catalog being instantiated.</p>
 </table>
 <dl class="method">
 <dt id="drizzlepac.catalogs.UserCatalog.generateXY">
-<tt class="descname">generateXY</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.generateXY" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generateXY</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#UserCatalog.generateXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.generateXY" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method to interpret input catalog file as columns of positions and fluxes.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.UserCatalog.plotXYCatalog">
-<tt class="descname">plotXYCatalog</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.plotXYCatalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots the source catalog positions using matplotlib&#8217;s <em class="xref py py-obj">pyplot.plot()</em></p>
-<p>Plotting <em class="xref py py-obj">kwargs</em> that can also be passed include any keywords understood
-by matplotlib&#8217;s <em class="xref py py-obj">pyplot.plot()</em> function such as:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">cmap</span><span class="p">,</span> <span class="n">marker</span>
+<code class="descname">plotXYCatalog</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#UserCatalog.plotXYCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.plotXYCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the source catalog positions using matplotlib&#8217;s <code class="xref py py-obj docutils literal"><span class="pre">pyplot.plot()</span></code></p>
+<p>Plotting <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code> that can also be passed include any keywords understood
+by matplotlib&#8217;s <code class="xref py py-obj docutils literal"><span class="pre">pyplot.plot()</span></code> function such as:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">cmap</span><span class="p">,</span> <span class="n">marker</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.UserCatalog.set_colnames">
-<tt class="descname">set_colnames</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.set_colnames" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_colnames</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#UserCatalog.set_colnames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.set_colnames" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="drizzlepac.catalogs.UserCatalog.COLNAMES">
-<tt class="descname">COLNAMES</tt><em class="property"> = ['xcol', 'ycol', 'fluxcol']</em><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.COLNAMES" title="Permalink to this definition">¶</a></dt>
+<code class="descname">COLNAMES</code><em class="property"> = ['xcol', 'ycol', 'fluxcol']</em><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.COLNAMES" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="drizzlepac.catalogs.UserCatalog.IN_UNITS">
-<tt class="descname">IN_UNITS</tt><em class="property"> = None</em><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.IN_UNITS" title="Permalink to this definition">¶</a></dt>
+<code class="descname">IN_UNITS</code><em class="property"> = None</em><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.IN_UNITS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="drizzlepac.catalogs.RefCatalog">
-<em class="property">class </em><tt class="descclassname">drizzlepac.catalogs.</tt><tt class="descname">RefCatalog</tt><big>(</big><em>wcs</em>, <em>catalog_source</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.catalogs.UserCatalog" title="drizzlepac.catalogs.UserCatalog"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.catalogs.UserCatalog</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.catalogs.</code><code class="descname">RefCatalog</code><span class="sig-paren">(</span><em>wcs</em>, <em>catalog_source</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#RefCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.catalogs.UserCatalog" title="drizzlepac.catalogs.UserCatalog"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.catalogs.UserCatalog</span></code></a></p>
 <p>Class which manages a reference catalog.</p>
 <p class="rubric">Notes</p>
 <p>A <em>reference catalog</em> is defined as a catalog of undistorted source positions
@@ -250,8 +244,7 @@ along with any arguments necessary for interpreting the catalog.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
 <blockquote>
 <div><p>Input WCS object generated using STWCS or HSTWCS</p>
 </div></blockquote>
@@ -271,40 +264,40 @@ the type of catalog being instantiated.</p>
 </table>
 <dl class="method">
 <dt id="drizzlepac.catalogs.RefCatalog.buildXY">
-<tt class="descname">buildXY</tt><big>(</big><em>catalogs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.buildXY" title="Permalink to this definition">¶</a></dt>
+<code class="descname">buildXY</code><span class="sig-paren">(</span><em>catalogs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#RefCatalog.buildXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.buildXY" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.RefCatalog.generateRaDec">
-<tt class="descname">generateRaDec</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.generateRaDec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generateRaDec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#RefCatalog.generateRaDec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.generateRaDec" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.RefCatalog.generateXY">
-<tt class="descname">generateXY</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.generateXY" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generateXY</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#RefCatalog.generateXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.generateXY" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="drizzlepac.catalogs.RefCatalog.COLNAMES">
-<tt class="descname">COLNAMES</tt><em class="property"> = ['refxcol', 'refycol', 'rfluxcol']</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.COLNAMES" title="Permalink to this definition">¶</a></dt>
+<code class="descname">COLNAMES</code><em class="property"> = ['refxcol', 'refycol', 'rfluxcol']</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.COLNAMES" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="drizzlepac.catalogs.RefCatalog.IN_UNITS">
-<tt class="descname">IN_UNITS</tt><em class="property"> = 'degrees'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.IN_UNITS" title="Permalink to this definition">¶</a></dt>
+<code class="descname">IN_UNITS</code><em class="property"> = 'degrees'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.IN_UNITS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="drizzlepac.catalogs.RefCatalog.PAR_PREFIX">
-<tt class="descname">PAR_PREFIX</tt><em class="property"> = 'ref'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
+<code class="descname">PAR_PREFIX</code><em class="property"> = 'ref'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="drizzlepac.catalogs.Catalog">
-<em class="property">class </em><tt class="descclassname">drizzlepac.catalogs.</tt><tt class="descname">Catalog</tt><big>(</big><em>wcs</em>, <em>catalog_source</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.catalogs.</code><code class="descname">Catalog</code><span class="sig-paren">(</span><em>wcs</em>, <em>catalog_source</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Base class for keeping track of a source catalog for an input WCS</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -317,8 +310,7 @@ along with any arguments necessary for interpreting the catalog.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
 <blockquote>
 <div><p>Input WCS object generated using STWCS or HSTWCS</p>
 </div></blockquote>
@@ -338,64 +330,64 @@ the type of catalog being instantiated.</p>
 </table>
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.apply_exclusions">
-<tt class="descname">apply_exclusions</tt><big>(</big><em>exclusions</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.apply_exclusions" title="Permalink to this definition">¶</a></dt>
+<code class="descname">apply_exclusions</code><span class="sig-paren">(</span><em>exclusions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.apply_exclusions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.apply_exclusions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Trim sky catalog to remove any sources within regions specified by
 exclusions file</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.apply_flux_limits">
-<tt class="descname">apply_flux_limits</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.apply_flux_limits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">apply_flux_limits</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.apply_flux_limits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.apply_flux_limits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply any user-specified limits on source selection
 Limits based on fluxes</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.buildCatalogs">
-<tt class="descname">buildCatalogs</tt><big>(</big><em>exclusions=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.buildCatalogs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">buildCatalogs</code><span class="sig-paren">(</span><em>exclusions=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.buildCatalogs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.buildCatalogs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary interface to build catalogs based on user inputs.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.generateRaDec">
-<tt class="descname">generateRaDec</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.generateRaDec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generateRaDec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.generateRaDec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.generateRaDec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert XY positions into sky coordinates using STWCS methods</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.generateXY">
-<tt class="descname">generateXY</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.generateXY" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generateXY</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.generateXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.generateXY" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method to generate source catalog in XY positions
 Implemented by each subclass</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.plotXYCatalog">
-<tt class="descname">plotXYCatalog</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.plotXYCatalog" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plotXYCatalog</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.plotXYCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.plotXYCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method which displays the original image and overlays the positions
 of the detected sources from this image&#8217;s catalog.</p>
-<p>Plotting <em class="xref py py-obj">kwargs</em> that can be provided are:</p>
+<p>Plotting <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code> that can be provided are:</p>
 <blockquote>
 <div>vmin, vmax, cmap, marker</div></blockquote>
-<p>Default colormap is <em class="xref py py-obj">summer</em>.</p>
+<p>Default colormap is <code class="xref py py-obj docutils literal"><span class="pre">summer</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.set_colnames">
-<tt class="descname">set_colnames</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.set_colnames" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_colnames</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.set_colnames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.set_colnames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method to define how to interpret a catalog file
 Only needed when provided a source catalog as input</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.catalogs.Catalog.writeXYCatalog">
-<tt class="descname">writeXYCatalog</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.catalogs.Catalog.writeXYCatalog" title="Permalink to this definition">¶</a></dt>
+<code class="descname">writeXYCatalog</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.writeXYCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.writeXYCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write out the X,Y catalog to a file</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="drizzlepac.catalogs.Catalog.PAR_PREFIX">
-<tt class="descname">PAR_PREFIX</tt><em class="property"> = ' '</em><a class="headerlink" href="#drizzlepac.catalogs.Catalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
+<code class="descname">PAR_PREFIX</code><em class="property"> = ' '</em><a class="headerlink" href="#drizzlepac.catalogs.Catalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -408,7 +400,7 @@ Only needed when provided a source catalog as input</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -423,12 +415,12 @@ Only needed when provided a source catalog as input</p>
         <li class="right" >
           <a href="image.html" title="Image Class"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

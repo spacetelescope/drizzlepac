@@ -1,0 +1,1231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.mapreg &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.mapreg</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides functions for mapping DS9 region files given in sky</span>
+<span class="sd">coordinates to DS9 region files specified in image coordinates</span>
+<span class="sd">of multiple images using the WCS information from the images.</span>
+
+<span class="sd">:Authors: Mihai Cara</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">import</span> <span class="nn">pyregion</span><span class="o">,</span> <span class="nn">stwcs</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">stsci.tools.fileutil</span> <span class="k">import</span> <span class="n">findExtname</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">teal</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">.regfilter</span> <span class="k">import</span> <span class="n">fast_filter_outer_regions</span>
+
+
+<span class="c1"># This is specifically NOT intended to match the package-wide version information.</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;0.1&#39;</span>
+<span class="n">__vdate__</span> <span class="o">=</span> <span class="s1">&#39;11-Nov-2013&#39;</span>
+<span class="n">__taskname__</span> <span class="o">=</span> <span class="s1">&#39;mapreg&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Mihai Cara&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">_AuxSTWCS</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fobj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minerr</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stwcs</span> <span class="o">=</span> <span class="n">fobj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stwcs</span> <span class="o">=</span> <span class="n">stwcs</span><span class="o">.</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">fobj</span><span class="o">=</span><span class="n">fobj</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span>
+                                               <span class="n">minerr</span><span class="o">=</span><span class="n">minerr</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="n">wcskey</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wcs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stwcs</span><span class="o">.</span><span class="n">wcs</span>
+
+    <span class="k">def</span> <span class="nf">sub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stwcs</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wcs_sky2pix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">ar</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">[:])</span>
+        <span class="k">if</span> <span class="s1">&#39;origin&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">ar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stwcs</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span> <span class="o">*</span><span class="nb">tuple</span><span class="p">(</span><span class="n">ar</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wcs_pix2sky</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">ar</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">[:])</span>
+        <span class="k">if</span> <span class="s1">&#39;origin&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">ar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stwcs</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span> <span class="o">*</span><span class="nb">tuple</span><span class="p">(</span><span class="n">ar</span><span class="p">)</span> <span class="p">)</span>
+
+
+<div class="viewcode-block" id="MapReg"><a class="viewcode-back" href="../../mapreg.html#drizzlepac.mapreg.MapReg">[docs]</a><span class="k">def</span> <span class="nf">MapReg</span><span class="p">(</span><span class="n">input_reg</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">img_wcs_ext</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">refimg</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ref_wcs_ext</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span>
+           <span class="n">chip_reg</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">outpath</span><span class="o">=</span><span class="s1">&#39;./regions&#39;</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">catfname</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">iteractive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+           <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="n">check_blank</span>
+    <span class="kn">from</span> <span class="nn">.tweakutils</span> <span class="k">import</span> <span class="n">parse_input</span>
+
+    <span class="n">input_reg</span>       <span class="o">=</span> <span class="n">_simple_parse_teal_fname</span><span class="p">(</span> <span class="n">check_blank</span><span class="p">(</span><span class="n">input_reg</span><span class="p">),</span>
+                                                <span class="n">parse_at</span> <span class="o">=</span> <span class="kc">True</span> <span class="p">)</span>
+    <span class="n">images_par</span><span class="p">,</span> <span class="n">cat</span> <span class="o">=</span> <span class="n">parse_input</span><span class="p">(</span> <span class="n">check_blank</span><span class="p">(</span><span class="n">images</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">img_wcs_ext_par</span> <span class="o">=</span> <span class="n">_simple_parse_teal_extn</span><span class="p">(</span> <span class="n">check_blank</span><span class="p">(</span><span class="n">img_wcs_ext</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">refimg_par</span>      <span class="o">=</span> <span class="n">check_blank</span><span class="p">(</span><span class="n">refimg</span><span class="p">)</span> <span class="c1">#TODO: may need something similar to</span>
+                                          <span class="c1"># _simple_parse_teal_fname when we will</span>
+                                          <span class="c1"># support it</span>
+    <span class="n">ref_wcs_ext_par</span> <span class="o">=</span> <span class="n">_simple_parse_teal_extn</span><span class="p">(</span> <span class="n">check_blank</span><span class="p">(</span><span class="n">ref_wcs_ext</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">chip_reg_par</span>    <span class="o">=</span> <span class="n">_simple_parse_teal_fname</span><span class="p">(</span> <span class="n">check_blank</span><span class="p">(</span><span class="n">chip_reg</span><span class="p">),</span>
+                                                <span class="n">parse_at</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">)</span>
+    <span class="n">outpath_par</span>     <span class="o">=</span> <span class="n">check_blank</span><span class="p">(</span><span class="n">outpath</span><span class="p">)</span>
+    <span class="n">filter_par</span>      <span class="o">=</span> <span class="n">check_blank</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span>
+
+    <span class="n">catfname_par</span>    <span class="o">=</span>  <span class="n">check_blank</span><span class="p">(</span><span class="n">catfname</span><span class="p">)</span>
+
+    <span class="n">map_region_files</span><span class="p">(</span> <span class="n">input_reg</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="n">images_par</span><span class="p">,</span> <span class="n">img_wcs_ext</span><span class="o">=</span><span class="n">img_wcs_ext_par</span><span class="p">,</span>
+                      <span class="n">refimg</span><span class="o">=</span><span class="n">refimg_par</span><span class="p">,</span> <span class="n">ref_wcs_ext</span><span class="o">=</span><span class="n">ref_wcs_ext_par</span><span class="p">,</span>
+                      <span class="n">chip_reg</span><span class="o">=</span><span class="n">chip_reg_par</span><span class="p">,</span>
+                      <span class="n">outpath</span><span class="o">=</span><span class="n">outpath_par</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="n">filter_par</span><span class="p">,</span>
+                      <span class="n">catfname</span> <span class="o">=</span> <span class="n">catfname_par</span><span class="p">,</span> <span class="n">iteractive</span><span class="o">=</span><span class="n">iteractive</span><span class="p">,</span>
+                      <span class="n">append</span><span class="o">=</span><span class="n">append</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span> <span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_simple_parse_teal_fname</span><span class="p">(</span><span class="n">fnamestr</span><span class="p">,</span> <span class="n">parse_at</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">fnamestr</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">fnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">fname</span> <span class="k">if</span> <span class="n">fname</span> <span class="k">else</span> <span class="kc">None</span> \
+              <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span><span class="n">fnamestr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">parse_at</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="n">fnamestr</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fnames</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">fnamelst</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">fnames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fname</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">fname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;@&#39;</span><span class="p">:</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">_simple_parse_teal_fname</span><span class="p">(</span>
+                            <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span><span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="n">parse_at</span> <span class="o">=</span> <span class="n">parse_at</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">fnamelst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fnamelst</span> <span class="o">+=</span> <span class="n">f</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fnamelst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="n">fnamestr</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">fnamelst</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fnamelst</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fnamelst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_simple_parse_teal_extn</span><span class="p">(</span><span class="n">extnstr</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">extnstr</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extnstr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">extnstr</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="n">extlst</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span><span class="n">extnstr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">extlst</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">extlst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">extlst</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="map_region_files"><a class="viewcode-back" href="../../mapreg.html#drizzlepac.mapreg.map_region_files">[docs]</a><span class="k">def</span> <span class="nf">map_region_files</span><span class="p">(</span><span class="n">input_reg</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">img_wcs_ext</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span>
+                     <span class="n">refimg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref_wcs_ext</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">chip_reg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">outpath</span><span class="o">=</span><span class="s1">&#39;./regions&#39;</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">catfname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">iteractive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="c1"># Check that output directory exists:</span>
+    <span class="k">if</span> <span class="n">outpath</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]:</span>
+        <span class="n">outpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">curdir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outpath</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;The output directory </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2"> does not exist.&quot;</span> <span class="o">%</span> <span class="n">outpath</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">filter</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;fast&quot;</span><span class="p">,</span><span class="s2">&quot;precise&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The &#39;filter&#39; argument can be None, &#39;fast&#39;, &quot;</span> \
+                        <span class="s2">&quot;or &#39;precise&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="c1">#TODO: Implement the &quot;precise&quot; checking of region intersection</span>
+    <span class="c1"># with the image&#39;s bounding box.</span>
+    <span class="k">if</span> <span class="nb">filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">filter</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;precise&quot;</span><span class="p">:</span>
+        <span class="n">_print_warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">precise</span><span class="se">\&quot;</span><span class="s2"> filter option is not yet supported. &quot;</span>\
+                       <span class="s2">&quot;Reverting to filter = </span><span class="se">\&quot;</span><span class="s2">fast</span><span class="se">\&quot;</span><span class="s2"> instead.&quot;</span><span class="p">)</span>
+        <span class="nb">filter</span> <span class="o">=</span> <span class="s2">&quot;fast&quot;</span>
+
+    <span class="c1"># create a 2D list of region - header (with WCS) pairs:</span>
+    <span class="c1"># [[reg1,ref_wcs_header1],[reg2,ref_wcs_header2],...]</span>
+    <span class="n">regheaders</span> <span class="o">=</span> <span class="n">build_reg_refwcs_header_list</span><span class="p">(</span><span class="n">input_reg</span><span class="p">,</span> <span class="n">refimg</span><span class="p">,</span> <span class="n">ref_wcs_ext</span><span class="p">,</span>
+                                              <span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1"># create a list of input files *without* extensions (if present) and</span>
+    <span class="c1"># a 2D list of &quot;chip&quot; region - image extension pairs:</span>
+    <span class="c1"># [[reg1, ext1], [reg2,ext2],...]</span>
+    <span class="n">imgfnames</span><span class="p">,</span> <span class="n">cregext</span> <span class="o">=</span> <span class="n">build_img_ext_reg_list</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">chip_reg</span><span class="p">,</span> <span class="n">img_wcs_ext</span><span class="p">,</span>
+                                                <span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1"># build a &quot;master&quot; list of regions in sky coordinates:</span>
+    <span class="n">all_sky_regions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">regheaders</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># Already in sky WCS</span>
+            <span class="n">all_sky_regions</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">all_sky_regions</span> <span class="o">+=</span> <span class="n">shapes_img2sky</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="c1">#TODO: implement shapes_img2sky</span>
+
+    <span class="n">all_sky_regions</span> <span class="o">=</span> <span class="n">pyregion</span><span class="o">.</span><span class="n">ShapeList</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">all_sky_regions</span><span class="p">))</span>
+
+    <span class="n">cattb</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># create a region file (with regions in image coordinates) for each</span>
+    <span class="c1"># image extension from the input_reg and chip_reg regions</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">imgfnames</span><span class="p">:</span>
+        <span class="n">imghdu</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">imghdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">catreg</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">extp</span> <span class="ow">in</span> <span class="n">cregext</span><span class="p">:</span>
+                <span class="n">ext</span> <span class="o">=</span> <span class="n">extp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="c1"># check that the extension is of supported type:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_supported_hdu</span><span class="p">(</span><span class="n">imghdu</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Extension </span><span class="si">{}</span><span class="s2"> is of unsupported &quot;</span> \
+                                       <span class="s2">&quot;type.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+
+                <span class="c1"># Remove references to non-SIP distortions from the header</span>
+                <span class="c1">#TODO: remove this line of code as well as the remove_header_tdd</span>
+                <span class="c1"># function once publicly available release of pyregion uses</span>
+                <span class="c1"># all_world2pix and all_pix2world functions and does this header</span>
+                <span class="c1"># cleanup itself.</span>
+<span class="c1">#                remove_header_tdd(imghdu[ext].header)</span>
+
+                <span class="c1">####### added to pass hstwcs instead of header to pyregion</span>
+<span class="c1">#                if isinstance(ext, str):</span>
+<span class="c1">#                    ext = findExtname(imghdu, extname = ext, extver = 1)</span>
+<span class="c1">#                elif isinstance(ext, tuple):</span>
+<span class="c1">#                    ext = findExtname(imghdu, extname = ext[0], extver = ext[1])</span>
+
+<span class="c1">#                wcs = stwcs.wcsutil.HSTWCS(imghdu, ext=ext)</span>
+                <span class="n">wcs</span>    <span class="o">=</span> <span class="n">_AuxSTWCS</span><span class="p">(</span><span class="n">imghdu</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span>
+                <span class="n">extreg</span> <span class="o">=</span> <span class="n">all_sky_regions</span><span class="o">.</span><span class="n">as_imagecoord</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">rot_wrt_axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="c1">#######</span>
+
+                <span class="c1">#extreg = all_sky_regions.as_imagecoord(imghdu[ext].header, rot_wrt_axis=2)</span>
+
+                <span class="k">if</span> <span class="n">extp</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="c1"># add &quot;fixed&quot; regions if any</span>
+                    <span class="n">extreg</span> <span class="o">=</span> <span class="n">pyregion</span><span class="o">.</span><span class="n">ShapeList</span><span class="p">(</span><span class="n">extreg</span><span class="o">+</span><span class="n">extp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="c1"># filter out regions outside the image:</span>
+                <span class="k">if</span> <span class="nb">filter</span> <span class="ow">and</span> <span class="nb">filter</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;fast&#39;</span><span class="p">:</span>
+                    <span class="n">fast_filter_outer_regions</span><span class="p">(</span> <span class="n">extreg</span><span class="p">,</span>
+                                               <span class="n">imghdu</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;NAXIS1&#39;</span><span class="p">],</span>
+                                               <span class="n">imghdu</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;NAXIS2&#39;</span><span class="p">],</span>
+                                               <span class="n">origin</span> <span class="o">=</span> <span class="mi">1</span> <span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">extreg</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># do not create empty region files</span>
+                    <span class="n">catreg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;None&#39;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># generate output region file name:</span>
+                <span class="n">extsuffix</span> <span class="o">=</span> <span class="n">_ext2str_suffix</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+                <span class="n">basefname</span><span class="p">,</span> <span class="n">fext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+                <span class="n">regfname</span> <span class="o">=</span> <span class="n">basefname</span> <span class="o">+</span> <span class="n">extsuffix</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">extsep</span> <span class="o">+</span> <span class="s2">&quot;reg&quot;</span>
+                <span class="n">fullregfname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outpath</span><span class="p">,</span> <span class="n">regfname</span><span class="p">)</span>
+
+                <span class="n">catreg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">regfname</span><span class="p">)</span>
+
+                <span class="c1"># save regions to a file:</span>
+                <span class="k">if</span> <span class="n">append</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fullregfname</span><span class="p">):</span>
+                    <span class="n">old_extreg</span> <span class="o">=</span> <span class="n">pyregion</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fullregfname</span><span class="p">)</span>
+                    <span class="n">extreg</span> <span class="o">=</span> <span class="n">pyregion</span><span class="o">.</span><span class="n">ShapeList</span><span class="p">(</span><span class="n">old_extreg</span> <span class="o">+</span> <span class="n">extreg</span><span class="p">)</span>
+
+                <span class="c1">#TODO: pyregion.write does not work well. For now use _regwite</span>
+                <span class="c1"># (until the bug fixes get to the pyregion project).</span>
+                <span class="c1">#TODO: we replaced pyregion.write with our implementation</span>
+                <span class="c1"># of the write (code from _regwrite) in the locally maintained</span>
+                <span class="c1"># pyregion until these changes get to be implemented in the</span>
+                <span class="c1"># publicly available release of pyregion.</span>
+                <span class="c1">#</span>
+                <span class="n">_regwrite</span><span class="p">(</span><span class="n">extreg</span><span class="p">,</span> <span class="n">fullregfname</span><span class="p">)</span>
+                <span class="c1">#extreg.write(fullregfname) # &lt;- use this instead of _regwrite</span>
+                                            <span class="c1"># once the pyregion bugs are fixed.</span>
+            <span class="n">cattb</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">fname</span><span class="p">,</span> <span class="n">catreg</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">imghdu</span><span class="p">:</span>
+                <span class="n">imghdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">raise</span>
+
+    <span class="c1"># create exclusions catalog file:</span>
+    <span class="k">if</span> <span class="n">catfname</span><span class="p">:</span>
+        <span class="n">catfh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outpath</span><span class="p">,</span> <span class="n">catfname</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">catentry</span> <span class="ow">in</span> <span class="n">cattb</span><span class="p">:</span>
+            <span class="n">catfh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">catentry</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c1"># image file name</span>
+            <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">catentry</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">catfh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">reg</span><span class="p">)</span> <span class="c1"># region file name</span>
+            <span class="n">catfh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">catfh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">remove_header_tdd</span><span class="p">(</span><span class="n">hdr</span><span class="p">):</span>
+    <span class="c1"># a workaround to pyregion using FITS &#39;header&#39; (instead of &#39;WCS&#39;)...</span>
+    <span class="c1"># For some images header alone is not enough...</span>
+    <span class="c1"># Removes offending corrections from the header...</span>
+    <span class="c1">#</span>
+    <span class="c1"># Code below is taken on &#39;remove_distortion_keywords&#39; from fitsblender/blendheaders.py</span>
+    <span class="c1">#</span>
+    <span class="n">distortion_kws</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;TDDALPHA&#39;</span><span class="p">,</span><span class="s1">&#39;TDDBETA&#39;</span><span class="p">,</span><span class="s1">&#39;D2IMEXT&#39;</span><span class="p">,</span><span class="s1">&#39;D2IMERR&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;DGEOEXT&#39;</span><span class="p">,</span><span class="s1">&#39;NPOLEXT&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Remove any reference to TDD correction from</span>
+    <span class="c1">#    distortion-corrected products</span>
+    <span class="c1"># We also need to remove the D2IM* keywords so that HSTWCS/PyWCS</span>
+    <span class="c1"># does not try to look for non-existent extensions</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">distortion_kws</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">hdr</span><span class="p">[</span><span class="n">kw</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+    <span class="c1"># Remove paper IV related keywords related to the</span>
+    <span class="c1">#   DGEO correction here</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;DP&#39;</span><span class="p">):</span>
+                <span class="k">del</span> <span class="n">hdr</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+                <span class="k">del</span> <span class="n">hdr</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;.*&#39;</span><span class="p">]</span>
+                <span class="k">del</span> <span class="n">hdr</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;.*.*&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CP&#39;</span><span class="p">):</span>
+                <span class="k">del</span> <span class="n">hdr</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">_regwrite</span><span class="p">(</span><span class="n">shapelist</span><span class="p">,</span><span class="n">outfile</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Writes the current shape list out as a region file &quot;&quot;&quot;</span>
+    <span class="c1"># This function corrects bugs and provides improvements over the pyregion&#39;s</span>
+    <span class="c1"># ShapeList.write method in the following:</span>
+    <span class="c1">#</span>
+    <span class="c1"># 1. ShapeList.write crashes if regions have no comments;</span>
+    <span class="c1"># 2. ShapeList.write converts &#39;exclude&#39; (&quot;-&quot;) regions to normal regions (&quot;+&quot;);</span>
+    <span class="c1"># 3. ShapeList.write does not support mixed coordinate systems in a</span>
+    <span class="c1">#    region list.</span>
+    <span class="c1">#</span>
+    <span class="c1"># NOTE: This function is provided as a temoprary workaround for the above</span>
+    <span class="c1">#    listed problems of the ShapeList.write. We hope that a future version</span>
+    <span class="c1">#    of pyregion will address all these issues.</span>
+    <span class="c1">#</span>
+    <span class="c1">#TODO: Push these changes to pyregion.</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shapelist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">_print_warning</span><span class="p">(</span><span class="s2">&quot;The region list is empty. The region file </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> &quot;</span>\
+                       <span class="s2">&quot;will be empty.&quot;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">outf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="n">outf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">cmsg</span> <span class="o">=</span> <span class="s2">&quot;Unable to create region file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">outfile</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">cmsg</span><span class="p">,)</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">cmsg</span><span class="p">,)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span>
+
+    <span class="n">prev_cs</span> <span class="o">=</span> <span class="n">shapelist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coord_format</span>
+
+    <span class="n">outf</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">outf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+        <span class="n">attr0</span> <span class="o">=</span> <span class="n">shapelist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">attr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">defaultline</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">attr0</span><span class="p">[</span><span class="n">a</span><span class="p">])</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attr0</span> \
+                                <span class="k">if</span> <span class="n">a</span><span class="o">!=</span><span class="s1">&#39;text&#39;</span><span class="p">])</span>
+
+        <span class="c1"># first line is globals</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;global&quot;</span><span class="p">,</span> <span class="n">defaultline</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">outf</span><span class="p">)</span>
+        <span class="c1"># second line must be a coordinate format</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">prev_cs</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">outf</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">shapelist</span><span class="p">:</span>
+            <span class="n">shape_attr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="n">prev_cs</span> <span class="o">==</span> <span class="n">shape</span><span class="o">.</span><span class="n">coord_format</span> \
+                            <span class="k">else</span> <span class="n">shape</span><span class="o">.</span><span class="n">coord_format</span><span class="o">+</span><span class="s2">&quot;; &quot;</span>
+            <span class="n">shape_excl</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="k">if</span> <span class="n">shape</span><span class="o">.</span><span class="n">exclude</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">text_coordlist</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">shape</span><span class="o">.</span><span class="n">coord_list</span><span class="p">]</span>
+            <span class="n">shape_coords</span> <span class="o">=</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_coordlist</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+            <span class="n">shape_comment</span> <span class="o">=</span> <span class="s2">&quot; # &quot;</span> <span class="o">+</span> <span class="n">shape</span><span class="o">.</span><span class="n">comment</span> <span class="k">if</span> <span class="n">shape</span><span class="o">.</span><span class="n">comment</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+
+            <span class="n">shape_str</span> <span class="o">=</span> <span class="n">shape_attr</span> <span class="o">+</span> <span class="n">shape_excl</span> <span class="o">+</span> <span class="n">shape</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="n">shape_coords</span> <span class="o">+</span> \
+                        <span class="n">shape_comment</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="n">shape_str</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">outf</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">cmsg</span> <span class="o">=</span> <span class="s2">&quot;Unable to create region file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">outfile</span>
+        <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">cmsg</span><span class="p">,)</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">cmsg</span><span class="p">,)</span>
+        <span class="k">if</span> <span class="n">outf</span><span class="p">:</span> <span class="n">outf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="n">e</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">outf</span><span class="p">:</span> <span class="n">outf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">raise</span>
+
+    <span class="n">outf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_is_supported_hdu</span><span class="p">(</span><span class="n">header</span><span class="p">):</span>
+    <span class="c1"># check that NAXIS == 2:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;NAXIS&#39;</span> <span class="ow">in</span> <span class="n">header</span> <span class="ow">or</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;NAXIS&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;NAXIS1&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;NAXIS2&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># check that this is either a primary HDU or an &#39;IMAGE&#39; extension</span>
+    <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;SIMPLE&#39;</span> <span class="ow">in</span> <span class="n">header</span><span class="p">)</span> <span class="ow">or</span> \
+           <span class="p">(</span><span class="s1">&#39;XTENSION&#39;</span> <span class="ow">in</span> <span class="n">header</span> <span class="ow">and</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;XTENSION&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;IMAGE&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_ext2str_suffix</span><span class="p">(</span><span class="n">ext</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;_</span><span class="si">{}{}</span><span class="s2">_twreg&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">ext</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;_extn</span><span class="si">{}</span><span class="s2">_twreg&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;_</span><span class="si">{}</span><span class="s2">_twreg&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span> <span class="c1"># &lt;- we should not get here...</span>
+
+
+<span class="k">def</span> <span class="nf">shapes_img2sky</span><span class="p">(</span><span class="n">reglist</span><span class="p">,</span> <span class="n">wcs</span><span class="p">):</span>
+    <span class="c1">#TODO: implement shapes_img2sky to do something useful</span>
+    <span class="c1"># (like real CS transformation)</span>
+    <span class="kn">from</span> <span class="nn">pyregion.wcs_helper</span> <span class="k">import</span> <span class="n">image_like_coordformats</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reglist</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">coord_format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">image_like_coordformats</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">build_reg_refwcs_header_list</span><span class="p">(</span><span class="n">input_reg</span><span class="p">,</span> <span class="n">refimg</span><span class="p">,</span> <span class="n">ref_wcs_ext</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+    <span class="c1"># check input region file names and initialize region lists:</span>
+    <span class="n">region_lists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">single_inp_reg</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_reg</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_reg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># a single region file</span>
+        <span class="n">single_inp_reg</span>  <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">input_regfnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_reg</span><span class="p">]</span>
+        <span class="n">ref_wcs_exts</span>    <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># for a single input region we assume that the</span>
+                              <span class="c1"># default location of the WCS is in the primary</span>
+                              <span class="c1"># header (if nothing else specified)</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_reg</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">input_reg</span><span class="p">:</span> <span class="c1"># a non-empty list of files</span>
+        <span class="c1"># select non-zero length file names;replace all other elements with None</span>
+        <span class="n">input_regfnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">fname</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> \
+                           <span class="nb">len</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">input_reg</span><span class="p">]</span>
+
+        <span class="c1"># Populate ref_wcs_exts with &quot;default&quot; FITS extension numbers according</span>
+        <span class="c1"># to the input region position in the input_regfnames list</span>
+        <span class="c1"># (starting with 1). That is, if multiple regions are given, then we</span>
+        <span class="c1"># assume that (if no extension name is provided) the WCS is located in</span>
+        <span class="c1"># &quot;extensions&quot; of the input reference FITS file (as opposite to the</span>
+        <span class="c1"># primary header).</span>
+        <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_regfnames</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Filter out elements of ref_wcs_exts and input_regfnames that</span>
+        <span class="c1"># correspond to None elements in input_regfnames:</span>
+        <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="p">[</span><span class="n">ext</span> <span class="k">for</span> <span class="n">reg</span><span class="p">,</span><span class="n">ext</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_regfnames</span><span class="p">,</span><span class="n">ref_wcs_exts</span><span class="p">)</span> \
+                        <span class="k">if</span> <span class="n">reg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">input_regfnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">reg</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">input_regfnames</span> <span class="k">if</span> <span class="n">reg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">input_regfnames</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ref_wcs_exts</span>    <span class="o">=</span> <span class="p">[]</span> <span class="c1"># unnecessary, really, because of the next &quot;if&quot;</span>
+
+    <span class="c1"># Check that we have at least one &quot;valid&quot; input region file name</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_regfnames</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Parameter &#39;input_reg&#39; must be either a non-zero &quot;</span> \
+            <span class="s2">&quot;length string or a non-empty list with at least &quot;</span>               \
+            <span class="s2">&quot;one non-zero length string file name.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check that the region files exist and try to open/read them:</span>
+    <span class="n">ireg</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">input_regfnames</span><span class="p">:</span>
+        <span class="c1"># check region file existence:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;The input region file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2"> does not exist.&quot;</span> <span class="o">%</span> \
+                <span class="n">fname</span><span class="p">)</span>
+        <span class="c1"># try to read regions:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">reglist</span> <span class="o">=</span> <span class="n">pyregion</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="n">region_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reglist</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Unable to open the input region file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">.&quot;</span> <span class="o">%</span> \
+                <span class="n">fname</span><span class="p">)</span>
+
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unexpected error parsing input region &quot;</span> \
+                <span class="s2">&quot;file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">. Suspecting either a corrupt file or &quot;</span>     \
+                <span class="s2">&quot;an unrecognizable region file format.&quot;</span> <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>
+
+        <span class="c1"># check if WCS is needed to convert from image to sky CS</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_needs_ref_WCS</span><span class="p">(</span><span class="n">reglist</span><span class="p">):</span>
+            <span class="n">ref_wcs_exts</span><span class="p">[</span><span class="n">ireg</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">ireg</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># If WCS is needed for conversion to sky coordinates, find the correct</span>
+    <span class="c1"># FITS extension based either on extension specified in the input reference</span>
+    <span class="c1"># image &#39;refimg&#39;, optional input argument &#39;ref_wcs_ext&#39;, and/or position of</span>
+    <span class="c1"># the region file in the input region list &#39;input_reg&#39;</span>
+    <span class="k">if</span> <span class="p">[</span><span class="kc">True</span> <span class="k">for</span> <span class="n">ireg</span> <span class="ow">in</span> <span class="n">ref_wcs_exts</span> <span class="k">if</span> <span class="n">ireg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="c1"># A reference WCS is required. Check that &#39;refimg&#39; is an existing file:</span>
+        <span class="k">if</span> <span class="n">refimg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;refimg&#39; cannot be None when some &quot;</span> \
+                             <span class="s2">&quot;input regions are given in logical coordinates.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refimg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;refimg&#39; must be a string with the &quot;</span> \
+                            <span class="s2">&quot;name of an existing FITS file and, optionally, &quot;</span> \
+                            <span class="s2">&quot;followed by an extension specification.&quot;</span><span class="p">)</span>
+
+        <span class="p">(</span><span class="n">refimg_fname</span><span class="p">,</span> <span class="n">frefext</span><span class="p">)</span> <span class="o">=</span> <span class="n">extension_from_filename</span><span class="p">(</span><span class="n">refimg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">refimg_fname</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;The reference FITS file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2"> does not exist.&quot;</span> <span class="o">%</span> \
+                          <span class="n">refimg_fname</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">frefext</span><span class="p">:</span>
+            <span class="c1"># Try to determine the extension name from the reference file name</span>
+            <span class="n">refext</span> <span class="o">=</span> <span class="n">parse_ext</span><span class="p">(</span><span class="n">frefext</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">single_inp_reg</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="p">[</span><span class="n">refext</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span> <span class="c1"># it is a string:</span>
+                    <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="p">[(</span><span class="n">refext</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Logical error in the code.&quot;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># check that FITS extension specified in the reference image file</span>
+                <span class="c1"># name is not too restrictive (for multiple regions it cannot</span>
+                <span class="c1"># contain a specific extver):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Extension version (&#39;EXTVER&#39;) in the &quot;</span>  \
+                    <span class="s2">&quot;reference file name should not be present when multiple &quot;</span> \
+                    <span class="s2">&quot;region files (in logical CS) are provided as input. &quot;</span>     \
+                    <span class="s2">&quot;Only extension name (&#39;EXTNAME&#39;) is allowed (e.g., &quot;</span>       \
+                    <span class="s2">&quot;[SCI], [DQ], etc.)&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Extension number (e.g., [0], [2], &quot;</span>    \
+                    <span class="s2">&quot;etc.) in the reference file name should not be present &quot;</span>  \
+                    <span class="s2">&quot;when multiple region files (in logical CS) are &quot;</span>          \
+                    <span class="s2">&quot;provided as input. Only extension name (&#39;EXTNAME&#39;) is &quot;</span>   \
+                    <span class="s2">&quot;allowed (e.g., [SCI], [DQ], etc.)&quot;</span><span class="p">)</span>
+
+                <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">if</span> <span class="n">extn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="n">extn</span><span class="p">)</span> \
+                                <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">ref_wcs_exts</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">ref_wcs_ext</span><span class="p">:</span>
+            <span class="c1"># Try to determine the extension name from the &#39;ref_wcs_ext&#39;</span>
+            <span class="c1"># argument:</span>
+            <span class="n">refext</span> <span class="o">=</span> <span class="n">parse_ext</span><span class="p">(</span><span class="n">ref_wcs_ext</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">single_inp_reg</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="p">[</span><span class="n">refext</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span> <span class="c1"># it is a string:</span>
+                    <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="p">[(</span><span class="n">refext</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Logical error in the code.&quot;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># check that FITS extension specified in the reference image</span>
+                <span class="c1"># file name is not too restrictive (for multiple regions it</span>
+                <span class="c1"># cannot contain a specific extver):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Extension version (&#39;EXTVER&#39;) in the &quot;</span>  \
+                    <span class="s2">&quot;&#39;ref_wcs_ext&#39; argument should not be present when &quot;</span>       \
+                    <span class="s2">&quot;multiple region files (in logical CS) are provided &quot;</span>      \
+                    <span class="s2">&quot;as input. Only extension name (&#39;EXTNAME&#39;) is allowed &quot;</span>    \
+                    <span class="s2">&quot;(e.g., [SCI], [DQ], etc.)&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Extension number (e.g., [0], [2], &quot;</span>    \
+                    <span class="s2">&quot;etc.) in the &#39;ref_wcs_ext&#39; argument should not be &quot;</span>       \
+                    <span class="s2">&quot;present when multiple region files (in logical CS) are &quot;</span>  \
+                    <span class="s2">&quot;provided as input. Only extension name (&#39;EXTNAME&#39;) is &quot;</span>   \
+                    <span class="s2">&quot;allowed (e.g., [SCI], [DQ], etc.)&quot;</span><span class="p">)</span>
+
+                <span class="n">ref_wcs_exts</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">if</span> <span class="n">extn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">refext</span><span class="p">,</span> <span class="n">extn</span><span class="p">)</span> \
+                                <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">ref_wcs_exts</span><span class="p">]</span>
+        <span class="c1"># check if the extensions found above are present</span>
+        <span class="c1"># in the reference WCS FITS file:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">refimg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
+            <span class="ow">not</span> <span class="n">_check_FITS_extensions</span><span class="p">(</span><span class="n">refimg</span><span class="p">,</span> <span class="n">ref_wcs_exts</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Not all FITS extensions derived based on the &quot;</span> \
+                <span class="s2">&quot;input region(s) and extension names have been found in the &quot;</span>  \
+                <span class="s2">&quot;input reference WCS file. Unable to proceed.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># load headers containing WCS from the reference input FITS file:</span>
+        <span class="n">ref_wcs_headers</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">if</span> <span class="n">extn</span> <span class="ow">is</span> <span class="kc">None</span> \
+                           <span class="k">else</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="n">refimg_fname</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">extn</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> \
+                           <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">ref_wcs_exts</span> <span class="p">]</span> <span class="c1">#TODO: return WCS instead of header</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># no WCS is needed (regions are already in sky coordinates):</span>
+        <span class="n">ref_wcs_headers</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">region_lists</span><span class="p">]</span>
+
+    <span class="c1"># Return a list of pairs of the form [region, header] with missing regions</span>
+    <span class="c1"># (i.e., region = None) filtered out. (We do not need to keep order anymore)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">region_lists</span><span class="p">,</span> <span class="n">ref_wcs_headers</span><span class="p">)))</span> \
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">build_img_ext_reg_list</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">chip_reg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">img_wcs_ext</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span>
+                           <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="c1"># Check that the &#39;chip_reg&#39; argument is of correct type/form:</span>
+    <span class="k">if</span> <span class="n">chip_reg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nreg</span>     <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">multireg</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">chip_reg</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chip_reg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">nreg</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">chip_reg</span> <span class="o">=</span> <span class="p">[</span><span class="n">chip_reg</span><span class="p">]</span>
+        <span class="n">multireg</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chip_reg</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">chip_reg</span> <span class="o">=</span> <span class="n">chip_reg</span><span class="p">[:]</span>
+        <span class="n">nreg</span>     <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chip_reg</span><span class="p">)</span>
+        <span class="n">multireg</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># check that all elements of the list are either strings or None:</span>
+        <span class="k">if</span> <span class="p">[</span><span class="kc">True</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">chip_reg</span>
+            <span class="k">if</span> <span class="n">reg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="nb">str</span><span class="p">)]:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;chip_reg&#39; can be either None, &quot;</span> \
+                            <span class="s2">&quot;a string, or a list of stings and/or None.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;chip_reg&#39; can be either None, &quot;</span> \
+                        <span class="s2">&quot;a string, or a list of stings and/or None.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># from the &#39;images&#39; argument built a list of file *names*</span>
+    <span class="c1"># ignoring extensions(!) and check that the files exist:</span>
+    <span class="n">imgfnames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">images</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;images&#39; cannot be an empty list or None.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">images</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;images&#39; must be either a string &quot;</span> \
+                    <span class="s2">&quot;or a non-empty list of strings of valid file names.&quot;</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span> <span class="o">=</span> <span class="n">extension_from_filename</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;The image file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2"> does not exist.&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">)</span>
+        <span class="n">imgfnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+
+    <span class="c1"># Get the HDU list of the first file in the list of images. This will be</span>
+    <span class="c1"># re-used to check available extensions.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">hdulist</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">imgfnames</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">hdulist</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">cmsg</span> <span class="o">=</span> <span class="s2">&quot;Unable to open the image file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">imgfnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">cmsg</span><span class="p">,)</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">cmsg</span><span class="p">,)</span>
+        <span class="k">raise</span> <span class="n">e</span>
+
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span>
+
+    <span class="c1"># initial processing of extensions (get a list of integers, str, or tuples):</span>
+    <span class="n">exts</span> <span class="o">=</span> <span class="n">parse_ext</span><span class="p">(</span><span class="n">img_wcs_ext</span><span class="p">,</span> <span class="n">default_extver</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exts</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">exts</span> <span class="o">=</span> <span class="p">[</span><span class="n">exts</span><span class="p">]</span>
+
+    <span class="c1"># for each string extension in the extension list &#39;exts&#39;, find out how many</span>
+    <span class="c1"># extension versions exist and create a new list of extensions in which the</span>
+    <span class="c1"># string (e.g., &#39;sci&#39;) gets replaced with tuples for each available</span>
+    <span class="c1"># extension version: [(&#39;sci&#39;,1),(&#39;sci&#39;,2), etc.]</span>
+    <span class="n">extensions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">exts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span><span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span><span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">extensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">extv</span> <span class="o">=</span> <span class="n">get_extver_list</span><span class="p">(</span><span class="n">hdulist</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">extv</span><span class="p">:</span>
+            <span class="n">extensions</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ext</span><span class="p">,</span><span class="n">v</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_check_FITS_extensions</span><span class="p">(</span><span class="n">hdulist</span><span class="p">,</span> <span class="n">extensions</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Not all extensions computed based on the &quot;</span>         \
+        <span class="s2">&quot;provided &#39;img_wcs_ext&#39; could be found in the HDU list of the &quot;</span>        \
+        <span class="s2">&quot;image(s) specified by the argument &#39;images&#39;. Make sure that all &quot;</span>     \
+        <span class="s2">&quot;extensions in the &#39;img_wcs_ext&#39; list are present in input &#39;images&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="n">nexts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">extensions</span><span class="p">)</span> <span class="c1"># &lt;- number of &quot;valid&quot; extensions</span>
+
+    <span class="c1"># Warn users if some regions will be dropped out:</span>
+    <span class="k">if</span> <span class="n">nreg</span> <span class="o">&gt;</span> <span class="n">nexts</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">_print_warning</span><span class="p">(</span><span class="s2">&quot;The number of region files provided through &quot;</span> \
+                       <span class="s2">&quot;&#39;chip_reg&#39; is larger than the number of extensions &quot;</span> \
+                       <span class="s2">&quot;derived based on &#39;img_wcs_ext&#39; that were found &quot;</span> \
+                       <span class="s2">&quot;in &#39;images&#39;.&quot;</span><span class="p">)</span>
+        <span class="n">_print_warning</span><span class="p">(</span><span class="s2">&quot;The following </span><span class="se">\&quot;</span><span class="s2">fixed</span><span class="se">\&quot;</span><span class="s2"> region files will &quot;</span> \
+                       <span class="s2">&quot;be dropped out:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nexts</span><span class="p">,</span><span class="n">nreg</span><span class="p">):</span>
+            <span class="n">_print_warning</span><span class="p">(</span><span class="s2">&quot;chip_reg[</span><span class="si">%d</span><span class="s2">]: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">chip_reg</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span>
+        <span class="n">chip_reg</span> <span class="o">=</span> <span class="n">chip_reg</span><span class="p">[:</span><span class="n">nexts</span><span class="p">]</span>
+
+    <span class="c1"># Warn users if there are more extensions than &quot;chip&quot; regions:</span>
+    <span class="k">if</span> <span class="n">nreg</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">chip_reg</span> <span class="o">=</span> <span class="n">nexts</span> <span class="o">*</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">nreg</span> <span class="o">&lt;</span> <span class="n">nexts</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">_print_warning</span><span class="p">(</span><span class="s2">&quot;The number of region files provided through &quot;</span> \
+                       <span class="s2">&quot;&#39;chip_reg&#39; is smaller than the number of extensions &quot;</span> \
+                       <span class="s2">&quot;derived based on &#39;img_wcs_ext&#39; that were found &quot;</span> \
+                       <span class="s2">&quot;in &#39;images&#39;.&quot;</span><span class="p">)</span>
+        <span class="n">_print_warning</span><span class="p">(</span><span class="s2">&quot;The following extensions have not been assigned any &quot;</span>  \
+                       <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">fixed</span><span class="se">\&quot;</span><span class="s2"> (chip related) regions:&quot;</span><span class="p">)</span>
+        <span class="n">extlist</span> <span class="o">=</span> <span class="s2">&quot;   &quot;</span>
+        <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extensions</span><span class="p">[</span><span class="n">nreg</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">chip_reg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">extlist</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;, &quot;</span>
+        <span class="n">extlist</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">extensions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">chip_reg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">_print_warning</span><span class="p">(</span><span class="n">extlist</span><span class="p">)</span>
+
+    <span class="c1"># Check that the region files exist and try to open/read them:</span>
+    <span class="n">region_lists</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">chip_reg</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">region_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="c1"># check region file existence:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;The input </span><span class="se">\&quot;</span><span class="s2">chip</span><span class="se">\&quot;</span><span class="s2"> region file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2"> does not &quot;</span>    \
+                          <span class="s2">&quot;exist.&quot;</span> <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="c1"># try to read regions:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">reglist</span> <span class="o">=</span> <span class="n">pyregion</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="n">region_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reglist</span><span class="p">)</span>
+            <span class="c1">#TODO: Check that regions are all in *image* coordinates</span>
+
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Unable to open the input region file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">.&quot;</span> <span class="o">%</span>     \
+                          <span class="n">fname</span><span class="p">)</span>
+
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unexpected error parsing input region &quot;</span>        \
+                               <span class="s2">&quot;file </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">. Suspecting either a corrupt &quot;</span>     \
+                               <span class="s2">&quot;file or an unrecognizable region file format.&quot;</span> \
+                               <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>
+
+    <span class="c1"># Print the list of pairs extension-&gt;chip region:</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">nreg</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">_print_important</span><span class="p">(</span><span class="s2">&quot;Please verify that the following association &quot;</span>  \
+              <span class="s2">&quot;between the commanded FITS extensions and provided </span><span class="se">\&quot;</span><span class="s2">fixed</span><span class="se">\&quot;</span><span class="s2"> &quot;</span> \
+              <span class="s2">&quot;region files is correct:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-----------------------------&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;EXTENSION:   --&gt;   REGION FILE:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nexts</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{!s:&lt;18.18s}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">extensions</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">chip_reg</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+    <span class="c1"># Return a list of image file names (with any extensions removed!) to which</span>
+    <span class="c1"># regions will be mapped AND a list of pairs of the form</span>
+    <span class="c1"># [region, extension].</span>
+    <span class="k">return</span> <span class="n">imgfnames</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">region_lists</span><span class="p">,</span> <span class="n">extensions</span><span class="p">))))</span>
+
+
+<span class="k">def</span> <span class="nf">_print_warning</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1m&quot;</span><span class="o">+</span><span class="s2">&quot;WARNING: &quot;</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\33</span><span class="s2">[0m&quot;</span><span class="o">+</span><span class="n">msg</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_print_important</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1mIMPORTANT: </span><span class="se">\33</span><span class="s2">[0m</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">_needs_ref_WCS</span><span class="p">(</span><span class="n">reglist</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Check if the region list contains shapes in image-like coordinates</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pyregion.wcs_helper</span> <span class="k">import</span> <span class="n">image_like_coordformats</span>
+
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reglist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">coord_format</span> <span class="ow">in</span> <span class="n">image_like_coordformats</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">_split_sky_img_regions</span><span class="p">(</span><span class="n">reglist</span><span class="p">):</span>
+    <span class="c1"># Given an input ShapeList object, _split_sky_img_regions separates the</span>
+    <span class="c1"># regions in the ShapeList object into the regions defined in sky coordinates</span>
+    <span class="c1"># and regions defined in image coordinates.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Return Value: a tuple of lists of regions (image, sky)</span>
+    <span class="kn">from</span> <span class="nn">pyregion.wcs_helper</span> <span class="k">import</span> <span class="n">image_like_coordformats</span>
+
+    <span class="n">img</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sky</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reglist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">coord_format</span> <span class="ow">in</span> <span class="n">image_like_coordformats</span><span class="p">:</span>
+            <span class="n">img</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sky</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">sky</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">extension_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse out filename from any specified extensions.</span>
+<span class="sd">    Returns rootname and string version of extension name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parse out any extension specified in filename</span>
+    <span class="n">_indx1</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">)</span>
+    <span class="n">_indx2</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_indx1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># check for closing square bracket:</span>
+        <span class="k">if</span> <span class="n">_indx2</span> <span class="o">&lt;</span> <span class="n">_indx1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Incorrect extension specification in file &quot;</span> \
+                                <span class="s2">&quot;name </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># Read extension name provided</span>
+        <span class="n">_fname</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[:</span><span class="n">_indx1</span><span class="p">]</span>
+        <span class="n">_extn</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[</span><span class="n">_indx1</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">_indx2</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_fname</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="n">_extn</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">_fname</span><span class="p">,</span> <span class="n">_extn</span>
+
+
+<span class="k">def</span> <span class="nf">parse_ext</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="n">default_extver</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">parse_ext</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="n">default_extver</span><span class="p">)</span> <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extn</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">default_extver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default_extver</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;default_extver&#39; must be an integer or None.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">extn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">extn</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="n">extname</span> <span class="o">=</span> <span class="n">extn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">extver</span>  <span class="o">=</span> <span class="n">default_extver</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The first element of a tuple must be a string &quot;</span> \
+                <span class="s2">&quot;with the extension name (&#39;EXTNAME&#39;).&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="n">default_extver</span><span class="p">)</span> <span class="k">if</span> <span class="n">default_extver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                                             <span class="k">else</span> <span class="n">extname</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The second element of a tuple must be an &quot;</span> \
+                    <span class="s2">&quot;integer number corresponding to the extension &quot;</span> \
+                    <span class="s2">&quot;version (&#39;EXTVER&#39;).&quot;</span><span class="p">)</span>
+            <span class="n">extver</span> <span class="o">=</span> <span class="n">default_extver</span> <span class="k">if</span> <span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">extname</span> <span class="k">if</span> <span class="n">extver</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="n">extver</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input extension name/number is not of any of the &quot;</span>\
+                        <span class="s2">&quot;supported types: integer number, string, or tuple.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check that extn is not a &quot;forced&quot; &#39;extname&#39;:</span>
+    <span class="n">forced_string_delim</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="se">\&quot;</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="n">extn</span> <span class="o">=</span> <span class="n">extn</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">extn</span> <span class="ow">and</span> <span class="p">(</span><span class="n">extn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="ow">in</span> <span class="n">forced_string_delim</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="p">(</span><span class="n">extn</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">forced_string_delim</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">default_extver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">default_extver</span><span class="p">)</span>
+
+    <span class="c1">#TODO: Add support for strings like &#39;(SCI,1)&#39; that *include* parentheses?</span>
+
+    <span class="c1"># check if extension version is present:</span>
+    <span class="n">commapos</span> <span class="o">=</span> <span class="n">extn</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">commapos</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># see if extension version is an integer:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">extver_str</span> <span class="o">=</span> <span class="n">extn</span><span class="p">[</span><span class="n">commapos</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">extver</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">extver_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">extver_str</span> <span class="k">else</span> <span class="n">default_extver</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">cmsg</span> <span class="o">=</span> <span class="s2">&quot;FITS extension version must be a valid integer.&quot;</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">cmsg</span><span class="p">,)</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">cmsg</span><span class="p">,)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span>
+
+        <span class="n">extname</span> <span class="o">=</span> <span class="n">extn</span><span class="p">[:</span><span class="n">commapos</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">extname</span> <span class="k">if</span> <span class="n">extver</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="n">extver</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># no extver present. However, check if the &#39;extn&#39; string can be</span>
+        <span class="c1"># interpreted as an integer. If so, interpret it as extension version.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">extver</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">extver</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># assume default extver if present:</span>
+        <span class="k">if</span> <span class="n">default_extver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">extn</span><span class="p">[:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">extn</span><span class="p">[:],</span> <span class="n">default_extver</span><span class="p">)</span>
+<span class="c1">#</span>
+<span class="c1"># Tests of &#39;parse_ext&#39;:</span>
+<span class="c1">#</span>
+<span class="c1">#--&gt; parse_ext(2)</span>
+<span class="c1">#2</span>
+<span class="c1">#--&gt; parse_ext(None)</span>
+<span class="c1">#0</span>
+<span class="c1">#--&gt; parse_ext((&#39;sci&#39;,2))</span>
+<span class="c1">#(&#39;sci&#39;, 2)</span>
+<span class="c1">#--&gt; parse_ext((&#39;sci&#39;))</span>
+<span class="c1">#&#39;sci&#39;</span>
+<span class="c1">#--&gt; parse_ext([&#39;file1&#39;,&#39;file2&#39;])</span>
+<span class="c1">#[&#39;file1&#39;, &#39;file2&#39;]</span>
+<span class="c1">#--&gt; parse_ext(&#39;sci&#39;)</span>
+<span class="c1">#&#39;sci&#39;</span>
+<span class="c1">#--&gt; parse_ext(&#39;sci,2&#39;)</span>
+<span class="c1">#(&#39;sci&#39;, 2)</span>
+<span class="c1">#--&gt; parse_ext(&#39;sci,2.3&#39;)</span>
+<span class="c1">#Traceback (innermost last):</span>
+<span class="c1">#    File &quot;&lt;console&gt;&quot;, line 1, in &lt;module&gt;</span>
+<span class="c1">#    File &quot;./tweakregtools.py&quot;, line 164, in parse_ext</span>
+<span class="c1">#ValueError: invalid literal for int() with base 10: &#39;2.3&#39;</span>
+<span class="c1">#FITS extension version must be a valid integer.</span>
+
+
+<span class="k">def</span> <span class="nf">count_extensions</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the number of &#39;extname&#39; extensions. &#39;img&#39; can be either a file</span>
+<span class="sd">    name, an HDU List object (from fits), or None (to get the number of all</span>
+<span class="sd">    HDU headers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;img&#39; must be either a file name (string) &quot;</span> \
+                        <span class="s2">&quot;or a `astropy.io.fits.HDUList` object.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">extname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;extname&#39; must be either a string &quot;</span> \
+        <span class="s2">&quot;indicating the value of the &#39;EXTNAME&#39; keyword of the extensions &quot;</span> \
+        <span class="s2">&quot;to be counted or None to return the count of all HDUs in the &quot;</span> \
+        <span class="s2">&quot;&#39;img&#39; FITS file.&quot;</span><span class="p">)</span>
+
+    <span class="n">extname</span> <span class="o">=</span> <span class="n">extname</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">img</span><span class="p">:</span>
+        <span class="c1">#if isinstance(e, fits.ImageHDU): continue</span>
+        <span class="k">if</span> <span class="s1">&#39;EXTNAME&#39;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span> \
+            <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extname&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="n">extname</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">n</span>
+
+
+<span class="k">def</span> <span class="nf">get_extver_list</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a list of all extension versions of &#39;extname&#39; extensions.</span>
+<span class="sd">    &#39;img&#39; can be either a file name or a HDU List object (from fits).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;img&#39; must be either a file name (string) &quot;</span>  \
+                        <span class="s2">&quot;or a fits.HDUList object.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># when extver is None - return the range of all FITS extensions</span>
+    <span class="k">if</span> <span class="n">extname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">extver</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">img</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">extver</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;extname&#39; must be either a string &quot;</span>          \
+            <span class="s2">&quot;indicating the value of the &#39;EXTNAME&#39; keyword of the extensions &quot;</span> \
+            <span class="s2">&quot;whose versions are to be returned or None to return &quot;</span>             \
+            <span class="s2">&quot;extension numbers of all HDUs in the &#39;img&#39; FITS file.&quot;</span><span class="p">)</span>
+
+    <span class="n">extname</span> <span class="o">=</span> <span class="n">extname</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+    <span class="n">extver</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">img</span><span class="p">:</span>
+        <span class="c1">#if not isinstance(e, fits.ImageHDU): continue</span>
+        <span class="n">hkeys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="k">if</span> <span class="s1">&#39;EXTNAME&#39;</span> <span class="ow">in</span> <span class="n">hkeys</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="n">extname</span><span class="p">:</span>
+            <span class="n">extver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;EXTVER&#39;</span> <span class="ow">in</span> <span class="n">hkeys</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">extver</span>
+
+
+<span class="k">def</span> <span class="nf">_check_FITS_extvers</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">extname</span><span class="p">,</span> <span class="n">extvers</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns True if all (except None) extension versions specified by the</span>
+<span class="sd">    argument &#39;extvers&#39; and that are of the type specified by the argument</span>
+<span class="sd">    &#39;extname&#39; are present in the &#39;img&#39; FITS file. Returns False if some of the</span>
+<span class="sd">    extension versions for a given EXTNAME cannot be found in the FITS image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">default_extn</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extname</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extvers</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">extv</span> <span class="o">=</span> <span class="p">[</span><span class="n">default_extn</span> <span class="k">if</span> <span class="n">ext</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ext</span> <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extvers</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">extv</span> <span class="o">=</span> <span class="p">[</span><span class="n">default_extn</span> <span class="k">if</span> <span class="n">extvers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">extvers</span><span class="p">]</span>
+
+    <span class="n">extv_in_fits</span> <span class="o">=</span> <span class="n">get_extver_list</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">extname</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">extv</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">extv_in_fits</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_check_FITS_extensions</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">extensions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extensions</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="n">extensions</span><span class="p">]</span>
+
+    <span class="n">int_ext</span>  <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ext_dict</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="c1"># sort &#39;extensions&#39; elements into a list of integers or a dictionary having</span>
+    <span class="c1"># as keys the first elements of the tuples and the values being lists of</span>
+    <span class="c1"># the second elements of the tuples corresponding to a given key:</span>
+    <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">extensions</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">int_ext</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">extn</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> \
+                                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;extensions&#39; must be a list &quot;</span>     \
+                    <span class="s2">&quot;containing a mixture of None, integers (FITS &quot;</span>         \
+                    <span class="s2">&quot;extension numbers), strings (FITS EXTNAME), or tuple &quot;</span> \
+                    <span class="s2">&quot;types (str, int) with the first element being the &quot;</span>    \
+                    <span class="s2">&quot;EXTNAME and the second element being EXTVER.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">extn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">ext_dict</span><span class="p">:</span>
+                <span class="n">ext_dict</span><span class="p">[</span><span class="n">extn</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ext_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">extn</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="p">[</span><span class="n">extn</span><span class="p">[</span><span class="mi">1</span><span class="p">]]})</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extn</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">ext_dict</span><span class="p">:</span>
+                <span class="n">ext_dict</span><span class="p">[</span><span class="n">extn</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ext_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">extn</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
+
+        <span class="k">elif</span> <span class="n">extn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">int_ext</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;extensions&#39; must be a list &quot;</span>     \
+                <span class="s2">&quot;containing a mixture of None, integers (FITS &quot;</span>         \
+                <span class="s2">&quot;extension numbers), strings (FITS EXTNAME), or tuple &quot;</span> \
+                <span class="s2">&quot;types (str, int) with the first element being the &quot;</span>    \
+                <span class="s2">&quot;EXTNAME and the second element being EXTVER.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># if &#39;img&#39; is a file name - open the FITS file:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;img&#39; must be either a file name (string) &quot;</span> \
+                        <span class="s2">&quot;or a fits.HDUList object.&quot;</span><span class="p">)</span>
+
+    <span class="n">all_present</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">int_ext</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">int_ext</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+            <span class="n">all_present</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">for</span> <span class="n">extname</span> <span class="ow">in</span> <span class="n">ext_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_check_FITS_extvers</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">extname</span><span class="p">,</span> <span class="n">ext_dict</span><span class="p">[</span><span class="n">extname</span><span class="p">]):</span>
+            <span class="n">all_present</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">break</span>
+
+    <span class="k">return</span> <span class="n">all_present</span>
+
+
+<span class="c1">#--------------------------</span>
+<span class="c1"># TEAL Interface functions</span>
+<span class="c1">#--------------------------</span>
+<span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">configObj</span><span class="p">):</span>
+    <span class="n">MapReg</span><span class="p">(</span><span class="n">input_reg</span>   <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input_reg&#39;</span><span class="p">],</span>
+           <span class="n">images</span>      <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">],</span>
+           <span class="n">img_wcs_ext</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;img_wcs_ext&#39;</span><span class="p">],</span>
+           <span class="n">refimg</span>      <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="c1">#configObj[&#39;refimg&#39;],</span>
+           <span class="n">ref_wcs_ext</span> <span class="o">=</span> <span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="c1">#configObj[&#39;ref_wcs_ext&#39;],</span>
+           <span class="n">chip_reg</span>    <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;chip_reg&#39;</span><span class="p">],</span>
+           <span class="n">outpath</span>     <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;outpath&#39;</span><span class="p">],</span>
+           <span class="nb">filter</span>      <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">],</span>
+           <span class="n">catfname</span>    <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;catfname&#39;</span><span class="p">],</span>
+           <span class="n">iteractive</span>  <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="c1">#configObj[&#39;iteractive&#39;],</span>
+           <span class="n">append</span>      <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;append&#39;</span><span class="p">],</span>
+           <span class="n">verbose</span>     <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="help"><a class="viewcode-back" href="../../mapreg.html#drizzlepac.mapreg.help">[docs]</a><span class="k">def</span> <span class="nf">help</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print out syntax help for running astrodrizzle</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file : str (Default = None)</span>
+<span class="sd">        If given, write out help to the filename specified by this parameter</span>
+<span class="sd">        Any previously existing file with this name will be deleted before</span>
+<span class="sd">        writing out the help.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">helpstr</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return useful help from a file in the script directory called</span>
+<span class="sd">    __taskname__.help</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
+    <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">docstring</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">docstring</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">htmlfile</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">show_ver</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="o">+</span> \
+                <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;Version&#39;</span><span class="p">,</span> <span class="n">__version__</span><span class="p">,</span>
+                <span class="s1">&#39; updated on &#39;</span><span class="p">,</span> <span class="n">__vdate__</span><span class="p">])</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
+
+    <span class="k">return</span> <span class="n">helpString</span>
+
+
+<span class="n">MapReg</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

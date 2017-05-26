@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stwcs.wcsutil.convertwcs &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for stwcs.wcsutil.convertwcs</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">stwcs</span>
+    <span class="kn">from</span> <span class="nn">stwcs</span> <span class="k">import</span> <span class="n">wcsutil</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">stwcs</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span>
+
+<span class="n">OPUS_WCSKEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OCRVAL1&#39;</span><span class="p">,</span> <span class="s1">&#39;OCRVAL2&#39;</span><span class="p">,</span> <span class="s1">&#39;OCRPIX1&#39;</span><span class="p">,</span> <span class="s1">&#39;OCRPIX2&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;OCD1_1&#39;</span><span class="p">,</span> <span class="s1">&#39;OCD1_2&#39;</span><span class="p">,</span> <span class="s1">&#39;OCD2_1&#39;</span><span class="p">,</span> <span class="s1">&#39;OCD2_2&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;OCTYPE1&#39;</span><span class="p">,</span> <span class="s1">&#39;OCTYPE2&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="archive_prefix_OPUS_WCS"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.convertwcs.archive_prefix_OPUS_WCS">[docs]</a><span class="k">def</span> <span class="nf">archive_prefix_OPUS_WCS</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Identifies WCS keywords which were generated by OPUS and archived</span>
+<span class="sd">        using a prefix of &#39;O&#39; for all &#39;SCI&#39; extensions in the file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fobj : str or `astropy.io.fits.HDUList`</span>
+<span class="sd">            Filename or fits object of a file</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">stwcs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;=====================&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The STWCS package is needed to convert an old-style OPUS WCS to an alternate WCS&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;=====================&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span>
+
+    <span class="n">closefits</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># A filename was provided as input</span>
+        <span class="n">fobj</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">)</span>
+        <span class="n">closefits</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Define the header</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">hdr</span> <span class="o">=</span> <span class="n">fobj</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+    <span class="n">numextn</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">countExtn</span><span class="p">(</span><span class="n">fobj</span><span class="p">)</span>
+    <span class="n">extlist</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numextn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">extlist</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+
+    <span class="c1"># Insure that the &#39;O&#39; alternate WCS is present</span>
+    <span class="k">if</span> <span class="s1">&#39;O&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">wcskeys</span><span class="p">(</span><span class="n">hdr</span><span class="p">):</span>
+        <span class="c1"># if not, archive the Primary WCS as the default OPUS WCS</span>
+        <span class="n">wcsutil</span><span class="o">.</span><span class="n">archiveWCS</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">extlist</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="n">wcsname</span><span class="o">=</span><span class="s1">&#39;OPUS&#39;</span><span class="p">)</span>
+
+    <span class="c1"># find out how many SCI extensions are in the image</span>
+    <span class="n">numextn</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">countExtn</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="n">extname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">numextn</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">extname</span> <span class="o">=</span> <span class="s1">&#39;PRIMARY&#39;</span>
+
+    <span class="c1"># create HSTWCS object from PRIMARY WCS</span>
+    <span class="n">wcsobj</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="s1">&#39;O&#39;</span><span class="p">)</span>
+    <span class="c1"># get list of WCS keywords</span>
+    <span class="n">wcskeys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">wcsobj</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># For each SCI extension...</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numextn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Now, look for any WCS keywords with a prefix of &#39;O&#39;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcskeys</span><span class="p">:</span>
+            <span class="n">okey</span> <span class="o">=</span> <span class="s1">&#39;O&#39;</span> <span class="o">+</span> <span class="n">key</span><span class="p">[:</span> <span class="mi">7</span><span class="p">]</span>
+            <span class="n">hdr</span> <span class="o">=</span> <span class="n">fobj</span><span class="p">[(</span><span class="n">extname</span><span class="p">,</span> <span class="n">e</span><span class="p">)]</span><span class="o">.</span><span class="n">header</span>
+            <span class="k">if</span> <span class="n">okey</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">:</span>
+                <span class="c1"># Update alternate WCS keyword with prefix-O OPUS keyword value</span>
+                <span class="n">hdr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdr</span><span class="p">[</span><span class="n">okey</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">closefits</span><span class="p">:</span>
+        <span class="n">fobj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="create_prefix_OPUS_WCS"><a class="viewcode-back" href="../../../wcscorr.html#stwcs.wcsutil.convertwcs.create_prefix_OPUS_WCS">[docs]</a><span class="k">def</span> <span class="nf">create_prefix_OPUS_WCS</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Creates alternate WCS with a prefix of &#39;O&#39; for OPUS generated WCS values</span>
+<span class="sd">        to work with old MultiDrizzle.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fobj : str or `astropy.io.fits.HDUList`</span>
+<span class="sd">            Filename or fits object of a file</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        IOError:</span>
+<span class="sd">            if input FITS object was not opened in &#39;update&#39; mode</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># List of O-prefix keywords to create</span>
+    <span class="n">owcskeys</span> <span class="o">=</span> <span class="n">OPUS_WCSKEYS</span>
+
+    <span class="n">closefits</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># A filename was provided as input</span>
+        <span class="n">fobj</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">)</span>
+        <span class="n">closefits</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># check to make sure this FITS obj has been opened in update mode</span>
+        <span class="k">if</span> <span class="n">fobj</span><span class="o">.</span><span class="n">fileinfo</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;filemode&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;update&#39;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;File not opened with &quot;mode=update&quot;. Quitting...&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IOError</span>
+
+    <span class="c1"># check for existance of O-prefix WCS</span>
+    <span class="k">if</span> <span class="n">owcskeys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fobj</span><span class="p">[</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+
+        <span class="c1"># find out how many SCI extensions are in the image</span>
+        <span class="n">numextn</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">countExtn</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="n">extname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">numextn</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">extname</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numextn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">hdr</span> <span class="o">=</span> <span class="n">fobj</span><span class="p">[(</span><span class="n">extname</span><span class="p">,</span> <span class="n">extn</span><span class="p">)]</span><span class="o">.</span><span class="n">header</span>
+            <span class="k">for</span> <span class="n">okey</span> <span class="ow">in</span> <span class="n">owcskeys</span><span class="p">:</span>
+                <span class="n">hdr</span><span class="p">[</span><span class="n">okey</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdr</span><span class="p">[</span><span class="n">okey</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span> <span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;O&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Close FITS image if we had to open it...</span>
+    <span class="k">if</span> <span class="n">closefits</span><span class="p">:</span>
+        <span class="n">fobj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

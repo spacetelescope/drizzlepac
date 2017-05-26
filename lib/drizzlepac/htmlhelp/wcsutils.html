@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>WCS Utilities &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>WCS Utilities &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,22 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.15 (26-May-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
-    <link rel="up" title="Utilities" href="util.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Output Image Generation" href="outimage.html" />
     <link rel="prev" title="Utility Functions" href="utilfuncs.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,11 +45,11 @@
         <li class="right" >
           <a href="utilfuncs.html" title="Utility Functions"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="util.html" accesskey="U">Utilities</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="util.html" accesskey="U">Utilities</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -59,22 +60,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="outimage.html"
                         title="next chapter">Output Image Generation</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/wcsutils.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/wcsutils.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -83,7 +83,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="wcs-utilities">
 <h1>WCS Utilities<a class="headerlink" href="#wcs-utilities" title="Permalink to this headline">¶</a></h1>
@@ -93,53 +93,51 @@ images and create the output WCS objects based on STWCS routines.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="class">
 <dt id="drizzlepac.wcs_functions.IdentityMap">
-<em class="property">class </em><tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">IdentityMap</tt><big>(</big><em>input</em>, <em>output</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.IdentityMap" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">IdentityMap</code><span class="sig-paren">(</span><em>input</em>, <em>output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#IdentityMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.IdentityMap" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="drizzlepac.wcs_functions.IdentityMap.forward">
-<tt class="descname">forward</tt><big>(</big><em>pixx</em>, <em>pixy</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.IdentityMap.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>pixx</em>, <em>pixy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#IdentityMap.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.IdentityMap.forward" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="drizzlepac.wcs_functions.LinearMap">
-<em class="property">class </em><tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">LinearMap</tt><big>(</big><em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>rot=0.0</em>, <em>scale=1.0</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.LinearMap" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">LinearMap</code><span class="sig-paren">(</span><em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>rot=0.0</em>, <em>scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#LinearMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.LinearMap" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="drizzlepac.wcs_functions.LinearMap.forward">
-<tt class="descname">forward</tt><big>(</big><em>pixx</em>, <em>pixy</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.LinearMap.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>pixx</em>, <em>pixy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#LinearMap.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.LinearMap.forward" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="drizzlepac.wcs_functions.WCSMap">
-<em class="property">class </em><tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">WCSMap</tt><big>(</big><em>input</em>, <em>output</em>, <em>origin=1</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">WCSMap</code><span class="sig-paren">(</span><em>input</em>, <em>output</em>, <em>origin=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#WCSMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sample class to demonstrate how to define a coordinate transformation</p>
 <dl class="method">
 <dt id="drizzlepac.wcs_functions.WCSMap.backward">
-<tt class="descname">backward</tt><big>(</big><em>pixx</em>, <em>pixy</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.backward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">backward</code><span class="sig-paren">(</span><em>pixx</em>, <em>pixy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#WCSMap.backward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.backward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform pixx,pixy positions from the output frame back onto their
 original positions in the input frame.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.wcs_functions.WCSMap.checkWCS">
-<tt class="descname">checkWCS</tt><big>(</big><em>obj</em>, <em>name</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.checkWCS" title="Permalink to this definition">¶</a></dt>
+<code class="descname">checkWCS</code><span class="sig-paren">(</span><em>obj</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#WCSMap.checkWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.checkWCS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.wcs_functions.WCSMap.forward">
-<tt class="descname">forward</tt><big>(</big><em>pixx</em>, <em>pixy</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>pixx</em>, <em>pixy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#WCSMap.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform the input pixx,pixy positions in the input frame
 to pixel positions in the output frame.</p>
 <p>This method gets passed to the drizzle algorithm.</p>
@@ -147,20 +145,20 @@ to pixel positions in the output frame.</p>
 
 <dl class="method">
 <dt id="drizzlepac.wcs_functions.WCSMap.get_pix_ratio">
-<tt class="descname">get_pix_ratio</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.get_pix_ratio" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_pix_ratio</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#WCSMap.get_pix_ratio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.get_pix_ratio" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the ratio of plate scales between the input and output WCS.
 This is used to properly distribute the flux in each pixel in &#8216;tdriz&#8217;.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.wcs_functions.WCSMap.rd2xy">
-<tt class="descname">rd2xy</tt><big>(</big><em>wcs</em>, <em>ra</em>, <em>dec</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.rd2xy" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rd2xy</code><span class="sig-paren">(</span><em>wcs</em>, <em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#WCSMap.rd2xy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.rd2xy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform input sky positions into pixel positions in the WCS provided.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.wcs_functions.WCSMap.xy2rd">
-<tt class="descname">xy2rd</tt><big>(</big><em>wcs</em>, <em>pixx</em>, <em>pixy</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.xy2rd" title="Permalink to this definition">¶</a></dt>
+<code class="descname">xy2rd</code><span class="sig-paren">(</span><em>wcs</em>, <em>pixx</em>, <em>pixy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#WCSMap.xy2rd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.WCSMap.xy2rd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform input pixel positions into sky positions in the WCS provided.</p>
 </dd></dl>
 
@@ -168,32 +166,31 @@ This is used to properly distribute the flux in each pixel in &#8216;tdriz&#8217
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.apply_fitlin">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">apply_fitlin</tt><big>(</big><em>data</em>, <em>P</em>, <em>Q</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.apply_fitlin" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">apply_fitlin</code><span class="sig-paren">(</span><em>data</em>, <em>P</em>, <em>Q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#apply_fitlin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.apply_fitlin" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.build_hstwcs">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">build_hstwcs</tt><big>(</big><em>crval1</em>, <em>crval2</em>, <em>crpix1</em>, <em>crpix2</em>, <em>naxis1</em>, <em>naxis2</em>, <em>pscale</em>, <em>orientat</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.build_hstwcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">build_hstwcs</code><span class="sig-paren">(</span><em>crval1</em>, <em>crval2</em>, <em>crpix1</em>, <em>crpix2</em>, <em>naxis1</em>, <em>naxis2</em>, <em>pscale</em>, <em>orientat</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#build_hstwcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.build_hstwcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an HSTWCS object for a default instrument without distortion
 based on user provided parameter values.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.build_pixel_transform">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">build_pixel_transform</tt><big>(</big><em>chip</em>, <em>output_wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.build_pixel_transform" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">build_pixel_transform</code><span class="sig-paren">(</span><em>chip</em>, <em>output_wcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#build_pixel_transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.build_pixel_transform" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.calcNewEdges">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">calcNewEdges</tt><big>(</big><em>wcs</em>, <em>shape</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.calcNewEdges" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">calcNewEdges</code><span class="sig-paren">(</span><em>wcs</em>, <em>shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#calcNewEdges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.calcNewEdges" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method will compute sky coordinates for all the pixels around
 the edge of an image AFTER applying the geometry model.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
 <blockquote>
 <div><p>HSTWCS object for image</p>
 </div></blockquote>
@@ -203,8 +200,7 @@ the edge of an image AFTER applying the geometry model.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>border</strong> : arr</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>border</strong> : arr</p>
 <blockquote class="last">
 <div><p>array which contains the new positions for
 all pixels around the border of the edges in alpha,dec</p>
@@ -217,24 +213,24 @@ all pixels around the border of the edges in alpha,dec</p>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.computeEdgesCenter">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">computeEdgesCenter</tt><big>(</big><em>edges</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.computeEdgesCenter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">computeEdgesCenter</code><span class="sig-paren">(</span><em>edges</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#computeEdgesCenter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.computeEdgesCenter" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.convertWCS">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">convertWCS</tt><big>(</big><em>inwcs</em>, <em>drizwcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.convertWCS" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">convertWCS</code><span class="sig-paren">(</span><em>inwcs</em>, <em>drizwcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#convertWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.convertWCS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Copy WCSObject WCS into Drizzle compatible array.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.createWCSObject">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">createWCSObject</tt><big>(</big><em>output</em>, <em>default_wcs</em>, <em>imageObjectList</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.createWCSObject" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">createWCSObject</code><span class="sig-paren">(</span><em>output</em>, <em>default_wcs</em>, <em>imageObjectList</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#createWCSObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.createWCSObject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.create_CD">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">create_CD</tt><big>(</big><em>orient</em>, <em>scale</em>, <em>cx=None</em>, <em>cy=None</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.create_CD" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">create_CD</code><span class="sig-paren">(</span><em>orient</em>, <em>scale</em>, <em>cx=None</em>, <em>cy=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#create_CD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.create_CD" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a (un?)distorted CD matrix from the basic inputs</p>
 <p>The &#8216;cx&#8217; and &#8216;cy&#8217; parameters, if given, provide the X and Y coefficients of
 the distortion as returned by reading the IDCTAB.  Only the first 2 elements
@@ -247,20 +243,20 @@ reference pixel.</p>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.ddtohms">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">ddtohms</tt><big>(</big><em>xsky</em>, <em>ysky</em>, <em>verbose=False</em>, <em>precision=6</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.ddtohms" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">ddtohms</code><span class="sig-paren">(</span><em>xsky</em>, <em>ysky</em>, <em>verbose=False</em>, <em>precision=6</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#ddtohms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.ddtohms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert sky position(s) from decimal degrees to HMS format.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.fitlin">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">fitlin</tt><big>(</big><em>imgarr</em>, <em>refarr</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.fitlin" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">fitlin</code><span class="sig-paren">(</span><em>imgarr</em>, <em>refarr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#fitlin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.fitlin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the least-squares fit between two arrays.
 A Python translation of &#8216;FITLIN&#8217; from &#8216;drutil.f&#8217; (Drizzle V2.9).</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.fitlin_clipped">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">fitlin_clipped</tt><big>(</big><em>xy</em>, <em>uv</em>, <em>verbose=False</em>, <em>mode='rscale'</em>, <em>nclip=3</em>, <em>reject=3</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.fitlin_clipped" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">fitlin_clipped</code><span class="sig-paren">(</span><em>xy</em>, <em>uv</em>, <em>verbose=False</em>, <em>mode='rscale'</em>, <em>nclip=3</em>, <em>reject=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#fitlin_clipped"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.fitlin_clipped" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a clipped fit based on the number of iterations and rejection limit
 (in sigma) specified by the user. This will more closely replicate the results
 obtained by &#8216;geomap&#8217; using &#8216;maxiter&#8217; and &#8216;reject&#8217; parameters.</p>
@@ -268,7 +264,7 @@ obtained by &#8216;geomap&#8217; using &#8216;maxiter&#8217; and &#8216;reject&#
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.fitlin_rscale">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">fitlin_rscale</tt><big>(</big><em>xy</em>, <em>uv</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.fitlin_rscale" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">fitlin_rscale</code><span class="sig-paren">(</span><em>xy</em>, <em>uv</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#fitlin_rscale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.fitlin_rscale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs a linear, orthogonal fit between matched
 lists of positions &#8216;xy&#8217; (input) and &#8216;uv&#8217; (output).</p>
 <p>Output: (same as for fit_arrays_general)</p>
@@ -276,19 +272,19 @@ lists of positions &#8216;xy&#8217; (input) and &#8216;uv&#8217; (output).</p>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.get_hstwcs">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">get_hstwcs</tt><big>(</big><em>filename</em>, <em>hdulist</em>, <em>extnum</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.get_hstwcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">get_hstwcs</code><span class="sig-paren">(</span><em>filename</em>, <em>hdulist</em>, <em>extnum</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#get_hstwcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.get_hstwcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the HSTWCS object for a given chip.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.get_pix_ratio_from_WCS">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">get_pix_ratio_from_WCS</tt><big>(</big><em>input</em>, <em>output</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.get_pix_ratio_from_WCS" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">get_pix_ratio_from_WCS</code><span class="sig-paren">(</span><em>input</em>, <em>output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#get_pix_ratio_from_WCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.get_pix_ratio_from_WCS" title="Permalink to this definition">¶</a></dt>
 <dd><p>[Functional form of .get_pix_ratio() method of WCSMap]</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.make_outputwcs">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">make_outputwcs</tt><big>(</big><em>imageObjectList</em>, <em>output</em>, <em>configObj=None</em>, <em>perfect=False</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.make_outputwcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">make_outputwcs</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>output</em>, <em>configObj=None</em>, <em>perfect=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#make_outputwcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.make_outputwcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the full output WCS based on the set of input imageObjects
 provided as input, along with the pre-determined output name from
 process_input.  The user specified output parameters are then used to
@@ -301,51 +297,85 @@ instance.</p>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.make_perfect_cd">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">make_perfect_cd</tt><big>(</big><em>wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.make_perfect_cd" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">make_perfect_cd</code><span class="sig-paren">(</span><em>wcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#make_perfect_cd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.make_perfect_cd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a perfect (square, orthogonal, undistorted) CD matrix from the
 input WCS.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.mergeWCS">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">mergeWCS</tt><big>(</big><em>default_wcs</em>, <em>user_pars</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.mergeWCS" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">mergeWCS</code><span class="sig-paren">(</span><em>default_wcs</em>, <em>user_pars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#mergeWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.mergeWCS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merges the user specified WCS values given as dictionary derived from
 the input configObj object with the output PyWCS object computed
 using distortion.output_wcs().</p>
 <p>The user_pars dictionary needs to have the following set of keys:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">user_pars</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;ra&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;dec&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;rot&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span>
-             <span class="s">&#39;outnx&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;outny&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;crpix1&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span><span class="s">&#39;crpix2&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">user_pars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ra&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;dec&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;scale&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;rot&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+             <span class="s1">&#39;outnx&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;outny&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;crpix1&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;crpix2&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">}</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="function">
+<dt id="drizzlepac.wcs_functions.readAltWCS">
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">readAltWCS</code><span class="sig-paren">(</span><em>fobj</em>, <em>ext</em>, <em>wcskey=' '</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#readAltWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.readAltWCS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in alternate primary WCS from specified extension.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str, <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/api/hdulists.html#astropy.io.fits.HDUList" title="(in Astropy v1.3.2)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></code></a></p>
+<blockquote>
+<div><p>fits filename or fits file object
+containing alternate/primary WCS(s) to be converted</p>
+</div></blockquote>
+<p><strong id="wcskey">wcskey</strong> : str</p>
+<blockquote>
+<div><p>[&#8221; &#8221;,A-Z]
+alternate/primary WCS key that will be replaced by the new key</p>
+</div></blockquote>
+<p><strong id="ext">ext</strong> : int</p>
+<blockquote>
+<div><p>fits extension number</p>
+</div></blockquote>
+<p><strong id="Returns">Returns</strong></p>
+<p><strong id="-------">&#8212;&#8212;-</strong></p>
+<p><strong id="hdr: fits.Header">hdr: fits.Header</strong></p>
+<blockquote class="last">
+<div><p>header object with ONLY the keywords for specified alternate WCS</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="drizzlepac.wcs_functions.removeAllAltWCS">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">removeAllAltWCS</tt><big>(</big><em>hdulist</em>, <em>extlist</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.removeAllAltWCS" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">removeAllAltWCS</code><span class="sig-paren">(</span><em>hdulist</em>, <em>extlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#removeAllAltWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.removeAllAltWCS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes all alternate WCS solutions from the header</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.restoreDefaultWCS">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">restoreDefaultWCS</tt><big>(</big><em>imageObjectList</em>, <em>output_wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.restoreDefaultWCS" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">restoreDefaultWCS</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>output_wcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#restoreDefaultWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.restoreDefaultWCS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restore WCS information to default values, and update imageObject
 accordingly.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.updateImageWCS">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">updateImageWCS</tt><big>(</big><em>imageObjectList</em>, <em>output_wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.updateImageWCS" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">updateImageWCS</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>output_wcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#updateImageWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.updateImageWCS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.updateWCS">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">updateWCS</tt><big>(</big><em>drizwcs</em>, <em>inwcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.updateWCS" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">updateWCS</code><span class="sig-paren">(</span><em>drizwcs</em>, <em>inwcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#updateWCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.updateWCS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Copy output WCS array from Drizzle into WCSObject.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.update_linCD">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">update_linCD</tt><big>(</big><em>cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0, 1.0], cy=[1.0, 0.0]</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.update_linCD" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">update_linCD</code><span class="sig-paren">(</span><em>cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0, 1.0], cy=[1.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#update_linCD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.update_linCD" title="Permalink to this definition">¶</a></dt>
 <dd><p>Modify an existing linear CD matrix with rotation and/or scale changes
 and return a new CD matrix.  If &#8216;cx&#8217; and &#8216;cy&#8217; are specified, it will
 return a distorted CD matrix.</p>
@@ -354,7 +384,7 @@ return a distorted CD matrix.</p>
 
 <dl class="function">
 <dt id="drizzlepac.wcs_functions.wcsfit">
-<tt class="descclassname">drizzlepac.wcs_functions.</tt><tt class="descname">wcsfit</tt><big>(</big><em>img_wcs</em>, <em>ref_wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.wcs_functions.wcsfit" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.wcs_functions.</code><code class="descname">wcsfit</code><span class="sig-paren">(</span><em>img_wcs</em>, <em>ref_wcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/wcs_functions.html#wcsfit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.wcs_functions.wcsfit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a linear fit between 2 WCS for shift, rotation and scale.
 Based on the WCSLIN function from &#8216;drutil.f&#8217;(Drizzle V2.9) and modified to
 allow for differences in reference positions assumed by PyDrizzle&#8217;s
@@ -363,8 +393,7 @@ distortion model and the coeffs used by &#8216;drizzle&#8217;.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="img">img</strong> : obj</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="img">img</strong> : obj</p>
 <blockquote>
 <div><p>ObsGeometry instance for input image</p>
 </div></blockquote>
@@ -386,7 +415,7 @@ distortion model and the coeffs used by &#8216;drizzle&#8217;.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -401,13 +430,13 @@ distortion model and the coeffs used by &#8216;drizzle&#8217;.</p>
         <li class="right" >
           <a href="utilfuncs.html" title="Utility Functions"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="util.html" >Utilities</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="util.html" >Utilities</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

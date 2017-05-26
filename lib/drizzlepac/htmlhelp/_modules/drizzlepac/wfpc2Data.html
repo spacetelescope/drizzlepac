@@ -1,0 +1,423 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.wfpc2Data &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.15 (26-May-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.wfpc2Data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">`wfpc2Data` module provides classes used to import WFPC2 specific instrument data.</span>
+
+<span class="sd">:Authors: Warren Hack, Ivo Busko, Christopher Hanley</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span> <span class="c1"># confidence medium</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span><span class="p">,</span> <span class="n">readgeis</span>
+
+<span class="kn">from</span> <span class="nn">.imageObject</span> <span class="k">import</span> <span class="n">imageObject</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">buildmask</span>
+
+<span class="c1"># Translation table for any image that does not use the DQ extension of the MEF</span>
+<span class="c1"># for the DQ array.</span>
+<span class="n">DQ_EXTNS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c0h&#39;</span><span class="p">:</span><span class="s1">&#39;sdq&#39;</span><span class="p">,</span><span class="s1">&#39;c0f&#39;</span><span class="p">:</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span><span class="s1">&#39;c0m&#39;</span><span class="p">:</span><span class="s1">&#39;sci&#39;</span><span class="p">}</span>
+
+<span class="c1">#### Calibrated gain and readnoise values for each chip</span>
+<span class="n">WFPC2_GAINS</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">1</span><span class="p">:{</span><span class="mi">7</span><span class="p">:[</span><span class="mf">7.12</span><span class="p">,</span><span class="mf">5.24</span><span class="p">],</span><span class="mi">15</span><span class="p">:[</span><span class="mf">13.99</span><span class="p">,</span><span class="mf">7.02</span><span class="p">]},</span>
+                <span class="mi">2</span><span class="p">:{</span><span class="mi">7</span><span class="p">:[</span><span class="mf">7.12</span><span class="p">,</span><span class="mf">5.51</span><span class="p">],</span><span class="mi">15</span><span class="p">:[</span><span class="mf">14.50</span><span class="p">,</span><span class="mf">7.84</span><span class="p">]},</span>
+                <span class="mi">3</span><span class="p">:{</span><span class="mi">7</span><span class="p">:[</span><span class="mf">6.90</span><span class="p">,</span><span class="mf">5.22</span><span class="p">],</span><span class="mi">15</span><span class="p">:[</span><span class="mf">13.95</span><span class="p">,</span><span class="mf">6.99</span><span class="p">]},</span>
+                <span class="mi">4</span><span class="p">:{</span><span class="mi">7</span><span class="p">:[</span><span class="mf">7.10</span><span class="p">,</span><span class="mf">5.19</span><span class="p">],</span><span class="mi">15</span><span class="p">:[</span><span class="mf">13.95</span><span class="p">,</span><span class="mf">8.32</span><span class="p">]}}</span>
+<span class="n">WFPC2_DETECTOR_NAMES</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span><span class="s2">&quot;PC&quot;</span><span class="p">,</span><span class="mi">2</span><span class="p">:</span><span class="s2">&quot;WF2&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">:</span><span class="s2">&quot;WF3&quot;</span><span class="p">,</span><span class="mi">4</span><span class="p">:</span><span class="s2">&quot;WF4&quot;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="WFPC2InputImage"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage">[docs]</a><span class="k">class</span> <span class="nc">WFPC2InputImage</span> <span class="p">(</span><span class="n">imageObject</span><span class="p">):</span>
+
+    <span class="n">SEPARATOR</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">imageObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="c1"># define the cosmic ray bits value to use in the dq array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cr_bits_value</span> <span class="o">=</span> <span class="mi">4096</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;INSTRUME&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errExt</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Attribute defining the pixel dimensions of WFPC2 chips.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">800</span><span class="p">,</span><span class="mi">800</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">native_units</span> <span class="o">=</span> <span class="s2">&quot;COUNTS&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">flatkey</span> <span class="o">=</span> <span class="s1">&#39;FLATFILE&#39;</span>
+
+        <span class="c1"># Reference Plate Scale used for updates to MDRIZSKY, we should get this from the wcs class</span>
+        <span class="c1">#self.refplatescale = 0.0996 # arcsec / pixel</span>
+
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assignSignature</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span> <span class="c1">#this is used in the static mask</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">cte_dir</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="c1"># independent of amp, chip</span>
+            <span class="n">det</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;DETECTOR&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="n">WFPC2_DETECTOR_NAMES</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span><span class="o">.</span><span class="n">darkcurrent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getdarkcurrent</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WFPC2InputImage.find_DQ_extension"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.find_DQ_extension">[docs]</a>    <span class="k">def</span> <span class="nf">find_DQ_extension</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return the suffix for the data quality extension and the name of the file</span>
+<span class="sd">            which that DQ extension should be read from.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">dqfile</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Look for additional file with DQ array, primarily for WFPC2 data</span>
+
+        <span class="n">indx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.fits&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">indx</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">[</span><span class="n">indx</span><span class="o">-</span><span class="mi">4</span><span class="p">:</span><span class="n">indx</span><span class="p">]</span>
+            <span class="n">dqfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">suffix</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span><span class="s1">&#39;_c1&#39;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">indx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="ow">and</span> \
+             <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">extsep</span> <span class="ow">and</span> \
+             <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;h&#39;</span><span class="p">:</span>
+
+            <span class="c1"># assume we&#39;ve got a GEIS file</span>
+            <span class="n">dqfile</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;1&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">hdulist</span> <span class="o">=</span> <span class="n">readgeis</span><span class="o">.</span><span class="n">readgeis</span><span class="p">(</span><span class="n">dqfile</span><span class="p">)</span>
+            <span class="n">prih</span>    <span class="o">=</span> <span class="n">hdulist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+            <span class="k">if</span> <span class="s1">&#39;FILETYPE&#39;</span> <span class="ow">in</span> <span class="n">prih</span><span class="p">:</span>
+                <span class="n">dq_suffix</span> <span class="o">=</span> <span class="n">prih</span><span class="p">[</span><span class="s1">&#39;FILETYPE&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># assume extension name is &#39;SDQ&#39; for WFPC2 GEIS files</span>
+                <span class="n">dq_suffix</span> <span class="o">=</span> <span class="s1">&#39;SDQ&#39;</span>
+            <span class="n">hdulist</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="n">dqfile</span><span class="p">,</span><span class="n">dq_suffix</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input file </span><span class="si">{}</span><span class="s2"> does not appear to be neither &quot;</span> \
+                        <span class="s2">&quot;a FITS file nor a GEIS file.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">))</span>
+
+        <span class="c1">#dq_suffix = DQ_EXTNS[suffix[1:]]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dqfile</span><span class="p">):</span>
+            <span class="n">dq_suffix</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getval</span><span class="p">(</span><span class="n">dqfile</span><span class="p">,</span> <span class="s2">&quot;EXTNAME&quot;</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dq_suffix</span> <span class="o">=</span> <span class="s2">&quot;SCI&quot;</span>
+
+        <span class="k">return</span> <span class="n">dqfile</span><span class="p">,</span><span class="n">dq_suffix</span></div>
+
+<div class="viewcode-block" id="WFPC2InputImage.getEffGain"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.getEffGain">[docs]</a>    <span class="k">def</span> <span class="nf">getEffGain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method used to return the effective gain of a instrument&#39;s</span>
+<span class="sd">        detector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        gain : float</span>
+<span class="sd">            The effective gain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span></div>
+
+<div class="viewcode-block" id="WFPC2InputImage.setInstrumentParameters"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.setInstrumentParameters">[docs]</a>    <span class="k">def</span> <span class="nf">setInstrumentParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instrpars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This method overrides the superclass to set default values into</span>
+<span class="sd">            the parameter dictionary, in case empty entries are provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pri_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;proc_unit&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ATODGAIN&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNotValid</span> <span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]):</span>
+            <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EXPTIME&#39;</span>
+
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_headergain</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">])</span>
+            <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span><span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span>
+                                                     <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;expkeyword&#39;</span><span class="p">])</span>
+
+            <span class="c1"># We need to treat Read Noise as a special case since it is</span>
+            <span class="c1"># not populated in the WFPC2 primary header</span>
+            <span class="k">if</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrParameter</span><span class="p">(</span>
+                    <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">],</span> <span class="n">pri_header</span><span class="p">,</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_headergain</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">chip</span><span class="o">.</span><span class="n">_exptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: invalid instrument task parameter&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+
+        <span class="c1"># We need to determine if the user has used the default readnoise/gain value</span>
+        <span class="c1"># since if not, they will need to supply a gain/readnoise value as well</span>
+
+        <span class="n">usingDefaultGain</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;gnkeyword&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ATODGAIN&#39;</span>
+        <span class="n">usingDefaultReadnoise</span> <span class="o">=</span> <span class="n">instrpars</span><span class="p">[</span><span class="s1">&#39;rnkeyword&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;None&#39;</span><span class="p">]</span>
+
+        <span class="c1"># If the user has specified either the readnoise or the gain, we need to make sure</span>
+        <span class="c1"># that they have actually specified both values.  In the default case, the readnoise</span>
+        <span class="c1"># of the system depends on what the gain</span>
+
+        <span class="k">if</span> <span class="n">usingDefaultReadnoise</span> <span class="ow">and</span> <span class="n">usingDefaultGain</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setchippars</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">usingDefaultReadnoise</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">usingDefaultGain</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ERROR: You need to supply readnoise information</span><span class="se">\n</span><span class="s2"> when not using the default gain for WFPC2.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">usingDefaultReadnoise</span> <span class="ow">and</span> <span class="n">usingDefaultGain</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ERROR: You need to supply gain information when</span><span class="se">\n</span><span class="s2"> not using the default readnoise for WFPC2.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># In this case, the user has specified both a gain and readnoise values.  Just use them as is.</span>
+            <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_headergain</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using user defined values for gain and readnoise&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Convert the science data to electrons</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doUnitConversions</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="WFPC2InputImage.getflat"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.getflat">[docs]</a>    <span class="k">def</span> <span class="nf">getflat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method for retrieving a detector&#39;s flat field.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        flat : array</span>
+<span class="sd">            The flat-field array in the same shape as the input image.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># For the WFPC2 flat we need to invert</span>
+        <span class="c1"># for use in Multidrizzle</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="nb">super</span><span class="p">(</span><span class="n">WFPC2InputImage</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">getflat</span><span class="p">(</span><span class="n">chip</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">flat</span></div>
+
+<div class="viewcode-block" id="WFPC2InputImage.doUnitConversions"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.doUnitConversions">[docs]</a>    <span class="k">def</span> <span class="nf">doUnitConversions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Apply unit conversions to all the chips, ignoring the group parameter.</span>
+<span class="sd">            This insures that all the chips get the same conversions when this</span>
+<span class="sd">            gets done, even if only 1 chip was specified to be processed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+         <span class="c1"># Image information</span>
+        <span class="n">_handle</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;readonly&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Now convert the SCI array(s) units</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_numchips</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+
+            <span class="n">chip</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">conversionFactor</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="c1"># add D2IMFILE to outputNames for removal by &#39;clean()&#39; method later</span>
+            <span class="k">if</span> <span class="s1">&#39;D2IMFILE&#39;</span> <span class="ow">in</span> <span class="n">_handle</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span> <span class="ow">and</span> <span class="n">_handle</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;D2IMFILE&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s2">&quot;N/A&quot;</span><span class="p">]:</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;d2imfile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_handle</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;D2IMFILE&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                # Multiply the values of the sci extension pixels by the gain.</span>
+<span class="sd">                print &quot;Converting %s[%d] from COUNTS to ELECTRONS&quot;%(self._filename,det)</span>
+
+<span class="sd">                # If the exptime is 0 the science image will be zeroed out.</span>
+<span class="sd">                np.multiply(_handle[self.scienceExt,det].data,chip._gain,_handle[self.scienceExt,det].data)</span>
+<span class="sd">                chip.data=_handle[self.scienceExt,det].data</span>
+
+<span class="sd">                # Set the BUNIT keyword to &#39;electrons&#39;</span>
+<span class="sd">                chip._bunit = &#39;ELECTRONS&#39;</span>
+<span class="sd">                chip.header.update(&#39;BUNIT&#39;,&#39;ELECTRONS&#39;)</span>
+<span class="sd">                _handle[self.scienceExt,det].header.update(&#39;BUNIT&#39;,&#39;ELECTRONS&#39;)</span>
+
+<span class="sd">                # Update the PHOTFLAM value</span>
+<span class="sd">                photflam = _handle[self.scienceExt,det].header[&#39;PHOTFLAM&#39;]</span>
+<span class="sd">                _handle[self.scienceExt,det].header.update(&#39;PHOTFLAM&#39;,(photflam/chip._gain))</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="n">conversionFactor</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span> <span class="c1">#1.</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_conversionFactor</span> <span class="o">=</span> <span class="n">conversionFactor</span> <span class="c1">#1.</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Invalid gain value for data, no conversion done&quot;</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="c1"># Close the files and clean-up</span>
+        <span class="n">_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="n">conversionFactor</span> <span class="c1"># 1.</span></div>
+
+<div class="viewcode-block" id="WFPC2InputImage.getdarkcurrent"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.getdarkcurrent">[docs]</a>    <span class="k">def</span> <span class="nf">getdarkcurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exten</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the dark current for the WFPC2 detector.  This value</span>
+<span class="sd">        will be contained within an instrument specific keyword.</span>
+<span class="sd">        The value in the image header will be converted to units</span>
+<span class="sd">        of electrons.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        darkcurrent : float</span>
+<span class="sd">            Dark current for the WFPC3 detector in **units of counts/electrons**.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">darkrate</span> <span class="o">=</span> <span class="mf">0.005</span> <span class="c1"># electrons / s</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">darkrate</span> <span class="o">=</span> <span class="n">darkrate</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">getGain</span><span class="p">(</span><span class="n">exten</span><span class="p">)</span> <span class="c1">#count/s</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">chip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">darkcurrent</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;DARKTIME&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">darkrate</span>
+
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span>  <span class="s2">&quot;#############################################</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;# Error:                                    #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#   Cannot find the value for &#39;DARKTIME&#39;    #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#   in the image header.  WFPC2 input       #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#   images are expected to have this header #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#   keyword.                                #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;# Error occured in the WFPC2InputImage class#</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#                                           #</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;#############################################</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">darkcurrent</span></div>
+
+<div class="viewcode-block" id="WFPC2InputImage.getReadNoise"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.getReadNoise">[docs]</a>    <span class="k">def</span> <span class="nf">getReadNoise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exten</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method for returning the readnoise of a detector (in counts).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        readnoise : float</span>
+<span class="sd">            The readnoise of the detector in **units of counts/electrons**.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">rn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="n">exten</span><span class="p">]</span><span class="o">.</span><span class="n">_rdnoise</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+            <span class="n">rn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">getGain</span><span class="p">(</span><span class="n">exten</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rn</span></div>
+
+<div class="viewcode-block" id="WFPC2InputImage.buildMask"><a class="viewcode-back" href="../../wfpc2objects.html#drizzlepac.wfpc2Data.WFPC2InputImage.buildMask">[docs]</a>    <span class="k">def</span> <span class="nf">buildMask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chip</span><span class="p">,</span><span class="n">bits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Build masks as specified in the user parameters found in the</span>
+<span class="sd">            configObj object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">sci_chip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span>
+        <span class="c1">### For WFPC2 Data, build mask files using:</span>
+        <span class="n">maskname</span> <span class="o">=</span> <span class="n">sci_chip</span><span class="o">.</span><span class="n">dqrootname</span><span class="o">+</span><span class="s1">&#39;_dqmask.fits&#39;</span>
+        <span class="n">dqmask_name</span> <span class="o">=</span> <span class="n">buildmask</span><span class="o">.</span><span class="n">buildShadowMaskImage</span><span class="p">(</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">dqfile</span><span class="p">,</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">detnum</span><span class="p">,</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">extnum</span><span class="p">,</span><span class="n">maskname</span><span class="p">,</span><span class="n">bitvalue</span><span class="o">=</span><span class="n">bits</span><span class="p">,</span><span class="n">binned</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">binned</span><span class="p">)</span>
+        <span class="n">sci_chip</span><span class="o">.</span><span class="n">dqmaskname</span> <span class="o">=</span> <span class="n">dqmask_name</span>
+        <span class="n">sci_chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;dqmask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dqmask_name</span>
+        <span class="n">sci_chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;tmpmask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;wfpc2_inmask</span><span class="si">%d</span><span class="s1">.fits&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">detnum</span><span class="p">)</span>
+        <span class="n">dqmask</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">dqmask_name</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dqmask</span></div>
+
+    <span class="k">def</span> <span class="nf">_assignSignature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;assign a unique signature for the image based</span>
+<span class="sd">           on the  instrument, detector, chip, and size</span>
+<span class="sd">           this will be used to uniquely identify the appropriate</span>
+<span class="sd">           static mask for the image</span>
+
+<span class="sd">           this also records the filename for the static mask to the outputNames dictionary</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sci_chip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">,</span><span class="n">chip</span><span class="p">]</span>
+        <span class="n">ny</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">_naxis1</span>
+        <span class="n">nx</span><span class="o">=</span><span class="n">sci_chip</span><span class="o">.</span><span class="n">_naxis2</span>
+        <span class="n">detnum</span> <span class="o">=</span> <span class="n">sci_chip</span><span class="o">.</span><span class="n">detnum</span>
+        <span class="n">instr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span>
+
+        <span class="n">sig</span><span class="o">=</span><span class="p">(</span><span class="n">instr</span><span class="o">+</span><span class="n">WFPC2_DETECTOR_NAMES</span><span class="p">[</span><span class="n">detnum</span><span class="p">],(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span><span class="n">chip</span><span class="p">)</span> <span class="c1">#signature is a tuple</span>
+        <span class="n">sci_chip</span><span class="o">.</span><span class="n">signature</span><span class="o">=</span><span class="n">sig</span> <span class="c1">#signature is a tuple</span>
+
+    <span class="k">def</span> <span class="nf">_setchippars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returnAllChips</span><span class="p">(</span><span class="n">extname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scienceExt</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">chip</span><span class="o">.</span><span class="n">_gain</span><span class="p">,</span><span class="n">chip</span><span class="o">.</span><span class="n">_rdnoise</span> <span class="o">=</span> <span class="n">WFPC2_GAINS</span><span class="p">[</span><span class="n">chip</span><span class="o">.</span><span class="n">detnum</span><span class="p">][</span><span class="n">chip</span><span class="o">.</span><span class="n">_headergain</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;! Header gain value is not valid for WFPC2&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

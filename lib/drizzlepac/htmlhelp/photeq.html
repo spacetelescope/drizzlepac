@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Photometric equalization for AstroDrizzle &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Photometric equalization for AstroDrizzle &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.15 (26-May-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="pixtopix: Coordinate transformation to/from drizzled images" href="pixtopix.html" />
     <link rel="prev" title="Region mapping for TweakReg" href="mapreg.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -57,22 +59,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="pixtopix.html"
                         title="next chapter">pixtopix: Coordinate transformation to/from drizzled images</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/photeq.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/photeq.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -81,44 +82,41 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="module-drizzlepac.photeq">
 <span id="photometric-equalization-for-astrodrizzle"></span><h1>Photometric equalization for AstroDrizzle<a class="headerlink" href="#module-drizzlepac.photeq" title="Permalink to this headline">¶</a></h1>
 <p>A tool to adjust data values of images by equalizing each chip&#8217;s PHOTFLAM value
 to a single common value so that all chips can be treated equally
-by <em class="xref py py-obj">AstroDrizzle</em>.</p>
+by <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Mihai Cara</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Mihai Cara</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="function">
 <dt id="drizzlepac.photeq.photeq">
-<tt class="descclassname">drizzlepac.photeq.</tt><tt class="descname">photeq</tt><big>(</big><em>files='*_flt.fits'</em>, <em>sciext='SCI'</em>, <em>errext='ERR'</em>, <em>ref_phot=None</em>, <em>ref_phot_ext=None</em>, <em>phot_kwd='PHOTFLAM'</em>, <em>aux_phot_kwd='PHOTFNU'</em>, <em>search_primary=True</em>, <em>readonly=True</em>, <em>clobber=False</em>, <em>logfile='photeq.log'</em><big>)</big><a class="headerlink" href="#drizzlepac.photeq.photeq" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.photeq.</code><code class="descname">photeq</code><span class="sig-paren">(</span><em>files='*_flt.fits'</em>, <em>sciext='SCI'</em>, <em>errext='ERR'</em>, <em>ref_phot=None</em>, <em>ref_phot_ext=None</em>, <em>phot_kwd='PHOTFLAM'</em>, <em>aux_phot_kwd='PHOTFNU'</em>, <em>search_primary=True</em>, <em>readonly=True</em>, <em>clobber=False</em>, <em>logfile='photeq.log'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/photeq.html#photeq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.photeq.photeq" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adjust data values of images by equalizing each chip&#8217;s PHOTFLAM value
 to a single common value so that all chips can be treated equally
-by <em class="xref py py-obj">AstroDrizzle</em>.</p>
+by <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="files">files</strong> : str (Default = <tt class="docutils literal"><span class="pre">'*_flt.fits'</span></tt>)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="files">files</strong> : str (Default = <code class="docutils literal"><span class="pre">'*_flt.fits'</span></code>)</p>
 <blockquote>
 <div><p>A string containing one of the following:</p>
 <blockquote>
 <div><ul class="simple">
 <li>a comma-separated list of valid science image file names,
-e.g.: <tt class="docutils literal"><span class="pre">'j1234567q_flt.fits,</span> <span class="pre">j1234568q_flt.fits'</span></tt>;</li>
-<li>an &#64;-file name, e.g., <tt class="docutils literal"><span class="pre">'&#64;files_to_match.txt'</span></tt>. See notes
+e.g.: <code class="docutils literal"><span class="pre">'j1234567q_flt.fits,</span> <span class="pre">j1234568q_flt.fits'</span></code>;</li>
+<li>an &#64;-file name, e.g., <code class="docutils literal"><span class="pre">'&#64;files_to_match.txt'</span></code>. See notes
 section for details on the format of the &#64;-files.</li>
 </ul>
 </div></blockquote>
@@ -128,9 +126,9 @@ section for details on the format of the &#64;-files.</li>
 <ul class="last simple">
 <li>file names of existing FITS, GEIS, or WAIVER FITS files;</li>
 <li>partial file names containing wildcard characters, e.g.,
-<tt class="docutils literal"><span class="pre">'*_flt.fits'</span></tt>;</li>
-<li>Association (ASN) tables (must have <tt class="docutils literal"><span class="pre">_asn</span></tt>, or <tt class="docutils literal"><span class="pre">_asc</span></tt>
-suffix), e.g., <tt class="docutils literal"><span class="pre">'j12345670_asn.fits'</span></tt>.</li>
+<code class="docutils literal"><span class="pre">'*_flt.fits'</span></code>;</li>
+<li>Association (ASN) tables (must have <code class="docutils literal"><span class="pre">_asn</span></code>, or <code class="docutils literal"><span class="pre">_asc</span></code>
+suffix), e.g., <code class="docutils literal"><span class="pre">'j12345670_asn.fits'</span></code>.</li>
 </ul>
 </div>
 </div></blockquote>
@@ -151,11 +149,11 @@ arrays. Error arrays are corrected in the same way as science data.</p>
 </div></blockquote>
 <p><strong id="ref_phot_ext">ref_phot_ext</strong> : int, str, tuple, None (Default = None)</p>
 <blockquote>
-<div><p>Extension from which the <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><tt class="xref py py-obj docutils literal"><span class="pre">photeq</span></tt></a> should get the reference photometric
-value specified by the <em class="xref py py-obj">phot_kwd</em> parameter. This parameter is ignored
-if <em class="xref py py-obj">ref_phot</em> <strong>is not</strong> <em class="xref py py-obj">None</em>. When <em class="xref py py-obj">ref_phot_ext</em> is <em class="xref py py-obj">None</em>, then
+<div><p>Extension from which the <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><code class="xref py py-obj docutils literal"><span class="pre">photeq</span></code></a> should get the reference photometric
+value specified by the <code class="xref py py-obj docutils literal"><span class="pre">phot_kwd</span></code> parameter. This parameter is ignored
+if <code class="xref py py-obj docutils literal"><span class="pre">ref_phot</span></code> <strong>is not</strong> <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>. When <code class="xref py py-obj docutils literal"><span class="pre">ref_phot_ext</span></code> is <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, then
 the reference inverse sensitivity value will be picked from the
-first <em class="xref py py-obj">sciext</em> of the first input image containing <em class="xref py py-obj">phot_kwd</em>.</p>
+first <code class="xref py py-obj docutils literal"><span class="pre">sciext</span></code> of the first input image containing <code class="xref py py-obj docutils literal"><span class="pre">phot_kwd</span></code>.</p>
 </div></blockquote>
 <p><strong id="phot_kwd">phot_kwd</strong> : str (Default = &#8216;PHOTFLAM&#8217;)</p>
 <blockquote>
@@ -165,11 +163,11 @@ which data should be rescaled.</p>
 </div></blockquote>
 <p><strong id="aux_phot_kwd">aux_phot_kwd</strong> : str, None, list of str (Default = &#8216;PHOTFNU&#8217;)</p>
 <blockquote>
-<div><p>Same as <em class="xref py py-obj">phot_kwd</em> but describes <em>other</em> photometric keyword(s)
+<div><p>Same as <code class="xref py py-obj docutils literal"><span class="pre">phot_kwd</span></code> but describes <em>other</em> photometric keyword(s)
 that should be corrected by inverse of the scale factor used to correct
 data. These keywords are <em>not</em> used to compute conversion factors.
 Multiple keywords can be specified as a Python list of strings:
-<tt class="docutils literal"><span class="pre">['PHOTFNU',</span> <span class="pre">'PHOTOHMY']</span></tt>.</p>
+<code class="docutils literal"><span class="pre">['PHOTFNU',</span> <span class="pre">'PHOTOHMY']</span></code>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">If specifying multiple secondary photometric keywords in the TEAL
@@ -179,20 +177,20 @@ interface, use a comma-separated list of keywords.</p>
 <p><strong id="search_primary">search_primary</strong> : bool (Default = True)</p>
 <blockquote>
 <div><p>Specifies whether to first search the primary header for the
-presence of <em class="xref py py-obj">phot_kwd</em> keyword and compute conversion factor based on
-that value. This is (partially) ignored when <em class="xref py py-obj">ref_phot</em> is not <em class="xref py py-obj">None</em> in
-the sense that the value specified by <em class="xref py py-obj">ref_phot</em> will be used as the
-reference <em>but</em> in all images primary will be searched for <em class="xref py py-obj">phot_kwd</em>
-and <em class="xref py py-obj">aux_phot_kwd</em> and those values will be corrected
-(if <tt class="docutils literal"><span class="pre">search_primary=True</span></tt>).</p>
+presence of <code class="xref py py-obj docutils literal"><span class="pre">phot_kwd</span></code> keyword and compute conversion factor based on
+that value. This is (partially) ignored when <code class="xref py py-obj docutils literal"><span class="pre">ref_phot</span></code> is not <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> in
+the sense that the value specified by <code class="xref py py-obj docutils literal"><span class="pre">ref_phot</span></code> will be used as the
+reference <em>but</em> in all images primary will be searched for <code class="xref py py-obj docutils literal"><span class="pre">phot_kwd</span></code>
+and <code class="xref py py-obj docutils literal"><span class="pre">aux_phot_kwd</span></code> and those values will be corrected
+(if <code class="docutils literal"><span class="pre">search_primary=True</span></code>).</p>
 </div></blockquote>
 <p><strong id="readonly">readonly</strong> : bool (Default = True)</p>
 <blockquote>
-<div><p>If <em class="xref py py-obj">True</em>, <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><tt class="xref py py-obj docutils literal"><span class="pre">photeq</span></tt></a> will not modify input files (nevertheless, it will
+<div><p>If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><code class="xref py py-obj docutils literal"><span class="pre">photeq</span></code></a> will not modify input files (nevertheless, it will
 convert input GEIS or WAVERED FITS files to MEF and could overwrite
-existing MEF files if <em class="xref py py-obj">clobber</em> is set to <em class="xref py py-obj">True</em>).
+existing MEF files if <code class="xref py py-obj docutils literal"><span class="pre">clobber</span></code> is set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>).
 The (console or log file) output however will be identical to the case
-when <tt class="docutils literal"><span class="pre">readonly=False</span></tt> and it can be examined before applying these
+when <code class="docutils literal"><span class="pre">readonly=False</span></code> and it can be examined before applying these
 changes to input files.</p>
 </div></blockquote>
 <p><strong id="clobber">clobber</strong> : bool (Default = False)</p>
@@ -209,50 +207,50 @@ to MEF.</p>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>By default, <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><tt class="xref py py-obj docutils literal"><span class="pre">photeq</span></tt></a> will search for the first inverse sensitivity
-value (given by the header keyword specified by the <em class="xref py py-obj">phot_kwd</em> parameter,
+<p>By default, <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><code class="xref py py-obj docutils literal"><span class="pre">photeq</span></code></a> will search for the first inverse sensitivity
+value (given by the header keyword specified by the <code class="xref py py-obj docutils literal"><span class="pre">phot_kwd</span></code> parameter,
 e.g., PHOTFLAM or PHOTFNU) found in the input images and it will equalize
 all other images to this reference value.</p>
-<p>It is possible to tell <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><tt class="xref py py-obj docutils literal"><span class="pre">photeq</span></tt></a> to look for the reference inverse
+<p>It is possible to tell <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><code class="xref py py-obj docutils literal"><span class="pre">photeq</span></code></a> to look for the reference inverse
 sensitivity value only in a specific extension of input images, e.g.: 3,
-(&#8216;sci&#8217;,3), etc. This can be done by setting <em class="xref py py-obj">ref_phot_ext</em> to a specific
+(&#8216;sci&#8217;,3), etc. This can be done by setting <code class="xref py py-obj docutils literal"><span class="pre">ref_phot_ext</span></code> to a specific
 extension. This may be useful, for example, for WFPC2 images: WF3 chip was
 one of the better calibrated chips, and so, if one prefers to have
 inverse sensitivities equalized to the inverse sensitivity of the WF3 chip,
-one can set <tt class="docutils literal"><span class="pre">ref_phot_ext=3</span></tt>.</p>
+one can set <code class="docutils literal"><span class="pre">ref_phot_ext=3</span></code>.</p>
 <p>Alternatively, one can provide their own reference inverse sensitivity
 value to which all other images should be &#8220;equalized&#8221; through the
-parameter <em class="xref py py-obj">ref_phot</em>.</p>
+parameter <code class="xref py py-obj docutils literal"><span class="pre">ref_phot</span></code>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Default parameter values (except for <em class="xref py py-obj">files</em>, <em class="xref py py-obj">readonly</em>, and <em class="xref py py-obj">clobber</em>)
+<p class="last">Default parameter values (except for <code class="xref py py-obj docutils literal"><span class="pre">files</span></code>, <code class="xref py py-obj docutils literal"><span class="pre">readonly</span></code>, and <code class="xref py py-obj docutils literal"><span class="pre">clobber</span></code>)
 should be acceptable for most HST images.</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">If images are intended to be used with <em class="xref py py-obj">AstroDrizzle</em>, it is recommended
+<p class="last">If images are intended to be used with <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>, it is recommended
 that sky background measurement be performed on &#8220;equalized&#8221; images as
-the <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><tt class="xref py py-obj docutils literal"><span class="pre">photeq</span></tt></a> is not aware of sky user keyword in the image headers and
+the <a class="reference internal" href="#drizzlepac.photeq.photeq" title="drizzlepac.photeq.photeq"><code class="xref py py-obj docutils literal"><span class="pre">photeq</span></code></a> is not aware of sky user keyword in the image headers and
 thus it cannot correct sky values already recorded in the headers.</p>
 </div>
 <p class="rubric">Examples</p>
 <ol class="arabic">
 <li><p class="first">In most cases the default parameters should suffice:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">photeq</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">photeq</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s1">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">If the re-calibration needs to be done on PHOTFNU rather than
 PHOTFLAM, then:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">ref_phot</span><span class="o">=</span><span class="s">&#39;PHOTFNU&#39;</span><span class="p">,</span>
-<span class="gp">... </span><span class="n">aux_phot_kwd</span><span class="o">=</span><span class="s">&#39;PHOTFLAM&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s1">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">ref_phot</span><span class="o">=</span><span class="s1">&#39;PHOTFNU&#39;</span><span class="p">,</span>
+<span class="gp">... </span><span class="n">aux_phot_kwd</span><span class="o">=</span><span class="s1">&#39;PHOTFLAM&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">If for WFPC2 data one desires that PHOTFLAM from WF3 be used as the
 reference in WFPC2 images, then:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">ref_phot_ext</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="c"># or (&#39;sci&#39;,3)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">photeq</span><span class="o">.</span><span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s1">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">ref_phot_ext</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="c1"># or (&#39;sci&#39;,3)</span>
 </pre></div>
 </div>
 </li>
@@ -261,14 +259,13 @@ reference in WFPC2 images, then:</p>
 
 <dl class="function">
 <dt id="drizzlepac.photeq.help">
-<tt class="descclassname">drizzlepac.photeq.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.photeq.help" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.photeq.</code><code class="descname">help</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/photeq.html#help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.photeq.help" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out syntax help for running skymatch</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
 Any previously existing file with this name will be deleted before
@@ -288,7 +285,7 @@ writing out the help.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -303,12 +300,12 @@ writing out the help.</p>
         <li class="right" >
           <a href="mapreg.html" title="Region mapping for TweakReg"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>
