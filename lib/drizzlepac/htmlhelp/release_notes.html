@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>DrizzlePac Release Notes &#8212; DrizzlePac 2.1.15 (26-May-2017) documentation</title>
+    <title>DrizzlePac Release Notes &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.15 (26-May-2017)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="tweakback.html" title="Tweakback"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -56,6 +56,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">DrizzlePac Release Notes</a><ul>
+<li><a class="reference internal" href="#drizzlepac-v2-1-16-05-june-2017">DrizzlePac v2.1.16 (05-June-2017)</a></li>
 <li><a class="reference internal" href="#drizzlepac-v2-1-15-26-may-2017">DrizzlePac v2.1.15 (26-May-2017)</a></li>
 <li><a class="reference internal" href="#drizzlepac-v2-1-14-28-apr-2017">DrizzlePac v2.1.14 (28-Apr-2017)</a></li>
 <li><a class="reference internal" href="#drizzlepac-v2-1-13-11-apr-2017">DrizzlePac v2.1.13 (11-Apr-2017)</a></li>
@@ -148,6 +149,13 @@
 <p>The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).</p>
+<div class="section" id="drizzlepac-v2-1-16-05-june-2017">
+<h2>DrizzlePac v2.1.16 (05-June-2017)<a class="headerlink" href="#drizzlepac-v2-1-16-05-june-2017" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fixed a bug introduced in release v2.1.15 in the logic for merging WCS due to
+which custom WCS scale was being ignored.</li>
+</ul>
+</div>
 <div class="section" id="drizzlepac-v2-1-15-26-may-2017">
 <h2>DrizzlePac v2.1.15 (26-May-2017)<a class="headerlink" href="#drizzlepac-v2-1-15-26-may-2017" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -215,7 +223,7 @@ resulting in a decreased number of warnings
 estimate Poisson errors
 (see <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/22">issue #22</a>).</li>
 <li>Fixed a bug in <code class="docutils literal"><span class="pre">tweakreg</span></code> due to incorrect matrix inversion.</li>
-<li>Improved compatibility with <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/index.html#module-astropy.io.fits" title="(in Astropy v1.3.2)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits</span></code></a> (&#8216;clobber&#8217; parameter) and
+<li>Improved compatibility with <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/index.html#module-astropy.io.fits" title="(in Astropy v1.3.3)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits</span></code></a> (&#8216;clobber&#8217; parameter) and
 <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/index.html#module-numpy" title="(in NumPy v1.12)"><code class="xref py py-obj docutils literal"><span class="pre">numpy</span></code></a> which has reduced the number of deprecation warnings).</li>
 <li>Existing static masks in the working directory are now overwritten and not
 simply re-used (see
@@ -730,7 +738,7 @@ images.</p>
         <li class="right" >
           <a href="tweakback.html" title="Tweakback"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.15 (26-May-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
