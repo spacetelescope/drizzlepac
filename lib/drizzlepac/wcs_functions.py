@@ -574,6 +574,12 @@ def _check_custom_WCS_pars(par1_name, par2_name, user_pars):
     return par1
 
 
+def _check_close_scale(scale, ref):
+    rtol = 10.0 * np.finfo(float).eps
+    atol = 100.0 * np.finfo(float).tiny
+    return np.isclose(scale, ref, atol=atol, rtol=rtol)
+
+
 def mergeWCS(default_wcs, user_pars):
     """ Merges the user specified WCS values given as dictionary derived from
         the input configObj object with the output PyWCS object computed
@@ -600,7 +606,7 @@ def mergeWCS(default_wcs, user_pars):
         _crval = None
 
     if ('scale' in user_pars and user_pars['scale'] is not None and
-        outwcs.pscale == user_pars['scale']):
+        not _check_close_scale(user_pars['scale'], outwcs.pscale)):
         _scale = user_pars['scale']
         _ratio = outwcs.pscale / _scale
     else:

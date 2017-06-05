@@ -15,6 +15,12 @@ version in reverse chronological order (most recent version at the top
 of the list).
 
 
+DrizzlePac v2.1.16 (05-June-2017)
+=================================
+
+- Fixed a bug introduced in release v2.1.15 in the logic for merging WCS due to
+  which custom WCS scale was being ignored.
+
 DrizzlePac v2.1.15 (26-May-2017)
 ================================
 
