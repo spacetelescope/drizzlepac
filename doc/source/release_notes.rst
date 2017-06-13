@@ -14,6 +14,13 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+DrizzlePac v2.1.17 (13-June-2017)
+=================================
+
+- ``drizzlepac.adrizzle`` updated to work with numpy >=1.12 when they implemented
+  more strict array conversion rules for math. Any input which still has INT
+  format will be converted to a float before any operations are performed, explicitly
+  implementing what was an automatic operation prior to numpy 1.12.
 
 DrizzlePac v2.1.16 (05-June-2017)
 =================================
