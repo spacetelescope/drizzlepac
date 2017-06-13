@@ -99,7 +99,7 @@ def run(configObj, wcsmap=None):
     # read file to get science array
     insci = get_data(configObj['input'])
     expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'])
-    in_sci_phdr = fits.getheader(fileutil.parseFilename(configObj['input'])[0])
+    in_sci_phdr = fits.getheader(fileutil.parseFilename(configObj['input'])[0], memmap=False)
 
     # we need to read in the input WCS
     input_wcs = stwcs.wcsutil.HSTWCS(configObj['input'],wcskey=_wcskey)
@@ -121,7 +121,7 @@ def run(configObj, wcsmap=None):
         # we also need to read in the output WCS from pre-existing output
         output_wcs = stwcs.wcsutil.HSTWCS(configObj['outdata'])
 
-        out_sci_hdr = fits.getheader(outname)
+        out_sci_hdr = fits.getheader(outname, memmap=False)
         outexptime = out_sci_hdr['DRIZEXPT']
         if 'ndrizim' in out_sci_hdr:
             uniqid = out_sci_hdr['ndrizim']+1
@@ -149,7 +149,7 @@ def run(configObj, wcsmap=None):
             refimage = configObj['User WCS Parameters']['refimage']
             refroot,extroot = fileutil.parseFilename(refimage)
             if extroot is None:
-                fimg = fits.open(refroot)
+                fimg = fits.open(refroot, memmap=False)
                 for i,extn in enumerate(fimg):
                     if 'CRVAL1' in extn.header: # Key on CRVAL1 for valid WCS
                         refwcs = wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
@@ -398,7 +398,7 @@ def mergeDQarray(maskname,dqarr):
         if isinstance(maskname, str):
             # working with file on disk (default case)
             if os.path.exists(maskname):
-                mask = fileutil.openImage(maskname)
+                mask = fileutil.openImage(maskname, memmap=False)
                 maskarr = mask[0].data.astype(np.bool)
                 mask.close()
         else:
@@ -416,18 +416,18 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
     if not isinstance(crmaskname, fits.HDUList) and not os.path.exists(crmaskname):
         log.warning('No CR mask file found! Input DQ array not updated.')
         return
-    if cr_bits_value == None:
+    if cr_bits_value is None:
         log.warning('Input DQ array not updated!')
         return
     if isinstance(crmaskname, fits.HDUList):
         # in_memory case
         crmask = crmaskname
     else:
-        crmask = fileutil.openImage(crmaskname)
+        crmask = fileutil.openImage(crmaskname, memmap=False)
 
     if os.path.exists(dqfile):
         fullext=dqfile+"["+dq_extn+str(chip)+"]"
-        infile = fileutil.openImage(fullext,mode='update')
+        infile = fileutil.openImage(fullext, mode='update', memmap=False)
         __bitarray = np.logical_not(crmask[0].data).astype(np.int16) * cr_bits_value
         np.bitwise_or(infile[dq_extn,chip].data,__bitarray,infile[dq_extn,chip].data)
         infile.close()
@@ -511,7 +511,7 @@ def interpret_maskval(paramDict):
     if 'maskval' not in paramDict:
         return 0
     maskval = paramDict['maskval']
-    if maskval == None:
+    if maskval is None:
         maskval = np.nan
     else:
         maskval = float(maskval) # just to be clear and absolutely sure...
@@ -552,8 +552,8 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     outwcs = copy.deepcopy(output_wcs)
 
     # Check for existance of output file.
-    if single == False and build == True and fileutil.findFile(
-                                imageObjectList[0].outputNames['outFinal']):
+    if (not single and build and
+        fileutil.findFile(imageObjectList[0].outputNames['outFinal'])):
         log.info('Removing previous output product...')
         os.remove(imageObjectList[0].outputNames['outFinal'])
 
@@ -696,7 +696,7 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
 
 
     # Check for unintialized inputs
-    here = _outsci==None and _outwht==None and _outctx==None
+    here = _outsci is None and _outwht is None and _outctx is None
     if _outsci is None:
         #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
         _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
@@ -767,12 +767,15 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     log.info('-Drizzle input: %s' % _expname)
 
     # Open the SCI image
-    _handle = fileutil.openImage(_expname,mode='readonly',memmap=0)
+    _handle = fileutil.openImage(_expname, mode='readonly', memmap=False)
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
 
     # Apply sky subtraction and unit conversion to input array
-    log.info("Applying sky value of %0.6f to %s"%(chip.computedSky,_expname))
-    _insci = _sciext.data - chip.computedSky
+    if chip.computedSky is None:
+        _insci = _sciext.data
+    else:
+        log.info("Applying sky value of %0.6f to %s"%(chip.computedSky,_expname))
+        _insci = _sciext.data - chip.computedSky
     _insci *= chip._effGain
 
     # Set additional parameters needed by 'drizzle'
@@ -862,7 +865,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     img.set_wtscl(chip._chip,paramDict['wt_scl'])
 
-    pix_ratio = outwcs.pscale/chip.wcslin_pscale
+    pix_ratio = outwcs.pscale / chip.wcslin_pscale
 
     # Convert mask to a datatype expected by 'tdriz'
     # Also, base weight mask on ERR or IVM file as requested by user
@@ -1032,7 +1035,7 @@ def do_driz(insci, input_wcs, inwht,
         nplanes = 1
     else:
         nplanes = 0
-        
+
     if nplanes <= planeid:
         raise IndexError("Not enough planes in drizzle context image")
 
@@ -1092,7 +1095,7 @@ def get_data(filename):
     extname = fileutil.parseExtn(extn)
     if extname[0] == '': extname = "PRIMARY"
     if os.path.exists(fileroot):
-        handle = fileutil.openImage(filename)
+        handle = fileutil.openImage(filename, memmap=False)
         data = handle[extname].data
         handle.close()
     else:
@@ -1122,7 +1125,7 @@ def create_output(filename):
     else:
         log.info('Updating existing output file: %s' % fileroot)
 
-    handle = fits.open(fileroot, mode='update')
+    handle = fits.open(fileroot, mode='update', memmap=False)
 
     return handle,extname
 

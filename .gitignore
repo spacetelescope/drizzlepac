@@ -1,0 +1,9 @@
+.eggs/
+__pycache__/
+build/
+dist/
+*.egg-info/
+*/*/version.py
+*.so
+*.dylib
+*.pyc

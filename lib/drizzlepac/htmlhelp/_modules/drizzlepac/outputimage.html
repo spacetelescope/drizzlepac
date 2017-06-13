@@ -1,0 +1,924 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.outputimage &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.16 (05-June-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.outputimage</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module manages the creation of the output image FITS file.</span>
+
+<span class="sd">:Authors: Warren Hack</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span> <span class="c1"># confidence medium</span>
+
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span><span class="p">,</span> <span class="n">readgeis</span><span class="p">,</span> <span class="n">logutil</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">wcs_functions</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">version</span>
+
+<span class="kn">from</span> <span class="nn">fitsblender</span> <span class="k">import</span> <span class="n">blendheaders</span>
+
+<span class="n">yes</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">no</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">RESERVED_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NAXIS&#39;</span><span class="p">,</span><span class="s1">&#39;BITPIX&#39;</span><span class="p">,</span><span class="s1">&#39;DATE&#39;</span><span class="p">,</span><span class="s1">&#39;IRAF-TLM&#39;</span><span class="p">,</span><span class="s1">&#39;XTENSION&#39;</span><span class="p">,</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">,</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">]</span>
+
+<span class="n">EXTLIST</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="s1">&#39;WHT&#39;</span><span class="p">,</span> <span class="s1">&#39;CTX&#39;</span><span class="p">)</span>
+
+<span class="n">WCS_KEYWORDS</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">,</span><span class="s1">&#39;CD1_2&#39;</span><span class="p">,</span> <span class="s1">&#39;CD2_1&#39;</span><span class="p">,</span> <span class="s1">&#39;CD2_2&#39;</span><span class="p">,</span> <span class="s1">&#39;CRPIX1&#39;</span><span class="p">,</span>
+<span class="s1">&#39;CRPIX2&#39;</span><span class="p">,</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">,</span> <span class="s1">&#39;CRVAL2&#39;</span><span class="p">,</span> <span class="s1">&#39;CTYPE1&#39;</span><span class="p">,</span> <span class="s1">&#39;CTYPE2&#39;</span><span class="p">,</span><span class="s1">&#39;WCSNAME&#39;</span><span class="p">]</span>
+
+<span class="c1"># fits.CompImageHDU() crashes with default arguments.</span>
+<span class="c1"># Instead check that fits module has *attribute* &#39;CompImageHDU&#39;:</span>
+<span class="n">PYFITS_COMPRESSION</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fits</span><span class="p">,</span> <span class="s1">&#39;CompImageHDU&#39;</span><span class="p">)</span>
+
+<span class="c1"># Set up dictionary of default keywords to be written out to the header</span>
+<span class="c1"># of the output drizzle image using writeDrizKeywords()</span>
+<span class="n">DRIZ_KEYWORDS</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;VER&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, task version&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;GEOM&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;wcs&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, source of geometric information&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;DATA&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, input data image&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;DEXP&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, input image exposure time (s)&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;OUDA&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, output data image&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;OUWE&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, output weighting image&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;OUCO&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, output context image&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;MASK&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, input weighting image&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;WTSC&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, weighting factor for input image&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;KERN&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, form of weight distribution kernel&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;PIXF&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, linear size of drop&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;COEF&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;SIP&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, source of coefficients&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;OUUN&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;cps&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, units of output image - counts or cps&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;FVAL&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;INDEF&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, fill value for zero weight output pix&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;WKEY&#39;</span><span class="p">:{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Input image WCS Version used&#39;</span><span class="p">}</span>
+                <span class="p">}</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="OutputImage"><a class="viewcode-back" href="../../outimage.html#drizzlepac.outputimage.OutputImage">[docs]</a><span class="k">class</span> <span class="nc">OutputImage</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class manages the creation of the array objects</span>
+<span class="sd">    which will be used by Drizzle. The three arrays, SCI/WHT/CTX,</span>
+<span class="sd">    will be setup either as extensions in a</span>
+<span class="sd">    single multi-extension FITS file, or as separate FITS</span>
+<span class="sd">    files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plist</span><span class="p">,</span> <span class="n">input_pars</span><span class="p">,</span> <span class="n">build</span><span class="o">=</span><span class="n">yes</span><span class="p">,</span> <span class="n">wcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">single</span><span class="o">=</span><span class="n">no</span><span class="p">,</span> <span class="n">blot</span><span class="o">=</span><span class="n">no</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The object &#39;plist&#39; must contain at least the following members::</span>
+
+<span class="sd">            plist[&#39;output&#39;]   - name of output FITS image (for SCI)</span>
+<span class="sd">            plist[&#39;outnx&#39;]    - size of X axis for output array</span>
+<span class="sd">            plist[&#39;outny&#39;]    - size of Y axis for output array</span>
+
+<span class="sd">        If &#39;single=yes&#39;, then &#39;plist&#39; also needs to contain::</span>
+
+<span class="sd">            plist[&#39;outsingle&#39;]</span>
+<span class="sd">            plist[&#39;outsweight&#39;]</span>
+<span class="sd">            plist[&#39;outscontext&#39;]</span>
+
+<span class="sd">        If &#39;blot=yes&#39;, then &#39;plist&#39; also needs::</span>
+
+<span class="sd">            plist[&#39;data&#39;]</span>
+<span class="sd">            plist[&#39;blotImage&#39;]</span>
+<span class="sd">            plist[&#39;blotnx&#39;],plist[&#39;blotny&#39;]</span>
+
+<span class="sd">        If &#39;build&#39; is set to &#39;no&#39;, then each extension/array must be</span>
+<span class="sd">        in separate FITS objects.  This would also require::</span>
+
+<span class="sd">          plist[&#39;outdata&#39;]    - name of output SCI FITS image</span>
+<span class="sd">          plist[&#39;outweight&#39;]  - name of output WHT FITS image</span>
+<span class="sd">          plist[&#39;outcontext&#39;] - name of output CTX FITS image</span>
+
+<span class="sd">        Optionally, the overall exposure time information can be passed as::</span>
+
+<span class="sd">            plist[&#39;texptime&#39;] - total exptime for output</span>
+<span class="sd">            plist[&#39;expstart&#39;] - start time of combined exposure</span>
+<span class="sd">            plist[&#39;expend&#39;]   - end time of combined exposure</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build</span> <span class="o">=</span> <span class="n">build</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">single</span> <span class="o">=</span> <span class="n">single</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parlist</span> <span class="o">=</span> <span class="n">plist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_pars</span> <span class="o">=</span> <span class="n">input_pars</span>
+        <span class="n">_nimgs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parlist</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bunit</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s1">&#39;cps&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blot</span> <span class="o">=</span> <span class="n">blot</span>
+
+        <span class="k">if</span> <span class="n">PYFITS_COMPRESSION</span> <span class="ow">and</span> <span class="s1">&#39;compress&#39;</span> <span class="ow">in</span> <span class="n">input_pars</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress</span> <span class="o">=</span> <span class="n">input_pars</span><span class="p">[</span><span class="s1">&#39;compress&#39;</span><span class="p">]</span> <span class="c1"># Control creation of compressed FITS files</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Merge input_pars with each chip&#39;s outputNames object</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parlist</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_pars</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">blot</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;output&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outny&#39;</span><span class="p">],</span><span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outnx&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;blotImage&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;blotny&#39;</span><span class="p">],</span><span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;blotnx&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Keep track of desired output WCS computed by PyDrizzle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span> <span class="o">=</span> <span class="n">wcs</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Apply special operating switches:</span>
+        <span class="c1">#   single - separate output for each input</span>
+        <span class="c1">#</span>
+        <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
+            <span class="n">_outdata</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outSingle&#39;</span><span class="p">]</span>
+            <span class="n">_outweight</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outSWeight&#39;</span><span class="p">]</span>
+            <span class="n">_outcontext</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outSContext&#39;</span><span class="p">]</span>
+            <span class="c1"># Only report values appropriate for single exposure</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">texptime</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c1"># plist[0][&#39;exptime&#39;]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expstart</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;expstart&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expend</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;expend&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">:</span>
+                <span class="n">_outdata</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outFinal&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_outdata</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outSci&#39;</span><span class="p">]</span>
+            <span class="n">_outweight</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outWeight&#39;</span><span class="p">]</span>
+            <span class="n">_outcontext</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outContext&#39;</span><span class="p">]</span>
+            <span class="c1"># Report values appropriate for entire combined product</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">texptime</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;texptime&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expstart</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;texpstart&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expend</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="n">_nimgs</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;texpend&#39;</span><span class="p">]</span>
+
+
+        <span class="k">if</span> <span class="n">blot</span><span class="p">:</span>
+            <span class="n">_outdata</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;blotImage&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outblot_key</span> <span class="o">=</span> <span class="s1">&#39;blotImage&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">build</span> <span class="ow">or</span> <span class="n">single</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">_outdata</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outdata</span> <span class="o">=</span> <span class="n">_outdata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outweight</span> <span class="o">=</span> <span class="n">_outweight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span> <span class="o">=</span> <span class="n">_outcontext</span>
+
+<div class="viewcode-block" id="OutputImage.set_bunit"><a class="viewcode-back" href="../../outimage.html#drizzlepac.outputimage.OutputImage.set_bunit">[docs]</a>    <span class="k">def</span> <span class="nf">set_bunit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">bunit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method used to update the value of the bunit attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bunit</span> <span class="o">=</span> <span class="n">bunit</span></div>
+
+<div class="viewcode-block" id="OutputImage.set_units"><a class="viewcode-back" href="../../outimage.html#drizzlepac.outputimage.OutputImage.set_units">[docs]</a>    <span class="k">def</span> <span class="nf">set_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">units</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method used to record what units were specified by the user for the output product.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="n">units</span></div>
+
+<div class="viewcode-block" id="OutputImage.writeFITS"><a class="viewcode-back" href="../../outimage.html#drizzlepac.outputimage.OutputImage.writeFITS">[docs]</a>    <span class="k">def</span> <span class="nf">writeFITS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">sciarr</span><span class="p">,</span> <span class="n">whtarr</span><span class="p">,</span> <span class="n">ctxarr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">versions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">yes</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">virtual</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate PyFITS objects for each output extension</span>
+<span class="sd">        using the file given by &#39;template&#39; for populating</span>
+<span class="sd">        headers.</span>
+
+<span class="sd">        The arrays will have the size specified by &#39;shape&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="p">[</span><span class="n">template</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">findFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Deleting previous output product: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+                <span class="n">fileutil</span><span class="o">.</span><span class="n">removeFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Output file </span><span class="si">%s</span><span class="s1"> already exists and overwrite not &#39;</span>
+                            <span class="s1">&#39;specified!&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Quitting... Please remove before resuming &#39;</span>
+                          <span class="s1">&#39;operations.&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">IOError</span>
+
+        <span class="c1"># initialize output value for this method</span>
+        <span class="n">outputFITS</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Default value for NEXTEND when &#39;build&#39;== True</span>
+        <span class="n">nextend</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">:</span>
+            <span class="n">nextend</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">findFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">):</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Deleting previous output WHT product: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">)</span>
+                    <span class="n">fileutil</span><span class="o">.</span><span class="n">removeFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Output file </span><span class="si">%s</span><span class="s1"> already exists and overwrite &#39;</span>
+                                <span class="s1">&#39;not specified!&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Quitting... Please remove before resuming &#39;</span>
+                              <span class="s1">&#39;operations.&#39;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">IOError</span>
+
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">findFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">):</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Deleting previous output CTX product: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">)</span>
+                    <span class="n">fileutil</span><span class="o">.</span><span class="n">removeFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Output file </span><span class="si">%s</span><span class="s1"> already exists and overwrite &#39;</span>
+                                <span class="s1">&#39;not specified!&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Quitting... Please remove before resuming &#39;</span>
+                              <span class="s1">&#39;operations.&#39;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">IOError</span>
+
+
+        <span class="c1"># Get default headers from multi-extension FITS file</span>
+        <span class="c1"># If only writing out single drizzle product, blending needs to be</span>
+        <span class="c1"># forced off as there is only 1 input to report, no blending needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">:</span>
+            <span class="n">blend</span><span class="o">=</span><span class="kc">False</span>
+
+        <span class="c1"># If input data is not in MEF FITS format, it will return &#39;None&#39;</span>
+        <span class="c1"># and those headers will have to be generated from drizzle output</span>
+        <span class="c1"># file FITS headers.</span>
+        <span class="c1"># NOTE: These are HEADER objects, not HDUs</span>
+        <span class="c1">#prihdr,scihdr,errhdr,dqhdr = getTemplates(template)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fullhdrs</span><span class="p">,</span> <span class="n">intab</span> <span class="o">=</span> <span class="n">getTemplates</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">newhdrs</span><span class="p">,</span> <span class="n">newtab</span> <span class="o">=</span> <span class="n">getTemplates</span><span class="p">(</span><span class="n">template</span><span class="p">,</span><span class="n">blend</span><span class="o">=</span><span class="n">blend</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">newtab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">nextend</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1"># account for new table extn</span>
+
+        <span class="n">prihdr</span> <span class="o">=</span> <span class="n">newhdrs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">scihdr</span> <span class="o">=</span> <span class="n">newhdrs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">errhdr</span> <span class="o">=</span> <span class="n">newhdrs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">dqhdr</span> <span class="o">=</span> <span class="n">newhdrs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+        <span class="c1"># Setup primary header as an HDU ready for appending to output FITS file</span>
+        <span class="n">prihdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">PrimaryHDU</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">prihdr</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Start by updating PRIMARY header keywords...</span>
+        <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTEND&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="s1">&#39;NAXIS&#39;</span><span class="p">)</span>
+        <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;NEXTEND&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nextend</span>
+        <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;FILENAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span>
+        <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;PROD_VER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;DrizzlePac </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">version</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+        <span class="c1"># Update the ROOTNAME with the new value as well</span>
+        <span class="n">_indx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;_drz&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_indx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">rootname_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rootname_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">[:</span><span class="n">_indx</span><span class="p">]</span>
+        <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;ROOTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rootname_val</span>
+
+
+        <span class="c1"># Get the total exposure time for the image</span>
+        <span class="c1"># If not calculated by PyDrizzle and passed through</span>
+        <span class="c1"># the pardict, then leave value from the template image.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">texptime</span><span class="p">:</span>
+            <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXPTIME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">texptime</span>
+            <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;TEXPTIME&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">texptime</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="s1">&#39;EXPTIME&#39;</span><span class="p">)</span>
+            <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXPSTART&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expstart</span>
+            <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;EXPEND&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expend</span>
+
+        <span class="c1">#Update ASN_MTYPE to reflect the fact that this is a product</span>
+        <span class="c1"># Currently hard-wired to always output &#39;PROD-DTH&#39; as MTYPE</span>
+        <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;ASN_MTYP&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;PROD-DTH&#39;</span>
+
+        <span class="c1"># Update DITHCORR calibration keyword if present</span>
+        <span class="c1"># Remove when we can modify FITS headers in place...</span>
+        <span class="k">if</span> <span class="s1">&#39;DRIZCORR&#39;</span> <span class="ow">in</span> <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+            <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;DRIZCORR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;COMPLETE&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;DITHCORR&#39;</span> <span class="ow">in</span> <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+            <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;DITHCORR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;COMPLETE&#39;</span>
+
+        <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;NDRIZIM&#39;</span><span class="p">]</span> <span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parlist</span><span class="p">),</span>
+                                   <span class="s1">&#39;Drizzle, No. images drizzled onto output&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Only a subset of these keywords makes sense for the new WCS based</span>
+        <span class="c1"># transformations. They need to be reviewed to decide what to keep</span>
+        <span class="c1"># and what to leave out.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">blot</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addDrizKeywords</span><span class="p">(</span><span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="n">versions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">scihdr</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">scihdr</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="k">if</span> <span class="s1">&#39;CCDCHIP&#39;</span> <span class="ow">in</span> <span class="n">scihdr</span><span class="p">:</span> <span class="n">scihdr</span><span class="p">[</span><span class="s1">&#39;CCDCHIP&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;-999&#39;</span>
+            <span class="k">if</span> <span class="s1">&#39;NCOMBINE&#39;</span> <span class="ow">in</span> <span class="n">scihdr</span><span class="p">:</span>
+                <span class="n">scihdr</span><span class="p">[</span><span class="s1">&#39;NCOMBINE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parlist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nimages&#39;</span><span class="p">]</span>
+
+            <span class="c1"># If BUNIT keyword was found and reset, then</span>
+            <span class="n">bunit_last_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">scihdr</span><span class="p">,</span><span class="s1">&#39;bunit&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">comment_str</span> <span class="o">=</span> <span class="s2">&quot;Units of science product&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunit</span><span class="o">.</span><span class="n">lower</span><span class="p">()[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;count&#39;</span><span class="p">:</span>
+                    <span class="n">comment_str</span> <span class="o">=</span> <span class="s2">&quot;counts * gain = electrons&quot;</span>
+                <span class="n">scihdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;BUNIT&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bunit</span><span class="p">,</span>
+                           <span class="n">comment</span><span class="o">=</span><span class="n">comment_str</span><span class="p">,</span>
+                           <span class="n">after</span><span class="o">=</span><span class="n">bunit_last_kw</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># check to see whether to update already present BUNIT comment</span>
+                <span class="k">if</span> <span class="s1">&#39;bunit&#39;</span> <span class="ow">in</span> <span class="n">scihdr</span> <span class="ow">and</span> <span class="n">scihdr</span><span class="p">[</span><span class="s1">&#39;bunit&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;count&#39;</span><span class="p">:</span>
+                    <span class="n">comment_str</span> <span class="o">=</span> <span class="s2">&quot;counts * gain = electrons&quot;</span>
+                    <span class="n">scihdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;BUNIT&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">scihdr</span><span class="p">[</span><span class="s1">&#39;bunit&#39;</span><span class="p">],</span>
+                               <span class="n">comment</span><span class="o">=</span><span class="n">comment_str</span><span class="p">,</span>
+                               <span class="n">after</span><span class="o">=</span><span class="n">bunit_last_kw</span><span class="p">)</span>
+
+            <span class="c1"># Add WCS keywords to SCI header</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">:</span>
+                <span class="n">pre_wcs_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">scihdr</span><span class="p">,</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">)</span>
+                <span class="n">addWCSKeywords</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">scihdr</span><span class="p">,</span><span class="n">blot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blot</span><span class="p">,</span>
+                                <span class="n">single</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">pre_wcs_kw</span><span class="p">)</span>
+                <span class="c1"># Recompute this after removing distortion kws</span>
+                <span class="n">pre_wcs_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">scihdr</span><span class="p">,</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">)</span>
+
+        <span class="c1">##########</span>
+        <span class="c1"># Now, build the output file</span>
+        <span class="c1">##########</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-Generating multi-extension output file: &#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+            <span class="n">fo</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">()</span>
+
+            <span class="c1"># Add primary header to output file...</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prihdu</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">single</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">CompImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">sciarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">scihdr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">EXTLIST</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">sciarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">scihdr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">EXTLIST</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">last_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">scihdr</span><span class="p">,</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">)</span>
+            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">last_kw</span><span class="p">)</span>
+            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">)</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+            <span class="c1"># Build WHT extension here, if requested...</span>
+            <span class="k">if</span> <span class="n">errhdr</span><span class="p">:</span>
+                <span class="n">errhdr</span><span class="p">[</span><span class="s1">&#39;CCDCHIP&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;-999&#39;</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">single</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">CompImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">whtarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">errhdr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">EXTLIST</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">whtarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">errhdr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">EXTLIST</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">last_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">errhdr</span><span class="p">,</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">)</span>
+            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;WHT&#39;</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">last_kw</span><span class="p">)</span>
+            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">:</span>
+                <span class="n">pre_wcs_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">)</span>
+                <span class="c1"># Update WCS Keywords based on PyDrizzle product&#39;s value</span>
+                <span class="c1"># since &#39;drizzle&#39; itself doesn&#39;t update that keyword.</span>
+                <span class="n">addWCSKeywords</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="n">blot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blot</span><span class="p">,</span>
+                               <span class="n">single</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">pre_wcs_kw</span><span class="p">)</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+            <span class="c1"># Build CTX extension here</span>
+            <span class="c1"># If there is only 1 plane, write it out as a 2-D extension</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ctxarr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">_ctxarr</span> <span class="o">=</span> <span class="n">ctxarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_ctxarr</span> <span class="o">=</span> <span class="n">ctxarr</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_ctxarr</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">single</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">CompImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">_ctxarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">dqhdr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">EXTLIST</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">_ctxarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">dqhdr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">EXTLIST</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">last_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">dqhdr</span><span class="p">,</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">)</span>
+            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;CTX&#39;</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">last_kw</span><span class="p">)</span>
+            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">:</span>
+                <span class="n">pre_wcs_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">)</span>
+                <span class="c1"># Update WCS Keywords based on PyDrizzle product&#39;s value</span>
+                <span class="c1"># since &#39;drizzle&#39; itself doesn&#39;t update that keyword.</span>
+                <span class="n">addWCSKeywords</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="n">blot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blot</span><span class="p">,</span>
+                               <span class="n">single</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">pre_wcs_kw</span><span class="p">)</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+            <span class="c1"># remove all alternate WCS solutions from headers of this product</span>
+            <span class="n">wcs_functions</span><span class="o">.</span><span class="n">removeAllAltWCS</span><span class="p">(</span><span class="n">fo</span><span class="p">,[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># add table of combined header keyword values to FITS file</span>
+            <span class="k">if</span> <span class="n">newtab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newtab</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">virtual</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Writing out to disk:&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+                <span class="c1"># write out file to disk</span>
+                <span class="n">fo</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+                <span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">del</span> <span class="n">fo</span><span class="p">,</span> <span class="n">hdu</span>
+                <span class="n">fo</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># End &#39;if not virtual&#39;</span>
+            <span class="n">outputFITS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">]</span><span class="o">=</span> <span class="n">fo</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-Generating simple FITS output: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">outdata</span><span class="p">)</span>
+
+            <span class="n">fo</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">()</span>
+            <span class="n">hdu_header</span> <span class="o">=</span> <span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">hdu_header</span><span class="p">[</span><span class="s1">&#39;nextend&#39;</span><span class="p">]</span>
+
+            <span class="c1"># Append remaining unique header keywords from template DQ</span>
+            <span class="c1"># header to Primary header...</span>
+            <span class="k">if</span> <span class="n">scihdr</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">_card</span> <span class="ow">in</span> <span class="n">scihdr</span><span class="o">.</span><span class="n">cards</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">_card</span><span class="o">.</span><span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESERVED_KEYS</span> <span class="ow">and</span> <span class="n">_card</span><span class="o">.</span><span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdu_header</span><span class="p">:</span>
+                        <span class="n">hdu_header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_card</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;PCOUNT&#39;</span><span class="p">,</span> <span class="s1">&#39;GCOUNT&#39;</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">kw</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">hdu_header</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outdata</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">CompImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">sciarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">hdu_header</span><span class="p">)</span>
+                <span class="n">wcs_ext</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">sciarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">hdu_header</span><span class="p">)</span>
+                <span class="n">wcs_ext</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># explicitly set EXTEND to FALSE for simple FITS files.</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sciarr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;extend&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="s1">&#39;NAXIS</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">dim</span><span class="p">)</span>
+
+            <span class="c1"># Add primary header to output file...</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+
+            <span class="c1"># remove all alternate WCS solutions from headers of this product</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+            <span class="n">wcs_functions</span><span class="o">.</span><span class="n">removeAllAltWCS</span><span class="p">(</span><span class="n">fo</span><span class="p">,</span><span class="n">wcs_ext</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">)</span>
+ 
+            <span class="c1"># add table of combined header keyword values to FITS file</span>
+            <span class="k">if</span> <span class="n">newtab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newtab</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">virtual</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Writing out image to disk:&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">outdata</span><span class="p">)</span>
+                <span class="c1"># write out file to disk</span>
+                <span class="n">fo</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outdata</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">fo</span><span class="p">,</span><span class="n">hdu</span>
+                <span class="n">fo</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># End &#39;if not virtual&#39;</span>
+            <span class="n">outputFITS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">outdata</span><span class="p">]</span><span class="o">=</span> <span class="n">fo</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outweight</span> <span class="ow">and</span> <span class="n">whtarr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># We need to build new PyFITS objects for each WHT array</span>
+                <span class="n">fwht</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">errhdr</span><span class="p">:</span>
+                    <span class="n">errhdr</span><span class="p">[</span><span class="s1">&#39;CCDCHIP&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;-999&#39;</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">:</span>
+                    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">CompImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">whtarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">whtarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+                <span class="c1"># Append remaining unique header keywords from template DQ</span>
+                <span class="c1"># header to Primary header...</span>
+                <span class="k">if</span> <span class="n">errhdr</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">_card</span> <span class="ow">in</span> <span class="n">errhdr</span><span class="o">.</span><span class="n">cards</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">_card</span><span class="o">.</span><span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESERVED_KEYS</span> <span class="ow">and</span> <span class="n">_card</span><span class="o">.</span><span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+                            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_card</span><span class="p">)</span>
+                <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outweight</span>
+                <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CCDCHIP&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;-999&#39;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">:</span>
+                    <span class="n">pre_wcs_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">)</span>
+                    <span class="c1"># Update WCS Keywords based on PyDrizzle product&#39;s value</span>
+                    <span class="c1"># since &#39;drizzle&#39; itself doesn&#39;t update that keyword.</span>
+                    <span class="n">addWCSKeywords</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">blot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blot</span><span class="p">,</span>
+                                   <span class="n">single</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">pre_wcs_kw</span><span class="p">)</span>
+
+                <span class="c1"># Add primary header to output file...</span>
+                <span class="n">fwht</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+                <span class="c1"># remove all alternate WCS solutions from headers of this product</span>
+                <span class="n">wcs_functions</span><span class="o">.</span><span class="n">removeAllAltWCS</span><span class="p">(</span><span class="n">fwht</span><span class="p">,</span><span class="n">wcs_ext</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">virtual</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Writing out image to disk:&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">)</span>
+                    <span class="n">fwht</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">)</span>
+                    <span class="k">del</span> <span class="n">fwht</span><span class="p">,</span><span class="n">hdu</span>
+                    <span class="n">fwht</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># End &#39;if not virtual&#39;</span>
+                <span class="n">outputFITS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">outweight</span><span class="p">]</span><span class="o">=</span> <span class="n">fwht</span>
+
+            <span class="c1"># If a context image was specified, build a PyFITS object</span>
+            <span class="c1"># for it as well...</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span> <span class="ow">and</span> <span class="n">ctxarr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fctx</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">()</span>
+
+                <span class="c1"># If there is only 1 plane, write it out as a 2-D extension</span>
+                <span class="k">if</span> <span class="n">ctxarr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">_ctxarr</span> <span class="o">=</span> <span class="n">ctxarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_ctxarr</span> <span class="o">=</span> <span class="n">ctxarr</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">:</span>
+                    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">CompImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">_ctxarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">_ctxarr</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">prihdu</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+                <span class="c1"># Append remaining unique header keywords from template DQ</span>
+                <span class="c1"># header to Primary header...</span>
+                <span class="k">if</span> <span class="n">dqhdr</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">_card</span> <span class="ow">in</span> <span class="n">dqhdr</span><span class="o">.</span><span class="n">cards</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">_card</span><span class="o">.</span><span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESERVED_KEYS</span><span class="p">)</span> <span class="ow">and</span>
+                             <span class="n">_card</span><span class="o">.</span><span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">):</span>
+                            <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_card</span><span class="p">)</span>
+                <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">:</span>
+                    <span class="n">pre_wcs_kw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_kwupdate_location</span><span class="p">(</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">)</span>
+                    <span class="c1"># Update WCS Keywords based on PyDrizzle product&#39;s value</span>
+                    <span class="c1"># since &#39;drizzle&#39; itself doesn&#39;t update that keyword.</span>
+                    <span class="n">addWCSKeywords</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">blot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blot</span><span class="p">,</span>
+                                   <span class="n">single</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">pre_wcs_kw</span><span class="p">)</span>
+
+                <span class="n">fctx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hdu</span><span class="p">)</span>
+                <span class="c1"># remove all alternate WCS solutions from headers of this product</span>
+                <span class="n">wcs_functions</span><span class="o">.</span><span class="n">removeAllAltWCS</span><span class="p">(</span><span class="n">fctx</span><span class="p">,</span><span class="n">wcs_ext</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">virtual</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Writing out image to disk:&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">)</span>
+                    <span class="n">fctx</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">)</span>
+                    <span class="k">del</span> <span class="n">fctx</span><span class="p">,</span><span class="n">hdu</span>
+                    <span class="n">fctx</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># End &#39;if not virtual&#39;</span>
+
+                <span class="n">outputFITS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">outcontext</span><span class="p">]</span><span class="o">=</span> <span class="n">fctx</span>
+
+        <span class="k">return</span> <span class="n">outputFITS</span></div>
+
+<div class="viewcode-block" id="OutputImage.find_kwupdate_location"><a class="viewcode-back" href="../../outimage.html#drizzlepac.outputimage.OutputImage.find_kwupdate_location">[docs]</a>    <span class="k">def</span> <span class="nf">find_kwupdate_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">hdr</span><span class="p">,</span><span class="n">keyword</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the last keyword in the output header that comes before the new</span>
+<span class="sd">        keyword in the original, full input headers.</span>
+<span class="sd">        This will rely on the original ordering of keywords from the original input</span>
+<span class="sd">        files in order to place the updated keyword in the correct location in case</span>
+<span class="sd">        the keyword was removed from the output header prior to calling this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># start by looping through the full templates</span>
+        <span class="n">kw_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">last_kw</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fullhdrs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">extn</span><span class="p">:</span>
+                <span class="c1">#indx = extn.ascard.index_of(keyword)</span>
+                <span class="n">indx</span> <span class="o">=</span> <span class="n">extn</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span>
+                <span class="n">kw_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">extn</span><span class="o">.</span><span class="n">keys</span><span class="p">())[:</span><span class="n">indx</span><span class="p">]</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">kw_list</span><span class="p">:</span>
+            <span class="c1"># find which keyword from this list exists in header to be updated</span>
+            <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">kw_list</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">:</span>
+                    <span class="n">last_kw</span> <span class="o">=</span> <span class="n">kw</span>
+                    <span class="k">break</span>
+        <span class="c1"># determine new value for the last keyword found before the HISTORY kws</span>
+        <span class="k">if</span> <span class="n">last_kw</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hdrkeys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">last_kw</span> <span class="o">=</span> <span class="n">hdrkeys</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">while</span> <span class="n">last_kw</span> <span class="o">==</span> <span class="s1">&#39;HISTORY&#39;</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="n">last_kw</span> <span class="o">=</span> <span class="n">hdrkeys</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">last_kw</span></div>
+
+
+<div class="viewcode-block" id="OutputImage.addDrizKeywords"><a class="viewcode-back" href="../../outimage.html#drizzlepac.outputimage.OutputImage.addDrizKeywords">[docs]</a>    <span class="k">def</span> <span class="nf">addDrizKeywords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">hdr</span><span class="p">,</span><span class="n">versions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Add drizzle parameter keywords to header. &quot;&quot;&quot;</span>
+
+        <span class="c1"># Extract some global information for the keywords</span>
+        <span class="n">_geom</span> <span class="o">=</span> <span class="s1">&#39;User parameters&#39;</span>
+
+        <span class="n">_imgnum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">pl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parlist</span><span class="p">:</span>
+
+            <span class="c1"># Start by building up the keyword prefix based</span>
+            <span class="c1"># on the image number for the chip</span>
+            <span class="c1">#_keyprefix = &#39;D%03d&#39;%_imgnum</span>
+            <span class="n">_imgnum</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">drizdict</span> <span class="o">=</span> <span class="n">DRIZ_KEYWORDS</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># Update drizdict with current values</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;VER&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;driz_version&#39;</span><span class="p">][:</span><span class="mi">44</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;DATA&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;DEXP&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUDA&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;outFinal&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUWE&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;outWeight&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;outContext&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">outcontext</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">outcontext</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;outContext&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUCO&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outcontext</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">:</span>
+                <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;MASK&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;singleDrizMask&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;MASK&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;finalMask&#39;</span><span class="p">][:</span><span class="mi">64</span><span class="p">]</span>
+
+            <span class="c1"># Process the values of WT_SCL to be consistent with</span>
+            <span class="c1"># what IRAF Drizzle would output</span>
+            <span class="k">if</span> <span class="s1">&#39;wt_scl_val&#39;</span> <span class="ow">in</span> <span class="n">pl</span><span class="p">:</span>
+                <span class="n">_wtscl</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;wt_scl_val&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;exptime&#39;</span><span class="p">:</span> <span class="n">_wtscl</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;expsq&#39;</span><span class="p">:</span> <span class="n">_wtscl</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">pl</span><span class="p">[</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span> <span class="n">_wtscl</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;wt_scl&#39;</span><span class="p">]</span>
+
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;WTSC&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_wtscl</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;KERN&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;kernel&#39;</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;PIXF&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;pixfrac&#39;</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;OUUN&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span>
+            <span class="k">if</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;fillval&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_fillval</span> <span class="o">=</span> <span class="s1">&#39;INDEF&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_fillval</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;fillval&#39;</span><span class="p">]</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;FVAL&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_fillval</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;WKEY&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="s1">&#39;driz_wcskey&#39;</span><span class="p">]</span>
+
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;SCAL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="n">pl</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">],</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, pixel size (arcsec) of output image&#39;</span><span class="p">}</span>
+            <span class="n">drizdict</span><span class="p">[</span><span class="s1">&#39;ISCL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span><span class="n">pl</span><span class="p">[</span><span class="s1">&#39;idcscale&#39;</span><span class="p">],</span><span class="s1">&#39;comment&#39;</span><span class="p">:</span><span class="s1">&#39;Drizzle, default IDCTAB pixel size(arcsec)&#39;</span><span class="p">}</span>
+
+            <span class="c1"># Now update header with values</span>
+            <span class="n">writeDrizKeywords</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span><span class="n">_imgnum</span><span class="p">,</span><span class="n">drizdict</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">drizdict</span>
+
+        <span class="c1"># Add version information as HISTORY cards to the header</span>
+        <span class="k">if</span> <span class="n">versions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ver_str</span> <span class="o">=</span> <span class="s2">&quot;AstroDrizzle processing performed using: &quot;</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="n">ver_str</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">versions</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">ver_str</span> <span class="o">=</span> <span class="s1">&#39;    &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; Version &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">versions</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="n">ver_str</span><span class="p">)</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">cleanTemplates</span><span class="p">(</span><span class="n">scihdr</span><span class="p">,</span><span class="n">errhdr</span><span class="p">,</span><span class="n">dqhdr</span><span class="p">):</span>
+
+    <span class="c1"># Now, safeguard against having BSCALE and BZERO</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;BSCALE&#39;</span><span class="p">,</span> <span class="s1">&#39;BZERO&#39;</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">scihdr</span><span class="p">[</span><span class="n">kw</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">errhdr</span><span class="p">[</span><span class="n">kw</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">dqhdr</span><span class="p">[</span><span class="n">kw</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="c1"># At this point, check errhdr and dqhdr to make sure they</span>
+    <span class="c1"># have all the requisite keywords (as listed in updateDTHKeywords).</span>
+    <span class="c1"># Simply copy them from scihdr if they don&#39;t exist...</span>
+    <span class="k">if</span> <span class="n">errhdr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dqhdr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">WCS_KEYWORDS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">scihdr</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">errhdr</span><span class="p">:</span>
+                    <span class="n">errhdr</span><span class="p">[</span><span class="n">keyword</span><span class="p">]</span> <span class="o">=</span> <span class="n">scihdr</span><span class="p">[</span><span class="n">keyword</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dqhdr</span><span class="p">:</span>
+                    <span class="n">dqhdr</span><span class="p">[</span><span class="n">keyword</span><span class="p">]</span><span class="o">=</span> <span class="n">scihdr</span><span class="p">[</span><span class="n">keyword</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">getTemplates</span><span class="p">(</span><span class="n">fnames</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Process all headers to produce a set of combined headers</span>
+<span class="sd">        that follows the rules defined by each instrument.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">blend</span><span class="p">:</span>
+        <span class="n">newhdrs</span> <span class="o">=</span>  <span class="n">blendheaders</span><span class="o">.</span><span class="n">getSingleTemplate</span><span class="p">(</span><span class="n">fnames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">newtab</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># apply rules to create final version of headers, plus table</span>
+        <span class="n">newhdrs</span><span class="p">,</span> <span class="n">newtab</span> <span class="o">=</span> <span class="n">blendheaders</span><span class="o">.</span><span class="n">get_blended_headers</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">fnames</span><span class="p">)</span>
+
+    <span class="n">cleanTemplates</span><span class="p">(</span><span class="n">newhdrs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">newhdrs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">newhdrs</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">newhdrs</span><span class="p">,</span> <span class="n">newtab</span>
+
+<span class="k">def</span> <span class="nf">addWCSKeywords</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span><span class="n">hdr</span><span class="p">,</span><span class="n">blot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">single</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">after</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Update input header &#39;hdr&#39; with WCS keywords.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wname</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">single</span><span class="p">:</span>
+        <span class="n">wname</span> <span class="o">=</span> <span class="s1">&#39;DRZWCS&#39;</span>
+
+    <span class="c1"># Update WCS Keywords based on PyDrizzle product&#39;s value</span>
+    <span class="c1"># since &#39;drizzle&#39; itself doesn&#39;t update that keyword.</span>
+    <span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;WCSNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wname</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;VAFACTOR&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;ORIENTAT&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">orientat</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+
+    <span class="c1"># Use of &#39;after&#39; not needed if these keywords already exist in the header</span>
+    <span class="k">if</span> <span class="n">after</span> <span class="ow">in</span> <span class="n">WCS_KEYWORDS</span><span class="p">:</span>
+        <span class="n">after</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;CTYPE1&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">:</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CTYPE2&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CTYPE1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CRPIX2&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CRPIX1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CRVAL2&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CD2_2&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CD2_1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CD1_2&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">)</span>
+
+    <span class="c1"># delete distortion model related keywords</span>
+    <span class="n">deleteDistortionKeywords</span><span class="p">(</span><span class="n">hdr</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">blot</span><span class="p">:</span>
+        <span class="n">blendheaders</span><span class="o">.</span><span class="n">remove_distortion_keywords</span><span class="p">(</span><span class="n">hdr</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">deleteDistortionKeywords</span><span class="p">(</span><span class="n">hdr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Delete distortion related keywords from output drizzle science header</span>
+<span class="sd">        since the drizzled image should have no remaining distortion.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dist_kws</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;D2IMERR1&#39;</span><span class="p">,</span><span class="s1">&#39;D2IMERR2&#39;</span><span class="p">,</span><span class="s1">&#39;D2IMDIS1&#39;</span><span class="p">,</span><span class="s1">&#39;D2IMDIS2&#39;</span><span class="p">,</span><span class="s1">&#39;D2IM1.*&#39;</span><span class="p">,</span><span class="s1">&#39;D2IM2.*&#39;</span><span class="p">,</span><span class="s1">&#39;D2IMEXT&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">dist_kws</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">hdr</span><span class="p">[</span><span class="n">kw</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">writeSingleFITS</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">wcs</span><span class="p">,</span><span class="n">output</span><span class="p">,</span><span class="n">template</span><span class="p">,</span><span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Write out a simple FITS file given a numpy array and the name of another</span>
+<span class="sd">    FITS file to use as a template for the output image header.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">outname</span><span class="p">,</span><span class="n">outextn</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseFilename</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+    <span class="n">outextname</span><span class="p">,</span><span class="n">outextver</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseExtn</span><span class="p">(</span><span class="n">outextn</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">findFile</span><span class="p">(</span><span class="n">outname</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">clobber</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Deleting previous output product: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">outname</span><span class="p">)</span>
+            <span class="n">fileutil</span><span class="o">.</span><span class="n">removeFile</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Output file </span><span class="si">%s</span><span class="s1"> already exists and overwrite not &#39;</span>
+                        <span class="s1">&#39;specified!&#39;</span> <span class="o">%</span> <span class="n">outname</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Quitting... Please remove before resuming operations.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IOError</span>
+
+    <span class="c1"># Now update WCS keywords with values from provided WCS</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wcs</span><span class="o">.</span><span class="n">sip</span><span class="p">,</span><span class="s1">&#39;a_order&#39;</span><span class="p">):</span>
+        <span class="n">siphdr</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">siphdr</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">wcshdr</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">(</span><span class="n">sip2hdr</span><span class="o">=</span><span class="n">siphdr</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">template</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Get default headers from multi-extension FITS file</span>
+        <span class="c1"># If input data is not in MEF FITS format, it will return &#39;None&#39;</span>
+        <span class="c1"># NOTE: These are HEADER objects, not HDUs</span>
+        <span class="p">(</span><span class="n">prihdr</span><span class="p">,</span><span class="n">scihdr</span><span class="p">,</span><span class="n">errhdr</span><span class="p">,</span><span class="n">dqhdr</span><span class="p">),</span><span class="n">newtab</span> <span class="o">=</span> <span class="n">getTemplates</span><span class="p">(</span><span class="n">template</span><span class="p">,</span><span class="n">EXTLIST</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">scihdr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scihdr</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="p">()</span>
+            <span class="n">indx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">prihdr</span><span class="o">.</span><span class="n">cards</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;INHERIT&#39;</span><span class="p">,</span><span class="s1">&#39;EXPNAME&#39;</span><span class="p">]:</span> <span class="n">indx</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span> <span class="k">break</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">indx</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">prihdr</span><span class="p">)):</span>
+                <span class="n">scihdr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prihdr</span><span class="o">.</span><span class="n">cards</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">indx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">prihdr</span><span class="p">)):</span>
+                <span class="k">del</span> <span class="n">prihdr</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">scihdr</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="p">()</span>
+        <span class="n">prihdr</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="p">()</span>
+        <span class="c1"># Start by updating PRIMARY header keywords...</span>
+        <span class="n">prihdr</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXTEND&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="s1">&#39;NAXIS&#39;</span><span class="p">)</span>
+        <span class="n">prihdr</span><span class="p">[</span><span class="s1">&#39;FILENAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outname</span>
+
+    <span class="k">if</span> <span class="n">outextname</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">outextname</span> <span class="o">=</span> <span class="s1">&#39;sci&#39;</span>
+    <span class="k">if</span> <span class="n">outextver</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="n">outextver</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">scihdr</span><span class="p">[</span><span class="s1">&#39;EXTNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outextname</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="n">scihdr</span><span class="p">[</span><span class="s1">&#39;EXTVER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outextver</span>
+
+    <span class="k">for</span> <span class="n">card</span> <span class="ow">in</span> <span class="n">wcshdr</span><span class="o">.</span><span class="n">cards</span><span class="p">:</span>
+        <span class="n">scihdr</span><span class="p">[</span><span class="n">card</span><span class="o">.</span><span class="n">keyword</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">card</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">card</span><span class="o">.</span><span class="n">comment</span><span class="p">)</span>
+
+    <span class="c1"># Create PyFITS HDUList for all extensions</span>
+    <span class="n">outhdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">()</span>
+    <span class="c1"># Setup primary header as an HDU ready for appending to output FITS file</span>
+    <span class="n">prihdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">PrimaryHDU</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">prihdr</span><span class="p">)</span>
+    <span class="n">scihdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">scihdr</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">outhdu</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prihdu</span><span class="p">)</span>
+    <span class="n">outhdu</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scihdu</span><span class="p">)</span>
+    <span class="n">outhdu</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Created output image: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">outname</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">writeDrizKeywords</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span><span class="n">imgnum</span><span class="p">,</span><span class="n">drizdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Write basic drizzle-related keywords out to image header as a record</span>
+<span class="sd">        of the processing performed to create the image</span>
+
+<span class="sd">        The dictionary &#39;drizdict&#39; will contain the keywords and values to be</span>
+<span class="sd">        written out to the header.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_keyprefix</span> <span class="o">=</span> <span class="s1">&#39;D</span><span class="si">%03d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">imgnum</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">drizdict</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">drizdict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">val</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">comment</span> <span class="o">=</span> <span class="n">drizdict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;comment&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">comment</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">comment</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">hdr</span><span class="p">[</span><span class="n">_keyprefix</span><span class="o">+</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">drizdict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;comment&#39;</span><span class="p">])</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.wcs_functions &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.16 (05-June-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.wcs_functions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">:Authors: Warren Hack</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span> <span class="c1"># confidence medium</span>
+
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">linalg</span>
+
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span><span class="p">,</span> <span class="n">asnutil</span><span class="p">,</span> <span class="n">logutil</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+<span class="kn">import</span> <span class="nn">stwcs</span>
+
+<span class="kn">from</span> <span class="nn">astropy</span> <span class="k">import</span> <span class="n">wcs</span> <span class="k">as</span> <span class="n">pywcs</span>
+<span class="kn">from</span> <span class="nn">stwcs</span> <span class="k">import</span> <span class="n">distortion</span><span class="p">,</span> <span class="n">wcsutil</span>
+<span class="kn">from</span> <span class="nn">stwcs.distortion</span> <span class="k">import</span> <span class="n">coeff_converter</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">stwcs.wcsutil</span> <span class="k">import</span> <span class="n">altwcs</span>
+
+<span class="n">DEFAULT_WCS_PARS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ra&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;dec&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;scale&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;rot&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;outnx&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;outny&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;crpix1&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;crpix2&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">}</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<span class="c1"># Default mapping function based on PyWCS</span>
+<div class="viewcode-block" id="WCSMap"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.WCSMap">[docs]</a><span class="k">class</span> <span class="nc">WCSMap</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Sample class to demonstrate how to define a coordinate transformation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="nb">input</span><span class="p">,</span><span class="n">output</span><span class="p">,</span><span class="n">origin</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Verify that we have valid WCS input objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkWCS</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="s1">&#39;Input&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkWCS</span><span class="p">(</span><span class="n">output</span><span class="p">,</span><span class="s1">&#39;Output&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="nb">input</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="c1">#self.output = output</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shift</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rot</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="WCSMap.checkWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.WCSMap.checkWCS">[docs]</a>    <span class="k">def</span> <span class="nf">checkWCS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obj</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">pywcs</span><span class="o">.</span><span class="n">WCS</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span><span class="s1">&#39; object needs to be an instance or subclass of a PyWCS object.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+<div class="viewcode-block" id="WCSMap.forward"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.WCSMap.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Transform the input pixx,pixy positions in the input frame</span>
+<span class="sd">            to pixel positions in the output frame.</span>
+
+<span class="sd">            This method gets passed to the drizzle algorithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This matches WTRAXY results to better than 1e-4 pixels.</span>
+        <span class="n">skyx</span><span class="p">,</span><span class="n">skyy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">wcs_world2pix</span><span class="p">(</span><span class="n">skyx</span><span class="p">,</span><span class="n">skyy</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="WCSMap.backward"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.WCSMap.backward">[docs]</a>    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Transform pixx,pixy positions from the output frame back onto their</span>
+<span class="sd">            original positions in the input frame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">skyx</span><span class="p">,</span><span class="n">skyy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">wcs_pix2world</span><span class="p">(</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span><span class="n">skyx</span><span class="p">,</span><span class="n">skyy</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="WCSMap.get_pix_ratio"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.WCSMap.get_pix_ratio">[docs]</a>    <span class="k">def</span> <span class="nf">get_pix_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return the ratio of plate scales between the input and output WCS.</span>
+<span class="sd">            This is used to properly distribute the flux in each pixel in &#39;tdriz&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">pscale</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">pscale</span></div>
+
+<div class="viewcode-block" id="WCSMap.xy2rd"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.WCSMap.xy2rd">[docs]</a>    <span class="k">def</span> <span class="nf">xy2rd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wcs</span><span class="p">,</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Transform input pixel positions into sky positions in the WCS provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">wcs</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span></div>
+<div class="viewcode-block" id="WCSMap.rd2xy"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.WCSMap.rd2xy">[docs]</a>    <span class="k">def</span> <span class="nf">rd2xy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wcs</span><span class="p">,</span><span class="n">ra</span><span class="p">,</span><span class="n">dec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Transform input sky positions into pixel positions in the WCS provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">wcs</span><span class="o">.</span><span class="n">wcs_world2pix</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span><span class="n">dec</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="get_pix_ratio_from_WCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.get_pix_ratio_from_WCS">[docs]</a><span class="k">def</span> <span class="nf">get_pix_ratio_from_WCS</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">output</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; [Functional form of .get_pix_ratio() method of WCSMap]&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">pscale</span><span class="o">/</span><span class="nb">input</span><span class="o">.</span><span class="n">pscale</span></div>
+<span class="c1">##</span>
+<span class="c1">#</span>
+<span class="c1">#### Default no-op transformation</span>
+<span class="c1">#</span>
+<span class="c1">##</span>
+<div class="viewcode-block" id="IdentityMap"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.IdentityMap">[docs]</a><span class="k">class</span> <span class="nc">IdentityMap</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="nb">input</span><span class="p">,</span><span class="n">output</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Applying identity transformation...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="nb">input</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">output</span>
+
+<div class="viewcode-block" id="IdentityMap.forward"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.IdentityMap.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span></div></div>
+<span class="c1">##</span>
+<span class="c1">#</span>
+<span class="c1">#### Linear transformation mapper</span>
+<span class="c1">#</span>
+<span class="c1">##</span>
+<div class="viewcode-block" id="LinearMap"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.LinearMap">[docs]</a><span class="k">class</span> <span class="nc">LinearMap</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">xsh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">ysh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">rot</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="c1"># Define rotation matrix</span>
+        <span class="n">_theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">rot</span><span class="p">)</span>
+        <span class="n">_mrot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">_mrot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">_theta</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">_theta</span><span class="p">))</span>
+        <span class="n">_mrot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">_theta</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">_theta</span><span class="p">))</span>
+        <span class="c1"># apply scaling factor to rotation matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">_mrot</span><span class="o">*</span><span class="n">scale</span>
+        <span class="c1"># define offset to be applied to positions after rotation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="p">[[</span><span class="n">xsh</span><span class="p">],[</span><span class="n">ysh</span><span class="p">]]</span>
+
+<div class="viewcode-block" id="LinearMap.forward"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.LinearMap.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,[</span><span class="n">pixx</span><span class="p">,</span><span class="n">pixy</span><span class="p">])</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span></div></div>
+
+<span class="c1">##</span>
+<span class="c1">#</span>
+<span class="c1">#### Stand-alone functions for WCS handling</span>
+<span class="c1">#</span>
+<span class="c1">##</span>
+<div class="viewcode-block" id="get_hstwcs"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.get_hstwcs">[docs]</a><span class="k">def</span> <span class="nf">get_hstwcs</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">hdulist</span><span class="p">,</span><span class="n">extnum</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Return the HSTWCS object for a given chip.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">hdrwcs</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">hdulist</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="n">extnum</span><span class="p">)</span>
+    <span class="n">hdrwcs</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+    <span class="n">hdrwcs</span><span class="o">.</span><span class="n">expname</span> <span class="o">=</span> <span class="n">hdulist</span><span class="p">[</span><span class="n">extnum</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;expname&#39;</span><span class="p">]</span>
+    <span class="n">hdrwcs</span><span class="o">.</span><span class="n">extver</span> <span class="o">=</span> <span class="n">hdulist</span><span class="p">[</span><span class="n">extnum</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extver&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">hdrwcs</span></div>
+
+<div class="viewcode-block" id="build_hstwcs"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.build_hstwcs">[docs]</a><span class="k">def</span> <span class="nf">build_hstwcs</span><span class="p">(</span><span class="n">crval1</span><span class="p">,</span> <span class="n">crval2</span><span class="p">,</span> <span class="n">crpix1</span><span class="p">,</span> <span class="n">crpix2</span><span class="p">,</span> <span class="n">naxis1</span><span class="p">,</span> <span class="n">naxis2</span><span class="p">,</span> <span class="n">pscale</span><span class="p">,</span> <span class="n">orientat</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create an HSTWCS object for a default instrument without distortion</span>
+<span class="sd">        based on user provided parameter values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wcsout</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">()</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">crval1</span><span class="p">,</span><span class="n">crval2</span><span class="p">])</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">crpix1</span><span class="p">,</span><span class="n">crpix2</span><span class="p">])</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">naxis1</span> <span class="o">=</span> <span class="n">naxis1</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">naxis2</span> <span class="o">=</span> <span class="n">naxis2</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildRotMatrix</span><span class="p">(</span><span class="n">orientat</span><span class="p">)</span><span class="o">*</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">pscale</span><span class="o">/</span><span class="mf">3600.0</span>
+    <span class="c1"># Synchronize updates with PyWCS/WCSLIB objects</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">setPscale</span><span class="p">()</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">setOrient</span><span class="p">()</span>
+    <span class="n">wcsout</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;RA---TAN&#39;</span><span class="p">,</span><span class="s1">&#39;DEC--TAN&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">wcsout</span></div>
+
+<div class="viewcode-block" id="update_linCD"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.update_linCD">[docs]</a><span class="k">def</span> <span class="nf">update_linCD</span><span class="p">(</span><span class="n">cdmat</span><span class="p">,</span> <span class="n">delta_rot</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">delta_scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">cx</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span> <span class="n">cy</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot; Modify an existing linear CD matrix with rotation and/or scale changes</span>
+<span class="sd">        and return a new CD matrix.  If &#39;cx&#39; and &#39;cy&#39; are specified, it will</span>
+<span class="sd">        return a distorted CD matrix.</span>
+
+<span class="sd">        Only those terms which are varying need to be specified on input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rotmat</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildRotMatrix</span><span class="p">(</span><span class="n">delta_rot</span><span class="p">)</span><span class="o">*</span><span class="n">delta_scale</span>
+    <span class="n">new_lincd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cdmat</span><span class="p">,</span><span class="n">rotmat</span><span class="p">)</span>
+
+    <span class="n">cxymat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">cx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">cx</span><span class="p">[</span><span class="mi">0</span><span class="p">]],[</span><span class="n">cy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">cy</span><span class="p">[</span><span class="mi">0</span><span class="p">]]])</span>
+    <span class="n">new_cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">new_lincd</span><span class="p">,</span><span class="n">cxymat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_cd</span></div>
+
+<div class="viewcode-block" id="create_CD"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.create_CD">[docs]</a><span class="k">def</span> <span class="nf">create_CD</span><span class="p">(</span><span class="n">orient</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">cx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cy</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a (un?)distorted CD matrix from the basic inputs</span>
+
+<span class="sd">    The &#39;cx&#39; and &#39;cy&#39; parameters, if given, provide the X and Y coefficients of</span>
+<span class="sd">    the distortion as returned by reading the IDCTAB.  Only the first 2 elements</span>
+<span class="sd">    are used and should correspond to the &#39;OC[X/Y]10&#39; and &#39;OC[X/Y]11&#39; terms in that</span>
+<span class="sd">    order as read from the expanded SIP headers.</span>
+
+<span class="sd">    The units of &#39;scale&#39; should be &#39;arcseconds/pixel&#39; of the reference pixel.</span>
+<span class="sd">    The value of &#39;orient&#39; should be the absolute orientation on the sky of the</span>
+<span class="sd">    reference pixel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cxymat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">cx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">cx</span><span class="p">[</span><span class="mi">0</span><span class="p">]],[</span><span class="n">cy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">cy</span><span class="p">[</span><span class="mi">0</span><span class="p">]]])</span>
+    <span class="n">rotmat</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildRotMatrix</span><span class="p">(</span><span class="n">orient</span><span class="p">)</span><span class="o">*</span><span class="n">scale</span><span class="o">/</span><span class="mf">3600.</span>
+
+    <span class="n">new_cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rotmat</span><span class="p">,</span><span class="n">cxymat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_cd</span></div>
+
+<div class="viewcode-block" id="ddtohms"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.ddtohms">[docs]</a><span class="k">def</span> <span class="nf">ddtohms</span><span class="p">(</span><span class="n">xsky</span><span class="p">,</span><span class="n">ysky</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">precision</span><span class="o">=</span><span class="mi">6</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Convert sky position(s) from decimal degrees to HMS format.&quot;&quot;&quot;</span>
+
+    <span class="n">xskyh</span> <span class="o">=</span> <span class="n">xsky</span> <span class="o">/</span><span class="mf">15.</span>
+    <span class="n">xskym</span> <span class="o">=</span> <span class="p">(</span><span class="n">xskyh</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">xskyh</span><span class="p">))</span> <span class="o">*</span> <span class="mf">60.</span>
+    <span class="n">xskys</span> <span class="o">=</span> <span class="p">(</span><span class="n">xskym</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">xskym</span><span class="p">))</span> <span class="o">*</span> <span class="mf">60.</span>
+
+    <span class="n">yskym</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ysky</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ysky</span><span class="p">)))</span> <span class="o">*</span> <span class="mf">60.</span>
+    <span class="n">yskys</span> <span class="o">=</span> <span class="p">(</span><span class="n">yskym</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">yskym</span><span class="p">))</span> <span class="o">*</span> <span class="mf">60.</span>
+
+    <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;%.&quot;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;f&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xskyh</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">rah</span><span class="p">,</span><span class="n">dech</span> <span class="o">=</span> <span class="p">[],[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">xskyh</span><span class="p">)):</span>
+            <span class="n">rastr</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">xskyh</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">xskym</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">fmt</span><span class="o">%</span><span class="p">(</span><span class="n">xskys</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">decstr</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ysky</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">yskym</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">fmt</span><span class="o">%</span><span class="p">(</span><span class="n">yskys</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">rah</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rastr</span><span class="p">)</span>
+            <span class="n">dech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">decstr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RA = &#39;</span><span class="p">,</span><span class="n">rastr</span><span class="p">,</span><span class="s1">&#39;, Dec = &#39;</span><span class="p">,</span><span class="n">decstr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rastr</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">xskyh</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">xskym</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">fmt</span><span class="o">%</span><span class="p">(</span><span class="n">xskys</span><span class="p">)</span>
+        <span class="n">decstr</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ysky</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">yskym</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">fmt</span><span class="o">%</span><span class="p">(</span><span class="n">yskys</span><span class="p">)</span>
+        <span class="n">rah</span> <span class="o">=</span> <span class="n">rastr</span>
+        <span class="n">dech</span> <span class="o">=</span> <span class="n">decstr</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RA = &#39;</span><span class="p">,</span><span class="n">rastr</span><span class="p">,</span><span class="s1">&#39;, Dec = &#39;</span><span class="p">,</span><span class="n">decstr</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rah</span><span class="p">,</span><span class="n">dech</span></div>
+<span class="c1">#</span>
+<span class="c1">#### Functions for applying pixel-based transformations</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="build_pixel_transform"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.build_pixel_transform">[docs]</a><span class="k">def</span> <span class="nf">build_pixel_transform</span><span class="p">(</span><span class="n">chip</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">):</span>
+    <span class="n">driz_pars</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;pxg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;pyg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="c1"># Use default C mapping function</span>
+    <span class="n">_inwcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">8</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;inwcs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">convertWCS</span><span class="p">(</span><span class="n">output_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">_inwcs</span><span class="p">)</span>
+
+    <span class="n">indx</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.fits&#39;</span><span class="p">)</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;coeffs_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][:</span><span class="n">indx</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;_coeffs&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">detnum</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.dat&#39;</span>
+    <span class="c1">#</span>
+    <span class="c1"># Need to compute and write out coeffs files for each chip as well.</span>
+    <span class="c1">#</span>
+    <span class="n">xcoeffs</span><span class="p">,</span><span class="n">ycoeffs</span> <span class="o">=</span> <span class="n">coeff_converter</span><span class="o">.</span><span class="n">sip2idc</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">wcs</span><span class="p">)</span>
+    <span class="c1"># account for the case where no IDCSCALE has been set, due to a</span>
+    <span class="c1"># lack of IDCTAB or to &#39;coeffs=False&#39;.</span>
+    <span class="n">idcscale</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">idcscale</span>
+    <span class="k">if</span> <span class="n">idcscale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">idcscale</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">pscale</span>
+    <span class="n">xcoeffs</span> <span class="o">/=</span> <span class="n">idcscale</span>
+    <span class="n">ycoeffs</span> <span class="o">/=</span> <span class="n">idcscale</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">xcoeffs</span><span class="p">,</span><span class="n">ycoeffs</span><span class="p">]</span>
+
+    <span class="n">abxt</span><span class="p">,</span><span class="n">cdyt</span> <span class="o">=</span> <span class="n">wcsfit</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">output_wcs</span><span class="p">)</span>
+    <span class="c1">#abxt[2] -= xzero</span>
+    <span class="c1">#cdyt[2] -= yzero</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;abxt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abxt</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;cdyt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdyt</span>
+
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;delta_rot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">RADTODEG</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">abxt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">cdyt</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="c1"># Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">abxt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">abxt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;tddalpha&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;tddalpha&#39;</span><span class="p">]</span>
+    <span class="n">driz_pars</span><span class="p">[</span><span class="s1">&#39;tddbeta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;tddbeta&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">driz_pars</span></div>
+
+
+<span class="c1">#</span>
+<span class="c1"># Possibly need to generate a stand-alone interface for this function.</span>
+<span class="c1">#</span>
+<span class="c1">#### Primary interface for creating the output WCS from a list of HSTWCS objects</span>
+<div class="viewcode-block" id="make_outputwcs"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.make_outputwcs">[docs]</a><span class="k">def</span> <span class="nf">make_outputwcs</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">configObj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">perfect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Computes the full output WCS based on the set of input imageObjects</span>
+<span class="sd">        provided as input, along with the pre-determined output name from</span>
+<span class="sd">        process_input.  The user specified output parameters are then used to</span>
+<span class="sd">        modify the default WCS to produce the final desired output frame.</span>
+<span class="sd">        The input imageObjectList has the outputValues dictionary</span>
+<span class="sd">        updated with the information from the computed output WCS.</span>
+<span class="sd">        It then returns this WCS as a WCSObject(imageObject)</span>
+<span class="sd">        instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+        <span class="n">imageObjectList</span> <span class="o">=</span> <span class="p">[</span><span class="n">imageObjectList</span><span class="p">]</span>
+
+    <span class="c1"># Compute default output WCS, replace later if user specifies a refimage</span>
+    <span class="n">hstwcs_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">undistort</span><span class="o">=</span><span class="kc">True</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="n">chip_wcs</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">getKeywordList</span><span class="p">(</span><span class="s1">&#39;wcs&#39;</span><span class="p">))</span>
+        <span class="c1"># IF the user turned off use of coeffs (coeffs==False)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">cw</span> <span class="ow">in</span> <span class="n">chip_wcs</span><span class="p">:</span>
+                <span class="c1"># Turn off distortion model for each input</span>
+                <span class="n">cw</span><span class="o">.</span><span class="n">sip</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">cw</span><span class="o">.</span><span class="n">cpdis1</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">cw</span><span class="o">.</span><span class="n">cpdis2</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">cw</span><span class="o">.</span><span class="n">det2im</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">undistort</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">hstwcs_list</span> <span class="o">+=</span> <span class="n">chip_wcs</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">undistort</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hstwcs_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">default_wcs</span> <span class="o">=</span> <span class="n">hstwcs_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">default_wcs</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">output_wcs</span><span class="p">(</span><span class="n">hstwcs_list</span><span class="p">,</span> <span class="n">undistort</span><span class="o">=</span><span class="n">undistort</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">perfect</span><span class="p">:</span>
+        <span class="n">default_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">make_perfect_cd</span><span class="p">(</span><span class="n">default_wcs</span><span class="p">)</span>
+
+    <span class="c1"># Turn WCS instances into WCSObject instances</span>
+    <span class="n">outwcs</span> <span class="o">=</span> <span class="n">createWCSObject</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">default_wcs</span><span class="p">,</span> <span class="n">imageObjectList</span><span class="p">)</span>
+
+    <span class="c1"># Merge in user-specified attributes for the output WCS</span>
+    <span class="c1"># as recorded in the input configObj object.</span>
+    <span class="n">final_pars</span> <span class="o">=</span> <span class="n">DEFAULT_WCS_PARS</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># More interpretation of the configObj needs to be done here to translate</span>
+    <span class="c1"># the input parameter names to those understood by &#39;mergeWCS&#39; as defined</span>
+    <span class="c1"># by the DEFAULT_WCS_PARS dictionary.</span>
+    <span class="n">single_step</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span> <span class="mi">3</span><span class="p">)]</span>
+    <span class="n">singleParDict</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span> <span class="s1">&#39;3a&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">single_step</span><span class="p">[</span><span class="s1">&#39;driz_separate&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">singleParDict</span><span class="p">[</span><span class="s1">&#39;driz_sep_wcs&#39;</span><span class="p">]:</span>
+        <span class="n">single_pars</span> <span class="o">=</span> <span class="n">DEFAULT_WCS_PARS</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">del</span> <span class="n">singleParDict</span><span class="p">[</span><span class="s1">&#39;driz_sep_wcs&#39;</span><span class="p">]</span>
+        <span class="n">keyname</span> <span class="o">=</span> <span class="s1">&#39;driz_sep_&#39;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">singleParDict</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">keyname</span><span class="p">):]</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;refimage&#39;</span><span class="p">:</span>
+                <span class="n">single_pars</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">singleParDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># Now, account for any user-specified reference image</span>
+        <span class="n">def_wcs</span> <span class="o">=</span> <span class="n">default_wcs</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">singleParDict</span><span class="p">[</span><span class="n">keyname</span> <span class="o">+</span> <span class="s1">&#39;refimage&#39;</span><span class="p">]:</span>
+            <span class="n">default_wcs</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">singleParDict</span><span class="p">[</span><span class="n">keyname</span> <span class="o">+</span> <span class="s1">&#39;refimage&#39;</span><span class="p">])</span>
+
+        <span class="c1">### Create single_wcs instance based on user parameters</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">single_wcs</span> <span class="o">=</span> <span class="n">mergeWCS</span><span class="p">(</span><span class="n">default_wcs</span><span class="p">,</span> <span class="n">single_pars</span><span class="p">)</span>
+        <span class="c1"># restore global default WCS to original value so single_drizzle WCS does not</span>
+        <span class="c1"># influence final_drizzle WCS</span>
+        <span class="n">default_wcs</span> <span class="o">=</span> <span class="n">def_wcs</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+
+    <span class="n">final_step</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="mi">7</span><span class="p">)]</span>
+    <span class="n">finalParDict</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="s1">&#39;7a&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">final_step</span><span class="p">[</span><span class="s1">&#39;driz_combine&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">finalParDict</span><span class="p">[</span><span class="s1">&#39;final_wcs&#39;</span><span class="p">]:</span>
+        <span class="k">del</span> <span class="n">finalParDict</span><span class="p">[</span><span class="s1">&#39;final_wcs&#39;</span><span class="p">]</span>
+        <span class="n">keyname</span> <span class="o">=</span> <span class="s1">&#39;final_&#39;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">finalParDict</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">keyname</span><span class="p">):]</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;refimage&#39;</span><span class="p">:</span>
+                <span class="n">final_pars</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">finalParDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># Now, account for any user-specified reference image</span>
+        <span class="k">if</span> <span class="n">finalParDict</span><span class="p">[</span><span class="n">keyname</span> <span class="o">+</span> <span class="s1">&#39;refimage&#39;</span><span class="p">]:</span>
+            <span class="n">rootname</span><span class="p">,</span><span class="n">extnum</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">parseFilename</span><span class="p">(</span><span class="n">finalParDict</span><span class="p">[</span><span class="n">keyname</span><span class="o">+</span><span class="s1">&#39;refimage&#39;</span><span class="p">])</span>
+            <span class="n">extnum</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">findWCSExtn</span><span class="p">(</span><span class="n">finalParDict</span><span class="p">[</span><span class="n">keyname</span><span class="o">+</span><span class="s1">&#39;refimage&#39;</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Creating OUTPUT WCS from </span><span class="si">{}</span><span class="s1">[</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rootname</span><span class="p">,</span><span class="n">extnum</span><span class="p">))</span>
+            <span class="n">default_wcs</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">[</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rootname</span><span class="p">,</span><span class="n">extnum</span><span class="p">))</span>
+
+        <span class="c1">### Create single_wcs instance based on user parameters</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">final_wcs</span> <span class="o">=</span> <span class="n">mergeWCS</span><span class="p">(</span><span class="n">default_wcs</span><span class="p">,</span> <span class="n">final_pars</span><span class="p">)</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span> <span class="o">=</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">final_wcs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Apply user settings to create custom output_wcs instances</span>
+    <span class="c1"># for each drizzle step</span>
+    <span class="n">updateImageWCS</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">outwcs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">outwcs</span></div>
+
+
+<div class="viewcode-block" id="make_perfect_cd"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.make_perfect_cd">[docs]</a><span class="k">def</span> <span class="nf">make_perfect_cd</span><span class="p">(</span><span class="n">wcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a perfect (square, orthogonal, undistorted) CD matrix from the</span>
+<span class="sd">        input WCS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">def_scale</span> <span class="o">=</span> <span class="p">(</span><span class="n">wcs</span><span class="o">.</span><span class="n">pscale</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3600.</span>
+    <span class="n">def_orientat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">wcs</span><span class="o">.</span><span class="n">orientat</span><span class="p">)</span>
+    <span class="n">perfect_cd</span> <span class="o">=</span> <span class="n">def_scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">def_orientat</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">def_orientat</span><span class="p">)],</span>
+         <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">def_orientat</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">def_orientat</span><span class="p">)]]</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">perfect_cd</span></div>
+
+
+<div class="viewcode-block" id="calcNewEdges"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.calcNewEdges">[docs]</a><span class="k">def</span> <span class="nf">calcNewEdges</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This method will compute sky coordinates for all the pixels around</span>
+<span class="sd">    the edge of an image AFTER applying the geometry model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    wcs : obj</span>
+<span class="sd">        HSTWCS object for image</span>
+
+<span class="sd">    shape : tuple</span>
+<span class="sd">        numpy shape tuple for size of image</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    border : arr</span>
+<span class="sd">        array which contains the new positions for</span>
+<span class="sd">        all pixels around the border of the edges in alpha,dec</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">naxis1</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">naxis2</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># build up arrays for pixel positions for the edges</span>
+    <span class="c1"># These arrays need to be: array([(x,y),(x1,y1),...])</span>
+    <span class="n">numpix</span> <span class="o">=</span> <span class="n">naxis1</span><span class="o">*</span><span class="mi">2</span> <span class="o">+</span> <span class="n">naxis2</span><span class="o">*</span><span class="mi">2</span>
+    <span class="n">border</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">numpix</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># Now determine the appropriate values for this array</span>
+    <span class="c1"># We also need to account for any subarray offsets</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">naxis1</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="n">naxis2</span>
+
+    <span class="c1"># Build range of pixel values for each side</span>
+    <span class="c1"># Add 1 to make them consistent with pixel numbering in IRAF</span>
+    <span class="c1"># Also include the LTV offsets to represent position in full chip</span>
+    <span class="c1">#   since the model works relative to full chip positions.</span>
+    <span class="n">xside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">naxis1</span><span class="p">)</span> <span class="o">+</span> <span class="n">xmin</span>
+    <span class="n">yside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">naxis2</span><span class="p">)</span> <span class="o">+</span> <span class="n">ymin</span>
+
+    <span class="c1">#Now apply them to the array to generate the appropriate tuples</span>
+    <span class="c1">#bottom</span>
+    <span class="n">_range0</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">_range1</span> <span class="o">=</span> <span class="n">naxis1</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">xside</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ymin</span>
+    <span class="c1">#top</span>
+    <span class="n">_range0</span> <span class="o">=</span> <span class="n">_range1</span>
+    <span class="n">_range1</span> <span class="o">=</span> <span class="n">_range0</span> <span class="o">+</span> <span class="n">naxis1</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">xside</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ymax</span>
+    <span class="c1">#left</span>
+    <span class="n">_range0</span> <span class="o">=</span> <span class="n">_range1</span>
+    <span class="n">_range1</span> <span class="o">=</span> <span class="n">_range0</span> <span class="o">+</span> <span class="n">naxis2</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">xmin</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">yside</span>
+    <span class="c1">#right</span>
+    <span class="n">_range0</span> <span class="o">=</span> <span class="n">_range1</span>
+    <span class="n">_range1</span> <span class="o">=</span> <span class="n">_range0</span> <span class="o">+</span> <span class="n">naxis2</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">xmax</span>
+    <span class="n">border</span><span class="p">[</span><span class="n">_range0</span><span class="p">:</span><span class="n">_range1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">yside</span>
+
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span><span class="n">border</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="n">border</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">edges</span></div>
+
+
+<div class="viewcode-block" id="computeEdgesCenter"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.computeEdgesCenter">[docs]</a><span class="k">def</span> <span class="nf">computeEdgesCenter</span><span class="p">(</span><span class="n">edges</span><span class="p">):</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">DEGTORAD</span><span class="p">(</span><span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">dec</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">DEGTORAD</span><span class="p">(</span><span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">xmean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
+    <span class="n">ymean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
+    <span class="n">zmean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">))</span>
+
+    <span class="n">crval1</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">RADTODEG</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">ymean</span><span class="p">,</span><span class="n">xmean</span><span class="p">))</span><span class="o">%</span><span class="mf">360.0</span>
+    <span class="n">crval2</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">RADTODEG</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">zmean</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xmean</span><span class="o">*</span><span class="n">xmean</span><span class="o">+</span><span class="n">ymean</span><span class="o">*</span><span class="n">ymean</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">crval1</span><span class="p">,</span><span class="n">crval2</span></div>
+
+
+<span class="c1">#### Utility functions for working with WCSObjects</span>
+<div class="viewcode-block" id="createWCSObject"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.createWCSObject">[docs]</a><span class="k">def</span> <span class="nf">createWCSObject</span><span class="p">(</span><span class="n">output</span><span class="p">,</span><span class="n">default_wcs</span><span class="p">,</span><span class="n">imageObjectList</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">imageObject</span>
+    <span class="n">outwcs</span> <span class="o">=</span> <span class="n">imageObject</span><span class="o">.</span><span class="n">WCSObject</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+    <span class="n">outwcs</span><span class="o">.</span><span class="n">default_wcs</span> <span class="o">=</span> <span class="n">default_wcs</span>
+    <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span> <span class="o">=</span> <span class="n">default_wcs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">outwcs</span><span class="o">.</span><span class="n">final_wcs</span> <span class="o">=</span> <span class="n">default_wcs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">outwcs</span><span class="o">.</span><span class="n">single_wcs</span> <span class="o">=</span> <span class="n">default_wcs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">outwcs</span><span class="o">.</span><span class="n">updateContextImage</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">createContext</span><span class="p">)</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Add exptime information for use with drizzle</span>
+    <span class="c1">#</span>
+    <span class="n">outwcs</span><span class="o">.</span><span class="n">_exptime</span><span class="p">,</span><span class="n">outwcs</span><span class="o">.</span><span class="n">_expstart</span><span class="p">,</span><span class="n">outwcs</span><span class="o">.</span><span class="n">_expend</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">compute_texptime</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">)</span>
+
+    <span class="n">outwcs</span><span class="o">.</span><span class="n">nimages</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">countImages</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">outwcs</span></div>
+
+<div class="viewcode-block" id="removeAllAltWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.removeAllAltWCS">[docs]</a><span class="k">def</span> <span class="nf">removeAllAltWCS</span><span class="p">(</span><span class="n">hdulist</span><span class="p">,</span><span class="n">extlist</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Removes all alternate WCS solutions from the header</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+    <span class="n">hdr</span> <span class="o">=</span> <span class="n">hdulist</span><span class="p">[</span><span class="n">extlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">header</span>
+    <span class="n">wkeys</span> <span class="o">=</span> <span class="n">altwcs</span><span class="o">.</span><span class="n">wcskeys</span><span class="p">(</span><span class="n">hdr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">wkeys</span><span class="p">:</span>
+        <span class="n">wkeys</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">extlist</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">wkey</span> <span class="ow">in</span> <span class="n">wkeys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">wkey</span> <span class="o">==</span> <span class="s1">&#39;O&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">altwcs</span><span class="o">.</span><span class="n">deleteWCS</span><span class="p">(</span><span class="n">hdulist</span><span class="p">,</span><span class="n">extn</span><span class="p">,</span><span class="n">wkey</span><span class="p">)</span>
+
+        <span class="c1"># Forcibly remove OPUS WCS Keywords, since deleteWCS will not do it</span>
+        <span class="n">hwcs</span> <span class="o">=</span> <span class="n">readAltWCS</span><span class="p">(</span><span class="n">hdulist</span><span class="p">,</span><span class="n">extn</span><span class="p">,</span><span class="n">wcskey</span><span class="o">=</span><span class="s1">&#39;O&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">hwcs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hwcs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;DATE-OBS&#39;</span><span class="p">,</span><span class="s1">&#39;MJD-OBS&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hdr</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">hdr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="updateImageWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.updateImageWCS">[docs]</a><span class="k">def</span> <span class="nf">updateImageWCS</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output_wcs</span><span class="p">):</span>
+
+     <span class="c1"># Update input imageObjects with output WCS information</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">updateOutputValues</span><span class="p">(</span><span class="n">output_wcs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="restoreDefaultWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.restoreDefaultWCS">[docs]</a><span class="k">def</span> <span class="nf">restoreDefaultWCS</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output_wcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Restore WCS information to default values, and update imageObject</span>
+<span class="sd">        accordingly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+        <span class="n">imageObjectList</span> <span class="o">=</span> <span class="p">[</span><span class="n">imageObjectList</span><span class="p">]</span>
+
+    <span class="n">output_wcs</span><span class="o">.</span><span class="n">restoreWCS</span><span class="p">()</span>
+
+    <span class="n">updateImageWCS</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span> <span class="n">output_wcs</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_rotateCD</span><span class="p">(</span><span class="n">cd</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+    <span class="c1"># This is the old (pre-astropy PR #5189 -</span>
+    <span class="c1"># see https://github.com/astropy/astropy/pull/5189) as this the version</span>
+    <span class="c1"># of the rotateCD expected in &#39;mergeWCS&#39; below</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">cth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">sth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cd</span><span class="p">,</span> <span class="p">[[</span><span class="n">cth</span><span class="p">,</span> <span class="n">sth</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="n">sth</span><span class="p">,</span> <span class="n">cth</span><span class="p">]])</span>
+
+
+<span class="k">def</span> <span class="nf">_py2round</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function returns a rounded up value of the argument, similar</span>
+<span class="sd">    to Python 2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">):</span>
+        <span class="n">rx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span>
+        <span class="n">rx</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">rx</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rx</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_check_custom_WCS_pars</span><span class="p">(</span><span class="n">par1_name</span><span class="p">,</span> <span class="n">par2_name</span><span class="p">,</span> <span class="n">user_pars</span><span class="p">):</span>
+    <span class="n">par1</span> <span class="o">=</span> <span class="n">par1_name</span> <span class="ow">in</span> <span class="n">user_pars</span> <span class="ow">and</span> <span class="n">user_pars</span><span class="p">[</span><span class="n">par1_name</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">par2</span> <span class="o">=</span> <span class="n">par2_name</span> <span class="ow">in</span> <span class="n">user_pars</span> <span class="ow">and</span> <span class="n">user_pars</span><span class="p">[</span><span class="n">par2_name</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">par1</span> <span class="o">!=</span> <span class="n">par2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">par1</span><span class="p">:</span>
+            <span class="n">par1n</span> <span class="o">=</span> <span class="n">par1_name</span>
+            <span class="n">par2n</span> <span class="o">=</span> <span class="n">par2_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">par1n</span> <span class="o">=</span> <span class="n">par2_name</span>
+            <span class="n">par2n</span> <span class="o">=</span> <span class="n">par1_name</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;When WCS parameter &#39;</span><span class="si">{}</span><span class="s2">&#39; is specified, &#39;</span><span class="si">{}</span><span class="s2">&#39; must &quot;</span>
+                         <span class="s2">&quot;be specified as well.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">par1n</span><span class="p">,</span> <span class="n">par2n</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">par1</span>
+
+
+<span class="k">def</span> <span class="nf">_check_close_scale</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>
+    <span class="n">rtol</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+    <span class="n">atol</span> <span class="o">=</span> <span class="mf">100.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">tiny</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">rtol</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="mergeWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.mergeWCS">[docs]</a><span class="k">def</span> <span class="nf">mergeWCS</span><span class="p">(</span><span class="n">default_wcs</span><span class="p">,</span> <span class="n">user_pars</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Merges the user specified WCS values given as dictionary derived from</span>
+<span class="sd">        the input configObj object with the output PyWCS object computed</span>
+<span class="sd">        using distortion.output_wcs().</span>
+
+<span class="sd">        The user_pars dictionary needs to have the following set of keys::</span>
+
+<span class="sd">            user_pars = {&#39;ra&#39;:None,&#39;dec&#39;:None,&#39;scale&#39;:None,&#39;rot&#39;:None,</span>
+<span class="sd">                         &#39;outnx&#39;:None,&#39;outny&#39;:None,&#39;crpix1&#39;:None,&#39;crpix2&#39;:None}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1"># Start by making a copy of the input WCS...</span>
+    <span class="c1">#</span>
+    <span class="n">outwcs</span> <span class="o">=</span> <span class="n">default_wcs</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+
+    <span class="c1"># If there are no user set parameters, just return a copy of</span>
+    <span class="c1"># the original WCS:</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">upar</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">upar</span> <span class="ow">in</span> <span class="n">user_pars</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+        <span class="k">return</span> <span class="n">outwcs</span>
+
+    <span class="k">if</span> <span class="n">_check_custom_WCS_pars</span><span class="p">(</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="n">user_pars</span><span class="p">):</span>
+        <span class="n">_crval</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">],</span> <span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_crval</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;scale&#39;</span> <span class="ow">in</span> <span class="n">user_pars</span> <span class="ow">and</span> <span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
+        <span class="ow">not</span> <span class="n">_check_close_scale</span><span class="p">(</span><span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">],</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">pscale</span><span class="p">)):</span>
+        <span class="n">_scale</span> <span class="o">=</span> <span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">]</span>
+        <span class="n">_ratio</span> <span class="o">=</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">pscale</span> <span class="o">/</span> <span class="n">_scale</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_ratio</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_scale</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;rot&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">user_pars</span><span class="p">)</span> <span class="ow">or</span> <span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;rot&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_delta_rot</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_delta_rot</span> <span class="o">=</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">orientat</span> <span class="o">-</span> <span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;rot&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_delta_rot</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">_delta_rot</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">_check_custom_WCS_pars</span><span class="p">(</span><span class="s1">&#39;crpix1&#39;</span><span class="p">,</span> <span class="s1">&#39;crpix2&#39;</span><span class="p">,</span> <span class="n">user_pars</span><span class="p">):</span>
+        <span class="n">_crpix</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;crpix1&#39;</span><span class="p">],</span> <span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;crpix2&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_crpix</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">_check_custom_WCS_pars</span><span class="p">(</span><span class="s1">&#39;outnx&#39;</span><span class="p">,</span> <span class="s1">&#39;outny&#39;</span><span class="p">,</span> <span class="n">user_pars</span><span class="p">):</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">_py2round</span><span class="p">(</span><span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;outnx&#39;</span><span class="p">])),</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">_py2round</span><span class="p">(</span><span class="n">user_pars</span><span class="p">[</span><span class="s1">&#39;outny&#39;</span><span class="p">]))</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Custom WCS output image size smaller than 1&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">_crpix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># make sure new image is centered on the CRPIX of the old WCS:</span>
+            <span class="n">_crpix</span> <span class="o">=</span> <span class="p">((</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_delta_rot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># no rotation is involved</span>
+
+            <span class="k">if</span> <span class="n">_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># apply scale only:</span>
+
+                <span class="c1"># compute output image shape:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">_py2round</span><span class="p">(</span><span class="n">_ratio</span> <span class="o">*</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">))),</span>
+                    <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">_py2round</span><span class="p">(</span><span class="n">_ratio</span> <span class="o">*</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">)))</span>
+                <span class="p">)</span>
+
+                <span class="c1"># update CRPIX:</span>
+                <span class="k">if</span> <span class="n">_crpix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">_crpix</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">_ratio</span> <span class="o">*</span> <span class="p">(</span><span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+                 <span class="p">[</span><span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis1</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis2</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">],</span>
+                 <span class="p">[</span><span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis1</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis2</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">]]</span>
+            <span class="p">)</span> <span class="o">-</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span>
+
+            <span class="k">if</span> <span class="n">_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># scale corners:</span>
+                <span class="n">_corners</span> <span class="o">*=</span> <span class="n">_ratio</span>
+
+            <span class="c1"># rotate corners and find new image range:</span>
+            <span class="p">((</span><span class="n">_xmin</span><span class="p">,</span> <span class="n">_xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">_ymin</span><span class="p">,</span> <span class="n">_ymax</span><span class="p">))</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getRotatedSize</span><span class="p">(</span><span class="n">_corners</span><span class="p">,</span>
+                                                                   <span class="n">_delta_rot</span><span class="p">)</span>
+
+            <span class="c1"># compute output image shape:</span>
+            <span class="c1"># NOTE: _py2round may be replaced with np.ceil</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">_py2round</span><span class="p">(</span><span class="n">_xmax</span> <span class="o">-</span> <span class="n">_xmin</span><span class="p">))),</span>
+                <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">_py2round</span><span class="p">(</span><span class="n">_ymax</span> <span class="o">-</span> <span class="n">_ymin</span><span class="p">)))</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">_crpix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># update CRPIX:</span>
+                <span class="n">_crpix</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">_xmin</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="n">_ymin</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="c1"># Set up the new WCS based on values from old one:</span>
+
+    <span class="k">if</span> <span class="n">_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Update plate scale</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">/</span> <span class="n">_ratio</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">pscale</span> <span class="o">=</span> <span class="n">_scale</span>
+
+    <span class="c1"># update orientation</span>
+    <span class="k">if</span> <span class="n">_delta_rot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">_rotateCD</span><span class="p">(</span><span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">,</span> <span class="n">_delta_rot</span><span class="p">)</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">orientat</span> <span class="o">-=</span> <span class="n">_delta_rot</span>
+
+    <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># update size:</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">,</span> <span class="n">outwcs</span><span class="o">.</span><span class="n">_naxis2</span> <span class="o">=</span> <span class="n">shape</span>
+
+    <span class="c1"># update reference position</span>
+    <span class="k">if</span> <span class="n">_crpix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">_crpix</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">_crval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">_crval</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">outwcs</span></div>
+
+
+<div class="viewcode-block" id="convertWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.convertWCS">[docs]</a><span class="k">def</span> <span class="nf">convertWCS</span><span class="p">(</span><span class="n">inwcs</span><span class="p">,</span><span class="n">drizwcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Copy WCSObject WCS into Drizzle compatible array.&quot;&quot;&quot;</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">crval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">crval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">drizwcs</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">drizwcs</span></div>
+
+<div class="viewcode-block" id="updateWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.updateWCS">[docs]</a><span class="k">def</span> <span class="nf">updateWCS</span><span class="p">(</span><span class="n">drizwcs</span><span class="p">,</span><span class="n">inwcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Copy output WCS array from Drizzle into WCSObject.&quot;&quot;&quot;</span>
+    <span class="n">crpix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">crval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">6</span><span class="p">]],[</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="n">drizwcs</span><span class="p">[</span><span class="mi">7</span><span class="p">]]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">cd</span>
+    <span class="n">inwcs</span><span class="o">.</span><span class="n">crval</span> <span class="o">=</span> <span class="n">crval</span>
+    <span class="n">inwc</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="n">crpix</span>
+    <span class="n">inwcs</span><span class="o">.</span><span class="n">pscale</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="n">N</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="mf">3600.</span>
+    <span class="n">inwcs</span><span class="o">.</span><span class="n">orient</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="n">inwcs</span><span class="o">.</span><span class="n">cd</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="mf">180.</span><span class="o">/</span><span class="n">N</span><span class="o">.</span><span class="n">pi</span></div>
+
+
+<div class="viewcode-block" id="wcsfit"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.wcsfit">[docs]</a><span class="k">def</span> <span class="nf">wcsfit</span><span class="p">(</span><span class="n">img_wcs</span><span class="p">,</span> <span class="n">ref_wcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform a linear fit between 2 WCS for shift, rotation and scale.</span>
+<span class="sd">    Based on the WCSLIN function from &#39;drutil.f&#39;(Drizzle V2.9) and modified to</span>
+<span class="sd">    allow for differences in reference positions assumed by PyDrizzle&#39;s</span>
+<span class="sd">    distortion model and the coeffs used by &#39;drizzle&#39;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img  : obj</span>
+<span class="sd">        ObsGeometry instance for input image</span>
+
+<span class="sd">    ref_wcs : obj</span>
+<span class="sd">        Undistorted WCSObject instance for output frame</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Define objects that we need to use for the fit...</span>
+    <span class="c1">#in_refpix = img_geom.model.refpix</span>
+    <span class="n">wmap</span> <span class="o">=</span> <span class="n">WCSMap</span><span class="p">(</span><span class="n">img_wcs</span><span class="p">,</span><span class="n">ref_wcs</span><span class="p">)</span>
+    <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">coeff_converter</span><span class="o">.</span><span class="n">sip2idc</span><span class="p">(</span><span class="n">img_wcs</span><span class="p">)</span>
+    <span class="c1"># Convert the RA/Dec positions back to X/Y in output product image</span>
+    <span class="c1">#_cpix_xyref = np.zeros((4,2),dtype=np.float64)</span>
+
+    <span class="c1"># Start by setting up an array of points +/-0.5 pixels around CRVAL1,2</span>
+    <span class="c1"># However, we must shift these positions by 1.0pix to match what</span>
+    <span class="c1"># drizzle will use as its reference position for &#39;align=center&#39;.</span>
+    <span class="n">_cpix</span> <span class="o">=</span> <span class="p">(</span><span class="n">img_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">img_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">_cpix_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_cpix</span><span class="p">,(</span><span class="n">_cpix</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">_cpix</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">1.</span><span class="p">),</span>
+                       <span class="p">(</span><span class="n">_cpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">1.</span><span class="p">,</span><span class="n">_cpix</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">1.</span><span class="p">),(</span><span class="n">_cpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">1.</span><span class="p">,</span><span class="n">_cpix</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="c1"># Convert these positions to RA/Dec</span>
+    <span class="n">_cpix_rd</span> <span class="o">=</span> <span class="n">wmap</span><span class="o">.</span><span class="n">xy2rd</span><span class="p">(</span><span class="n">img_wcs</span><span class="p">,</span><span class="n">_cpix_arr</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="n">_cpix_arr</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1">#for pix in xrange(len(_cpix_rd[0])):</span>
+    <span class="n">_cpix_xref</span><span class="p">,</span><span class="n">_cpix_yref</span> <span class="o">=</span> <span class="n">wmap</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="n">ref_wcs</span><span class="p">,</span><span class="n">_cpix_rd</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">_cpix_rd</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">_cpix_xyref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">_cpix_xyref</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_cpix_xref</span>
+    <span class="n">_cpix_xyref</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_cpix_yref</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    # needed to handle correctly subarrays and wfpc2 data</span>
+<span class="sd">    if img_wcs.delta_refx == 0.0 and img_wcs.delta_refy == 0.0:</span>
+<span class="sd">        offx, offy = (0.0,0.0)</span>
+<span class="sd">    else:</span>
+<span class="sd">        offx, offy = (1.0, 1.0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">offx</span><span class="p">,</span> <span class="n">offy</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Now, apply distortion model to input image XY positions</span>
+    <span class="c1">#_cpix_xyc = np.zeros((4,2),dtype=np.float64)</span>
+    <span class="n">_cpix_xyc</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">apply_idc</span><span class="p">(</span><span class="n">_cpix_arr</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">img_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">,</span> <span class="n">img_wcs</span><span class="o">.</span><span class="n">pscale</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Need to get the XDELTA,YDELTA values included here in order to get this</span>
+    <span class="c1"># to work with MDTng.</span>
+    <span class="c1">#if in_refpix:</span>
+    <span class="c1">#    _cpix_xyc += (in_refpix[&#39;XDELTA&#39;], in_refpix[&#39;YDELTA&#39;])</span>
+
+    <span class="c1"># Perform a fit between:</span>
+    <span class="c1">#       - undistorted, input positions: _cpix_xyc</span>
+    <span class="c1">#       - X/Y positions in reference frame: _cpix_xyref</span>
+    <span class="n">abxt</span><span class="p">,</span><span class="n">cdyt</span> <span class="o">=</span> <span class="n">fitlin</span><span class="p">(</span><span class="n">_cpix_xyc</span><span class="p">,</span><span class="n">_cpix_xyref</span><span class="p">)</span>
+
+    <span class="c1"># This correction affects the final fit when you are fitting</span>
+    <span class="c1"># a WCS to itself (no distortion coeffs), so it needs to be</span>
+    <span class="c1"># taken out in the coeffs file by modifying the zero-point value.</span>
+    <span class="c1">#  WJH 17-Mar-2005</span>
+    <span class="n">abxt</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ref_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">offx</span>
+    <span class="n">cdyt</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ref_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">offy</span>
+
+    <span class="k">return</span> <span class="n">abxt</span><span class="p">,</span><span class="n">cdyt</span></div>
+
+
+<div class="viewcode-block" id="fitlin"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.fitlin">[docs]</a><span class="k">def</span> <span class="nf">fitlin</span><span class="p">(</span><span class="n">imgarr</span><span class="p">,</span><span class="n">refarr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the least-squares fit between two arrays.</span>
+<span class="sd">        A Python translation of &#39;FITLIN&#39; from &#39;drutil.f&#39; (Drizzle V2.9).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize variables</span>
+    <span class="n">_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">_xorg</span> <span class="o">=</span> <span class="n">imgarr</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">_yorg</span> <span class="o">=</span> <span class="n">imgarr</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">_xoorg</span> <span class="o">=</span> <span class="n">refarr</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">_yoorg</span> <span class="o">=</span> <span class="n">refarr</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">_sigxox</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">_sigxoy</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">_sigxo</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">_sigyox</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">_sigyoy</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">_sigyo</span> <span class="o">=</span> <span class="mf">0.</span>
+
+    <span class="n">_npos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">imgarr</span><span class="p">)</span>
+    <span class="c1"># Populate matrices</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_npos</span><span class="p">):</span>
+        <span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">((</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_xorg</span><span class="p">),</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_xorg</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yorg</span><span class="p">)</span>
+        <span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_xorg</span><span class="p">)</span>
+        <span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">((</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yorg</span><span class="p">),</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yorg</span>
+
+        <span class="n">_sigxox</span> <span class="o">+=</span> <span class="p">(</span><span class="n">refarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_xoorg</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_xorg</span><span class="p">)</span>
+        <span class="n">_sigxoy</span> <span class="o">+=</span> <span class="p">(</span><span class="n">refarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_xoorg</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yorg</span><span class="p">)</span>
+        <span class="n">_sigxo</span> <span class="o">+=</span> <span class="n">refarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_xoorg</span>
+        <span class="n">_sigyox</span> <span class="o">+=</span> <span class="p">(</span><span class="n">refarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yoorg</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span><span class="n">_xorg</span><span class="p">)</span>
+        <span class="n">_sigyoy</span> <span class="o">+=</span> <span class="p">(</span><span class="n">refarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yoorg</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">imgarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yorg</span><span class="p">)</span>
+        <span class="n">_sigyo</span> <span class="o">+=</span> <span class="n">refarr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_yoorg</span>
+
+    <span class="n">_mat</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">_npos</span>
+    <span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">_mat</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">_mat</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="c1"># Now invert this matrix</span>
+    <span class="n">_mat</span> <span class="o">=</span> <span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">_mat</span><span class="p">)</span>
+
+    <span class="n">_a</span>  <span class="o">=</span> <span class="n">_sigxox</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">_sigxoy</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">_sigxo</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">_b</span>  <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="p">(</span><span class="n">_sigxox</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">_sigxoy</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">_sigxo</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+    <span class="c1">#_x0 = _sigxox*_mat[2][0]+_sigxoy*_mat[2][1]+_sigxo*_mat[2][2]</span>
+
+    <span class="n">_c</span>  <span class="o">=</span> <span class="n">_sigyox</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">_sigyoy</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">_sigyo</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">_d</span>  <span class="o">=</span> <span class="n">_sigyox</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">_sigyoy</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">_sigyo</span><span class="o">*</span><span class="n">_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    <span class="c1">#_y0 = _sigyox*_mat[2][0]+_sigyoy*_mat[2][1]+_sigyo*_mat[2][2]</span>
+
+    <span class="n">_xt</span> <span class="o">=</span> <span class="n">_xoorg</span> <span class="o">-</span> <span class="n">_a</span><span class="o">*</span><span class="n">_xorg</span><span class="o">+</span><span class="n">_b</span><span class="o">*</span><span class="n">_yorg</span>
+    <span class="n">_yt</span> <span class="o">=</span> <span class="n">_yoorg</span> <span class="o">-</span> <span class="n">_d</span><span class="o">*</span><span class="n">_xorg</span><span class="o">-</span><span class="n">_c</span><span class="o">*</span><span class="n">_yorg</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">_a</span><span class="p">,</span><span class="n">_b</span><span class="p">,</span><span class="n">_xt</span><span class="p">],[</span><span class="n">_c</span><span class="p">,</span><span class="n">_d</span><span class="p">,</span><span class="n">_yt</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="fitlin_rscale"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.fitlin_rscale">[docs]</a><span class="k">def</span> <span class="nf">fitlin_rscale</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span><span class="n">uv</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Performs a linear, orthogonal fit between matched</span>
+<span class="sd">        lists of positions &#39;xy&#39; (input) and &#39;uv&#39; (output).</span>
+
+<span class="sd">        Output: (same as for fit_arrays_general)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">uv</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">mv</span> <span class="o">=</span> <span class="n">uv</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">mx</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">my</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="n">u</span> <span class="o">=</span> <span class="n">uv</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">mu</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">uv</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">mv</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">mx</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">my</span>
+
+    <span class="n">Sxx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">Syy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">Sux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">Suy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">Svx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">Svy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="c1"># implement parity check</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Sux</span><span class="p">,</span><span class="n">Svy</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="n">XX</span> <span class="o">=</span> <span class="n">p</span><span class="o">*</span><span class="n">Sux</span> <span class="o">+</span> <span class="n">Svy</span>
+    <span class="n">YY</span> <span class="o">=</span> <span class="n">Suy</span> <span class="o">-</span> <span class="n">p</span><span class="o">*</span><span class="n">Svx</span>
+
+    <span class="c1"># derive output values</span>
+    <span class="n">theta_deg</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">RADTODEG</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">YY</span><span class="p">,</span><span class="n">XX</span><span class="p">))</span><span class="o">%</span> <span class="mf">360.0</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">XX</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">YY</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">Sxx</span><span class="o">+</span><span class="n">Syy</span><span class="p">)</span>
+    <span class="n">shift</span> <span class="o">=</span> <span class="p">(</span><span class="n">mu</span><span class="o">-</span><span class="n">mx</span><span class="p">,</span><span class="n">mv</span><span class="o">-</span><span class="n">my</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Linear RSCALE fit: rotation = &#39;</span><span class="p">,</span><span class="n">theta_deg</span><span class="p">,</span><span class="s1">&#39;  scale = &#39;</span><span class="p">,</span><span class="n">scale</span><span class="p">,</span><span class="s1">&#39;  offset = &#39;</span><span class="p">,</span><span class="n">shift</span><span class="p">)</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">buildRotMatrix</span><span class="p">(</span><span class="o">-</span><span class="n">theta_deg</span><span class="p">)</span>
+
+    <span class="n">P</span> <span class="o">=</span> <span class="p">[</span><span class="n">coeffs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="n">coeffs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">shift</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="p">[</span><span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="n">shift</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">P</span><span class="p">,</span><span class="n">Q</span></div>
+
+<div class="viewcode-block" id="fitlin_clipped"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.fitlin_clipped">[docs]</a><span class="k">def</span> <span class="nf">fitlin_clipped</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span><span class="n">uv</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rscale&#39;</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">reject</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Perform a clipped fit based on the number of iterations and rejection limit</span>
+<span class="sd">        (in sigma) specified by the user. This will more closely replicate the results</span>
+<span class="sd">        obtained by &#39;geomap&#39; using &#39;maxiter&#39; and &#39;reject&#39; parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fitting_funcs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rscale&#39;</span><span class="p">:</span><span class="n">fitlin_rscale</span><span class="p">,</span><span class="s1">&#39;general&#39;</span><span class="p">:</span><span class="n">fitlin</span><span class="p">}</span>
+    <span class="c1"># Get the fitting function to be used</span>
+    <span class="n">fit_func</span> <span class="o">=</span> <span class="n">fitting_funcs</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+    <span class="c1"># Perform the initial fit</span>
+    <span class="n">P</span><span class="p">,</span><span class="n">Q</span> <span class="o">=</span> <span class="n">fit_func</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span><span class="n">uv</span><span class="p">)</span>
+    <span class="n">xyc</span> <span class="o">=</span> <span class="n">apply_fitlin</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span>
+
+    <span class="c1"># compute residuals from fit for input positions</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">uv</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">xyc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">uv</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">xyc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">fit_rms</span> <span class="o">=</span> <span class="p">[</span><span class="n">dx</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span><span class="n">dy</span><span class="o">.</span><span class="n">std</span><span class="p">()]</span>
+
+    <span class="k">if</span> <span class="n">nclip</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">xy</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">outdata</span> <span class="o">=</span> <span class="n">uv</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">numclipped</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nclip</span><span class="p">):</span>
+        <span class="n">iterclipped</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">xyc</span> <span class="o">=</span> <span class="n">apply_fitlin</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span>
+
+        <span class="c1"># compute residuals from fit for input positions</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">outdata</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">xyc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">outdata</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">xyc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># find indices of outliers in x and y</span>
+        <span class="n">xout</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dx</span> <span class="o">-</span> <span class="n">dx</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">&gt;</span> <span class="n">reject</span><span class="o">*</span><span class="n">dx</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+        <span class="n">yout</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dy</span> <span class="o">-</span> <span class="n">dy</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">&gt;</span> <span class="n">reject</span><span class="o">*</span><span class="n">dy</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+        <span class="c1"># concatenate those indices and sort them</span>
+        <span class="n">outliers_indx</span> <span class="o">=</span> <span class="n">xout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="o">+</span><span class="n">yout</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">outliers_indx</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="c1"># define the full range of indices for the data points left</span>
+        <span class="n">full_indx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="c1"># remove all unique indices specified in outliers from full range</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">outliers_indx</span><span class="p">:</span>
+            <span class="c1"># only remove if it has not been removed already</span>
+            <span class="c1"># accounts for the same point being an outlier in both x and y</span>
+            <span class="k">if</span> <span class="n">full_indx</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">full_indx</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+            <span class="n">iterclipped</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">iterclipped</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">numclipped</span> <span class="o">+=</span> <span class="n">iterclipped</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removed a total of &#39;</span><span class="p">,</span><span class="n">numclipped</span><span class="p">,</span><span class="s1">&#39; points through iteration &#39;</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># create clipped data</span>
+        <span class="n">data_iter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">full_indx</span><span class="p">),</span><span class="mi">2</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Iter #&#39;</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39; data:&#39;</span><span class="p">,</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">data_iter</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">full_indx</span><span class="p">))</span>
+
+        <span class="n">data_iter</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">0</span><span class="p">][</span><span class="n">full_indx</span><span class="p">]</span>
+        <span class="n">data_iter</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">][</span><span class="n">full_indx</span><span class="p">]</span>
+        <span class="n">outdata_iter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">full_indx</span><span class="p">),</span><span class="mi">2</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">outdata_iter</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">outdata</span><span class="p">[:,</span><span class="mi">0</span><span class="p">][</span><span class="n">full_indx</span><span class="p">]</span>
+        <span class="n">outdata_iter</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">outdata</span><span class="p">[:,</span><span class="mi">1</span><span class="p">][</span><span class="n">full_indx</span><span class="p">]</span>
+
+        <span class="c1"># perform the fit again with the clipped data and go to the next iteration</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data_iter</span>
+        <span class="n">outdata</span> <span class="o">=</span> <span class="n">outdata_iter</span>
+        <span class="n">P</span><span class="p">,</span><span class="n">Q</span> <span class="o">=</span> <span class="n">fit_func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">outdata</span><span class="p">)</span>
+        <span class="c1"># compute residuals from fit for input positions</span>
+        <span class="n">xyc</span> <span class="o">=</span> <span class="n">apply_fitlin</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">outdata</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">xyc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">outdata</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">xyc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">fit_rms</span> <span class="o">=</span> <span class="p">[</span><span class="n">dx</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span><span class="n">dy</span><span class="o">.</span><span class="n">std</span><span class="p">()]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Fit clipped &#39;</span><span class="p">,</span><span class="n">numclipped</span><span class="p">,</span><span class="s1">&#39; points over &#39;</span><span class="p">,</span><span class="n">nclip</span><span class="p">,</span><span class="s1">&#39; iterations.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">,</span><span class="n">fit_rms</span></div>
+
+<div class="viewcode-block" id="apply_fitlin"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.apply_fitlin">[docs]</a><span class="k">def</span> <span class="nf">apply_fitlin</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">Q</span><span class="p">):</span>
+    <span class="c1"># start by parsing coefficients into affine matrix and offset</span>
+    <span class="n">fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">P</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">P</span><span class="p">[</span><span class="mi">1</span><span class="p">]],[</span><span class="n">Q</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">]]])</span>
+    <span class="n">xsh</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">ysh</span> <span class="o">=</span> <span class="n">Q</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">fit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">xy1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">fit</span><span class="p">)</span>
+        <span class="n">xy1x</span> <span class="o">=</span> <span class="n">xy1</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">xsh</span>
+        <span class="n">xy1y</span> <span class="o">=</span> <span class="n">xy1</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">ysh</span>
+    <span class="k">return</span> <span class="n">xy1x</span><span class="p">,</span><span class="n">xy1y</span></div>
+
+
+<div class="viewcode-block" id="readAltWCS"><a class="viewcode-back" href="../../wcsutils.html#drizzlepac.wcs_functions.readAltWCS">[docs]</a><span class="k">def</span> <span class="nf">readAltWCS</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">ext</span><span class="p">,</span> <span class="n">wcskey</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads in alternate primary WCS from specified extension.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fobj : str, `astropy.io.fits.HDUList`</span>
+<span class="sd">        fits filename or fits file object</span>
+<span class="sd">        containing alternate/primary WCS(s) to be converted</span>
+<span class="sd">    wcskey : str</span>
+<span class="sd">        [&quot; &quot;,A-Z]</span>
+<span class="sd">        alternate/primary WCS key that will be replaced by the new key</span>
+<span class="sd">    ext : int</span>
+<span class="sd">        fits extension number</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hdr: fits.Header</span>
+<span class="sd">        header object with ONLY the keywords for specified alternate WCS</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">fobj</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">hdr</span> <span class="o">=</span> <span class="n">altwcs</span><span class="o">.</span><span class="n">_getheader</span><span class="p">(</span><span class="n">fobj</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">nwcs</span> <span class="o">=</span> <span class="n">pywcs</span><span class="o">.</span><span class="n">WCS</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span> <span class="n">fobj</span><span class="o">=</span><span class="n">fobj</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">wcskey</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;readAltWCS: Could not read WCS with key </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">wcskey</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;            Skipping </span><span class="si">%s</span><span class="s1">[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fobj</span><span class="o">.</span><span class="n">filename</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ext</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">hwcs</span> <span class="o">=</span> <span class="n">nwcs</span><span class="o">.</span><span class="n">to_header</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">nwcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">has_cd</span><span class="p">():</span>
+        <span class="n">hwcs</span> <span class="o">=</span> <span class="n">altwcs</span><span class="o">.</span><span class="n">pc2cd</span><span class="p">(</span><span class="n">hwcs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">wcskey</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hwcs</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

@@ -50,7 +50,7 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
     if configObj is None:
         return
 
-    if editpars == False:
+    if not editpars:
         run(configObj)
 
 
@@ -124,11 +124,12 @@ def _median(imageObjectList, paramDict):
 
     #print "Checking parameters:"
     #print comb_type,nlow,nhigh,grow,maskpt,nsigma1,nsigma2
-    if (paramDict['combine_lthresh'] == None):
+    if paramDict['combine_lthresh'] is None:
         lthresh = None
     else:
         lthresh = float(paramDict['combine_lthresh'])
-    if (paramDict['combine_hthresh'] == None):
+
+    if paramDict['combine_hthresh'] is None:
         hthresh = None
     else:
         hthresh = float(paramDict['combine_hthresh'])
@@ -209,7 +210,7 @@ def _median(imageObjectList, paramDict):
             if virtual:
                 _single_hdr = singleDriz[wcs_extnum].header
             else:
-                _single_hdr = fits.getheader(singleDriz_name,ext=wcs_extnum)
+                _single_hdr = fits.getheader(singleDriz_name, ext=wcs_extnum, memmap=False)
 
         _singleImage=iterfile.IterFitsFile(iter_singleDriz)
         if virtual:
@@ -262,7 +263,7 @@ def _median(imageObjectList, paramDict):
             for chip in image.returnAllChips(extname=image.scienceExt):
                 # compute sky value as sky/pixel using the single_drz pixel scale
                 if bsky is None or bsky > chip.subtractedSky:
-                    bsky = chip.subtractedSky
+                    bsky = chip.subtractedSky * chip._conversionFactor
 
                 # Extract the readnoise value for the chip
                 rdnoise += (chip._rdnoise)**2
@@ -495,7 +496,7 @@ def _writeImage( dataArray=None, inputHeader=None):
 
     _prihdu = fits.PrimaryHDU(data=dataArray, header=inputHeader)
     """
-    if (inputHeader == None):
+    if inputHeader is None:
         #use a general primary HDU
         _prihdu = fits.PrimaryHDU(data=dataArray)
 

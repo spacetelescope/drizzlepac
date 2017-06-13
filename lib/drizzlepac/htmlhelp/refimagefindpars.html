@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Refmagefindpars: Source finding parameters for the reference image &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Refmagefindpars: Source finding parameters for the reference image &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Imagefindpars: Source finding parameters" href="imagefindpars.html" />
     <link rel="prev" title="TWEAKREG: Alignment of Images" href="tweakreg.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -57,22 +59,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="imagefindpars.html"
                         title="next chapter">Imagefindpars: Source finding parameters</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/refimagefindpars.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/refimagefindpars.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -81,7 +82,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="refmagefindpars-source-finding-parameters-for-the-reference-image">
 <span id="refimagefindpars"></span><h1>Refmagefindpars: Source finding parameters for the reference image<a class="headerlink" href="#refmagefindpars-source-finding-parameters-for-the-reference-image" title="Permalink to this headline">¶</a></h1>
@@ -90,29 +91,28 @@ built-in source finding algorithm based on the published algorithms
 used by DAOFIND. These settings apply only to source finding
 in the reference images.</p>
 <span class="target" id="module-drizzlepac.refimagefindpars"></span><p>These parameters control the operation of the algorithm that extracts
-sources from the reference image (if specified) as called by <a class="reference internal" href="tweakreg.html#tweakreg"><em>TWEAKREG: Alignment of Images</em></a>.
-The algorithm implemented follows the concepts defined by <tt class="docutils literal"><span class="pre">DAOFIND</span></tt>
-(without actually using any <tt class="docutils literal"><span class="pre">DAOFIND</span></tt> code).</p>
+sources from the reference image (if specified) as called by <a class="reference internal" href="tweakreg.html#tweakreg"><span class="std std-ref">TWEAKREG: Alignment of Images</span></a>.
+The algorithm implemented follows the concepts defined by <code class="docutils literal"><span class="pre">DAOFIND</span></code>
+(without actually using any <code class="docutils literal"><span class="pre">DAOFIND</span></code> code).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Attributes:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><dl class="first last docutils">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>computesig</strong>: bool (Default = True)</dt>
 <dd><p class="first">This parameter controls whether or not to automatically compute a
-sigma value to be used for object identification. If set to <tt class="docutils literal"><span class="pre">True</span></tt>,
+sigma value to be used for object identification. If set to <code class="docutils literal"><span class="pre">True</span></code>,
 then the value computed will override any user input for
-the parameter <tt class="docutils literal"><span class="pre">skysigma</span></tt>. The automatic sigma value gets
+the parameter <code class="docutils literal"><span class="pre">skysigma</span></code>. The automatic sigma value gets
 computed from each input exposure as:</p>
 <div class="math">
-<p><img src="_images/math/f0ebd49833d51f8188e949e95f365f405deb1a98.png" alt="\sigma = \sqrt{2\left|mode\right|}"/></p>
+<p><img src="_images/math/b63e6b84b5fc4fc1a9d780a935879bb99bcaf34f.png" alt="\sigma = \sqrt{2\left|mode\right|}"/></p>
 </div><p class="last">This single value will then be used for object identification
 for all input exposures.</p>
 </dd>
 <dt><strong>skysigma</strong>: float (Default = 0.0)</dt>
 <dd><p class="first last">The standard deviation of the sky pixels. This value will only be
-used if computesig is <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
+used if computesig is <code class="docutils literal"><span class="pre">False</span></code>.</p>
 </dd>
 <dt><strong>conv_width</strong>: float (Default = 3.5)</dt>
 <dd><p class="first last">The convolution kernel width in pixels. Recommended values
@@ -163,34 +163,34 @@ that should be considered &#8220;good&#8221; when building masks for source
 finding. For example, if pixels in the DQ array can be combinations
 of 1, 2, 4, and 8 flags and one wants to consider DQ &#8220;defects&#8221;
 having flags 2 and 4 as being acceptable for source finding,
-then <em class="xref py py-obj">dqbits</em> should be set to 2+4=6. Then a DQ pixel having values
+then <code class="xref py py-obj docutils literal"><span class="pre">dqbits</span></code> should be set to 2+4=6. Then a DQ pixel having values
 2,4, or 6 will be considered a good pixel, while a DQ pixel with
 a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
 <p>Alternatively, one can enter a comma- or &#8216;+&#8217;-separated list of
 integer bit flags that should be added to obtain the final &#8220;good&#8221;
-bits. For example, both <tt class="docutils literal"><span class="pre">4,8</span></tt> and <tt class="docutils literal"><span class="pre">4+8</span></tt> are equivalent to
-setting <em class="xref py py-obj">dqbits</em> to 12.</p>
+bits. For example, both <code class="docutils literal"><span class="pre">4,8</span></code> and <code class="docutils literal"><span class="pre">4+8</span></code> are equivalent to
+setting <code class="xref py py-obj docutils literal"><span class="pre">dqbits</span></code> to 12.</p>
 <div class="line-block">
-<div class="line">Setting <em class="xref py py-obj">dqbits</em> to 0 will make <em>all</em> non-zero pixels in the DQ
+<div class="line">Setting <code class="xref py py-obj docutils literal"><span class="pre">dqbits</span></code> to 0 will make <em>all</em> non-zero pixels in the DQ
 mask to be considered &#8220;bad&#8221; pixels, and the corresponding image
 pixels will not be used for source finding.</div>
 </div>
 <div class="line-block">
-<div class="line">The default value of <em class="xref py py-obj">None</em> will turn off the use of image&#8217;s DQ
+<div class="line">The default value of <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> will turn off the use of image&#8217;s DQ
 array for source finding.</div>
 </div>
 <div class="last line-block">
-<div class="line">In order to reverse the meaning of the <em class="xref py py-obj">dqbits</em>
+<div class="line">In order to reverse the meaning of the <code class="xref py py-obj docutils literal"><span class="pre">dqbits</span></code>
 parameter from indicating values of the &#8220;good&#8221; DQ flags
 to indicating the &#8220;bad&#8221; DQ flags, prepend &#8216;~&#8217; to the string
 value. For example, in order not to use pixels with
 DQ flags 4 and 8 for source finding and to consider
 as &#8220;good&#8221; all other pixels (regardless of their DQ flag),
-set <em class="xref py py-obj">dqbits</em> to <tt class="docutils literal"><span class="pre">~4+8</span></tt>, or <tt class="docutils literal"><span class="pre">~4,8</span></tt>. To obtain the
-same effect with an <em class="xref py py-obj">int</em> input value (except for 0),
+set <code class="xref py py-obj docutils literal"><span class="pre">dqbits</span></code> to <code class="docutils literal"><span class="pre">~4+8</span></code>, or <code class="docutils literal"><span class="pre">~4,8</span></code>. To obtain the
+same effect with an <a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">int</span></code></a> input value (except for 0),
 enter -(4+8+1)=-9. Following this convention,
-a <em class="xref py py-obj">dqbits</em> string value of <tt class="docutils literal"><span class="pre">'~0'</span></tt> would be equivalent to
-setting <tt class="docutils literal"><span class="pre">dqbits=None</span></tt>.</div>
+a <code class="xref py py-obj docutils literal"><span class="pre">dqbits</span></code> string value of <code class="docutils literal"><span class="pre">'~0'</span></code> would be equivalent to
+setting <code class="docutils literal"><span class="pre">dqbits=None</span></code>.</div>
 </div>
 </dd>
 <dt><strong>use_sharp_round</strong>: bool (Default = False)</dt>
@@ -198,28 +198,28 @@ setting <tt class="docutils literal"><span class="pre">dqbits=None</span></tt>.<
 based on their sharpness and roundness statistics.</p>
 </dd>
 <dt><strong>sharplo</strong>: float (Default = 0.2)</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">sharplo</span></tt> and <tt class="docutils literal"><span class="pre">sharphi</span></tt> are designed to eliminate brightness
+<dd><p class="first last"><code class="docutils literal"><span class="pre">sharplo</span></code> and <code class="docutils literal"><span class="pre">sharphi</span></code> are designed to eliminate brightness
 maxima that are due to bad pixels rather than to astronomical objects.
-Only sources with sharpness above the <tt class="docutils literal"><span class="pre">sharplo</span></tt> value will be
+Only sources with sharpness above the <code class="docutils literal"><span class="pre">sharplo</span></code> value will be
 selected.</p>
 </dd>
 <dt><strong>sharphi</strong>: float (Default = 1.0)</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">sharplo</span></tt> and <tt class="docutils literal"><span class="pre">sharphi</span></tt> are designed to eliminate brightness
+<dd><p class="first last"><code class="docutils literal"><span class="pre">sharplo</span></code> and <code class="docutils literal"><span class="pre">sharphi</span></code> are designed to eliminate brightness
 maxima that are due to bad pixels rather than to astronomical objects.
-Only sources with sharpness below the <tt class="docutils literal"><span class="pre">sharphi</span></tt> value will be
+Only sources with sharpness below the <code class="docutils literal"><span class="pre">sharphi</span></code> value will be
 selected.</p>
 </dd>
 <dt><strong>roundlo</strong>: float (Default = -1.0)</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">roundlo</span></tt> and <tt class="docutils literal"><span class="pre">roundhi</span></tt> are designed to eliminate brightness
+<dd><p class="first last"><code class="docutils literal"><span class="pre">roundlo</span></code> and <code class="docutils literal"><span class="pre">roundhi</span></code> are designed to eliminate brightness
 maxima that are due to bad rows or columns, rather than to
 astronomical objects. Only sources with roundness above the
-<tt class="docutils literal"><span class="pre">roundlo</span></tt> value will be selected.</p>
+<code class="docutils literal"><span class="pre">roundlo</span></code> value will be selected.</p>
 </dd>
 <dt><strong>roundhi</strong>: float (Default = 1.0)</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">roundlo</span></tt> and <tt class="docutils literal"><span class="pre">roundhi</span></tt> are designed to eliminate brightness
+<dd><p class="first last"><code class="docutils literal"><span class="pre">roundlo</span></code> and <code class="docutils literal"><span class="pre">roundhi</span></code> are designed to eliminate brightness
 maxima that are due to bad rows or columns, rather than to
 astronomical objects. Only sources with roundness below the
-<tt class="docutils literal"><span class="pre">roundhi</span></tt> value will be selected.</p>
+<code class="docutils literal"><span class="pre">roundhi</span></code> value will be selected.</p>
 </dd>
 </dl>
 </td>
@@ -228,21 +228,20 @@ astronomical objects. Only sources with roundness below the
 </table>
 <dl class="function">
 <dt id="drizzlepac.refimagefindpars.getHelpAsString">
-<tt class="descclassname">drizzlepac.refimagefindpars.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.refimagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.refimagefindpars.</code><code class="descname">getHelpAsString</code><span class="sig-paren">(</span><em>docstring=False</em>, <em>show_ver=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/refimagefindpars.html#getHelpAsString"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.refimagefindpars.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>return useful help from a file in the script directory called
 __taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.refimagefindpars.help">
-<tt class="descclassname">drizzlepac.refimagefindpars.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.refimagefindpars.help" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.refimagefindpars.</code><code class="descname">help</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/refimagefindpars.html#help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.refimagefindpars.help" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out syntax help for running astrodrizzle</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
 Any previously existing file with this name will be deleted before
@@ -262,7 +261,7 @@ writing out the help.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -277,12 +276,12 @@ writing out the help.</p>
         <li class="right" >
           <a href="tweakreg.html" title="TWEAKREG: Alignment of Images"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

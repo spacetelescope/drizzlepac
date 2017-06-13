@@ -119,7 +119,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     configObj['mdriztab'] = mdriztab
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have
     # already called 'run()'.
-    if editpars == False:
+    if not editpars:
         run(configObj, wcsmap=wcsmap)
 
 #

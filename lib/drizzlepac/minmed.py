@@ -70,16 +70,16 @@ class minmed:
             ):
 
         # Define input variables
-        self.__imageList = imageList
-        self.__weightImageList = weightImageList
-        self.__weightMaskList = weightMaskList
-        self.__exposureTimeList = exposureTimeList
-        self.__readnoiseList = readnoiseList
-        self.__backgroundValueList = backgroundValueList
-        self.__numberOfImages = len( self.__imageList)
-        self.__combine_grow = combine_grow
-        self.__combine_nsigma1 = combine_nsigma1
-        self.__combine_nsigma2 = combine_nsigma2
+        self._imageList = imageList
+        self._weightImageList = weightImageList
+        self._weightMaskList = weightMaskList
+        self._exposureTimeList = exposureTimeList
+        self._readnoiseList = readnoiseList
+        self._backgroundValueList = backgroundValueList
+        self._numberOfImages = len( self._imageList)
+        self._combine_grow = combine_grow
+        self._combine_nsigma1 = combine_nsigma1
+        self._combine_nsigma2 = combine_nsigma2
 
         if fillval:
             combtype_mean = 'imean'
@@ -90,12 +90,12 @@ class minmed:
 
 
         # Create a different median image based upon the number of images in the input list.
-        __median_file = np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)
-        if (self.__numberOfImages == 2):
-            __tmp = numCombine(self.__imageList,numarrayMaskList=self.__weightMaskList,
+        median_file = np.zeros(self._imageList[0].shape,dtype=self._imageList[0].dtype)
+        if (self._numberOfImages == 2):
+            tmp = numCombine(self._imageList,numarrayMaskList=self._weightMaskList,
                                  combinationType=combtype_mean,nlow=0,nhigh=0,
                                  nkeep=1,upper=None,lower=None)
-            __median_file = __tmp.combArrObj
+            median_file = tmp.combArrObj
         else:
             # The value of NHIGH=1 will cause problems when there is only 1 valid
             # unmasked input image for that pixel due to a difference in behavior
@@ -103,13 +103,13 @@ class minmed:
             # This value may need to be adjusted on the fly based on the number of
             # inputs and the number of masked values/pixel.
             #
-            __tmp = numCombine(self.__imageList,numarrayMaskList=self.__weightMaskList,
+            tmp = numCombine(self._imageList,numarrayMaskList=self._weightMaskList,
                                  combinationType=combtype_median,nlow=0,nhigh=1,
                                  nkeep=1,upper=None,lower=None)
-            __median_file = __tmp.combArrObj
+            median_file = tmp.combArrObj
 
-            if self.__weightMaskList in [None,[]]:
-                self.__weightMaskList = [np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)]*len(self.__imageList)
+            if self._weightMaskList in [None,[]]:
+                self._weightMaskList = [np.zeros(self._imageList[0].shape,dtype=self._imageList[0].dtype)]*len(self._imageList)
             # The following section of code will address the problem caused by having
             # a value of nhigh = 1.  This will behave in a way similar to the way the
             # IRAF task IMCOMBINE behaves.  In order to accomplish this, the following
@@ -119,7 +119,7 @@ class minmed:
             # 3) In the locations of the summed mask where the sum is 1 less than the
             #    the total number of images, the value of that location in the summed
             #    sceince image will be used to replace the existing value in the
-            #    existing __median_file.
+            #    existing median_file.
             #
             # This procuedure is being used to prevent too much data from being thrown
             # out of the image.  Take for example the case of 3 input images.  In two
@@ -133,83 +133,84 @@ class minmed:
             # when the sci images are summed, the value of the sum will only come from the "good"
             # pixels.
             tmpList = []
-            for image in range(len(self.__imageList)):
-                tmp =np.where(self.__weightMaskList[image] == 1, 0, self.__imageList[image])
+            for image in range(len(self._imageList)):
+                tmp =np.where(self._weightMaskList[image] == 1, 0, self._imageList[image])
                 tmpList.append(tmp)
 
             # Sum the mask files
-            maskSum = self.__sumImages(self.__weightMaskList)
+            maskSum = self._sumImages(self._weightMaskList)
             # Sum the science images
-            sciSum = self.__sumImages(tmpList)
+            sciSum = self._sumImages(tmpList)
             del(tmpList)
             # Use the summed sci image values in locations where the maskSum indicates
             # that there is only 1 good pixel to use.  The value will be used in the
-            # __median_file image
-            __median_file = np.where(maskSum == self.__numberOfImages-1,sciSum,__median_file)
+            # median_file image
+            median_file = np.where(maskSum == self._numberOfImages-1,sciSum,median_file)
 
-        if self.__weightMaskList in [None,[]]:
-            self.__weightMaskList = [np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)]*len(self.__imageList)
+        if self._weightMaskList in [None,[]]:
+            self._weightMaskList = [np.zeros(self._imageList[0].shape,dtype=self._imageList[0].dtype)]*len(self._imageList)
         # Sum the weightMaskList elements
-        __maskSum = self.__sumImages(self.__weightMaskList)
+        maskSum = self._sumImages(self._weightMaskList)
 
         # Create the minimum image from the stack of input images.
         # Find the maximum pixel value for the image stack.
-        _maxValue = -1e+9
-        for image in self.__imageList:
-            _newMax = image.max()
-            if (_newMax > _maxValue):
-                _maxValue = _newMax
+        maxValue = -1e+9
+        for image in self._imageList:
+            newMax = image.max()
+            if (newMax > maxValue):
+                maxValue = newMax
 
         # For each image, set pixels masked as "bad" to the "super-maximum" value.
-        for image in range(len(self.__imageList)):
-            self.__imageList[image] = np.where(self.__weightMaskList[image] == 1,_maxValue+1,self.__imageList[image])
+        for image in range(len(self._imageList)):
+            self._imageList[image] = np.where(self._weightMaskList[image] == 1,maxValue+1,self._imageList[image])
 
         # Call numcombine throwing out the highest N - 1 pixels.
-        __tmp = numCombine(self.__imageList,numarrayMaskList=None,
-                                 combinationType=combtype_median,nlow=0,nhigh=self.__numberOfImages-1,
+        tmp = numCombine(self._imageList,numarrayMaskList=None,
+                                 combinationType=combtype_median,nlow=0,nhigh=self._numberOfImages-1,
                                  nkeep=1,upper=None,lower=None)
-        __minimum_file = __tmp.combArrObj
-        # Reset any pixl at _maxValue + 1 to 0.
-        __minimum_file = np.where(__maskSum == self.__numberOfImages, 0, __minimum_file)
+        minimum_file = tmp.combArrObj
+        # Reset any pixl at maxValue + 1 to 0.
+        minimum_file = np.where(maskSum == self._numberOfImages, 0, minimum_file)
 
         # Scale the weight images by the background values and add them to the bk
-        __backgroundFileList = []
-        for image in range(len(self.__weightImageList)):
-            __tmp = self.__weightImageList[image] * (self.__backgroundValueList[image]/(self.__exposureTimeList[image]))
-            __backgroundFileList.append(__tmp)
+        backgroundFileList = []
+        for image in range(len(self._weightImageList)):
+            tmp = self._weightImageList[image] * (self._backgroundValueList[image]/(self._exposureTimeList[image]))
+            backgroundFileList.append(tmp)
 
         # Create an image of the total effective background (in DN) per pixel:
         # (which is the sum of all the background-scaled weight files)
         #
-        __bkgd_file = self.__sumImages(__backgroundFileList)
-        del(__backgroundFileList)
+        bkgd_file = self._sumImages(backgroundFileList)
+        del(backgroundFileList)
 
         #
         # Scale the weight mask images by the square of the readnoise values
         #
-        __readnoiseFileList = []
-        for image in range(len(self.__weightMaskList)):
-            __tmp = np.logical_not(self.__weightMaskList[image]) * (self.__readnoiseList[image] * self.__readnoiseList[image])
-            __readnoiseFileList.append(__tmp)
+        readnoiseFileList = []
+        for image in range(len(self._weightMaskList)):
+            tmp = (np.logical_not(self._weightMaskList[image]) *
+                   (self._readnoiseList[image] * self._readnoiseList[image]))
+            readnoiseFileList.append(tmp)
 
         # Create an image of the total readnoise**2 per pixel:
         # (which is the sum of all the input readnoise values)
         #
-        __readnoise_file = self.__sumImages(__readnoiseFileList)
-        del(__readnoiseFileList)
+        readnoise_file = self._sumImages(readnoiseFileList)
+        del(readnoiseFileList)
 
         # Create an image of the total effective exposure time per pixel:
         # (which is simply the sum of all the drizzle output weight files)
         #
-        __weight_file = self.__sumImages(self.__weightImageList)
+        weight_file = self._sumImages(self._weightImageList)
 
 
         # Scale up both the median and minimum arrays by the total effective exposure time
         # per pixel.
         #
-        __minimum_file_weighted = __minimum_file * __weight_file
-        __median_file_weighted = __median_file * __weight_file
-        del(__weight_file)
+        minimum_file_weighted = minimum_file * weight_file
+        median_file_weighted = median_file * weight_file
+        del(weight_file)
 
         # Calculate the 1-sigma r.m.s.:
         #   variance = median_electrons + bkgd_electrons + readnoise**2
@@ -217,15 +218,20 @@ class minmed:
         #   This image has units of electrons.
         #
         # make this the abs value so that negative numbers dont throw an exception?
-        __rms_file = np.sqrt(__median_file_weighted + __bkgd_file + __readnoise_file)
+        rms_file2 = np.fmax(
+            median_file_weighted + bkgd_file + readnoise_file,
+            np.zeros_like(median_file_weighted)
+        )
+        rms_file = np.sqrt(rms_file2)
 
-        del __bkgd_file, __readnoise_file
+        del bkgd_file
+        del readnoise_file
         # For the median array, calculate the n-sigma lower threshold to the array
         # and incorporate that into the pixel values.
         #
-        __median_rms_file = __median_file_weighted - (__rms_file * self.__combine_nsigma1)
+        median_rms_file = median_file_weighted - (rms_file * self._combine_nsigma1)
 
-        if self.__combine_grow != 0:
+        if self._combine_grow != 0:
             #
             # Do a more sophisticated rejection: For all cases where the minimum pixel will
             # be accepted instead of the median, set a lower threshold for that pixel and the
@@ -244,13 +250,13 @@ class minmed:
             # Then use this image in the final replacement, in the same way as for the
             # case where this option is not selected.
 
-            __minimum_flag_file = np.where(np.less(__minimum_file_weighted,__median_rms_file),1,0)
+            minimum_flag_file = np.where(np.less(minimum_file_weighted,median_rms_file), 1, 0)
 
             # The box size value must be an integer.  This is not a problem since __combine_grow should always
             # be an integer type.  The combine_grow column in the MDRIZTAB should also be an integer type.
-            __boxsize = int(2 * self.__combine_grow + 1)
-            __boxshape = (__boxsize,__boxsize)
-            __minimum_grow_file = np.zeros(self.__imageList[0].shape,dtype=self.__imageList[0].dtype)
+            boxsize = int(2 * self._combine_grow + 1)
+            boxshape = (boxsize, boxsize)
+            minimum_grow_file = np.zeros(self._imageList[0].shape,dtype=self._imageList[0].dtype)
 
 
             # If the boxcar convolution has failed it is potentially for two reasons:
@@ -262,68 +268,74 @@ class minmed:
             #   If the boxcar convolution has failed, try to give a meaningfull explanation
             #   as to why based upon the conditionals described above.
 
-            if (__boxsize <= 0):
+            if (boxsize <= 0):
                 errormsg1 =  "############################################################\n"
                 errormsg1 += "# The boxcar convolution in minmed has failed.  The 'grow' #\n"
                 errormsg1 += "# parameter must be greater than or equal to zero. You     #\n"
                 errormsg1 += "# specified an input value for the 'grow' parameter of:    #\n"
-                errormsg1 += "        combine_grow: " + str(self.__combine_grow)+'\n'
+                errormsg1 += "        combine_grow: " + str(self._combine_grow)+'\n'
                 errormsg1 += "############################################################\n"
                 raise ValueError(errormsg1)
-            if (__boxsize > self.__imageList[0].shape[0]):
+            if (boxsize > self._imageList[0].shape[0]):
                 errormsg2 =  "############################################################\n"
                 errormsg2 += "# The boxcar convolution in minmed has failed.  The 'grow' #\n"
                 errormsg2 += "# parameter specified has resulted in a boxcar kernel that #\n"
                 errormsg2 += "# has dimensions larger than the actual image.  You        #\n"
                 errormsg2 += "# specified an input value for the 'grow' parameter of:    #\n"
-                errormsg2 += "        combine_grow: " +str(self.__combine_grow)+'\n'
+                errormsg2 += "        combine_grow: " +str(self._combine_grow)+'\n'
                 errormsg2 += "############################################################\n"
-                print(self.__imageList[0].shape)
+                print(self._imageList[0].shape)
                 raise ValueError(errormsg2)
 
             # Attempt the boxcar convolution using the boxshape based upon the user input value of "grow"
-            NC.boxcar(__minimum_flag_file,__boxshape,output=__minimum_grow_file,mode='constant',cval=0)
+            NC.boxcar(minimum_flag_file, boxshape, output=minimum_grow_file,
+                      mode='constant', cval=0)
 
-            del(__minimum_flag_file)
+            del(minimum_flag_file)
 
-            __temp1 = (__median_file_weighted - (__rms_file * self.__combine_nsigma1))
-            __temp2 = (__median_file_weighted - (__rms_file * self.__combine_nsigma2))
-            __median_rms2_file = np.where(np.equal(__minimum_grow_file,0),__temp1,__temp2)
-            del(__temp1)
-            del(__temp2)
-            del(__rms_file)
-            del(__minimum_grow_file)
+            temp1 = (median_file_weighted - (rms_file * self._combine_nsigma1))
+            temp2 = (median_file_weighted - (rms_file * self._combine_nsigma2))
+            median_rms2_file = np.where(np.equal(minimum_grow_file, 0), temp1, temp2)
+            del(temp1)
+            del(temp2)
+            del(rms_file)
+            del(minimum_grow_file)
 
             # Finally decide whether to use the minimim or the median (in counts/s),
             # based on whether the median is more than 3 sigma above the minimum.
             #
-            self.combArrObj = __tmp
-            self.combArrObj = np.where(np.less(__minimum_file_weighted,__median_rms2_file),
-                                        __minimum_file,
-                                        __median_file)
+            self.combArrObj = np.where(
+                np.less(minimum_file_weighted, median_rms2_file),
+                minimum_file,
+                median_file
+            )
 
         else:
             # Finally decide whether to use the minimim or the median (in counts/s),
             # based on whether the median is more than 3 sigma above the minimum.
             #
-            self.combArrObj = __tmp
-            self.combArrObj = np.where(np.less(__minimum_file_weighted,__median_rms_file),
-                                        __minimum_file,
-                                        __median_file)
+            self.combArrObj = np.where(
+                np.less(minimum_file_weighted, median_rms_file),
+                minimum_file,
+                median_file
+            )
 
         # Set fill regions to a pixel value of 0.
-        self.combArrObj = np.where(__maskSum == self.__numberOfImages, 0, self.combArrObj)
+        self.combArrObj = np.where(maskSum == self._numberOfImages, 0, self.combArrObj)
 
-#        self.out_file1 = __median_rms2_file.copy()
-#        self.out_file2 = __minimum_file_weighted.copy()
+#        self.out_file1 = median_rms2_file.copy()
+#        self.out_file2 = minimum_file_weighted.copy()
 
 
 
-    def __sumImages(self,numarrayObjectList):
+    def _sumImages(self,numarrayObjectList):
         """ Sum a list of numarray objects. """
-        if numarrayObjectList in [None,[]]:
+        if numarrayObjectList in [None, []]:
             return None
-        __sum = np.zeros(numarrayObjectList[0].shape,dtype=numarrayObjectList[0].dtype)
+
+        tsum = np.zeros(numarrayObjectList[0].shape, dtype=numarrayObjectList[0].dtype)
+
         for image in numarrayObjectList:
-            __sum += image
-        return __sum
+            tsum += image
+
+        return tsum

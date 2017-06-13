@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 1: Process Input &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Step 1: Process Input &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Step 2: Generate a Static Mask" href="static.html" />
     <link rel="prev" title="WFPC2 ImageObjects" href="wfpc2objects.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -72,22 +74,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="static.html"
                         title="next chapter">Step 2: Generate a Static Mask</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/process.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/process.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -96,7 +97,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="step-1-process-input">
 <span id="processinput"></span><h1>Step 1: Process Input<a class="headerlink" href="#step-1-process-input" title="Permalink to this headline">¶</a></h1>
@@ -117,11 +118,9 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
@@ -138,36 +137,36 @@
 No mixture of association tables, &#64;files and regular fits files is allowed.
 Files can be in GEIS or MEF format (but not waiver fits).</p>
 <p>Runs some sanity checks on the input files.
-If necessary converts files to MEF format (this should not be left to <em class="xref py py-obj">makewcs</em>
-because <em class="xref py py-obj">updatewcs</em> may be <em class="xref py py-obj">False</em>).
+If necessary converts files to MEF format (this should not be left to <code class="xref py py-obj docutils literal"><span class="pre">makewcs</span></code>
+because <code class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></code> may be <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>).
 Runs makewcs.
-The function <a class="reference internal" href="#drizzlepac.processInput.process_input" title="drizzlepac.processInput.process_input"><tt class="xref py py-obj docutils literal"><span class="pre">process_input</span></tt></a> returns an association table, ivmlist, output name</p>
+The function <a class="reference internal" href="#drizzlepac.processInput.process_input" title="drizzlepac.processInput.process_input"><code class="xref py py-obj docutils literal"><span class="pre">process_input</span></code></a> returns an association table, ivmlist, output name</p>
 <p>The common interface interpreter for MultiDrizzle tasks, &#8216;processCommonInput()&#8217;,
 not only runs &#8216;process_input()&#8217; but &#8216;createImageObject()&#8217; and &#8216;defineOutput()&#8217;
 as well to fully setup all inputs for use with the rest of the MultiDrizzle
 steps either as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <dl class="function">
 <dt id="drizzlepac.processInput.addIVMInputs">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">addIVMInputs</tt><big>(</big><em>imageObjectList</em>, <em>ivmlist</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.addIVMInputs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">addIVMInputs</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>ivmlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#addIVMInputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.addIVMInputs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add IVM filenames provided by user to outputNames dictionary for each input imageObject.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.applyContextPar">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">applyContextPar</tt><big>(</big><em>imageObjectList</em>, <em>contextpar</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.applyContextPar" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply the value of the parameter <em class="xref py py-obj">context</em> to the input list, setting
-the name of the output context image to None if <em class="xref py py-obj">context</em> is False</p>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">applyContextPar</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>contextpar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#applyContextPar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.applyContextPar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the value of the parameter <code class="xref py py-obj docutils literal"><span class="pre">context</span></code> to the input list, setting
+the name of the output context image to None if <code class="xref py py-obj docutils literal"><span class="pre">context</span></code> is False</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.buildASNList">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">buildASNList</tt><big>(</big><em>rootnames</em>, <em>asnname</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.buildASNList" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">buildASNList</code><span class="sig-paren">(</span><em>rootnames</em>, <em>asnname</em>, <em>check_for_duplicates=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#buildASNList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.buildASNList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the list of filenames for a given set of rootnames</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.buildEmptyDRZ">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">buildEmptyDRZ</tt><big>(</big><em>input</em>, <em>output</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.buildEmptyDRZ" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">buildEmptyDRZ</code><span class="sig-paren">(</span><em>input</em>, <em>output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#buildEmptyDRZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.buildEmptyDRZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an empty DRZ file.</p>
 <p>This module creates an empty DRZ file in a valid FITS format so that the HST
 pipeline can handle the Multidrizzle zero expossure time exception
@@ -176,8 +175,7 @@ where all data has been excluded from processing.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="input">input</strong> : str</p>
 <blockquote>
 <div><p>filename of the initial input to process_input</p>
 </div></blockquote>
@@ -193,14 +191,14 @@ where all data has been excluded from processing.</p>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.buildFileList">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">buildFileList</tt><big>(</big><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>wcskey=None</em>, <em>updatewcs=True</em>, <em>**workinplace</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.buildFileList" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">buildFileList</code><span class="sig-paren">(</span><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>wcskey=None</em>, <em>updatewcs=True</em>, <em>**workinplace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#buildFileList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.buildFileList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a file list which has undergone various instrument-specific
 checks for input to MultiDrizzle, including splitting STIS associations.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.buildFileListOrig">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">buildFileListOrig</tt><big>(</big><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>wcskey=None</em>, <em>updatewcs=True</em>, <em>**workinplace</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.buildFileListOrig" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">buildFileListOrig</code><span class="sig-paren">(</span><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>wcskey=None</em>, <em>updatewcs=True</em>, <em>**workinplace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#buildFileListOrig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.buildFileListOrig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a file list which has undergone various instrument-specific
 checks for input to MultiDrizzle, including splitting STIS associations.
 Compared to buildFileList, this version returns the list of the
@@ -210,14 +208,14 @@ WAIVER FITS-&gt;MEF conversion).</p>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.changeSuffixinASN">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">changeSuffixinASN</tt><big>(</big><em>asnfile</em>, <em>suffix</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.changeSuffixinASN" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">changeSuffixinASN</code><span class="sig-paren">(</span><em>asnfile</em>, <em>suffix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#changeSuffixinASN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.changeSuffixinASN" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a copy of the original asn file and change the name of all members
 to include the suffix.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.checkDGEOFile">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">checkDGEOFile</tt><big>(</big><em>filenames</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.checkDGEOFile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">checkDGEOFile</code><span class="sig-paren">(</span><em>filenames</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#checkDGEOFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.checkDGEOFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Verify that input file has been updated with NPOLFILE</p>
 <p>This function checks for the presence of &#8216;NPOLFILE&#8217; kw in the primary header
 when &#8216;DGEOFILE&#8217; kw is present and valid (i.e. &#8216;DGEOFILE&#8217; is not blank or &#8216;N/A&#8217;).
@@ -233,8 +231,7 @@ correction at runtime.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filenames">filenames</strong> : list of str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="filenames">filenames</strong> : list of str</p>
 <blockquote class="last">
 <div><p>file names of all images to be checked</p>
 </div></blockquote>
@@ -246,45 +243,33 @@ correction at runtime.</p>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.checkForDuplicateInputs">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">checkForDuplicateInputs</tt><big>(</big><em>rootnames</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.checkForDuplicateInputs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">checkForDuplicateInputs</code><span class="sig-paren">(</span><em>rootnames</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#checkForDuplicateInputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.checkForDuplicateInputs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check input files specified in ASN table for duplicate versions with
 multiple valid suffixes (_flt and _flc, for example).</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.checkMultipleFiles">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">checkMultipleFiles</tt><big>(</big><em>input</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.checkMultipleFiles" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">checkMultipleFiles</code><span class="sig-paren">(</span><em>input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#checkMultipleFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.checkMultipleFiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the input to determine whether there is 1 or more than 1 valid input file.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="drizzlepac.processInput.convert_dgeo_to_d2im">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">convert_dgeo_to_d2im</tt><big>(</big><em>dgeofile</em>, <em>output</em>, <em>clobber=True</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.convert_dgeo_to_d2im" title="Permalink to this definition">¶</a></dt>
-<dd><p>Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="drizzlepac.processInput.convert_dgeo_to_d2im_OLD">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">convert_dgeo_to_d2im_OLD</tt><big>(</big><em>dgeofile</em>, <em>output</em>, <em>clobber=True</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.convert_dgeo_to_d2im_OLD" title="Permalink to this definition">¶</a></dt>
-<dd><p>Routine that converts the WFPC2 DGEOFILE into a D2IMFILE.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="drizzlepac.processInput.createImageObjectList">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">createImageObjectList</tt><big>(</big><em>files</em>, <em>instrpars</em>, <em>group=None</em>, <em>undistort=True</em>, <em>inmemory=False</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.createImageObjectList" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">createImageObjectList</code><span class="sig-paren">(</span><em>files</em>, <em>instrpars</em>, <em>group=None</em>, <em>undistort=True</em>, <em>inmemory=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#createImageObjectList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.createImageObjectList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of imageObject instances, 1 for each input image in the list of input filenames.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.getMdriztabPars">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">getMdriztabPars</tt><big>(</big><em>input</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.getMdriztabPars" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">getMdriztabPars</code><span class="sig-paren">(</span><em>input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#getMdriztabPars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.getMdriztabPars" title="Permalink to this definition">¶</a></dt>
 <dd><p>High-level function for getting the parameters from MDRIZTAB</p>
 <p>Used primarily for TEAL interface.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.manageInputCopies">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">manageInputCopies</tt><big>(</big><em>filelist</em>, <em>**workinplace</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.manageInputCopies" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">manageInputCopies</code><span class="sig-paren">(</span><em>filelist</em>, <em>**workinplace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#manageInputCopies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.manageInputCopies" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates copies of all input images in a sub-directory.</p>
 <p>The copies are made prior to any processing being done to the images at all,
 including updating the WCS keywords. If there are already copies present,
@@ -294,48 +279,46 @@ current working copies.</p>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.processFilenames">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">processFilenames</tt><big>(</big><em>input=None</em>, <em>output=None</em>, <em>infilesOnly=False</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.processFilenames" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">processFilenames</code><span class="sig-paren">(</span><em>input=None</em>, <em>output=None</em>, <em>infilesOnly=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#processFilenames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.processFilenames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process the input string which contains the input file information and
 return a filelist,output</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.process_input">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">process_input</tt><big>(</big><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>updatewcs=True</em>, <em>prodonly=False</em>, <em>wcskey=None</em>, <em>**workinplace</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.process_input" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">process_input</code><span class="sig-paren">(</span><em>input</em>, <em>output=None</em>, <em>ivmlist=None</em>, <em>updatewcs=True</em>, <em>prodonly=False</em>, <em>wcskey=None</em>, <em>**workinplace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#process_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.process_input" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the full input list of filenames after verifying and converting
 files as needed.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.reportResourceUsage">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">reportResourceUsage</tt><big>(</big><em>imageObjectList</em>, <em>outwcs</em>, <em>num_cores</em>, <em>interactive=False</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.reportResourceUsage" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">reportResourceUsage</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>outwcs</em>, <em>num_cores</em>, <em>interactive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#reportResourceUsage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.reportResourceUsage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide some information to the user on the estimated resource
 usage (primarily memory) for this run.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.resetDQBits">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">resetDQBits</tt><big>(</big><em>imageObjectList</em>, <em>cr_bits_value=4096</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.resetDQBits" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">resetDQBits</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>cr_bits_value=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#resetDQBits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.resetDQBits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the CR bit in each input image&#8217;s DQ array</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.runmakewcs">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">runmakewcs</tt><big>(</big><em>input</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.runmakewcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">runmakewcs</code><span class="sig-paren">(</span><em>input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#runmakewcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.runmakewcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs make wcs and recomputes the WCS keywords</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str</p>
 <blockquote>
 <div><p>a list of files</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>output</strong> : list of str</p>
 <blockquote class="last">
 <div><p>returns a list of names of the modified files
 (For GEIS files returns the translated names.)</p>
@@ -348,7 +331,7 @@ usage (primarily memory) for this run.</p>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.setCommonInput">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">setCommonInput</tt><big>(</big><em>configObj</em>, <em>createOutwcs=True</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.setCommonInput" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">setCommonInput</code><span class="sig-paren">(</span><em>configObj</em>, <em>createOutwcs=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#setCommonInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.setCommonInput" title="Permalink to this definition">¶</a></dt>
 <dd><p>The common interface interpreter for MultiDrizzle tasks which not only runs
 &#8216;process_input()&#8217; but &#8216;createImageObject()&#8217; and &#8216;defineOutput()&#8217; as well to
 fully setup all inputs for use with the rest of the MultiDrizzle steps either
@@ -357,8 +340,7 @@ as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="configObj">configObj</strong> : object</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="configObj">configObj</strong> : object</p>
 <blockquote>
 <div><p>configObj instance or simple dictionary of input parameters</p>
 </div></blockquote>
@@ -392,7 +374,7 @@ images processed and no output wcs information in necessary; as in:</p>
 
 <dl class="function">
 <dt id="drizzlepac.processInput.update_member_names">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">update_member_names</tt><big>(</big><em>oldasndict</em>, <em>pydr_input</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.update_member_names" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">update_member_names</code><span class="sig-paren">(</span><em>oldasndict</em>, <em>pydr_input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#update_member_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.update_member_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update names in a member dictionary.</p>
 <p>Given an association dictionary with rootnames and a list of full
 file names, it will update the names in the member dictionary to
@@ -402,15 +384,8 @@ as an input and not the corresponding GEIS file.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="drizzlepac.processInput.update_wfpc2_d2geofile">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">update_wfpc2_d2geofile</tt><big>(</big><em>filename</em>, <em>fhdu=None</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.update_wfpc2_d2geofile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a D2IMFILE from the DGEOFILE for a WFPC2 image (input), and
-modifies the header to reflect the new usage.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="drizzlepac.processInput.userStop">
-<tt class="descclassname">drizzlepac.processInput.</tt><tt class="descname">userStop</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#drizzlepac.processInput.userStop" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.processInput.</code><code class="descname">userStop</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#userStop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.userStop" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <div class="section" id="resetbits-update-of-input">
@@ -423,31 +398,29 @@ such as the DQ array from an HST image, to zero.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <div class="section" id="parameters">
 <h3>PARAMETERS<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
-<dt>filename <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>full filename with path</dd>
-<dt>bits <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>sum or list of integers corresponding to all the bits to be reset</dd>
+<dt>filename</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>full filename with path</dd>
+<dt>bits</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>sum or list of integers corresponding to all the bits to be reset</dd>
 </dl>
 </div>
 <div class="section" id="optional-parameters">
 <h3>Optional Parameters<a class="headerlink" href="#optional-parameters" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
-<dt>extver <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
-<dd>List of version numbers of the arrays to be corrected
+<dt>extver</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span><dd>List of version numbers of the arrays to be corrected
 (default: None, will reset all matching arrays)</dd>
-<dt>extname <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>EXTNAME of the arrays in the FITS files to be reset
+<dt>extname</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>EXTNAME of the arrays in the FITS files to be reset
 (default: &#8216;dq&#8217;)</dd>
 </dl>
 </div>
@@ -460,7 +433,7 @@ array and the integer value provided as input using the operation (array &amp; ~
 <h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
 <p>It can be called not only from within Python, but also from the host-level
 operating system command line using the syntax:</p>
-<div class="highlight-python"><div class="highlight"><pre>resetbits filename bits [extver [extname]]
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">resetbits</span> <span class="n">filename</span> <span class="n">bits</span> <span class="p">[</span><span class="n">extver</span> <span class="p">[</span><span class="n">extname</span><span class="p">]]</span>
 </pre></div>
 </div>
 </div>
@@ -469,44 +442,43 @@ operating system command line using the syntax:</p>
 <ol class="arabic">
 <li><p class="first">The following command will reset the 4096 bits in all
 the DQ arrays of the file &#8216;input_flt.fits&#8217;:</p>
-<div class="highlight-python"><div class="highlight"><pre>resetbits input_flt.fits 4096
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">resetbits</span> <span class="n">input_flt</span><span class="o">.</span><span class="n">fits</span> <span class="mi">4096</span>
 </pre></div>
 </div>
 <p>or from the Python command line:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">resetbits</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">resetbits</span><span class="o">.</span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">resetbits</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resetbits</span><span class="o">.</span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s2">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">To reset the 2,32,64 and 4096 (sum of 4194) bits in the
 second DQ array, specified as &#8216;dq,2&#8217;, in the file &#8216;input_flt.fits&#8217;:</p>
-<div class="highlight-python"><div class="highlight"><pre>resetbits input_flt.fits 4194 2
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">resetbits</span> <span class="n">input_flt</span><span class="o">.</span><span class="n">fits</span> <span class="mi">4194</span> <span class="mi">2</span>
 </pre></div>
 </div>
 <p>or from the Python command line:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">resetbits</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">resetbits</span><span class="o">.</span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="o">+</span><span class="mi">32</span><span class="o">+</span><span class="mi">64</span><span class="o">+</span><span class="mi">4096</span><span class="p">,</span> <span class="n">extver</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">resetbits</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resetbits</span><span class="o">.</span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s2">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="o">+</span><span class="mi">32</span><span class="o">+</span><span class="mi">64</span><span class="o">+</span><span class="mi">4096</span><span class="p">,</span> <span class="n">extver</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
 </ol>
 <dl class="function">
 <dt id="drizzlepac.resetbits.getHelpAsString">
-<tt class="descclassname">drizzlepac.resetbits.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.resetbits.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.resetbits.</code><code class="descname">getHelpAsString</code><span class="sig-paren">(</span><em>docstring=False</em>, <em>show_ver=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/resetbits.html#getHelpAsString"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.resetbits.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>return useful help from a file in the script directory called
 __taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.resetbits.help">
-<tt class="descclassname">drizzlepac.resetbits.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.resetbits.help" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.resetbits.</code><code class="descname">help</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/resetbits.html#help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.resetbits.help" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out syntax help for running astrodrizzle</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
 Any previously existing file with this name will be deleted before
@@ -520,14 +492,13 @@ writing out the help.</p>
 
 <dl class="function">
 <dt id="drizzlepac.resetbits.reset_dq_bits">
-<tt class="descclassname">drizzlepac.resetbits.</tt><tt class="descname">reset_dq_bits</tt><big>(</big><em>input</em>, <em>bits</em>, <em>extver=None</em>, <em>extname='dq'</em><big>)</big><a class="headerlink" href="#drizzlepac.resetbits.reset_dq_bits" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.resetbits.</code><code class="descname">reset_dq_bits</code><span class="sig-paren">(</span><em>input</em>, <em>bits</em>, <em>extver=None</em>, <em>extname='dq'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/resetbits.html#reset_dq_bits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.resetbits.reset_dq_bits" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function resets bits in the integer array(s) of a FITS file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="filename">filename</strong> : str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="filename">filename</strong> : str</p>
 <blockquote>
 <div><p>full filename with path</p>
 </div></blockquote>
@@ -557,13 +528,13 @@ parameter) will have their bits reset.</p>
 <ol class="arabic">
 <li><p class="first">The following command will reset the 4096 bits in all
 the DQ arrays of the file input_file_flt.fits:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s2">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">To reset the 2,32,64 and 4096 bits in the second DQ array,
 specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="s">&quot;2,32,64,4096&quot;</span><span class="p">,</span> <span class="n">extver</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s2">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="s2">&quot;2,32,64,4096&quot;</span><span class="p">,</span> <span class="n">extver</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -572,7 +543,7 @@ specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
 
 <dl class="function">
 <dt id="drizzlepac.resetbits.run">
-<tt class="descclassname">drizzlepac.resetbits.</tt><tt class="descname">run</tt><big>(</big><em>configobj=None</em><big>)</big><a class="headerlink" href="#drizzlepac.resetbits.run" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.resetbits.</code><code class="descname">run</code><span class="sig-paren">(</span><em>configobj=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/resetbits.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.resetbits.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Teal interface for running this code.</p>
 </dd></dl>
 
@@ -586,7 +557,7 @@ specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -601,12 +572,12 @@ specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

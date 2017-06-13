@@ -7,9 +7,11 @@
 from __future__ import absolute_import, division, print_function
 import os, sys
 import copy
+from distutils.version import LooseVersion
 
 import numpy as np
 #import pywcs
+import astropy
 from astropy import wcs as pywcs
 import astropy.coordinates as coords
 from astropy import units as u
@@ -25,6 +27,8 @@ import pyregion
 #import idlphot
 from . import tweakutils, util
 from .mapreg import _AuxSTWCS
+
+ASTROPY_VER_GE13 = LooseVersion(astropy.__version__) >= LooseVersion('1.3')
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
@@ -439,7 +443,7 @@ class ImageCatalog(Catalog):
         self.fnamenoext = self.fname if extind < 0 else self.fname[:extind]
         if self.wcs.extname == ('',None):
             self.wcs.extname = (0)
-        self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname)
+        self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname, memmap=False)
 
 
     def _combine_exclude_mask(self, mask):
@@ -465,7 +469,7 @@ class ImageCatalog(Catalog):
            basicFITScheck(reg_file_name):
             # likely we are dealing with a FITS file.
             # check that the file is a simple with 2 axes:
-            hdulist = fits.open(reg_file_name)
+            hdulist = fits.open(reg_file_name, memmap=False)
             extlist = get_extver_list(hdulist,extname=None)
             for ext in extlist:
                 usermask = hdulist[ext].data
@@ -529,7 +533,10 @@ class ImageCatalog(Catalog):
         #DEBUG:
         if mask is not None:
             fn = os.path.splitext(self.fname)[0] + '_srcfind_mask.fits'
-            fits.writeto(fn, mask.astype(dtype=np.uint8), clobber=True)
+            if ASTROPY_VER_GE13:
+                fits.writeto(fn, mask.astype(dtype=np.uint8), overwrite=True)
+            else:
+                fits.writeto(fn, mask.astype(dtype=np.uint8), clobber=True)
 
         return mask
 
@@ -629,7 +636,7 @@ class ImageCatalog(Catalog):
     def _compute_sigma(self):
         src_vals = self.source
         if np.any(np.isnan(self.source)):
-            src_vals = self.source[np.where(np.isnan(self.source)==False)]
+            src_vals = self.source[np.where(np.isnan(self.source) == False)]
         istats = imagestats.ImageStats(src_vals,nclip=3,
                                         fields='mode,stddev',binwidth=0.01)
         sigma = np.sqrt(2.0 * np.abs(istats.mode))

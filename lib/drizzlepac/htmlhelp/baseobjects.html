@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Base ImageObject Classes &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Base ImageObject Classes &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,22 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
-    <link rel="up" title="imageObject Classes" href="imageobject.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="ACS ImageObjects" href="acsobjects.html" />
     <link rel="prev" title="imageObject Classes" href="imageobject.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,11 +45,11 @@
         <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="imageobject.html" accesskey="U">imageObject Classes</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -59,22 +60,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="acsobjects.html"
                         title="next chapter">ACS ImageObjects</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/baseobjects.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/baseobjects.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -83,7 +83,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="base-imageobject-classes">
 <span id="baseimageobjects"></span><h1>Base ImageObject Classes<a class="headerlink" href="#base-imageobject-classes" title="Permalink to this headline">¶</a></h1>
@@ -93,36 +93,34 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="class">
 <dt id="drizzlepac.imageObject.baseImageObject">
-<em class="property">class </em><tt class="descclassname">drizzlepac.imageObject.</tt><tt class="descname">baseImageObject</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.imageObject.</code><code class="descname">baseImageObject</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Base ImageObject which defines the primary set of methods.</p>
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.buildERRmask">
-<tt class="descname">buildERRmask</tt><big>(</big><em>chip</em>, <em>dqarr</em>, <em>scale</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildERRmask" title="Permalink to this definition">¶</a></dt>
+<code class="descname">buildERRmask</code><span class="sig-paren">(</span><em>chip</em>, <em>dqarr</em>, <em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.buildERRmask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildERRmask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a weight mask from an input DQ array and an ERR array
 associated with the input image.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.buildEXPmask">
-<tt class="descname">buildEXPmask</tt><big>(</big><em>chip</em>, <em>dqarr</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildEXPmask" title="Permalink to this definition">¶</a></dt>
+<code class="descname">buildEXPmask</code><span class="sig-paren">(</span><em>chip</em>, <em>dqarr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.buildEXPmask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildEXPmask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a weight mask from an input DQ array and the exposure time
 per pixel for this chip.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.buildIVMmask">
-<tt class="descname">buildIVMmask</tt><big>(</big><em>chip</em>, <em>dqarr</em>, <em>scale</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildIVMmask" title="Permalink to this definition">¶</a></dt>
+<code class="descname">buildIVMmask</code><span class="sig-paren">(</span><em>chip</em>, <em>dqarr</em>, <em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.buildIVMmask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildIVMmask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a weight mask from an input DQ array and either an IVM array
 provided by the user or a self-generated IVM array derived from the
 flat-field reference file associated with the input image.</p>
@@ -130,7 +128,7 @@ flat-field reference file associated with the input image.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.buildMask">
-<tt class="descname">buildMask</tt><big>(</big><em>chip</em>, <em>bits=0</em>, <em>write=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildMask" title="Permalink to this definition">¶</a></dt>
+<code class="descname">buildMask</code><span class="sig-paren">(</span><em>chip</em>, <em>bits=0</em>, <em>write=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.buildMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.buildMask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build masks as specified in the user parameters found in the
 configObj object.</p>
 <p>We should overload this function in the instrument specific
@@ -142,13 +140,13 @@ should be masked out to get the best results in multidrizzle.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.clean">
-<tt class="descname">clean</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.clean" title="Permalink to this definition">¶</a></dt>
+<code class="descname">clean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.clean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.clean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes intermediate products generated for this imageObject.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.close" title="Permalink to this definition">¶</a></dt>
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close the object nicely and release all the data
 arrays from memory YOU CANT GET IT BACK, the pointers
 and data are gone so use the getData method to get
@@ -158,20 +156,20 @@ putData to reattach a new data array to the imageObject.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.findExtNum">
-<tt class="descname">findExtNum</tt><big>(</big><em>extname=None</em>, <em>extver=1</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.findExtNum" title="Permalink to this definition">¶</a></dt>
+<code class="descname">findExtNum</code><span class="sig-paren">(</span><em>extname=None</em>, <em>extver=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.findExtNum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.findExtNum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Find the extension number of the give extname and extver.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.find_DQ_extension">
-<tt class="descname">find_DQ_extension</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.find_DQ_extension" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_DQ_extension</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.find_DQ_extension"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.find_DQ_extension" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the suffix for the data quality extension and the name of the
 file which that DQ extension should be read from.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getAllData">
-<tt class="descname">getAllData</tt><big>(</big><em>extname=None</em>, <em>exclude=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getAllData" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getAllData</code><span class="sig-paren">(</span><em>extname=None</em>, <em>exclude=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getAllData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getAllData" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is meant to make it easier to attach ALL the data
 extensions of the image object so that we can write out copies of
 the original image nicer.</p>
@@ -187,7 +185,7 @@ the one you do not want overwritten.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getData">
-<tt class="descname">getData</tt><big>(</big><em>exten=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getData" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getData</code><span class="sig-paren">(</span><em>exten=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return just the data array from the specified extension
 fileutil is used instead of fits to account for non-
 FITS input images. openImage returns a fits object.</p>
@@ -195,18 +193,18 @@ FITS input images. openImage returns a fits object.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getExtensions">
-<tt class="descname">getExtensions</tt><big>(</big><em>extname='SCI'</em>, <em>section=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getExtensions" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getExtensions</code><span class="sig-paren">(</span><em>extname='SCI'</em>, <em>section=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getExtensions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getExtensions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the list of EXTVER values for extensions with name specified in extname.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getGain">
-<tt class="descname">getGain</tt><big>(</big><em>exten</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getGain" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getGain</code><span class="sig-paren">(</span><em>exten</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getGain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getGain" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getHeader">
-<tt class="descname">getHeader</tt><big>(</big><em>exten=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getHeader" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getHeader</code><span class="sig-paren">(</span><em>exten=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getHeader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return just the specified header extension fileutil
 is used instead of fits to account for non-FITS
 input images. openImage returns a fits object.</p>
@@ -214,7 +212,7 @@ input images. openImage returns a fits object.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getInstrParameter">
-<tt class="descname">getInstrParameter</tt><big>(</big><em>value</em>, <em>header</em>, <em>keyword</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getInstrParameter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getInstrParameter</code><span class="sig-paren">(</span><em>value</em>, <em>header</em>, <em>keyword</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getInstrParameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getInstrParameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method gets a instrument parameter from a
 pair of task parameters: a value, and a header keyword.</p>
 <dl class="docutils">
@@ -233,27 +231,27 @@ found, return None.</li>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getKeywordList">
-<tt class="descname">getKeywordList</tt><big>(</big><em>kw</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getKeywordList" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getKeywordList</code><span class="sig-paren">(</span><em>kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getKeywordList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getKeywordList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return lists of all attribute values for all active chips in the
 imageObject.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getNumpyType">
-<tt class="descname">getNumpyType</tt><big>(</big><em>irafType</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getNumpyType" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getNumpyType</code><span class="sig-paren">(</span><em>irafType</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getNumpyType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getNumpyType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the corresponding numpy data type.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getOutputName">
-<tt class="descname">getOutputName</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getOutputName" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getOutputName</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getOutputName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getOutputName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the name of the file or PyFITS object associated with that
 name, depending on the setting of self.inmemory.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getReadNoiseImage">
-<tt class="descname">getReadNoiseImage</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getReadNoiseImage" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getReadNoiseImage</code><span class="sig-paren">(</span><em>chip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getReadNoiseImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getReadNoiseImage" title="Permalink to this definition">¶</a></dt>
 <dd><p class="rubric">Notes</p>
 <p>Method for returning the readnoise image of a detector
 (in electrons).</p>
@@ -262,8 +260,7 @@ name, depending on the setting of self.inmemory.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Units:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">electrons</td>
+<tr class="field-odd field"><th class="field-name">Units:</th><td class="field-body">electrons</td>
 </tr>
 </tbody>
 </table>
@@ -271,7 +268,7 @@ name, depending on the setting of self.inmemory.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getdarkcurrent">
-<tt class="descname">getdarkcurrent</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getdarkcurrent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getdarkcurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
 <dd><p class="rubric">Notes</p>
 <p>Return the dark current for the detector.  This value
 will be contained within an instrument specific keyword.
@@ -281,8 +278,7 @@ of electrons.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Units:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">electrons</td>
+<tr class="field-odd field"><th class="field-name">Units:</th><td class="field-body">electrons</td>
 </tr>
 </tbody>
 </table>
@@ -290,7 +286,7 @@ of electrons.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getdarkimg">
-<tt class="descname">getdarkimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getdarkimg" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getdarkimg</code><span class="sig-paren">(</span><em>chip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getdarkimg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getdarkimg" title="Permalink to this definition">¶</a></dt>
 <dd><p class="rubric">Notes</p>
 <p>Return an array representing the dark image for the detector.</p>
 <p>The method will return an array of the same shape as the image.</p>
@@ -298,8 +294,7 @@ of electrons.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Units:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">electrons</td>
+<tr class="field-odd field"><th class="field-name">Units:</th><td class="field-body">electrons</td>
 </tr>
 </tbody>
 </table>
@@ -307,13 +302,12 @@ of electrons.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getexptimeimg">
-<tt class="descname">getexptimeimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getexptimeimg" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getexptimeimg</code><span class="sig-paren">(</span><em>chip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getexptimeimg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getexptimeimg" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>exptimeimg</strong> : numpy array</p>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>exptimeimg</strong> : numpy array</p>
 <blockquote class="last">
 <div><p>The method will return an array of the same shape as the image.</p>
 </div></blockquote>
@@ -329,8 +323,7 @@ EXP arrays, namely, WFC3/IR and NICMOS images.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Units:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">None</td>
+<tr class="field-odd field"><th class="field-name">Units:</th><td class="field-body">None</td>
 </tr>
 </tbody>
 </table>
@@ -338,14 +331,13 @@ EXP arrays, namely, WFC3/IR and NICMOS images.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getflat">
-<tt class="descname">getflat</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getflat" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getflat</code><span class="sig-paren">(</span><em>chip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getflat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getflat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method for retrieving a detector&#8217;s flat field.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first">flat: array</p>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">flat: array</p>
 <blockquote class="last">
 <div><p>This method will return an array the same shape as the image in
 <strong>units of electrons</strong>.</p>
@@ -358,7 +350,7 @@ EXP arrays, namely, WFC3/IR and NICMOS images.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getskyimg">
-<tt class="descname">getskyimg</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getskyimg" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getskyimg</code><span class="sig-paren">(</span><em>chip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getskyimg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getskyimg" title="Permalink to this definition">¶</a></dt>
 <dd><p class="rubric">Notes</p>
 <p>Return an array representing the sky image for the detector.  The value
 of the sky is what would actually be subtracted from the exposure by
@@ -367,8 +359,7 @@ the skysub step.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Units:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">electrons</td>
+<tr class="field-odd field"><th class="field-name">Units:</th><td class="field-body">electrons</td>
 </tr>
 </tbody>
 </table>
@@ -376,13 +367,13 @@ the skysub step.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.info">
-<tt class="descname">info</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.info" title="Permalink to this definition">¶</a></dt>
+<code class="descname">info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return fits information on the _image.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.putData">
-<tt class="descname">putData</tt><big>(</big><em>data=None</em>, <em>exten=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.putData" title="Permalink to this definition">¶</a></dt>
+<code class="descname">putData</code><span class="sig-paren">(</span><em>data=None</em>, <em>exten=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.putData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.putData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Now that we are removing the data from the object to save memory,
 we need something that cleanly puts the data array back into
 the object so that we can write out everything together  using
@@ -397,28 +388,28 @@ either extension number or a string like &#8216;sci,1&#8217;</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.returnAllChips">
-<tt class="descname">returnAllChips</tt><big>(</big><em>extname=None</em>, <em>exclude=None</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.returnAllChips" title="Permalink to this definition">¶</a></dt>
+<code class="descname">returnAllChips</code><span class="sig-paren">(</span><em>extname=None</em>, <em>exclude=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.returnAllChips"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.returnAllChips" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing all the chips which match the
 extname given minus those specified for exclusion (if any).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.saveVirtualOutputs">
-<tt class="descname">saveVirtualOutputs</tt><big>(</big><em>outdict</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.saveVirtualOutputs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">saveVirtualOutputs</code><span class="sig-paren">(</span><em>outdict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.saveVirtualOutputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.saveVirtualOutputs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assign in-memory versions of generated products for this imageObject
 based on dictionary &#8216;outdict&#8217;.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.set_mt_wcs">
-<tt class="descname">set_mt_wcs</tt><big>(</big><em>image</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.set_mt_wcs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_mt_wcs</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.set_mt_wcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.set_mt_wcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the WCS for this image based on the WCS information from
 another imageObject.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.set_units">
-<tt class="descname">set_units</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.set_units" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_units</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.set_units"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.set_units" title="Permalink to this definition">¶</a></dt>
 <dd><p>Record the units for this image, both BUNITS from header and
 in_units as needed internally. This method will be defined
 specifically for each instrument.</p>
@@ -426,32 +417,32 @@ specifically for each instrument.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.set_wtscl">
-<tt class="descname">set_wtscl</tt><big>(</big><em>chip</em>, <em>wtscl_par</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.set_wtscl" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_wtscl</code><span class="sig-paren">(</span><em>chip</em>, <em>wtscl_par</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.set_wtscl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.set_wtscl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the value of the wt_scl parameter as needed for drizzling.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.updateContextImage">
-<tt class="descname">updateContextImage</tt><big>(</big><em>contextpar</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateContextImage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reset the name of the context image to None if parameter <em class="xref py py-obj">context</em> == False.</p>
+<code class="descname">updateContextImage</code><span class="sig-paren">(</span><em>contextpar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.updateContextImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateContextImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the name of the context image to None if parameter <code class="xref py py-obj docutils literal"><span class="pre">context</span></code> == False.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.updateData">
-<tt class="descname">updateData</tt><big>(</big><em>exten</em>, <em>data</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateData" title="Permalink to this definition">¶</a></dt>
+<code class="descname">updateData</code><span class="sig-paren">(</span><em>exten</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.updateData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write out updated data and header to
 the original input file for this object.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.updateIVMName">
-<tt class="descname">updateIVMName</tt><big>(</big><em>ivmname</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateIVMName" title="Permalink to this definition">¶</a></dt>
+<code class="descname">updateIVMName</code><span class="sig-paren">(</span><em>ivmname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.updateIVMName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateIVMName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update outputNames for image with user-supplied IVM filename.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.updateOutputValues">
-<tt class="descname">updateOutputValues</tt><big>(</big><em>output_wcs</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateOutputValues" title="Permalink to this definition">¶</a></dt>
+<code class="descname">updateOutputValues</code><span class="sig-paren">(</span><em>output_wcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.updateOutputValues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.updateOutputValues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Copy info from output WCSObject into outputnames for each chip
 for use in creating outputimage object.</p>
 </dd></dl>
@@ -460,8 +451,8 @@ for use in creating outputimage object.</p>
 
 <dl class="class">
 <dt id="drizzlepac.imageObject.imageObject">
-<em class="property">class </em><tt class="descclassname">drizzlepac.imageObject.</tt><tt class="descname">imageObject</tt><big>(</big><em>filename</em>, <em>group=None</em>, <em>inmemory=False</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.imageObject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.imageObject.baseImageObject" title="drizzlepac.imageObject.baseImageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.baseImageObject</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.imageObject.</code><code class="descname">imageObject</code><span class="sig-paren">(</span><em>filename</em>, <em>group=None</em>, <em>inmemory=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#imageObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.imageObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.imageObject.baseImageObject" title="drizzlepac.imageObject.baseImageObject"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.baseImageObject</span></code></a></p>
 <p>This returns an imageObject that contains all the
 necessary information to run the image file through
 any multidrizzle function. It is essentially a
@@ -471,14 +462,14 @@ the entire image file, and some that might pertain
 only to the specific chip.</p>
 <dl class="method">
 <dt id="drizzlepac.imageObject.imageObject.compute_wcslin">
-<tt class="descname">compute_wcslin</tt><big>(</big><em>undistort=True</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.imageObject.compute_wcslin" title="Permalink to this definition">¶</a></dt>
+<code class="descname">compute_wcslin</code><span class="sig-paren">(</span><em>undistort=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#imageObject.compute_wcslin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.imageObject.compute_wcslin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the undistorted WCS based solely on the known distortion
 model information associated with the WCS.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.imageObject.setInstrumentParameters">
-<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.imageObject.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setInstrumentParameters</code><span class="sig-paren">(</span><em>instrpars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#imageObject.setInstrumentParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.imageObject.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define instrument-specific parameters for use in the code.
 By definition, this definition will need to be overridden by
 methods defined in each instrument&#8217;s sub-class.</p>
@@ -486,7 +477,7 @@ methods defined in each instrument&#8217;s sub-class.</p>
 
 <dl class="method">
 <dt id="drizzlepac.imageObject.imageObject.set_units">
-<tt class="descname">set_units</tt><big>(</big><em>chip</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.imageObject.set_units" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_units</code><span class="sig-paren">(</span><em>chip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#imageObject.set_units"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.imageObject.set_units" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define units for this image.</p>
 </dd></dl>
 
@@ -494,11 +485,11 @@ methods defined in each instrument&#8217;s sub-class.</p>
 
 <dl class="class">
 <dt id="drizzlepac.imageObject.WCSObject">
-<em class="property">class </em><tt class="descclassname">drizzlepac.imageObject.</tt><tt class="descname">WCSObject</tt><big>(</big><em>filename</em>, <em>suffix='_drz'</em><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.WCSObject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.imageObject.baseImageObject" title="drizzlepac.imageObject.baseImageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.baseImageObject</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.imageObject.</code><code class="descname">WCSObject</code><span class="sig-paren">(</span><em>filename</em>, <em>suffix='_drz'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#WCSObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.WCSObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.imageObject.baseImageObject" title="drizzlepac.imageObject.baseImageObject"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.baseImageObject</span></code></a></p>
 <dl class="method">
 <dt id="drizzlepac.imageObject.WCSObject.restore_wcs">
-<tt class="descname">restore_wcs</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.imageObject.WCSObject.restore_wcs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">restore_wcs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#WCSObject.restore_wcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.WCSObject.restore_wcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -511,7 +502,7 @@ methods defined in each instrument&#8217;s sub-class.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -526,13 +517,13 @@ methods defined in each instrument&#8217;s sub-class.</p>
         <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="imageobject.html" >imageObject Classes</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

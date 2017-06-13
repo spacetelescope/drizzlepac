@@ -1,0 +1,768 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.photeq &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.16 (05-June-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.photeq</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A tool to adjust data values of images by equalizing each chip&#39;s PHOTFLAM value</span>
+<span class="sd">to a single common value so that all chips can be treated equally</span>
+<span class="sd">by `AstroDrizzle`.</span>
+
+<span class="sd">:Authors: Mihai Cara</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;photeq&#39;</span><span class="p">]</span>
+<span class="n">__taskname__</span> <span class="o">=</span> <span class="s1">&#39;drizzlepac.photeq&#39;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;0.2&#39;</span>
+<span class="n">__vdate__</span> <span class="o">=</span> <span class="s1">&#39;06-Nov-2015&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Mihai Cara&#39;</span>
+
+<span class="c1"># HISTORY:</span>
+<span class="c1"># v0.1 - 14-Aug-2015 - Initial release</span>
+<span class="c1"># v0.2 - 06-Nov-2015 - Added doctstrings, logging, TEAL interface</span>
+
+
+<span class="c1"># STDLIB</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># THIRD PARTY</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">teal</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">teal</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># LOCAL</span>
+<span class="kn">from</span> <span class="nn">stsci.skypac</span> <span class="k">import</span> <span class="n">parseat</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+
+<span class="c1"># create logger</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">captureWarnings</span><span class="p">(</span><span class="n">capture</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">_log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+<span class="n">_log_formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="c1"># create console handler and set level to debug</span>
+<span class="n">_sh_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+<span class="n">_sh_log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+<span class="n">_sh_log</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">_log_formatter</span><span class="p">)</span>
+
+<span class="c1"># add _sh_log to logger</span>
+<span class="n">_log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">_sh_log</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_mlinfo</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_mlwarn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="photeq"><a class="viewcode-back" href="../../photeq.html#drizzlepac.photeq.photeq">[docs]</a><span class="k">def</span> <span class="nf">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="s1">&#39;*_flt.fits&#39;</span><span class="p">,</span> <span class="n">sciext</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">,</span> <span class="n">errext</span><span class="o">=</span><span class="s1">&#39;ERR&#39;</span><span class="p">,</span>
+           <span class="n">ref_phot</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref_phot_ext</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">phot_kwd</span><span class="o">=</span><span class="s1">&#39;PHOTFLAM&#39;</span><span class="p">,</span> <span class="n">aux_phot_kwd</span><span class="o">=</span><span class="s1">&#39;PHOTFNU&#39;</span><span class="p">,</span>
+           <span class="n">search_primary</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+           <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="s1">&#39;photeq.log&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adjust data values of images by equalizing each chip&#39;s PHOTFLAM value</span>
+<span class="sd">    to a single common value so that all chips can be treated equally</span>
+<span class="sd">    by `AstroDrizzle`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    files : str (Default = ``&#39;*_flt.fits&#39;``)</span>
+
+<span class="sd">        A string containing one of the following:</span>
+
+<span class="sd">            * a comma-separated list of valid science image file names,</span>
+<span class="sd">              e.g.: ``&#39;j1234567q_flt.fits, j1234568q_flt.fits&#39;``;</span>
+
+<span class="sd">            * an @-file name, e.g., ``&#39;@files_to_match.txt&#39;``. See notes</span>
+<span class="sd">              section for details on the format of the @-files.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            **Valid science image file names** are:</span>
+
+<span class="sd">            * file names of existing FITS, GEIS, or WAIVER FITS files;</span>
+
+<span class="sd">            * partial file names containing wildcard characters, e.g.,</span>
+<span class="sd">              ``&#39;*_flt.fits&#39;``;</span>
+
+<span class="sd">            * Association (ASN) tables (must have ``_asn``, or ``_asc``</span>
+<span class="sd">              suffix), e.g., ``&#39;j12345670_asn.fits&#39;``.</span>
+
+<span class="sd">    sciext : str (Default = &#39;SCI&#39;)</span>
+<span class="sd">        Extension *name* of extensions whose data and/or headers should</span>
+<span class="sd">        be corrected.</span>
+
+<span class="sd">    errext : str (Default = &#39;ERR&#39;)</span>
+<span class="sd">        Extension *name* of the extensions containing corresponding error</span>
+<span class="sd">        arrays. Error arrays are corrected in the same way as science data.</span>
+
+<span class="sd">    ref_phot : float, None (Default = None)</span>
+<span class="sd">        A number indicating the new value of PHOTFLAM or PHOTFNU</span>
+<span class="sd">        (set by &#39;phot_kwd&#39;) to which the data should be adjusted.</span>
+
+<span class="sd">    ref_phot_ext : int, str, tuple, None (Default = None)</span>
+<span class="sd">        Extension from which the `photeq` should get the reference photometric</span>
+<span class="sd">        value specified by the `phot_kwd` parameter. This parameter is ignored</span>
+<span class="sd">        if `ref_phot` **is not** `None`. When `ref_phot_ext` is `None`, then</span>
+<span class="sd">        the reference inverse sensitivity value will be picked from the</span>
+<span class="sd">        first `sciext` of the first input image containing `phot_kwd`.</span>
+
+<span class="sd">    phot_kwd : str (Default = &#39;PHOTFLAM&#39;)</span>
+<span class="sd">        Specifies the primary keyword which contains inverse sensitivity</span>
+<span class="sd">        (e.g., PHOTFLAM). It is used to compute conversion factors by</span>
+<span class="sd">        which data should be rescaled.</span>
+
+<span class="sd">    aux_phot_kwd : str, None, list of str (Default = &#39;PHOTFNU&#39;)</span>
+<span class="sd">        Same as `phot_kwd` but describes *other* photometric keyword(s)</span>
+<span class="sd">        that should be corrected by inverse of the scale factor used to correct</span>
+<span class="sd">        data. These keywords are *not* used to compute conversion factors.</span>
+<span class="sd">        Multiple keywords can be specified as a Python list of strings:</span>
+<span class="sd">        ``[&#39;PHOTFNU&#39;, &#39;PHOTOHMY&#39;]``.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            If specifying multiple secondary photometric keywords in the TEAL</span>
+<span class="sd">            interface, use a comma-separated list of keywords.</span>
+
+<span class="sd">    search_primary : bool (Default = True)</span>
+<span class="sd">        Specifies whether to first search the primary header for the</span>
+<span class="sd">        presence of `phot_kwd` keyword and compute conversion factor based on</span>
+<span class="sd">        that value. This is (partially) ignored when `ref_phot` is not `None` in</span>
+<span class="sd">        the sense that the value specified by `ref_phot` will be used as the</span>
+<span class="sd">        reference *but* in all images primary will be searched for `phot_kwd`</span>
+<span class="sd">        and `aux_phot_kwd` and those values will be corrected</span>
+<span class="sd">        (if ``search_primary=True``).</span>
+
+<span class="sd">    readonly : bool (Default = True)</span>
+<span class="sd">        If `True`, `photeq` will not modify input files (nevertheless, it will</span>
+<span class="sd">        convert input GEIS or WAVERED FITS files to MEF and could overwrite</span>
+<span class="sd">        existing MEF files if `clobber` is set to `True`).</span>
+<span class="sd">        The (console or log file) output however will be identical to the case</span>
+<span class="sd">        when ``readonly=False`` and it can be examined before applying these</span>
+<span class="sd">        changes to input files.</span>
+
+<span class="sd">    clobber : bool (Default = False)</span>
+<span class="sd">        Overwrite existing MEF files when converting input WAVERED FITS or GEIS</span>
+<span class="sd">        to MEF.</span>
+
+<span class="sd">    logfile : str, None (Default = &#39;photeq.log&#39;)</span>
+<span class="sd">        File name of the log file.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    By default, `photeq` will search for the first inverse sensitivity</span>
+<span class="sd">    value (given by the header keyword specified by the `phot_kwd` parameter,</span>
+<span class="sd">    e.g., PHOTFLAM or PHOTFNU) found in the input images and it will equalize</span>
+<span class="sd">    all other images to this reference value.</span>
+
+<span class="sd">    It is possible to tell `photeq` to look for the reference inverse</span>
+<span class="sd">    sensitivity value only in a specific extension of input images, e.g.: 3,</span>
+<span class="sd">    (&#39;sci&#39;,3), etc. This can be done by setting `ref_phot_ext` to a specific</span>
+<span class="sd">    extension. This may be useful, for example, for WFPC2 images: WF3 chip was</span>
+<span class="sd">    one of the better calibrated chips, and so, if one prefers to have</span>
+<span class="sd">    inverse sensitivities equalized to the inverse sensitivity of the WF3 chip,</span>
+<span class="sd">    one can set ``ref_phot_ext=3``.</span>
+
+<span class="sd">    Alternatively, one can provide their own reference inverse sensitivity</span>
+<span class="sd">    value to which all other images should be &quot;equalized&quot; through the</span>
+<span class="sd">    parameter `ref_phot`.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">       Default parameter values (except for `files`, `readonly`, and `clobber`)</span>
+<span class="sd">       should be acceptable for most HST images.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">       If images are intended to be used with `AstroDrizzle`, it is recommended</span>
+<span class="sd">       that sky background measurement be performed on &quot;equalized&quot; images as</span>
+<span class="sd">       the `photeq` is not aware of sky user keyword in the image headers and</span>
+<span class="sd">       thus it cannot correct sky values already recorded in the headers.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    #. In most cases the default parameters should suffice:</span>
+
+<span class="sd">           &gt;&gt;&gt; from drizzlepac import photeq</span>
+<span class="sd">           &gt;&gt;&gt; photeq.photeq(files=&#39;*_flt.fits&#39;, readonly=False)</span>
+
+<span class="sd">    #. If the re-calibration needs to be done on PHOTFNU rather than</span>
+<span class="sd">       PHOTFLAM, then:</span>
+
+<span class="sd">           &gt;&gt;&gt; photeq.photeq(files=&#39;*_flt.fits&#39;, ref_phot=&#39;PHOTFNU&#39;,</span>
+<span class="sd">           ... aux_phot_kwd=&#39;PHOTFLAM&#39;)</span>
+
+<span class="sd">    #. If for WFPC2 data one desires that PHOTFLAM from WF3 be used as the</span>
+<span class="sd">       reference in WFPC2 images, then:</span>
+
+<span class="sd">           &gt;&gt;&gt; photeq.photeq(files=&#39;*_flt.fits&#39;, ref_phot_ext=3) # or (&#39;sci&#39;,3)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Time it</span>
+    <span class="n">runtime_begin</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+    <span class="c1"># check that input file name is a string:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;files&#39; must be a comma-separated list of &quot;</span>
+                        <span class="s2">&quot; file names&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Set-up log files:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">logfile</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># first, in case there are any &quot;leftover&quot; file handlers,</span>
+        <span class="c1"># close and remove them:</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">_log</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_sh_log</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">):</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">_log</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+        <span class="c1"># create file handler:</span>
+        <span class="n">log_formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s1">&#39;[</span><span class="si">%(levelname)s</span><span class="s1">:] </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">log_file_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">logfile</span><span class="p">)</span>
+        <span class="n">log_file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">log_formatter</span><span class="p">)</span>
+        <span class="c1"># add log_file_handler to logger</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">log_file_handler</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">logfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported &#39;logfile&#39; type&quot;</span><span class="p">)</span>
+
+    <span class="c1">#  BEGIN:</span>
+    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;***** </span><span class="si">{0}</span><span class="s2"> started on </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">runtime_begin</span><span class="p">))</span>
+    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;      Version </span><span class="si">{0}</span><span class="s2"> (</span><span class="si">{1}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">__version__</span><span class="p">,</span> <span class="n">__vdate__</span><span class="p">))</span>
+
+    <span class="c1"># check that extension names are strings (or None for error ext):</span>
+    <span class="k">if</span> <span class="n">sciext</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sci_ext4parse</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+        <span class="n">ext2get</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sciext</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;sciext&#39; must be a string or None&quot;</span><span class="p">)</span>
+        <span class="n">sciext</span> <span class="o">=</span> <span class="n">sciext</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">sciext</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;PRIMARY&#39;</span><span class="p">:</span>
+            <span class="n">sciext</span> <span class="o">=</span> <span class="n">sciext</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">ext2get</span> <span class="o">=</span> <span class="p">(</span><span class="n">sciext</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ext2get</span> <span class="o">=</span> <span class="p">(</span><span class="n">sciext</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+
+        <span class="n">sci_ext4parse</span> <span class="o">=</span> <span class="n">ext2get</span>
+
+    <span class="k">if</span> <span class="n">errext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">errext</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;errext&#39; must be a string or None&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check that phot_kwd is supported:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;phot_kwd&#39; must be a string&quot;</span><span class="p">)</span>
+    <span class="n">phot_kwd</span> <span class="o">=</span> <span class="n">phot_kwd</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+    <span class="c1"># check that ref_phot_ext has correct type:</span>
+    <span class="k">if</span> <span class="n">ref_phot_ext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> \
+       <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> \
+        <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> \
+            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">))):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported &#39;ref_phot_ext&#39; type&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">ref_phot_ext</span> <span class="o">=</span> <span class="p">(</span><span class="n">ref_phot_ext</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">aux_phot_kwd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">aux_phot_kwd</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">aux_phot_kwd</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">aux_phot_kwd</span> <span class="o">=</span> <span class="p">[</span><span class="n">aux_phot_kwd</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="n">phot_kwd</span> <span class="o">==</span> <span class="n">aux_phot_kwd</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Auxiliary photometric keyword must be different &quot;</span>
+                             <span class="s2">&quot;from the main photometric keyword &#39;phot_kwd&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">aux_phot_kwd</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">phot</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">phot</span> <span class="ow">in</span> <span class="n">aux_phot_kwd</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;aux_phot_kwd&#39; must be a string, list of &quot;</span>
+                        <span class="s2">&quot;strings, or None&quot;</span><span class="p">)</span>
+        <span class="n">aux_phot_kwd</span> <span class="o">=</span> <span class="p">[</span><span class="n">phot</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="k">for</span> <span class="n">phot</span> <span class="ow">in</span> <span class="n">aux_phot_kwd</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ref_phot</span> <span class="ow">in</span> <span class="n">aux_phot_kwd</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Auxiliary photometric keyword(s) must be &quot;</span>
+                             <span class="s2">&quot;different from the main photometric keyword &quot;</span>
+                             <span class="s2">&quot;&#39;phot_kwd&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;aux_phot_kwd&#39; must be a string, list of &quot;</span>
+                        <span class="s2">&quot;strings, or None&quot;</span><span class="p">)</span>
+
+    <span class="c1"># read input file list:</span>
+    <span class="n">fl</span> <span class="o">=</span> <span class="n">parseat</span><span class="o">.</span><span class="n">parse_cs_line</span><span class="p">(</span><span class="n">csline</span><span class="o">=</span><span class="n">files</span><span class="p">,</span> <span class="n">default_ext</span><span class="o">=</span><span class="n">sci_ext4parse</span><span class="p">,</span>
+                               <span class="n">im_fmode</span><span class="o">=</span><span class="s1">&#39;readonly&#39;</span> <span class="k">if</span> <span class="n">readonly</span> <span class="k">else</span> <span class="s1">&#39;update&#39;</span><span class="p">,</span>
+                               <span class="n">clobber</span><span class="o">=</span><span class="n">clobber</span><span class="p">,</span> <span class="n">fnamesOnly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                               <span class="n">doNotOpenDQ</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># check if user supplied file extensions, set them to the sciext,</span>
+    <span class="c1"># and warn that they will be ignored:</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fl</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">f</span><span class="o">.</span><span class="n">fext</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">sci_ext4parse</span><span class="p">:</span>
+            <span class="n">_mlwarn</span><span class="p">(</span><span class="s2">&quot;WARNING: Extension specifications for file </span><span class="si">{:s}</span><span class="s2"> &quot;</span>
+                    <span class="s2">&quot;will be ignored. Using all </span><span class="si">{:s}</span><span class="s2"> extensions instead.&quot;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="p">,</span>  <span class="s1">&#39;image-like&#39;</span> <span class="k">if</span> <span class="n">sciext</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> \
+                            <span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">ext2str</span><span class="p">(</span><span class="n">sciext</span><span class="p">,</span>
+                                                        <span class="n">default_extver</span><span class="o">=</span><span class="kc">None</span><span class="p">))))</span>
+
+    <span class="c1"># find the reference PHOTFLAM/PHOTNU:</span>
+    <span class="n">flc</span> <span class="o">=</span> <span class="n">fl</span><span class="p">[:]</span>
+    <span class="n">ref_hdu</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ref_ext</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ref_user</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">ref_phot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ref_user</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flc</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">convert2ImageRef</span><span class="p">()</span>
+
+            <span class="c1"># get primary hdu:</span>
+            <span class="n">pri_hdu</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># find all valid extensions:</span>
+            <span class="k">if</span> <span class="n">ref_phot_ext</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sciext</span> <span class="o">==</span> <span class="s1">&#39;PRIMARY&#39;</span><span class="p">:</span>
+                    <span class="n">extnum</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">extnum</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_ext_list</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">sciext</span><span class="p">)</span>
+
+                <span class="n">is_pri_hdu</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span> <span class="ow">is</span> <span class="n">pri_hdu</span> <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extnum</span><span class="p">]</span>
+
+                <span class="c1"># if necessary, add primary header to the hdu list:</span>
+                <span class="k">if</span> <span class="n">search_primary</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">pri_index</span> <span class="o">=</span> <span class="n">is_pri_hdu</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="n">extnum</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">extnum</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pri_index</span><span class="p">))</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">extnum</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">extnum</span> <span class="o">=</span> <span class="p">[</span><span class="n">ref_phot_ext</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extnum</span><span class="p">:</span>
+                <span class="n">hdu</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">phot_kwd</span> <span class="ow">in</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+                    <span class="n">ref_phot</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">phot_kwd</span><span class="p">]</span>
+                    <span class="n">ref_ext</span> <span class="o">=</span> <span class="n">ext</span>
+                    <span class="n">ref_hdu</span> <span class="o">=</span> <span class="n">hdu</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">ref_phot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_mlwarn</span><span class="p">(</span><span class="s2">&quot;WARNING: Could not find specified inverse &quot;</span>
+                        <span class="s2">&quot;         sensitivity keyword &#39;</span><span class="si">{:s}</span><span class="s2">&#39;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="s2">&quot;         in any of the </span><span class="si">{}</span><span class="s2"> extensions of file &#39;</span><span class="si">{}</span><span class="s2">&#39;.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="s2">&quot;         This input file will be ignored.&quot;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="s1">&#39;image-like&#39;</span> <span class="k">if</span> <span class="n">sciext</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> \
+                                <span class="s2">&quot;</span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">ext2str</span><span class="p">(</span><span class="n">sciext</span><span class="p">,</span>
+                                                            <span class="n">default_extver</span><span class="o">=</span><span class="kc">None</span><span class="p">)),</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">original_fname</span><span class="p">)))</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">release_all_images</span><span class="p">()</span>
+                <span class="n">fl</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">ref_phot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not find the inverse sensitivity keyword &quot;</span>
+                           <span class="s2">&quot;&#39;</span><span class="si">{:s}</span><span class="s2">&#39; in the specified headers of &quot;</span>
+                           <span class="s2">&quot;the input image(s).</span><span class="se">\n</span><span class="s2">Cannot continue.&quot;</span>
+                           <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">))</span>
+
+    <span class="n">aux_phot_kwd_list</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">aux_phot_kwd</span><span class="p">)</span>
+
+    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">PRIMARY PHOTOMETRIC KEYWORD: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">))</span>
+    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;SECONDARY PHOTOMETRIC KEYWORD(S): </span><span class="si">{:s}</span><span class="s2">&quot;</span>
+              <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">aux_phot_kwd_list</span> <span class="k">if</span> <span class="n">aux_phot_kwd_list</span> <span class="k">else</span> <span class="s1">&#39;None&#39;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">ref_user</span><span class="p">:</span>
+        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;REFERENCE VALUE PROVIDED BY USER: &#39;</span><span class="si">{:s}</span><span class="s2">&#39;=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="n">ref_phot</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;REFERENCE VALUE FROM FILE: &#39;</span><span class="si">{:s}</span><span class="s2">[</span><span class="si">{:s}</span><span class="s2">]&#39;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">original_fname</span><span class="p">),</span>
+                          <span class="n">utils</span><span class="o">.</span><span class="n">ext2str</span><span class="p">(</span><span class="n">ref_ext</span><span class="p">)))</span>
+        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;REFERENCE &#39;</span><span class="si">{:s}</span><span class="s2">&#39; VALUE IS: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="n">ref_phot</span><span class="p">))</span>
+
+    <span class="c1"># equalize PHOTFLAM/PHOTNU</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fl</span><span class="p">:</span>
+        <span class="c1"># open the file if necessary:</span>
+        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">fnamesOnly</span><span class="p">:</span>
+            <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Processing file &#39;</span><span class="si">{:s}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="p">))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">convert2ImageRef</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Processing file &#39;</span><span class="si">{:s}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">original_fname</span><span class="p">))</span>
+
+        <span class="c1"># first, see if photflam is in the primary header and save this value:</span>
+        <span class="n">pri_conv</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">search_primary</span><span class="p">:</span>
+            <span class="n">whdu</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">phot_kwd</span> <span class="ow">in</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;   * Primary header:&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">whdu</span> <span class="ow">is</span> <span class="n">ref_hdu</span><span class="p">:</span>
+                    <span class="n">pri_conv</span> <span class="o">=</span> <span class="mf">1.0</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - &#39;</span><span class="si">{}</span><span class="s2">&#39; = </span><span class="si">{}</span><span class="s2"> found in the primary header.&quot;</span>
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">phot_kwd</span><span class="p">]))</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Data conversion factor based on primary &quot;</span>
+                              <span class="s2">&quot;header: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pri_conv</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - &#39;</span><span class="si">{}</span><span class="s2">&#39; found in the primary header.&quot;</span>
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">))</span>
+                    <span class="n">pri_conv</span> <span class="o">=</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">phot_kwd</span><span class="p">]</span> <span class="o">/</span> <span class="n">ref_phot</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Setting </span><span class="si">{:s}</span><span class="s2"> in the primary header to </span><span class="si">{}</span><span class="s2"> &quot;</span>
+                              <span class="s2">&quot;(old value was </span><span class="si">{}</span><span class="s2">)&quot;</span>
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="n">ref_phot</span><span class="p">,</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">phot_kwd</span><span class="p">]))</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Data conversion factor based on primary &quot;</span>
+                            <span class="s2">&quot;header: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pri_conv</span><span class="p">))</span>
+                    <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">phot_kwd</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref_phot</span>
+
+            <span class="c1"># correct the &quot;other&quot; photometric keyword, if present:</span>
+            <span class="k">if</span> <span class="n">pri_conv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">whdu</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ref_hdu</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">aux_kwd</span> <span class="ow">in</span> <span class="n">aux_phot_kwd</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">aux_kwd</span> <span class="ow">in</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+                        <span class="n">old_aux_phot</span> <span class="o">=</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">aux_kwd</span><span class="p">]</span>
+                        <span class="n">new_aux_phot</span> <span class="o">=</span> <span class="n">old_aux_phot</span> <span class="o">/</span> <span class="n">pri_conv</span>
+                        <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">aux_kwd</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_aux_phot</span>
+                        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Setting </span><span class="si">{:s}</span><span class="s2"> in the primary header &quot;</span>
+                                <span class="s2">&quot;to </span><span class="si">{}</span><span class="s2"> (old value was </span><span class="si">{}</span><span class="s2">)&quot;</span>
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">aux_kwd</span><span class="p">,</span> <span class="n">new_aux_phot</span><span class="p">,</span> <span class="n">old_aux_phot</span><span class="p">))</span>
+
+            <span class="c1"># process data and error arrays when &#39;sciext&#39; was specifically set to</span>
+            <span class="c1"># &#39;PRIMARY&#39;:</span>
+            <span class="k">if</span> <span class="n">sciext</span> <span class="o">==</span> <span class="s1">&#39;PRIMARY&#39;</span> <span class="ow">and</span> <span class="n">pri_conv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">has_data</span> <span class="o">=</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">whdu</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="ow">and</span>
+                            <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+
+                <span class="c1"># correct data:</span>
+                <span class="k">if</span> <span class="n">has_data</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">whdu</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">):</span>
+                        <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="n">pri_conv</span>
+                        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Data have been multiplied by </span><span class="si">{}</span><span class="s2">&quot;</span>
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pri_conv</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">_mlwarn</span><span class="p">(</span><span class="s2">&quot;WARNING: Data not converted because it is of &quot;</span>
+                                <span class="s2">&quot;non-floating point type.&quot;</span><span class="p">)</span>
+
+                <span class="c1"># correct error array:</span>
+                <span class="k">if</span> <span class="n">errext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">eext</span> <span class="o">=</span> <span class="p">(</span><span class="n">errext</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">whdu</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="n">eext</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="n">_mlwarn</span><span class="p">(</span><span class="s2">&quot;     - WARNING: Error extension </span><span class="si">{:s}</span><span class="s2"> not found.&quot;</span>
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">ext2str</span><span class="p">(</span><span class="n">eext</span><span class="p">)))</span>
+
+                        <span class="n">f</span><span class="o">.</span><span class="n">release_all_images</span><span class="p">()</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">whdu</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">whdu</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">):</span>
+                            <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="n">pri_conv</span>
+                            <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Error array (ext=</span><span class="si">{}</span><span class="s2">) has been &quot;</span>
+                                    <span class="s2">&quot;multiplied by </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">eext</span><span class="p">,</span> <span class="n">pri_conv</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Error array in extension </span><span class="si">{:s}</span><span class="s2"> &quot;</span>
+                                    <span class="s2">&quot;contains non-floating point data.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                    <span class="s2">&quot;       Skipping this extension&quot;</span>
+                                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">ext2str</span><span class="p">(</span><span class="n">ext</span><span class="p">)))</span>
+
+                <span class="n">f</span><span class="o">.</span><span class="n">release_all_images</span><span class="p">()</span>
+                <span class="k">continue</span>
+
+        <span class="c1"># find all valid extensions:</span>
+        <span class="n">extnum</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_ext_list</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">sciext</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extnum</span><span class="p">:</span>
+            <span class="n">whdu</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span>
+            <span class="n">conv</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">whdu</span> <span class="ow">is</span> <span class="n">ref_hdu</span><span class="p">:</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;   * EXT: </span><span class="si">{}</span><span class="s2"> - This is the </span><span class="se">\&quot;</span><span class="s2">reference</span><span class="se">\&quot;</span><span class="s2"> extension.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="s2">&quot;          Nothing to do. Skipping this extension...&quot;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+                <span class="k">continue</span>
+
+            <span class="n">has_data</span> <span class="o">=</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">whdu</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="ow">and</span>
+                        <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">has_data</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">whdu</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">):</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;   * EXT: </span><span class="si">{}</span><span class="s2"> contains non-floating point data. &quot;</span>
+                        <span class="s2">&quot;Skipping this extension&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+
+            <span class="c1"># find all auxiliary photometric keywords present in the header:</span>
+            <span class="n">paux</span> <span class="o">=</span> <span class="p">[</span><span class="n">aux_kwd</span> <span class="k">for</span> <span class="n">aux_kwd</span> <span class="ow">in</span> <span class="n">aux_phot_kwd</span> <span class="k">if</span> <span class="n">aux_kwd</span> \
+                    <span class="ow">in</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">phot_kwd</span> <span class="ow">in</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">:</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;   * EXT: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+                <span class="n">old_phot</span> <span class="o">=</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">phot_kwd</span><span class="p">]</span>
+                <span class="n">conv</span> <span class="o">=</span> <span class="n">old_phot</span> <span class="o">/</span> <span class="n">ref_phot</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Setting </span><span class="si">{:s}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2"> (old value was </span><span class="si">{}</span><span class="s2">)&quot;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="n">ref_phot</span><span class="p">,</span> <span class="n">old_phot</span><span class="p">))</span>
+                <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">phot_kwd</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref_phot</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Computed conversion factor for data: </span><span class="si">{}</span><span class="s2">&quot;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">conv</span><span class="p">))</span>
+
+            <span class="k">elif</span> <span class="n">pri_conv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;   * EXT: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - &#39;</span><span class="si">{:s}</span><span class="s2"> not found. Skipping this extension...&quot;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">))</span>
+                <span class="k">continue</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;   * EXT: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+
+                <span class="c1"># if paux:</span>
+                    <span class="c1"># print(&quot;ERROR: Primary photometric keyword (&#39;{:s}&#39;) is &quot;</span>
+                          <span class="c1"># &quot;missing but\n       the secondary keywords (&#39;{:s}&#39;) &quot;</span>
+                          <span class="c1"># &quot;are present. This extension cannot be processed.&quot;</span>
+                          <span class="c1"># .format(phot_kwd, &#39;,&#39;.join(paux)))</span>
+                    <span class="c1"># continue</span>
+
+                <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - &#39;</span><span class="si">{:s}</span><span class="s2"> not found. Using conversion factor &quot;</span>
+                        <span class="s2">&quot;based</span><span class="se">\n</span><span class="s2">       on the primary header: </span><span class="si">{}</span><span class="s2">&quot;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">phot_kwd</span><span class="p">,</span> <span class="n">pri_conv</span><span class="p">))</span>
+                <span class="n">conv</span> <span class="o">=</span> <span class="n">pri_conv</span>
+
+            <span class="c1"># correct the &quot;other&quot; photometric keyword, if present:</span>
+            <span class="k">if</span> <span class="n">conv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">aux_kwd</span> <span class="ow">in</span> <span class="n">paux</span><span class="p">:</span>
+                    <span class="n">old_aux_phot</span> <span class="o">=</span> <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">aux_kwd</span><span class="p">]</span>
+                    <span class="n">new_aux_phot</span> <span class="o">=</span> <span class="n">old_aux_phot</span> <span class="o">/</span> <span class="n">conv</span>
+                    <span class="n">whdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">aux_kwd</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_aux_phot</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Setting </span><span class="si">{:s}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2"> (old value was </span><span class="si">{}</span><span class="s2">)&quot;</span>
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">aux_kwd</span><span class="p">,</span> <span class="n">new_aux_phot</span><span class="p">,</span> <span class="n">old_aux_phot</span><span class="p">))</span>
+
+            <span class="c1"># correct data:</span>
+            <span class="k">if</span> <span class="n">has_data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">conv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;   * EXT: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">whdu</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">):</span>
+                    <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="n">conv</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Data have been multiplied by </span><span class="si">{}</span><span class="s2">&quot;</span>
+                            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">conv</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;WARNING: Non-floating point data. Data cannot &quot;</span>
+                            <span class="s2">&quot;be re-scaled.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># correct error array:</span>
+            <span class="k">if</span> <span class="n">errext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">eext</span> <span class="o">=</span> <span class="p">(</span><span class="n">errext</span><span class="p">,</span> <span class="n">ext</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">whdu</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="n">eext</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">whdu</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">whdu</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">):</span>
+                        <span class="n">whdu</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="n">conv</span>
+                        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Error array (ext=</span><span class="si">{}</span><span class="s2">) has been &quot;</span>
+                                <span class="s2">&quot;multiplied by </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">eext</span><span class="p">,</span> <span class="n">conv</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;     - Error array in extension </span><span class="si">{:s}</span><span class="s2"> &quot;</span>
+                                <span class="s2">&quot;contains non-floating point data.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                <span class="s2">&quot;       Skipping this extension&quot;</span>
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">ext2str</span><span class="p">(</span><span class="n">ext</span><span class="p">)))</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">release_all_images</span><span class="p">()</span>
+
+    <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Done.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">readonly</span><span class="p">:</span>
+        <span class="n">_mlinfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">NOTE: &#39;</span><span class="si">{:s}</span><span class="s2">&#39; was run in READONLY mode</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;       and input image(s)&#39; content WAS NOT MODIFIED.&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">))</span>
+
+    <span class="c1"># close all log file handlers:</span>
+    <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">_log</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_sh_log</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">):</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">h</span><span class="p">)</span></div>
+
+
+<span class="c1">#--------------------------</span>
+<span class="c1"># TEAL Interface functions</span>
+<span class="c1">#--------------------------</span>
+<span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">configObj</span><span class="p">):</span>
+    <span class="n">logfile</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;logfile&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;logfile&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span> \
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">photeq</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">],</span>
+           <span class="n">sciext</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;sciext&#39;</span><span class="p">],</span>
+           <span class="n">errext</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;errext&#39;</span><span class="p">],</span>
+           <span class="n">ref_phot</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;ref_phot&#39;</span><span class="p">],</span>
+           <span class="n">ref_phot_ext</span><span class="o">=</span><span class="n">util</span><span class="o">.</span><span class="n">check_blank</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;ref_phot_ext&#39;</span><span class="p">]),</span>
+           <span class="n">phot_kwd</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;phot_kwd&#39;</span><span class="p">],</span>
+           <span class="n">aux_phot_kwd</span><span class="o">=</span><span class="n">_split_kwd_list</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;aux_phot_kwd&#39;</span><span class="p">]),</span>
+           <span class="n">search_primary</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;search_primary&#39;</span><span class="p">],</span>
+           <span class="n">readonly</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;readonly&#39;</span><span class="p">],</span>
+           <span class="n">clobber</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;clobber&#39;</span><span class="p">],</span>
+           <span class="n">logfile</span><span class="o">=</span><span class="n">logfile</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_split_kwd_list</span><span class="p">(</span><span class="n">kwd_list</span><span class="p">):</span>
+    <span class="n">kwdl</span> <span class="o">=</span> <span class="n">kwd_list</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">newl</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">kwd</span> <span class="ow">in</span> <span class="n">kwdl</span><span class="p">:</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">kwd</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">k</span><span class="p">:</span>
+            <span class="n">newl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">nkwd</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newl</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nkwd</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">nkwd</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">newl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">newl</span>
+
+
+<span class="k">def</span> <span class="nf">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return useful help from a file in the script directory called</span>
+<span class="sd">    __taskname__.help</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">__package__</span><span class="p">)</span>
+    <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
+    <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">docstring</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">docstring</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">htmlfile</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">show_ver</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="o">+</span> \
+                <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;Version&#39;</span><span class="p">,</span> <span class="n">__version__</span><span class="p">,</span>
+                <span class="s1">&#39; updated on &#39;</span><span class="p">,</span> <span class="n">__vdate__</span><span class="p">])</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="o">+</span> <span class="n">photeq</span><span class="o">.</span><span class="n">__doc__</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
+
+    <span class="k">return</span> <span class="n">helpString</span>
+
+
+<div class="viewcode-block" id="help"><a class="viewcode-back" href="../../photeq.html#drizzlepac.photeq.help">[docs]</a><span class="k">def</span> <span class="nf">help</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print out syntax help for running skymatch</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file : str (Default = None)</span>
+<span class="sd">        If given, write out help to the filename specified by this parameter</span>
+<span class="sd">        Any previously existing file with this name will be deleted before</span>
+<span class="sd">        writing out the help.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">helpstr</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

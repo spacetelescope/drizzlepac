@@ -69,20 +69,14 @@ class baseImageObject(object):
         """ Overload the comparison operator
             just to check the filename of the object?
         """
-        if isinstance(other,imageObject):
-            if (self._filename == other._filename):
-                return True
-        return False
+        return (isinstance(other, imageObject) and self._filename == other._filename)
 
     def _isNotValid(self, par1, par2):
         """ Method used to determine if a value or keyword is
             supplied as input for instrument specific parameters.
         """
         invalidValues = [None,'None','INDEF','']
-        if (par1 in invalidValues) and (par2 in invalidValues):
-            return True
-        else:
-            return False
+        return (par1 in invalidValues and par2 in invalidValues)
 
     def info(self):
         """ Return fits information on the _image.
@@ -101,7 +95,20 @@ class baseImageObject(object):
             the data array returned for future use. You can use
             putData to reattach a new data array to the imageObject.
         """
+        if self._image is None:
+            return
+
+        # mcara: I think the code below is not necessary but in order to
+        #        preserve the same functionality as the code removed below,
+        #        I make an empty copy of the image object:
+        empty_image = fits.HDUList()
+        for u in self._image:
+            empty_image.append(u.__class__(data=None, header=None))
+        # mcara: END unnecessary code
+
         self._image.close()  #calls fits.close()
+
+        self._image = empty_image
 
         #we actuallly want to make sure that all the
         #data extensions have been closed and deleted
@@ -109,13 +116,15 @@ class baseImageObject(object):
         #at this point, but I'd like there to be something
         #valid there afterwards that I can play with
 
-        if not self._isSimpleFits:
-            for ext,hdu in enumerate(self._image):
-                #use the datatype for the extension
-                #dtype=self.getNumpyType(hdu.header["BITPIX"])
-                hdu.data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet
-        else:
-            self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
+        # mcara: REMOVED unnecessary code:
+        #
+        # if not self._isSimpleFits:
+        #     for ext,hdu in enumerate(self._image):
+        #         #use the datatype for the extension
+        #         #dtype=self.getNumpyType(hdu.header["BITPIX"])
+        #         hdu.data = None #np.array(0,dtype=dtype)  #so we dont get io errors on stuff that wasn't read in yet
+        # else:
+        #     self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
 
     def clean(self):
         """ Deletes intermediate products generated for this imageObject.
@@ -155,8 +164,8 @@ class baseImageObject(object):
         extnum = self._interpretExten(exten)
         if self._image[extnum].data is None:
             if os.path.exists(fname):
-                _image=fileutil.openImage(fname,clobber=False,memmap=0)
-                _data=fileutil.getExtn(_image,extn=exten).data
+                _image=fileutil.openImage(fname, clobber=False, memmap=False)
+                _data=fileutil.getExtn(_image, extn=exten).data
                 _image.close()
                 del _image
                 self._image[extnum].data = _data
@@ -172,7 +181,7 @@ class baseImageObject(object):
             is used instead of fits to account for non-FITS
             input images. openImage returns a fits object.
         """
-        _image=fileutil.openImage(self._filename,clobber=False,memmap=0)
+        _image=fileutil.openImage(self._filename, clobber=False, memmap=False)
         _header=fileutil.getExtn(_image,extn=exten).header
         _image.close()
         del _image
@@ -191,7 +200,7 @@ class baseImageObject(object):
             #assume that a direct extnum has been given
             _extnum=int(exten)
 
-        if(_extnum == None):
+        if _extnum is None:
             msg = "no extension number found"
             log.error(msg)
             raise ValueError(msg)
@@ -203,7 +212,7 @@ class baseImageObject(object):
             the original input file for this object.
         """
         _extnum=self._interpretExten(exten)
-        fimg = fileutil.openImage(self._filename,mode='update')
+        fimg = fileutil.openImage(self._filename, mode='update', memmap=False)
         fimg[_extnum].data = data
         fimg[_extnum].header = self._image[_extnum].header
         fimg.close()
@@ -274,14 +283,14 @@ class baseImageObject(object):
                     chiplist.append(self._image[i])
         return chiplist
 
-    def _findExtnames(self,extname=None,exclude=None):
+    def _findExtnames(self, extname=None, exclude=None):
         """ This method builds a list of all extensions which have 'EXTNAME'==extname
             and do not include any extensions with 'EXTNAME'==exclude, if any are
             specified for exclusion at all.
         """
         #make a list of the available extension names for the object
         extensions=[]
-        if extname != None:
+        if extname is not None:
             if not isinstance(extname,list): extname=[extname]
             for extn in extname:
                 extensions.append(extn.upper())
@@ -294,7 +303,7 @@ class baseImageObject(object):
                     if self._image[i].extname.upper() not in extensions:
                         extensions.append(self._image[i].extname)
         #remove this extension from the list
-        if exclude != None:
+        if exclude is not None:
             exclude.upper()
             if exclude in extensions:
                 newExt=[]
@@ -469,7 +478,7 @@ class baseImageObject(object):
         """
 
         self.createContext = contextpar
-        if contextpar == False:
+        if not contextpar:
             log.info('No context image will be created for %s' %
                      self._filename)
             self.outputNames['outContext'] = None
@@ -482,7 +491,7 @@ class baseImageObject(object):
 
         dqfile = None
         dq_suffix=None
-        if(self.maskExt != None):
+        if(self.maskExt is not None):
             for hdu in self._image:
                 # Look for DQ extension in input file
                 if 'extname' in hdu.header and hdu.header['extname'].lower() == self.maskExt.lower():
@@ -533,7 +542,7 @@ class baseImageObject(object):
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
 
         try:
-            handle = fileutil.openImage(filename, mode='readonly', memmap=0)
+            handle = fileutil.openImage(filename, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn=exten)
             if hdu.data.shape[0] != sci_chip.image_shape[0]:
                 _ltv2 = np.round(sci_chip.ltv2)
@@ -643,7 +652,7 @@ class baseImageObject(object):
     def getExtensions(self,extname='SCI',section=None):
         ''' Return the list of EXTVER values for extensions with name specified in extname.
         '''
-        if section == None:
+        if section is None:
             numext = 0
             section = []
             for hdu in self._image:
@@ -719,7 +728,7 @@ class baseImageObject(object):
         del dqarr
         return dqmask
 
-    def buildEXPmask(self,chip,dqarr):
+    def buildEXPmask(self, chip, dqarr):
         """ Builds a weight mask from an input DQ array and the exposure time
         per pixel for this chip.
         """
@@ -731,7 +740,7 @@ class baseImageObject(object):
 
         return expmask.astype(np.float32)
 
-    def buildIVMmask(self,chip,dqarr,scale):
+    def buildIVMmask(self ,chip, dqarr, scale):
         """ Builds a weight mask from an input DQ array and either an IVM array
         provided by the user or a self-generated IVM array derived from the
         flat-field reference file associated with the input image.
@@ -739,13 +748,13 @@ class baseImageObject(object):
         sci_chip = self._image[self.scienceExt,chip]
         ivmname = self.outputNames['ivmFile']
 
-        if ivmname != None:
+        if ivmname is not None:
             log.info("Applying user supplied IVM files for chip %s" % chip)
             #Parse the input file name to get the extension we are working on
             extn = "IVM,{}".format(chip)
 
             #Open the mask image for updating and the IVM image
-            ivm =  fileutil.openImage(ivmname, mode='readonly')
+            ivm =  fileutil.openImage(ivmname, mode='readonly', memmap=False)
             ivmfile = fileutil.getExtn(ivm, extn)
 
             # Multiply the IVM file by the input mask in place.
@@ -844,7 +853,7 @@ class baseImageObject(object):
         """
         self.outputNames['ivmFile'] = ivmname
 
-    def set_mt_wcs(self,image):
+    def set_mt_wcs(self, image):
         """ Reset the WCS for this image based on the WCS information from
             another imageObject.
         """
@@ -854,23 +863,23 @@ class baseImageObject(object):
             # Do we want to keep track of original WCS or not? No reason now...
             sci_chip.wcs = ref_chip.wcs.copy()
 
-    def set_wtscl(self,chip,wtscl_par):
+    def set_wtscl(self, chip, wtscl_par):
         """ Sets the value of the wt_scl parameter as needed for drizzling.
         """
         sci_chip = self._image[self.scienceExt,chip]
 
         exptime = 1 #sci_chip._exptime
         _parval = 'unity'
-        if wtscl_par != None:
+        if wtscl_par is not None:
             if type(wtscl_par) == type(''):
-                if  wtscl_par.isdigit() == False :
+                if not wtscl_par.isdigit():
                     # String passed in as value, check for 'exptime' or 'expsq'
                     _wtscl_float = None
                     try:
                         _wtscl_float = float(wtscl_par)
                     except ValueError:
                         _wtscl_float = None
-                    if _wtscl_float != None:
+                    if _wtscl_float is not None:
                         _wtscl = _wtscl_float
                     elif wtscl_par == 'expsq':
                         _wtscl = exptime*exptime
@@ -911,15 +920,19 @@ class baseImageObject(object):
               - if both are blank, or if the header keyword is not
                 found, return None.
         """
-        if isinstance(value,str) and value in ['None','',' ','INDEF']:
+        if isinstance(value, str) and value in ['None', '', ' ', 'INDEF']:
             value = None
-        if (value != None and value != '')  and (keyword != None and keyword.strip() != ''):
+
+        if value and (keyword is not None and keyword.strip() != ''):
             exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword)
             raise ValueError(exceptionMessage)
-        elif value != None and value != '':
+
+        elif value is not None and value != '':
             return self._averageFromList(value)
-        elif keyword != None and keyword.strip() != '':
+
+        elif keyword is not None and keyword.strip() != '':
             return self._averageFromHeader(header, keyword)
+
         else:
             return None
 
@@ -968,7 +981,7 @@ class imageObject(baseImageObject):
 
         #filutil open returns a fits object
         try:
-            self._image=fileutil.openImage(filename,clobber=False,memmap=0)
+            self._image=fileutil.openImage(filename, clobber=False, memmap=False)
 
         except IOError:
             raise IOError("Unable to open file: %s" % filename)
@@ -1012,7 +1025,7 @@ class imageObject(baseImageObject):
         self._isSimpleFits = False
 
         # Clean out any stray MDRIZSKY keywords from PRIMARY headers
-        fimg = fileutil.openImage(filename,mode='update')
+        fimg = fileutil.openImage(filename, mode='update', memmap=False)
         if 'MDRIZSKY' in fimg['PRIMARY'].header:
             del fimg['PRIMARY'].header['MDRIZSKY']
         fimg.close()
@@ -1062,7 +1075,7 @@ class imageObject(baseImageObject):
 
                 sci_chip.dqfile,sci_chip.dq_extn = self.find_DQ_extension()
                 #self.maskExt = sci_chip.dq_extn
-                if(sci_chip.dqfile != None):
+                if(sci_chip.dqfile is not None):
                     sci_chip.dqname = sci_chip.dqfile +'['+sci_chip.dq_extn+','+str(chip)+']'
 
                 # build up HSTWCS object for each chip, which will be necessary for drizzling operations
@@ -1096,17 +1109,20 @@ class imageObject(baseImageObject):
                 # Keep track of the sky value that should be subtracted from this chip
                 # Read in value from image header, in case user has already
                 # determined the sky level
-                if "MDRIZSKY" in sci_chip.header:
-                    subsky = sci_chip.header['MDRIZSKY']
-                    log.info('Reading in MDRIZSKY of %s' % subsky)
-                else:
-                    subsky = 0.0
+                #
                 # .computedSky:   value to be applied by the
                 #                 adrizzle/ablot steps.
                 # .subtractedSky: value already (or will be by adrizzle/ablot)
                 #                 subtracted from the image
-                sci_chip.subtractedSky = subsky
-                sci_chip.computedSky = subsky
+                #
+                if "MDRIZSKY" in sci_chip.header:
+                    subsky = sci_chip.header['MDRIZSKY']
+                    log.info('Reading in MDRIZSKY of %s' % subsky)
+                    sci_chip.subtractedSky = subsky
+                    sci_chip.computedSky = subsky
+                else:
+                    sci_chip.subtractedSky = 0.0
+                    sci_chip.computedSky = None
 
                 sci_chip.darkcurrent = 0.0
 

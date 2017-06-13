@@ -177,7 +177,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         print('Updating: ',f)
         fdir = os.path.split(f)[0]
         # Open each file...
-        fimg = fits.open(f, mode='update')
+        fimg = fits.open(f, mode='update', memmap=False)
         phdr = fimg['PRIMARY'].header
         fdet = phdr['detector']
         # get header of DGEOFILE
@@ -185,7 +185,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
         if dfile in ['N/A','',' ',None]:
             npolname = ''
         else:
-            dhdr = fits.getheader(fu.osfn(dfile))
+            dhdr = fits.getheader(fu.osfn(dfile), memmap=False)
             if not interactive:
                 # search all new NPOLFILEs for one that matches current DGEOFILE config
                 npol = find_npolfile(ngeofiles,fdet,[phdr['filter1'],phdr['filter2']])
@@ -261,7 +261,7 @@ def find_d2ifile(flist,detector):
     """
     d2ifile = None
     for f in flist:
-        fdet = fits.getval(f,'detector')
+        fdet = fits.getval(f, 'detector', memmap=False)
         if fdet == detector:
             d2ifile = f
     return d2ifile
@@ -272,11 +272,11 @@ def find_npolfile(flist,detector,filters):
     """
     npolfile = None
     for f in flist:
-        fdet = fits.getval(f,'detector')
+        fdet = fits.getval(f, 'detector', memmap=False)
         if fdet == detector:
-            filt1 = fits.getval(f,'filter1')
-            filt2 = fits.getval(f,'filter2')
-            fdate = fits.getval(f,'date')
+            filt1 = fits.getval(f, 'filter1', memmap=False)
+            filt2 = fits.getval(f, 'filter2', memmap=False)
+            fdate = fits.getval(f, 'date', memmap=False)
             if filt1 == 'ANY' or \
              (filt1 == filters[0] and filt2 == filters[1]):
                 npolfile = f

@@ -205,7 +205,7 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
     if isinstance(reference, wcsutil.HSTWCS) or isinstance(reference, pywcs.WCS):
         wref = reference
     else:
-        refimg = fits.open(reference)
+        refimg = fits.open(reference, memmap=False)
         wref = None
         for extn in refimg:
             if 'extname' in extn.header and extn.header['extname'] == 'WCS':
@@ -249,12 +249,12 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
     # insure that input PRIMARY WCS has been archived before overwriting
     # with new solution
     if open_image:
-        fimg = fits.open(image, mode='update')
+        fimg = fits.open(image, mode='update', memmap=False)
         image_update = True
     else:
         fimg = image
 
-    if image_update is True:
+    if image_update:
         wcsutil.altwcs.archiveWCS(fimg,extlist,reusekey=True)
 
     # Process MEF images...
@@ -318,12 +318,12 @@ def _inv2x2(x):
     det = inv[0,0]*inv[1,1] - inv[0,1]*inv[1,0]
     if np.abs(det) < np.finfo(np.float64).tiny:
         raise ArithmeticError('Singular matrix.')
-    a = inv[0.0]
-    d = inv[1,1]
-    inv[1,0] *= -1.0
-    inv[0,1] *= -1.0
-    inv[0,0] = d
-    inv[1,1] = d
+    a = inv[0, 0]
+    d = inv[1, 1]
+    inv[1, 0] *= -1.0
+    inv[0, 1] *= -1.0
+    inv[0, 0] = d
+    inv[1, 1] = a
     inv /= det
     inv = inv.astype(np.float64)
     if not np.all(np.isfinite(inv)):
@@ -440,7 +440,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
 
     fimg_open=False
     if not isinstance(image, fits.HDUList):
-        fimg = fits.open(image, mode='update')
+        fimg = fits.open(image, mode='update', memmap=False)
         fimg_open = True
         fimg_update = True
     else:
@@ -476,7 +476,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
             print("WCSNAME  : ",wcsname)
 
         # Insure that if a copy of the WCS has not been created yet, it will be now
-        wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr)
+        wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr, relax=True)
 
         for key in wcs_hdr:
             hdr[key] = wcs_hdr[key]

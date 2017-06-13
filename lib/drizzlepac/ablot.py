@@ -79,7 +79,7 @@ def run(configObj,wcsmap=None):
     # output from PyDrizzle (which will always be a FITS file)
     # Open the input (drizzled?) image
     _fname,_sciextn = fileutil.parseFilename(configObj['data'])
-    _inimg = fileutil.openImage(_fname)
+    _inimg = fileutil.openImage(_fname, memmap=False)
     _expin = fileutil.getKeyword(configObj['data'],scale_pars['expkey'],handle=_inimg)
 
     # Return the PyFITS HDU corresponding to the named extension
@@ -283,7 +283,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             else:
                 outMedian = outMedianObj
                 _fname,_sciextn = fileutil.parseFilename(outMedian)
-                _inimg = fileutil.openImage(_fname)
+                _inimg = fileutil.openImage(_fname, memmap=False)
 
             # Return the PyFITS HDU corresponding to the named extension
             _scihdu = fileutil.getExtn(_inimg,_sciextn)
@@ -302,9 +302,10 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             else:
                 skyval = paramDict['blot_skyval']
             _outsci /= chip._conversionFactor
-            _outsci += skyval
-            log.info('Applying sky value of %0.6f to blotted image %s'%
-                        (skyval,chip.outputNames['data']))
+            if skyval is not None:
+                _outsci += skyval
+                log.info('Applying sky value of %0.6f to blotted image %s'%
+                            (skyval,chip.outputNames['data']))
 
             # Write output Numpy objects to a PyFITS file
             # Blotting only occurs from a drizzled SCI extension

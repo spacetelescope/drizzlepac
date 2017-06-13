@@ -43,28 +43,26 @@ class STISInputImage (imageObject):
 
         # Try to open the file in the location specified by LFLTFILE.
         try:
-            handle = fileutil.openImage(lflatfile,mode='readonly',memmap=0)
+            handle = fileutil.openImage(lflatfile, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn=exten)
             lfltdata = hdu.data
             if lfltdata.shape != self.full_shape:
                 lfltdata = interp2d.expand2d(lfltdata,self.full_shape)
-        except:
-            lfltdata = np.ones(self.full_shape,dtype=sci_chip.image_dtype)
-            str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-            print(str)
+        except IOError:
+            lfltdata = np.ones(self.full_shape, dtype=sci_chip.data.dtype)
+            print("Cannot find file '{:s}'. Treating flatfield constant value "
+                  "of '1'.\n".format(lflatfile))
 
         # Try to open the file in the location specified by PFLTFILE.
         try:
-            handle = fileutil.openImage(pflatfile,mode='readonly',memmap=0)
+            handle = fileutil.openImage(pflatfile, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn=exten)
             pfltdata = hdu.data
-        except:
-            pfltdata = np.ones(self.image_shape,dtype=sci_chip.image_dtype)
-            str = "Cannot find file "+filename+".  Treating flatfield constant value of '1'.\n"
-            print(str)
+        except IOError:
+            pfltdata = np.ones(self.full_shape, dtype=sci_chip.data.dtype)
+            print("Cannot find file '{:s}'. Treating flatfield constant value "
+                  "of '1'.\n".format(pflatfile))
 
-        print("lfltdata shape: ",lfltdata.shape)
-        print("pfltdata shape: ",pfltdata.shape)
         flat = lfltdata * pfltdata
 
         return flat
@@ -78,13 +76,12 @@ class STISInputImage (imageObject):
 
         """
          # Image information
-        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0)
-        _handle = fileutil.openImage(self._filename,mode='readonly')
+        _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
-            if chip._gain != None:
+            if chip._gain is not None:
 
                 conversionFactor = chip._gain
                 chip._effGain = chip._gain #1.
@@ -188,7 +185,7 @@ class CCDInputImage(STISInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if chip._gain is None or chip._rdnoise is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
@@ -210,7 +207,7 @@ class NUVInputImage(STISInputImage):
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
         # no cte correction for STIS/NUV-MAMA so set cte_dir=0.
-        print('\nWARNING: No cte correction will be made for this STIS/NUV-MAMA data.\n')
+        print('WARNING: No cte correction will be made for this STIS/NUV-MAMA data.')
 
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0
@@ -232,28 +229,25 @@ class NUVInputImage(STISInputImage):
 
        # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
-        usingDefaultGain = False
-        usingDefaultReadnoise = False
-        if (instrpars['gnkeyword'] == None):
-            usingDefaultGain = True
-        if (instrpars['rnkeyword'] == None):
-            usingDefaultReadnoise = True
-
+        usingDefaultGain = instrpars['gnkeyword'] is None
+        usingDefaultReadnoise = instrpars['rnkeyword'] is None
 
         for chip in self.returnAllChips(extname=self.scienceExt):
             #pri_header=chip.header
             chip.cte_dir=0
             # We need to treat Read Noise and Gain as a special case since it is
             # not populated in the STIS primary header for the MAMAs
-            if (instrpars['rnkeyword'] != None):
-                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                         instrpars['rnkeyword'])
+            if instrpars['rnkeyword'] is not None:
+                chip._rdnoise   = self.getInstrParameter(
+                    instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+                )
             else:
                 chip._rdnoise = None
 
-            if (instrpars['gnkeyword'] != None):
-                chip._gain = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                         instrpars['gnkeyword'])
+            if instrpars['gnkeyword'] is not None:
+                chip._gain = self.getInstrParameter(
+                    instrpars['gain'], pri_header, instrpars['gnkeyword']
+                )
             else:
                 chip._gain = None
 
@@ -272,7 +266,7 @@ class NUVInputImage(STISInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
 
-            if chip._exptime == None:
+            if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
         # Convert the science data to electrons if specified by the user.
@@ -336,7 +330,7 @@ class FUVInputImage(STISInputImage):
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
         # no cte correction for STIS/FUV-MAMA so set cte_dir=0.
-        print('\nWARNING: No cte correction will be made for this STIS/FUV-MAMA data.\n')
+        print('WARNING: No cte correction will be made for this STIS/FUV-MAMA data.')
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 0
             self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
@@ -362,27 +356,31 @@ class FUVInputImage(STISInputImage):
 
             chip.cte_dir=0
 
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
-                                                     instrpars['expkeyword'])
-            if chip._exptime == None:
+            chip._exptime = self.getInstrParameter(
+                instrpars['exptime'], chip.header, instrpars['expkeyword']
+            )
+
+            if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
-            if (instrpars['rnkeyword'] != None):
-                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                         instrpars['rnkeyword'])
+            if instrpars['rnkeyword'] is not None:
+                chip._rdnoise   = self.getInstrParameter(
+                    instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+                )
             else:
                 chip._rdnoise = None
                 usingDefaultReadnoise = True
 
-            if (instrpars['gnkeyword'] != None):
-                chip._gain = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                         instrpars['gnkeyword'])
+            if instrpars['gnkeyword'] is not None:
+                chip._gain = self.getInstrParameter(
+                    instrpars['gain'], pri_header, instrpars['gnkeyword']
+                )
             else:
                 chip._gain = None
                 usingDefaultGain = True
 
-            if chip._exptime == None:
+            if chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 

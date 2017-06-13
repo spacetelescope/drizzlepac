@@ -1,0 +1,638 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.updatehdr &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.16 (05-June-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.updatehdr</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">:Authors: Warren Hack, Mihai Cara</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">astropy</span> <span class="k">import</span> <span class="n">wcs</span> <span class="k">as</span> <span class="n">pywcs</span>
+
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span><span class="p">,</span> <span class="n">logutil</span>
+<span class="kn">from</span> <span class="nn">stwcs</span> <span class="k">import</span> <span class="n">wcsutil</span><span class="p">,</span> <span class="n">updatewcs</span>
+<span class="kn">from</span> <span class="nn">stwcs.wcsutil</span> <span class="k">import</span> <span class="n">wcscorr</span>
+<span class="kn">from</span> <span class="nn">stsci.skypac.utils</span> <span class="k">import</span> <span class="n">get_ext_list</span><span class="p">,</span> <span class="n">ext2str</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">linearfit</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;0.2.0&#39;</span>
+<span class="n">__vdate__</span> <span class="o">=</span> <span class="s1">&#39;10-Oct-2014&#39;</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="n">wcs_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">,</span><span class="s1">&#39;CRVAL2&#39;</span><span class="p">,</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">,</span><span class="s1">&#39;CD1_2&#39;</span><span class="p">,</span><span class="s1">&#39;CD2_1&#39;</span><span class="p">,</span><span class="s1">&#39;CD2_2&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;CRPIX1&#39;</span><span class="p">,</span><span class="s1">&#39;CRPIX2&#39;</span><span class="p">,</span><span class="s1">&#39;ORIENTAT&#39;</span><span class="p">]</span>
+
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float128&#39;</span><span class="p">):</span>
+    <span class="n">ndfloat128</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float128</span>
+<span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="s1">&#39;float96&#39;</span><span class="p">):</span>
+    <span class="n">ndfloat128</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float96</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">ndfloat128</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+
+
+<div class="viewcode-block" id="update_from_shiftfile"><a class="viewcode-back" href="../../updatehdr.html#drizzlepac.updatehdr.update_from_shiftfile">[docs]</a><span class="k">def</span> <span class="nf">update_from_shiftfile</span><span class="p">(</span><span class="n">shiftfile</span><span class="p">,</span><span class="n">wcsname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update headers of all images specified in shiftfile with shifts</span>
+<span class="sd">    from shiftfile.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shiftfile : str</span>
+<span class="sd">        Filename of shiftfile.</span>
+
+<span class="sd">    wcsname : str</span>
+<span class="sd">        Label to give to new WCS solution being created by this fit. If</span>
+<span class="sd">        a value of None is given, it will automatically use &#39;TWEAK&#39; as the</span>
+<span class="sd">        label. [Default =None]</span>
+
+<span class="sd">    force : bool</span>
+<span class="sd">        Update header even though WCS already exists with this solution or</span>
+<span class="sd">        wcsname? [Default=False]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fileutil</span><span class="o">.</span><span class="n">osfn</span><span class="p">(</span><span class="n">shiftfile</span><span class="p">))</span>
+    <span class="n">shift_lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># interpret header of shift file</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">shift_lines</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;refimage&#39;</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">or</span> <span class="s1">&#39;reference&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">refimage</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">refimage</span> <span class="o">=</span> <span class="n">refimage</span><span class="p">[:</span><span class="n">refimage</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;[wcs]&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+            <span class="k">break</span>
+
+    <span class="c1"># Determine the max length in the first column (filenames)</span>
+    <span class="n">fnames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">shift_lines</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="n">fnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">fname_fmt</span> <span class="o">=</span> <span class="s1">&#39;S</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">fnames</span><span class="p">))</span>
+
+    <span class="c1"># Now read in numerical values from shiftfile</span>
+    <span class="n">type_list</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;names&#39;</span><span class="p">:(</span><span class="s1">&#39;fnames&#39;</span><span class="p">,</span><span class="s1">&#39;xsh&#39;</span><span class="p">,</span><span class="s1">&#39;ysh&#39;</span><span class="p">,</span><span class="s1">&#39;rot&#39;</span><span class="p">,</span><span class="s1">&#39;scale&#39;</span><span class="p">,</span><span class="s1">&#39;xrms&#39;</span><span class="p">,</span><span class="s1">&#39;yrms&#39;</span><span class="p">),</span>
+                 <span class="s1">&#39;formats&#39;</span><span class="p">:(</span><span class="n">fname_fmt</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">)}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sdict</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">shiftfile</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">type_list</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="n">tlist</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;names&#39;</span><span class="p">:(</span><span class="s1">&#39;fnames&#39;</span><span class="p">,</span><span class="s1">&#39;xsh&#39;</span><span class="p">,</span><span class="s1">&#39;ysh&#39;</span><span class="p">,</span><span class="s1">&#39;rot&#39;</span><span class="p">,</span><span class="s1">&#39;scale&#39;</span><span class="p">),</span>
+                     <span class="s1">&#39;formats&#39;</span><span class="p">:(</span><span class="n">fname_fmt</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">,</span><span class="s1">&#39;f4&#39;</span><span class="p">)}</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">shiftfile</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">tlist</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">sdict</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;fnames&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],],</span><span class="n">dtype</span><span class="o">=</span><span class="n">type_list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">sname</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">sdict</span><span class="p">[</span><span class="n">sname</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">sname</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">sdict</span><span class="p">:</span>
+        <span class="n">updatewcs_with_shift</span><span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;fnames&#39;</span><span class="p">],</span> <span class="n">refimage</span><span class="p">,</span> <span class="n">wcsname</span><span class="o">=</span><span class="n">wcsname</span><span class="p">,</span>
+                <span class="n">rot</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;rot&#39;</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">],</span>
+                <span class="n">xsh</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;xsh&#39;</span><span class="p">],</span> <span class="n">ysh</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;ysh&#39;</span><span class="p">],</span>
+                <span class="n">xrms</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;xrms&#39;</span><span class="p">],</span> <span class="n">yrms</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;yrms&#39;</span><span class="p">],</span>
+                <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="updatewcs_with_shift"><a class="viewcode-back" href="../../updatehdr.html#drizzlepac.updatehdr.updatewcs_with_shift">[docs]</a><span class="k">def</span> <span class="nf">updatewcs_with_shift</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">reference</span><span class="p">,</span><span class="n">wcsname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reusename</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">fitgeom</span><span class="o">=</span><span class="s1">&#39;rscale&#39;</span><span class="p">,</span>
+                         <span class="n">rot</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">xsh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">ysh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">fit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">xrms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yrms</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">sciext</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update the SCI headers in &#39;image&#39; based on the fit provided as determined</span>
+<span class="sd">    in the WCS specified by &#39;reference&#39;.  The fit should be a 2-D matrix as</span>
+<span class="sd">    generated for use with &#39;make_vector_plot()&#39;.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The algorithm used to apply the provided fit solution to the image</span>
+<span class="sd">    involves applying the following steps to the WCS of each of the</span>
+<span class="sd">    input image&#39;s chips:</span>
+
+<span class="sd">    1. compute RA/Dec with full distortion correction for</span>
+<span class="sd">            reference point as (Rc_i,Dc_i)</span>
+
+<span class="sd">    2. find the Xc,Yc for each Rc_i,Dc_i and get the difference from the</span>
+<span class="sd">            CRPIX position for the reference WCS as (dXc_i,dYc_i)</span>
+
+<span class="sd">    3. apply fit (rot&amp;scale) to (dXc_i,dYc_i) then apply shift, then add</span>
+<span class="sd">            CRPIX back to get new (Xcs_i,Ycs_i) position</span>
+
+<span class="sd">    4. compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)</span>
+
+<span class="sd">    5. compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)</span>
+
+<span class="sd">    6. apply the fit to the chip&#39;s undistorted CD matrix, the apply linear</span>
+<span class="sd">            distortion terms back in to create a new CD matrix</span>
+
+<span class="sd">    7. add (dRcs_i,dDcs_i) to CRVAL of the reference chip&#39;s WCS</span>
+
+<span class="sd">    8. update header with new WCS values</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : str or PyFITS.HDUList object</span>
+<span class="sd">        Filename, or PyFITS object, of image with WCS to be updated.</span>
+<span class="sd">        All extensions with EXTNAME matches the value of the &#39;sciext&#39;</span>
+<span class="sd">        parameter value (by default, all &#39;SCI&#39; extensions) will be updated.</span>
+
+<span class="sd">    reference : str</span>
+<span class="sd">        Filename of image/headerlet (FITS file) which contains the WCS</span>
+<span class="sd">        used to define the tangent plane in which all the fit parameters</span>
+<span class="sd">        (shift, rot, scale) were measured.</span>
+
+<span class="sd">    wcsname : str</span>
+<span class="sd">        Label to give to new WCS solution being created by this fit. If</span>
+<span class="sd">        a value of None is given, it will automatically use &#39;TWEAK&#39; as the</span>
+<span class="sd">        label. If a WCS has a name with this specific value, the code will</span>
+<span class="sd">        automatically append a version ID using the format &#39;_n&#39;, such as</span>
+<span class="sd">        &#39;TWEAK_1&#39;, &#39;TWEAK_2&#39;,or &#39;TWEAK_update_1&#39;.</span>
+<span class="sd">        [Default =None]</span>
+
+<span class="sd">    reusename : bool</span>
+<span class="sd">        User can specify whether or not to over-write WCS with same name.</span>
+<span class="sd">        [Default: False]</span>
+
+<span class="sd">    rot : float</span>
+<span class="sd">        Amount of rotation measured in fit to be applied.</span>
+<span class="sd">        [Default=0.0]</span>
+
+<span class="sd">    scale : float</span>
+<span class="sd">        Amount of scale change measured in fit to be applied.</span>
+<span class="sd">        [Default=1.0]</span>
+
+<span class="sd">    xsh : float</span>
+<span class="sd">        Offset in X pixels from defined tangent plane to be applied to image.</span>
+<span class="sd">        [Default=0.0]</span>
+
+<span class="sd">    ysh : float</span>
+<span class="sd">        Offset in Y pixels from defined tangent plane to be applied to image.</span>
+<span class="sd">        [Default=0.0]</span>
+
+<span class="sd">    fit : arr</span>
+<span class="sd">        Linear coefficients for fit</span>
+<span class="sd">        [Default = None]</span>
+
+<span class="sd">    xrms : float</span>
+<span class="sd">        RMS of fit in RA (in decimal degrees) that will be recorded as</span>
+<span class="sd">        CRDER1 in WCS and header</span>
+<span class="sd">        [Default = None]</span>
+
+<span class="sd">    yrms : float</span>
+<span class="sd">        RMS of fit in Dec (in decimal degrees) that will be recorded as</span>
+<span class="sd">        CRDER2 in WCS and header</span>
+<span class="sd">        [Default = None]</span>
+
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Print extra messages during processing? [Default=False]</span>
+
+<span class="sd">    force : bool</span>
+<span class="sd">        Update header even though WCS already exists with this solution or</span>
+<span class="sd">        wcsname? [Default=False]</span>
+
+<span class="sd">    sciext : string</span>
+<span class="sd">        Value of FITS EXTNAME keyword for extensions with WCS headers to</span>
+<span class="sd">        be updated with the fit values. [Default=&#39;SCI&#39;]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># if input reference is a ref_wcs file from tweakshifts, use it</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">pywcs</span><span class="o">.</span><span class="n">WCS</span><span class="p">):</span>
+        <span class="n">wref</span> <span class="o">=</span> <span class="n">reference</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">refimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">wref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">refimg</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;extname&#39;</span> <span class="ow">in</span> <span class="n">extn</span><span class="o">.</span><span class="n">header</span> <span class="ow">and</span> <span class="n">extn</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extname&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;WCS&#39;</span><span class="p">:</span>
+                <span class="n">wref</span> <span class="o">=</span> <span class="n">pywcs</span><span class="o">.</span><span class="n">WCS</span><span class="p">(</span><span class="n">refimg</span><span class="p">[</span><span class="s1">&#39;wcs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="n">refimg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># else, we have presumably been provided a full undistorted image</span>
+        <span class="c1"># as a reference, so use it with HSTWCS instead</span>
+        <span class="k">if</span> <span class="n">wref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wref</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="n">open_image</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">filename</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">fileinfo</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;filemode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="s1">&#39;update&#39;</span><span class="p">:</span>
+            <span class="n">image_update</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">image_update</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">open_image</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="n">image_update</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Now that we are sure we have a good reference WCS to use,</span>
+    <span class="c1"># continue with the update</span>
+    <span class="n">logstr</span> <span class="o">=</span> <span class="s2">&quot;....Updating header for </span><span class="si">{:s}</span><span class="s2">...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logstr</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">logstr</span><span class="p">)</span>
+
+    <span class="c1"># reset header WCS keywords to original (OPUS generated) values</span>
+    <span class="n">extlist</span> <span class="o">=</span> <span class="n">get_ext_list</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">extname</span><span class="o">=</span><span class="s1">&#39;SCI&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extlist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">image_update</span><span class="p">:</span>
+            <span class="c1"># Create initial WCSCORR extension</span>
+            <span class="n">wcscorr</span><span class="o">.</span><span class="n">init_wcscorr</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">extlist</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># insure that input PRIMARY WCS has been archived before overwriting</span>
+    <span class="c1"># with new solution</span>
+    <span class="k">if</span> <span class="n">open_image</span><span class="p">:</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">image_update</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">image</span>
+
+    <span class="k">if</span> <span class="n">image_update</span><span class="p">:</span>
+        <span class="n">wcsutil</span><span class="o">.</span><span class="n">altwcs</span><span class="o">.</span><span class="n">archiveWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span><span class="n">extlist</span><span class="p">,</span><span class="n">reusekey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Process MEF images...</span>
+    <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extlist</span><span class="p">:</span>
+        <span class="n">logstr</span> <span class="o">=</span> <span class="s2">&quot;Processing </span><span class="si">{:s}</span><span class="s2">[</span><span class="si">{:s}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fimg</span><span class="o">.</span><span class="n">filename</span><span class="p">(),</span>
+                                                <span class="n">ext2str</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{:s}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logstr</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">logstr</span><span class="p">)</span>
+        <span class="n">chip_wcs</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">HSTWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span>
+
+        <span class="n">update_refchip_with_shift</span><span class="p">(</span><span class="n">chip_wcs</span><span class="p">,</span> <span class="n">wref</span><span class="p">,</span> <span class="n">fitgeom</span><span class="o">=</span><span class="n">fitgeom</span><span class="p">,</span>
+                    <span class="n">rot</span><span class="o">=</span><span class="n">rot</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">xsh</span><span class="o">=</span><span class="n">xsh</span><span class="p">,</span> <span class="n">ysh</span><span class="o">=</span><span class="n">ysh</span><span class="p">,</span>
+                    <span class="n">fit</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">xrms</span><span class="o">=</span><span class="n">xrms</span><span class="p">,</span> <span class="n">yrms</span><span class="o">=</span><span class="n">yrms</span><span class="p">)</span>
+        <span class="c1">#if util.is_blank(wcsname):</span>
+            <span class="c1">#wcsname = &#39;TWEAK&#39;</span>
+
+        <span class="c1"># Update FITS file with newly updated WCS for this chip</span>
+        <span class="n">extnum</span> <span class="o">=</span> <span class="n">fimg</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">fimg</span><span class="p">[</span><span class="n">ext</span><span class="p">])</span>
+        <span class="n">update_wcs</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">extnum</span><span class="p">,</span> <span class="n">chip_wcs</span><span class="p">,</span> <span class="n">wcsname</span><span class="o">=</span><span class="n">wcsname</span><span class="p">,</span>
+                   <span class="n">reusename</span><span class="o">=</span><span class="n">reusename</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">open_image</span><span class="p">:</span>
+        <span class="n">fimg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">linearize</span><span class="p">(</span><span class="n">wcsim</span><span class="p">,</span> <span class="n">wcsima</span><span class="p">,</span> <span class="n">wcsref</span><span class="p">,</span> <span class="n">imcrpix</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">shift</span><span class="p">,</span> <span class="n">hx</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">hy</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="c1"># linearization using 5-point formula for first order derivative</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">imcrpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y0</span> <span class="o">=</span> <span class="n">imcrpix</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span> <span class="o">-</span> <span class="n">hx</span><span class="p">,</span> <span class="n">y0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span> <span class="o">-</span> <span class="n">hx</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">y0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span> <span class="o">+</span> <span class="n">hx</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">y0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span> <span class="o">+</span> <span class="n">hx</span><span class="p">,</span> <span class="n">y0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span> <span class="o">-</span> <span class="n">hy</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span> <span class="o">-</span> <span class="n">hy</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span> <span class="o">+</span> <span class="n">hy</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span> <span class="o">+</span> <span class="n">hy</span><span class="p">]],</span>
+                   <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="c1"># convert image coordinates to reference image coordinates:</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">wcsref</span><span class="o">.</span><span class="n">wcs_world2pix</span><span class="p">(</span><span class="n">wcsim</span><span class="o">.</span><span class="n">wcs_pix2world</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ndfloat128</span><span class="p">)</span>
+    <span class="c1"># apply linear fit transformation:</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">shift</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># convert back to image coordinate system:</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">wcsima</span><span class="o">.</span><span class="n">wcs_world2pix</span><span class="p">(</span>
+        <span class="n">wcsref</span><span class="o">.</span><span class="n">wcs_pix2world</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ndfloat128</span><span class="p">)</span>
+
+    <span class="c1"># derivative with regard to x:</span>
+    <span class="n">u1</span> <span class="o">=</span> <span class="p">((</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">hx</span><span class="p">)</span>
+    <span class="c1"># derivative with regard to y:</span>
+    <span class="n">u2</span> <span class="o">=</span> <span class="p">((</span><span class="n">p</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">6</span><span class="p">]))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">hy</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_inv2x2</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">inv</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ndfloat128</span><span class="p">)</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">inv</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">inv</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">inv</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">inv</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">det</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tiny</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ArithmeticError</span><span class="p">(</span><span class="s1">&#39;Singular matrix.&#39;</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">inv</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">inv</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">inv</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
+    <span class="n">inv</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
+    <span class="n">inv</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+    <span class="n">inv</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+    <span class="n">inv</span> <span class="o">/=</span> <span class="n">det</span>
+    <span class="n">inv</span> <span class="o">=</span> <span class="n">inv</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">inv</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ArithmeticError</span><span class="p">(</span><span class="s1">&#39;Singular matrix.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inv</span>
+
+
+<span class="k">def</span> <span class="nf">update_refchip_with_shift</span><span class="p">(</span><span class="n">chip_wcs</span><span class="p">,</span> <span class="n">wcslin</span><span class="p">,</span> <span class="n">fitgeom</span><span class="o">=</span><span class="s1">&#39;rscale&#39;</span><span class="p">,</span>
+                            <span class="n">rot</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">xsh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ysh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                            <span class="n">fit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xrms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yrms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># compute the matrix for the scale and rotation correction</span>
+    <span class="k">if</span> <span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="n">linearfit</span><span class="o">.</span><span class="n">buildFitMatrix</span><span class="p">(</span><span class="n">rot</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+
+    <span class="n">shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">xsh</span><span class="p">,</span> <span class="n">ysh</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">wcslin</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">,</span> <span class="n">fit</span><span class="p">)</span> <span class="o">+</span> <span class="n">wcslin</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span>
+
+    <span class="n">fit</span> <span class="o">=</span> <span class="n">_inv2x2</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">fit</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">cwcs</span> <span class="o">=</span> <span class="n">chip_wcs</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+    <span class="n">cd_eye</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ndfloat128</span><span class="p">)</span>
+    <span class="n">zero_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ndfloat128</span><span class="p">)</span>
+
+    <span class="c1"># estimate precision necessary for iterative processes:</span>
+    <span class="n">maxiter</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">crpix2corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">_naxis1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">_naxis2</span><span class="p">])])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span>
+    <span class="n">maxUerr</span> <span class="o">=</span> <span class="mf">1.0e-5</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">crpix2corners</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># estimate step for numerical differentiation. We need a step</span>
+    <span class="c1"># large enough to avoid rounding errors and small enough to get a</span>
+    <span class="c1"># better precision for numerical differentiation.</span>
+    <span class="c1"># TODO: The logic below should be revised at a later time so that it</span>
+    <span class="c1"># better takes into account the two competing requirements.</span>
+    <span class="n">hx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">20.0</span><span class="p">,</span> <span class="p">(</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="mf">100.0</span><span class="p">,</span>
+                      <span class="p">(</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">_naxis1</span> <span class="o">-</span> <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">100.0</span><span class="p">))</span>
+    <span class="n">hy</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">20.0</span><span class="p">,</span> <span class="p">(</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="mf">100.0</span><span class="p">,</span>
+                      <span class="p">(</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">_naxis2</span> <span class="o">-</span> <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">100.0</span><span class="p">))</span>
+
+    <span class="c1"># compute new CRVAL for the image WCS:</span>
+    <span class="n">crpixinref</span> <span class="o">=</span> <span class="n">wcslin</span><span class="o">.</span><span class="n">wcs_world2pix</span><span class="p">(</span>
+        <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs_pix2world</span><span class="p">([</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">],</span><span class="mi">1</span><span class="p">),</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">crpixinref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="p">(</span><span class="n">crpixinref</span> <span class="o">-</span> <span class="n">shift</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span> <span class="o">=</span> <span class="n">wcslin</span><span class="o">.</span><span class="n">wcs_pix2world</span><span class="p">(</span><span class="n">crpixinref</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+    <span class="c1"># initial approximation for CD matrix of the image WCS:</span>
+    <span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="o">=</span> <span class="n">linearize</span><span class="p">(</span><span class="n">cwcs</span><span class="p">,</span> <span class="n">chip_wcs</span><span class="p">,</span> <span class="n">wcslin</span><span class="p">,</span> <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">,</span>
+                       <span class="n">fit</span><span class="p">,</span> <span class="n">shift</span><span class="p">,</span> <span class="n">hx</span><span class="o">=</span><span class="n">hx</span><span class="p">,</span> <span class="n">hy</span><span class="o">=</span><span class="n">hy</span><span class="p">)</span>
+    <span class="n">err0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">U</span><span class="o">-</span><span class="n">cd_eye</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ndfloat128</span><span class="p">),</span> <span class="n">U</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+    <span class="c1"># NOTE: initial solution is the exact mathematical solution (modulo numeric</span>
+    <span class="c1"># differentiation). However, e.g., due to rounding errors, approximate</span>
+    <span class="c1"># numerical differentiation, the solution may be improved by performing</span>
+    <span class="c1"># several iterations. The next step will try to perform</span>
+    <span class="c1"># fixed-point iterations to &quot;improve&quot; the solution</span>
+    <span class="c1"># but this is not really required.</span>
+
+    <span class="c1"># Perform fixed-point iterations to improve the approximation</span>
+    <span class="c1"># for CD matrix of the image WCS (actually for the U matrix).</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxiter</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="o">=</span> <span class="n">linearize</span><span class="p">(</span><span class="n">chip_wcs</span><span class="p">,</span> <span class="n">chip_wcs</span><span class="p">,</span> <span class="n">wcslin</span><span class="p">,</span> <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span><span class="p">,</span>
+                           <span class="n">cd_eye</span><span class="p">,</span> <span class="n">zero_shift</span><span class="p">,</span> <span class="n">hx</span><span class="o">=</span><span class="n">hx</span><span class="p">,</span> <span class="n">hy</span><span class="o">=</span><span class="n">hy</span><span class="p">)</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">U</span><span class="o">-</span><span class="n">cd_eye</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">err</span> <span class="o">&gt;</span> <span class="n">err0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span><span class="p">,</span> <span class="n">U</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">err</span> <span class="o">&lt;</span> <span class="n">maxUerr</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">err0</span> <span class="o">=</span> <span class="n">err</span>
+
+    <span class="k">if</span> <span class="n">xrms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">chip_wcs</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xrms</span><span class="p">,</span><span class="n">yrms</span><span class="p">])</span>
+
+
+<span class="c1">###</span>
+<span class="c1">### Header keyword prefix related archive functions</span>
+<span class="c1">###</span>
+<div class="viewcode-block" id="update_wcs"><a class="viewcode-back" href="../../updatehdr.html#drizzlepac.updatehdr.update_wcs">[docs]</a><span class="k">def</span> <span class="nf">update_wcs</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">extnum</span><span class="p">,</span><span class="n">new_wcs</span><span class="p">,</span><span class="n">wcsname</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">reusename</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates the WCS of the specified extension number with the new WCS</span>
+<span class="sd">    after archiving the original WCS.</span>
+
+<span class="sd">    The value of &#39;new_wcs&#39; needs to be the full</span>
+<span class="sd">    HSTWCS object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : str</span>
+<span class="sd">        Filename of image with WCS that needs to be updated</span>
+
+<span class="sd">    extnum : int</span>
+<span class="sd">        Extension number for extension with WCS to be updated/replaced</span>
+
+<span class="sd">    new_wcs : object</span>
+<span class="sd">        Full HSTWCS object which will replace/update the existing WCS</span>
+
+<span class="sd">    wcsname : str</span>
+<span class="sd">        Label to give newly updated WCS</span>
+
+<span class="sd">    reusename : bool</span>
+<span class="sd">        User can choose whether to over-write WCS with same name or not.</span>
+<span class="sd">        [Default: False]</span>
+
+<span class="sd">    verbose : bool, int</span>
+<span class="sd">        Print extra messages during processing? [Default: False]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Start by insuring that the correct value of &#39;orientat&#39; has been computed</span>
+    <span class="n">new_wcs</span><span class="o">.</span><span class="n">setOrient</span><span class="p">()</span>
+
+    <span class="n">fimg_open</span><span class="o">=</span><span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">HDUList</span><span class="p">):</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">fimg_open</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">fimg_update</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fimg</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="k">if</span> <span class="n">fimg</span><span class="o">.</span><span class="n">fileinfo</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;filemode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="s1">&#39;update&#39;</span><span class="p">:</span>
+            <span class="n">fimg_update</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fimg_update</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Determine final (unique) WCSNAME value, either based on the default or</span>
+    <span class="c1"># user-provided name</span>
+    <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">wcsname</span><span class="p">):</span>
+        <span class="n">wcsname</span> <span class="o">=</span> <span class="s1">&#39;TWEAK&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">reusename</span><span class="p">:</span>
+        <span class="n">wcsname</span> <span class="o">=</span> <span class="n">create_unique_wcsname</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">extnum</span><span class="p">,</span> <span class="n">wcsname</span><span class="p">)</span>
+
+    <span class="n">idchdr</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">new_wcs</span><span class="o">.</span><span class="n">idcscale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">idchdr</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Open the file for updating the WCS</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logstr</span> <span class="o">=</span> <span class="s1">&#39;Updating header for </span><span class="si">%s</span><span class="s1">[</span><span class="si">%s</span><span class="s1">]&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">fimg</span><span class="o">.</span><span class="n">filename</span><span class="p">(),</span><span class="nb">str</span><span class="p">(</span><span class="n">extnum</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">logstr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">logstr</span><span class="p">)</span>
+
+        <span class="n">hdr</span> <span class="o">=</span> <span class="n">fimg</span><span class="p">[</span><span class="n">extnum</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;    with WCS of&#39;</span><span class="p">)</span>
+            <span class="n">new_wcs</span><span class="o">.</span><span class="n">printwcs</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WCSNAME  : &quot;</span><span class="p">,</span><span class="n">wcsname</span><span class="p">)</span>
+
+        <span class="c1"># Insure that if a copy of the WCS has not been created yet, it will be now</span>
+        <span class="n">wcs_hdr</span> <span class="o">=</span> <span class="n">new_wcs</span><span class="o">.</span><span class="n">wcs2header</span><span class="p">(</span><span class="n">idc2hdr</span><span class="o">=</span><span class="n">idchdr</span><span class="p">,</span> <span class="n">relax</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wcs_hdr</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcs_hdr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;ORIENTAT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_wcs</span><span class="o">.</span><span class="n">orientat</span>
+        <span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;WCSNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wcsname</span>
+        <span class="n">util</span><span class="o">.</span><span class="n">updateNEXTENDKw</span><span class="p">(</span><span class="n">fimg</span><span class="p">)</span>
+
+        <span class="c1"># Only if this image was opened in update mode should this</span>
+        <span class="c1"># newly updated WCS be archived, as it will never be written out</span>
+        <span class="c1"># to a file otherwise.</span>
+        <span class="k">if</span> <span class="n">fimg_update</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">reusename</span><span class="p">:</span>
+                <span class="c1"># Save the newly updated WCS as an alternate WCS as well</span>
+                <span class="n">wkey</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">altwcs</span><span class="o">.</span><span class="n">next_wcskey</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="n">extnum</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wkey</span> <span class="o">=</span> <span class="n">wcsutil</span><span class="o">.</span><span class="n">altwcs</span><span class="o">.</span><span class="n">getKeyFromName</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span><span class="n">wcsname</span><span class="p">)</span>
+
+            <span class="c1"># wcskey needs to be specified so that archiveWCS will create a</span>
+            <span class="c1"># duplicate WCS with the same WCSNAME as the Primary WCS</span>
+            <span class="n">wcsutil</span><span class="o">.</span><span class="n">altwcs</span><span class="o">.</span><span class="n">archiveWCS</span><span class="p">(</span><span class="n">fimg</span><span class="p">,[</span><span class="n">extnum</span><span class="p">],</span><span class="n">wcsname</span><span class="o">=</span><span class="n">wcsname</span><span class="p">,</span>
+                <span class="n">wcskey</span><span class="o">=</span><span class="n">wkey</span><span class="p">,</span> <span class="n">reusekey</span><span class="o">=</span><span class="n">reusename</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fimg_open</span><span class="p">:</span>
+            <span class="c1"># finish up by closing the file now</span>
+            <span class="n">fimg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="create_unique_wcsname"><a class="viewcode-back" href="../../updatehdr.html#drizzlepac.updatehdr.create_unique_wcsname">[docs]</a><span class="k">def</span> <span class="nf">create_unique_wcsname</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">extnum</span><span class="p">,</span> <span class="n">wcsname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function evaluates whether the specified wcsname value has</span>
+<span class="sd">    already been used in this image.  If so, it automatically modifies</span>
+<span class="sd">    the name with a simple version ID using wcsname_NNN format.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fimg : obj</span>
+<span class="sd">        PyFITS object of image with WCS information to be updated</span>
+
+<span class="sd">    extnum : int</span>
+<span class="sd">        Index of extension with WCS information to be updated</span>
+
+<span class="sd">    wcsname : str</span>
+<span class="sd">        Value of WCSNAME specified by user for labelling the new WCS</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    uniqname : str</span>
+<span class="sd">        Unique WCSNAME value</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">wcsutil</span><span class="o">.</span><span class="n">altwcs</span><span class="o">.</span><span class="n">wcsnames</span><span class="p">(</span><span class="n">fimg</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">extnum</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">wcsname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wnames</span><span class="p">:</span>
+        <span class="n">uniqname</span> <span class="o">=</span> <span class="n">wcsname</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># setup pattern to match</span>
+        <span class="n">rpatt</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">wcsname</span><span class="o">+</span><span class="s1">&#39;_\d&#39;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">wname</span> <span class="ow">in</span> <span class="n">wnames</span><span class="p">:</span>
+            <span class="n">rmatch</span> <span class="o">=</span> <span class="n">rpatt</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">wname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rmatch</span><span class="p">:</span>
+                <span class="c1"># get index</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">wname</span><span class="p">[</span><span class="n">wname</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="n">index</span><span class="p">:</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1"># for use with new name</span>
+        <span class="n">uniqname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">wcsname</span><span class="p">,</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">uniqname</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

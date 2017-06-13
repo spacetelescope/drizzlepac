@@ -68,15 +68,19 @@ from __future__ import absolute_import, division, print_function
 import os
 import numpy as np
 from stsci.tools import stpyfits as fits
-from stsci.tools import parseinput, logutil, bitmask
+from stsci.tools import parseinput, logutil
+try:
+    from stsci.tools.bitmask import interpret_bit_flags
+except ImportError:
+    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
 
 from . import util
 
 __taskname__ = "drizzlepac.resetbits"
 
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.0.0'
-__vdate__ = '3-Aug-2010'
+__version__ = '1.0.1'
+__vdate__ = '23-March-2017'
 
 
 log = logutil.create_logger(__name__)
@@ -121,12 +125,12 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
 
     """
     # Interpret bits value
-    bits = bitmask.interpret_bits_value(bits)
+    bits = interpret_bit_flags(bits)
 
     flist, fcol = parseinput.parseinput(input)
     for filename in flist:
         # open input file in write mode to allow updating the DQ array in-place
-        p = fits.open(filename,mode='update')
+        p = fits.open(filename, mode='update', memmap=False)
 
         # Identify the DQ array to be updated
         # If no extver is specified, build a list of all DQ arrays in the file

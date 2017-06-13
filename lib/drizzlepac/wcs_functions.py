@@ -14,17 +14,17 @@ from numpy import linalg
 from stsci.tools import fileutil, asnutil, logutil
 from . import util
 import stwcs
-#import pywcs
+
 from astropy import wcs as pywcs
 from stwcs import distortion, wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs
 
 DEFAULT_WCS_PARS = {'ra':None,'dec':None,'scale':None,'rot':None,
-                     'outnx':None,'outny':None,
+                    'outnx':None,'outny':None,
                     'crpix1':None,'crpix2':None}
 
-
+import logging
 log = logutil.create_logger(__name__)
 
 
@@ -367,13 +367,14 @@ def make_perfect_cd(wcs):
     """ Create a perfect (square, orthogonal, undistorted) CD matrix from the
         input WCS.
     """
-
-    # create a perfectly square, orthogonal WCS
-    def_scale = (wcs.pscale)/3600.
+    def_scale = (wcs.pscale) / 3600.
     def_orientat = np.deg2rad(wcs.orientat)
-    perfect_cd = np.array([[-np.cos(def_orientat),np.sin(def_orientat)],
-                          [np.sin(def_orientat),np.cos(def_orientat)]])*def_scale
+    perfect_cd = def_scale * np.array(
+        [[-np.cos(def_orientat),np.sin(def_orientat)],
+         [np.sin(def_orientat),np.cos(def_orientat)]]
+    )
     return perfect_cd
+
 
 def calcNewEdges(wcs, shape):
     """
@@ -482,16 +483,20 @@ def removeAllAltWCS(hdulist,extlist):
     """
     Removes all alternate WCS solutions from the header
     """
+    log.setLevel(logging.WARNING)
     hdr = hdulist[extlist[0]].header
     wkeys = altwcs.wcskeys(hdr)
     if ' ' in wkeys:
         wkeys.remove(' ')
     for extn in extlist:
         for wkey in wkeys:
+            if wkey == 'O':
+                continue
             altwcs.deleteWCS(hdulist,extn,wkey)
 
         # Forcibly remove OPUS WCS Keywords, since deleteWCS will not do it
-        hwcs = altwcs.readAltWCS(hdulist,extn,wcskey='O')
+        hwcs = readAltWCS(hdulist,extn,wcskey='O')
+
         if hwcs is None:
             continue
         for k in hwcs.keys():
@@ -500,6 +505,7 @@ def removeAllAltWCS(hdulist,extlist):
                     del hdr[k]
                 except KeyError:
                     pass
+    log.setLevel(logging.INFO)
 
 
 def updateImageWCS(imageObjectList, output_wcs):
@@ -521,7 +527,60 @@ def restoreDefaultWCS(imageObjectList, output_wcs):
     updateImageWCS(imageObjectList, output_wcs)
 
 
-def mergeWCS(default_wcs,user_pars):
+def _rotateCD(cd, theta):
+    # This is the old (pre-astropy PR #5189 -
+    # see https://github.com/astropy/astropy/pull/5189) as this the version
+    # of the rotateCD expected in 'mergeWCS' below
+    theta = np.deg2rad(theta)
+    cth = np.cos(theta)
+    sth = np.sin(theta)
+    return np.dot(cd, [[cth, sth], [-sth, cth]])
+
+
+def _py2round(x):
+    """
+    This function returns a rounded up value of the argument, similar
+    to Python 2.
+    """
+    if hasattr(x, '__iter__'):
+        rx = np.empty_like(x)
+        m = x >= 0.0
+        rx[m] = np.floor(x[m] + 0.5)
+        m = np.logical_not(m)
+        rx[m] = np.ceil(x[m] - 0.5)
+        return rx
+
+    else:
+        if x >= 0.0:
+            return np.floor(x + 0.5)
+        else:
+            return np.ceil(x - 0.5)
+
+
+def _check_custom_WCS_pars(par1_name, par2_name, user_pars):
+    par1 = par1_name in user_pars and user_pars[par1_name] is not None
+    par2 = par2_name in user_pars and user_pars[par2_name] is not None
+
+    if par1 != par2:
+        if par1:
+            par1n = par1_name
+            par2n = par2_name
+        else:
+            par1n = par2_name
+            par2n = par1_name
+        raise ValueError("When WCS parameter '{}' is specified, '{}' must "
+                         "be specified as well.".format(par1n, par2n))
+
+    return par1
+
+
+def _check_close_scale(scale, ref):
+    rtol = 10.0 * np.finfo(float).eps
+    atol = 100.0 * np.finfo(float).tiny
+    return np.isclose(scale, ref, atol=atol, rtol=rtol)
+
+
+def mergeWCS(default_wcs, user_pars):
     """ Merges the user specified WCS values given as dictionary derived from
         the input configObj object with the output PyWCS object computed
         using distortion.output_wcs().
@@ -536,70 +595,120 @@ def mergeWCS(default_wcs,user_pars):
     #
     outwcs = default_wcs.deepcopy()
 
-    # If there are no user set parameters, just return a copy of the original WCS
-    merge = False
-    for upar in user_pars.values():
-        if upar is not None:
-            merge = True
-            break
-
-    if not merge:
+    # If there are no user set parameters, just return a copy of
+    # the original WCS:
+    if all([upar is None for upar in user_pars.values()]):
         return outwcs
 
-    if ('ra' not in user_pars) or user_pars['ra'] == None:
+    if _check_custom_WCS_pars('ra', 'dec', user_pars):
+        _crval = (user_pars['ra'], user_pars['dec'])
+    else:
         _crval = None
-    else:
-        _crval = (user_pars['ra'],user_pars['dec'])
 
-    if ('scale' not in user_pars) or user_pars['scale'] == None:
-        _ratio = 1.0
-        _psize = None
-        # Need to resize the WCS for any changes in pscale
+    if ('scale' in user_pars and user_pars['scale'] is not None and
+        not _check_close_scale(user_pars['scale'], outwcs.pscale)):
+        _scale = user_pars['scale']
+        _ratio = outwcs.pscale / _scale
     else:
-        _ratio = outwcs.pscale / user_pars['scale']
-        _psize = user_pars['scale']
+        _ratio = None
+        _scale = None
 
-    if ('rot' not in user_pars) or user_pars['rot'] == None:
-        _orient = None
-        _delta_rot = 0.
+    if ('rot' not in user_pars) or user_pars['rot'] is None:
+        _delta_rot = None
     else:
-        _orient = user_pars['rot']
         _delta_rot = outwcs.orientat - user_pars['rot']
+        if _delta_rot == 0.0:
+            _delta_rot = None
 
-    _mrot = fileutil.buildRotMatrix(_delta_rot)
+    if _check_custom_WCS_pars('crpix1', 'crpix2', user_pars):
+        _crpix = (user_pars['crpix1'], user_pars['crpix2'])
+    else:
+        _crpix = None
 
-    if ('outnx' not in user_pars) or user_pars['outnx'] == None:
-        _corners = np.array([[0.,0.],[outwcs._naxis1,0.],[0.,outwcs._naxis2],[outwcs._naxis1,outwcs._naxis2]])
-        _corners -= (outwcs._naxis1/2.,outwcs._naxis2/2.)
-        _range = util.getRotatedSize(_corners,_delta_rot)
-        shape = ((_range[0][1] - _range[0][0])*_ratio,(_range[1][1]-_range[1][0])*_ratio)
-        old_shape = (outwcs._naxis1*_ratio,outwcs._naxis2*_ratio)
+    shape = None
 
-        _crpix = (shape[0]/2., shape[1]/2.)
+    if _check_custom_WCS_pars('outnx', 'outny', user_pars):
+        shape = (
+            int(_py2round(user_pars['outnx'])),
+            int(_py2round(user_pars['outny']))
+        )
+
+        if shape[0] < 1 or shape[1] < 1:
+            raise ValueError("Custom WCS output image size smaller than 1")
+
+        if _crpix is None:
+            # make sure new image is centered on the CRPIX of the old WCS:
+            _crpix = ((shape[0] + 1.0) / 2.0, (shape[1] + 1.0) / 2.0)
 
     else:
-        shape = [user_pars['outnx'],user_pars['outny']]
-        if user_pars['crpix1'] == None:
-            _crpix = (shape[0]/2.,shape[1]/2.)
-        else:
-            _crpix = [user_pars['crpix1'],user_pars['crpix2']]
+        if _delta_rot is None:
+            # no rotation is involved
 
-    # Set up the new WCS based on values from old one.
-    # Update plate scale
-    outwcs.wcs.cd = outwcs.wcs.cd / _ratio
-    outwcs.pscale /= _ratio
-    #Update orientation
-    outwcs.rotateCD(_delta_rot)
-    outwcs.orientat += -_delta_rot
-    # Update size
-    outwcs._naxis1 =  int(shape[0])
-    outwcs._naxis2 =  int(shape[1])
-    # Update reference position
-    outwcs.wcs.crpix = np.array(_crpix,dtype=np.float64)
+            if _ratio is not None:
+                # apply scale only:
+
+                # compute output image shape:
+                shape = (
+                    max(1, int(_py2round(_ratio * outwcs._naxis1))),
+                    max(1, int(_py2round(_ratio * outwcs._naxis2)))
+                )
+
+                # update CRPIX:
+                if _crpix is None:
+                    _crpix = 1.0 + _ratio * (outwcs.wcs.crpix - 1.0)
+
+        else:
+            _corners = np.array(
+                [[0.5, 0.5],
+                 [outwcs._naxis1 + 0.5, 0.5],
+                 [0.5, outwcs._naxis2 + 0.5],
+                 [outwcs._naxis1 + 0.5, outwcs._naxis2 + 0.5]]
+            ) - outwcs.wcs.crpix
+
+            if _ratio is not None:
+                # scale corners:
+                _corners *= _ratio
+
+            # rotate corners and find new image range:
+            ((_xmin, _xmax), (_ymin, _ymax)) = util.getRotatedSize(_corners,
+                                                                   _delta_rot)
+
+            # compute output image shape:
+            # NOTE: _py2round may be replaced with np.ceil
+            shape = (
+                max(1, int(_py2round(_xmax - _xmin))),
+                max(1, int(_py2round(_ymax - _ymin)))
+            )
+
+            if _crpix is None:
+                # update CRPIX:
+                _crpix = (-_xmin + 0.5, -_ymin + 0.5)
+
+    # Set up the new WCS based on values from old one:
+
+    if _ratio is not None:
+        # Update plate scale
+        outwcs.wcs.cd = outwcs.wcs.cd / _ratio
+        outwcs.pscale = _scale
+
+    # update orientation
+    if _delta_rot is not None:
+        outwcs.wcs.cd = _rotateCD(outwcs.wcs.cd, _delta_rot)
+        outwcs.orientat -= _delta_rot
+
+    if shape is not None:
+        # update size:
+        outwcs._naxis1, outwcs._naxis2 = shape
+
+    # update reference position
+    if _crpix is not None:
+        outwcs.wcs.crpix = np.array(_crpix, dtype=np.float64)
+
     if _crval is not None:
-        outwcs.wcs.crval = np.array(_crval,dtype=np.float64)
+        outwcs.wcs.crval = np.array(_crval, dtype=np.float64)
 
     return outwcs
+
 
 def convertWCS(inwcs,drizwcs):
     """ Copy WCSObject WCS into Drizzle compatible array."""
@@ -883,3 +992,43 @@ def apply_fitlin(data,P,Q):
         xy1x = xy1[:,0] + xsh
         xy1y = xy1[:,1] + ysh
     return xy1x,xy1y
+
+
+def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
+    """
+    Reads in alternate primary WCS from specified extension.
+
+    Parameters
+    ----------
+    fobj : str, `astropy.io.fits.HDUList`
+        fits filename or fits file object
+        containing alternate/primary WCS(s) to be converted
+    wcskey : str
+        [" ",A-Z]
+        alternate/primary WCS key that will be replaced by the new key
+    ext : int
+        fits extension number
+    Returns
+    -------
+    hdr: fits.Header
+        header object with ONLY the keywords for specified alternate WCS
+    """
+    log.setLevel(logging.WARNING)
+    if isinstance(fobj, str):
+        fobj = fits.open(fobj, memmap=False)
+
+    hdr = altwcs._getheader(fobj, ext)
+    try:
+        nwcs = pywcs.WCS(hdr, fobj=fobj, key=wcskey)
+    except KeyError:
+        if verbose:
+            print('readAltWCS: Could not read WCS with key %s' % wcskey)
+            print('            Skipping %s[%s]' % (fobj.filename(), str(ext)))
+        return None
+
+    hwcs = nwcs.to_header()
+
+    if nwcs.wcs.has_cd():
+        hwcs = altwcs.pc2cd(hwcs, key=wcskey)
+    log.setLevel(logging.INFO)
+    return hwcs

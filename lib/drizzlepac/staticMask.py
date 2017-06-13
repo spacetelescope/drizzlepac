@@ -14,14 +14,17 @@ from __future__ import absolute_import, division, print_function  # confidence h
 
 import os
 import sys
+from distutils.version import LooseVersion
 
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
+import astropy
 from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util
 from . import processInput
 
+ASTROPY_VER_GE13 = LooseVersion(astropy.__version__) >= LooseVersion('1.3')
 
 __taskname__ = "drizzlepac.staticMask"
 _step_num_ = 1
@@ -53,7 +56,7 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
     if configObj is None:
         return
 
-    if editpars == False:
+    if not editpars:
         run(configObj)
 
 #this is called by the TEAL interface
@@ -270,25 +273,28 @@ class staticMask(object):
 
         for key in self.masklist.keys():
             #check to see if the file already exists on disk
-            filename=self.masknames[key]
+            filename = self.masknames[key]
             #create a new fits image with the mask array and a standard header
             #open a new header and data unit
             newHDU = fits.PrimaryHDU()
             newHDU.data = self.masklist[key]
 
-            if not virtual:
-                if not(fileutil.checkFileExists(filename)):
-                    try:
-                        newHDU.writeto(filename, clobber=True)
-                        log.info("Saving static mask to disk: %s" % filename)
-
-                    except IOError:
-                        log.error("Problem saving static mask file: %s to "
-                                  "disk!\n" % filename)
-                        raise IOError
-            else:
+            if virtual:
                 for img in imageObjectList:
                     img.saveVirtualOutputs({filename:newHDU})
+
+            else:
+                try:
+                    if ASTROPY_VER_GE13:
+                        newHDU.writeto(filename, overwrite=True)
+                    else:
+                        newHDU.writeto(filename, clobber=True)
+                    log.info("Saving static mask to disk: %s" % filename)
+
+                except IOError:
+                    log.error("Problem saving static mask file: %s to "
+                              "disk!\n" % filename)
+                    raise IOError
 
 
 def help(file=None):

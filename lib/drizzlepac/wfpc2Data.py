@@ -93,7 +93,7 @@ class WFPC2InputImage (imageObject):
 
         #dq_suffix = DQ_EXTNS[suffix[1:]]
         if os.path.exists(dqfile):
-            dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1)
+            dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1, memmap=False)
         else:
             dq_suffix = "SCI"
 
@@ -136,25 +136,22 @@ class WFPC2InputImage (imageObject):
 
             # We need to treat Read Noise as a special case since it is
             # not populated in the WFPC2 primary header
-            if (instrpars['rnkeyword'] != None):
-                chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                         instrpars['rnkeyword'])
-            else:
+            if instrpars['rnkeyword'] is None:
                 chip._rdnoise = None
+            else:
+                chip._rdnoise   = self.getInstrParameter(
+                    instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+                )
 
-            if chip._headergain == None or chip._exptime == None:
+            if chip._headergain is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
 
-        usingDefaultGain = False
-        usingDefaultReadnoise = False
-        if (instrpars['gnkeyword'] == 'ATODGAIN'):
-            usingDefaultGain = True
-        if (instrpars['rnkeyword'] == None or instrpars['rnkeyword'] == 'None'):
-            usingDefaultReadnoise = True
+        usingDefaultGain = instrpars['gnkeyword'] == 'ATODGAIN'
+        usingDefaultReadnoise = instrpars['rnkeyword'] in [None, 'None']
 
         # If the user has specified either the readnoise or the gain, we need to make sure
         # that they have actually specified both values.  In the default case, the readnoise
@@ -196,8 +193,7 @@ class WFPC2InputImage (imageObject):
             gets done, even if only 1 chip was specified to be processed.
         """
          # Image information
-        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0)
-        _handle = fileutil.openImage(self._filename,mode='readonly')
+        _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         # Now convert the SCI array(s) units
         for det in range(1,self._numchips+1):
@@ -208,7 +204,7 @@ class WFPC2InputImage (imageObject):
             if 'D2IMFILE' in _handle[0].header and _handle[0].header['D2IMFILE'] not in ["","N/A"]:
                 chip.outputNames['d2imfile'] = _handle[0].header['D2IMFILE']
 
-            if chip._gain != None:
+            if chip._gain is not None:
                 """
                 # Multiply the values of the sci extension pixels by the gain.
                 print "Converting %s[%d] from COUNTS to ELECTRONS"%(self._filename,det)
@@ -262,19 +258,18 @@ class WFPC2InputImage (imageObject):
             darkcurrent = chip.header['DARKTIME'] * darkrate
 
         except:
-            str =  "#############################################\n"
-            str += "#                                           #\n"
-            str += "# Error:                                    #\n"
-            str += "#   Cannot find the value for 'DARKTIME'    #\n"
-            str += "#   in the image header.  WFPC2 input       #\n"
-            str += "#   images are expected to have this header #\n"
-            str += "#   keyword.                                #\n"
-            str += "#                                           #\n"
-            str += "# Error occured in the WFPC2InputImage class#\n"
-            str += "#                                           #\n"
-            str += "#############################################\n"
-            raise ValueError(str)
-
+            msg =  "#############################################\n"
+            msg += "#                                           #\n"
+            msg += "# Error:                                    #\n"
+            msg += "#   Cannot find the value for 'DARKTIME'    #\n"
+            msg += "#   in the image header.  WFPC2 input       #\n"
+            msg += "#   images are expected to have this header #\n"
+            msg += "#   keyword.                                #\n"
+            msg += "#                                           #\n"
+            msg += "# Error occured in the WFPC2InputImage class#\n"
+            msg += "#                                           #\n"
+            msg += "#############################################\n"
+            raise ValueError(msg)
 
         return darkcurrent
 
@@ -306,7 +301,7 @@ class WFPC2InputImage (imageObject):
         sci_chip.dqmaskname = dqmask_name
         sci_chip.outputNames['dqmask'] = dqmask_name
         sci_chip.outputNames['tmpmask'] = 'wfpc2_inmask%d.fits'%(sci_chip.detnum)
-        dqmask = fits.getdata(dqmask_name, 0)
+        dqmask = fits.getdata(dqmask_name, ext=0, memmap=False)
         return dqmask
 
     def _assignSignature(self, chip):

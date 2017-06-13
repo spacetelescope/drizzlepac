@@ -50,7 +50,7 @@ DRIZ_KEYWORDS = {
                 'WKEY':{'value':"",'comment':'Input image WCS Version used'}
                 }
 
-
+import logging
 log = logutil.create_logger(__name__)
 
 
@@ -450,8 +450,11 @@ class OutputImage:
             fo.append(hdu)
 
             # remove all alternate WCS solutions from headers of this product
-            wcs_functions.removeAllAltWCS(fo,wcs_ext)
 
+            logging.disable(logging.INFO)
+            wcs_functions.removeAllAltWCS(fo,wcs_ext)
+            logging.disable(logging.NOTSET)
+ 
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
@@ -465,7 +468,7 @@ class OutputImage:
             # End 'if not virtual'
             outputFITS[self.outdata]= fo
 
-            if self.outweight and whtarr != None:
+            if self.outweight and whtarr is not None:
                 # We need to build new PyFITS objects for each WHT array
                 fwht = fits.HDUList()
 
@@ -506,7 +509,7 @@ class OutputImage:
 
             # If a context image was specified, build a PyFITS object
             # for it as well...
-            if self.outcontext and ctxarr != None:
+            if self.outcontext and ctxarr is not None:
                 fctx = fits.HDUList()
 
                 # If there is only 1 plane, write it out as a 2-D extension
@@ -642,7 +645,7 @@ class OutputImage:
             del drizdict
 
         # Add version information as HISTORY cards to the header
-        if versions != None:
+        if versions is not None:
             ver_str = "AstroDrizzle processing performed using: "
             hdr.add_history(ver_str)
             for k in versions.keys():
@@ -670,7 +673,7 @@ def cleanTemplates(scihdr,errhdr,dqhdr):
     # At this point, check errhdr and dqhdr to make sure they
     # have all the requisite keywords (as listed in updateDTHKeywords).
     # Simply copy them from scihdr if they don't exist...
-    if errhdr != None and dqhdr != None:
+    if errhdr is not None and dqhdr is not None:
         for keyword in WCS_KEYWORDS:
             if keyword in scihdr:
                 if keyword not in errhdr:

@@ -34,7 +34,11 @@ from __future__ import absolute_import, division, print_function # confidence hi
 
 import os
 
-from stsci.tools import fileutil, readgeis, bitmask
+from stsci.tools import fileutil, readgeis
+try:
+    from stsci.tools.bitmask import bitfield_to_boolean_mask
+except ImportError:
+    from stsci.tools.bitmask import bitmask2mask as bitfield_to_boolean_mask
 
 from astropy.io import fits
 import numpy as np
@@ -77,21 +81,13 @@ def buildDQMasks(imageObjectList,configObj):
         img.buildMask(configObj['single'], configObj['bits'])
 
 
-def buildMask(dqarr,bitvalue):
-    """ Builds a bit-mask from an input DQ array and a bitvalue flag"""
+def buildMask(dqarr, bitvalue):
+    """ Builds a bit-mask from an input DQ array and a bitvalue flag """
+    return bitfield_to_boolean_mask(dqarr, bitvalue, good_mask_value=1,
+                                    dtype=np.uint8)
 
-    bitvalue = bitmask.interpret_bits_value(bitvalue)
 
-    #if bitvalue == None:
-        #return ((dqarr * 0.0) + 1.0).astype(np.uint8)
-    #_maskarr = np.bitwise_or(dqarr,np.array([bitvalue]))
-    #return np.choose(np.greater(_maskarr,bitvalue),(1,0)).astype(np.uint8)
-
-    if bitvalue is None:
-        return (np.ones(dqarr.shape,dtype=np.uint8))
-    return np.logical_not(np.bitwise_and(dqarr,~bitvalue)).astype(np.uint8)
-
-def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
+def buildMaskImage(rootname, bitvalue, output, extname='DQ', extver=1):
     """ Builds mask image from rootname's DQ array
         If there is no valid 'DQ' array in image, then return
         an empty string.
@@ -111,10 +107,10 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
         fileutil.removeFile(maskname)
 
     # Open input file with DQ array
-    fdq = fileutil.openImage(rootname,memmap=0,mode='readonly')
+    fdq = fileutil.openImage(rootname, mode='readonly', memmap=False)
     try:
-        _extn = fileutil.findExtname(fdq,extname,extver=extver)
-        if _extn != None:
+        _extn = fileutil.findExtname(fdq, extname, extver=extver)
+        if _extn is not None:
             # Read in DQ array
             dqarr = fdq[_extn].data
         else:
@@ -122,11 +118,11 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
 
         # For the case where there is no DQ array,
         # create a mask image of all ones.
-        if dqarr == None:
+        if dqarr is None:
             # We need to get the dimensions of the output DQ array
             # Since the DQ array is non-existent, look for the SCI extension
             _sci_extn = fileutil.findExtname(fdq,'SCI',extver=extver)
-            if _sci_extn != None:
+            if _sci_extn is not None:
                 _shape = fdq[_sci_extn].data.shape
                 dqarr = np.zeros(_shape,dtype=np.uint16)
             else:
@@ -134,7 +130,7 @@ def buildMaskImage(rootname,bitvalue,output,extname='DQ',extver=1):
         # Build mask array from DQ array
         maskarr = buildMask(dqarr,bitvalue)
         #Write out the mask file as simple FITS file
-        fmask = fits.open(maskname, 'append')
+        fmask = fits.open(maskname, mode='append', memmap=False)
         maskhdu = fits.PrimaryHDU(data = maskarr)
         fmask.append(maskhdu)
 
@@ -206,16 +202,14 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
     if fileutil.findFile(maskname):
         fileutil.removeFile(maskname)
 
-    _use_inmask = False
-    if fileutil.findFile(dqfile) != True or bitvalue == None:
-        _use_inmask = True
+    _use_inmask = not fileutil.findFile(dqfile) or bitvalue is None
 
     # Check for existance of input .c1h file for use in making inmask file
-    if fileutil.findFile(dqfile) != True or bitvalue is None:
+    if _use_inmask:
         #_mask = 'wfpc2_inmask'+detnum+'.fits'
         _mask = maskname
         # Check to see if file exists...
-        if _use_inmask and not fileutil.findFile(_mask):
+        if not fileutil.findFile(_mask):
         # If not, create the file.
         # This takes a long time to run, so it should be done
         # only when absolutely necessary...
@@ -236,7 +230,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
                     del bmaskarr
 
                 #Write out the mask file as simple FITS file
-                fmask = fits.open(_mask,'append')
+                fmask = fits.open(_mask, mode='append', memmap=False)
                 maskhdu = fits.PrimaryHDU(data=maskarr)
                 fmask.append(maskhdu)
 
@@ -250,8 +244,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
         #
         # Build full mask based on .c1h and shadow mask
         #
-        fdq = fileutil.openImage(dqfile)
-        #fsmask = fits.open(_mask,memmap=1,mode='readonly')
+        fdq = fileutil.openImage(dqfile, mode='readonly', memmap=False)
         try:
             # Read in DQ array from .c1h and from shadow mask files
             dqarr = fdq[int(extnum)].data
@@ -261,7 +254,7 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
             dqmaskarr = buildMask(dqarr,bitvalue)
 
             #Write out the mask file as simple FITS file
-            fdqmask = fits.open(maskname,'append')
+            fdqmask = fits.open(maskname, mode='append', memmap=False)
             maskhdu = fits.PrimaryHDU(data=dqmaskarr)
             fdqmask.append(maskhdu)
 

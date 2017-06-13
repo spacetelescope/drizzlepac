@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 3: Subtracting the Sky &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Step 3: Subtracting the Sky &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" />
     <link rel="prev" title="Step 2: Generate a Static Mask" href="static.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -57,22 +59,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="adrizzle.html"
                         title="next chapter">Step 4 and 8: Drizzling the Images</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/sky.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/sky.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -81,7 +82,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="module-drizzlepac.sky">
 <span id="step-3-subtracting-the-sky"></span><span id="subtractsky"></span><h1>Step 3: Subtracting the Sky<a class="headerlink" href="#module-drizzlepac.sky" title="Permalink to this headline">¶</a></h1>
@@ -91,20 +92,18 @@ input image while recording the subtracted value in the image header.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Christopher Hanley, Megan Sosey, Mihai Cara</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Christopher Hanley, Megan Sosey, Mihai Cara</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="function">
 <dt id="drizzlepac.sky.sky">
-<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">sky</tt><big>(</big><em>input=None</em>, <em>outExt=None</em>, <em>configObj=None</em>, <em>group=None</em>, <em>editpars=False</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.sky.sky" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.sky.</code><code class="descname">sky</code><span class="sig-paren">(</span><em>input=None</em>, <em>outExt=None</em>, <em>configObj=None</em>, <em>group=None</em>, <em>editpars=False</em>, <em>**inputDict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/sky.html#sky"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.sky.sky" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for computing and subtracting (or equalizing/matching) the backgroud
 in input images. The algorithm for sky subtraction can be selected through
-the <em class="xref py py-obj">skymethod</em> parameter. This function will update the <tt class="docutils literal"><span class="pre">MDRIZSKY</span></tt> keyword
+the <code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code> parameter. This function will update the <code class="docutils literal"><span class="pre">MDRIZSKY</span></code> keyword
 in the headers of the input files.</p>
 <p>Sky subtraction is generally recommended for optimal flagging and removal of
 CR&#8217;s when the sky background is more than a few electrons.  However, some
@@ -132,8 +131,7 @@ see the <a class="reference external" href="http://drizzlepac.stsci.edu">Drizzle
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = None)</p>
 <blockquote>
 <div><p>A python list of image filenames, or just a single filename.</p>
 </div></blockquote>
@@ -144,7 +142,7 @@ then the input image is overwritten.</p>
 </div></blockquote>
 <p><strong id="configObj">configObj</strong> : configObject (Default = None)</p>
 <blockquote>
-<div><p>An instance of <em class="xref py py-obj">configObject</em></p>
+<div><p>An instance of <code class="xref py py-obj docutils literal"><span class="pre">configObject</span></code></p>
 </div></blockquote>
 <p><strong id="group">group</strong> : int (Default = None)</p>
 <blockquote>
@@ -159,16 +157,16 @@ then the input image is overwritten.</p>
 <div><p>An optional list of parameters specified by the user.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">These are parameters that <em class="xref py py-obj">configObj</em> should contain by default. These
-parameters can be altered on the fly using the <em class="xref py py-obj">inputDict</em>. If <em class="xref py py-obj">configObj</em>
-is set to None and there is no <em class="xref py py-obj">inputDict</em> information, then the values
+<p class="last">These are parameters that <code class="xref py py-obj docutils literal"><span class="pre">configObj</span></code> should contain by default. These
+parameters can be altered on the fly using the <code class="xref py py-obj docutils literal"><span class="pre">inputDict</span></code>. If <code class="xref py py-obj docutils literal"><span class="pre">configObj</span></code>
+is set to None and there is no <code class="xref py py-obj docutils literal"><span class="pre">inputDict</span></code> information, then the values
 for the parameters will be pulled from the default configuration files
 for the task. These are the same configuration files that are
 referenced in the TEAL parameter interface GUI. If you wish to edit
 these parameters by hand in the GUI, simply set editpars=True.</p>
 </div>
-<p>Table of optional parameters that should be in <em class="xref py py-obj">configobj</em> and can also be
-specified in <em class="xref py py-obj">inputDict</em>.</p>
+<p>Table of optional parameters that should be in <code class="xref py py-obj docutils literal"><span class="pre">configobj</span></code> and can also be
+specified in <code class="xref py py-obj docutils literal"><span class="pre">inputDict</span></code>.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="17%" />
@@ -180,52 +178,52 @@ specified in <em class="xref py py-obj">inputDict</em>.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><em class="xref py py-obj">skyuser</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code></td>
 <td>&#8216;KEYWORD in header which indicates a sky subtraction value to use&#8217;.</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">skymethod</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code></td>
 <td>&#8216;Sky computation method&#8217;</td>
 </tr>
-<tr class="row-even"><td><em class="xref py py-obj">skysub</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skysub</span></code></td>
 <td>&#8216;Perform sky subtraction?&#8217;</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">skywidth</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skywidth</span></code></td>
 <td>&#8216;Bin width of histogram for sampling sky statistics (in sigma)&#8217;</td>
 </tr>
-<tr class="row-even"><td><em class="xref py py-obj">skystat</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skystat</span></code></td>
 <td>&#8216;Sky correction statistics parameter&#8217;</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">skylower</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skylower</span></code></td>
 <td>&#8216;Lower limit of usable data for sky (always in electrons)&#8217;</td>
 </tr>
-<tr class="row-even"><td><em class="xref py py-obj">skyupper</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skyupper</span></code></td>
 <td>&#8216;Upper limit of usable data for sky (always in electrons)&#8217;</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">skyclip</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skyclip</span></code></td>
 <td>&#8216;Number of clipping iterations&#8217;</td>
 </tr>
-<tr class="row-even"><td><em class="xref py py-obj">skylsigma</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skylsigma</span></code></td>
 <td>&#8216;Lower side clipping factor (in sigma)&#8217;</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">skyusigma</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skyusigma</span></code></td>
 <td>&#8216;Upper side clipping factor (in sigma)&#8217;</td>
 </tr>
-<tr class="row-even"><td><em class="xref py py-obj">skymask_cat</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skymask_cat</span></code></td>
 <td>&#8216;Catalog file listing image masks&#8217;</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">use_static</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">use_static</span></code></td>
 <td>&#8216;Use static mask for skymatch computations?&#8217;</td>
 </tr>
-<tr class="row-even"><td><em class="xref py py-obj">sky_bits</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code></td>
 <td>&#8216;Bit flags for identifying bad pixels in DQ array&#8217;</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">skyuser</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code></td>
 <td>&#8216;KEYWORD indicating a sky subtraction value if done by user&#8217;</td>
 </tr>
-<tr class="row-even"><td><em class="xref py py-obj">skyfile</em></td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skyfile</span></code></td>
 <td>&#8216;Name of file with user-computed sky values&#8217;</td>
 </tr>
-<tr class="row-odd"><td><em class="xref py py-obj">in_memory</em></td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">in_memory</span></code></td>
 <td>&#8216;Optimize for speed or for memory use&#8217;</td>
 </tr>
 </tbody>
@@ -235,21 +233,20 @@ specified in <em class="xref py py-obj">inputDict</em>.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>None</strong> : The input file&#8217;s primary headers is updated with the computed sky value.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>None</strong> : The input file&#8217;s primary headers is updated with the computed sky value.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
 <tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>skysub</strong> : bool (Default = Yes)</p>
 <blockquote>
-<div><p>Turn on or off sky subtraction on the input data. When <em class="xref py py-obj">skysub</em> is set
-to <em class="xref py py-obj">no</em>, then <em class="xref py py-obj">skyuser</em> field will be enabled and if user specifies a header
+<div><p>Turn on or off sky subtraction on the input data. When <code class="xref py py-obj docutils literal"><span class="pre">skysub</span></code> is set
+to <code class="xref py py-obj docutils literal"><span class="pre">no</span></code>, then <code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code> field will be enabled and if user specifies a header
 keyword showing the sky value in the image, then that value will be used for
 CR-rejection but it will not be subtracted from the (drizzled) image data.
-If user sets <em class="xref py py-obj">skysub</em> to <em class="xref py py-obj">yes</em> then <em class="xref py py-obj">skyuser</em> field will be disabled
+If user sets <code class="xref py py-obj docutils literal"><span class="pre">skysub</span></code> to <code class="xref py py-obj docutils literal"><span class="pre">yes</span></code> then <code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code> field will be disabled
 (and if it is not empty - it will be ignored) and user can use one of the
-methods available through the <em class="xref py py-obj">skymethod</em> parameter to compute the sky
-or provide a file (see <em class="xref py py-obj">skyfile</em> parameter) with values that should be
+methods available through the <code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code> parameter to compute the sky
+or provide a file (see <code class="xref py py-obj docutils literal"><span class="pre">skyfile</span></code> parameter) with values that should be
 subtracted from (single) drizzled images.</p>
 </div></blockquote>
 <p><strong>skymethod</strong> : {&#8216;localmin&#8217;, &#8216;globalmin+match&#8217;, &#8216;globalmin&#8217;, &#8216;match&#8217;}, optional (Default = &#8216;localmin&#8217;)</p>
@@ -259,7 +256,7 @@ subtracted from (single) drizzled images.</p>
 <li><p class="first"><strong>&#8216;localmin&#8217;</strong>: compute a common sky for all members of <em>an exposure</em>
 (see NOTES below). For a typical use, it will compute
 sky values for each chip/image extension (marked for sky
-subtraction in the <a class="reference external" href="http://docs.python.org/library/functions.html#input" title="(in Python v2.7)"><tt class="xref py py-obj docutils literal"><span class="pre">input</span></tt></a> parameter) in an input image,
+subtraction in the <a class="reference external" href="https://docs.python.org/2/library/functions.html#input" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a> parameter) in an input image,
 and it will subtract the previously found minimum sky value
 from all chips (marked for sky subtraction) in that image.
 This process is repeated for each input image.</p>
@@ -278,7 +275,7 @@ versions of astrodrizzle.</p>
 <li><p class="first"><strong>&#8216;globalmin&#8217;</strong>: compute a common sky value for all members of
 <em>all exposures</em> (see NOTES below). It will compute
 sky values for each chip/image extension (marked for sky
-subtraction in the <tt class="xref py py-attr docutils literal"><span class="pre">input</span></tt> parameter) in <strong>all</strong> input
+subtraction in the <code class="xref py py-attr docutils literal"><span class="pre">input</span></code> parameter) in <strong>all</strong> input
 images, find the minimum sky value, and then it will
 subtract the <strong>same</strong> minimum sky value from <strong>all</strong> chips
 (marked for sky subtraction) in <strong>all</strong> images. This method <em>may</em>
@@ -291,7 +288,7 @@ input images whose sky value will be set to (reported to be) 0.
 This setting will &#8220;equalize&#8221; sky values between the images in
 large mosaics. However, this method is not recommended when used
 in conjunction with <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a>
-because it computes relative sky values while <em class="xref py py-obj">astrodrizzle</em> needs
+because it computes relative sky values while <code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code> needs
 &#8220;measured&#8221; sky values for median image generation and CR rejection.</p>
 </li>
 <li><p class="first"><strong>&#8216;globalmin+match&#8217;</strong>: first find a minimum &#8220;global&#8221; sky value
@@ -344,12 +341,12 @@ covering significant parts of the image.</p>
 </div></blockquote>
 <p><strong>sky_bits</strong> : int, None, optional (Default = 0)</p>
 <blockquote>
-<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8220;good&#8221; when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ &#8220;defects&#8221; having flags 2 and 4 as being acceptable for sky computations, then <em class="xref py py-obj">sky_bits</em> should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
+<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8220;good&#8221; when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ &#8220;defects&#8221; having flags 2 and 4 as being acceptable for sky computations, then <code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code> should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
 <div class="line-block">
 <div class="line">Default value (0) will make <em>all</em> non-zero pixels in the DQ mask to be considered &#8220;bad&#8221; pixels, and the corresponding image pixels will not be used for sky computations.</div>
 </div>
 <div class="line-block">
-<div class="line">Set <em class="xref py py-obj">sky_bits</em> to <em class="xref py py-obj">None</em> to turn off the use of image&#8217;s DQ array for sky computations.</div>
+<div class="line">Set <code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code> to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> to turn off the use of image&#8217;s DQ array for sky computations.</div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -363,11 +360,11 @@ covering significant parts of the image.</p>
 <p><strong>skyuser</strong> : str (Default = &#8216;&#8217;)</p>
 <blockquote>
 <div><p>Name of header keyword which records the sky value already subtracted
-from the image by the user. The <em class="xref py py-obj">skyuser</em> parameter is ignored when
-<em class="xref py py-obj">skysub</em> is set to <em class="xref py py-obj">yes</em>.</p>
+from the image by the user. The <code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code> parameter is ignored when
+<code class="xref py py-obj docutils literal"><span class="pre">skysub</span></code> is set to <code class="xref py py-obj docutils literal"><span class="pre">yes</span></code>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">When <em class="xref py py-obj">skysub`=`no</em> and <em class="xref py py-obj">skyuser</em> field is empty, then <em class="xref py py-obj">AstroDrizzle</em> will
+<p class="last">When <code class="xref py py-obj docutils literal"><span class="pre">skysub`=`no</span></code> and <code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code> field is empty, then <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code> will
 assume that sky background is 0.0 for the purpose of cosmic-ray rejection.</p>
 </div>
 </div></blockquote>
@@ -380,38 +377,38 @@ assume that sky background is 0.0 for the purpose of cosmic-ray rejection.</p>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p><a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><tt class="xref py py-func docutils literal"><span class="pre">sky</span></tt></a> provides new algorithms for sky value computations
+<p><a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><code class="xref py py-func docutils literal"><span class="pre">sky</span></code></a> provides new algorithms for sky value computations
 and enhances previously available algorithms used by, e.g.,
 <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">Astrodrizzle</a>.</p>
 <p>First, the standard sky computation algorithm
-(see <em class="xref py py-obj">skymethod</em> = <tt class="docutils literal"><span class="pre">'localmin'</span></tt>) was upgraded to be able to use
+(see <code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code> = <code class="docutils literal"><span class="pre">'localmin'</span></code>) was upgraded to be able to use
 DQ flags and user supplied masks to remove &#8220;bad&#8221; pixels from being
 used for sky statistics computations.</p>
-<p>Second, two new methods have been introduced: <tt class="docutils literal"><span class="pre">'globalmin'</span></tt> and
-<tt class="docutils literal"><span class="pre">'match'</span></tt>, as well as a combination of the two &#8211; <tt class="docutils literal"><span class="pre">'globalmin+match'</span></tt>.</p>
+<p>Second, two new methods have been introduced: <code class="docutils literal"><span class="pre">'globalmin'</span></code> and
+<code class="docutils literal"><span class="pre">'match'</span></code>, as well as a combination of the two &#8211; <code class="docutils literal"><span class="pre">'globalmin+match'</span></code>.</p>
 <ul>
-<li><p class="first">The <tt class="docutils literal"><span class="pre">'globalmin'</span></tt> method computes the minimum sky value across <em>all</em>
+<li><p class="first">The <code class="docutils literal"><span class="pre">'globalmin'</span></code> method computes the minimum sky value across <em>all</em>
 chips in <em>all</em> input images. That sky value is then considered to be
 the background in all input images.</p>
 </li>
-<li><p class="first">The <tt class="docutils literal"><span class="pre">'match'</span></tt> algorithm is somewhat
-similar to the traditional sky subtraction method (<em class="xref py py-obj">skymethod</em>=<tt class="docutils literal"><span class="pre">'localmin'</span></tt>) in the sense that it measures the sky indipendently
+<li><p class="first">The <code class="docutils literal"><span class="pre">'match'</span></code> algorithm is somewhat
+similar to the traditional sky subtraction method (<code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code>=<code class="docutils literal"><span class="pre">'localmin'</span></code>) in the sense that it measures the sky indipendently
 in input images (or detector chips). The major differences are that,
 unlike the traditional method,</p>
 <blockquote>
 <div><ol class="arabic simple">
-<li><tt class="docutils literal"><span class="pre">'match'</span></tt> algorithm computes <em>relative</em> sky values with regard
+<li><code class="docutils literal"><span class="pre">'match'</span></code> algorithm computes <em>relative</em> sky values with regard
 to the sky in a reference image chosen from the input list
 of images; <em>and</em></li>
 <li>Sky statistics is computed only in the part of the image
 that intersects other images.</li>
 </ol>
 </div></blockquote>
-<p>This makes <tt class="docutils literal"><span class="pre">'match'</span></tt> sky computation algorithm particularly useful
+<p>This makes <code class="docutils literal"><span class="pre">'match'</span></code> sky computation algorithm particularly useful
 for &#8220;equalizing&#8221; sky values in large mosaics in which one may have
 only (at least) pair-wise intersection of images without having
 a common intersection region (on the sky) in all images.</p>
-<p>The <em class="xref py py-obj">&#8216;match&#8217;</em> method works in the following way: for each pair
+<p>The <code class="xref py py-obj docutils literal"><span class="pre">'match'</span></code> method works in the following way: for each pair
 of intersecting images, an equation is written that
 requires that average surface brightness in the overlapping part of
 the sky be equal in both images. The final system of equations is then
@@ -434,27 +431,27 @@ accordingly.</p>
 <p>Because this method computes <em>relative sky values</em> compared to a
 reference image (which will have its sky value set to 0), the sky
 values computed with this method usually are smaller than the
-&#8220;absolute&#8221; sky values computed, e.g., with the <tt class="docutils literal"><span class="pre">'localmin'</span></tt>
+&#8220;absolute&#8221; sky values computed, e.g., with the <code class="docutils literal"><span class="pre">'localmin'</span></code>
 algorithm. Since <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a> expects
 &#8220;true&#8221; (as opposite to <em>relative</em>) sky values in order to
 correctly compute the median image or to perform cosmic-ray
 detection, this algorithm in not recommended to be used <em>alone</em>
-for sky computations to be used with <em class="xref py py-obj">astrodrizzle</em>.</p>
-<p class="last">For the same reason, IVM weighting in <em class="xref py py-obj">astrodrizzle</em> should <strong>not</strong>
-be used with <tt class="docutils literal"><span class="pre">'match'</span></tt> method: sky values reported in <tt class="docutils literal"><span class="pre">MDRIZSKY</span></tt>
+for sky computations to be used with <code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code>.</p>
+<p class="last">For the same reason, IVM weighting in <code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code> should <strong>not</strong>
+be used with <code class="docutils literal"><span class="pre">'match'</span></code> method: sky values reported in <code class="docutils literal"><span class="pre">MDRIZSKY</span></code>
 header keyword will be relative sky values (sky offsets) and derived
 weights will be incorrect.</p>
 </div>
 </li>
-<li><p class="first">The <tt class="docutils literal"><span class="pre">'globalmin+match'</span></tt> algorithm combines <tt class="docutils literal"><span class="pre">'match'</span></tt> and
-<tt class="docutils literal"><span class="pre">'globalmin'</span></tt> methods in order to overcome the limitation of the
-<tt class="docutils literal"><span class="pre">'match'</span></tt> method described in the note above: it uses <tt class="docutils literal"><span class="pre">'globalmin'</span></tt>
+<li><p class="first">The <code class="docutils literal"><span class="pre">'globalmin+match'</span></code> algorithm combines <code class="docutils literal"><span class="pre">'match'</span></code> and
+<code class="docutils literal"><span class="pre">'globalmin'</span></code> methods in order to overcome the limitation of the
+<code class="docutils literal"><span class="pre">'match'</span></code> method described in the note above: it uses <code class="docutils literal"><span class="pre">'globalmin'</span></code>
 algorithm to find a baseline sky value common to all input images
-and the <tt class="docutils literal"><span class="pre">'match'</span></tt> algorithm to &#8220;equalize&#8221; sky values in the mosaic.
+and the <code class="docutils literal"><span class="pre">'match'</span></code> algorithm to &#8220;equalize&#8221; sky values in the mosaic.
 Thus, the sky value of the &#8220;reference&#8221; image will be equal to the
-baseline sky value (instead of 0 in <tt class="docutils literal"><span class="pre">'match'</span></tt> algorithm alone)
+baseline sky value (instead of 0 in <code class="docutils literal"><span class="pre">'match'</span></code> algorithm alone)
 making this method acceptable for use in conjunction with
-<em class="xref py py-obj">astrodrizzle</em>.</p>
+<code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code>.</p>
 </li>
 </ul>
 <dl class="docutils">
@@ -463,8 +460,8 @@ making this method acceptable for use in conjunction with
 that correspond to different chips in the detector used to acquire
 the image. The subset of image extensions that form an exposure
 is defined by specifying extensions to be used with input images
-(see parameter <em class="xref py py-obj">input</em>).</p>
-<p>See help for <tt class="xref py py-func docutils literal"><span class="pre">skypac.parseat.parse_at_line</span></tt> for details
+(see parameter <a class="reference external" href="https://docs.python.org/2/library/functions.html#input" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a>).</p>
+<p>See help for <code class="xref py py-func docutils literal"><span class="pre">skypac.parseat.parse_at_line</span></code> for details
 on how to specify image extensions.</p>
 <p><strong>Footprint</strong> &#8211; the outline (edge) of the projection of a chip or
 of an exposure on the celestial sphere.</p>
@@ -472,19 +469,19 @@ of an exposure on the celestial sphere.</p>
 <p class="first admonition-title">Note</p>
 <ul class="last simple">
 <li>Footprints are managed by the
-<tt class="xref py py-class docutils literal"><span class="pre">SphericalPolygon</span></tt> class.</li>
+<code class="xref py py-class docutils literal"><span class="pre">SphericalPolygon</span></code> class.</li>
 <li>Both footprints <em>and</em> associated exposures (image data, WCS
 information, and other header information) are managed by the
-<tt class="xref py py-class docutils literal"><span class="pre">SkyLine</span></tt> class.</li>
-<li>Each <tt class="xref py py-class docutils literal"><span class="pre">SkyLine</span></tt> object contains one or more
-<tt class="xref py py-class docutils literal"><span class="pre">SkyLineMember</span></tt> objects that manage
+<code class="xref py py-class docutils literal"><span class="pre">SkyLine</span></code> class.</li>
+<li>Each <code class="xref py py-class docutils literal"><span class="pre">SkyLine</span></code> object contains one or more
+<code class="xref py py-class docutils literal"><span class="pre">SkyLineMember</span></code> objects that manage
 both footprints <em>and</em> associated <em>chip</em> data that form an exposure.</li>
 </ul>
 </div>
 </dd>
 <dt><strong>Remarks:</strong></dt>
 <dd><ul class="first last">
-<li><p class="first"><a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><tt class="xref py py-func docutils literal"><span class="pre">sky</span></tt></a> works directly on <em>geometrically distorted</em>
+<li><p class="first"><a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><code class="xref py py-func docutils literal"><span class="pre">sky</span></code></a> works directly on <em>geometrically distorted</em>
 flat-fielded images thus avoiding the need to perform an additional
 drizzle step to perform distortion correction of input images.</p>
 <p>Initially, the footprint of a chip in an image is aproximated by a
@@ -501,7 +498,7 @@ of image pairs are found by intersecting these spherical polygons.</p>
 <dd><p class="first">Primary reason for introducing &#8220;sky match&#8221; algorithm was to try to
 equalize the sky in large mosaics in which computation of the
 &#8220;absolute&#8221; sky is difficult due to the presence of large diffuse
-sources in the image. As discussed above, <a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><tt class="xref py py-func docutils literal"><span class="pre">sky</span></tt></a>
+sources in the image. As discussed above, <a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><code class="xref py py-func docutils literal"><span class="pre">sky</span></code></a>
 accomplishes this by comparing &#8220;sky values&#8221; in a pair of images in the
 overlap region (that is common to both images). Quite obviously the
 quality of sky &#8220;matching&#8221; will depend on how well these &#8220;sky values&#8221;
@@ -517,12 +514,12 @@ that flat-fielding is performed to obtain uniform surface brightness
 and not flux. This distinction is important for images that have
 not been distortion corrected. As a consequence, it is advisable that
 point-like sources be masked through the user-supplied mask files.
-Alternatively, one can use <em class="xref py py-obj">upper</em> parameter to limit the use of
+Alternatively, one can use <code class="xref py py-obj docutils literal"><span class="pre">upper</span></code> parameter to limit the use of
 bright objects in sky computations.</li>
 <li>Normally, distorted flat-fielded images contain cosmic rays. This
 algorithm does not perform CR cleaning. A possible way of minimizing
 the effect of the cosmic rays on sky computations is to use
-clipping (<em class="xref py py-obj">nclip</em> &gt; 0) and/or set <em class="xref py py-obj">upper</em> parameter to a value
+clipping (<code class="xref py py-obj docutils literal"><span class="pre">nclip</span></code> &gt; 0) and/or set <code class="xref py py-obj docutils literal"><span class="pre">upper</span></code> parameter to a value
 larger than most of the sky background (or extended source) but
 lower than the values of most CR pixels.</li>
 <li>In general, clipping is a good way of eliminating &#8220;bad&#8221; pixels:
@@ -535,21 +532,21 @@ different images even when factoring in the &#8220;true&#8221; difference
 in the sky background between the two images.</li>
 <li>In general images can have different &#8220;true&#8221; background values
 (we could measure it if images were not affected by large diffuse
-sources). However, arguments such as <em class="xref py py-obj">lower</em> and <em class="xref py py-obj">upper</em> will
+sources). However, arguments such as <code class="xref py py-obj docutils literal"><span class="pre">lower</span></code> and <code class="xref py py-obj docutils literal"><span class="pre">upper</span></code> will
 apply to all images regardless of the intrinsic differences
 in sky levels.</li>
 </ul>
 </dd>
 <dt><strong>How to use the tasks stand alone interface in your own scripts:</strong></dt>
 <dd>These tasks are designed to work together seemlessly when run in the
-full <em class="xref py py-obj">AstroDrizzle</em> interface. More advanced users may wish to create
+full <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code> interface. More advanced users may wish to create
 specialized scripts for their own datasets, making use of only a subset
-of the predefined <em class="xref py py-obj">AstroDrizzle</em> tasks, or add additional processing,
+of the predefined <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code> tasks, or add additional processing,
 which may be usefull for their particular data. In these cases,
 individual access to the tasks is important.</dd>
 </dl>
-<p>Something to keep in mind is that the full <em class="xref py py-obj">AstroDrizzle</em> interface will
-make backup copies of your original files and place them in the <tt class="docutils literal"><span class="pre">OrIg/</span></tt>
+<p>Something to keep in mind is that the full <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code> interface will
+make backup copies of your original files and place them in the <code class="docutils literal"><span class="pre">OrIg/</span></code>
 directory of your current working directory. If you are working with
 the stand alone interfaces, it is assumed that the user has already taken
 care of backing up their original datafiles as the input file with be
@@ -557,24 +554,23 @@ directly altered.</p>
 <p class="rubric">Examples</p>
 <p>Basic example of how to call sky yourself from a python command line,
 this example will use the default parameter settings and subtract a sky
-value from each <tt class="docutils literal"><span class="pre">*flt.fits</span></tt> image in the current directory,
+value from each <code class="docutils literal"><span class="pre">*flt.fits</span></code> image in the current directory,
 saving the output file with the extension of &#8220;mysky&#8221;:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">sky</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sky</span><span class="o">.</span><span class="n">sky</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">,</span><span class="n">outExt</span><span class="o">=</span><span class="s">&#39;mysky&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">sky</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sky</span><span class="o">.</span><span class="n">sky</span><span class="p">(</span><span class="s1">&#39;*flt.fits&#39;</span><span class="p">,</span><span class="n">outExt</span><span class="o">=</span><span class="s1">&#39;mysky&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.sky.help">
-<tt class="descclassname">drizzlepac.sky.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.sky.help" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.sky.</code><code class="descname">help</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/sky.html#help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.sky.help" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out syntax help for running astrodrizzle</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
 Any previously existing file with this name will be deleted before
@@ -594,7 +590,7 @@ writing out the help.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -609,12 +605,12 @@ writing out the help.</p>
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

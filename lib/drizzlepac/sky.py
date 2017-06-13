@@ -15,7 +15,12 @@ import os, sys
 
 import logging
 from .imageObject import imageObject
-from stsci.tools import fileutil, teal, logutil, bitmask
+from stsci.tools import fileutil, teal, logutil
+try:
+    from stsci.tools.bitmask import interpret_bit_flags
+except ImportError:
+    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
+
 
 from stsci.skypac.skymatch import skymatch
 from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
@@ -159,7 +164,17 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
                          .format(paramDict['skyuser']))
                 for image in imageObjList:
                     log.info('Working on sky for: %s' % image._filename)
-                    _skyUserFromHeaderKwd(image,paramDict)
+                    _skyUserFromHeaderKwd(image, paramDict)
+        else:
+            # reset "computedSky" chip's attribute:
+            for image in imageObjList:
+                numchips    = image._numchips
+                extname     = image.scienceExt
+                for extver in range(1, numchips + 1, 1):
+                    chip = image[extname, extver]
+                    if not chip.group_member:
+                        continue
+                    chip.computedSky = None
 
         if procSteps is not None:
             procSteps.endStep('Subtract Sky')
@@ -246,7 +261,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
     # reason is that we want to combine user supplied masks with DQ+static
     # masks provided by astrodrizzle.
     new_fi = []
-    sky_bits = bitmask.interpret_bits_value(paramDict['sky_bits'])
+    sky_bits = interpret_bit_flags(paramDict['sky_bits'])
     for i in range(nimg):
         # extract extension information:
         extname = imageList[i].scienceExt
@@ -384,10 +399,18 @@ def _buildStaticDQUserMask(img, ext, sky_bits, use_static, umask,
                 smask = img.virtualOutputs[staticMaskName].data
         else:
             if staticMaskName is not None and os.path.isfile(staticMaskName):
-                sm, dq = openImageEx(staticMaskName, mode='readonly',
-                            saveAsMEF=False, clobber=False,
-                            imageOnly=True, openImageHDU=True, openDQHDU=False,
-                            preferMEF=False, verbose=False)
+                sm, dq = openImageEx(
+                    staticMaskName,
+                    mode='readonly',
+                    memmap=False,
+                    saveAsMEF=False,
+                    clobber=False,
+                    imageOnly=True,
+                    openImageHDU=True,
+                    openDQHDU=False,
+                    preferMEF=False,
+                    verbose=False
+                )
                 if sm.hdu is not None:
                     smask = sm.hdu[0].data
                     sm.release()
@@ -483,7 +506,7 @@ def _skyUserFromFile(imageObjList, skyFile, apply_sky=None):
                 # .subtractedSky: value already (or will be by adrizzle/ablot)
                 #                 subtracted from the image
                 if skyapplied:
-                    imageSet[chipext].computedSky = 0.0 # used by adrizzle/ablot
+                    imageSet[chipext].computedSky = None # used by adrizzle/ablot
                 else:
                     imageSet[chipext].computedSky = _skyValue
                 imageSet[chipext].subtractedSky = _skyValue
@@ -551,7 +574,7 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
 
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
-                imageSet[chipext].computedSky = 0.0
+                imageSet[chipext].computedSky = None
                 print("Setting ",skyKW,"=",_skyValue)
 
 #this is the main function that does all the real work in computing the
@@ -615,7 +638,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
 
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
-                imageSet[chipext].computedSky = 0.0
+                imageSet[chipext].computedSky = None
                 print("Setting ",skyKW,"=",_skyValue)
 
     else:
@@ -634,7 +657,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             imageSet[myext].data=imageSet.getData(myext)
 
             image=imageSet[myext]
-            _skyValue= _computeSky(image, paramDict, memmap=0)
+            _skyValue= _computeSky(image, paramDict, memmap=False)
             #scale the sky value by the area on sky
             # account for the case where no IDCSCALE has been set, due to a
             # lack of IDCTAB or to 'coeffs=False'.
@@ -676,7 +699,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
 ##  Helper functions follow  ##
 ###############################
 
-def _computeSky(image, skypars, memmap=0):
+def _computeSky(image, skypars, memmap=False):
 
     """
     Compute the sky value for the data array passed to the function
@@ -717,7 +740,7 @@ def _extractSkyValue(imstatObject,skystat):
 
 
 
-def _subtractSky(image,skyValue,memmap=0):
+def _subtractSky(image,skyValue,memmap=False):
     """
     subtract the given sky value from each the data array
     that has been passed. image is a fits object that
@@ -742,7 +765,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
     else:
         strexten = '[%s]'%(exten)
     log.info('Updating keyword %s in %s' % (skyKW, filename + strexten))
-    fobj = fileutil.openImage(filename, mode='update')
+    fobj = fileutil.openImage(filename, mode='update', memmap=False)
     fobj[exten].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
     fobj.close()
 
@@ -756,7 +779,7 @@ def _addDefaultSkyKW(imageObjList):
         fname = imageSet._filename
         numchips=imageSet._numchips
         sciExt=imageSet.scienceExt
-        fobj = fileutil.openImage(fname, mode='update')
+        fobj = fileutil.openImage(fname, mode='update', memmap=False)
         for chip in range(1,numchips+1,1):
             ext = (sciExt,chip)
             if not imageSet[ext].group_member:

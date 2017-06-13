@@ -1,0 +1,346 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.resetbits &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.16 (05-June-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.resetbits</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot; resetbits - A module to set the value of specified array pixels to zero</span>
+
+<span class="sd">    This module allows a user to reset the pixel values of any integer array,</span>
+<span class="sd">    such as the DQ array from an HST image, to zero.</span>
+
+<span class="sd">    :Authors: Warren Hack</span>
+
+<span class="sd">    :License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">    PARAMETERS</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        full filename with path</span>
+<span class="sd">    bits : str</span>
+<span class="sd">        sum or list of integers corresponding to all the bits to be reset</span>
+
+<span class="sd">    Optional Parameters</span>
+<span class="sd">    -------------------</span>
+<span class="sd">    extver : int, optional</span>
+<span class="sd">        List of version numbers of the arrays to be corrected</span>
+<span class="sd">        (default: None, will reset all matching arrays)</span>
+<span class="sd">    extname : str, optional</span>
+<span class="sd">        EXTNAME of the arrays in the FITS files to be reset</span>
+<span class="sd">        (default: &#39;dq&#39;)</span>
+
+<span class="sd">    NOTES</span>
+<span class="sd">    -----</span>
+<span class="sd">    This module performs a simple bitwise-and on all the pixels in the specified</span>
+<span class="sd">    array and the integer value provided as input using the operation (array &amp; ~bits).</span>
+
+<span class="sd">    Usage</span>
+<span class="sd">    -----</span>
+<span class="sd">    It can be called not only from within Python, but also from the host-level</span>
+<span class="sd">    operating system command line using the syntax::</span>
+
+<span class="sd">        resetbits filename bits [extver [extname]]</span>
+
+
+<span class="sd">    EXAMPLES</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    1. The following command will reset the 4096 bits in all</span>
+<span class="sd">       the DQ arrays of the file &#39;input_flt.fits&#39;::</span>
+
+<span class="sd">            resetbits input_flt.fits 4096</span>
+
+<span class="sd">       or from the Python command line::</span>
+
+<span class="sd">            &gt;&gt;&gt; import resetbits</span>
+<span class="sd">            &gt;&gt;&gt; resetbits.reset_dq_bits(&quot;input_file_flt.fits&quot;, 4096)</span>
+
+
+<span class="sd">    2. To reset the 2,32,64 and 4096 (sum of 4194) bits in the</span>
+<span class="sd">       second DQ array, specified as &#39;dq,2&#39;, in the file &#39;input_flt.fits&#39;::</span>
+
+<span class="sd">            resetbits input_flt.fits 4194 2</span>
+
+<span class="sd">       or from the Python command line::</span>
+
+<span class="sd">            &gt;&gt;&gt; import resetbits</span>
+<span class="sd">            &gt;&gt;&gt; resetbits.reset_dq_bits(&quot;input_file_flt.fits&quot;, 2+32+64+4096, extver=2)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">stpyfits</span> <span class="k">as</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">parseinput</span><span class="p">,</span> <span class="n">logutil</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">stsci.tools.bitmask</span> <span class="k">import</span> <span class="n">interpret_bit_flags</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">stsci.tools.bitmask</span> <span class="k">import</span> <span class="n">interpret_bits_value</span> <span class="k">as</span> <span class="n">interpret_bit_flags</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+
+<span class="n">__taskname__</span> <span class="o">=</span> <span class="s2">&quot;drizzlepac.resetbits&quot;</span>
+
+<span class="c1"># This is specifically NOT intended to match the package-wide version information.</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;1.0.1&#39;</span>
+<span class="n">__vdate__</span> <span class="o">=</span> <span class="s1">&#39;23-March-2017&#39;</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="reset_dq_bits"><a class="viewcode-back" href="../../process.html#drizzlepac.resetbits.reset_dq_bits">[docs]</a><span class="k">def</span> <span class="nf">reset_dq_bits</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span><span class="n">bits</span><span class="p">,</span><span class="n">extver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">extname</span><span class="o">=</span><span class="s1">&#39;dq&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This function resets bits in the integer array(s) of a FITS file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        full filename with path</span>
+
+<span class="sd">    bits : str</span>
+<span class="sd">        sum or list of integers corresponding to all the bits to be reset</span>
+
+<span class="sd">    extver : int, optional</span>
+<span class="sd">        List of version numbers of the DQ arrays</span>
+<span class="sd">        to be corrected [Default Value: None, will do all]</span>
+
+<span class="sd">    extname : str, optional</span>
+<span class="sd">        EXTNAME of the DQ arrays in the FITS file</span>
+<span class="sd">        [Default Value: &#39;dq&#39;]</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The default value of None for the &#39;extver&#39; parameter specifies that all</span>
+<span class="sd">    extensions with EXTNAME matching &#39;dq&#39; (as specified by the &#39;extname&#39;</span>
+<span class="sd">    parameter) will have their bits reset.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">        1. The following command will reset the 4096 bits in all</span>
+<span class="sd">           the DQ arrays of the file input_file_flt.fits::</span>
+
+<span class="sd">                reset_dq_bits(&quot;input_file_flt.fits&quot;, 4096)</span>
+
+<span class="sd">        2. To reset the 2,32,64 and 4096 bits in the second DQ array,</span>
+<span class="sd">           specified as &#39;dq,2&#39;, in the file input_file_flt.fits::</span>
+
+<span class="sd">                reset_dq_bits(&quot;input_file_flt.fits&quot;, &quot;2,32,64,4096&quot;, extver=2)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Interpret bits value</span>
+    <span class="n">bits</span> <span class="o">=</span> <span class="n">interpret_bit_flags</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span>
+
+    <span class="n">flist</span><span class="p">,</span> <span class="n">fcol</span> <span class="o">=</span> <span class="n">parseinput</span><span class="o">.</span><span class="n">parseinput</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">:</span>
+        <span class="c1"># open input file in write mode to allow updating the DQ array in-place</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Identify the DQ array to be updated</span>
+        <span class="c1"># If no extver is specified, build a list of all DQ arrays in the file</span>
+        <span class="k">if</span> <span class="n">extver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">extver</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+                <span class="c1"># find only those extensions which match the input extname</span>
+                <span class="c1"># using case-insensitive name comparisons for &#39;extname&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;extver&#39;</span> <span class="ow">in</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span> <span class="ow">and</span> \
+                   <span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extname&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">extname</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">extver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">hdu</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extver&#39;</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Otherwise, insure that input extver values are a list</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extver</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="n">extver</span> <span class="o">=</span> <span class="p">[</span><span class="n">extver</span><span class="p">]</span>
+
+        <span class="c1"># for each DQ array identified in the file...</span>
+        <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">extver</span><span class="p">:</span>
+            <span class="n">dqarr</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">extname</span><span class="p">,</span><span class="n">extn</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">dqdtype</span> <span class="o">=</span> <span class="n">dqarr</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="c1"># reset the desired bits</span>
+            <span class="n">p</span><span class="p">[</span><span class="n">extname</span><span class="p">,</span><span class="n">extn</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">dqarr</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">bits</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dqdtype</span><span class="p">)</span> <span class="c1"># preserve original dtype</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Reset bit values of </span><span class="si">%s</span><span class="s1"> to a value of 0 in </span><span class="si">%s</span><span class="s1">[</span><span class="si">%s</span><span class="s1">,</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span>
+                     <span class="p">(</span><span class="n">bits</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">extname</span><span class="p">,</span> <span class="n">extn</span><span class="p">))</span>
+        <span class="c1"># close the file with the updated DQ array(s)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<span class="c1">#</span>
+<span class="c1">#### Interfaces used by TEAL</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../process.html#drizzlepac.resetbits.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">configobj</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Teal interface for running this code. &#39;&#39;&#39;</span>
+
+    <span class="n">reset_dq_bits</span><span class="p">(</span><span class="n">configobj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">],</span><span class="n">configobj</span><span class="p">[</span><span class="s1">&#39;bits&#39;</span><span class="p">],</span>
+                  <span class="n">extver</span><span class="o">=</span><span class="n">configobj</span><span class="p">[</span><span class="s1">&#39;extver&#39;</span><span class="p">],</span><span class="n">extname</span><span class="o">=</span><span class="n">configobj</span><span class="p">[</span><span class="s1">&#39;extname&#39;</span><span class="p">])</span></div>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+
+    <span class="kn">import</span> <span class="nn">getopt</span><span class="o">,</span> <span class="nn">sys</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">optlist</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">getopt</span><span class="o">.</span><span class="n">getopt</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">&#39;h&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">getopt</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">__doc__</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">__version__</span><span class="p">)</span>
+
+    <span class="c1"># initialize default values</span>
+    <span class="n">help</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># read options</span>
+    <span class="k">for</span> <span class="n">opt</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">optlist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">opt</span> <span class="o">==</span> <span class="s2">&quot;-h&quot;</span><span class="p">:</span>
+            <span class="n">help</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;dq&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">help</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">__doc__</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">__version__</span><span class="o">+</span><span class="s1">&#39;(&#39;</span><span class="o">+</span><span class="n">__vdate__</span><span class="o">+</span><span class="s1">&#39;)&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reset_dq_bits</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="help"><a class="viewcode-back" href="../../process.html#drizzlepac.resetbits.help">[docs]</a><span class="k">def</span> <span class="nf">help</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print out syntax help for running astrodrizzle</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file : str (Default = None)</span>
+<span class="sd">        If given, write out help to the filename specified by this parameter</span>
+<span class="sd">        Any previously existing file with this name will be deleted before</span>
+<span class="sd">        writing out the help.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">helpstr</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="getHelpAsString"><a class="viewcode-back" href="../../process.html#drizzlepac.resetbits.getHelpAsString">[docs]</a><span class="k">def</span> <span class="nf">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return useful help from a file in the script directory called</span>
+<span class="sd">    __taskname__.help</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">__package__</span><span class="p">)</span>
+    <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
+    <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">docstring</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">docstring</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">htmlfile</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">show_ver</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="o">+</span> \
+                <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;Version&#39;</span><span class="p">,</span> <span class="n">__version__</span><span class="p">,</span>
+                <span class="s1">&#39; updated on &#39;</span><span class="p">,</span> <span class="n">__vdate__</span><span class="p">])</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
+
+    <span class="k">return</span> <span class="n">helpString</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

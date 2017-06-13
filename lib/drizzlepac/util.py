@@ -63,14 +63,14 @@ def get_pool_size(usr_config_value, num_tasks):
     if not can_parallel:
         return 1
     # Give priority to their specified cfg value, over the actual cpu count
-    if usr_config_value != None:
-        if num_tasks == None:
+    if usr_config_value is not None:
+        if num_tasks is None:
             return usr_config_value
         else:
             # usr_config_value may be needlessly high
             return min(usr_config_value, num_tasks)
     # they haven't specified a cfg value, so go with the cpu_count
-    if num_tasks == None:
+    if num_tasks is None:
         return _cpu_count
     else:
         # run no more workers than tasks
@@ -208,7 +208,7 @@ class WithLogging(object):
                     pass
 
             self.depth += 1
-            
+
             # This looks utterly bizarre, but it seems to be the only way I can
             # ensure that any exceptions that occur in the wrapped function are
             # logged before teardown_global_logging() is called.  Unless the
@@ -429,12 +429,18 @@ def count_sci_extensions(filename):
     """
     num_sci = 0
     extname = 'SCI'
-    for extn in fileutil.openImage(filename):
+
+    hdu_list = fileutil.openImage(filename, memmap=False)
+
+    for extn in hdu_list:
         if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
+
     if num_sci == 0:
         extname = 'PRIMARY'
         num_sci = 1
+
+    hdu_list.close()
 
     return num_sci,extname
 
@@ -460,7 +466,7 @@ def verifyUpdatewcs(fname):
     updated = True
     numsci,extname = count_sci_extensions(fname)
     for n in range(1,numsci+1):
-        hdr = fits.getheader(fname, extname=extname, extver=n)
+        hdr = fits.getheader(fname, extname=extname, extver=n, memmap=False)
         if 'wcsname' not in hdr:
             updated = False
             break
@@ -528,7 +534,7 @@ def findWCSExtn(filename):
     rootname,extroot = fileutil.parseFilename(filename)
     extnum = None
     if extroot is None:
-        fimg = fits.open(rootname)
+        fimg = fits.open(rootname, memmap=False)
         for i,extn in enumerate(fimg):
             if 'crval1' in extn.header:
                 refwcs = wcsutil.HSTWCS('{}[{}]'.format(rootname,i))
@@ -638,15 +644,15 @@ def applyUserPars_steps(configObj, input_dict, step='3a'):
     stepname = getSectionName(configObj,step)
     finalParDict = configObj[stepname].copy()
     del finalParDict[step_kws[step]]
-    
+
     # interpret input_dict to find any parameters for this step specified by the user
     user_pars = {}
     for kw in finalParDict:
         if kw in input_dict: user_pars[kw] = input_dict[kw]
     if len(user_pars) > 0:
         configObj[stepname][step_kws[step]] = True
-        
-    
+
+
 def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
     """ Return default configObj instance for task updated
         with user-specified values from input_dict.
@@ -947,29 +953,30 @@ def compute_texptime(imageObjectList):
 
     return (exptime,expstart,expend)
 
+
 def computeRange(corners):
     """ Determine the range spanned by an array of pixel positions. """
-    _xrange = (np.minimum.reduce(corners[:,0]),np.maximum.reduce(corners[:,0]))
-    _yrange = (np.minimum.reduce(corners[:,1]),np.maximum.reduce(corners[:,1]))
-    return _xrange,_yrange
+    x = corners[:, 0]
+    y = corners[:, 1]
+    _xrange = (np.minimum.reduce(x), np.maximum.reduce(x))
+    _yrange = (np.minimum.reduce(y), np.maximum.reduce(y))
+    return _xrange, _yrange
 
-def getRotatedSize(corners,angle):
+
+def getRotatedSize(corners, angle):
     """ Determine the size of a rotated (meta)image."""
-    # If there is no rotation, simply return original values
-    if angle == 0.:
-        _corners = corners
-    else:
-        # Find center
-        #_xr,_yr = computeRange(corners)
-        #_cen = ( ((_xr[1] - _xr[0])/2.)+_xr[0],((_yr[1]-_yr[0])/2.)+_yr[0])
+    if angle:
         _rotm = fileutil.buildRotMatrix(angle)
         # Rotate about the center
-        #_corners = N.dot(corners - _cen,_rotm)
-        _corners = np.dot(corners,_rotm)
+        _corners = np.dot(corners, _rotm)
+    else:
+        # If there is no rotation, simply return original values
+        _corners = corners
 
     return computeRange(_corners)
 
-def readcols(infile,cols=[0,1,2,3],hms=False):
+
+def readcols(infile, cols=[0, 1, 2, 3], hms=False):
     """
     Read the columns from an ASCII file as numpy arrays.
 
@@ -1023,7 +1030,7 @@ def parse_colnames(colnames,coords=None):
     # parse column names from coords file and match to input values
     if coords is not None and fileutil.isFits(coords)[0]:
         # Open FITS file with table
-        ftab = fits.open(coords)
+        ftab = fits.open(coords, memmap=False)
         # determine which extension has the table
         for extn in ftab:
             if isinstance(extn, fits.BinTableHDU):
@@ -1063,12 +1070,12 @@ def createFile(dataArray=None, outfile=None, header=None):
     None when the FITS file was written out to a file.
     """
     # Insure that at least a data-array has been provided to create the file
-    assert(dataArray != None), "Please supply a data array for createFiles"
+    assert(dataArray is not None), "Please supply a data array for createFiles"
 
     try:
         # Create the output file
         fitsobj = fits.HDUList()
-        if (header != None):
+        if header is not None:
             try:
                 del(header['NAXIS1'])
                 del(header['NAXIS2'])
@@ -1095,13 +1102,13 @@ def createFile(dataArray=None, outfile=None, header=None):
             hdu = fits.PrimaryHDU(data=dataArray)
 
         fitsobj.append(hdu)
-        if outfile:
+        if outfile is not None:
             fitsobj.writeto(outfile)
     finally:
         # CLOSE THE IMAGE FILES
         fitsobj.close()
 
-        if outfile:
+        if outfile is not None:
             del fitsobj
             fitsobj = None
     return fitsobj

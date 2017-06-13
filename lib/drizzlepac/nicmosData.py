@@ -65,14 +65,13 @@ class NICMOSInputImage(imageObject):
         """
 
          # Image information
-        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0)
-        _handle = fileutil.openImage(self._filename,mode='readonly')
+        _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
 
-            if chip._gain != None:
+            if chip._gain is not None:
 
                 #conversionFactor = (self.getExpTime() * self.getGain())
                 conversionFactor = chip._gain
@@ -186,8 +185,8 @@ class NICMOSInputImage(imageObject):
         # the TEMPFILE keyword in the primary header.
         tddobj = readTDD.fromcalfile(self.name)
 
-        if tddobj == None:
-            return np.ones(self.full_shape,dtype=self.image_dtype)*self.getdarkcurrent()
+        if tddobj is None:
+            return np.ones(self.full_shape, dtype=self.image_dtype) * self.getdarkcurrent()
         else:
             # Create Dark Object from AMPGLOW and Lineark Dark components
             darkobj = tddobj.getampglow() + tddobj.getlindark()
@@ -264,13 +263,13 @@ class NIC1InputImage(NICMOSInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
 
-            if chip._gain == None or self._exptime == None:
+            if chip._gain is None or self._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             # We need to treat Read Noise as a special case since it is
             # not populated in the NICMOS primary header
-            if chip._rdnoise == None:
+            if chip._rdnoise is None:
                 chip._rdnoise = self._getDefaultReadnoise()
 
             chip._darkrate=self._getDarkRate()
@@ -331,13 +330,13 @@ class NIC2InputImage(NICMOSInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
 
-            if chip._gain == None or self._exptime == None:
+            if chip._gain is None or self._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             # We need to treat Read Noise as a special case since it is
             # not populated in the NICMOS primary header
-            if chip._rdnoise == None:
+            if chip._rdnoise is None:
                 chip._rdnoise = self._getDefaultReadnoise()
 
             chip._darkrate=self._getDarkRate()
@@ -402,13 +401,13 @@ class NIC3InputImage(NICMOSInputImage):
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
 
-            if chip._gain == None or self._exptime == None:
+            if chip._gain is None or self._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
             # We need to treat Read Noise as a special case since it is
             # not populated in the NICMOS primary header
-            if chip._rdnoise == None:
+            if chip._rdnoise is None:
                 chip._rdnoise = self._getDefaultReadnoise()
 
             chip._darkrate=self._getDarkRate()

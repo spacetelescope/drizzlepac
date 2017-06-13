@@ -53,7 +53,7 @@ class IRInputImage(imageObject):
 
         """
         try:
-            hdulist = fileutil.openImage(self.name,mode='readonly',memmap=0)
+            hdulist = fileutil.openImage(self.name, mode='readonly', memmap=False)
             extnhdulist = fileutil.getExtn(hdulist,extn="SAMP")
             sampimage = extnhdulist.data[self.ltv2:self.size2,self.ltv1:self.size1]
         except:

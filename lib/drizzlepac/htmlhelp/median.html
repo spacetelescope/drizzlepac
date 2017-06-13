@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Step 5: Create a Median Image &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>Step 5: Create a Median Image &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Step 6: Blotting the Median Image" href="ablot.html" />
     <link rel="prev" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -57,22 +59,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="ablot.html"
                         title="next chapter">Step 6: Blotting the Median Image</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/median.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/median.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -81,7 +82,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="step-5-create-a-median-image">
 <span id="median"></span><h1>Step 5: Create a Median Image<a class="headerlink" href="#step-5-create-a-median-image" title="Permalink to this headline">¶</a></h1>
@@ -92,39 +93,36 @@ drizzle images.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="function">
 <dt id="drizzlepac.createMedian.createMedian">
-<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">createMedian</tt><big>(</big><em>imgObjList</em>, <em>configObj</em>, <em>procSteps=None</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.createMedian" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.createMedian.</code><code class="descname">createMedian</code><span class="sig-paren">(</span><em>imgObjList</em>, <em>configObj</em>, <em>procSteps=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/createMedian.html#createMedian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.createMedian.createMedian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Top-level interface to createMedian step called from top-level MultiDrizzle.</p>
-<p>This function parses the input parameters then calls the <em class="xref py py-obj">_median()</em> function
+<p>This function parses the input parameters then calls the <code class="xref py py-obj docutils literal"><span class="pre">_median()</span></code> function
 to median-combine the input images into a single image.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.createMedian.getHelpAsString">
-<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">getHelpAsString</tt><big>(</big><em>docstring=False</em>, <em>show_ver=True</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.getHelpAsString" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.createMedian.</code><code class="descname">getHelpAsString</code><span class="sig-paren">(</span><em>docstring=False</em>, <em>show_ver=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/createMedian.html#getHelpAsString"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.createMedian.getHelpAsString" title="Permalink to this definition">¶</a></dt>
 <dd><p>return useful help from a file in the script directory called
 __taskname__.help</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.createMedian.help">
-<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">help</tt><big>(</big><em>file=None</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.help" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.createMedian.</code><code class="descname">help</code><span class="sig-paren">(</span><em>file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/createMedian.html#help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.createMedian.help" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print out syntax help for running astrodrizzle</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="file">file</strong> : str (Default = None)</p>
 <blockquote class="last">
 <div><p>If given, write out help to the filename specified by this parameter
 Any previously existing file with this name will be deleted before
@@ -138,7 +136,7 @@ writing out the help.</p>
 
 <dl class="function">
 <dt id="drizzlepac.createMedian.median">
-<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">median</tt><big>(</big><em>input=None</em>, <em>configObj=None</em>, <em>editpars=False</em>, <em>**inputDict</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.median" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.createMedian.</code><code class="descname">median</code><span class="sig-paren">(</span><em>input=None</em>, <em>configObj=None</em>, <em>editpars=False</em>, <em>**inputDict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/createMedian.html#median"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.createMedian.median" title="Permalink to this definition">¶</a></dt>
 <dd><p>The singly drizzled science images are combined to create a single median
 image. This median combination gets performed section-by-section from the
 input single drizzled images. Each section corresponds to a contiguous set
@@ -150,20 +148,19 @@ in addition to improving the alignment of the image stack. Creating a median
 image from the aligned and undistorted input images allows for a statistical
 rejection of bad pixels.</p>
 <p>The final median image serves as the only output from this step.</p>
-<p>For more information on the science applications of the <a class="reference internal" href="#drizzlepac.createMedian.createMedian" title="drizzlepac.createMedian.createMedian"><tt class="xref py py-obj docutils literal"><span class="pre">createMedian</span></tt></a> task,
+<p>For more information on the science applications of the <a class="reference internal" href="#drizzlepac.createMedian.createMedian" title="drizzlepac.createMedian.createMedian"><code class="xref py py-obj docutils literal"><span class="pre">createMedian</span></code></a> task,
 see the <a class="reference external" href="http://drizzlepac.stsci.edu">DrizzlePac Handbook</a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = None)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="input">input</strong> : str or list of str (Default = None)</p>
 <blockquote>
 <div><p>A python list of drizzled image filenames, or just a single filename.</p>
 </div></blockquote>
 <p><strong id="configObj">configObj</strong> : configObject (Default = None)</p>
 <blockquote>
-<div><p>An instance of <em class="xref py py-obj">configObject</em> which overrides default parameter settings.</p>
+<div><p>An instance of <code class="xref py py-obj docutils literal"><span class="pre">configObject</span></code> which overrides default parameter settings.</p>
 </div></blockquote>
 <p><strong id="editpars">editpars</strong> : bool (Default = False)</p>
 <blockquote>
@@ -192,8 +189,30 @@ be used to override the defaults.</p>
 </div></blockquote>
 <p><strong>combine_type</strong> : str {&#8216;average&#8217;, &#8216;median&#8217;, &#8216;sum&#8217;, &#8216;minmed&#8217;} (Default = &#8216;minmed&#8217;)</p>
 <blockquote>
-<div><p>This parameter defines the method that will be used to create the median image.  The &#8216;average&#8217;, &#8216;median&#8217;, and &#8216;sum&#8217; options set the calculation type when running &#8216;numcombine&#8217;, a numpy method for median-combining arrays to create the median image. The &#8220;minmed&#8221; option will produce an image that is generally the same as the median, except in cases where the median is significantly higher than the minimum good pixel value. In this case, &#8220;minmed&#8221; will choose the minimum value. The sigma thresholds for this decision are provided by the &#8220;combine_nsigma&#8221; parameter. However, as the &#8220;combine_nsigma&#8221; parameter does not adjust for the larger probability of a single &#8220;nsigma&#8221; event with a greater number of images, &#8220;minmed&#8221; will bias the comparison image low for a large number of images. &#8220;minmed&#8221; is highly recommended for three images, and is good for four to six images, but should be avoided for ten or more images.</p>
-<p>A value of &#8216;median&#8217; is the recommended method for a large number of images, and works equally well as minmed down to approximately four images. However, the user should set the &#8220;combine_nhigh&#8221; parameter to a value of 1 when using &#8220;median&#8221; with four images, and consider raising this parameter&#8217;s value for larger numbers of images. As a median averages the two inner values when the number of values being considered is even, the user may want to keep the total number of images minus &#8220;combine_nhigh&#8221; odd when using &#8220;median&#8221;.</p>
+<div><p>This parameter defines the method that will be used to create the median
+image.  The &#8216;average&#8217;, &#8216;median&#8217;, and &#8216;sum&#8217; options set the calculation
+type when running &#8216;numcombine&#8217;, a numpy method for median-combining arrays
+to create the median image. The &#8220;minmed&#8221; option will produce an image that
+is generally the same as the median, except in cases where the median is
+significantly higher than the minimum good pixel value. In this case,
+&#8220;minmed&#8221; will choose the minimum value. The sigma thresholds for this
+decision are provided by the &#8220;combine_nsigma&#8221; parameter. However, as
+the &#8220;combine_nsigma&#8221; parameter does not adjust for the larger probability
+of a single &#8220;nsigma&#8221; event with a greater number of images, &#8220;minmed&#8221; will
+bias the comparison image low for a large number of images.
+The value of sigma is computed as <img class="math" src="_images/math/efd90f7fd1d28adfecb2a3c48c0b79a336749627.png" alt="\sigma = \sqrt(M + S + R^2)"/>,
+where <em>M</em> is the median image data (in electrons), <em>S</em> is the value of the
+subtracted sky (in electrons), and <em>R</em> is the value of the readout noise
+(in electrons). &#8220;minmed&#8221; is highly recommended for three images, and is
+good for four to six images, but should be avoided for ten or more images.</p>
+<p>A value of &#8216;median&#8217; is the recommended method for a large number of images,
+and works equally well as minmed down to approximately four images.
+However, the user should set the &#8220;combine_nhigh&#8221; parameter to a value of 1
+when using &#8220;median&#8221; with four images, and consider raising this parameter&#8217;s
+value for larger numbers of images. As a median averages the two inner
+values when the number of values being considered is even, the user may
+want to keep the total number of images minus &#8220;combine_nhigh&#8221; odd when
+using &#8220;median&#8221;.</p>
 </div></blockquote>
 <p><strong>combine_nsigma</strong> : float (Default = &#8216;4 3&#8217;)</p>
 <blockquote>
@@ -228,16 +247,16 @@ be used to override the defaults.</p>
 </tbody>
 </table>
 <p class="rubric">Examples</p>
-<p>For <a class="reference internal" href="#drizzlepac.createMedian.createMedian" title="drizzlepac.createMedian.createMedian"><tt class="xref py py-obj docutils literal"><span class="pre">createMedian</span></tt></a>, the user interface function is <a class="reference internal" href="#drizzlepac.createMedian.median" title="drizzlepac.createMedian.median"><tt class="xref py py-obj docutils literal"><span class="pre">median</span></tt></a>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">createMedian</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">createMedian</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="s">&#39;*flt.fits&#39;</span><span class="p">)</span>
+<p>For <a class="reference internal" href="#drizzlepac.createMedian.createMedian" title="drizzlepac.createMedian.createMedian"><code class="xref py py-obj docutils literal"><span class="pre">createMedian</span></code></a>, the user interface function is <a class="reference internal" href="#drizzlepac.createMedian.median" title="drizzlepac.createMedian.median"><code class="xref py py-obj docutils literal"><span class="pre">median</span></code></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">createMedian</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">createMedian</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="s1">&#39;*flt.fits&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="drizzlepac.createMedian.run">
-<tt class="descclassname">drizzlepac.createMedian.</tt><tt class="descname">run</tt><big>(</big><em>configObj</em><big>)</big><a class="headerlink" href="#drizzlepac.createMedian.run" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.createMedian.</code><code class="descname">run</code><span class="sig-paren">(</span><em>configObj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/createMedian.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.createMedian.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -248,7 +267,7 @@ be used to override the defaults.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -263,12 +282,12 @@ be used to override the defaults.</p>
         <li class="right" >
           <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

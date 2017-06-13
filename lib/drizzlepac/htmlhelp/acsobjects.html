@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>ACS ImageObjects &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>ACS ImageObjects &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,22 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
-    <link rel="up" title="imageObject Classes" href="imageobject.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="WFC3 ImageObjects" href="wfc3objects.html" />
     <link rel="prev" title="Base ImageObject Classes" href="baseobjects.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,11 +45,11 @@
         <li class="right" >
           <a href="baseobjects.html" title="Base ImageObject Classes"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="imageobject.html" accesskey="U">imageObject Classes</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="imageobject.html" accesskey="U">imageObject Classes</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -59,22 +60,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="wfc3objects.html"
                         title="next chapter">WFC3 ImageObjects</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/acsobjects.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/acsobjects.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -83,7 +83,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="module-drizzlepac.acsData">
 <span id="acs-imageobjects"></span><span id="acsdata"></span><h1>ACS ImageObjects<a class="headerlink" href="#module-drizzlepac.acsData" title="Permalink to this headline">¶</a></h1>
@@ -92,26 +92,24 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Christopher Hanley, Warren Hack, Ivo Busko, David Grumm</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Christopher Hanley, Warren Hack, Ivo Busko, David Grumm</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="class">
 <dt id="drizzlepac.acsData.ACSInputImage">
-<em class="property">class </em><tt class="descclassname">drizzlepac.acsData.</tt><tt class="descname">ACSInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="drizzlepac.imageObject.imageObject"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.imageObject</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.acsData.</code><code class="descname">ACSInputImage</code><span class="sig-paren">(</span><em>filename=None</em>, <em>group=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#ACSInputImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="baseobjects.html#drizzlepac.imageObject.imageObject" title="drizzlepac.imageObject.imageObject"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.imageObject.imageObject</span></code></a></p>
 <dl class="method">
 <dt id="drizzlepac.acsData.ACSInputImage.doUnitConversions">
-<tt class="descname">doUnitConversions</tt><big>(</big><big>)</big><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage.doUnitConversions" title="Permalink to this definition">¶</a></dt>
+<code class="descname">doUnitConversions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#ACSInputImage.doUnitConversions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage.doUnitConversions" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="drizzlepac.acsData.ACSInputImage.getdarkcurrent">
-<tt class="descname">getdarkcurrent</tt><big>(</big><em>extver</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getdarkcurrent</code><span class="sig-paren">(</span><em>extver</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#ACSInputImage.getdarkcurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage.getdarkcurrent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the dark current for the ACS detector.  This value
 will be contained within an instrument specific keyword.
 The value in the image header will be converted to units
@@ -120,8 +118,7 @@ of electrons.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first">darkcurrent: float</p>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">darkcurrent: float</p>
 <blockquote class="last">
 <div><p>Dark current value for the ACS detector in <strong>units of electrons</strong>.</p>
 </div></blockquote>
@@ -133,18 +130,18 @@ of electrons.</p>
 
 <dl class="attribute">
 <dt id="drizzlepac.acsData.ACSInputImage.SEPARATOR">
-<tt class="descname">SEPARATOR</tt><em class="property"> = '_'</em><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage.SEPARATOR" title="Permalink to this definition">¶</a></dt>
+<code class="descname">SEPARATOR</code><em class="property"> = '_'</em><a class="headerlink" href="#drizzlepac.acsData.ACSInputImage.SEPARATOR" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="drizzlepac.acsData.WFCInputImage">
-<em class="property">class </em><tt class="descclassname">drizzlepac.acsData.</tt><tt class="descname">WFCInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.WFCInputImage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.acsData.ACSInputImage" title="drizzlepac.acsData.ACSInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.acsData.ACSInputImage</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.acsData.</code><code class="descname">WFCInputImage</code><span class="sig-paren">(</span><em>filename=None</em>, <em>group=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#WFCInputImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.WFCInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.acsData.ACSInputImage" title="drizzlepac.acsData.ACSInputImage"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.acsData.ACSInputImage</span></code></a></p>
 <dl class="method">
 <dt id="drizzlepac.acsData.WFCInputImage.setInstrumentParameters">
-<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.WFCInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setInstrumentParameters</code><span class="sig-paren">(</span><em>instrpars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#WFCInputImage.setInstrumentParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.WFCInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method overrides the superclass to set default values into
 the parameter dictionary, in case empty entries are provided.</p>
 <p>This method gets called from processInput.</p>
@@ -154,11 +151,11 @@ the parameter dictionary, in case empty entries are provided.</p>
 
 <dl class="class">
 <dt id="drizzlepac.acsData.HRCInputImage">
-<em class="property">class </em><tt class="descclassname">drizzlepac.acsData.</tt><tt class="descname">HRCInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.HRCInputImage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.acsData.ACSInputImage" title="drizzlepac.acsData.ACSInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.acsData.ACSInputImage</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.acsData.</code><code class="descname">HRCInputImage</code><span class="sig-paren">(</span><em>filename=None</em>, <em>group=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#HRCInputImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.HRCInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.acsData.ACSInputImage" title="drizzlepac.acsData.ACSInputImage"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.acsData.ACSInputImage</span></code></a></p>
 <dl class="method">
 <dt id="drizzlepac.acsData.HRCInputImage.setInstrumentParameters">
-<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.HRCInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setInstrumentParameters</code><span class="sig-paren">(</span><em>instrpars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#HRCInputImage.setInstrumentParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.HRCInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method overrides the superclass to set default values into
 the parameter dictionary, in case empty entries are provided.</p>
 <p>This method gets called from processInput.</p>
@@ -168,11 +165,11 @@ the parameter dictionary, in case empty entries are provided.</p>
 
 <dl class="class">
 <dt id="drizzlepac.acsData.SBCInputImage">
-<em class="property">class </em><tt class="descclassname">drizzlepac.acsData.</tt><tt class="descname">SBCInputImage</tt><big>(</big><em>filename=None</em>, <em>group=None</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.SBCInputImage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#drizzlepac.acsData.ACSInputImage" title="drizzlepac.acsData.ACSInputImage"><tt class="xref py py-class docutils literal"><span class="pre">drizzlepac.acsData.ACSInputImage</span></tt></a></p>
+<em class="property">class </em><code class="descclassname">drizzlepac.acsData.</code><code class="descname">SBCInputImage</code><span class="sig-paren">(</span><em>filename=None</em>, <em>group=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#SBCInputImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.SBCInputImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#drizzlepac.acsData.ACSInputImage" title="drizzlepac.acsData.ACSInputImage"><code class="xref py py-class docutils literal"><span class="pre">drizzlepac.acsData.ACSInputImage</span></code></a></p>
 <dl class="method">
 <dt id="drizzlepac.acsData.SBCInputImage.setInstrumentParameters">
-<tt class="descname">setInstrumentParameters</tt><big>(</big><em>instrpars</em><big>)</big><a class="headerlink" href="#drizzlepac.acsData.SBCInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setInstrumentParameters</code><span class="sig-paren">(</span><em>instrpars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/acsData.html#SBCInputImage.setInstrumentParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.acsData.SBCInputImage.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the instrument parameters.</p>
 </dd></dl>
 
@@ -186,7 +183,7 @@ the parameter dictionary, in case empty entries are provided.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -201,13 +198,13 @@ the parameter dictionary, in case empty entries are provided.</p>
         <li class="right" >
           <a href="baseobjects.html" title="Base ImageObject Classes"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li>
-          <li><a href="imageobject.html" >imageObject Classes</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="imageobject.html" >imageObject Classes</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

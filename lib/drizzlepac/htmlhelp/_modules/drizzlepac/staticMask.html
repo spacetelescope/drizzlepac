@@ -1,0 +1,444 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drizzlepac.staticMask &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.16 (05-June-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drizzlepac.staticMask</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides functions and classes that manage the creation</span>
+<span class="sd">of the global static masks.</span>
+
+<span class="sd">For `staticMask`, the user interface function is :py:func:`createMask`.</span>
+
+<span class="sd">:Authors: Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey</span>
+
+<span class="sd">:License: `&lt;http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE&gt;`_</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>  <span class="c1"># confidence high</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">distutils.version</span> <span class="k">import</span> <span class="n">LooseVersion</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">fileutil</span><span class="p">,</span> <span class="n">teal</span><span class="p">,</span> <span class="n">logutil</span>
+<span class="kn">import</span> <span class="nn">astropy</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">stsci.imagestats</span> <span class="k">import</span> <span class="n">ImageStats</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">processInput</span>
+
+<span class="n">ASTROPY_VER_GE13</span> <span class="o">=</span> <span class="n">LooseVersion</span><span class="p">(</span><span class="n">astropy</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">LooseVersion</span><span class="p">(</span><span class="s1">&#39;1.3&#39;</span><span class="p">)</span>
+
+<span class="n">__taskname__</span> <span class="o">=</span> <span class="s2">&quot;drizzlepac.staticMask&quot;</span>
+<span class="n">_step_num_</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<span class="c1">#this is called by the user</span>
+<div class="viewcode-block" id="createMask"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.createMask">[docs]</a><span class="k">def</span> <span class="nf">createMask</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static_sig</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">editpars</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">configObj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">inputDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The user can input a list of images if they like to create static masks</span>
+<span class="sd">        as well as optional values for static_sig and inputDict.</span>
+
+<span class="sd">        The configObj.cfg file will set the defaults and then override them</span>
+<span class="sd">        with the user options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">input</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">inputDict</span><span class="p">[</span><span class="s2">&quot;static_sig&quot;</span><span class="p">]</span><span class="o">=</span><span class="n">static_sig</span>
+        <span class="n">inputDict</span><span class="p">[</span><span class="s2">&quot;group&quot;</span><span class="p">]</span><span class="o">=</span><span class="n">group</span>
+        <span class="n">inputDict</span><span class="p">[</span><span class="s2">&quot;updatewcs&quot;</span><span class="p">]</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">inputDict</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">]</span><span class="o">=</span><span class="nb">input</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="o">&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s2">&quot;Please supply an input image</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+    <span class="c1">#this accounts for a user-called init where config is not defined yet</span>
+    <span class="n">configObj</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getDefaultConfigObj</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span><span class="n">configObj</span><span class="p">,</span><span class="n">inputDict</span><span class="p">,</span><span class="n">loadOnly</span><span class="o">=</span><span class="p">(</span><span class="ow">not</span> <span class="n">editpars</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">configObj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">editpars</span><span class="p">:</span>
+        <span class="n">run</span><span class="p">(</span><span class="n">configObj</span><span class="p">)</span></div>
+
+<span class="c1">#this is called by the TEAL interface</span>
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">configObj</span><span class="p">):</span>
+
+    <span class="c1">#now we really just need the imageObject list created for the dataset</span>
+    <span class="n">filelist</span><span class="p">,</span><span class="n">output</span><span class="p">,</span><span class="n">ivmlist</span><span class="p">,</span><span class="n">oldasndict</span><span class="o">=</span><span class="n">processInput</span><span class="o">.</span><span class="n">processFilenames</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">],</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">imageObjList</span><span class="o">=</span><span class="n">processInput</span><span class="o">.</span><span class="n">createImageObjectList</span><span class="p">(</span><span class="n">filelist</span><span class="p">,</span><span class="n">instrpars</span><span class="o">=</span><span class="p">{},</span><span class="n">group</span><span class="o">=</span><span class="n">configObj</span><span class="p">[</span><span class="s1">&#39;group&#39;</span><span class="p">])</span>
+    <span class="n">createStaticMask</span><span class="p">(</span><span class="n">imageObjList</span><span class="p">,</span><span class="n">configObj</span><span class="p">)</span></div>
+
+
+<span class="c1">#this is the workhorse function called by MultiDrizzle</span>
+<div class="viewcode-block" id="createStaticMask"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.createStaticMask">[docs]</a><span class="k">def</span> <span class="nf">createStaticMask</span><span class="p">(</span><span class="n">imageObjectList</span><span class="o">=</span><span class="p">[],</span><span class="n">configObj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">procSteps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">procSteps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">procSteps</span><span class="o">.</span><span class="n">addStep</span><span class="p">(</span><span class="s1">&#39;Static Mask&#39;</span><span class="p">)</span>
+
+    <span class="n">step_name</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">_step_num_</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">configObj</span><span class="p">[</span><span class="n">step_name</span><span class="p">][</span><span class="s1">&#39;static&#39;</span><span class="p">]:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Static Mask step not performed.&#39;</span><span class="p">)</span>
+        <span class="n">procSteps</span><span class="o">.</span><span class="n">endStep</span><span class="p">(</span><span class="s1">&#39;Static Mask&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">)</span> <span class="o">==</span><span class="mi">0</span><span class="p">)):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Invalid image object list given to static mask&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;USER INPUT PARAMETERS for Static Mask Step:&#39;</span><span class="p">)</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">printParams</span><span class="p">(</span><span class="n">configObj</span><span class="p">[</span><span class="n">step_name</span><span class="p">],</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
+
+    <span class="c1">#create a static mask object</span>
+    <span class="n">myMask</span> <span class="o">=</span> <span class="n">staticMask</span><span class="p">(</span><span class="n">configObj</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+        <span class="n">myMask</span><span class="o">.</span><span class="n">addMember</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="c1"># create tmp filename here...</span>
+
+
+    <span class="c1">#save the masks to disk for later access</span>
+    <span class="n">myMask</span><span class="o">.</span><span class="n">saveToFile</span><span class="p">(</span><span class="n">imageObjectList</span><span class="p">)</span>
+    <span class="n">myMask</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">procSteps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">procSteps</span><span class="o">.</span><span class="n">endStep</span><span class="p">(</span><span class="s1">&#39;Static Mask&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="constructFilename"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.constructFilename">[docs]</a><span class="k">def</span> <span class="nf">constructFilename</span><span class="p">(</span><span class="n">signature</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Construct an output filename for the given signature::</span>
+
+<span class="sd">         signature=[instr+detector,(nx,ny),detnum]</span>
+
+<span class="sd">    The signature is in the image object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="n">buildSignatureKey</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filename</span></div>
+
+<div class="viewcode-block" id="buildSignatureKey"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.buildSignatureKey">[docs]</a><span class="k">def</span> <span class="nf">buildSignatureKey</span><span class="p">(</span><span class="n">signature</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build static file filename suffix used by mkstemp()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">signature</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;x&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;_staticMask.fits&quot;</span></div>
+
+<div class="viewcode-block" id="staticMask"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask">[docs]</a><span class="k">class</span> <span class="nc">staticMask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class manages the creation of the global static mask which</span>
+<span class="sd">    masks pixels that are unwanted in the SCI array.</span>
+<span class="sd">    A static mask  object gets created for each global</span>
+<span class="sd">    mask needed, one for each chip from each instrument/detector.</span>
+<span class="sd">    Each static mask array has type Int16, and resides in memory.</span>
+
+<span class="sd">    :Notes:</span>
+<span class="sd">        Class that manages the creation of a global static</span>
+<span class="sd">        mask which is used to mask pixels that are some</span>
+<span class="sd">        sigma BELOW the mode computed for the image.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configObj</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># the signature is created in the imageObject class</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="o">=</span><span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">masknames</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_name</span><span class="o">=</span><span class="n">util</span><span class="o">.</span><span class="n">getSectionName</span><span class="p">(</span><span class="n">configObj</span><span class="p">,</span><span class="n">_step_num_</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">configObj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">static_sig</span> <span class="o">=</span> <span class="n">configObj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">step_name</span><span class="p">][</span><span class="s1">&#39;static_sig&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">static_sig</span> <span class="o">=</span> <span class="mf">4.</span> <span class="c1"># define a reasonable number</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Using default of 4. for static mask sigma.&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="staticMask.addMember"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask.addMember">[docs]</a>    <span class="k">def</span> <span class="nf">addMember</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imagePtr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Combines the input image with the static mask that</span>
+<span class="sd">        has the same signature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        imagePtr : object</span>
+<span class="sd">            An imageObject reference</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The signature parameter consists of the tuple::</span>
+
+<span class="sd">            (instrument/detector, (nx,ny), chip_id)</span>
+
+<span class="sd">        The signature is defined in the image object for each chip</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numchips</span><span class="o">=</span><span class="n">imagePtr</span><span class="o">.</span><span class="n">_numchips</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Computing static mask:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">chips</span> <span class="o">=</span> <span class="n">imagePtr</span><span class="o">.</span><span class="n">group</span>
+        <span class="k">if</span> <span class="n">chips</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">chips</span> <span class="o">=</span> <span class="n">imagePtr</span><span class="o">.</span><span class="n">getExtensions</span><span class="p">()</span>
+
+        <span class="c1">#for chip in range(1,numchips+1,1):</span>
+        <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="n">chips</span><span class="p">:</span>
+            <span class="n">chipid</span><span class="o">=</span><span class="n">imagePtr</span><span class="o">.</span><span class="n">scienceExt</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">chip</span><span class="p">)</span>
+            <span class="n">chipimage</span><span class="o">=</span><span class="n">imagePtr</span><span class="o">.</span><span class="n">getData</span><span class="p">(</span><span class="n">chipid</span><span class="p">)</span>
+            <span class="n">signature</span><span class="o">=</span><span class="n">imagePtr</span><span class="p">[</span><span class="n">chipid</span><span class="p">]</span><span class="o">.</span><span class="n">signature</span>
+
+            <span class="c1"># If this is a new signature, create a new Static Mask file which is empty</span>
+            <span class="c1"># only create a new mask if one doesn&#39;t already exist</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">signature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buildMaskArray</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+                <span class="n">maskname</span> <span class="o">=</span>  <span class="n">constructFilename</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">masknames</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">=</span> <span class="n">maskname</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">chip_sig</span> <span class="o">=</span> <span class="n">buildSignatureKey</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masknames</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">chip_sig</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masknames</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                        <span class="n">maskname</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">masknames</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+                        <span class="k">break</span>
+            <span class="n">imagePtr</span><span class="p">[</span><span class="n">chipid</span><span class="p">]</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s1">&#39;staticMask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">maskname</span>
+
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">ImageStats</span><span class="p">(</span><span class="n">chipimage</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">fields</span><span class="o">=</span><span class="s1">&#39;mode&#39;</span><span class="p">)</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">mode</span>
+            <span class="n">rms</span>  <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">stddev</span>
+            <span class="n">nbins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">stats</span>
+
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;  mode = </span><span class="si">%9f</span><span class="s1">;   rms = </span><span class="si">%7f</span><span class="s1">;   static_sig = </span><span class="si">%0.2f</span><span class="s1">&#39;</span> <span class="o">%</span>
+                     <span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">rms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_sig</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">nbins</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span> <span class="c1"># only combine data from new image if enough data to mask</span>
+                <span class="n">sky_rms_diff</span> <span class="o">=</span> <span class="n">mode</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">static_sig</span><span class="o">*</span><span class="n">rms</span><span class="p">)</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">[</span><span class="n">signature</span><span class="p">],</span>
+                               <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">chipimage</span><span class="p">,</span> <span class="n">sky_rms_diff</span><span class="p">)),</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">[</span><span class="n">signature</span><span class="p">])</span>
+            <span class="k">del</span> <span class="n">chipimage</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_buildMaskArray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">signature</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates empty  numpy array for static mask array signature. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">signature</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+<div class="viewcode-block" id="staticMask.getMaskArray"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask.getMaskArray">[docs]</a>    <span class="k">def</span> <span class="nf">getMaskArray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the appropriate StaticMask array for the image. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">mask</span></div>
+
+<div class="viewcode-block" id="staticMask.getFilename"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask.getFilename">[docs]</a>    <span class="k">def</span> <span class="nf">getFilename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">signature</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the name of the output mask file that</span>
+<span class="sd">        should reside on disk for the given signature. &quot;&quot;&quot;</span>
+
+        <span class="n">filename</span><span class="o">=</span><span class="n">constructFilename</span><span class="p">(</span><span class="n">signature</span><span class="p">)</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">fileutil</span><span class="o">.</span><span class="n">checkFileExists</span><span class="p">(</span><span class="n">filename</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">filename</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">mMask file for &quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">),</span> <span class="s2">&quot; does not exist on disk&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="staticMask.getMaskname"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask.getMaskname">[docs]</a>    <span class="k">def</span> <span class="nf">getMaskname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chipid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct an output filename for the given signature::</span>
+
+<span class="sd">             signature=[instr+detector,(nx,ny),detnum]</span>
+
+<span class="sd">        The signature is in the image object and the</span>
+<span class="sd">        name of the static mask file is saved as sci_chip.outputNames[&quot;staticMask&quot;].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="n">chipid</span><span class="p">]</span><span class="o">.</span><span class="n">outputNames</span><span class="p">[</span><span class="s2">&quot;staticMask&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="staticMask.close"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Deletes all static mask objects. &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+<div class="viewcode-block" id="staticMask.deleteMask"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask.deleteMask">[docs]</a>    <span class="k">def</span> <span class="nf">deleteMask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">signature</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Delete just the mask that matches the signature given.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">signature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">[</span><span class="n">signature</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No matching mask&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="staticMask.saveToFile"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.staticMask.saveToFile">[docs]</a>    <span class="k">def</span> <span class="nf">saveToFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">imageObjectList</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Saves the static mask to a file</span>
+<span class="sd">            it uses the signatures associated with each</span>
+<span class="sd">            mask to contruct the filename for the output mask image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">virtual</span> <span class="o">=</span> <span class="n">imageObjectList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">inmemory</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1">#check to see if the file already exists on disk</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">masknames</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="c1">#create a new fits image with the mask array and a standard header</span>
+            <span class="c1">#open a new header and data unit</span>
+            <span class="n">newHDU</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">PrimaryHDU</span><span class="p">()</span>
+            <span class="n">newHDU</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">masklist</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">virtual</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">imageObjectList</span><span class="p">:</span>
+                    <span class="n">img</span><span class="o">.</span><span class="n">saveVirtualOutputs</span><span class="p">({</span><span class="n">filename</span><span class="p">:</span><span class="n">newHDU</span><span class="p">})</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ASTROPY_VER_GE13</span><span class="p">:</span>
+                        <span class="n">newHDU</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">newHDU</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving static mask to disk: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Problem saving static mask file: </span><span class="si">%s</span><span class="s2"> to &quot;</span>
+                              <span class="s2">&quot;disk!</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">IOError</span></div></div>
+
+
+<div class="viewcode-block" id="help"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.help">[docs]</a><span class="k">def</span> <span class="nf">help</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Print out syntax help for running astrodrizzle</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file : str (Default = None)</span>
+<span class="sd">        If given, write out help to the filename specified by this parameter</span>
+<span class="sd">        Any previously existing file with this name will be deleted before</span>
+<span class="sd">        writing out the help.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">helpstr</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">helpstr</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="getHelpAsString"><a class="viewcode-back" href="../../static.html#drizzlepac.staticMask.getHelpAsString">[docs]</a><span class="k">def</span> <span class="nf">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return useful help from a file in the script directory called</span>
+<span class="sd">    __taskname__.help</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">__package__</span><span class="p">)</span>
+    <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
+    <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">docstring</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">docstring</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">htmlfile</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">show_ver</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="o">+</span> \
+                <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;Version&#39;</span><span class="p">,</span> <span class="n">__version__</span><span class="p">,</span>
+                <span class="s1">&#39; updated on &#39;</span><span class="p">,</span> <span class="n">__vdate__</span><span class="p">])</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
+
+    <span class="k">return</span> <span class="n">helpString</span></div>
+
+
+<span class="n">createMask</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

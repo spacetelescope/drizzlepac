@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Region mapping for TweakReg" href="mapreg.html" />
     <link rel="prev" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -57,22 +59,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="mapreg.html"
                         title="next chapter">Region mapping for TweakReg</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/updatehdr.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/updatehdr.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -81,28 +82,26 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="updatehdr-functions-for-updating-wcs-with-new-solutions">
 <span id="updatehdr"></span><h1>UPDATEHDR: Functions for Updating WCS with New Solutions<a class="headerlink" href="#updatehdr-functions-for-updating-wcs-with-new-solutions" title="Permalink to this headline">¶</a></h1>
 <p>The functions in this module support updating the WCS information in
-distorted images with the alignment solution determined by <em class="xref py py-obj">tweakreg</em>
+distorted images with the alignment solution determined by <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code>
 or saved in a shiftfile.</p>
 <span class="target" id="module-drizzlepac.updatehdr"></span><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack, Mihai Cara</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack, Mihai Cara</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
 <dl class="function">
 <dt id="drizzlepac.updatehdr.create_unique_wcsname">
-<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">create_unique_wcsname</tt><big>(</big><em>fimg</em>, <em>extnum</em>, <em>wcsname</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.create_unique_wcsname" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.updatehdr.</code><code class="descname">create_unique_wcsname</code><span class="sig-paren">(</span><em>fimg</em>, <em>extnum</em>, <em>wcsname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/updatehdr.html#create_unique_wcsname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.updatehdr.create_unique_wcsname" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function evaluates whether the specified wcsname value has
 already been used in this image.  If so, it automatically modifies
 the name with a simple version ID using wcsname_NNN format.</p>
@@ -110,8 +109,7 @@ the name with a simple version ID using wcsname_NNN format.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="fimg">fimg</strong> : obj</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="fimg">fimg</strong> : obj</p>
 <blockquote>
 <div><p>PyFITS object of image with WCS information to be updated</p>
 </div></blockquote>
@@ -125,8 +123,7 @@ the name with a simple version ID using wcsname_NNN format.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Returns:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>uniqname</strong> : str</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>uniqname</strong> : str</p>
 <blockquote class="last">
 <div><p>Unique WCSNAME value</p>
 </div></blockquote>
@@ -138,15 +135,14 @@ the name with a simple version ID using wcsname_NNN format.</p>
 
 <dl class="function">
 <dt id="drizzlepac.updatehdr.update_from_shiftfile">
-<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_from_shiftfile</tt><big>(</big><em>shiftfile</em>, <em>wcsname=None</em>, <em>force=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_from_shiftfile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.updatehdr.</code><code class="descname">update_from_shiftfile</code><span class="sig-paren">(</span><em>shiftfile</em>, <em>wcsname=None</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/updatehdr.html#update_from_shiftfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.updatehdr.update_from_shiftfile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update headers of all images specified in shiftfile with shifts
 from shiftfile.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="shiftfile">shiftfile</strong> : str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="shiftfile">shiftfile</strong> : str</p>
 <blockquote>
 <div><p>Filename of shiftfile.</p>
 </div></blockquote>
@@ -169,7 +165,7 @@ wcsname? [Default=False]</p>
 
 <dl class="function">
 <dt id="drizzlepac.updatehdr.update_wcs">
-<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">update_wcs</tt><big>(</big><em>image</em>, <em>extnum</em>, <em>new_wcs</em>, <em>wcsname=''</em>, <em>reusename=False</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.update_wcs" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.updatehdr.</code><code class="descname">update_wcs</code><span class="sig-paren">(</span><em>image</em>, <em>extnum</em>, <em>new_wcs</em>, <em>wcsname=''</em>, <em>reusename=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/updatehdr.html#update_wcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.updatehdr.update_wcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates the WCS of the specified extension number with the new WCS
 after archiving the original WCS.</p>
 <p>The value of &#8216;new_wcs&#8217; needs to be the full
@@ -178,8 +174,7 @@ HSTWCS object.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="image">image</strong> : str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="image">image</strong> : str</p>
 <blockquote>
 <div><p>Filename of image with WCS that needs to be updated</p>
 </div></blockquote>
@@ -212,7 +207,7 @@ HSTWCS object.</p>
 
 <dl class="function">
 <dt id="drizzlepac.updatehdr.updatewcs_with_shift">
-<tt class="descclassname">drizzlepac.updatehdr.</tt><tt class="descname">updatewcs_with_shift</tt><big>(</big><em>image</em>, <em>reference</em>, <em>wcsname=None</em>, <em>reusename=False</em>, <em>fitgeom='rscale'</em>, <em>rot=0.0</em>, <em>scale=1.0</em>, <em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>fit=None</em>, <em>xrms=None</em>, <em>yrms=None</em>, <em>verbose=False</em>, <em>force=False</em>, <em>sciext='SCI'</em><big>)</big><a class="headerlink" href="#drizzlepac.updatehdr.updatewcs_with_shift" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.updatehdr.</code><code class="descname">updatewcs_with_shift</code><span class="sig-paren">(</span><em>image</em>, <em>reference</em>, <em>wcsname=None</em>, <em>reusename=False</em>, <em>fitgeom='rscale'</em>, <em>rot=0.0</em>, <em>scale=1.0</em>, <em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>fit=None</em>, <em>xrms=None</em>, <em>yrms=None</em>, <em>verbose=False</em>, <em>force=False</em>, <em>sciext='SCI'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/updatehdr.html#updatewcs_with_shift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.updatehdr.updatewcs_with_shift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the SCI headers in &#8216;image&#8217; based on the fit provided as determined
 in the WCS specified by &#8216;reference&#8217;.  The fit should be a 2-D matrix as
 generated for use with &#8216;make_vector_plot()&#8217;.</p>
@@ -220,8 +215,7 @@ generated for use with &#8216;make_vector_plot()&#8217;.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong id="image">image</strong> : str or PyFITS.HDUList object</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="image">image</strong> : str or PyFITS.HDUList object</p>
 <blockquote>
 <div><p>Filename, or PyFITS object, of image with WCS to be updated.
 All extensions with EXTNAME matches the value of the &#8216;sciext&#8217;
@@ -306,39 +300,31 @@ be updated with the fit values. [Default=&#8217;SCI&#8217;]</p>
 <p>The algorithm used to apply the provided fit solution to the image
 involves applying the following steps to the WCS of each of the
 input image&#8217;s chips:</p>
-<ol class="arabic">
+<ol class="arabic simple">
 <li><dl class="first docutils">
 <dt>compute RA/Dec with full distortion correction for</dt>
-<dd><p class="first last">reference point as (Rc_i,Dc_i)</p>
-</dd>
+<dd>reference point as (Rc_i,Dc_i)</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>find the Xc,Yc for each Rc_i,Dc_i and get the difference from the</dt>
-<dd><p class="first last">CRPIX position for the reference WCS as (dXc_i,dYc_i)</p>
-</dd>
+<dd>CRPIX position for the reference WCS as (dXc_i,dYc_i)</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>apply fit (rot&amp;scale) to (dXc_i,dYc_i) then apply shift, then add</dt>
-<dd><p class="first last">CRPIX back to get new (Xcs_i,Ycs_i) position</p>
-</dd>
+<dd>CRPIX back to get new (Xcs_i,Ycs_i) position</dd>
 </dl>
 </li>
-<li><p class="first">compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)</p>
-</li>
-<li><p class="first">compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)</p>
-</li>
+<li>compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)</li>
+<li>compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)</li>
 <li><dl class="first docutils">
 <dt>apply the fit to the chip&#8217;s undistorted CD matrix, the apply linear</dt>
-<dd><p class="first last">distortion terms back in to create a new CD matrix</p>
-</dd>
+<dd>distortion terms back in to create a new CD matrix</dd>
 </dl>
 </li>
-<li><p class="first">add (dRcs_i,dDcs_i) to CRVAL of the reference chip&#8217;s WCS</p>
-</li>
-<li><p class="first">update header with new WCS values</p>
-</li>
+<li>add (dRcs_i,dDcs_i) to CRVAL of the reference chip&#8217;s WCS</li>
+<li>update header with new WCS values</li>
 </ol>
 </dd></dl>
 
@@ -350,7 +336,7 @@ input image&#8217;s chips:</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -365,12 +351,12 @@ input image&#8217;s chips:</p>
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

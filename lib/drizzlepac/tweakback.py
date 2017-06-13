@@ -158,7 +158,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
         fltfiles = [fltfiles]
 
     sciext = determine_extnum(drzfile, extname='SCI')
-    scihdr = fits.getheader(drzfile, ext=sciext)
+    scihdr = fits.getheader(drzfile, ext=sciext, memmap=False)
 
     ### Step 1: Read in updated and original WCS solutions
     # determine keys for all alternate WCS solutions in drizzled image header
@@ -197,12 +197,12 @@ def tweakback(drzfile, input=None,  origwcs = None,
     crderr2kw = 'CRDER2'+wkeys[-1]
 
     if crderr1kw in scihdr:
-        crderr1 = fits.getval(drzfile, crderr1kw, ext=sciext)
+        crderr1 = fits.getval(drzfile, crderr1kw, ext=sciext, memmap=False)
     else:
         crderr1 = 0.0
 
     if crderr2kw in scihdr:
-        crderr2 = fits.getval(drzfile, crderr2kw, ext=sciext)
+        crderr2 = fits.getval(drzfile, crderr2kw, ext=sciext, memmap=False)
     else:
         crderr2 = 0.0
     del scihdr
@@ -216,7 +216,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
             log.info(logstr)
 
         # reset header WCS keywords to original (OPUS generated) values
-        imhdulist = fits.open(fname, mode='update', memmap=True)
+        imhdulist = fits.open(fname, mode='update', memmap=False)
         extlist = get_ext_list(imhdulist, extname='SCI')
         if not extlist:
             extlist = [0]
@@ -354,7 +354,7 @@ def extract_input_filenames(drzfile):
     """
     Generate a list of filenames from a drizzled image's header
     """
-    data_kws = fits.getval(drzfile, 'd*data', ext=0)
+    data_kws = fits.getval(drzfile, 'd*data', ext=0, memmap=False)
     if len(data_kws) == 0:
         return None
     fnames = []
@@ -367,7 +367,7 @@ def extract_input_filenames(drzfile):
 
 def determine_extnum(drzfile, extname='SCI'):
     # Determine what kind of drizzled file input has been provided: MEF or single
-    hdulist = fits.open(drzfile)
+    hdulist = fits.open(drzfile, memmap=False)
     numext = len(hdulist)
     sciext = 0
     for e,i in zip(hdulist,list(range(numext))):

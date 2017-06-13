@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>skytopix: Coordinate transformation from sky coordinates &mdash; DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</title>
+    <title>skytopix: Coordinate transformation from sky coordinates &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
     
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,21 +14,23 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0.dev46088 (27-May-2015)',
+        VERSION:     '2.1.16 (05-June-2017)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Updatenpol" href="updatenpol.html" />
     <link rel="prev" title="pixtosky: Coordinate transformation to sky coordinates" href="pixtosky.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,10 +45,10 @@
         <li class="right" >
           <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
@@ -70,22 +72,21 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="updatenpol.html"
                         title="next chapter">Updatenpol</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/skytopix.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/skytopix.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -94,7 +95,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="skytopix-coordinate-transformation-from-sky-coordinates">
 <span id="skytopix"></span><h1>skytopix: Coordinate transformation from sky coordinates<a class="headerlink" href="#skytopix-coordinate-transformation-from-sky-coordinates" title="Permalink to this headline">¶</a></h1>
@@ -102,22 +103,20 @@
 with the full WCS and distortion model on source positions
 from sky coordinates to the WCS defined by an image.
 This task serves as a replacement for
-the <tt class="docutils literal"><span class="pre">IRAF.STSDAS</span></tt> task <em class="xref py py-obj">rd2xy</em>, albeit with the
+the <code class="docutils literal"><span class="pre">IRAF.STSDAS</span></code> task <code class="xref py py-obj docutils literal"><span class="pre">rd2xy</span></code>, albeit with the
 added capability of understanding the full distortion model
 provided in the headers of images updated for use with astrodrizzle and
 tweakreg.</p>
-<span class="target" id="module-drizzlepac.skytopix"></span><p><em class="xref py py-obj">skytopix</em> transforms source positions given as RA, Dec values into
+<span class="target" id="module-drizzlepac.skytopix"></span><p><code class="xref py py-obj docutils literal"><span class="pre">skytopix</span></code> transforms source positions given as RA, Dec values into
 pixel positions on the image based on the WCS information and any recognized
 distortion keywords contained in the input image header.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Authors:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">License:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
+<tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
 </tbody>
 </table>
@@ -125,8 +124,8 @@ distortion keywords contained in the input image header.</p>
 <h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>input <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>full filename with path of input image, an extension name
+<dt>input</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>full filename with path of input image, an extension name
 [&#8216;sci&#8217;,1] should be provided if input is a multi-extension
 FITS file.</dd>
 </dl>
@@ -136,27 +135,27 @@ FITS file.</dd>
 <h2>Optional Parameters<a class="headerlink" href="#optional-parameters" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>ra <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
-<dd>RA position in either decimal degrees or HMS format
-(with or without <tt class="docutils literal"><span class="pre">':'</span></tt>)
-like <tt class="docutils literal"><span class="pre">'19:10:50.337406303'</span></tt> or <tt class="docutils literal"><span class="pre">'19</span> <span class="pre">10</span> <span class="pre">50.337406303'</span></tt></dd>
-<dt>dec <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
-<dd>Dec position in either decimal degrees or HMS format
-(with or without <tt class="docutils literal"><span class="pre">':'</span></tt>)
-like <tt class="docutils literal"><span class="pre">'-60:2:22.186557409'</span></tt> or <tt class="docutils literal"><span class="pre">'-60</span> <span class="pre">2</span> <span class="pre">22.186557409'</span></tt></dd>
-<dt>coordfile <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>full filename with path of file with sky coordinates</dd>
-<dt>colnames <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>comma separated list of column names from &#8216;coordfile&#8217; file
+<dt>ra</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span><dd>RA position in either decimal degrees or HMS format
+(with or without <code class="docutils literal"><span class="pre">':'</span></code>)
+like <code class="docutils literal"><span class="pre">'19:10:50.337406303'</span></code> or <code class="docutils literal"><span class="pre">'19</span> <span class="pre">10</span> <span class="pre">50.337406303'</span></code></dd>
+<dt>dec</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span><dd>Dec position in either decimal degrees or HMS format
+(with or without <code class="docutils literal"><span class="pre">':'</span></code>)
+like <code class="docutils literal"><span class="pre">'-60:2:22.186557409'</span></code> or <code class="docutils literal"><span class="pre">'-60</span> <span class="pre">2</span> <span class="pre">22.186557409'</span></code></dd>
+<dt>coordfile</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>full filename with path of file with sky coordinates</dd>
+<dt>colnames</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>comma separated list of column names from &#8216;coordfile&#8217; file
 containing sky coordinates, respectively. Will default to
 first two columns if None are specified. Column names for ASCII
 files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
-<dt>precision <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
-<dd>Number of floating-point digits in output values</dd>
-<dt>output <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
-<dd>Name of output file with results, if desired</dd>
-<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>Print out full list of transformation results (default: <em class="xref py py-obj">False</em>)</dd>
+<dt>precision</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span><dd>Number of floating-point digits in output values</dd>
+<dt>output</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>Name of output file with results, if desired</dd>
+<dt>verbose</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Print out full list of transformation results (default: <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>)</dd>
 </dl>
 </div></blockquote>
 </div>
@@ -164,11 +163,11 @@ files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
 <h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>X position of pixel. If more than 1 input value, then it will be a
+<dt>x</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>X position of pixel. If more than 1 input value, then it will be a
 numpy array.</dd>
-<dt>y <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>Y position of pixel. If more than 1 input value, then it will be a
+<dt>y</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>Y position of pixel. If more than 1 input value, then it will be a
 numpy array.</dd>
 </dl>
 </div></blockquote>
@@ -179,8 +178,8 @@ numpy array.</dd>
 based on all WCS keywords and any recognized distortion keywords from the
 input image header. The transformation recognizes the conventions for
 describing distortion implemented as part of the SIP and Paper IV conventions
-used with <em class="xref py py-obj">AstroDrizzle</em>.  Input images can be updated to use these conventions
-through the use of the <em class="xref py py-obj">updatewcs</em> module the STWCS package.</p>
+used with <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>.  Input images can be updated to use these conventions
+through the use of the <code class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></code> module the STWCS package.</p>
 </div>
 <div class="section" id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
@@ -193,7 +192,7 @@ These examples illustrate the syntax that can be used to run the task in a
 couple of common modes.</p>
 <ol class="arabic">
 <li><p class="first">Run the task using the TEAL GUI under PyRAF:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">epar</span> <span class="n">skytopix</span>
 </pre></div>
 </div>
@@ -206,32 +205,31 @@ pixel position (X,Y) without using the TEAL GUI:</p>
 </dl>
 </li>
 </ol>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="kn">import</span> <span class="n">skytopix</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span>
-<span class="gp">... </span>                     <span class="s">&#39;0:22:07.0088&#39;</span><span class="p">,</span> <span class="s">&#39;-72:03:05.429&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">skytopix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s2">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="s1">&#39;0:22:07.0088&#39;</span><span class="p">,</span> <span class="s1">&#39;-72:03:05.429&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<ol class="arabic" start="3">
+<ol class="arabic simple" start="3">
 <li><dl class="first docutils">
 <dt>Convert a list of (undistorted) sky positions from the file,</dt>
 <dd><dl class="first last docutils">
 <dt>&#8216;radec.dat&#8217; for a calibrated ACS image (j8bt06nyq_flt.fits)</dt>
-<dd><p class="first last">into distorted pixel positions, and write out the result to
-the file &#8216;xypos.dat&#8217; without using the TEAL GUI:</p>
-</dd>
+<dd>into distorted pixel positions, and write out the result to
+the file &#8216;xypos.dat&#8217; without using the TEAL GUI:</dd>
 </dl>
 </dd>
 </dl>
 </li>
 </ol>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span>
-<span class="gp">... </span>                     <span class="n">coordfile</span><span class="o">=</span><span class="s">&quot;radec.dat&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&quot;xypos.dat&quot;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">skytopix</span><span class="o">.</span><span class="n">rd2xy</span><span class="p">(</span><span class="s2">&quot;j8bt06nyq_flt.fits[sci,1]&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">coordfile</span><span class="o">=</span><span class="s2">&quot;radec.dat&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;xypos.dat&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <dl class="function">
 <dt id="drizzlepac.skytopix.rd2xy">
-<tt class="descclassname">drizzlepac.skytopix.</tt><tt class="descname">rd2xy</tt><big>(</big><em>input</em>, <em>ra=None</em>, <em>dec=None</em>, <em>coordfile=None</em>, <em>colnames=None</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><big>)</big><a class="headerlink" href="#drizzlepac.skytopix.rd2xy" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">drizzlepac.skytopix.</code><code class="descname">rd2xy</code><span class="sig-paren">(</span><em>input</em>, <em>ra=None</em>, <em>dec=None</em>, <em>coordfile=None</em>, <em>colnames=None</em>, <em>precision=6</em>, <em>output=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/skytopix.html#rd2xy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.skytopix.rd2xy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Primary interface to perform coordinate transformations from
 pixel to sky coordinates using STWCS and full distortion models
 read from the input image header.</p>
@@ -245,7 +243,7 @@ read from the input image header.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -260,12 +258,12 @@ read from the input image header.</p>
         <li class="right" >
           <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
              >previous</a> |</li>
-        <li><a href="index.html">DrizzlePac 2.1.0.dev46088 (27-May-2015) documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2012, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

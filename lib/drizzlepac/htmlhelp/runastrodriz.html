@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Running Astrodrizzle &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
+    
+    <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.1.16 (05-June-2017)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Updatenpol" href="updatenpol.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="updatenpol.html" title="Updatenpol"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/stsci_logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Running Astrodrizzle</a><ul>
+<li><a class="reference internal" href="#typical-usage">Typical Usage</a></li>
+<li><a class="reference internal" href="#alternative-usage">Alternative Usage</a></li>
+<li><a class="reference internal" href="#gui-usage-under-python">GUI Usage under Python</a></li>
+<li><a class="reference internal" href="#pyraf-usage">PyRAF Usage</a></li>
+<li><a class="reference internal" href="#options">Options</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="updatenpol.html"
+                        title="previous chapter">Updatenpol</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/runastrodriz.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="running-astrodrizzle">
+<span id="id1"></span><h1>Running Astrodrizzle<a class="headerlink" href="#running-astrodrizzle" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal"><span class="pre">runastrodriz</span></code> is a module to control operation of astrodrizzle which removes distortion and combines HST images in the pipeline.</p>
+<div class="section" id="typical-usage">
+<h2>Typical Usage<a class="headerlink" href="#typical-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">runastrodriz</span><span class="o">.</span><span class="n">py</span> <span class="p">[</span><span class="o">-</span><span class="n">fhibn</span><span class="p">]</span> <span class="n">inputFilename</span> <span class="p">[</span><span class="n">newpath</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="alternative-usage">
+<h2>Alternative Usage<a class="headerlink" href="#alternative-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wfc3tools</span> <span class="k">import</span> <span class="n">runastrodriz</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">runastrodriz</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">inputFilename</span><span class="p">,</span><span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">newpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">inmemory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="gui-usage-under-python">
+<h2>GUI Usage under Python<a class="headerlink" href="#gui-usage-under-python" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stsci.tools</span> <span class="k">import</span> <span class="n">teal</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">wfc3tools</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">teal</span><span class="p">(</span><span class="s1">&#39;runastrodriz&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="pyraf-usage">
+<h2>PyRAF Usage<a class="headerlink" href="#pyraf-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">epar</span> <span class="n">runastrodriz</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<p>If the &#8216;-i&#8217; option gets specified, no intermediate products will be written out
+to disk. These products, instead, will be kept in memory. This includes all
+single drizzle products (<em>single_sci</em> and <em>single_wht</em>), median image,
+blot images, and crmask images.  The use of this option will therefore require
+significantly more memory than usual to process the data.</p>
+<p>If a value has been provided for the newpath parameter, all processing will be
+performed in that directory/ramdisk.  The steps involved are:</p>
+<blockquote>
+<div><ul class="simple">
+<li>create a temporary directory under that directory named after the input file</li>
+<li>copy all files related to the input to that new directory</li>
+<li>change to that new directory and run astrodrizzle</li>
+<li>change back to original directory</li>
+<li>move (not copy) ALL files from temp directory to original directory</li>
+<li>delete temp sub-directory</li>
+</ul>
+</div></blockquote>
+<p>The &#8216;-b&#8217; option will run this task in BASIC mode without creating headerlets
+for each input image.</p>
+<p>The &#8216;-n&#8217; option allows the user to specify the number of cores to be used in
+running AstroDrizzle.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="updatenpol.html" title="Updatenpol"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

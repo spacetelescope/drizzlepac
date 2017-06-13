@@ -40,10 +40,15 @@ import numpy as np
 import astropy
 from astropy.io import fits
 
-from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
-                         check_files, logutil, mputil, textutil, bitmask)
 from stwcs import updatewcs as uw
 from stwcs.wcsutil import altwcs, wcscorr
+from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
+                         check_files, logutil, mputil, textutil)
+try:
+    from stsci.tools.bitmask import interpret_bit_flags
+except ImportError:
+    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
+
 
 from . import wcs_functions
 from . import util
@@ -152,13 +157,16 @@ def setCommonInput(configObj, createOutwcs=True):
                 break
 
     # interpret all 'bits' related parameters and convert them to integers
-    configObj['resetbits'] = bitmask.interpret_bits_value(configObj['resetbits'])
+    configObj['resetbits'] = interpret_bit_flags(configObj['resetbits'])
     step3name = util.getSectionName(configObj,3)
-    configObj[step3name]['driz_sep_bits'] = bitmask.interpret_bits_value(
-                                        configObj[step3name]['driz_sep_bits'])
+    configObj[step3name]['driz_sep_bits'] = interpret_bit_flags(
+                                        configObj[step3name]['driz_sep_bits']
+    )
     step7name = util.getSectionName(configObj,7)
-    configObj[step7name]['final_bits'] = bitmask.interpret_bits_value(
-                                        configObj[step7name]['final_bits'])
+    configObj[step7name]['final_bits'] = interpret_bit_flags(
+                                        configObj[step7name]['final_bits']
+    )
+
     # Verify any refimage parameters to be used
     step3aname = util.getSectionName(configObj,'3a')
     if not util.verifyRefimage(configObj[step3aname]['driz_sep_refimage']):
@@ -276,12 +284,17 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
 
     if interactive:
         print('Continue with processing?')
-        if sys.version_info[0] >= 3:
-            k = eval(input("(y)es or (n)o"))
-        else:
-            k = input("(y)es or (n)o")
-        if 'n' in k.lower():
-            raise ValueError
+        while True:
+            if sys.version_info[0] >= 3:
+                k = input("(y)es or (n)o").strip()[0].lower()
+            else:
+                k = raw_input("(y)es or (n)o").strip()[0].lower()
+
+            if k not in ['n', 'y']:
+                continue
+
+            if k == 'n':
+                raise KeyboardInterrupt("Execution aborted")
 
 
 def getMdriztabPars(input):
@@ -338,7 +351,8 @@ def createImageObjectList(files,instrpars,group=None,
                         mtflag = False
         else:
             mtflag = False
-        if mtflag is True:
+
+        if mtflag:
             print("#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n")
             if mt_refimg is None:
                 mt_refimg = image
@@ -362,7 +376,7 @@ def _getInputImage (input,group=None):
     sci_ext = 'SCI'
     if group in [None,'']:
         exten = '[sci,1]'
-        phdu = fits.getheader(input)
+        phdu = fits.getheader(input, memmap=False)
     else:
         # change to use fits more directly here?
         if group.find(',') > 0:
@@ -373,8 +387,8 @@ def _getInputImage (input,group=None):
                 grp = int(grp[0])
         else:
             grp = int(group)
-        phdu = fits.getheader(input)
-        phdu.extend(fits.getheader(input, ext=grp))
+        phdu = fits.getheader(input, memmap=False)
+        phdu.extend(fits.getheader(input, ext=grp, memmap=False))
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
     _instrument = phdu['INSTRUME']
@@ -448,8 +462,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         print("No input files provided to processInput")
         raise ValueError
 
-    if (isinstance(input, list) == False) and \
-       ('_asn' in input or '_asc' in input) :
+    if not isinstance(input, list) and ('_asn' in input or '_asc' in input):
         # Input is an association table
         # Get the input files, and run makewcs on them
         oldasndict = asnutil.readASNTable(input, prodonly=infilesOnly)
@@ -458,10 +471,10 @@ def processFilenames(input=None,output=None,infilesOnly=False):
             if output in ["",None,"None"]:
                 output = oldasndict['output'].lower() # insure output name is lower case
 
-        asnhdr = fits.getheader(input)
+        asnhdr = fits.getheader(input, memmap=False)
         # Only perform duplication check if not already completed...
         dupcheck = asnhdr.get('DUPCHECK',default="PERFORM") == "PERFORM"
-        
+
         #filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
         filelist = buildASNList(oldasndict['order'],input,check_for_duplicates=dupcheck)
 
@@ -552,7 +565,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         elif drz_extn[:4] not in output.lower():
             output = fileutil.buildNewRootname(output, extn=drz_extn)
 
-        
+
     log.info('Setting up output name: %s' % output)
 
     return asndict, ivmlist, output
@@ -612,7 +625,7 @@ def _process_input_wcs_single(fname, wcskey, updatewcs):
         extlist = []
         for extn in range(1, numext + 1):
             extlist.append(('SCI', extn))
-        if wcskey in string.uppercase:
+        if wcskey in string.ascii_uppercase:
             wkey = wcskey
             wname = ' '
         else:
@@ -672,7 +685,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
-    
+
     # check for non-polynomial distortion correction
     filelist = checkDGEOFile(filelist)
 
@@ -680,7 +693,10 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)
 
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
-    
+
+    if updatewcs:
+        uw.updatewcs(','.join(set(newfilelist) - set(filelist)))
+
     if len(ivmlist) > 0:
         ivmlist, filelist = list(zip(*ivmlist))
     else:
@@ -729,13 +745,13 @@ def changeSuffixinASN(asnfile, suffix):
     """
     # Start by creating a new name for the ASN table
     _new_asn = asnfile.replace('_asn.fits','_'+suffix+'_asn.fits')
-    if os.path.exists(_new_asn) == True:
+    if os.path.exists(_new_asn):
         os.remove(_new_asn)
     # copy original ASN table to new table
     shutil.copy(asnfile,_new_asn)
 
     # Open up the new copy and convert all MEMNAME's to include suffix
-    fasn = fits.open(_new_asn,'update')
+    fasn = fits.open(_new_asn, mode='update', memmap=False)
     fasn[0].header['DUPCHECK'] = "COMPLETE"
     newdata = fasn[1].data.tolist()
     for i in range(len(newdata)):
@@ -753,7 +769,7 @@ def changeSuffixinASN(asnfile, suffix):
     new_dtype.append((d.descr[0][0],d.descr[0][1].replace(msize,'{}{}'.format(mtype,new_size))))
     new_dtype.append(d.descr[1])
     new_dtype.append(d.descr[2])
-    
+
     # Assign newly created, reformatted array to extension
     newasn = np.array(newdata,dtype=new_dtype)
     fasn[1].data = newasn
@@ -946,7 +962,7 @@ def buildEmptyDRZ(input, output):
     # the DRZ file.
     try :
         log.info('Building empty DRZ file from %s' % inputfile[0])
-        img = fits.open(inputfile[0])
+        img = fits.open(inputfile[0], memmap=False)
     except:
         raise IOError('Unable to open file %s \n' % inputfile)
 
@@ -1048,15 +1064,15 @@ def checkDGEOFile(filenames):
             The names of these files must be added to the primary header either using the task XXXX
             or manually, for example:
 
-            hedit %s[0] npolfile fname_npl.fits add+
-            hedit %s[0] d2imfile fname_d2i.fits add+
+            hedit {0:s}[0] npolfile fname_npl.fits add+
+            hedit {0:s}[0] d2imfile fname_d2i.fits add+
 
             where fname_npl.fits is the name of the new style dgeo file and fname_d2i.fits is
             the name of the detector to image correction. After adding these keywords to the
             primary header, updatewcs must be run to update the science files:
 
             from stwcs import updatewcs
-            updatewcs.updatewcs(%s)
+            updatewcs.updatewcs("{0:s}")
 
             Alternatively you may choose to run astrodrizzle without DGEO and detector to image correction.
 
@@ -1064,30 +1080,35 @@ def checkDGEOFile(filenames):
             To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
             """
 
+    short_msg = """
+            To stop astrodrizzle and update the dgeo files, type 'q'.
+            To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
+    """
+
     for inputfile in filenames:
         try:
-            dgeofile = fits.getval(inputfile, 'DGEOFILE')
+            dgeofile = fits.getval(inputfile, 'DGEOFILE', memmap=False)
         except KeyError:
             continue
         if dgeofile not in ["N/A", "n/a", ""]:
-            message = msg % (inputfile, inputfile, inputfile)
+            message = msg.format(inputfile)
             try:
-                npolfile = fits.getval(inputfile, 'NPOLFILE')
+                npolfile = fits.getval(inputfile, 'NPOLFILE', memmap=False)
             except KeyError:
                 ustop = userStop(message)
-                while ustop == None:
-                    ustop = userStop(message)
-                if ustop == True:
+                while ustop is None:
+                    ustop = userStop(short_msg)
+                if ustop:
                     return None
-                elif ustop == False:
-                    pass
+
     return filenames
 
 def userStop(message):
     if sys.version_info[0] >= 3:
-        user_input = eval(input(message))
-    else:
         user_input = input(message)
+    else:
+        user_input = raw_input(message)
+
     if user_input == 'q':
         return True
     elif user_input == 'c':
@@ -1139,6 +1160,8 @@ def _setDefaults(input_dict={}):
         'driz_separate':True,
         'driz_sep_outnx':None,
         'driz_sep_outny':None,
+        'driz_sep_crpix1':None,
+        'driz_sep_crpix2':None,
         'driz_sep_kernel':'turbo',
         'driz_sep_scale':None,
         'driz_sep_pixfrac':1.0,
@@ -1167,6 +1190,8 @@ def _setDefaults(input_dict={}):
         'final_wht_type':"EXP",
         'final_outnx':None,
         'final_outny':None,
+        'final_crpix1':None,
+        'final_crpix2':None,
         'final_kernel':'square',
         'final_scale':None,
         'final_pixfrac':1.0,

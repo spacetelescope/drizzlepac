@@ -109,13 +109,12 @@ class WFC3UVISInputImage(WFC3InputImage):
                                                      instrpars['expkeyword'])
             chip._effGain=chip._gain
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if chip._gain is None or chip._rdnoise is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
         # Convert the science data to electrons.
         self.doUnitConversions()
-
 
     def getdarkcurrent(self,chip):
         """
@@ -127,29 +126,26 @@ class WFC3UVISInputImage(WFC3InputImage):
         darkcurrent: float
             The dark current value with **units of electrons**.
         """
-
         darkcurrent = 0.
 
         try:
-            darkcurrent = self._image[self.scienceExt,chip].header['MEANDARK']
-        except:
-            str =  "#############################################\n"
-            str += "#                                           #\n"
-            str += "# Error:                                    #\n"
-            str += "#   Cannot find the value for 'MEANDARK'    #\n"
-            str += "#   in the image header.  WFC3 input images #\n"
-            str += "#   are expected to have this header        #\n"
-            str += "#   keyword.                                #\n"
-            str += "#                                           #\n"
-            str += "# Error occured in WFC3UVISInputImage class #\n"
-            str += "#                                           #\n"
-            str += "#############################################\n"
-            raise ValueError(str)
+            darkcurrent = self._image[self.scienceExt, chip].header['MEANDARK']
 
+        except:
+            msg =  "#############################################\n"
+            msg += "#                                           #\n"
+            msg += "# Error:                                    #\n"
+            msg += "#   Cannot find the value for 'MEANDARK'    #\n"
+            msg += "#   in the image header.  WFC3 input images #\n"
+            msg += "#   are expected to have this header        #\n"
+            msg += "#   keyword.                                #\n"
+            msg += "#                                           #\n"
+            msg += "# Error occured in WFC3UVISInputImage class #\n"
+            msg += "#                                           #\n"
+            msg += "#############################################\n"
+            raise ValueError(msg)
 
         return darkcurrent
-
-
 
 
 class WFC3IRInputImage(WFC3InputImage):
@@ -178,8 +174,7 @@ class WFC3IRInputImage(WFC3InputImage):
          photometry keywords will be calculated as such, so no image
          manipulation needs be done between native and electrons """
          # Image information
-        #_handle = fileutil.openImage(self._filename,mode='update',memmap=0)
-        _handle = fileutil.openImage(self._filename,mode='readonly')
+        _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         for chip in self.returnAllChips(extname=self.scienceExt):
             conversionFactor = 1.0
@@ -230,7 +225,7 @@ class WFC3IRInputImage(WFC3InputImage):
                                                      instrpars['expkeyword'])
             chip._effGain= 1
 
-            if chip._gain == None or chip._rdnoise == None or chip._exptime == None:
+            if chip._gain is None or chip._rdnoise is None or chip._exptime is None:
                 print('ERROR: invalid instrument task parameter')
                 raise ValueError
 
@@ -267,7 +262,7 @@ class WFC3IRInputImage(WFC3InputImage):
         # keyword in the primary keyword of the science data.
         try:
             filename = self.header["DARKFILE"]
-            handle = fileutil.openImage(filename,mode='readonly',memmap=0)
+            handle = fileutil.openImage(filename, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn="sci,1")
             darkobj = hdu.data[sci_chip.ltv2:sci_chip.size2,sci_chip.ltv1:sci_chip.size1]
 

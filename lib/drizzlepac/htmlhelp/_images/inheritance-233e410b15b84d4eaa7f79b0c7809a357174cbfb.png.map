@@ -1,0 +1,4 @@
+<map id="inheritanced9e0a89e98" name="inheritanced9e0a89e98">
+<area shape="rect" id="node1" href="#drizzlepac.imgclasses.Image" target="_top" title="Primary class to keep track of all WCS and catalog information for" alt="" coords="15,55,142,80"/>
+<area shape="rect" id="node2" href="#drizzlepac.imgclasses.RefImage" target="_top" title="This class provides all the information needed by to define a reference" alt="" coords="5,5,152,31"/>
+</map>
