@@ -769,13 +769,19 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Open the SCI image
     _handle = fileutil.openImage(_expname, mode='readonly', memmap=False)
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
-
+    
     # Apply sky subtraction and unit conversion to input array
     if chip.computedSky is None:
         _insci = _sciext.data
     else:
         log.info("Applying sky value of %0.6f to %s"%(chip.computedSky,_expname))
         _insci = _sciext.data - chip.computedSky
+    # If input SCI image is still integer format (RAW files)
+    # transform it to float32 for all subsequent operations
+    # needed for numpy >=1.12.x
+    if np.issubdtype(_insci[0,0],np.int16):
+        _insci = _insci.astype(np.float32)
+
     _insci *= chip._effGain
 
     # Set additional parameters needed by 'drizzle'
