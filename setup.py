@@ -6,7 +6,7 @@ import sys
 
 try:
     import pandokia
-except (NameError, ModuleNotFoundError):
+except (ImportError, NameError, ModuleNotFoundError):
     pandokia = False
 
 from glob import glob
