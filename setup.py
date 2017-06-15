@@ -5,6 +5,11 @@ import subprocess
 import sys
 
 try:
+    _mnfe = ModuleNotFoundError
+except NameError:
+    ModuleNotFoundError = ImportError
+
+try:
     import pandokia
 except (ImportError, NameError, ModuleNotFoundError):
     pandokia = False
