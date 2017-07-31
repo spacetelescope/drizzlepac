@@ -260,11 +260,14 @@ catfile : str (Default = '')
     columns will provide the names of the source catalogs for each chip
     in order of the science extension numbers ((SCI,1), (SCI,2), ...).
 
-
     A sample catfile, with one line per image would look like::
 
      image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
      image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo
+
+    .. note::
+      Catalog files themselves must be text files containing
+      "white space"-separated list of values (``xcol``, ``ycol``, etc.)
 
 xcol : int (Default = 1)
     Column number of X position from the user-generated catalog files
@@ -317,6 +320,10 @@ refcat : str (Default = '')
     catalog extracted from one of the input images. When `refimage` is not
     specified, reference WCS to be used with reference catalog will be
     derived from input images.
+
+    .. note::
+      Reference catalog must be text file containing
+      "white space"-separated list of values (``xcol``, ``ycol``, etc.)
 
 refxcol : int (Default = 1)
     Column number of RA in the external catalog file specified by the
@@ -468,6 +475,10 @@ mode of operation will be to extract a catalog of source positions from
 each input image using either a 'DAOFIND-like' algorithm or ``SExtractor`` (if
 the user has ``SExtractor`` installed). Alternatively, the user can provide
 their catalogs of source positions derived from **each input chip**.
+
+.. note::
+   Catalog files must be text files containing
+   "white space"-separated list of values (``xcol``, ``ycol``, etc.)
 
 The reference frame will be defined either by:
 
