@@ -336,7 +336,7 @@ class baseImageObject(object):
 
         extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
         extver=self._image[self.scienceExt,chip].header["EXTVER"]
-        expname = self._rootname.lower()
+        expname = self._rootname
 
         # record extension-based name to reflect what extension a mask file corresponds to
         self._image[self.scienceExt,chip].rootname=expname + "_" + extname + str(extver)
