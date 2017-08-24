@@ -7,3 +7,4 @@ dist/
 *.so
 *.dylib
 *.pyc
+.DS_Store

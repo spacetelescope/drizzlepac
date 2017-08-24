@@ -14,6 +14,13 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+Drizzlepac v2.1.18 (not released)
+=================================
+
+- ``drizzlepac`` lowers the case of the path of output images.
+  See https://github.com/spacetelescope/drizzlepac/issues/79 for more
+  details.
+
 DrizzlePac v2.1.17 (13-June-2017)
 =================================
 
