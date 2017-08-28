@@ -737,7 +737,7 @@ class UserCatalog(Catalog):
             self.sharp_col = False
 
         if self.pars['xyunits'] == 'degrees':
-            self.radec = (self.xypos[0].copy(), self.xypos[1].copy())
+            self.radec = [self.xypos[0].copy(), self.xypos[1].copy()]
             if self.wcs is not None:
                 self.xypos[:2] = list(self.wcs.all_world2pix(np.array(self.xypos[:2]).T, self.origin).T)
 
