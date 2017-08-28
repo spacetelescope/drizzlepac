@@ -155,26 +155,37 @@ class Catalog(object):
         self.prefix = self.PAR_PREFIX
 
         if not isinstance(self.wcs,pywcs.WCS):
-            print(textutil.textbox('WCS not a valid PyWCS object. Conversion of RA/Dec not possible...'),
-                  file=sys.stderr)
+            print(
+                textutil.textbox(
+                    'WCS not a valid PyWCS object. '
+                    'Conversion of RA/Dec not possible...'
+                    ),
+                file=sys.stderr
+            )
             raise ValueError
+
         if self.xypos is None or len(self.xypos[0]) == 0:
             self.xypos = None
-            warnstr = textutil.textbox('WARNING: \n'+
-                        'No objects found for this image...')
+            warnstr = textutil.textbox(
+                'WARNING: \n'
+                'No objects found for this image...'
+            )
+
             for line in warnstr.split('\n'):
                 log.warning(line)
+
             print(warnstr)
+
             return
 
-        if self.radec is None or force:
+        if self.radec is None:
             if self.wcs is not None:
                 print('     Found {:d} objects.'.format(len(self.xypos[0])))
                 self.radec = self.wcs.all_pix2world(self.xypos[0],self.xypos[1],self.origin)
             else:
                 # If we have no WCS, simply pass along the XY input positions
                 # under the assumption they were already sky positions.
-                self.radec = self.xypos
+                self.radec = copy.deepcopy(self.xypos)
 
 
     def apply_exclusions(self,exclusions):
@@ -220,6 +231,7 @@ class Catalog(object):
             self.radec = radec_trimmed
             self.xypos = xypos_trimmed
             log.info('Excluded %d sources from catalog.'%num_excluded)
+
 
     def apply_flux_limits(self):
         """ Apply any user-specified limits on source selection
@@ -334,7 +346,8 @@ class Catalog(object):
             print("Trimming of catalog resulted in NO valid sources! ")
             raise ValueError
 
-    def buildCatalogs(self,exclusions=None,**kwargs):
+
+    def buildCatalogs(self, exclusions=None, **kwargs):
         """ Primary interface to build catalogs based on user inputs.
         """
         self.generateXY(**kwargs)
@@ -723,7 +736,13 @@ class UserCatalog(Catalog):
                 self.xypos.append(np.zeros(self.num_objects, dtype=float))
             self.sharp_col = False
 
-    def plotXYCatalog(self,**kwargs):
+        if self.pars['xyunits'] == 'degrees':
+            self.radec = (self.xypos[0].copy(), self.xypos[1].copy())
+            if self.wcs is not None:
+                self.xypos[:2] = list(self.wcs.all_world2pix(np.array(self.xypos[:2]).T, self.origin).T)
+
+
+    def plotXYCatalog(self, **kwargs):
         """
         Plots the source catalog positions using matplotlib's `pyplot.plot()`
 
