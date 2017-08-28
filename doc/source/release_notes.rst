@@ -17,9 +17,13 @@ of the list).
 Drizzlepac v2.1.18 (not released)
 =================================
 
-- ``drizzlepac`` lowers the case of the path of output images.
+- ``astrodrizzle`` lowers the case of the path of output images.
   See https://github.com/spacetelescope/drizzlepac/issues/79 for more
   details.
+
+- ``tweakreg`` ignores user-specified units of image catalogs (provided through
+  the ``refcat`` parameter).
+  See https://github.com/spacetelescope/drizzlepac/issues/81 for more details.
 
 DrizzlePac v2.1.17 (13-June-2017)
 =================================
