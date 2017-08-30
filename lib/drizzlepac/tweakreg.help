@@ -75,6 +75,10 @@ refimage : str (Default = '')
     Filename of reference image. Sources derived from this image will be
     used as the reference for matching with sources from all input images
     unless a separate catalog is provided through the `refcat` parameter.
+    In addition, this image file must contain a valid not distorted WCS that
+    will define the projection plane in which image alignment is performed
+    ("reference WCS"). When ``refimage`` is not provided, a reference WCS
+    will be derived from input images.
 
 expand_refcat : bool (Default = False)
     Specifies whether to add new sources from just matched images to

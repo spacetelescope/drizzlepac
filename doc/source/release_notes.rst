@@ -17,13 +17,15 @@ of the list).
 Drizzlepac v2.1.18 (not released)
 =================================
 
-- ``astrodrizzle`` lowers the case of the path of output images.
+- Fixed ``astrodrizzle`` lowers the case of the path of output images issue.
   See https://github.com/spacetelescope/drizzlepac/issues/79 for more
   details.
 
-- ``tweakreg`` ignores user-specified units of image catalogs (provided through
-  the ``refcat`` parameter).
-  See https://github.com/spacetelescope/drizzlepac/issues/81 for more details.
+- Fixed ``tweakreg`` ignores user-specified units of image catalogs (provided
+  through the ``refcat`` parameter) issue. See https://github.com/spacetelescope/drizzlepac/issues/81 for more details.
+
+- Corrected a message printed by tweakreg about used WCS for alignment. Also
+  improved documentation for the ``refimage`` parameter.
 
 DrizzlePac v2.1.17 (13-June-2017)
 =================================
