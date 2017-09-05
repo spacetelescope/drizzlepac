@@ -24,8 +24,8 @@ from . import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.4.3'
-__vdate__ = '01-Jul-2016'
+__version__ = '1.4.4'
+__vdate__ = '28-Aug-2017'
 
 from . import tweakutils
 from . import imgclasses
@@ -495,8 +495,8 @@ def run(configobj):
         omitted_images.insert(0, refimg) # refimage *must* be first
         do_match_refimg = True
 
-    print('\n{0}\nAligning all input images to WCS defined by {1}\n{0}\n'
-          .format('='*20, refwcs_fname))
+    print("\n{0}\nPerforming alignment in the projection plane defined by the "
+          "WCS\nderived from '{1}'\n{0}\n".format('='*63, refwcs_fname))
 
     if refimage.outxy is not None:
         if cat_src is None:
