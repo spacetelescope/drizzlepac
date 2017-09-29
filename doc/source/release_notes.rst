@@ -14,6 +14,13 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+DrizzlePac v2.1.19 (29-September-2017)
+======================================
+
+- Fixed a bug in computing optimal order of expanding reference catalog that
+  resulted in code crashes.
+  See https://github.com/spacetelescope/drizzlepac/pull/86 for more details.
+
 Drizzlepac v2.1.18 (05-September-2017)
 ======================================
 
