@@ -16,17 +16,8 @@ file : str or list of str  (Default = ``'*flt.fits'``)
      - filename of an association (ASN)table
      - wild-card specification for files in directory (using ``\*``, ``?`` etc.)
      - comma-separated list of filenames
-     - ``@file`` filelist containing list of desired input filenames
-       (and optional inverse variance map filenames)
-
-    The ``@file`` filelist needs to be provided as an ASCII text file
-    containing a list of filenames for all input images with one
-    filename on each line of the file. If inverse variance maps have
-    also been created by the user and are to be used (by specifying
-    ``IVM`` to the parameter `final_wht_type` described further below),
-    then these are simply provided as a second column in the filelist,
-    with each ``IVM`` filename listed on the same line as a second entry,
-    after its corresponding exposure filename.
+     - ``@file`` filelist containing list of desired input filenames with one
+       filename on each line of the file.
 
 editpars : bool (Default = False)
     A parameter that allows user to edit input parameters by hand in the GUI.
@@ -295,7 +286,6 @@ maxflux : float (Default = None)
     objects with fluxes brighter than the minimum specified in `minflux`
     will be used. If both values are set to `None`, all objects will be used.
 
-
 minflux : float (Default = None)
     Limiting flux value for selecting valid objects in the input image's
     catalog. If specified, this flux value will serve as the lower limit
@@ -303,7 +293,6 @@ minflux : float (Default = None)
     identified in the reference image. If the value is set to `None`, all
     objects fainter than the limit specified by `maxflux` will be used.
     If both values are set to `None`, all objects will be used.
-
 
 fluxunits : str {'counts', 'cps', 'mag'} (Default = 'counts')
     This allows the task to correctly interpret the flux limits specified
