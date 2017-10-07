@@ -14,6 +14,21 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+DrizzlePac v2.1.20 (07-October-2017)
+====================================
+
+- Fixed a bug in exanding reference catalog in `tweakreg` that would result
+  in the code crashing.
+  See https://github.com/spacetelescope/drizzlepac/pull/87 for more details.
+
+- Fixed a bug due to which user catalog fluxes would be interpreted as
+  magnitudes when `fluxunits` was set to `'cps'`.
+  See https://github.com/spacetelescope/drizzlepac/pull/88 for more details.
+
+- Fixed a bug due to which user-supplied flux limits were ignored for
+  the reference catalog.
+  See https://github.com/spacetelescope/drizzlepac/pull/89 for more details.
+
 DrizzlePac v2.1.19 (29-September-2017)
 ======================================
 

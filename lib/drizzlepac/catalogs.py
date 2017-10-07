@@ -306,6 +306,9 @@ class Catalog(object):
         else:
             all_xypos = [xy[flux_mask].copy() for xy in self.xypos]
 
+        nrem = flux_mask.size - np.count_nonzero(flux_mask)
+        print("     Removed {:d} sources based on flux limits.".format(nrem))
+
         if self.nbright is not None:
             print("Selecting catalog based on {} brightest sources".format(self.nbright))
             fluxes = fluxes[flux_mask]
