@@ -17,7 +17,7 @@ of the list).
 DrizzlePac v2.1.20 (07-October-2017)
 ====================================
 
-- Fixed a bug in exanding reference catalog in `tweakreg` that would result
+- Fixed a bug in expanding reference catalog in `tweakreg` that would result
   in the code crashing.
   See https://github.com/spacetelescope/drizzlepac/pull/87 for more details.
 
