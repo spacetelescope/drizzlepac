@@ -268,8 +268,8 @@ class Image(object):
         # Build full list of all sky positions from all chips
         self.buildSkyCatalog()
         tsrc = 0 if self.all_radec is None else len(self.all_radec[0])
-        print("===  Found a TOTAL of {:d} objects in image '{:s}'"
-              .format(tsrc, filename))
+        print("===  FINAL number of objects in image '{:s}': {:d}"
+              .format(filename, tsrc))
 
         if self.pars['writecat']:
             catname = self.rootname+"_sky_catalog.coo"
@@ -354,16 +354,15 @@ class Image(object):
             if skycat is not None:
                 ralist.append(skycat[0])
                 declist.append(skycat[1])
-                if len(xycat) > 2:
+                if xycat is not None and len(xycat) > 2:
                     fluxlist.append(xycat[2])
                     idlist.append(xycat[3])
-                if len(skycat) > 2:
+                elif len(skycat) > 2:
                     fluxlist.append(skycat[2])
                     idlist.append(skycat[3])
                 else:
                     fluxlist.append([999.0]*len(skycat[0]))
                     idlist.append(np.arange(len(skycat[0])))
-
 
                 self.all_radec = [np.concatenate(ralist),np.concatenate(declist),
                         np.concatenate(fluxlist),np.concatenate(idlist)]

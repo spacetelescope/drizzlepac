@@ -20,6 +20,7 @@ import stsci.imagestats as imagestats
 from . import findobj
 from . import cdriz
 
+
 def parse_input(input, prodonly=False, sort_wildcards=True):
     catlist = None
 
@@ -63,12 +64,14 @@ def parse_input(input, prodonly=False, sort_wildcards=True):
 
     return filelist,catlist
 
+
 def atfile_sci(line):
     if line in [None,'',' ']:
         lspl = ''
     else:
         lspl = line.split()[0]
     return lspl
+
 
 def parse_atfile_cat(input):
     """ Return the list of catalog filenames specified as part of the input @-file
@@ -90,6 +93,7 @@ def parse_atfile_cat(input):
     f.close()
     return catlist,catdict
 
+
 #
 # functions to help work with configobj input
 #
@@ -106,108 +110,39 @@ def ndfind(array, hmin, fwhm, skymode,
            sharplim=[0.2,1.0], roundlim=[-1,1], minpix=5,
            peakmin=None, peakmax=None, fluxmin=None, fluxmax=None,
            nsigma=1.5, ratio=1.0, theta=0.0,
-           mask=None, use_sharp_round=False):
-    star_list,fluxes= findobj.findstars(array, fwhm, hmin, skymode,
-                    peakmin=peakmin, peakmax=peakmax,
-                    fluxmin=fluxmin, fluxmax=fluxmax,
-                    ratio=ratio, nsigma=nsigma, theta=theta,
-                    use_sharp_round=use_sharp_round,
-                    mask=mask,
-                    sharplo=sharplim[0], sharphi=sharplim[1],
-                    roundlo=roundlim[0], roundhi=roundlim[1])
+           mask=None, use_sharp_round=False, nbright=None):
+
+    star_list, fluxes= findobj.findstars(
+        array, fwhm, hmin, skymode,
+        peakmin=peakmin, peakmax=peakmax,
+        fluxmin=fluxmin, fluxmax=fluxmax,
+        ratio=ratio, nsigma=nsigma, theta=theta,
+        use_sharp_round=use_sharp_round,
+        mask=mask,
+        sharplo=sharplim[0], sharphi=sharplim[1],
+        roundlo=roundlim[0], roundhi=roundlim[1]
+    )
+
     if len(star_list) == 0:
         print('No valid sources found...')
         return tuple([[] for i in range(7 if use_sharp_round else 4)])
-    star_arr = np.array(star_list)
-    fluxes = np.array(fluxes,np.float32)
+
+    star_list = list(np.array(star_list).T)
+    fluxes = np.array(fluxes, np.float)
+
+    if nbright is not None:
+        idx = np.argsort(fluxes)[::-1]
+        fluxes = fluxes[idx]
+        star_list = [s[idx] for s in star_list]
+
     if use_sharp_round:
-        return (star_arr[:,0], star_arr[:,1], fluxes,
-                np.arange(star_arr.shape[0]),
-                star_arr[:,2], star_arr[:,3], star_arr[:,4])
+        return (star_list[0], star_list[1], fluxes,
+                np.arange(star_list[0].size),
+                star_list[2], star_list[3], star_list[4])
     else:
-        return (star_arr[:,0], star_arr[:,1], fluxes,
-                np.arange(star_arr.shape[0]), None, None, None)
+        return (star_list[0], star_list[1], fluxes,
+                np.arange(star_list[0].size), None, None, None)
 
-
-# Object finding algorithm based on NDIMAGE routines
-def ndfind_old(array,hmin,fwhm,sharplim=[0.2,1.0],roundlim=[-1,1],minpix=5,datamax=None):
-    """ Source finding algorithm based on NDIMAGE routines
-
-        This function provides a simple replacement for the DAOFIND task.
-
-        Parameters
-        ----------
-        array : arr
-            Input image as numpy array
-        hmin  : float
-            Limit for source detection in pixel values
-        fwhm  : float
-            Full-width half-maximum of the PSF in the image
-        minpix : int
-            Minimum number of pixels for any valid source
-        sharplim : tuple
-            [Not used at this time]
-        roundlim : tuple
-            [Not used at this time]
-        datamax  : float
-            Maximum good pixel value found in any detected source
-
-        Returns
-        -------
-        x  : arr
-            Array of detected source X positions (in array coordinates, 0-based)
-        y  : arr
-            Array of detected source Y positions (in array coordinates, 0-based)
-        flux : arr
-            Array of detected source fluxes in pixel values
-        id  : arr
-            Array of detected source ID numbers
-    """
-    #cimg,c1 = idlgauss_convolve(array,sigma)
-    #cimg = np.abs(ndimage.gaussian_laplace(array,fwhm))
-    cimg = -1*ndimage.gaussian_laplace(array,fwhm)
-    cimg = np.clip(cimg,0,cimg.max())
-    #cimg = ndimage.gaussian_filter(array,fwhm)
-
-    climit = hmin / fwhm
-    cmask = cimg >= climit
-    gwidth = int(2*fwhm+0.5)
-    gradius = gwidth//2
-
-    #cmask = cimg >= hmin
-    # find and label sources
-    ckern = ndimage.generate_binary_structure(2,1)
-    clabeled,cnum = ndimage.label(cmask,structure=ckern)
-    cobjs = ndimage.find_objects(clabeled)
-    xpos = []
-    ypos = []
-    flux = []
-    for s in cobjs:
-        nmask = cmask[s].sum()
-        if nmask >= minpix: # eliminate spurious detections
-            imgsect = array[s]*cmask[s]
-            if datamax is not None and (imgsect.max() > datamax):
-                continue # skip any source with pixel value > datamax
-            cimgsect = cimg[s]*cmask[s]
-
-            maxposind = np.where(cimgsect==cimgsect.max())
-            maxpos = (maxposind[0][0],maxposind[1][0])
-            yr0 = maxpos[0]-gradius
-            yr1 = maxpos[0]+gradius
-            if yr0 < 0: yr0 = 0
-            if yr1 > cimgsect.shape[0]: yr1 = cimgsect.shape[0]
-            xr0 = maxpos[1] - gradius
-            xr1 = maxpos[1] + gradius
-            if xr0 < 0: xr0 = 0
-            if xr1 > cimgsect.shape[1]: xr1 = cimgsect.shape[1]
-
-            yx = ndimage.center_of_mass(cimgsect[yr0:yr1,xr0:xr1])
-            # convert position to chip position in (0-based) X,Y
-            xpos.append(yx[1]+s[1].start+yr0)
-            ypos.append(yx[0]+s[0].start+xr0)
-            flux.append((array[s]*cmask[s]).sum())
-    # Still need to implement sharpness and roundness limits
-    return np.array(xpos),np.array(ypos),np.array(flux),np.arange(len(xpos))
 
 def isfloat(value):
     """ Return True if all characters are part of a floating point value
@@ -217,6 +152,7 @@ def isfloat(value):
         return True
     except ValueError:
         return False
+
 
 def parse_skypos(ra,dec):
     """
@@ -237,6 +173,7 @@ def parse_skypos(ra,dec):
         rval,dval = radec_hmstodd(ra,dec)
     return rval,dval
 
+
 def make_val_float(val):
     if isinstance(val,float):
         rval = val
@@ -246,6 +183,7 @@ def make_val_float(val):
         except ValueError:
             rval = None
     return rval
+
 
 def radec_hmstodd(ra,dec):
     """ Function to convert HMS values into decimal degrees.
@@ -378,6 +316,7 @@ def parse_exclusions(exclusions):
                                     'units':units})
     return exclusion_list
 
+
 def parse_colname(colname):
     """ Common function to interpret input column names provided by the user.
 
@@ -439,6 +378,7 @@ def parse_colname(colname):
 
     return cols
 
+
 def readcols(infile, cols=None):
     """ Function which reads specified columns from either FITS tables or
         ASCII files
@@ -467,6 +407,7 @@ def readcols(infile, cols=None):
         outarr = read_ASCII_cols(infile,cols=cols)
     return outarr
 
+
 def read_FITS_cols(infile,cols=None):
     """ Read columns from FITS table
     """
@@ -493,6 +434,7 @@ def read_FITS_cols(infile,cols=None):
 
     ftab.close()
     return outarr
+
 
 def read_ASCII_cols(infile,cols=[1,2,3]):
     """ Interpret input ASCII file to return arrays for specified columns.
@@ -595,6 +537,7 @@ def read_ASCII_cols(infile,cols=[1,2,3]):
         outarr[c] = np.array(outarr[c])
     return outarr
 
+
 def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     """ Write out a shiftfile for a given list of input Image class objects
     """
@@ -627,6 +570,7 @@ def write_shiftfile(image_list,filename,outwcs='tweak_wcs.fits'):
     f.write(rows)
     f.close()
     print('Writing out shiftfile :',filename)
+
 
 def createWcsHDU(wcs):
     """ Generate a WCS header object that can be used to populate a reference WCS HDU.
@@ -662,6 +606,7 @@ def createWcsHDU(wcs):
                           "image y axis (deg. e of n)")
 
     return fits.ImageHDU(None, header)
+
 
 #
 # Code used for testing source finding algorithms
@@ -703,6 +648,7 @@ def idlgauss_convolve(image,fwhm):
     h[:,-nhalf:] = 0
 
     return h,c1
+
 
 def gauss_array(nx, ny=None, fwhm=1.0, sigma_x=None, sigma_y=None, zero_norm=False):
     """ Computes the 2D Gaussian with size nx*ny.
@@ -760,6 +706,7 @@ def gauss_array(nx, ny=None, fwhm=1.0, sigma_x=None, sigma_y=None, zero_norm=Fal
         h -= h.mean()
 
     return h
+
 
 def gauss(x,sigma):
     """ Compute 1-D value of gaussian at position x relative to center."""
@@ -991,6 +938,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
                 format=suffix[1:]
         plt.savefig(plotname,format=format)
 
+
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
     xy1y = data[1]
@@ -1020,6 +968,7 @@ def write_xy_file(outname,xydata,append=False,format=["%20.6f"]):
         fout1.write(outstr+"\n")
     fout1.close()
     print('wrote XY data to: ',outname)
+
 
 def find_xy_peak(img,center=None,sigma=3.0):
     """ Find the center of the peak of offsets
@@ -1073,6 +1022,7 @@ def find_xy_peak(img,center=None,sigma=3.0):
     del imgc
     return xp,yp,flux,zpqual
 
+
 def plot_zeropoint(pars):
     """ Plot 2d histogram.
 
@@ -1113,6 +1063,7 @@ def plot_zeropoint(pars):
             if suffix[1:] in ['png','pdf','ps','eps','svg']:
                 format=suffix[1:]
         plt.savefig(pars['plotname'],format=format)
+
 
 def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
                         plotname=None, interactive=True):
@@ -1162,6 +1113,7 @@ def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
     del zpmat
 
     return xp,yp,flux,zpqual
+
 
 def build_pos_grid(start,end,nstep, mesh=False):
     """
