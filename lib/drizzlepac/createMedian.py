@@ -169,22 +169,22 @@ def _median(imageObjectList, paramDict):
 
         if lthresh is not None and proc_units.lower() == 'native':
             if native_units.lower() == 'counts':
-                lthresh = lthresh * det_gain
+                lthresh *= det_gain
             elif native_units.lower() == 'counts/s':
-                lthresh = lthresh * det_gain * img_exptime
+                lthresh *= det_gain * img_exptime
             elif native_units.lower() == 'electrons/s':
-                lthresh = lthresh * img_exptime
+                lthresh *= img_exptime
             else:
                 raise ValueError("Unexpected native units: '{}'"
                                  .format(native_units))
 
         if hthresh is not None and proc_units.lower() == 'native':
             if native_units.lower().startswith('counts'):
-                hthresh = hthresh * det_gain
+                hthresh *= det_gain
             elif native_units.lower() == 'counts/s':
-                hthresh = hthresh * det_gain * img_exptime
+                hthresh *= det_gain * img_exptime
             elif native_units.lower() == 'electrons/s':
-                hthresh = hthresh * img_exptime
+                hthresh *= img_exptime
             else:
                 raise ValueError("Unexpected native units: '{}'"
                                  .format(native_units))
