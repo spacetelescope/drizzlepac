@@ -175,13 +175,13 @@ def _median(imageObjectList, paramDict):
                                      .format(native_units))
 
             if lthresh is not None:
-                if native_units_lc.starswith('counts'):
+                if native_units_lc.startswith('counts'):
                     lthresh *= det_gain
                 if native_units_lc.endswith('/s'):
                     lthresh *= img_exptime
 
             if hthresh is not None:
-                if native_units_lc.starswith('counts'):
+                if native_units_lc.startswith('counts'):
                     hthresh *= det_gain
                 if native_units_lc.endswith('/s'):
                     hthresh *= img_exptime
