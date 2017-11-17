@@ -166,18 +166,25 @@ def _median(imageObjectList, paramDict):
         det_gain = image.getGain(1)
         img_exptime = image._image['sci',1]._exptime
         native_units = image.native_units
-        if lthresh is not None:
-            if proc_units.lower() == 'native':
-                if native_units.lower() == "counts":
-                    lthresh = lthresh * det_gain
-                    if native_units.lower() == "counts/s":
-                        lthresh = lthresh * img_exptime
-        if hthresh is not None:
-            if proc_units.lower() == 'native':
-                if native_units.lower() == "counts":
-                    hthresh = hthresh * det_gain
-                    if native_units.lower() == "counts/s":
-                        hthresh = hthresh * img_exptime
+        native_units_lc = native_units.lower()
+
+        if proc_units.lower() == 'native':
+            if native_units_lc not in ['counts', 'electrons', 'counts/s',
+                                       'electrons/s']:
+                raise ValueError("Unexpected native units: '{}'"
+                                     .format(native_units))
+
+            if lthresh is not None:
+                if native_units_lc.startswith('counts'):
+                    lthresh *= det_gain
+                if native_units_lc.endswith('/s'):
+                    lthresh *= img_exptime
+
+            if hthresh is not None:
+                if native_units_lc.startswith('counts'):
+                    hthresh *= det_gain
+                if native_units_lc.endswith('/s'):
+                    hthresh *= img_exptime
 
         singleDriz = image.getOutputName("outSingle")
         singleDriz_name = image.outputNames['outSingle']
