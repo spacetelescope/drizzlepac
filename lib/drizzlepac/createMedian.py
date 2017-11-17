@@ -166,24 +166,28 @@ def _median(imageObjectList, paramDict):
         det_gain = image.getGain(1)
         img_exptime = image._image['sci',1]._exptime
         native_units = image.native_units
-        if lthresh is not None:
-            if proc_units.lower() == 'native':
-                if native_units.lower() == 'counts':
-                    lthresh = lthresh * det_gain
-                elif native_units.lower() in ['counts/s', 'electrons/s']:
-                    lthresh = lthresh * img_exptime
-                else:
-                    raise ValueError("Unexpected native units: '{}'"
-                                     .format(native_units))
-        if hthresh is not None:
-            if proc_units.lower() == 'native':
-                if native_units.lower() == 'counts':
-                    hthresh = hthresh * det_gain
-                elif native_units.lower() == ['counts/s', 'electrons/s']:
-                    hthresh = hthresh * img_exptime
-                else:
-                    raise ValueError("Unexpected native units: '{}'"
-                                     .format(native_units))
+
+        if lthresh is not None and proc_units.lower() == 'native':
+            if native_units.lower() == 'counts':
+                lthresh = lthresh * det_gain
+            elif native_units.lower() == 'counts/s':
+                lthresh = lthresh * det_gain * img_exptime
+            elif native_units.lower() == 'electrons/s':
+                lthresh = lthresh * img_exptime
+            else:
+                raise ValueError("Unexpected native units: '{}'"
+                                 .format(native_units))
+
+        if hthresh is not None and proc_units.lower() == 'native':
+            if native_units.lower().startswith('counts'):
+                hthresh = hthresh * det_gain
+            elif native_units.lower() == 'counts/s':
+                hthresh = hthresh * det_gain * img_exptime
+            elif native_units.lower() == 'electrons/s':
+                hthresh = hthresh * img_exptime
+            else:
+                raise ValueError("Unexpected native units: '{}'"
+                                 .format(native_units))
 
         singleDriz = image.getOutputName("outSingle")
         singleDriz_name = image.outputNames['outSingle']
