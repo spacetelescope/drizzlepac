@@ -168,16 +168,22 @@ def _median(imageObjectList, paramDict):
         native_units = image.native_units
         if lthresh is not None:
             if proc_units.lower() == 'native':
-                if native_units.lower() == "counts":
+                if native_units.lower() == 'counts':
                     lthresh = lthresh * det_gain
-                    if native_units.lower() == "counts/s":
-                        lthresh = lthresh * img_exptime
+                elif native_units.lower() in ['counts/s', 'electrons/s']:
+                    lthresh = lthresh * img_exptime
+                else:
+                    raise ValueError("Unexpected native units: '{}'"
+                                     .format(native_units))
         if hthresh is not None:
             if proc_units.lower() == 'native':
-                if native_units.lower() == "counts":
+                if native_units.lower() == 'counts':
                     hthresh = hthresh * det_gain
-                    if native_units.lower() == "counts/s":
-                        hthresh = hthresh * img_exptime
+                elif native_units.lower() == ['counts/s', 'electrons/s']:
+                    hthresh = hthresh * img_exptime
+                else:
+                    raise ValueError("Unexpected native units: '{}'"
+                                     .format(native_units))
 
         singleDriz = image.getOutputName("outSingle")
         singleDriz_name = image.outputNames['outSingle']

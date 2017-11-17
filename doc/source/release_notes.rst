@@ -14,6 +14,15 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+Drizzlepac v2.1.21 (Unreleased)
+===============================
+
+- Fixed a bug in `drizzlepac` due to which user provided `combine_lthresh` or
+  `combine_hthresh` in the `CREATE MEDIAN IMAGE` step were not converted
+  correctly to electrons (processing unit). This bug affected processing of
+  WFPC2, STIS, NICMOS, and WFC3 data. See
+  https://github.com/spacetelescope/drizzlepac/issues/94 for more details.
+
 DrizzlePac v2.1.20 (07-October-2017)
 ====================================
 
