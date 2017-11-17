@@ -166,28 +166,25 @@ def _median(imageObjectList, paramDict):
         det_gain = image.getGain(1)
         img_exptime = image._image['sci',1]._exptime
         native_units = image.native_units
+        native_units_lc = native_units.lower()
 
-        if lthresh is not None and proc_units.lower() == 'native':
-            if native_units.lower() == 'counts':
-                lthresh *= det_gain
-            elif native_units.lower() == 'counts/s':
-                lthresh *= det_gain * img_exptime
-            elif native_units.lower() == 'electrons/s':
-                lthresh *= img_exptime
-            else:
+        if proc_units.lower() == 'native':
+            if native_units_lc not in ['counts', 'electrons', 'counts/s',
+                                       'electrons/s']:
                 raise ValueError("Unexpected native units: '{}'"
-                                 .format(native_units))
+                                     .format(native_units))
 
-        if hthresh is not None and proc_units.lower() == 'native':
-            if native_units.lower().startswith('counts'):
-                hthresh *= det_gain
-            elif native_units.lower() == 'counts/s':
-                hthresh *= det_gain * img_exptime
-            elif native_units.lower() == 'electrons/s':
-                hthresh *= img_exptime
-            else:
-                raise ValueError("Unexpected native units: '{}'"
-                                 .format(native_units))
+            if lthresh is not None:
+                if native_units_lc.starswith('counts'):
+                    lthresh *= det_gain
+                if native_units_lc.endswith('/s'):
+                    lthresh *= img_exptime
+
+            if hthresh is not None:
+                if native_units_lc.starswith('counts'):
+                    hthresh *= det_gain
+                if native_units_lc.endswith('/s'):
+                    hthresh *= img_exptime
 
         singleDriz = image.getOutputName("outSingle")
         singleDriz_name = image.outputNames['outSingle']
