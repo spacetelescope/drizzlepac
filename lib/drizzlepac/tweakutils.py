@@ -783,7 +783,15 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             Write out plot to a file with this name if specified.
 
     """
+    import matplotlib
     from matplotlib import pyplot as plt
+    interactive = matplotlib.is_interactive()
+    turn_interactive_off = False
+
+    if not interactive:
+        plt.ion()
+        if not interactive:
+            turn_interactive_off = True
 
     if data is None:
         data = readcols(coordfile,cols=columns)
@@ -828,6 +836,7 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
         write_xy_file(output,[xy1x,xy1y,dx,dy])
 
     fig = plt.figure(num=figure_id)
+
     if not append:
         plt.clf()
 
@@ -937,7 +946,11 @@ def make_vector_plot(coordfile,columns=[1,2,3,4],data=None,figure_id=None,
             if suffix[1:] in ['png','pdf','ps','eps','svg']:
                 format=suffix[1:]
         plt.savefig(plotname,format=format)
+    plt.figure(num=figure_id+1)
 
+    if turn_interactive_off:
+        print("Turning interactive off...")
+        plt.ioff()
 
 def apply_db_fit(data,fit,xsh=0.0,ysh=0.0):
     xy1x = data[0]
@@ -1029,7 +1042,11 @@ def plot_zeropoint(pars):
     Pars will be a dictionary containing:
         data, figure_id, vmax, title_str, xp,yp, searchrad
     """
+    import matplotlib
     from matplotlib import pyplot as plt
+    interactive = matplotlib.is_interactive()
+    turn_interactive_off = False
+    turn_interactive_on = False
 
     xp = pars['xp']
     yp = pars['yp']
@@ -1040,8 +1057,12 @@ def plot_zeropoint(pars):
 
     if pars['interactive']:
         plt.ion()
+        if not interactive:
+            turn_interactive_off = True
     else:
         plt.ioff()
+        if interactive:
+            turn_interactive_on = True
 
     a=plt.imshow(pars['data'],vmin=0,vmax=pars['vmax'],interpolation='nearest')
     plt.jet()#gray()
@@ -1064,6 +1085,12 @@ def plot_zeropoint(pars):
                 format=suffix[1:]
         plt.savefig(pars['plotname'],format=format)
 
+    if turn_interactive_on:
+        print("Turning interactive back on...")
+        plt.ion()
+    if turn_interactive_off:
+        print("Turning interactive back off...")
+        plt.ioff()
 
 def build_xy_zeropoint(imgxy,refxy,searchrad=3.0,histplot=False,figure_id=1,
                         plotname=None, interactive=True):

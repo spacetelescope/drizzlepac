@@ -357,12 +357,12 @@ class Catalog(object):
 
         """
         try:
-            from matplotlib import pyplot as pl
+            from matplotlib import pyplot as plt
         except:
-            pl = None
+            plt = None
 
-        if pl is not None: # If the pyplot package could be loaded...
-            pl.clf()
+        if plt is not None: # If the pyplot package could be loaded...
+            plt.clf()
             pars = kwargs.copy()
 
             if 'marker' not in pars:
@@ -382,8 +382,9 @@ class Catalog(object):
                 pl_vmax = pars['vmax']
                 del pars['vmax']
 
-            pl.imshow(self.source,cmap=pl_cmap,vmin=pl_vmin,vmax=pl_vmax)
-            pl.plot(self.xypos[0]-1,self.xypos[1]-1,pars['marker'])
+            plt.imshow(self.source,cmap=pl_cmap,vmin=pl_vmin,vmax=pl_vmax)
+            plt.plot(self.xypos[0]-1,self.xypos[1]-1,pars['marker'])
+            plt.figure() # create new figure for subsequent plots (by user?)
 
     def writeXYCatalog(self,filename):
         """ Write out the X,Y catalog to a file
@@ -740,13 +741,15 @@ class UserCatalog(Catalog):
 
         """
         try:
-            from matplotlib import pyplot as pl
+            from matplotlib import pyplot as plt
         except:
-            pl = None
+            plt = None
 
-        if pl is not None:
-            pl.clf()
-            pl.plot(self.xypos[0],self.xypos[1],**kwargs)
+        if plt is not None:
+            plt.clf()
+            plt.plot(self.xypos[0],self.xypos[1],**kwargs)
+
+            plt.figure()  # create new figure for subsequent plots (by user?)
 
 
 class RefCatalog(UserCatalog):
