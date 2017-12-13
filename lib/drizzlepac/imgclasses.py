@@ -668,40 +668,40 @@ class Image(object):
 
                 print('Computed ',pars['fitgeometry'],' fit for ',self.name,': ')
                 if pars['fitgeometry'] == 'shift':
-                    print("XSH: {:.6g}  YSH: {:.6g}"
+                    print("XSH: {:.4f}  YSH: {:.4f}"
                           .format(self.fit['offset'][0],
                                   self.fit['offset'][1]))
                 elif pars['fitgeometry'] == 'rscale' and self.fit['proper']:
-                    print("XSH: {:.6g}  YSH: {:.6g}    ROT: {:.6g}    "
-                          "SCALE: {:.6g}".format(
+                    print("XSH: {:.4f}  YSH: {:.4f}    ROT: {:.10g}    "
+                          "SCALE: {:.6f}".format(
                               self.fit['offset'][0],
                               self.fit['offset'][1],
                               self.fit['rot'],
                               self.fit['scale'][0]))
                 elif pars['fitgeometry'] == 'general' or \
                      (pars['fitgeometry'] == 'rscale' and not self.fit['proper']):
-                    print("XSH: {:.6g}  YSH: {:.6g}    PROPER ROT: {:.6g}    "
+                    print("XSH: {:.4f}  YSH: {:.4f}    PROPER ROT: {:.10g}    "
                           "".format(
                               self.fit['offset'][0],
                               self.fit['offset'][1],
                               self.fit['rot']))
-                    print("<ROT>: {:.6g}  SKEW: {:.6g}    ROT_X: {:.6g}  "
-                          "ROT_Y: {:.6g}".format(
+                    print("<ROT>: {:.10g}  SKEW: {:.10g}    ROT_X: {:.10g}  "
+                          "ROT_Y: {:.10g}".format(
                               self.fit['rotxy'][2],
                               self.fit['skew'],
                               self.fit['rotxy'][0],
                               self.fit['rotxy'][1]))
-                    print("<SCALE>: {:.6g}  SCALE_X: {:.6g}  "
-                          "SCALE_Y: {:.6g}".format(
+                    print("<SCALE>: {:.10g}  SCALE_X: {:.10g}  "
+                          "SCALE_Y: {:.10g}".format(
                               self.fit['scale'][0],
                               self.fit['scale'][1],
                               self.fit['scale'][2]))
                 else:
                     assert(False)
 
-                print('XRMS: %0.6g    YRMS: %0.6g\n'%(
+                print('XRMS: %.2g    YRMS: %.2g\n'%(
                         self.fit['rms'][0],self.fit['rms'][1]))
-                print('RMS_RA: %g (deg)   RMS_DEC: %g (deg)\n'%(
+                print('RMS_RA: %.2g (deg)   RMS_DEC: %.2g (deg)\n'%(
                         self.fit['rms_keys']['RMS_RA'],
                         self.fit['rms_keys']['RMS_DEC']))
                 print('Final solution based on ',self.fit['rms_keys']['NMATCH'],' objects.')
@@ -964,17 +964,21 @@ class Image(object):
         """ Write out the catalog of all sources and resids used in the final fit.
         """
         if self.pars['writecat']:
-            log.info('Creating catalog for the fit: %s'%self.catalog_names['fitmatch'])
+            log.info('Creating catalog for the fit: {:s}'.format(self.catalog_names['fitmatch']))
             f = open(self.catalog_names['fitmatch'],'w')
-            f.write('# Input image: %s\n'%self.filename)
+            f.write('# Input image: {:s}\n'.format(self.filename))
             f.write('# Coordinate mapping parameters: \n')
-            f.write('#    X and Y rms: %15.4g  %15.4g\n'%(self.fit['rms'][0],
-                                                        self.fit['rms'][1]))
-            f.write('#    X and Y shift: %15.4g  %15.4g\n'%(self.fit['offset'][0],
-                                                            self.fit['offset'][1]))
-            f.write('#    X and Y scale: %15.6g  %15.6g\n'%(self.fit['scale'][1],
-                                                            self.fit['scale'][2]))
-            f.write('#    X and Y rotation: %15.6g \n'%(self.fit['rot']))
+            f.write('#    X and Y rms: {:.2g}  {:.2g}\n'
+                    .format(self.fit['rms'][0], self.fit['rms'][1]))
+            f.write('#    X and Y shift: {:.4f}  {:.4f}\n'
+                    .format(self.fit['offset'][0], self.fit['offset'][1]))
+            f.write('#    X and Y scale: {:.10g}  {:.10g}\n'
+                    .format(self.fit['scale'][1], self.fit['scale'][2]))
+            f.write('#    X and Y rotation: {:.10g}  {:.10g}\n'
+                    .format(self.fit['rotxy'][0], self.fit['rotxy'][1]))
+            f.write('#    <rotation> and skew: {:.10g}  {:.10g}\n'
+                    .format(self.fit['rotxy'][2], self.fit['skew']))
+
             f.write('# \n# Input Coordinate Listing\n')
             f.write('#     Column 1: X (reference)\n')
             f.write('#     Column 2: Y (reference)\n')

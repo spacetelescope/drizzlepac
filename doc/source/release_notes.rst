@@ -23,6 +23,10 @@ Drizzlepac v2.1.21 (Unreleased)
   WFPC2, STIS, NICMOS, and WFC3 data. See
   https://github.com/spacetelescope/drizzlepac/issues/94 for more details.
 
+- Modified print format so that scales, skew and rotations are printed with
+  10 significant digits while shifts are printed with 4 digits after the
+  decimal point.
+
 DrizzlePac v2.1.20 (07-October-2017)
 ====================================
 
