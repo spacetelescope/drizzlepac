@@ -134,7 +134,7 @@ class OutputImage:
             _outweight = plist[0]['outSWeight']
             _outcontext = plist[0]['outSContext']
             # Only report values appropriate for single exposure
-            self.texptime = 1.0 # plist[0]['exptime']
+            self.texptime = plist[0]['exptime']
             self.expstart = plist[0]['expstart']
             self.expend = plist[0]['expend']
         else:
@@ -454,7 +454,7 @@ class OutputImage:
             logging.disable(logging.INFO)
             wcs_functions.removeAllAltWCS(fo,wcs_ext)
             logging.disable(logging.NOTSET)
- 
+
             # add table of combined header keyword values to FITS file
             if newtab is not None:
                 fo.append(newtab)
