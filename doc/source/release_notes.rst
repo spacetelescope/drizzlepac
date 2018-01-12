@@ -14,8 +14,12 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-Drizzlepac v2.1.21 (Unreleased)
-===============================
+Drizzlepac v2.1.21 (12-January-2018)
+====================================
+
+- Restore recording of correct ``EXPTIME`` value in the headers of
+  single drizzled ("single_sci") images. See
+  https://github.com/spacetelescope/drizzlepac/issues/93 for more details.
 
 - Fixed a bug in `drizzlepac` due to which user provided `combine_lthresh` or
   `combine_hthresh` in the `CREATE MEDIAN IMAGE` step were not converted
