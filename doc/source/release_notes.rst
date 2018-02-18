@@ -14,6 +14,19 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+Drizzlepac v2.1.22 (not released)
+=================================
+
+- Changed the definition of Megabyte used to describe the size of the buffer
+  for create median step (``combine_bufsize``). Previously a mixed
+  (base-2 and base-10) definition was used with 1MB = 1000x1024B = 1024000B.
+  Now 1MB is defined in base-2 (MiB) as 1MB = 1024x1024B = 1048576B.
+
+- Redesigned the logic in ``createMedian`` step used to split large
+  ``single_sci`` images into smaller chunks: new logic is more straightforward
+  and fixes errors in the old algorithm that resulted in crashes or
+  unnecessarily small chunk sizes that slowed down ``createMedian`` step.
+
 Drizzlepac v2.1.21 (12-January-2018)
 ====================================
 
