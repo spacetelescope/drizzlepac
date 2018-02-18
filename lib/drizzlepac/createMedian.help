@@ -100,7 +100,9 @@ combine_grow : int (Default = 1)
     Width, in pixels, beyond the limit set by the rejection algorithm being
     used, for additional pixels to be rejected in an image. This parameter
     is used to set the 'grow' parameter in 'imcombine' for use in creating
-    the median image.
+    the median image **only when** ``combine_type`` is ``'(i)minmed'``.
+    When ``combine_type`` is anything other than ``'(i)minmed'``, this
+    parameter is ignored (set to 0).
 
 
 combine_bufsize : float (Default = None)

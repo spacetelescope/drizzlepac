@@ -27,6 +27,12 @@ Drizzlepac v2.1.22 (not released)
   and fixes errors in the old algorithm that resulted in crashes or
   unnecessarily small chunk sizes that slowed down ``createMedian`` step.
 
+- Due to the above mentioned redesign in the logic for splitting large images
+  into smaller chunks, now `overlap` can be set to 0 if so desired in the
+  ``minmed`` combine type. Also, it is automatically ignored (set to 0) for all
+  non-``minmed`` combine types. This will result in additional speed-up in the
+  Create Median step.
+
 Drizzlepac v2.1.21 (12-January-2018)
 ====================================
 
