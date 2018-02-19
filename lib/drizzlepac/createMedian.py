@@ -298,7 +298,7 @@ def _median(imageObjectList, paramDict):
     # create an array for the median output image, use the size of the first
     # image in the list. Store other useful image characteristics:
     single_driz_data = singleDrizList[0].data
-    single_driz_data_size = single_driz_data.itemsize
+    data_item_size = single_driz_data.itemsize
     imrows, imcols = single_driz_data.shape
 
     medianImageArray = np.zeros_like(single_driz_data)
@@ -316,12 +316,11 @@ def _median(imageObjectList, paramDict):
     # has enough rows to span the kernel used in the boxcar method
     # within minmed.
     overlap = 2 * grow
-    buffsize = BUFSIZE if bufsizeMb is None else (BUFSIZE * bufsizeMb)
-    section_nrows = max(imrows,
-                        int(buffsize / (imcols * single_driz_data_size)))
+    buffsize = BUFSIZE if bufsizeMB is None else (BUFSIZE * bufsizeMB)
+    section_nrows = min(imrows, int(buffsize / (imcols * data_item_size)))
 
     if section_nrows == 0:
-        buffsize = imcols * single_driz_data_size
+        buffsize = imcols * data_item_size
         print("WARNING: Buffer size is too small to hold a single row.\n"
               "         Buffer size size will be increased to minimal "
               "required: {}MB".format(float(buffsize) / 1048576.0))
