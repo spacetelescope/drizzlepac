@@ -299,6 +299,7 @@ def _median(imageObjectList, paramDict):
     # image in the list. Store other useful image characteristics:
     single_driz_data = singleDrizList[0].data
     data_item_size = single_driz_data.itemsize
+    single_data_dtype = single_driz_data.dtype
     imrows, imcols = single_driz_data.shape
 
     medianImageArray = np.zeros_like(single_driz_data)
@@ -356,34 +357,42 @@ def _median(imageObjectList, paramDict):
             e1 = min(e1, e2 - overlap - 1)
             u2 = e2 - e1
 
-        imdrizSectionsList = [w[e1:e2] for w in singleDrizList]
-        weightSectionsList = [w[e1:e2] for w in singleWeightList]
+        imdrizSectionsList = np.empty(
+            (len(singleDrizList), e2 - e1, imcols),
+            dtype=single_data_dtype
+        )
+        for i, w in enumerate(singleDrizList):
+            imdrizSectionsList[i, :, :] = w[e1:e2]
+
+        if singleWeightList:
+            weightSectionsList = np.empty(
+                (len(singleWeightList), e2 - e1, imcols),
+                dtype=single_data_dtype
+            )
+            for i, w in enumerate(singleWeightList):
+                weightSectionsList[i, :, :] = w[e1:e2]
+        else:
+            weightSectionsList = None
+
         weight_mask_list = None
 
-        if newmasks and weightSectionsList:
+        if newmasks and weightSectionsList is not None:
             # Build new masks from single drizzled images.
-            weight_mask_list = []
+            # Generate new pixel mask file for median step.
+            # This mask will be created from the single-drizzled
+            # weight image for this image.
 
-            for listIndex, weight_arr in enumerate(weightSectionsList):
-                # Generate new pixel mask file for median step.
-                # This mask will be created from the single-drizzled
-                # weight image for this image.
+            # The mean of the weight array will be computed and all
+            # pixels with values less than 0.7 of the mean will be flagged
+            # as bad in this mask. This mask will then be used when
+            # creating the median image.
+            # 0 means good, 1 means bad here...
+            weight_mask_list = np.less(
+                weightSectionsList,
+                np.asarray(wht_mean)[:, None, None]
+            ).astype(np.uint8)
 
-                # The mean of the weight array will be computed and all
-                # pixels with values less than 0.7 of the mean will be flagged
-                # as bad in this mask.  This mask will then be used when
-                # creating the median image.
-
-                # Compute image statistics
-                mean = wht_mean[listIndex]
-
-                # 0 means good, 1 means bad here...
-                weight_mask_list.append(
-                    np.less(weight_arr, mean).astype(np.uint8)
-                )
-
-        # Do MINMED
-        if 'minmed' in comb_type:
+        if 'minmed' in comb_type:  # Do MINMED
             # set up use of 'imedian'/'imean' in minmed algorithm
             fillval = comb_type.startswith('i')
 
@@ -401,8 +410,7 @@ def _median(imageObjectList, paramDict):
                 fillval=fillval
             ).combArrObj
 
-        # DO NUMCOMBINE
-        else:
+        else:  # DO NUMCOMBINE
             # Create the combined array object using the numcombine task
             result = numcombine.numCombine(
                 imdrizSectionsList,
