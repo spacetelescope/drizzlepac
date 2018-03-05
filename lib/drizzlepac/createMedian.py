@@ -23,7 +23,7 @@ from stsci.tools import iterfile, teal, logutil
 
 from . import imageObject
 from . import util
-from .minmed import minmed
+from .minmed import min_med
 from . import processInput
 from .adrizzle import _single_step_num_
 
@@ -397,7 +397,7 @@ def _median(imageObjectList, paramDict):
             fillval = comb_type.startswith('i')
 
             # Create the combined array object using the minmed algorithm
-            result = minmed(
+            result = min_med(
                 imdrizSectionsList,
                 weightSectionsList,
                 readnoiseList,
@@ -408,11 +408,11 @@ def _median(imageObjectList, paramDict):
                 combine_nsigma1=nsigma1,
                 combine_nsigma2=nsigma2,
                 fillval=fillval
-            ).combArrObj
+            )
 
         else:  # DO NUMCOMBINE
             # Create the combined array object using the numcombine task
-            result = numcombine.numCombine(
+            result = numcombine.num_combine(
                 imdrizSectionsList,
                 numarrayMaskList=weight_mask_list,
                 combinationType=comb_type,
@@ -420,7 +420,7 @@ def _median(imageObjectList, paramDict):
                 nhigh=nhigh,
                 upper=hthresh,
                 lower=lthresh
-            ).combArrObj
+            )
 
         # Write out the processed image sections to the final output array:
         medianImageArray[e1+u1:e1+u2, :] = result[u1:u2, :]
