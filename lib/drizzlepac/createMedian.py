@@ -403,7 +403,7 @@ def _median(imageObjectList, paramDict):
                 readnoiseList,
                 exposureTimeList,
                 backgroundValueList,
-                weightMaskList=weight_mask_list,
+                weight_masks=weight_mask_list,
                 combine_grow=grow,
                 combine_nsigma1=nsigma1,
                 combine_nsigma2=nsigma2,
@@ -414,8 +414,8 @@ def _median(imageObjectList, paramDict):
             # Create the combined array object using the numcombine task
             result = numcombine.num_combine(
                 imdrizSectionsList,
-                numarrayMaskList=weight_mask_list,
-                combinationType=comb_type,
+                masks=weight_mask_list,
+                combination_type=comb_type,
                 nlow=nlow,
                 nhigh=nhigh,
                 upper=hthresh,
