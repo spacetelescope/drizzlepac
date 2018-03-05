@@ -347,8 +347,8 @@ class minmed:
         return tsum
 
 
-def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
-            backgroundValueList, weightMaskList=None, combine_grow=1,
+def min_med(images, weight_images, readnoise_list, exptime_list,
+            background_values, weight_masks=None, combine_grow=1,
             combine_nsigma1=4, combine_nsigma2=3, fillval=False):
     """ Create a median array, rejecting the highest pixel and
     computing the lowest valid pixel after mask application.
@@ -359,22 +359,22 @@ def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
 
     Parameters
     ----------
-    imageList : list of numpy.ndarray
+    images : list of numpy.ndarray
         List of input data to be combined.
 
-    weightImageList : list of numpy.ndarray
+    weight_images : list of numpy.ndarray
         List of input data weight images to be combined.
 
-    readnoiseList : list
+    readnoise_list : list
         List of readnoise values to use for the input images.
 
-    exposureTimeList : list
+    exptime_list : list
         List of exposure times to use for the input images.
 
-    backgroundValueList : list
+    background_values : list
         List of image background values to use for the input images.
 
-    weightMaskList : list of numpy.ndarray, None
+    weight_masks : list of numpy.ndarray, None
         List of imput data weight masks to use for pixel rejection.
         (Default: `None`)
 
@@ -417,29 +417,29 @@ def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
     # Once we've made these two files, then calculate the SNR based on the
     # median-pixel image, and compare with the minimum.
 
-    nimages = len(imageList)
+    nimages = len(images)
     combtype_median = 'imedian' if fillval else 'median'
-    imageList = np.asarray(imageList)
-    weightImageList = np.asarray(weightImageList)
+    images = np.asarray(images)
+    weight_images = np.asarray(weight_images)
 
-    if weightMaskList == [] or weightMaskList is None:
-        weightMaskList = None
-        maskSum = np.zeros(imageList.shape[1:], dtype=np.int16)
+    if weight_masks == [] or weight_masks is None:
+        weight_masks = None
+        mask_sum = np.zeros(images.shape[1:], dtype=np.int16)
         all_bad_idx = np.array([], dtype=np.int)
         all_bad_idy = np.array([], dtype=np.int)
     else:
-        weightMaskList = np.asarray(weightMaskList, dtype=np.bool)
-        maskSum = np.sum(weightMaskList, axis=0, dtype=np.int16)
-        all_bad_idx, all_bad_idy = np.where(maskSum == nimages)
+        weight_masks = np.asarray(weight_masks, dtype=np.bool)
+        mask_sum = np.sum(weight_masks, axis=0, dtype=np.int16)
+        all_bad_idx, all_bad_idy = np.where(mask_sum == nimages)
 
     # Create a different median image based upon the number of images in the
     # input list.
     if nimages == 2:
         median_file = num_combine(
-            imageList,
-            numarrayMaskList=weightMaskList,
-            combinationType='imean' if fillval else 'mean',
-            nlow=0, nhigh=0, nkeep=1, upper=None, lower=None
+            images,
+            masks=weight_masks,
+            combination_type='imean' if fillval else 'mean',
+            nlow=0, nhigh=0, lower=None, upper=None
         )
 
     else:
@@ -450,10 +450,10 @@ def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
         # inputs and the number of masked values/pixel.
         #
         median_file = num_combine(
-            imageList,
-            numarrayMaskList=weightMaskList,
-            combinationType=combtype_median,
-            nlow=0, nhigh=1, nkeep=1, upper=None, lower=None
+            images,
+            masks=weight_masks,
+            combination_type=combtype_median,
+            nlow=0, nhigh=1, lower=None, upper=None
         )
 
         # The following section of code will address the problem caused by
@@ -478,51 +478,50 @@ def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
         # We need to make certain that "bad" pixels in the sci data are set to
         # 0. That way, when the sci images are summed, the value of the sum
         # will only come from the "good" pixels.
-        if weightMaskList is None:
-            sciSum = np.sum(imageList, axis=0)
+        if weight_masks is None:
+            sci_sum = np.sum(images, axis=0)
             if nimages == 1:
-                median_file = sciSum
+                median_file = sci_sum
 
         else:
-            sciSum = np.sum(imageList * np.logical_not(weightMaskList), axis=0)
-            # Use the summed sci image values in locations where the maskSum
+            sci_sum = np.sum(images * np.logical_not(weight_masks), axis=0)
+            # Use the summed sci image values in locations where the mask_sum
             # indicates that there is only 1 good pixel to use. The value will
             # be used in the median_file image
-            idx = np.where(maskSum == (nimages - 1))
-            median_file[idx] = sciSum[idx]
+            idx = np.where(mask_sum == (nimages - 1))
+            median_file[idx] = sci_sum[idx]
 
     # Create the minimum image from the stack of input images.
-    if weightMaskList is not None:
-        # make a copy of imageList to avoid side-effect of modifying input
+    if weight_masks is not None:
+        # make a copy of images to avoid side-effect of modifying input
         # argument:
-        imageList = imageList.copy()
-        imageList[weightMaskList] = np.nan
-        imageList[:, all_bad_idx, all_bad_idy] = 0
-        minimum_file = np.nanmin(imageList, axis=0)
+        images = images.copy()
+        images[weight_masks] = np.nan
+        images[:, all_bad_idx, all_bad_idy] = 0
+        minimum_file = np.nanmin(images, axis=0)
     else:
-        minimum_file = np.amin(imageList, axis=0)
+        minimum_file = np.amin(images, axis=0)
 
     # Scale the weight images by the background values and add them to the bk
     # Create an image of the total effective background (in DN) per pixel:
     # (which is the sum of all the background-scaled weight files)
     s = np.asarray([bv / et for bv, et in
-                    zip(backgroundValueList, exposureTimeList)])
-    bkgd_file = np.sum(weightImageList * s[:, None, None], axis=0)
+                    zip(background_values, exptime_list)])
+    bkgd_file = np.sum(weight_images * s[:, None, None], axis=0)
 
     # Scale the weight mask images by the square of the readnoise values.
     # Create an image of the total readnoise**2 per pixel
     # (which is the sum of all the input readnoise values).
-    readnoiseFileList = []
-    if weightMaskList is None:
-        rdn2 = sum((r**2 for r in readnoiseList))
-        readnoise_file = rdn2 * np.ones_like(imageList[0])
+    if weight_masks is None:
+        rdn2 = sum((r**2 for r in readnoise_list))
+        readnoise_file = rdn2 * np.ones_like(images[0])
     else:
-        readnoise_file = np.sum(np.logical_not(weightMaskList) *
-                                (np.asarray(readnoiseList)**2)[:, None, None])
+        readnoise_file = np.sum(np.logical_not(weight_masks) *
+                                (np.asarray(readnoise_list)**2)[:, None, None])
 
     # Create an image of the total effective exposure time per pixel:
     # (which is simply the sum of all the drizzle output weight files)
-    weight_file = np.sum(weightImageList, axis=0)
+    weight_file = np.sum(weight_images, axis=0)
 
     # Scale up both the median and minimum arrays by the total effective
     # exposure time per pixel.
@@ -574,7 +573,7 @@ def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
         # column in the MDRIZTAB should also be an integer type.
         boxsize = int(2 * combine_grow + 1)
         boxshape = (boxsize, boxsize)
-        minimum_grow_file = np.zeros_like(imageList[0])
+        minimum_grow_file = np.zeros_like(images[0])
 
         # If the boxcar convolution has failed it is potentially for
         # two reasons:
@@ -594,7 +593,7 @@ def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
             errormsg1 += "############################################################\n"
             raise ValueError(errormsg1)
 
-        if boxsize > imageList.shape[1]:
+        if boxsize > images.shape[1]:
             errormsg2 = "############################################################\n"
             errormsg2 += "# The boxcar convolution in minmed has failed.  The 'grow' #\n"
             errormsg2 += "# parameter specified has resulted in a boxcar kernel that #\n"
@@ -602,7 +601,7 @@ def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
             errormsg2 += "# specified an input value for the 'grow' parameter of:    #\n"
             errormsg2 += "        combine_grow: " + str(combine_grow) + '\n'
             errormsg2 += "############################################################\n"
-            print(imageList.shape[1:])
+            print(images.shape[1:])
             raise ValueError(errormsg2)
 
         # Attempt the boxcar convolution using the boxshape based upon the user
