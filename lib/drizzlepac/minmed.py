@@ -8,32 +8,34 @@ or median image based up bad pixel identification.
 
 """
 #   PROGRAM: numcombine.py
-#   AUTOHOR: Christopher Hanley (based upon original code of Anton Koekemoer)
+#   AUTHOR: Christopher Hanley (based upon original code of Anton Koekemoer)
 #   DATE:    February 11, 2004
-#   PURPOSE: Create an image combination algroithm that chooses between a minimum
-#               or median image based up bad pixel identification.
-#
+#   PURPOSE: Create an image combination algroithm that chooses between
+#            a minimum or median image based up bad pixel identification.
 #   HISTORY:
 #      Version 0.1.0: Initial Development -- CJH -- 02/11/04
 #      Version 0.1.1: Cast boxsize as type int.  This should always be the case
-#       anyways but this protects against errors in the MDRIZTAB -- CJH/WJH -- 07/08/04
-#      Version 0.1.2: Improve error message handing in the case where the boxcar
-#       convolution step fails.  --CJH -- 10/13/04
-#      Version 0.2.0: The creation of the median image will now more closesly replicate
-#       the IRAF IMCOMBINE behavior of nkeep = 1 and nhigh = 1. -- CJH -- 03/29/05
-from __future__ import division, print_function # confidence medium
-
+#        anyways but this protects against errors in the
+#        MDRIZTAB -- CJH/WJH -- 07/08/04
+#      Version 0.1.2: Improve error message handing in the case where
+#        the boxcar convolution step fails.  --CJH -- 10/13/04
+#      Version 0.2.0: The creation of the median image will now more closesly
+#        replicate the IRAF IMCOMBINE behavior of nkeep = 1 and nhigh = 1.
+#        -- CJH -- 03/29/05
+#      Version 0.3.0: Rewritten to optimize the code and to bring
+#        code up to modern standards.-- Mihai Cara -- 02/19/2018
+from __future__ import (absolute_import, division, unicode_literals,
+                        print_function)
+import warnings
 import numpy as np
-import stsci.convolve as NC
-
-from stsci.image.numcombine import numCombine
-
+from stsci.convolve import boxcar
+from stsci.image.numcombine import numCombine, num_combine
 from .version import *
 
 class minmed:
-    """ Create a median array, rejecting the highest pixel and computing the lowest valid pixel after mask application"""
+    """ **DEPRECATED** Create a median array, rejecting the highest pixel and
+    computing the lowest valid pixel after mask application
 
-    """
         # In this case we want to calculate two things:
         #   1) the median array, rejecting the highest pixel (thus running
         #      imcombine with nlow=0, nhigh=1, nkeep=1, using the masks)
@@ -52,9 +54,10 @@ class minmed:
         #
         # Once we've made these two files, then calculate the SNR based on the
         # median-pixel image, and compare with the minimum.
-    """
 
-    """ In this version of the mimmed algorithm we assume that the units of all input data is electons."""
+    In this version of the mimmed algorithm we assume that the units of all
+    input data is electons.
+    """
     def __init__(self,
             imageList,              # list of input data to be combined.
             weightImageList,        # list of input data weight images to be combined.
@@ -68,6 +71,10 @@ class minmed:
             fillval = False         # Turn on use of imedian/imean
 
             ):
+
+        warnings.warn("The 'minmed' class is deprecated and may be removed"
+                      " in a future version. Use 'min_med()' instead.",
+                      DeprecationWarning)
 
         # Define input variables
         self._imageList = imageList
@@ -288,8 +295,8 @@ class minmed:
                 raise ValueError(errormsg2)
 
             # Attempt the boxcar convolution using the boxshape based upon the user input value of "grow"
-            NC.boxcar(minimum_flag_file, boxshape, output=minimum_grow_file,
-                      mode='constant', cval=0)
+            boxcar(minimum_flag_file, boxshape, output=minimum_grow_file,
+                   mode='constant', cval=0)
 
             del(minimum_flag_file)
 
@@ -327,7 +334,6 @@ class minmed:
 #        self.out_file2 = minimum_file_weighted.copy()
 
 
-
     def _sumImages(self,numarrayObjectList):
         """ Sum a list of numarray objects. """
         if numarrayObjectList in [None, []]:
@@ -339,3 +345,287 @@ class minmed:
             tsum += image
 
         return tsum
+
+
+def min_med(imageList, weightImageList, readnoiseList, exposureTimeList,
+            backgroundValueList, weightMaskList=None, combine_grow=1,
+            combine_nsigma1=4, combine_nsigma2=3, fillval=False):
+    """ Create a median array, rejecting the highest pixel and
+    computing the lowest valid pixel after mask application.
+
+    .. note::
+        In this version of the mimmed algorithm we assume that the units of
+        all input data is electons.
+
+    Parameters
+    ----------
+    imageList : list of numpy.ndarray
+        List of input data to be combined.
+
+    weightImageList : list of numpy.ndarray
+        List of input data weight images to be combined.
+
+    readnoiseList : list
+        List of readnoise values to use for the input images.
+
+    exposureTimeList : list
+        List of exposure times to use for the input images.
+
+    backgroundValueList : list
+        List of image background values to use for the input images.
+
+    weightMaskList : list of numpy.ndarray, None
+        List of imput data weight masks to use for pixel rejection.
+        (Default: `None`)
+
+    combine_grow : int
+        Radius (pixels) for neighbor rejection. (Default: 1)
+
+    combine_nsigma1 : float
+        Significance for accepting minimum instead of median. (Default: 4)
+
+    combine_nsigma2 : float
+        Significance for accepting minimum instead of median. (Default: 3)
+
+    fillval : bool
+        Turn on use of imedian/imean. (Default: `False`)
+
+    Returns
+    -------
+    combined_array : numpy.ndarray
+        Combined array.
+
+    """
+    # In this case we want to calculate two things:
+    #   1) the median array, rejecting the highest pixel (thus running
+    #      imcombine with nlow=0, nhigh=1, nkeep=1, using the masks)
+    #   2) the lowest valid pixel after applying the masks (thus running
+    #      imcombine with nlow=0, nhigh=3, nkeep=1, using the masks)
+    #
+    # We also calculate the sum of the weight files (to produce the total
+    # effective exposure time for each pixel).
+    #
+    # The total effective background in the final image is calculated as
+    # follows:
+    #   - convert background for each input image to counts/s
+    #     (divide by exptime)
+    #   - multiply this value by the weight image, to obtain the effective
+    #     background counts (in DN) for each pixel, for each image
+    #   - Add these images together, to obtain the total effective background
+    #     for the combined image.
+    #
+    # Once we've made these two files, then calculate the SNR based on the
+    # median-pixel image, and compare with the minimum.
+
+    nimages = len(imageList)
+    combtype_median = 'imedian' if fillval else 'median'
+    imageList = np.asarray(imageList)
+    weightImageList = np.asarray(weightImageList)
+
+    if weightMaskList == [] or weightMaskList is None:
+        weightMaskList = None
+        maskSum = np.zeros(imageList.shape[1:], dtype=np.int16)
+        all_bad_idx = np.array([], dtype=np.int)
+        all_bad_idy = np.array([], dtype=np.int)
+    else:
+        weightMaskList = np.asarray(weightMaskList, dtype=np.bool)
+        maskSum = np.sum(weightMaskList, axis=0, dtype=np.int16)
+        all_bad_idx, all_bad_idy = np.where(maskSum == nimages)
+
+    # Create a different median image based upon the number of images in the
+    # input list.
+    if nimages == 2:
+        median_file = num_combine(
+            imageList,
+            numarrayMaskList=weightMaskList,
+            combinationType='imean' if fillval else 'mean',
+            nlow=0, nhigh=0, nkeep=1, upper=None, lower=None
+        )
+
+    else:
+        # The value of NHIGH=1 will cause problems when there is only 1 valid
+        # unmasked input image for that pixel due to a difference in behavior
+        # between 'num_combine' and 'iraf.imcombine'.
+        # This value may need to be adjusted on the fly based on the number of
+        # inputs and the number of masked values/pixel.
+        #
+        median_file = num_combine(
+            imageList,
+            numarrayMaskList=weightMaskList,
+            combinationType=combtype_median,
+            nlow=0, nhigh=1, nkeep=1, upper=None, lower=None
+        )
+
+        # The following section of code will address the problem caused by
+        # having a value of nhigh = 1.  This will behave in a way similar to
+        # the way the IRAF task IMCOMBINE behaves.  In order to accomplish
+        # this, the following procedure will be followed:
+        # 1) The input masks will be summed.
+        # 2) The science data will be summed.
+        # 3) In the locations of the summed mask where the sum is 1 less than
+        #    the total number of images, the value of that location in the
+        #    summed science image will be used to replace the existing value
+        #    in the existing median_file.
+        #
+        # This procedure is being used to prevent too much data from being
+        # thrown out of the image. Take for example the case of 3 input images.
+        # In two of the images the pixel locations have been masked out.
+        # Now, if nhigh is applied there will be no value to use for that
+        # position.  However, if this new procedure is used that value in
+        # the resulting images will be the value that was rejected by the
+        # nhigh rejection step.
+
+        # We need to make certain that "bad" pixels in the sci data are set to
+        # 0. That way, when the sci images are summed, the value of the sum
+        # will only come from the "good" pixels.
+        if weightMaskList is None:
+            sciSum = np.sum(imageList, axis=0)
+            if nimages == 1:
+                median_file = sciSum
+
+        else:
+            sciSum = np.sum(imageList * np.logical_not(weightMaskList), axis=0)
+            # Use the summed sci image values in locations where the maskSum
+            # indicates that there is only 1 good pixel to use. The value will
+            # be used in the median_file image
+            idx = np.where(maskSum == (nimages - 1))
+            median_file[idx] = sciSum[idx]
+
+    # Create the minimum image from the stack of input images.
+    if weightMaskList is not None:
+        # make a copy of imageList to avoid side-effect of modifying input
+        # argument:
+        imageList = imageList.copy()
+        imageList[weightMaskList] = np.nan
+        imageList[:, all_bad_idx, all_bad_idy] = 0
+        minimum_file = np.nanmin(imageList, axis=0)
+    else:
+        minimum_file = np.amin(imageList, axis=0)
+
+    # Scale the weight images by the background values and add them to the bk
+    # Create an image of the total effective background (in DN) per pixel:
+    # (which is the sum of all the background-scaled weight files)
+    s = np.asarray([bv / et for bv, et in
+                    zip(backgroundValueList, exposureTimeList)])
+    bkgd_file = np.sum(weightImageList * s[:, None, None], axis=0)
+
+    # Scale the weight mask images by the square of the readnoise values.
+    # Create an image of the total readnoise**2 per pixel
+    # (which is the sum of all the input readnoise values).
+    readnoiseFileList = []
+    if weightMaskList is None:
+        rdn2 = sum((r**2 for r in readnoiseList))
+        readnoise_file = rdn2 * np.ones_like(imageList[0])
+    else:
+        readnoise_file = np.sum(np.logical_not(weightMaskList) *
+                                (np.asarray(readnoiseList)**2)[:, None, None])
+
+    # Create an image of the total effective exposure time per pixel:
+    # (which is simply the sum of all the drizzle output weight files)
+    weight_file = np.sum(weightImageList, axis=0)
+
+    # Scale up both the median and minimum arrays by the total effective
+    # exposure time per pixel.
+    minimum_file_weighted = minimum_file * weight_file
+    median_file_weighted = median_file * weight_file
+    del weight_file
+
+    # Calculate the 1-sigma r.m.s.:
+    #   variance = median_electrons + bkgd_electrons + readnoise**2
+    #   rms = sqrt(variance)
+    #   This image has units of electrons.
+    #
+    # make this the abs value so that negative numbers dont throw an exception?
+    rms_file2 = np.fmax(
+        median_file_weighted + bkgd_file + readnoise_file,
+        np.zeros_like(median_file_weighted)
+    )
+    rms_file = np.sqrt(rms_file2)
+    del bkgd_file, readnoise_file
+
+    # For the median array, calculate the n-sigma lower threshold to the array
+    # and incorporate that into the pixel values.
+    median_rms_file = median_file_weighted - rms_file * combine_nsigma1
+
+    if combine_grow != 0:
+        # Do a more sophisticated rejection: For all cases where the minimum
+        # pixel will be accepted instead of the median, set a lower threshold
+        # for that pixel and the ones around it (ie become less conservative
+        # in rejecting the median). This is because in cases of
+        # triple-incidence cosmic rays, quite often the low-lying outliers
+        # of the CRs can influence the median for the initial relatively high
+        # value of sigma, so a lower threshold must be used to mnake sure that
+        # the minimum is selected.
+        #
+        # This is done as follows:
+        # 1) make an image which is zero everywhere except where the minimum
+        #    will be accepted
+        # 2) box-car smooth this image, to make these regions grow.
+        # 3) In the file "median_rms_file_electrons", replace these pixels
+        #     by median - combine_nsigma2 * rms
+        #
+        # Then use this image in the final replacement, in the same way as for
+        # the case where this option is not selected.
+        minimum_flag_file = np.less(minimum_file_weighted,
+                                    median_rms_file).astype(np.float64)
+
+        # The box size value must be an integer. This is not a problem since
+        # __combine_grow should always be an integer type. The combine_grow
+        # column in the MDRIZTAB should also be an integer type.
+        boxsize = int(2 * combine_grow + 1)
+        boxshape = (boxsize, boxsize)
+        minimum_grow_file = np.zeros_like(imageList[0])
+
+        # If the boxcar convolution has failed it is potentially for
+        # two reasons:
+        #   1) The kernel size for the boxcar is bigger than the actual image.
+        #   2) The grow parameter was specified with a value < 0.  This would
+        #      result in an illegal boxshape kernel. The dimensions of the
+        #      kernel box *MUST* be integer and greater than zero.
+        #
+        #   If the boxcar convolution has failed, try to give a meaningfull
+        #   explanation as to why based upon the conditionals described above.
+        if boxsize <= 0:
+            errormsg1 = "############################################################\n"
+            errormsg1 += "# The boxcar convolution in minmed has failed.  The 'grow' #\n"
+            errormsg1 += "# parameter must be greater than or equal to zero. You     #\n"
+            errormsg1 += "# specified an input value for the 'grow' parameter of:    #\n"
+            errormsg1 += "        combine_grow: " + str(combine_grow)+'\n'
+            errormsg1 += "############################################################\n"
+            raise ValueError(errormsg1)
+
+        if boxsize > imageList.shape[1]:
+            errormsg2 = "############################################################\n"
+            errormsg2 += "# The boxcar convolution in minmed has failed.  The 'grow' #\n"
+            errormsg2 += "# parameter specified has resulted in a boxcar kernel that #\n"
+            errormsg2 += "# has dimensions larger than the actual image.  You        #\n"
+            errormsg2 += "# specified an input value for the 'grow' parameter of:    #\n"
+            errormsg2 += "        combine_grow: " + str(combine_grow) + '\n'
+            errormsg2 += "############################################################\n"
+            print(imageList.shape[1:])
+            raise ValueError(errormsg2)
+
+        # Attempt the boxcar convolution using the boxshape based upon the user
+        # input value of "grow"
+        boxcar(minimum_flag_file, boxshape, output=minimum_grow_file,
+               mode='constant', cval=0)
+        del minimum_flag_file
+
+        median_rms_file = np.where(
+            np.equal(minimum_grow_file, 0),
+            median_file_weighted - rms_file * combine_nsigma1,
+            median_file_weighted - rms_file * combine_nsigma2
+        )
+        del rms_file, minimum_grow_file
+
+    # Finally decide whether to use the minimim or the median (in counts/s),
+    # based on whether the median is more than 3 sigma above the minimum.
+    combined_array = np.where(
+        np.less(minimum_file_weighted, median_rms_file),
+        minimum_file,
+        median_file
+    )
+    # Set fill regions to a pixel value of 0.
+    combined_array[all_bad_idx, all_bad_idy] = 0
+
+    return combined_array
