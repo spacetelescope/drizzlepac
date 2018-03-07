@@ -515,9 +515,13 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
     if weight_masks is None:
         rdn2 = sum((r**2 for r in readnoise_list))
         readnoise_file = rdn2 * np.ones_like(images[0])
+
     else:
-        readnoise_file = np.sum(np.logical_not(weight_masks) *
-                                (np.asarray(readnoise_list)**2)[:, None, None])
+        readnoise_file = np.sum(
+            np.logical_not(weight_masks) *
+            (np.asarray(readnoise_list)**2)[:, None, None],
+            axis=0
+        )
 
     # Create an image of the total effective exposure time per pixel:
     # (which is simply the sum of all the drizzle output weight files)
