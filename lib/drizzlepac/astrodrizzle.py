@@ -87,8 +87,11 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
             raise RuntimeError('Cannot find .cfg file: '+configobj)
         configobj = teal.load(configobj, strict=False)
 
-    if configobj is None or configobj == 'defaults':
+    if configobj is None:
         configobj = teal.load(__taskname__)
+
+    elif configobj == 'defaults':
+        configobj = teal.load(__taskname__, defaults=True)
 
     if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
         configobj['updatewcs'] = input_dict['updatewcs']

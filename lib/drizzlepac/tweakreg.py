@@ -771,12 +771,14 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
 
     # Get default or user-specified configobj for primary task
     if isinstance(configobj, str):
-        if not os.path.exists(configobj):
+        if configobj == 'defaults':
+            configobj = teal.load(__taskname__, defaults=True)
+        elif not os.path.exists(configobj):
             print('Cannot find .cfg file: '+configobj)
-            return
-        configobj = teal.load(configobj, strict=False)
+        else:
+            configobj = teal.load(configobj, strict=False)
 
-    if configobj is None:
+    elif configobj is None:
         configobj = teal.load(__taskname__)
 
     if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
