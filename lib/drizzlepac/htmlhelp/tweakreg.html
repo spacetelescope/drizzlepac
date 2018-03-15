@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>TWEAKREG: Alignment of Images &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>TWEAKREG: Alignment of Images &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Refmagefindpars: Source finding parameters for the reference image" href="refimagefindpars.html" />
     <link rel="prev" title="DrizzlePac Release Notes" href="release_notes.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -107,7 +104,7 @@ other and/or to and external astrometric reference frame or image.</p>
 <dd><p>Tweakreg provides an automated interface for computing residual shifts
 between input exposures being combined using <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>. The offsets
 computed by Tweakreg correspond to pointing differences after applying the WCS
-information from the input image&#8217;s headers.  Such errors would, for example,
+information from the input image’s headers.  Such errors would, for example,
 be due to errors in guide-star positions when combining observations from
 different observing visits or from slight offsets introduced upon re-acquiring
 the guide stars in a slightly different position.</p>
@@ -125,18 +122,10 @@ This paramater can be provided in any of several forms:</p>
 <li>filename of an association (ASN)table</li>
 <li>wild-card specification for files in directory (using <code class="docutils literal"><span class="pre">\*</span></code>, <code class="docutils literal"><span class="pre">?</span></code> etc.)</li>
 <li>comma-separated list of filenames</li>
-<li><code class="docutils literal"><span class="pre">&#64;file</span></code> filelist containing list of desired input filenames
-(and optional inverse variance map filenames)</li>
+<li><code class="docutils literal"><span class="pre">&#64;file</span></code> filelist containing list of desired input filenames with one
+filename on each line of the file.</li>
 </ul>
 </div></blockquote>
-<p>The <code class="docutils literal"><span class="pre">&#64;file</span></code> filelist needs to be provided as an ASCII text file
-containing a list of filenames for all input images with one
-filename on each line of the file. If inverse variance maps have
-also been created by the user and are to be used (by specifying
-<code class="docutils literal"><span class="pre">IVM</span></code> to the parameter <code class="xref py py-obj docutils literal"><span class="pre">final_wht_type</span></code> described further below),
-then these are simply provided as a second column in the filelist,
-with each <code class="docutils literal"><span class="pre">IVM</span></code> filename listed on the same line as a second entry,
-after its corresponding exposure filename.</p>
 </div></blockquote>
 <p><strong id="editpars">editpars</strong> : bool (Default = False)</p>
 <blockquote>
@@ -149,7 +138,7 @@ True to use the GUI to edit parameters.</p>
 </div></blockquote>
 <p><strong id="imagefindcfg">imagefindcfg</strong> : dict, configObject (Default = None)</p>
 <blockquote>
-<div><p>An instance of <a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> or <code class="xref py py-obj docutils literal"><span class="pre">configObject</span></code> which overrides default source
+<div><p>An instance of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> or <code class="xref py py-obj docutils literal"><span class="pre">configObject</span></code> which overrides default source
 finding (for input images) parameter settings. See help for
 <code class="xref py py-obj docutils literal"><span class="pre">imagefindpars</span></code> PSET for a list of available parameters. <strong>Only</strong> the
 parameters that are different from default values  <strong>need</strong> to be specified
@@ -157,7 +146,7 @@ here.</p>
 </div></blockquote>
 <p><strong id="refimagefindcfg">refimagefindcfg</strong> : dict, configObject (Default = None)</p>
 <blockquote>
-<div><p>An instance of <a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> or <code class="xref py py-obj docutils literal"><span class="pre">configObject</span></code> which overrides default source
+<div><p>An instance of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> or <code class="xref py py-obj docutils literal"><span class="pre">configObject</span></code> which overrides default source
 finding (for input reference image) parameter settings. See help for
 <code class="xref py py-obj docutils literal"><span class="pre">refimagefindpars</span></code> PSET for a list of available parameters. <strong>Only</strong> the
 parameters that are different from default values <strong>need</strong> to be specified
@@ -175,7 +164,7 @@ even though this parameter no longer can be set through the TEAL GUI.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">This list of parameters <strong>can</strong> contain parameters specific
-to the <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a> task itself described here in the &#8220;Other Parameters&#8221;
+to the <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a> task itself described here in the “Other Parameters”
 section and <strong>may not</strong> contain parameters from the <code class="xref py py-obj docutils literal"><span class="pre">refimagefindpars</span></code>
 PSET.</p>
 </div>
@@ -183,7 +172,7 @@ PSET.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">For compatibility purpose with previous <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a> versions,
 <code class="xref py py-obj docutils literal"><span class="pre">inputDict</span></code> may contain parameters from the the <code class="xref py py-obj docutils literal"><span class="pre">imagefindpars</span></code>
-PSET. However, if <code class="xref py py-obj docutils literal"><span class="pre">imagefindcfg</span></code> is not <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, then <code class="xref py py-obj docutils literal"><span class="pre">imagefindpars</span></code>
+PSET. However, if <code class="xref py py-obj docutils literal"><span class="pre">imagefindcfg</span></code> is not <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, then <code class="xref py py-obj docutils literal"><span class="pre">imagefindpars</span></code>
 parameters specified through <code class="xref py py-obj docutils literal"><span class="pre">inputDict</span></code> may not duplicate
 parameters specified through <code class="xref py py-obj docutils literal"><span class="pre">imagefindcfg</span></code>.</p>
 </div>
@@ -191,11 +180,15 @@ parameters specified through <code class="xref py py-obj docutils literal"><span
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>refimage</strong> : str (Default = &#8216;&#8217;)</p>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first"><strong>refimage</strong> : str (Default = ‘’)</p>
 <blockquote>
 <div><p>Filename of reference image. Sources derived from this image will be
 used as the reference for matching with sources from all input images
-unless a separate catalog is provided through the <code class="xref py py-obj docutils literal"><span class="pre">refcat</span></code> parameter.</p>
+unless a separate catalog is provided through the <code class="xref py py-obj docutils literal"><span class="pre">refcat</span></code> parameter.
+In addition, this image file must contain a valid not distorted WCS that
+will define the projection plane in which image alignment is performed
+(“reference WCS”). When <code class="docutils literal"><span class="pre">refimage</span></code> is not provided, a reference WCS
+will be derived from input images.</p>
 </div></blockquote>
 <p><strong>expand_refcat</strong> : bool (Default = False)</p>
 <blockquote>
@@ -206,45 +199,45 @@ expanded reference catalog.</p>
 <p><strong>enforce_user_order</strong> : bool (Default = True)</p>
 <blockquote>
 <div><p>Specifies whether images should be aligned in the order specified in
-the <a class="reference external" href="https://docs.python.org/2/library/functions.html#file" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">file</span></code></a> input parameter or <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a> should optimize the order
-of alignment by intersection area of the images. Default value (<a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>)
+the <code class="xref py py-obj docutils literal"><span class="pre">file</span></code> input parameter or <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a> should optimize the order
+of alignment by intersection area of the images. Default value (<a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>)
 will align images in the user specified order, except when some images
 cannot be aligned in which case <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a> will optimize the image
 alignment order. Alignment order optimization is available <em>only</em>
-when <code class="xref py py-obj docutils literal"><span class="pre">expand_refcat</span></code> = <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>.</p>
+when <code class="xref py py-obj docutils literal"><span class="pre">expand_refcat</span></code> = <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>.</p>
 </div></blockquote>
-<p><strong>exclusions: string (Default = &#8216;&#8217;)</strong></p>
+<p><strong>exclusions: string (Default = ‘’)</strong></p>
 <blockquote>
 <div><p>This parameter allows the user to specify a set of files which contain
 regions in the image to ignore (or to include) when finding sources.
 This file MUST have 1 line for each input image with the name of the input
 file in the first column.  Subsequent columns would be used to specify an
 inclusion and/or exclusion file for each chip in <code class="docutils literal"><span class="pre">'SCI,&lt;n&gt;'</span></code> index order.
-If a chip does not require an exclusion file, the string <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> or <code class="docutils literal"><span class="pre">INDEF</span></code>
+If a chip does not require an exclusion file, the string <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> or <code class="docutils literal"><span class="pre">INDEF</span></code>
 can be used as a placeholder for that chip. Each exclusion file can be
 either a mask provided as a simple FITS file or a region file in DS9-format.</p>
 <p>When a mask file is provided, <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a> will look for the first image-like
 extension with image data of the same dimensions as the input image. Zeros
-in the mask will be interpreted as &#8220;bad&#8221; (excluded from search) pixels
-while non-zero pixels will be interpreted as &#8220;good&#8221; pixels. It is
+in the mask will be interpreted as “bad” (excluded from search) pixels
+while non-zero pixels will be interpreted as “good” pixels. It is
 recommended that mask files be FITS files without extensions and mask data
 (preferably of integer type) reside in the primary HDU.</p>
-<p>If a region file is provided then it should conform to the &#8216;region&#8217; file
+<p>If a region file is provided then it should conform to the ‘region’ file
 format generated by DS9. The region files can contain both regular
-(&#8220;include&#8221;) regions as well as &#8220;exclude&#8221; regions. Regular (&#8220;include&#8221;)
+(“include”) regions as well as “exclude” regions. Regular (“include”)
 regions indicate the regions of the image that should be searched for
-sources while &#8220;exclude&#8221; regions indicate parts of the image that should
-not be used for source detection. The &#8220;ruler&#8221;, &#8220;compass&#8221;, and &#8220;projection&#8221;
+sources while “exclude” regions indicate parts of the image that should
+not be used for source detection. The “ruler”, “compass”, and “projection”
 regions are not supported (ignored). When <strong>all regions</strong>
-in a region file are &#8220;exclude&#8221; regions, then it will be assumed that the
-entire image is &#8220;good&#8221; before the exclude regions are processed. In other
-words, an &#8220;include&#8221; region corresponding to the entire image will be
+in a region file are “exclude” regions, then it will be assumed that the
+entire image is “good” before the exclude regions are processed. In other
+words, an “include” region corresponding to the entire image will be
 <em>prepended</em> to the list of exclude regions.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Regions in a region file are processed in the order they appear in the
-region file. Thus, when region files contain <em>both</em> &#8220;include&#8221; and
-&#8220;exclude&#8221; regions, the order in which these regions appear may affect
+region file. Thus, when region files contain <em>both</em> “include” and
+“exclude” regions, the order in which these regions appear may affect
 the results.</p>
 </div>
 <div class="admonition warning">
@@ -299,7 +292,7 @@ requiring any user input.</p>
 <div><p>Specify whether or not to print extra messages during
 processing.</p>
 </div></blockquote>
-<p><strong>runfile</strong> : string (Default = &#8216;tweakreg.log&#8217;)</p>
+<p><strong>runfile</strong> : string (Default = ‘tweakreg.log’)</p>
 <blockquote>
 <div><p>Specify the filename of the processing log.</p>
 </div></blockquote>
@@ -311,7 +304,7 @@ directly with the shifts that were determined. This will allow the
 input images to be combined by <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code> without having to provide
 the shiftfile as well.</p>
 </div></blockquote>
-<p><strong>wcsname</strong> : str (Default = &#8216;TWEAK&#8217;)</p>
+<p><strong>wcsname</strong> : str (Default = ‘TWEAK’)</p>
 <blockquote>
 <div><p>Name of updated WCS.</p>
 </div></blockquote>
@@ -333,7 +326,7 @@ parameter.</p>
 <div><p>If creating a headerlet, choose whether or not to attach the new
 headerlet to the input image as a new extension.</p>
 </div></blockquote>
-<p><strong>hdrfile: string (Default = &#8216;&#8217;)</strong></p>
+<p><strong>hdrfile: string (Default = ‘’)</strong></p>
 <blockquote>
 <div><p>Filename to use for writing out headerlet to a separate file. If the name
 does not contain <code class="docutils literal"><span class="pre">.fits</span></code>, it will create a filename from the
@@ -344,29 +337,29 @@ creating a headerlet for image <code class="docutils literal"><span class="pre">
 </div></blockquote>
 <p><strong>clobber: bool (Default = No)</strong></p>
 <blockquote>
-<div><p>If a headerlet with &#8216;hdrfile&#8217; already exists on disk, specify
+<div><p>If a headerlet with ‘hdrfile’ already exists on disk, specify
 whether or not to overwrite that previous file.</p>
 </div></blockquote>
-<p><strong>hdrname: string (Default = &#8216;&#8217;)</strong></p>
+<p><strong>hdrname: string (Default = ‘’)</strong></p>
 <blockquote>
 <div><p>Unique name to give to headerlet solution. This name will be used to
 identify this specific WCS alignment solution contained in the headerlet.</p>
 </div></blockquote>
-<p><strong>author: string, optional (Default = &#8216;&#8217;)</strong></p>
+<p><strong>author: string, optional (Default = ‘’)</strong></p>
 <blockquote>
 <div><p>Name of the creator of the headerlet.</p>
 </div></blockquote>
-<p><strong>descrip: string, optional (Default = &#8216;&#8217;)</strong></p>
+<p><strong>descrip: string, optional (Default = ‘’)</strong></p>
 <blockquote>
 <div><p>Short (1-line) description to be included in headerlet as <code class="docutils literal"><span class="pre">DESCRIP</span></code> keyword.
 This can be used to provide a quick look description of the WCS alignment
 contained in the headerlet.</p>
 </div></blockquote>
-<p><strong>catalog: string, optional (Default = &#8216;&#8217;)</strong></p>
+<p><strong>catalog: string, optional (Default = ‘’)</strong></p>
 <blockquote>
 <div><p>Name of reference catalog used as the basis for the image alignment.</p>
 </div></blockquote>
-<p><strong>history: string, optional (Default = &#8216;&#8217;)</strong></p>
+<p><strong>history: string, optional (Default = ‘’)</strong></p>
 <blockquote>
 <div><p>Filename of a file containing detailed information regarding the history
 of the WCS solution contained in the headerlet. This can include information
@@ -379,12 +372,12 @@ will be reformatted as 70-character wide FITS HISTORY keyword section.</p>
 <blockquote>
 <div><p>Create output shiftfile?</p>
 </div></blockquote>
-<p><strong>outshifts</strong> : str (Default = &#8216;shifts.txt&#8217;)</p>
+<p><strong>outshifts</strong> : str (Default = ‘shifts.txt’)</p>
 <blockquote>
 <div><p>The name for the output shift file created by <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code>.  This
 shiftfile will be formatted for use as direct input to <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>.</p>
 </div></blockquote>
-<p><strong>outwcs</strong> : str  (Default = &#8216;shifts_wcs.fits&#8217;)</p>
+<p><strong>outwcs</strong> : str  (Default = ‘shifts_wcs.fits’)</p>
 <blockquote>
 <div><p>Filename to be given to the OUTPUT reference WCS file created
 by <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code>. This reference WCS defines the WCS from which the
@@ -395,17 +388,22 @@ data itself. The values will be derived from the FIRST input image
 specified.</p>
 </div></blockquote>
 <p><strong>*COORDINATE FILE DESCRIPTION*</strong></p>
-<p><strong>catfile</strong> : str (Default = &#8216;&#8217;)</p>
+<p><strong>catfile</strong> : str (Default = ‘’)</p>
 <blockquote>
 <div><p>Name of file that contains a list of input images and associated
 catalog files generated by the user. Each line of this file will
 contain the name of an input image in the first column. The remaining
 columns will provide the names of the source catalogs for each chip
-in order of the science extension numbers ((SCI,1), (SCI,2), ...).</p>
+in order of the science extension numbers ((SCI,1), (SCI,2), …).</p>
 <p>A sample catfile, with one line per image would look like:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">image1_flt</span><span class="o">.</span><span class="n">fts</span>  <span class="n">cat1_sci1</span><span class="o">.</span><span class="n">coo</span>  <span class="n">cat1_sci2</span><span class="o">.</span><span class="n">coo</span>
 <span class="n">image2_flt</span><span class="o">.</span><span class="n">fts</span>  <span class="n">cat2_sci1</span><span class="o">.</span><span class="n">coo</span>  <span class="n">cat2_sci2</span><span class="o">.</span><span class="n">coo</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Catalog files themselves must be text files containing
+“white space”-separated list of values (<code class="docutils literal"><span class="pre">xcol</span></code>, <code class="docutils literal"><span class="pre">ycol</span></code>, etc.)</p>
 </div>
 </div></blockquote>
 <p><strong>xcol</strong> : int (Default = 1)</p>
@@ -427,29 +425,29 @@ a flux limit has been specified by the user using the <code class="xref py py-ob
 </div></blockquote>
 <p><strong>maxflux</strong> : float (Default = None)</p>
 <blockquote>
-<div><p>Limiting flux value for selecting valid objects in the input image&#8217;s
+<div><p>Limiting flux value for selecting valid objects in the input image’s
 catalog.  If specified, this flux will serve as the upper limit of a
 range for selecting objects to be used in matching with objects
-identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all
+identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all
 objects with fluxes brighter than the minimum specified in <code class="xref py py-obj docutils literal"><span class="pre">minflux</span></code>
-will be used. If both values are set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
+will be used. If both values are set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
 </div></blockquote>
 <p><strong>minflux</strong> : float (Default = None)</p>
 <blockquote>
-<div><p>Limiting flux value for selecting valid objects in the input image&#8217;s
+<div><p>Limiting flux value for selecting valid objects in the input image’s
 catalog. If specified, this flux value will serve as the lower limit
 of a range for selecting objects to be used in matching with objects
-identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all
+identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all
 objects fainter than the limit specified by <code class="xref py py-obj docutils literal"><span class="pre">maxflux</span></code> will be used.
-If both values are set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
+If both values are set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
 </div></blockquote>
-<p><strong>fluxunits</strong> : str {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;} (Default = &#8216;counts&#8217;)</p>
+<p><strong>fluxunits</strong> : str {‘counts’, ‘cps’, ‘mag’} (Default = ‘counts’)</p>
 <blockquote>
 <div><p>This allows the task to correctly interpret the flux limits specified
 by <code class="xref py py-obj docutils literal"><span class="pre">maxflux</span></code> and <code class="xref py py-obj docutils literal"><span class="pre">minflux</span></code> when sorting the object list for trimming
 of fainter objects.</p>
 </div></blockquote>
-<p><strong>xyunits</strong> : str {&#8216;pixels&#8217;, &#8216;degrees&#8217;} (Default = &#8216;pixels&#8217;)</p>
+<p><strong>xyunits</strong> : str {‘pixels’, ‘degrees’} (Default = ‘pixels’)</p>
 <blockquote>
 <div><p>Specifies whether the positions in this catalog are already sky pixel
 positions, or whether they need to be transformed to the sky.</p>
@@ -457,15 +455,20 @@ positions, or whether they need to be transformed to the sky.</p>
 <p><strong>nbright</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>The number of brightest objects to keep after sorting the full object
-list. If nbright is set equal to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
+list. If nbright is set equal to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
 </div></blockquote>
 <p><strong>*REFERENCE CATALOG DESCRIPTION*</strong></p>
-<p><strong>refcat</strong> : str (Default = &#8216;&#8217;)</p>
+<p><strong>refcat</strong> : str (Default = ‘’)</p>
 <blockquote>
 <div><p>Name of the external reference catalog file to be used in place of the
 catalog extracted from one of the input images. When <code class="xref py py-obj docutils literal"><span class="pre">refimage</span></code> is not
 specified, reference WCS to be used with reference catalog will be
 derived from input images.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Reference catalog must be text file containing
+“white space”-separated list of values (<code class="docutils literal"><span class="pre">xcol</span></code>, <code class="docutils literal"><span class="pre">ycol</span></code>, etc.)</p>
+</div>
 </div></blockquote>
 <p><strong>refxcol</strong> : int (Default = 1)</p>
 <blockquote>
@@ -477,7 +480,7 @@ refcat.</p>
 <div><p>Column number of Dec in the external catalog file specified by the
 refcat.</p>
 </div></blockquote>
-<p><strong>refxyunits</strong> : str {&#8216;pixels&#8217;,&#8217;degrees&#8217;} (Default = &#8216;degrees&#8217;)</p>
+<p><strong>refxyunits</strong> : str {‘pixels’,’degrees’} (Default = ‘degrees’)</p>
 <blockquote>
 <div><p>Units of sky positions.</p>
 </div></blockquote>
@@ -491,9 +494,9 @@ specified by the refcat.</p>
 <div><p>Limiting flux value used to select valid objects in the external
 catalog. If specified, the flux value will serve as the upper limit
 of a range for selecting objects to be used in matching with objects
-identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>,
+identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>,
 all objects with fluxes brighter than the minimum specified in
-<code class="xref py py-obj docutils literal"><span class="pre">rminflux</span></code> will be used. If both values are set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all
+<code class="xref py py-obj docutils literal"><span class="pre">rminflux</span></code> will be used. If both values are set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all
 objects will be used.</p>
 </div></blockquote>
 <p><strong>rminflux</strong> : float (Default = None)</p>
@@ -501,11 +504,11 @@ objects will be used.</p>
 <div><p>Limiting flux value used to select valid objects in the external
 catalog. If specified, the flux will serve as the lower limit
 of a range for selecting objects to be used in matching with objects
-identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>,
+identified in the reference image. If the value is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>,
 all objects fainter than the limit specified by <code class="xref py py-obj docutils literal"><span class="pre">rmaxflux</span></code> will be
-used. If both values are set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
+used. If both values are set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used.</p>
 </div></blockquote>
-<p><strong>rfluxunits</strong> : {&#8216;counts&#8217;, &#8216;cps&#8217;, &#8216;mag&#8217;} (Default = &#8216;mag&#8217;)</p>
+<p><strong>rfluxunits</strong> : {‘counts’, ‘cps’, ‘mag’} (Default = ‘mag’)</p>
 <blockquote>
 <div><p>This allows the task to correctly interpret the flux limits specified
 by <code class="xref py py-obj docutils literal"><span class="pre">rmaxflux</span></code> and <code class="xref py py-obj docutils literal"><span class="pre">rminflux</span></code> when sorting the object list for trimming
@@ -514,7 +517,7 @@ of fainter objects.</p>
 <p><strong>refnbright</strong> : int (Default = None)</p>
 <blockquote>
 <div><p>Number of brightest objects to keep after sorting the full object
-list. If refnbright is set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used. Used in
+list. If refnbright is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, all objects will be used. Used in
 conjunction with refcat.</p>
 </div></blockquote>
 <p><strong>*OBJECT MATCHING PARAMETERS*</strong></p>
@@ -527,7 +530,7 @@ in matching objects from other images.</p>
 <blockquote>
 <div><p>The search radius for a match.</p>
 </div></blockquote>
-<p><strong>searchunits</strong> : str (Default = &#8216;arcseconds&#8217;)</p>
+<p><strong>searchunits</strong> : str (Default = ‘arcseconds’)</p>
 <blockquote>
 <div><p>Units for search radius.</p>
 </div></blockquote>
@@ -542,24 +545,24 @@ in matching objects from other images.</p>
 <p><strong>tolerance</strong> : float (Default = 1.0)</p>
 <blockquote>
 <div><p>The matching tolerance in pixels after applying an initial solution
-derived from the &#8216;triangles&#8217; algorithm.  This parameter gets passed
+derived from the ‘triangles’ algorithm.  This parameter gets passed
 directly to <code class="xref py py-obj docutils literal"><span class="pre">xyxymatch</span></code> for use in matching the object lists from each
-image with the reference image&#8217;s object list.</p>
+image with the reference image’s object list.</p>
 </div></blockquote>
 <p><strong>separation</strong> : float (Default = 0.0)</p>
 <blockquote>
 <div><p>The  minimum  separation for objects in the input and reference
-coordinate lists. Objects closer together than &#8216;separation&#8217; pixels
+coordinate lists. Objects closer together than ‘separation’ pixels
 are removed from the input and reference coordinate lists prior
 to matching. This parameter gets passed directly to <code class="xref py py-obj docutils literal"><span class="pre">xyxymatch</span></code> for
 use in matching the object lists from each image with the reference
-image&#8217;s object list.</p>
+image’s object list.</p>
 </div></blockquote>
 <p><strong>xoffset</strong> : float (Default = 0.0)</p>
 <blockquote>
 <div><p>Initial estimate for the offset in X between the images and the
 reference frame. This offset will be used for all input images
-provided. If the parameter value is set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, no offset will
+provided. If the parameter value is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>, no offset will
 be assumed in matching sources in <code class="xref py py-obj docutils literal"><span class="pre">xyxymatch</span></code>.</p>
 </div></blockquote>
 <p><strong>yoffset</strong> : float (Default = 0.0)</p>
@@ -570,17 +573,17 @@ provided.If the parameter value is set to None, no offset will
 be assumed in matching sources in <code class="xref py py-obj docutils literal"><span class="pre">xyxymatch</span></code>.</p>
 </div></blockquote>
 <p><strong>*CATALOG FITTING PARAMETERS*</strong></p>
-<p><strong>fitgeometry</strong> : str {&#8216;shift&#8217;, &#8216;rscale&#8217;, &#8216;general&#8217;} (Default = &#8216;rscale&#8217;)</p>
+<p><strong>fitgeometry</strong> : str {‘shift’, ‘rscale’, ‘general’} (Default = ‘rscale’)</p>
 <blockquote>
 <div><p>The fitting geometry to be used in fitting the matched object lists.
 This parameter is used in fitting the offsets, rotations and/or scale
-changes from the matched object lists. The &#8216;general&#8217; fit geometry
+changes from the matched object lists. The ‘general’ fit geometry
 allows for independent scale and rotation for each axis.</p>
 </div></blockquote>
-<p><strong>residplot</strong> : str {&#8216;No plot&#8217;, &#8216;vector&#8217;, &#8216;residuals&#8217;, &#8216;both&#8217;}  (Default = &#8216;both&#8217;)</p>
+<p><strong>residplot</strong> : str {‘No plot’, ‘vector’, ‘residuals’, ‘both’}  (Default = ‘both’)</p>
 <blockquote>
-<div><p>Plot residuals from fit? If &#8216;both&#8217; is selected, the &#8216;vector&#8217;
-and &#8216;residuals&#8217; plots will be displayed in separate plotting windows at
+<div><p>Plot residuals from fit? If ‘both’ is selected, the ‘vector’
+and ‘residuals’ plots will be displayed in separate plotting windows at
 the same time.</p>
 </div></blockquote>
 <p><strong>nclip</strong> : int (Default = 3)</p>
@@ -600,15 +603,15 @@ by updatewcs not only recomputes the WCS based on the currently
 used <code class="docutils literal"><span class="pre">IDCTAB</span></code>, but also populates the header with
 the <code class="docutils literal"><span class="pre">SIP</span></code> coefficients. For <code class="docutils literal"><span class="pre">ACS/WFC</span></code> images, the time-dependence
 correction will also be applied to the <code class="docutils literal"><span class="pre">WCS</span></code> and <code class="docutils literal"><span class="pre">SIP</span></code> keywords.
-This parameter should be set to &#8216;No&#8217; (<a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>) when the WCS keywords
+This parameter should be set to ‘No’ (<a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>) when the WCS keywords
 have been carefully set by some other method, and need to be passed
-through to drizzle &#8216;as is&#8217;, otherwise those updates will be over-written
+through to drizzle ‘as is’, otherwise those updates will be over-written
 by this update.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">This parameter was preserved in the API for compatibility purposes with
 existing user processing pipe-lines. However, it has been removed from the
-TEAL interface because it is easy to have it set to &#8216;yes&#8217;
+TEAL interface because it is easy to have it set to ‘yes’
 (especially between consecutive runs of <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>) with potentially
 disastrous effects on input image WCS (for example it could wipe-out
 previously aligned WCS).</p>
@@ -627,24 +630,29 @@ previously aligned WCS).</p>
 images for ACS and WFC3, or <code class="docutils literal"><span class="pre">_c0m.fits</span></code> images for WFPC2) as input images.
 All coordinates for sources derived from these images (either by this task
 or as provided by the user directly) will be corrected for distortion using
-the distortion model information specified in each image&#8217;s header. This
-eliminates the need to run &#8216;astrodrizzle&#8217; on the input images prior to
+the distortion model information specified in each image’s header. This
+eliminates the need to run ‘astrodrizzle’ on the input images prior to
 running <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">All calibrated input images must have been updated using
 <code class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></code> from the <code class="xref py py-obj docutils literal"><span class="pre">STWCS</span></code> package, to include the full
 distortion model in the header. Alternatively, one can set
-<code class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></code> parameter to <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a> when running either <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a>
+<code class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></code> parameter to <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a> when running either <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a>
 or <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code> from command line (Python interpreter)
 <strong>the first time</strong> on such images.</p>
 </div>
 <p>This task will use catalogs, and catalog-matching, based on the <code class="xref py py-obj docutils literal"><span class="pre">xyxymatch</span></code>
 algorithm to determine the offset between the input images. The primary
 mode of operation will be to extract a catalog of source positions from
-each input image using either a &#8216;DAOFIND-like&#8217; algorithm or <code class="docutils literal"><span class="pre">SExtractor</span></code> (if
+each input image using either a ‘DAOFIND-like’ algorithm or <code class="docutils literal"><span class="pre">SExtractor</span></code> (if
 the user has <code class="docutils literal"><span class="pre">SExtractor</span></code> installed). Alternatively, the user can provide
 their catalogs of source positions derived from <strong>each input chip</strong>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Catalog files must be text files containing
+“white space”-separated list of values (<code class="docutils literal"><span class="pre">xcol</span></code>, <code class="docutils literal"><span class="pre">ycol</span></code>, etc.)</p>
+</div>
 <p>The reference frame will be defined either by:</p>
 <blockquote>
 <div><ul class="simple">
@@ -670,15 +678,15 @@ for trimming potential false detections from each source list would be
 to set a flux limit to exclude detections below that limit. As the fluxes
 reported in the default source object lists are provided as magnitude
 values, setting the <code class="xref py py-obj docutils literal"><span class="pre">maxflux</span></code> or <code class="xref py py-obj docutils literal"><span class="pre">minflux</span></code> parameter value to a magnitude-
-based limit, and then setting the <code class="xref py py-obj docutils literal"><span class="pre">ascend</span></code> parameter to <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, will allow
+based limit, and then setting the <code class="xref py py-obj docutils literal"><span class="pre">ascend</span></code> parameter to <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, will allow
 for the creations of catalogs trimmed of all sources fainter than the
 provided limit. The trimmed source list can then be used in matching
 sources between images and in establishing the final fitting for the shifts.</p>
 <p>A fit can then be performed on the matched set of positions between the
-input and the reference to produce the &#8216;shiftfile&#8217;. If the user is
+input and the reference to produce the ‘shiftfile’. If the user is
 confident that the solution will be correct, the header of each input image
 can be updated directly with the fit derived for that image. Otherwise,
-the &#8216;shiftfile&#8217; can be passed to AstroDrizzle for aligning the images.</p>
+the ‘shiftfile’ can be passed to AstroDrizzle for aligning the images.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Because of the nature of the used algorithm it may be necessary
@@ -691,17 +699,17 @@ matched to a larger reference catalog. This allows alignment of images
 that do not overlap directly with the reference image and/or catalog and
 it is particularly useful in image registration of large mosaics. Addition
 of new sources to the reference catalog can be turned off by
-setting <code class="xref py py-obj docutils literal"><span class="pre">expand_refcat</span></code> to <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a> when using an external reference catalog.
+setting <code class="xref py py-obj docutils literal"><span class="pre">expand_refcat</span></code> to <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a> when using an external reference catalog.
 When an external catalog is not provided (<code class="xref py py-obj docutils literal"><span class="pre">refcat`='')</span> <span class="pre">or</span> <span class="pre">when</span>
-<span class="pre">using</span> <span class="pre">an</span> <span class="pre">external</span> <span class="pre">reference</span> <span class="pre">catalog</span> <span class="pre">with</span> <span class="pre">`expand_refcat</span></code> set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>
-(assuming <code class="xref py py-obj docutils literal"><span class="pre">writecat</span></code> = <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a> and <code class="xref py py-obj docutils literal"><span class="pre">clean</span></code> = <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>),
+<span class="pre">using</span> <span class="pre">an</span> <span class="pre">external</span> <span class="pre">reference</span> <span class="pre">catalog</span> <span class="pre">with</span> <span class="pre">`expand_refcat</span></code> set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>
+(assuming <code class="xref py py-obj docutils literal"><span class="pre">writecat</span></code> = <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a> and <code class="xref py py-obj docutils literal"><span class="pre">clean</span></code> = <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>),
 the list of all sources in the expanded reference catalog is saved
 in a catalog file named <code class="docutils literal"><span class="pre">cumulative_sky_refcat_###.coo</span></code> where ### is the
 base file name derived from either the external catalog (if provided) or
 the name of the image used as the reference image.</p>
-<p>When <code class="xref py py-obj docutils literal"><span class="pre">enforce_user_order</span></code> is <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>, image catalogs are matched to the
+<p>When <code class="xref py py-obj docutils literal"><span class="pre">enforce_user_order</span></code> is <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>, image catalogs are matched to the
 reference catalog in order of decreasing overlap area with the reference
-catalog, otherwise user order of files specified in the <a class="reference external" href="https://docs.python.org/2/library/functions.html#file" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">file</span></code></a> parameter
+catalog, otherwise user order of files specified in the <code class="xref py py-obj docutils literal"><span class="pre">file</span></code> parameter
 is used.</p>
 <p><strong>Format of Exclusion Catalog</strong></p>
 <p>The format for the exclusions catalog requires 1 line in the file for
@@ -720,12 +728,12 @@ second chip in the second image, the file would need to look like:</p>
 <span class="n">j99da1f2q_flt</span><span class="o">.</span><span class="n">fits</span> <span class="kc">None</span> <span class="n">test_sci2_exclusion</span><span class="o">.</span><span class="n">reg</span>
 </pre></div>
 </div>
-<p>The value <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> could also be replaced by <code class="docutils literal"><span class="pre">INDEF</span></code> if desired, but either
+<p>The value <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> could also be replaced by <code class="docutils literal"><span class="pre">INDEF</span></code> if desired, but either
 string needs to be present to signify no regions file for that chip while
 the code continues parsing the line to find a file for the second chip.</p>
 <p><strong>Format of Region Files</strong></p>
-<p>The format of the exclusions catalogs referenced in the &#8216;exclusions&#8217;
-file defaults to the format written out by DS9 using the &#8216;DS9/Funtools&#8217;
+<p>The format of the exclusions catalogs referenced in the ‘exclusions’
+file defaults to the format written out by DS9 using the ‘DS9/Funtools’
 region file format.  A sample file with circle() regions will look like:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Region file format: DS9 version 4.1</span>
 <span class="c1"># Filename: j99da1f2q_flt.fits[SCI]</span>
@@ -739,9 +747,9 @@ region file format.  A sample file with circle() regions will look like:</p>
 <span class="o">-</span><span class="n">circle</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">,</span><span class="mi">30</span><span class="p">)</span> <span class="c1"># inner circle</span>
 </pre></div>
 </div>
-<p>This region file will be interpreted as &#8220;find all sources in the image that
+<p>This region file will be interpreted as “find all sources in the image that
 <strong>are inside</strong> the four regions above but <strong>not inside</strong> the
-region -circle(200,200,30)&#8221;. Effectively we will instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a>
+region -circle(200,200,30)”. Effectively we will instruct <a class="reference internal" href="#drizzlepac.tweakreg.TweakReg" title="drizzlepac.tweakreg.TweakReg"><code class="xref py py-obj docutils literal"><span class="pre">TweakReg</span></code></a>
 to find all the sources <em>inside</em> the following regions:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">circle</span><span class="p">(</span><span class="mi">3170</span><span class="p">,</span><span class="mi">198</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
 <span class="n">ellipse</span><span class="p">(</span><span class="mi">3269</span><span class="p">,</span><span class="mi">428</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">45</span><span class="p">)</span> <span class="c1"># a rotated ellipse</span>
@@ -778,7 +786,7 @@ input images:</p>
 <span class="gp">... </span>      <span class="n">updatehdr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">shiftfile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">outshifts</span><span class="o">=</span><span class="s1">&#39;shift.txt&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>or, using <a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> constructor,</p>
+<p>or, using <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> constructor,</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">drizzlepac</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">tweakreg</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s1">&#39;*flt.fits&#39;</span><span class="p">,</span>
@@ -788,7 +796,7 @@ input images:</p>
 </pre></div>
 </div>
 <p>Or, run the same task from the PyRAF command line, but specify all parameters in
-a config file named &#8220;myparam.cfg&#8221;:</p>
+a config file named “myparam.cfg”:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">TweakReg</span><span class="p">(</span><span class="s1">&#39;*flt.fits&#39;</span><span class="p">,</span> <span class="n">configobj</span><span class="o">=</span><span class="s1">&#39;myparam.cfg&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -798,7 +806,7 @@ prior to running the task:</p>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Help can be accessed via the &#8220;Help&#8221; pulldown menu in the TEAL GUI.  It can also
+<li><p class="first">Help can be accessed via the “Help” pulldown menu in the TEAL GUI.  It can also
 be accessed from the PyRAF command-line and saved to a text file:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">tweakreg</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tweakreg</span><span class="o">.</span><span class="n">help</span><span class="p">()</span>
@@ -856,12 +864,12 @@ writing out the help.</p>
         <li class="right" >
           <a href="release_notes.html" title="DrizzlePac Release Notes"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

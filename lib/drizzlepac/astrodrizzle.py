@@ -18,7 +18,7 @@ This process involves a number of steps, namely:
 A full description of this process can be found
 in the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_\ .
 
-:Output: The primary output from this task is the distortion-corrected, \
+The primary output from this task is the distortion-corrected,
 cosmic-ray cleaned, and combined image as a FITS file.
 
 This task requires numerous user-settable parameters to control the primary

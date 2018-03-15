@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Step 4 and 8: Drizzling the Images &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Step 4 and 8: Drizzling the Images &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Step 5: Create a Median Image" href="median.html" />
     <link rel="prev" title="Step 3: Subtracting the Sky" href="sky.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="sky.html" title="Step 3: Subtracting the Sky"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -118,7 +115,7 @@ based on the cosmic-ray masks determined by <code class="xref py py-obj docutils
 <dl class="function">
 <dt id="drizzlepac.adrizzle.do_driz">
 <code class="descclassname">drizzlepac.adrizzle.</code><code class="descname">do_driz</code><span class="sig-paren">(</span><em>insci</em>, <em>input_wcs</em>, <em>inwht</em>, <em>output_wcs</em>, <em>outsci</em>, <em>outwht</em>, <em>outcon</em>, <em>expin</em>, <em>in_units</em>, <em>wt_scl</em>, <em>wcslin_pscale=1.0</em>, <em>uniqid=1</em>, <em>pixfrac=1.0</em>, <em>kernel='square'</em>, <em>fillval='INDEF'</em>, <em>stepsize=10</em>, <em>wcsmap=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/adrizzle.html#do_driz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.adrizzle.do_driz" title="Permalink to this definition">¶</a></dt>
-<dd><p>Core routine for performing &#8216;drizzle&#8217; operation on a single input image
+<dd><p>Core routine for performing ‘drizzle’ operation on a single input image
 All input values will be Python objects such as ndarrays, instead
 of filenames.
 File handling (input and output) will be performed by calling routine.</p>
@@ -171,14 +168,14 @@ see the <a class="reference external" href="http://documents.stsci.edu/hst/HST_o
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>driz_separate</strong> : bool (Default = No)</p>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><p class="first"><strong>driz_separate</strong> : bool (Default = No)</p>
 <blockquote>
 <div><p>This parameter specifies whether or not to drizzle each input image
 onto separate output images. The separate output images will all have
 the same WCS as the final combined output frame. These images are used
 to create the median image, needed for cosmic ray rejection.</p>
 </div></blockquote>
-<p><strong>driz_sep_kernel</strong> : {&#8216;square&#8217;, &#8216;point&#8217;, &#8216;gaussian&#8217;, &#8216;turbo&#8217;, &#8216;tophat&#8217;, &#8216;lanczos3&#8217;} (Default = &#8216;turbo&#8217;)</p>
+<p><strong>driz_sep_kernel</strong> : {‘square’, ‘point’, ‘gaussian’, ‘turbo’, ‘tophat’, ‘lanczos3’} (Default = ‘turbo’)</p>
 <blockquote>
 <div><p>Used for the initial separate drizzling operation only, this parameter
 specifies the form of the kernel function used to distribute flux onto
@@ -195,18 +192,18 @@ and is very fast.</p>
 <li><p class="first"><strong>gaussian</strong>: this kernel is a circular gaussian with a FWHM equal
 to the value of <code class="docutils literal"><span class="pre">pixfrac</span></code>, measured in input pixels.</p>
 </li>
-<li><p class="first"><strong>turbo</strong>: this is similar to kernel=&#8221;square&#8221; but the box is always
+<li><p class="first"><strong>turbo</strong>: this is similar to kernel=”square” but the box is always
 the same shape and size on the output grid, and is always aligned
 with the X and Y axes. This may result in a significant speed
 increase.</p>
 </li>
-<li><p class="first"><strong>tophat</strong>: this kernel is a circular &#8220;top hat&#8221; shape of
+<li><p class="first"><strong>tophat</strong>: this kernel is a circular “top hat” shape of
 width <code class="docutils literal"><span class="pre">pixfrac</span></code>. It effects only output pixels within a radius
 of <code class="docutils literal"><span class="pre">pixfrac</span></code>/2 from the output position.</p>
 </li>
 <li><p class="first"><strong>lanczos3</strong>: a Lanczos style kernel, extending a radius of 3
 pixels from the center of the detection. The Lanczos kernel
-is a damped and bounded form of the &#8220;sinc&#8221; interpolator,
+is a damped and bounded form of the “sinc” interpolator,
 and is very effective for resampling single images
 when <code class="docutils literal"><span class="pre">scale</span></code>=<code class="docutils literal"><span class="pre">pixfrac</span></code>=1. It leads to less resolution loss
 than other kernels, and typically results in reduced correlated
@@ -221,8 +218,8 @@ recommended for <code class="docutils literal"><span class="pre">scale</span></c
 </li>
 </ul>
 </div></blockquote>
-<p>The default for this step is <strong>&#8220;turbo&#8221;</strong> since it is much faster
-than <strong>&#8220;square&#8221;</strong>, and it is quite satisfactory for the purposes of
+<p>The default for this step is <strong>“turbo”</strong> since it is much faster
+than <strong>“square”</strong>, and it is quite satisfactory for the purposes of
 generating the median image. More information about the different
 kernels can be found in the help file for the drizzle task.</p>
 </div></blockquote>
@@ -232,17 +229,17 @@ kernels can be found in the help file for the drizzle task.</p>
 If <code class="xref py py-obj docutils literal"><span class="pre">driz_sep_wt_scl</span></code>=<code class="docutils literal"><span class="pre">exptime</span></code>, then the scaling value will be set
 equal to the exposure time found in the image header. The use of the
 default value is recommended for producing optimal behavior for most
-scenarious. It is possible to set <code class="xref py py-obj docutils literal"><span class="pre">wt_scl</span></code>=&#8217;expsq&#8217; for weighting by
+scenarious. It is possible to set <code class="xref py py-obj docutils literal"><span class="pre">wt_scl</span></code>=’expsq’ for weighting by
 the square of the exposure time, which is optimal for read-noise
 dominated images.</p>
 </div></blockquote>
 <p><strong>driz_sep_pixfrac</strong> : float (Default = 1.0)</p>
 <blockquote>
-<div><p>Fraction by which input pixels are &#8220;shrunk&#8221; before being drizzled onto
+<div><p>Fraction by which input pixels are “shrunk” before being drizzled onto
 the output image grid, given as a real number between 0 and 1.
-This specifies the size of the footprint, or &#8220;dropsize&#8221;, of a pixel
+This specifies the size of the footprint, or “dropsize”, of a pixel
 in units of the input pixel size. If <code class="docutils literal"><span class="pre">pixfrac</span></code> is set to
-less than 0.001, the kernel parameter will be reset to &#8216;point&#8217;
+less than 0.001, the kernel parameter will be reset to ‘point’
 for more efficient processing. In the step of drizzling each
 input image onto a separate output image, the default value of 1.0
 is best in order to ensure that each output drizzled image is fully
@@ -262,8 +259,8 @@ is provided (e.g. 0), then these pixels will be set to that value.</p>
 </div></blockquote>
 <p><strong>driz_sep_bits</strong> : int (Default = 0)</p>
 <blockquote>
-<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array
-that should be considered &#8216;good&#8217; when building the weighting mask.
+<div><p>Integer sum of all the DQ bit values from the input image’s DQ array
+that should be considered ‘good’ when building the weighting mask.
 This can also be used to reset pixels to good if they had been
 flagged as cosmic rays during a previous run of <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code>,
 by adding the value 4096 for ACS and WFPC2 data. Please see the section
@@ -273,13 +270,13 @@ on Selecting the <code class="xref py py-obj docutils literal"><span class="pre"
 <blockquote>
 <div><p>Define custom WCS for seperate output images?</p>
 </div></blockquote>
-<p><strong>driz_sep_refimage</strong> : str (Default = &#8216;&#8217;)</p>
+<p><strong>driz_sep_refimage</strong> : str (Default = ‘’)</p>
 <blockquote>
 <div><p>Reference image from which a WCS solution can be obtained.</p>
 </div></blockquote>
 <p><strong>driz_sep_rot</strong> : float (Default = INDEF)</p>
 <blockquote>
-<div><p>Position Angle of output image&#8217;s Y-axis relative to North.
+<div><p>Position Angle of output image’s Y-axis relative to North.
 A value of 0.0 would orient the final output image to be North up.
 The default of <code class="docutils literal"><span class="pre">INDEF</span></code> specifies that the images will not be rotated,
 but will instead be drizzled in the default orientation for the camera
@@ -392,7 +389,7 @@ writing out the help.</p>
 <dl class="function">
 <dt id="drizzlepac.adrizzle.interpret_maskval">
 <code class="descclassname">drizzlepac.adrizzle.</code><code class="descname">interpret_maskval</code><span class="sig-paren">(</span><em>paramDict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/adrizzle.html#interpret_maskval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.adrizzle.interpret_maskval" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply logic for interpreting final_maskval value...</p>
+<dd><p>Apply logic for interpreting final_maskval value…</p>
 </dd></dl>
 
 <dl class="function">
@@ -471,12 +468,12 @@ images.  See the <a class="reference internal" href="#drizzlepac.adrizzle.run_dr
         <li class="right" >
           <a href="sky.html" title="Step 3: Subtracting the Sky"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

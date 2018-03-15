@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Region mapping for TweakReg &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Region mapping for TweakReg &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Photometric equalization for AstroDrizzle" href="photeq.html" />
     <link rel="prev" title="UPDATEHDR: Functions for Updating WCS with New Solutions" href="updatehdr.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -114,7 +111,7 @@ task for sources finding.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="input_reg">input_reg</strong> : string or list of strings (Default = &#8216;&#8217;)</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="input_reg">input_reg</strong> : string or list of strings (Default = ‘’)</p>
 <blockquote>
 <div><p>Input region files that need to be mapped to image CS using WCS information
 from <code class="xref py py-obj docutils literal"><span class="pre">images</span></code> (see below). Only region files saved in sky CS are allowed
@@ -166,7 +163,7 @@ extension name present in the input <code class="docutils literal"><span class="
 has four SCI and four DQ extensions, then <code class="docutils literal"><span class="pre">'SCI;DQ,1;0'</span></code> will be expanded into
 <code class="docutils literal"><span class="pre">'SCI,1;SCI,2;SCI,3;SCI,4;DQ,1;0'</span></code>.</p>
 </div></blockquote>
-<p><strong id="refimg">refimg</strong> : string (Default = &#8216;&#8217;)</p>
+<p><strong id="refimg">refimg</strong> : string (Default = ‘’)</p>
 <blockquote>
 <div><p><strong>Reserved for future use.</strong>
 Filename of the reference image. May contain extension specifier:
@@ -193,13 +190,13 @@ present in the <code class="docutils literal"><span class="pre">refimg</span></c
 available through <code class="docutils literal"><span class="pre">TEAL</span></code> interface.</p>
 </div>
 </div></blockquote>
-<p><strong id="chip_reg">chip_reg</strong> : string or list of strings (Default = &#8216;&#8217;)</p>
+<p><strong id="chip_reg">chip_reg</strong> : string or list of strings (Default = ‘’)</p>
 <blockquote>
 <div><p>Input region files in image CS associated with each extension specified by
 the <code class="docutils literal"><span class="pre">img_wcs_ext</span></code> parameter above. These regions will be added directly
 (without any transformation) to the <code class="xref py py-obj docutils literal"><span class="pre">input_reg</span></code> regions mapped to each
 extension of the input <code class="docutils literal"><span class="pre">images</span></code>. These regions must be specified in
-image-like coordinates. Typically, these regions should contain &#8220;exclude&#8221;
+image-like coordinates. Typically, these regions should contain “exclude”
 regions to exclude parts of the image specific to the detector <strong>chip</strong>
 (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
 images) from being used for source finding.
@@ -209,16 +206,16 @@ This paramater can be provided in one of the following forms:</p>
 <li>filename of a single image (if <code class="docutils literal"><span class="pre">img_wcs_ext</span></code> specifies a single FITS
 extension);</li>
 <li>comma-separated list of filenames (if <code class="docutils literal"><span class="pre">img_wcs_ext</span></code> specifies more than
-one extension) or <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> for extensions that do not need any
+one extension) or <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> for extensions that do not need any
 chip-specific regions to be excluded/included;</li>
-<li>&#8216;&#8217; (empty string) or None if no chip-specific region files are provided.</li>
+<li>‘’ (empty string) or None if no chip-specific region files are provided.</li>
 </ul>
 <p>The number of regions ideally must be equal to the number of extensions
 specified by the <code class="docutils literal"><span class="pre">img_wcs_ext</span></code> parameter. If the number of chip-specific
-regions is less than the number of <code class="docutils literal"><span class="pre">img_wcs_ext</span></code> extensions then &#8216;chip_reg&#8217;
+regions is less than the number of <code class="docutils literal"><span class="pre">img_wcs_ext</span></code> extensions then ‘chip_reg’
 regions will be assigned to the first extensions from <code class="docutils literal"><span class="pre">img_wcs_ext</span></code>
 (after internal expansion described in help for the <code class="docutils literal"><span class="pre">img_wcs_ext</span></code>
-parameter above). If the number of &#8216;chip_reg&#8217; is larger than the number of
+parameter above). If the number of ‘chip_reg’ is larger than the number of
 <code class="docutils literal"><span class="pre">img_wcs_ext</span></code> extensions then extra regions will be ignored.</p>
 </div></blockquote>
 </div></blockquote>
@@ -226,15 +223,15 @@ parameter above). If the number of &#8216;chip_reg&#8217; is larger than the num
 <blockquote>
 <div><p>The directory to which the transformed regions should be saved.</p>
 </div></blockquote>
-<p><strong id="filter">filter</strong> : string {&#8216;None&#8217;, &#8216;fast&#8217;, or &#8216;precise&#8217; } (Default = &#8216;None&#8217;)</p>
+<p><strong id="filter">filter</strong> : string {‘None’, ‘fast’, or ‘precise’ } (Default = ‘None’)</p>
 <blockquote>
 <div><p>Specify whether or not to remove the regions in the transformed region files
-that are outside the image array. With the &#8216;fast&#8217; mehod only intersection
+that are outside the image array. With the ‘fast’ mehod only intersection
 of the bounding boxes is being checked.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The <code class="docutils literal"><span class="pre">'precise'</span></code> method is not
-implemented in this release and, if specified, defaults to &#8216;fast&#8217;.
+implemented in this release and, if specified, defaults to ‘fast’.
 The <code class="docutils literal"><span class="pre">'precise'</span></code> option is not available through the <code class="docutils literal"><span class="pre">TEAL</span></code>
 interface.</p>
 </div>
@@ -296,25 +293,25 @@ regions produced by <code class="xref py py-func docutils literal"><span class="
 the NOTE 1 above.</p>
 <p><strong>NOTE 3:</strong> <code class="xref py py-func docutils literal"><span class="pre">MapReg</span></code> does not take into account pointing errors and thus the
 produced region files can be somewhat misaligned compared to their intended
-position around the sources identified in the &#8220;reference&#8221; image. Threfore, it is
+position around the sources identified in the “reference” image. Threfore, it is
 highly recommended that the produced region files be loaded into DS9 and their
 position be adjusted manually to include the sources of interest (or to avoid
 the regions that need to be avoided).
 If possible, the <em>include</em> or <em>exclude</em> regions should be large enough as to
 allow for most pointing errors.</p>
 <p class="rubric">Examples</p>
-<p>Let&#8217;s say that based on some image <code class="docutils literal"><span class="pre">refimg.fits</span></code> we have produced a &#8220;master&#8221;
+<p>Let’s say that based on some image <code class="docutils literal"><span class="pre">refimg.fits</span></code> we have produced a “master”
 reference image (<code class="docutils literal"><span class="pre">master.reg</span></code>) that includes regions around sources that we want
 to use for image alignment in task <code class="xref py py-func docutils literal"><span class="pre">TweakReg</span></code> and excludes regions that we
 want to avoid being used for image alignment (e.g, diffraction spikes, saturated
 quasars, stars, etc.). We save the file <code class="docutils literal"><span class="pre">master.reg</span></code> in sky CS (e.g., <code class="docutils literal"><span class="pre">fk5</span></code>).</p>
-<p>Also, let&#8217;s assume that we have a set of images <code class="docutils literal"><span class="pre">img1.fits</span></code>, <code class="docutils literal"><span class="pre">img2.fits</span></code>, etc.
-with four FITS extensions named &#8216;SCI&#8217; and &#8216;DQ&#8217;. For some of the extensions,
+<p>Also, let’s assume that we have a set of images <code class="docutils literal"><span class="pre">img1.fits</span></code>, <code class="docutils literal"><span class="pre">img2.fits</span></code>, etc.
+with four FITS extensions named ‘SCI’ and ‘DQ’. For some of the extensions,
 after analizing the <code class="docutils literal"><span class="pre">img*.fits</span></code> images we have identified parts of the chips that
 cannot be used for image alighnment. We create region files for those extensions
 and save the files in image CS as, e.g., <code class="docutils literal"><span class="pre">img1_chip_sci2.reg</span></code> (in our example
-this will be the only chip that needs &#8220;special&#8221; treatment).</p>
-<p>Finally, let&#8217;s say we want to &#8220;replicate&#8221; the &#8220;master&#8221; region file to all SCI
+this will be the only chip that needs “special” treatment).</p>
+<p>Finally, let’s say we want to “replicate” the “master” region file to all SCI
 exctensions of the <code class="docutils literal"><span class="pre">img*.fits</span></code> images as well as to the 2nd DQ extension and to
 the 8th extension of the <code class="docutils literal"><span class="pre">img*.fits</span></code> images.</p>
 <p>To do this we run:</p>
@@ -385,12 +382,12 @@ writing out the help.</p>
         <li class="right" >
           <a href="updatehdr.html" title="UPDATEHDR: Functions for Updating WCS with New Solutions"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

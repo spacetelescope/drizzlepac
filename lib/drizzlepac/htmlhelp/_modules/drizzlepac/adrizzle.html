@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.adrizzle &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.adrizzle &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -101,7 +98,7 @@
 <span class="n">_single_step_num_</span> <span class="o">=</span> <span class="mi">3</span>
 <span class="n">_final_step_num_</span> <span class="o">=</span> <span class="mi">7</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">time_pre_all</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="n">time_driz_all</span> <span class="o">=</span> <span class="p">[]</span>
@@ -836,13 +833,19 @@
     <span class="c1"># Open the SCI image</span>
     <span class="n">_handle</span> <span class="o">=</span> <span class="n">fileutil</span><span class="o">.</span><span class="n">openImage</span><span class="p">(</span><span class="n">_expname</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;readonly&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">_sciext</span> <span class="o">=</span> <span class="n">_handle</span><span class="p">[</span><span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extname&#39;</span><span class="p">],</span><span class="n">chip</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;extver&#39;</span><span class="p">]]</span>
-
+    
     <span class="c1"># Apply sky subtraction and unit conversion to input array</span>
     <span class="k">if</span> <span class="n">chip</span><span class="o">.</span><span class="n">computedSky</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_insci</span> <span class="o">=</span> <span class="n">_sciext</span><span class="o">.</span><span class="n">data</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying sky value of </span><span class="si">%0.6f</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">computedSky</span><span class="p">,</span><span class="n">_expname</span><span class="p">))</span>
         <span class="n">_insci</span> <span class="o">=</span> <span class="n">_sciext</span><span class="o">.</span><span class="n">data</span> <span class="o">-</span> <span class="n">chip</span><span class="o">.</span><span class="n">computedSky</span>
+    <span class="c1"># If input SCI image is still integer format (RAW files)</span>
+    <span class="c1"># transform it to float32 for all subsequent operations</span>
+    <span class="c1"># needed for numpy &gt;=1.12.x</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">_insci</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">):</span>
+        <span class="n">_insci</span> <span class="o">=</span> <span class="n">_insci</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
     <span class="n">_insci</span> <span class="o">*=</span> <span class="n">chip</span><span class="o">.</span><span class="n">_effGain</span>
 
     <span class="c1"># Set additional parameters needed by &#39;drizzle&#39;</span>
@@ -1225,7 +1228,7 @@
 <span class="sd">    called ``__taskname__.help``</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
     <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">__package__</span><span class="p">)</span>
     <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
     <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
@@ -1238,17 +1241,17 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
-            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="vm">__file__</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+            <span class="k">if</span> <span class="vm">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="vm">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
 
     <span class="k">return</span> <span class="n">helpString</span></div>
 
 
-<span class="n">drizzle</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">drizzle</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -1265,13 +1268,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

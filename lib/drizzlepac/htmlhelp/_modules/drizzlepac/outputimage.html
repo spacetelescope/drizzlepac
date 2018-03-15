@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.outputimage &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.outputimage &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -118,7 +115,7 @@
                 <span class="p">}</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="OutputImage"><a class="viewcode-back" href="../../outimage.html#drizzlepac.outputimage.OutputImage">[docs]</a><span class="k">class</span> <span class="nc">OutputImage</span><span class="p">:</span>
@@ -201,7 +198,7 @@
             <span class="n">_outweight</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outSWeight&#39;</span><span class="p">]</span>
             <span class="n">_outcontext</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;outSContext&#39;</span><span class="p">]</span>
             <span class="c1"># Only report values appropriate for single exposure</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">texptime</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c1"># plist[0][&#39;exptime&#39;]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">texptime</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;exptime&#39;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">expstart</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;expstart&#39;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">expend</span> <span class="o">=</span> <span class="n">plist</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;expend&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -521,7 +518,7 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
             <span class="n">wcs_functions</span><span class="o">.</span><span class="n">removeAllAltWCS</span><span class="p">(</span><span class="n">fo</span><span class="p">,</span><span class="n">wcs_ext</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">)</span>
- 
+
             <span class="c1"># add table of combined header keyword values to FITS file</span>
             <span class="k">if</span> <span class="n">newtab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">fo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newtab</span><span class="p">)</span>
@@ -912,13 +909,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

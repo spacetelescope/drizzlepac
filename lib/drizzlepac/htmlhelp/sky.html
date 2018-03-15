@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Step 3: Subtracting the Sky &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Step 3: Subtracting the Sky &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" />
     <link rel="prev" title="Step 2: Generate a Static Mask" href="static.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -106,13 +103,13 @@ in input images. The algorithm for sky subtraction can be selected through
 the <code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code> parameter. This function will update the <code class="docutils literal"><span class="pre">MDRIZSKY</span></code> keyword
 in the headers of the input files.</p>
 <p>Sky subtraction is generally recommended for optimal flagging and removal of
-CR&#8217;s when the sky background is more than a few electrons.  However, some
+CR’s when the sky background is more than a few electrons.  However, some
 science applications may require the sky to not be removed, allowing for the
 final drizzle step to be performed with no sky subtraction. If you turn off
 sky subtraction, you should also set drizzle.pixfrac to 1, otherwise
 variations in sky between images will add noise to your data.</p>
-<p>In addition to the &#8220;pure&#8221; sky computation, this task can be used for sky
-&#8220;equalization&#8221;, that is, it can match sky values in the images
+<p>In addition to the “pure” sky computation, this task can be used for sky
+“equalization”, that is, it can match sky values in the images
 that are part of a mosaic.</p>
 <p>For cameras with multiple detectors (such as ACS/WFC, WFPC2, or WFC3),
 the sky values in each exposure are first measured separately for
@@ -179,65 +176,65 @@ specified in <code class="xref py py-obj docutils literal"><span class="pre">inp
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code></td>
-<td>&#8216;KEYWORD in header which indicates a sky subtraction value to use&#8217;.</td>
+<td>‘KEYWORD in header which indicates a sky subtraction value to use’.</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code></td>
-<td>&#8216;Sky computation method&#8217;</td>
+<td>‘Sky computation method’</td>
 </tr>
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skysub</span></code></td>
-<td>&#8216;Perform sky subtraction?&#8217;</td>
+<td>‘Perform sky subtraction?’</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skywidth</span></code></td>
-<td>&#8216;Bin width of histogram for sampling sky statistics (in sigma)&#8217;</td>
+<td>‘Bin width of histogram for sampling sky statistics (in sigma)’</td>
 </tr>
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skystat</span></code></td>
-<td>&#8216;Sky correction statistics parameter&#8217;</td>
+<td>‘Sky correction statistics parameter’</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skylower</span></code></td>
-<td>&#8216;Lower limit of usable data for sky (always in electrons)&#8217;</td>
+<td>‘Lower limit of usable data for sky (always in electrons)’</td>
 </tr>
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skyupper</span></code></td>
-<td>&#8216;Upper limit of usable data for sky (always in electrons)&#8217;</td>
+<td>‘Upper limit of usable data for sky (always in electrons)’</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skyclip</span></code></td>
-<td>&#8216;Number of clipping iterations&#8217;</td>
+<td>‘Number of clipping iterations’</td>
 </tr>
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skylsigma</span></code></td>
-<td>&#8216;Lower side clipping factor (in sigma)&#8217;</td>
+<td>‘Lower side clipping factor (in sigma)’</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skyusigma</span></code></td>
-<td>&#8216;Upper side clipping factor (in sigma)&#8217;</td>
+<td>‘Upper side clipping factor (in sigma)’</td>
 </tr>
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skymask_cat</span></code></td>
-<td>&#8216;Catalog file listing image masks&#8217;</td>
+<td>‘Catalog file listing image masks’</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">use_static</span></code></td>
-<td>&#8216;Use static mask for skymatch computations?&#8217;</td>
+<td>‘Use static mask for skymatch computations?’</td>
 </tr>
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code></td>
-<td>&#8216;Bit flags for identifying bad pixels in DQ array&#8217;</td>
+<td>‘Bit flags for identifying bad pixels in DQ array’</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code></td>
-<td>&#8216;KEYWORD indicating a sky subtraction value if done by user&#8217;</td>
+<td>‘KEYWORD indicating a sky subtraction value if done by user’</td>
 </tr>
 <tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">skyfile</span></code></td>
-<td>&#8216;Name of file with user-computed sky values&#8217;</td>
+<td>‘Name of file with user-computed sky values’</td>
 </tr>
 <tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">in_memory</span></code></td>
-<td>&#8216;Optimize for speed or for memory use&#8217;</td>
+<td>‘Optimize for speed or for memory use’</td>
 </tr>
 </tbody>
 </table>
 <p>These optional parameters are described in more detail below in the
-&#8220;Other Parameters&#8221; section.</p>
+“Other Parameters” section.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>None</strong> : The input file&#8217;s primary headers is updated with the computed sky value.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>None</strong> : The input file’s primary headers is updated with the computed sky value.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>skysub</strong> : bool (Default = Yes)</p>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><p class="first"><strong>skysub</strong> : bool (Default = Yes)</p>
 <blockquote>
 <div><p>Turn on or off sky subtraction on the input data. When <code class="xref py py-obj docutils literal"><span class="pre">skysub</span></code> is set
 to <code class="xref py py-obj docutils literal"><span class="pre">no</span></code>, then <code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code> field will be enabled and if user specifies a header
@@ -249,30 +246,30 @@ methods available through the <code class="xref py py-obj docutils literal"><spa
 or provide a file (see <code class="xref py py-obj docutils literal"><span class="pre">skyfile</span></code> parameter) with values that should be
 subtracted from (single) drizzled images.</p>
 </div></blockquote>
-<p><strong>skymethod</strong> : {&#8216;localmin&#8217;, &#8216;globalmin+match&#8217;, &#8216;globalmin&#8217;, &#8216;match&#8217;}, optional (Default = &#8216;localmin&#8217;)</p>
+<p><strong>skymethod</strong> : {‘localmin’, ‘globalmin+match’, ‘globalmin’, ‘match’}, optional (Default = ‘localmin’)</p>
 <blockquote>
 <div><p>Select the algorithm for sky computation:</p>
 <ul>
-<li><p class="first"><strong>&#8216;localmin&#8217;</strong>: compute a common sky for all members of <em>an exposure</em>
+<li><p class="first"><strong>‘localmin’</strong>: compute a common sky for all members of <em>an exposure</em>
 (see NOTES below). For a typical use, it will compute
 sky values for each chip/image extension (marked for sky
-subtraction in the <a class="reference external" href="https://docs.python.org/2/library/functions.html#input" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a> parameter) in an input image,
+subtraction in the <a class="reference external" href="https://docs.python.org/3/library/functions.html#input" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a> parameter) in an input image,
 and it will subtract the previously found minimum sky value
 from all chips (marked for sky subtraction) in that image.
 This process is repeated for each input image.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">This setting is recommended when regions of overlap between images
-are dominated by &#8220;pure&#8221; sky (as opposite to extended, diffuse
+are dominated by “pure” sky (as opposite to extended, diffuse
 sources).</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">This is similar to the &#8220;skysub&#8221; algorithm used in previous
+<p class="last">This is similar to the “skysub” algorithm used in previous
 versions of astrodrizzle.</p>
 </div>
 </li>
-<li><p class="first"><strong>&#8216;globalmin&#8217;</strong>: compute a common sky value for all members of
+<li><p class="first"><strong>‘globalmin’</strong>: compute a common sky value for all members of
 <em>all exposures</em> (see NOTES below). It will compute
 sky values for each chip/image extension (marked for sky
 subtraction in the <code class="xref py py-attr docutils literal"><span class="pre">input</span></code> parameter) in <strong>all</strong> input
@@ -281,18 +278,18 @@ subtract the <strong>same</strong> minimum sky value from <strong>all</strong> c
 (marked for sky subtraction) in <strong>all</strong> images. This method <em>may</em>
 useful when input images already have matched background values.</p>
 </li>
-<li><p class="first"><strong>&#8216;match&#8217;</strong>: compute differences in sky values between images
+<li><p class="first"><strong>‘match’</strong>: compute differences in sky values between images
 in common (pair-wise) sky regions. In this case computed sky values
 will be relative (delta) to the sky computed in one of the
 input images whose sky value will be set to (reported to be) 0.
-This setting will &#8220;equalize&#8221; sky values between the images in
+This setting will “equalize” sky values between the images in
 large mosaics. However, this method is not recommended when used
 in conjunction with <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a>
 because it computes relative sky values while <code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code> needs
-&#8220;measured&#8221; sky values for median image generation and CR rejection.</p>
+“measured” sky values for median image generation and CR rejection.</p>
 </li>
-<li><p class="first"><strong>&#8216;globalmin+match&#8217;</strong>: first find a minimum &#8220;global&#8221; sky value
-in all input images and then use <strong>&#8216;match&#8217;</strong> method to
+<li><p class="first"><strong>‘globalmin+match’</strong>: first find a minimum “global” sky value
+in all input images and then use <strong>‘match’</strong> method to
 equalize sky values between images.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -307,7 +304,7 @@ covering significant parts of the image.</p>
 <blockquote>
 <div><p>Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.</p>
 </div></blockquote>
-<p><strong>skystat</strong> : {&#8216;median&#8217;, &#8216;mode&#8217;, &#8216;mean&#8217;}, optional (Default Value = &#8216;median&#8217;)</p>
+<p><strong>skystat</strong> : {‘median’, ‘mode’, ‘mean’}, optional (Default Value = ‘median’)</p>
 <blockquote>
 <div><p>Statistical method for determining the sky value from the image pixel values.</p>
 </div></blockquote>
@@ -331,7 +328,7 @@ covering significant parts of the image.</p>
 <blockquote>
 <div><p>Upper clipping limit, in sigma, used when computing the sky value.</p>
 </div></blockquote>
-<p><strong>skymask_cat</strong> : str, optional (Default Value = &#8216;&#8217;)</p>
+<p><strong>skymask_cat</strong> : str, optional (Default Value = ‘’)</p>
 <blockquote>
 <div><p>File name of a catalog file listing user masks to be used with images.</p>
 </div></blockquote>
@@ -341,23 +338,23 @@ covering significant parts of the image.</p>
 </div></blockquote>
 <p><strong>sky_bits</strong> : int, None, optional (Default = 0)</p>
 <blockquote>
-<div><p>Integer sum of all the DQ bit values from the input image&#8217;s DQ array that should be considered &#8220;good&#8221; when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ &#8220;defects&#8221; having flags 2 and 4 as being acceptable for sky computations, then <code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code> should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a &#8220;bad&#8221; pixel.</p>
+<div><p>Integer sum of all the DQ bit values from the input image’s DQ array that should be considered “good” when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ “defects” having flags 2 and 4 as being acceptable for sky computations, then <code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code> should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a “bad” pixel.</p>
 <div class="line-block">
-<div class="line">Default value (0) will make <em>all</em> non-zero pixels in the DQ mask to be considered &#8220;bad&#8221; pixels, and the corresponding image pixels will not be used for sky computations.</div>
+<div class="line">Default value (0) will make <em>all</em> non-zero pixels in the DQ mask to be considered “bad” pixels, and the corresponding image pixels will not be used for sky computations.</div>
 </div>
 <div class="line-block">
-<div class="line">Set <code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code> to <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> to turn off the use of image&#8217;s DQ array for sky computations.</div>
+<div class="line">Set <code class="xref py py-obj docutils literal"><span class="pre">sky_bits</span></code> to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a> to turn off the use of image’s DQ array for sky computations.</div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">DQ masks (if used), <em>will</em> <em>be</em> combined with user masks specified in the input &#64;-file.</p>
 </div>
 </div></blockquote>
-<p><strong>skyfile</strong> : str, optional (Default Value = &#8216;&#8217;)</p>
+<p><strong>skyfile</strong> : str, optional (Default Value = ‘’)</p>
 <blockquote>
 <div><p>Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.</p>
 </div></blockquote>
-<p><strong>skyuser</strong> : str (Default = &#8216;&#8217;)</p>
+<p><strong>skyuser</strong> : str (Default = ‘’)</p>
 <blockquote>
 <div><p>Name of header keyword which records the sky value already subtracted
 from the image by the user. The <code class="xref py py-obj docutils literal"><span class="pre">skyuser</span></code> parameter is ignored when
@@ -382,10 +379,10 @@ and enhances previously available algorithms used by, e.g.,
 <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">Astrodrizzle</a>.</p>
 <p>First, the standard sky computation algorithm
 (see <code class="xref py py-obj docutils literal"><span class="pre">skymethod</span></code> = <code class="docutils literal"><span class="pre">'localmin'</span></code>) was upgraded to be able to use
-DQ flags and user supplied masks to remove &#8220;bad&#8221; pixels from being
+DQ flags and user supplied masks to remove “bad” pixels from being
 used for sky statistics computations.</p>
 <p>Second, two new methods have been introduced: <code class="docutils literal"><span class="pre">'globalmin'</span></code> and
-<code class="docutils literal"><span class="pre">'match'</span></code>, as well as a combination of the two &#8211; <code class="docutils literal"><span class="pre">'globalmin+match'</span></code>.</p>
+<code class="docutils literal"><span class="pre">'match'</span></code>, as well as a combination of the two – <code class="docutils literal"><span class="pre">'globalmin+match'</span></code>.</p>
 <ul>
 <li><p class="first">The <code class="docutils literal"><span class="pre">'globalmin'</span></code> method computes the minimum sky value across <em>all</em>
 chips in <em>all</em> input images. That sky value is then considered to be
@@ -405,7 +402,7 @@ that intersects other images.</li>
 </ol>
 </div></blockquote>
 <p>This makes <code class="docutils literal"><span class="pre">'match'</span></code> sky computation algorithm particularly useful
-for &#8220;equalizing&#8221; sky values in large mosaics in which one may have
+for “equalizing” sky values in large mosaics in which one may have
 only (at least) pair-wise intersection of images without having
 a common intersection region (on the sky) in all images.</p>
 <p>The <code class="xref py py-obj docutils literal"><span class="pre">'match'</span></code> method works in the following way: for each pair
@@ -421,7 +418,7 @@ at all other groups of intersecting images (except for the simple
 case when <em>single</em> images do not intersect any other images). In these
 cases the algorithm will find equalizing sky values for each group.
 However since these groups of images do not intersect each other,
-sky will be matched only within each group and the &#8220;inter-group&#8221;
+sky will be matched only within each group and the “inter-group”
 sky mismatch could be significant.</p>
 <p class="last">Users are responsible for detecting such cases and adjusting processing
 accordingly.</p>
@@ -431,9 +428,9 @@ accordingly.</p>
 <p>Because this method computes <em>relative sky values</em> compared to a
 reference image (which will have its sky value set to 0), the sky
 values computed with this method usually are smaller than the
-&#8220;absolute&#8221; sky values computed, e.g., with the <code class="docutils literal"><span class="pre">'localmin'</span></code>
+“absolute” sky values computed, e.g., with the <code class="docutils literal"><span class="pre">'localmin'</span></code>
 algorithm. Since <a class="reference external" href="http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html">astrodrizzle</a> expects
-&#8220;true&#8221; (as opposite to <em>relative</em>) sky values in order to
+“true” (as opposite to <em>relative</em>) sky values in order to
 correctly compute the median image or to perform cosmic-ray
 detection, this algorithm in not recommended to be used <em>alone</em>
 for sky computations to be used with <code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code>.</p>
@@ -447,8 +444,8 @@ weights will be incorrect.</p>
 <code class="docutils literal"><span class="pre">'globalmin'</span></code> methods in order to overcome the limitation of the
 <code class="docutils literal"><span class="pre">'match'</span></code> method described in the note above: it uses <code class="docutils literal"><span class="pre">'globalmin'</span></code>
 algorithm to find a baseline sky value common to all input images
-and the <code class="docutils literal"><span class="pre">'match'</span></code> algorithm to &#8220;equalize&#8221; sky values in the mosaic.
-Thus, the sky value of the &#8220;reference&#8221; image will be equal to the
+and the <code class="docutils literal"><span class="pre">'match'</span></code> algorithm to “equalize” sky values in the mosaic.
+Thus, the sky value of the “reference” image will be equal to the
 baseline sky value (instead of 0 in <code class="docutils literal"><span class="pre">'match'</span></code> algorithm alone)
 making this method acceptable for use in conjunction with
 <code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code>.</p>
@@ -456,14 +453,14 @@ making this method acceptable for use in conjunction with
 </ul>
 <dl class="docutils">
 <dt><strong>Glossary:</strong></dt>
-<dd><p class="first"><strong>Exposure</strong> &#8211; a <em>subset</em> of FITS image extensions in an input image
+<dd><p class="first"><strong>Exposure</strong> – a <em>subset</em> of FITS image extensions in an input image
 that correspond to different chips in the detector used to acquire
 the image. The subset of image extensions that form an exposure
 is defined by specifying extensions to be used with input images
-(see parameter <a class="reference external" href="https://docs.python.org/2/library/functions.html#input" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a>).</p>
+(see parameter <a class="reference external" href="https://docs.python.org/3/library/functions.html#input" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a>).</p>
 <p>See help for <code class="xref py py-func docutils literal"><span class="pre">skypac.parseat.parse_at_line</span></code> for details
 on how to specify image extensions.</p>
-<p><strong>Footprint</strong> &#8211; the outline (edge) of the projection of a chip or
+<p><strong>Footprint</strong> – the outline (edge) of the projection of a chip or
 of an exposure on the celestial sphere.</p>
 <div class="last admonition note">
 <p class="first admonition-title">Note</p>
@@ -485,7 +482,7 @@ both footprints <em>and</em> associated <em>chip</em> data that form an exposure
 flat-fielded images thus avoiding the need to perform an additional
 drizzle step to perform distortion correction of input images.</p>
 <p>Initially, the footprint of a chip in an image is aproximated by a
-2D planar rectangle representing the borders of chip&#8217;s distorted
+2D planar rectangle representing the borders of chip’s distorted
 image. After applying distortion model to this rectangle and
 progecting it onto the celestial sphere, it is approximated by
 spherical polygons. Footprints of exposures and mosaics are
@@ -495,15 +492,15 @@ of image pairs are found by intersecting these spherical polygons.</p>
 </ul>
 </dd>
 <dt><strong>Limitations and Discussions:</strong></dt>
-<dd><p class="first">Primary reason for introducing &#8220;sky match&#8221; algorithm was to try to
+<dd><p class="first">Primary reason for introducing “sky match” algorithm was to try to
 equalize the sky in large mosaics in which computation of the
-&#8220;absolute&#8221; sky is difficult due to the presence of large diffuse
+“absolute” sky is difficult due to the presence of large diffuse
 sources in the image. As discussed above, <a class="reference internal" href="#drizzlepac.sky.sky" title="drizzlepac.sky.sky"><code class="xref py py-func docutils literal"><span class="pre">sky</span></code></a>
-accomplishes this by comparing &#8220;sky values&#8221; in a pair of images in the
+accomplishes this by comparing “sky values” in a pair of images in the
 overlap region (that is common to both images). Quite obviously the
-quality of sky &#8220;matching&#8221; will depend on how well these &#8220;sky values&#8221;
+quality of sky “matching” will depend on how well these “sky values”
 can be estimated. We use quotation marks around <em>sky values</em> because
-for some image &#8220;true&#8221; background may not be present at all and the
+for some image “true” background may not be present at all and the
 measured sky may be the surface brightness of large galaxy, nebula, etc.</p>
 <p>Here is a brief list of possible limitations/factors that can affect
 the outcome of the matching (sky subtraction in general) algorithm:</p>
@@ -522,15 +519,15 @@ the effect of the cosmic rays on sky computations is to use
 clipping (<code class="xref py py-obj docutils literal"><span class="pre">nclip</span></code> &gt; 0) and/or set <code class="xref py py-obj docutils literal"><span class="pre">upper</span></code> parameter to a value
 larger than most of the sky background (or extended source) but
 lower than the values of most CR pixels.</li>
-<li>In general, clipping is a good way of eliminating &#8220;bad&#8221; pixels:
+<li>In general, clipping is a good way of eliminating “bad” pixels:
 pixels affected by CR, hot/dead pixels, etc. However, for
 images with complicated backgrounds (extended galaxies, nebulae,
 etc.), affected by CR and noise, clipping process may mask different
 pixels in different images. If variations in the background are
 too strong, clipping may converge to different sky values in
-different images even when factoring in the &#8220;true&#8221; difference
+different images even when factoring in the “true” difference
 in the sky background between the two images.</li>
-<li>In general images can have different &#8220;true&#8221; background values
+<li>In general images can have different “true” background values
 (we could measure it if images were not affected by large diffuse
 sources). However, arguments such as <code class="xref py py-obj docutils literal"><span class="pre">lower</span></code> and <code class="xref py py-obj docutils literal"><span class="pre">upper</span></code> will
 apply to all images regardless of the intrinsic differences
@@ -555,7 +552,7 @@ directly altered.</p>
 <p>Basic example of how to call sky yourself from a python command line,
 this example will use the default parameter settings and subtract a sky
 value from each <code class="docutils literal"><span class="pre">*flt.fits</span></code> image in the current directory,
-saving the output file with the extension of &#8220;mysky&#8221;:</p>
+saving the output file with the extension of “mysky”:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">drizzlepac</span> <span class="k">import</span> <span class="n">sky</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sky</span><span class="o">.</span><span class="n">sky</span><span class="p">(</span><span class="s1">&#39;*flt.fits&#39;</span><span class="p">,</span><span class="n">outExt</span><span class="o">=</span><span class="s1">&#39;mysky&#39;</span><span class="p">)</span>
 </pre></div>
@@ -605,12 +602,12 @@ writing out the help.</p>
         <li class="right" >
           <a href="static.html" title="Step 2: Generate a Static Mask"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

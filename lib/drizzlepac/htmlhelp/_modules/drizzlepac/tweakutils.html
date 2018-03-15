@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.tweakutils &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.tweakutils &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -87,6 +84,7 @@
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">findobj</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">cdriz</span>
 
+
 <span class="k">def</span> <span class="nf">parse_input</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">prodonly</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sort_wildcards</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">catlist</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -130,12 +128,14 @@
 
     <span class="k">return</span> <span class="n">filelist</span><span class="p">,</span><span class="n">catlist</span>
 
+
 <span class="k">def</span> <span class="nf">atfile_sci</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">line</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">]:</span>
         <span class="n">lspl</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">lspl</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">lspl</span>
+
 
 <div class="viewcode-block" id="parse_atfile_cat"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.parse_atfile_cat">[docs]</a><span class="k">def</span> <span class="nf">parse_atfile_cat</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Return the list of catalog filenames specified as part of the input @-file</span>
@@ -157,6 +157,7 @@
     <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">catlist</span><span class="p">,</span><span class="n">catdict</span></div>
 
+
 <span class="c1">#</span>
 <span class="c1"># functions to help work with configobj input</span>
 <span class="c1">#</span>
@@ -173,108 +174,39 @@
            <span class="n">sharplim</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span> <span class="n">roundlim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">minpix</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
            <span class="n">peakmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">peakmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fluxmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fluxmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
            <span class="n">nsigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">ratio</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-           <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_sharp_round</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">star_list</span><span class="p">,</span><span class="n">fluxes</span><span class="o">=</span> <span class="n">findobj</span><span class="o">.</span><span class="n">findstars</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">hmin</span><span class="p">,</span> <span class="n">skymode</span><span class="p">,</span>
-                    <span class="n">peakmin</span><span class="o">=</span><span class="n">peakmin</span><span class="p">,</span> <span class="n">peakmax</span><span class="o">=</span><span class="n">peakmax</span><span class="p">,</span>
-                    <span class="n">fluxmin</span><span class="o">=</span><span class="n">fluxmin</span><span class="p">,</span> <span class="n">fluxmax</span><span class="o">=</span><span class="n">fluxmax</span><span class="p">,</span>
-                    <span class="n">ratio</span><span class="o">=</span><span class="n">ratio</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="n">nsigma</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span>
-                    <span class="n">use_sharp_round</span><span class="o">=</span><span class="n">use_sharp_round</span><span class="p">,</span>
-                    <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
-                    <span class="n">sharplo</span><span class="o">=</span><span class="n">sharplim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sharphi</span><span class="o">=</span><span class="n">sharplim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                    <span class="n">roundlo</span><span class="o">=</span><span class="n">roundlim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">roundhi</span><span class="o">=</span><span class="n">roundlim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+           <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_sharp_round</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nbright</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">star_list</span><span class="p">,</span> <span class="n">fluxes</span><span class="o">=</span> <span class="n">findobj</span><span class="o">.</span><span class="n">findstars</span><span class="p">(</span>
+        <span class="n">array</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">hmin</span><span class="p">,</span> <span class="n">skymode</span><span class="p">,</span>
+        <span class="n">peakmin</span><span class="o">=</span><span class="n">peakmin</span><span class="p">,</span> <span class="n">peakmax</span><span class="o">=</span><span class="n">peakmax</span><span class="p">,</span>
+        <span class="n">fluxmin</span><span class="o">=</span><span class="n">fluxmin</span><span class="p">,</span> <span class="n">fluxmax</span><span class="o">=</span><span class="n">fluxmax</span><span class="p">,</span>
+        <span class="n">ratio</span><span class="o">=</span><span class="n">ratio</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="n">nsigma</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span>
+        <span class="n">use_sharp_round</span><span class="o">=</span><span class="n">use_sharp_round</span><span class="p">,</span>
+        <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
+        <span class="n">sharplo</span><span class="o">=</span><span class="n">sharplim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sharphi</span><span class="o">=</span><span class="n">sharplim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">roundlo</span><span class="o">=</span><span class="n">roundlim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">roundhi</span><span class="o">=</span><span class="n">roundlim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">)</span>
+
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">star_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No valid sources found...&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">([[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span> <span class="k">if</span> <span class="n">use_sharp_round</span> <span class="k">else</span> <span class="mi">4</span><span class="p">)])</span>
-    <span class="n">star_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">star_list</span><span class="p">)</span>
-    <span class="n">fluxes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fluxes</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">star_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">star_list</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">fluxes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fluxes</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nbright</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">fluxes</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">fluxes</span> <span class="o">=</span> <span class="n">fluxes</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">star_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">star_list</span><span class="p">]</span>
+
     <span class="k">if</span> <span class="n">use_sharp_round</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">star_arr</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">star_arr</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">fluxes</span><span class="p">,</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">star_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                <span class="n">star_arr</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">star_arr</span><span class="p">[:,</span><span class="mi">3</span><span class="p">],</span> <span class="n">star_arr</span><span class="p">[:,</span><span class="mi">4</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">star_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">star_list</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">fluxes</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">star_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+                <span class="n">star_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">star_list</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">star_list</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">star_arr</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">star_arr</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">fluxes</span><span class="p">,</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">star_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">star_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">star_list</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">fluxes</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">star_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-
-<span class="c1"># Object finding algorithm based on NDIMAGE routines</span>
-<div class="viewcode-block" id="ndfind_old"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.ndfind_old">[docs]</a><span class="k">def</span> <span class="nf">ndfind_old</span><span class="p">(</span><span class="n">array</span><span class="p">,</span><span class="n">hmin</span><span class="p">,</span><span class="n">fwhm</span><span class="p">,</span><span class="n">sharplim</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span><span class="n">roundlim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">minpix</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">datamax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Source finding algorithm based on NDIMAGE routines</span>
-
-<span class="sd">        This function provides a simple replacement for the DAOFIND task.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        array : arr</span>
-<span class="sd">            Input image as numpy array</span>
-<span class="sd">        hmin  : float</span>
-<span class="sd">            Limit for source detection in pixel values</span>
-<span class="sd">        fwhm  : float</span>
-<span class="sd">            Full-width half-maximum of the PSF in the image</span>
-<span class="sd">        minpix : int</span>
-<span class="sd">            Minimum number of pixels for any valid source</span>
-<span class="sd">        sharplim : tuple</span>
-<span class="sd">            [Not used at this time]</span>
-<span class="sd">        roundlim : tuple</span>
-<span class="sd">            [Not used at this time]</span>
-<span class="sd">        datamax  : float</span>
-<span class="sd">            Maximum good pixel value found in any detected source</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        x  : arr</span>
-<span class="sd">            Array of detected source X positions (in array coordinates, 0-based)</span>
-<span class="sd">        y  : arr</span>
-<span class="sd">            Array of detected source Y positions (in array coordinates, 0-based)</span>
-<span class="sd">        flux : arr</span>
-<span class="sd">            Array of detected source fluxes in pixel values</span>
-<span class="sd">        id  : arr</span>
-<span class="sd">            Array of detected source ID numbers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1">#cimg,c1 = idlgauss_convolve(array,sigma)</span>
-    <span class="c1">#cimg = np.abs(ndimage.gaussian_laplace(array,fwhm))</span>
-    <span class="n">cimg</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">ndimage</span><span class="o">.</span><span class="n">gaussian_laplace</span><span class="p">(</span><span class="n">array</span><span class="p">,</span><span class="n">fwhm</span><span class="p">)</span>
-    <span class="n">cimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cimg</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">cimg</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-    <span class="c1">#cimg = ndimage.gaussian_filter(array,fwhm)</span>
-
-    <span class="n">climit</span> <span class="o">=</span> <span class="n">hmin</span> <span class="o">/</span> <span class="n">fwhm</span>
-    <span class="n">cmask</span> <span class="o">=</span> <span class="n">cimg</span> <span class="o">&gt;=</span> <span class="n">climit</span>
-    <span class="n">gwidth</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">fwhm</span><span class="o">+</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">gradius</span> <span class="o">=</span> <span class="n">gwidth</span><span class="o">//</span><span class="mi">2</span>
-
-    <span class="c1">#cmask = cimg &gt;= hmin</span>
-    <span class="c1"># find and label sources</span>
-    <span class="n">ckern</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">generate_binary_structure</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">clabeled</span><span class="p">,</span><span class="n">cnum</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="n">cmask</span><span class="p">,</span><span class="n">structure</span><span class="o">=</span><span class="n">ckern</span><span class="p">)</span>
-    <span class="n">cobjs</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">find_objects</span><span class="p">(</span><span class="n">clabeled</span><span class="p">)</span>
-    <span class="n">xpos</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">ypos</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">flux</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">cobjs</span><span class="p">:</span>
-        <span class="n">nmask</span> <span class="o">=</span> <span class="n">cmask</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">nmask</span> <span class="o">&gt;=</span> <span class="n">minpix</span><span class="p">:</span> <span class="c1"># eliminate spurious detections</span>
-            <span class="n">imgsect</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">*</span><span class="n">cmask</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">datamax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">imgsect</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">datamax</span><span class="p">):</span>
-                <span class="k">continue</span> <span class="c1"># skip any source with pixel value &gt; datamax</span>
-            <span class="n">cimgsect</span> <span class="o">=</span> <span class="n">cimg</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">*</span><span class="n">cmask</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
-
-            <span class="n">maxposind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cimgsect</span><span class="o">==</span><span class="n">cimgsect</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-            <span class="n">maxpos</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxposind</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">maxposind</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">yr0</span> <span class="o">=</span> <span class="n">maxpos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">gradius</span>
-            <span class="n">yr1</span> <span class="o">=</span> <span class="n">maxpos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">gradius</span>
-            <span class="k">if</span> <span class="n">yr0</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">yr0</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="n">yr1</span> <span class="o">&gt;</span> <span class="n">cimgsect</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">yr1</span> <span class="o">=</span> <span class="n">cimgsect</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">xr0</span> <span class="o">=</span> <span class="n">maxpos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">gradius</span>
-            <span class="n">xr1</span> <span class="o">=</span> <span class="n">maxpos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">gradius</span>
-            <span class="k">if</span> <span class="n">xr0</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">xr0</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="n">xr1</span> <span class="o">&gt;</span> <span class="n">cimgsect</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="n">xr1</span> <span class="o">=</span> <span class="n">cimgsect</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-
-            <span class="n">yx</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">center_of_mass</span><span class="p">(</span><span class="n">cimgsect</span><span class="p">[</span><span class="n">yr0</span><span class="p">:</span><span class="n">yr1</span><span class="p">,</span><span class="n">xr0</span><span class="p">:</span><span class="n">xr1</span><span class="p">])</span>
-            <span class="c1"># convert position to chip position in (0-based) X,Y</span>
-            <span class="n">xpos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="o">+</span><span class="n">yr0</span><span class="p">)</span>
-            <span class="n">ypos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="o">+</span><span class="n">xr0</span><span class="p">)</span>
-            <span class="n">flux</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">array</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">*</span><span class="n">cmask</span><span class="p">[</span><span class="n">s</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-    <span class="c1"># Still need to implement sharpness and roundness limits</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xpos</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ypos</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flux</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">xpos</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="isfloat"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.isfloat">[docs]</a><span class="k">def</span> <span class="nf">isfloat</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Return True if all characters are part of a floating point value</span>
@@ -284,6 +216,7 @@
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span></div>
+
 
 <div class="viewcode-block" id="parse_skypos"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.parse_skypos">[docs]</a><span class="k">def</span> <span class="nf">parse_skypos</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span><span class="n">dec</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -304,6 +237,7 @@
         <span class="n">rval</span><span class="p">,</span><span class="n">dval</span> <span class="o">=</span> <span class="n">radec_hmstodd</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span><span class="n">dec</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rval</span><span class="p">,</span><span class="n">dval</span></div>
 
+
 <span class="k">def</span> <span class="nf">make_val_float</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="nb">float</span><span class="p">):</span>
         <span class="n">rval</span> <span class="o">=</span> <span class="n">val</span>
@@ -313,6 +247,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="n">rval</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="n">rval</span>
+
 
 <div class="viewcode-block" id="radec_hmstodd"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.radec_hmstodd">[docs]</a><span class="k">def</span> <span class="nf">radec_hmstodd</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span><span class="n">dec</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Function to convert HMS values into decimal degrees.</span>
@@ -445,6 +380,7 @@
                                     <span class="s1">&#39;units&#39;</span><span class="p">:</span><span class="n">units</span><span class="p">})</span>
     <span class="k">return</span> <span class="n">exclusion_list</span></div>
 
+
 <div class="viewcode-block" id="parse_colname"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.parse_colname">[docs]</a><span class="k">def</span> <span class="nf">parse_colname</span><span class="p">(</span><span class="n">colname</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Common function to interpret input column names provided by the user.</span>
 
@@ -506,6 +442,7 @@
 
     <span class="k">return</span> <span class="n">cols</span></div>
 
+
 <div class="viewcode-block" id="readcols"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.readcols">[docs]</a><span class="k">def</span> <span class="nf">readcols</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Function which reads specified columns from either FITS tables or</span>
 <span class="sd">        ASCII files</span>
@@ -534,6 +471,7 @@
         <span class="n">outarr</span> <span class="o">=</span> <span class="n">read_ASCII_cols</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span><span class="n">cols</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">outarr</span></div>
 
+
 <div class="viewcode-block" id="read_FITS_cols"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.read_FITS_cols">[docs]</a><span class="k">def</span> <span class="nf">read_FITS_cols</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span><span class="n">cols</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Read columns from FITS table</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -560,6 +498,7 @@
 
     <span class="n">ftab</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">outarr</span></div>
+
 
 <div class="viewcode-block" id="read_ASCII_cols"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.read_ASCII_cols">[docs]</a><span class="k">def</span> <span class="nf">read_ASCII_cols</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span><span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]):</span>
     <span class="sd">&quot;&quot;&quot; Interpret input ASCII file to return arrays for specified columns.</span>
@@ -662,6 +601,7 @@
         <span class="n">outarr</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">outarr</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">outarr</span></div>
 
+
 <div class="viewcode-block" id="write_shiftfile"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.write_shiftfile">[docs]</a><span class="k">def</span> <span class="nf">write_shiftfile</span><span class="p">(</span><span class="n">image_list</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">outwcs</span><span class="o">=</span><span class="s1">&#39;tweak_wcs.fits&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Write out a shiftfile for a given list of input Image class objects</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -694,6 +634,7 @@
     <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
     <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Writing out shiftfile :&#39;</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="createWcsHDU"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.createWcsHDU">[docs]</a><span class="k">def</span> <span class="nf">createWcsHDU</span><span class="p">(</span><span class="n">wcs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Generate a WCS header object that can be used to populate a reference WCS HDU.</span>
@@ -729,6 +670,7 @@
                           <span class="s2">&quot;image y axis (deg. e of n)&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">fits</span><span class="o">.</span><span class="n">ImageHDU</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span></div>
+
 
 <span class="c1">#</span>
 <span class="c1"># Code used for testing source finding algorithms</span>
@@ -770,6 +712,7 @@
     <span class="n">h</span><span class="p">[:,</span><span class="o">-</span><span class="n">nhalf</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">return</span> <span class="n">h</span><span class="p">,</span><span class="n">c1</span>
+
 
 <div class="viewcode-block" id="gauss_array"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.gauss_array">[docs]</a><span class="k">def</span> <span class="nf">gauss_array</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma_x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sigma_y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zero_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Computes the 2D Gaussian with size nx*ny.</span>
@@ -827,6 +770,7 @@
         <span class="n">h</span> <span class="o">-=</span> <span class="n">h</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">h</span></div>
+
 
 <div class="viewcode-block" id="gauss"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.gauss">[docs]</a><span class="k">def</span> <span class="nf">gauss</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">sigma</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Compute 1-D value of gaussian at position x relative to center.&quot;&quot;&quot;</span>
@@ -970,7 +914,7 @@
 
         <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;DX: </span><span class="si">%.4f</span><span class="s1"> to </span><span class="si">%.4f</span><span class="s1"> +/- </span><span class="si">%.4f</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">dxs</span><span class="o">.</span><span class="n">min</span><span class="p">,</span><span class="n">dxs</span><span class="o">.</span><span class="n">max</span><span class="p">,</span><span class="n">dxs</span><span class="o">.</span><span class="n">stddev</span><span class="p">))</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;DY: </span><span class="si">%.4f</span><span class="s1"> to </span><span class="si">%.4f</span><span class="s1"> +/- </span><span class="si">%.4f</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">dys</span><span class="o">.</span><span class="n">min</span><span class="p">,</span><span class="n">dys</span><span class="o">.</span><span class="n">max</span><span class="p">,</span><span class="n">dys</span><span class="o">.</span><span class="n">stddev</span><span class="p">))</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">r&quot;$Vector\ plot\ of\ </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">\ residuals:\ </span><span class="si">%s</span><span class="s2">$&quot;</span><span class="o">%</span><span class="p">(</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$Vector\ plot\ of\ </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">\ residuals:\ </span><span class="si">%s</span><span class="s2">$&quot;</span><span class="o">%</span><span class="p">(</span>
                 <span class="n">xy1x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">numpts</span><span class="p">,</span><span class="n">title</span><span class="p">))</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">quiverkey</span><span class="p">(</span><span class="n">qplot</span><span class="p">,</span><span class="n">minx</span><span class="o">+</span><span class="n">key_dx</span><span class="p">,</span><span class="n">miny</span><span class="o">-</span><span class="n">key_dy</span><span class="p">,</span><span class="n">key_len</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%0.2f</span><span class="s2"> pixels&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">key_len</span><span class="p">),</span>
                     <span class="n">coordinates</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">,</span><span class="n">labelpos</span><span class="o">=</span><span class="s1">&#39;E&#39;</span><span class="p">,</span><span class="n">labelcolor</span><span class="o">=</span><span class="s1">&#39;Maroon&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;Maroon&#39;</span><span class="p">)</span>
@@ -1008,7 +952,7 @@
             <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Residuals [</span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">]&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">xy1x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">numpts</span><span class="p">),</span><span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="n">labelsize</span><span class="o">+</span><span class="mi">6</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># This definition of the title supports math symbols in the title</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">r&quot;$&quot;</span><span class="o">+</span><span class="n">title</span><span class="o">+</span><span class="s2">&quot;$&quot;</span><span class="p">,</span><span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">labelsize</span><span class="o">+</span><span class="mi">6</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$&quot;</span><span class="o">+</span><span class="n">title</span><span class="o">+</span><span class="s2">&quot;$&quot;</span><span class="p">,</span><span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">labelsize</span><span class="o">+</span><span class="mi">6</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">pnum</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">plot_defs</span><span class="p">):</span>
             <span class="n">pn</span> <span class="o">=</span> <span class="n">pnum</span><span class="o">+</span><span class="mi">1</span>
@@ -1058,6 +1002,7 @@
                 <span class="nb">format</span><span class="o">=</span><span class="n">suffix</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">plotname</span><span class="p">,</span><span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span></div>
 
+
 <span class="k">def</span> <span class="nf">apply_db_fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">fit</span><span class="p">,</span><span class="n">xsh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">ysh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
     <span class="n">xy1x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">xy1y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -1087,6 +1032,7 @@
         <span class="n">fout1</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">outstr</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">fout1</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;wrote XY data to: &#39;</span><span class="p">,</span><span class="n">outname</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="find_xy_peak"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.find_xy_peak">[docs]</a><span class="k">def</span> <span class="nf">find_xy_peak</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">sigma</span><span class="o">=</span><span class="mf">3.0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Find the center of the peak of offsets</span>
@@ -1140,6 +1086,7 @@
     <span class="k">del</span> <span class="n">imgc</span>
     <span class="k">return</span> <span class="n">xp</span><span class="p">,</span><span class="n">yp</span><span class="p">,</span><span class="n">flux</span><span class="p">,</span><span class="n">zpqual</span></div>
 
+
 <div class="viewcode-block" id="plot_zeropoint"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.plot_zeropoint">[docs]</a><span class="k">def</span> <span class="nf">plot_zeropoint</span><span class="p">(</span><span class="n">pars</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Plot 2d histogram.</span>
 
@@ -1180,6 +1127,7 @@
             <span class="k">if</span> <span class="n">suffix</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;png&#39;</span><span class="p">,</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span><span class="s1">&#39;ps&#39;</span><span class="p">,</span><span class="s1">&#39;eps&#39;</span><span class="p">,</span><span class="s1">&#39;svg&#39;</span><span class="p">]:</span>
                 <span class="nb">format</span><span class="o">=</span><span class="n">suffix</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;plotname&#39;</span><span class="p">],</span><span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="build_xy_zeropoint"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.build_xy_zeropoint">[docs]</a><span class="k">def</span> <span class="nf">build_xy_zeropoint</span><span class="p">(</span><span class="n">imgxy</span><span class="p">,</span><span class="n">refxy</span><span class="p">,</span><span class="n">searchrad</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span><span class="n">histplot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">figure_id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                         <span class="n">plotname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -1230,6 +1178,7 @@
 
     <span class="k">return</span> <span class="n">xp</span><span class="p">,</span><span class="n">yp</span><span class="p">,</span><span class="n">flux</span><span class="p">,</span><span class="n">zpqual</span></div>
 
+
 <div class="viewcode-block" id="build_pos_grid"><a class="viewcode-back" href="../../tweakutils.html#drizzlepac.tweakutils.build_pos_grid">[docs]</a><span class="k">def</span> <span class="nf">build_pos_grid</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="n">end</span><span class="p">,</span><span class="n">nstep</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return a grid of positions starting at X,Y given by &#39;start&#39;, and ending</span>
@@ -1272,13 +1221,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

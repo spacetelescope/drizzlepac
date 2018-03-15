@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.imgclasses &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.imgclasses &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -113,7 +110,7 @@
 <span class="c1"># use convex hull for images? (this is tighter than chip&#39;s bounding box)</span>
 <span class="n">IMAGE_USE_CONVEX_HULL</span> <span class="o">=</span> <span class="kc">True</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">sortKeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;minflux&#39;</span><span class="p">,</span><span class="s1">&#39;maxflux&#39;</span><span class="p">,</span><span class="s1">&#39;nbright&#39;</span><span class="p">,</span><span class="s1">&#39;fluxunits&#39;</span><span class="p">]</span>
 
@@ -335,8 +332,8 @@
         <span class="c1"># Build full list of all sky positions from all chips</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">buildSkyCatalog</span><span class="p">()</span>
         <span class="n">tsrc</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_radec</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_radec</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===  Found a TOTAL of </span><span class="si">{:d}</span><span class="s2"> objects in image &#39;</span><span class="si">{:s}</span><span class="s2">&#39;&quot;</span>
-              <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tsrc</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===  FINAL number of objects in image &#39;</span><span class="si">{:s}</span><span class="s2">&#39;: </span><span class="si">{:d}</span><span class="s2">&quot;</span>
+              <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">tsrc</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;writecat&#39;</span><span class="p">]:</span>
             <span class="n">catname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rootname</span><span class="o">+</span><span class="s2">&quot;_sky_catalog.coo&quot;</span>
@@ -421,16 +418,15 @@
             <span class="k">if</span> <span class="n">skycat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">ralist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">skycat</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="n">declist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">skycat</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xycat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">xycat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">xycat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
                     <span class="n">fluxlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xycat</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
                     <span class="n">idlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xycat</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">skycat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">skycat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
                     <span class="n">fluxlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">skycat</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
                     <span class="n">idlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">skycat</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">fluxlist</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mf">999.0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">skycat</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
                     <span class="n">idlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">skycat</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
-
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">all_radec</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">ralist</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">declist</span><span class="p">),</span>
                         <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">fluxlist</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">idlist</span><span class="p">)]</span>
@@ -736,40 +732,40 @@
 
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Computed &#39;</span><span class="p">,</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;fitgeometry&#39;</span><span class="p">],</span><span class="s1">&#39; fit for &#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="s1">&#39;: &#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">pars</span><span class="p">[</span><span class="s1">&#39;fitgeometry&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;shift&#39;</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;XSH: </span><span class="si">{:.6g}</span><span class="s2">  YSH: </span><span class="si">{:.6g}</span><span class="s2">&quot;</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;XSH: </span><span class="si">{:.4f}</span><span class="s2">  YSH: </span><span class="si">{:.4f}</span><span class="s2">&quot;</span>
                           <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
                                   <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
                 <span class="k">elif</span> <span class="n">pars</span><span class="p">[</span><span class="s1">&#39;fitgeometry&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rscale&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;proper&#39;</span><span class="p">]:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;XSH: </span><span class="si">{:.6g}</span><span class="s2">  YSH: </span><span class="si">{:.6g}</span><span class="s2">    ROT: </span><span class="si">{:.6g}</span><span class="s2">    &quot;</span>
-                          <span class="s2">&quot;SCALE: </span><span class="si">{:.6g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;XSH: </span><span class="si">{:.4f}</span><span class="s2">  YSH: </span><span class="si">{:.4f}</span><span class="s2">    ROT: </span><span class="si">{:.10g}</span><span class="s2">    &quot;</span>
+                          <span class="s2">&quot;SCALE: </span><span class="si">{:.6f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rot&#39;</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
                 <span class="k">elif</span> <span class="n">pars</span><span class="p">[</span><span class="s1">&#39;fitgeometry&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;general&#39;</span> <span class="ow">or</span> \
                      <span class="p">(</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;fitgeometry&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rscale&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;proper&#39;</span><span class="p">]):</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;XSH: </span><span class="si">{:.6g}</span><span class="s2">  YSH: </span><span class="si">{:.6g}</span><span class="s2">    PROPER ROT: </span><span class="si">{:.6g}</span><span class="s2">    &quot;</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;XSH: </span><span class="si">{:.4f}</span><span class="s2">  YSH: </span><span class="si">{:.4f}</span><span class="s2">    PROPER ROT: </span><span class="si">{:.10g}</span><span class="s2">    &quot;</span>
                           <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rot&#39;</span><span class="p">]))</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&lt;ROT&gt;: </span><span class="si">{:.6g}</span><span class="s2">  SKEW: </span><span class="si">{:.6g}</span><span class="s2">    ROT_X: </span><span class="si">{:.6g}</span><span class="s2">  &quot;</span>
-                          <span class="s2">&quot;ROT_Y: </span><span class="si">{:.6g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&lt;ROT&gt;: </span><span class="si">{:.10g}</span><span class="s2">  SKEW: </span><span class="si">{:.10g}</span><span class="s2">    ROT_X: </span><span class="si">{:.10g}</span><span class="s2">  &quot;</span>
+                          <span class="s2">&quot;ROT_Y: </span><span class="si">{:.10g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rotxy&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;skew&#39;</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rotxy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rotxy&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&lt;SCALE&gt;: </span><span class="si">{:.6g}</span><span class="s2">  SCALE_X: </span><span class="si">{:.6g}</span><span class="s2">  &quot;</span>
-                          <span class="s2">&quot;SCALE_Y: </span><span class="si">{:.6g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&lt;SCALE&gt;: </span><span class="si">{:.10g}</span><span class="s2">  SCALE_X: </span><span class="si">{:.10g}</span><span class="s2">  &quot;</span>
+                          <span class="s2">&quot;SCALE_Y: </span><span class="si">{:.10g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">assert</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;XRMS: </span><span class="si">%0.6g</span><span class="s1">    YRMS: </span><span class="si">%0.6g</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;XRMS: </span><span class="si">%.2g</span><span class="s1">    YRMS: </span><span class="si">%.2g</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RMS_RA: </span><span class="si">%g</span><span class="s1"> (deg)   RMS_DEC: </span><span class="si">%g</span><span class="s1"> (deg)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RMS_RA: </span><span class="si">%.2g</span><span class="s1"> (deg)   RMS_DEC: </span><span class="si">%.2g</span><span class="s1"> (deg)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms_keys&#39;</span><span class="p">][</span><span class="s1">&#39;RMS_RA&#39;</span><span class="p">],</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms_keys&#39;</span><span class="p">][</span><span class="s1">&#39;RMS_DEC&#39;</span><span class="p">]))</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Final solution based on &#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms_keys&#39;</span><span class="p">][</span><span class="s1">&#39;NMATCH&#39;</span><span class="p">],</span><span class="s1">&#39; objects.&#39;</span><span class="p">)</span>
@@ -1032,17 +1028,21 @@
         <span class="sd">&quot;&quot;&quot; Write out the catalog of all sources and resids used in the final fit.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;writecat&#39;</span><span class="p">]:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Creating catalog for the fit: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">catalog_names</span><span class="p">[</span><span class="s1">&#39;fitmatch&#39;</span><span class="p">])</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Creating catalog for the fit: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">catalog_names</span><span class="p">[</span><span class="s1">&#39;fitmatch&#39;</span><span class="p">]))</span>
             <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">catalog_names</span><span class="p">[</span><span class="s1">&#39;fitmatch&#39;</span><span class="p">],</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# Input image: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# Input image: </span><span class="si">{:s}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# Coordinate mapping parameters: </span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y rms: </span><span class="si">%15.4g</span><span class="s1">  </span><span class="si">%15.4g</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
-                                                        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y shift: </span><span class="si">%15.4g</span><span class="s1">  </span><span class="si">%15.4g</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
-                                                            <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y scale: </span><span class="si">%15.6g</span><span class="s1">  </span><span class="si">%15.6g</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
-                                                            <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]))</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y rotation: </span><span class="si">%15.6g</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rot&#39;</span><span class="p">]))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y rms: </span><span class="si">{:.2g}</span><span class="s1">  </span><span class="si">{:.2g}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rms&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y shift: </span><span class="si">{:.4f}</span><span class="s1">  </span><span class="si">{:.4f}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y scale: </span><span class="si">{:.10g}</span><span class="s1">  </span><span class="si">{:.10g}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    X and Y rotation: </span><span class="si">{:.10g}</span><span class="s1">  </span><span class="si">{:.10g}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rotxy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rotxy&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#    &lt;rotation&gt; and skew: </span><span class="si">{:.10g}</span><span class="s1">  </span><span class="si">{:.10g}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;rotxy&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="s1">&#39;skew&#39;</span><span class="p">]))</span>
+
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;# </span><span class="se">\n</span><span class="s1"># Input Coordinate Listing</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#     Column 1: X (reference)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;#     Column 2: Y (reference)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -1681,13 +1681,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.astrodrizzle &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.astrodrizzle &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -85,7 +82,7 @@
 <span class="sd">A full description of this process can be found</span>
 <span class="sd">in the `DrizzlePac Handbook &lt;http://drizzlepac.stsci.edu&gt;`_\ .</span>
 
-<span class="sd">:Output: The primary output from this task is the distortion-corrected, \</span>
+<span class="sd">The primary output from this task is the distortion-corrected,</span>
 <span class="sd">cosmic-ray cleaned, and combined image as a FITS file.</span>
 
 <span class="sd">This task requires numerous user-settable parameters to control the primary</span>
@@ -125,7 +122,7 @@
 <span class="c1"># Pointer to the included Python class for WCS-based coordinate transformations</span>
 <span class="n">PYTHON_WCSMAP</span> <span class="o">=</span> <span class="n">wcs_functions</span><span class="o">.</span><span class="n">WCSMap</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <span class="c1">#</span>
@@ -154,8 +151,11 @@
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Cannot find .cfg file: &#39;</span><span class="o">+</span><span class="n">configobj</span><span class="p">)</span>
         <span class="n">configobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">configobj</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">configobj</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">configobj</span> <span class="o">==</span> <span class="s1">&#39;defaults&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">configobj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">configobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">configobj</span> <span class="o">==</span> <span class="s1">&#39;defaults&#39;</span><span class="p">:</span>
+        <span class="n">configobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="s1">&#39;updatewcs&#39;</span> <span class="ow">in</span> <span class="n">input_dict</span><span class="p">:</span> <span class="c1"># user trying to explicitly turn on updatewcs</span>
         <span class="n">configobj</span><span class="p">[</span><span class="s1">&#39;updatewcs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;updatewcs&#39;</span><span class="p">]</span>
@@ -356,7 +356,7 @@
 <span class="sd">    __taskname__.help</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
     <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
     <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
     <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
@@ -369,10 +369,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
-            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="vm">__file__</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+            <span class="k">if</span> <span class="vm">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="vm">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
 
@@ -416,7 +416,7 @@
               <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">vok</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">80</span><span class="p">)</span>
 
-<span class="n">AstroDrizzle</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">AstroDrizzle</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -433,13 +433,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

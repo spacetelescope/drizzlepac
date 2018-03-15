@@ -14,6 +14,86 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+Drizzlepac v2.1.22 (15-March-2018)
+==================================
+
+- Changed the definition of Megabyte used to describe the size of the buffer
+  for create median step (``combine_bufsize``). Previously a mixed
+  (base-2 and base-10) definition was used with 1MB = 1000x1024B = 1024000B.
+  Now 1MB is defined in base-2 (MiB) as 1MB = 1024x1024B = 1048576B.
+
+- Redesigned the logic in ``createMedian`` step used to split large
+  ``single_sci`` images into smaller chunks: new logic is more straightforward
+  and fixes errors in the old algorithm that resulted in crashes or
+  unnecessarily small chunk sizes that slowed down ``createMedian`` step.
+
+- Due to the above mentioned redesign in the logic for splitting large images
+  into smaller chunks, now `overlap` can be set to 0 if so desired in the
+  ``minmed`` combine type. Also, it is automatically ignored (set to 0) for all
+  non-``minmed`` combine types. This will result in additional speed-up in the
+  Create Median step.
+
+- Updated documentation.
+
+Drizzlepac v2.1.21 (12-January-2018)
+====================================
+
+- Restore recording of correct ``EXPTIME`` value in the headers of
+  single drizzled ("single_sci") images. See
+  https://github.com/spacetelescope/drizzlepac/issues/93 for more details.
+
+- Fixed a bug in `drizzlepac` due to which user provided `combine_lthresh` or
+  `combine_hthresh` in the `CREATE MEDIAN IMAGE` step were not converted
+  correctly to electrons (processing unit). This bug affected processing of
+  WFPC2, STIS, NICMOS, and WFC3 data. See
+  https://github.com/spacetelescope/drizzlepac/issues/94 for more details.
+
+- Modified print format so that scales, skew and rotations are printed with
+  10 significant digits while shifts are printed with 4 digits after the
+  decimal point.
+
+DrizzlePac v2.1.20 (07-October-2017)
+====================================
+
+- Fixed a bug in expanding reference catalog in `tweakreg` that would result
+  in the code crashing.
+  See https://github.com/spacetelescope/drizzlepac/pull/87 for more details.
+
+- Fixed a bug due to which user catalog fluxes would be interpreted as
+  magnitudes when `fluxunits` was set to `'cps'`.
+  See https://github.com/spacetelescope/drizzlepac/pull/88 for more details.
+
+- Fixed a bug due to which user-supplied flux limits were ignored for
+  the reference catalog.
+  See https://github.com/spacetelescope/drizzlepac/pull/89 for more details.
+
+DrizzlePac v2.1.19 (29-September-2017)
+======================================
+
+- Fixed a bug in computing optimal order of expanding reference catalog that
+  resulted in code crashes.
+  See https://github.com/spacetelescope/drizzlepac/pull/86 for more details.
+
+Drizzlepac v2.1.18 (05-September-2017)
+======================================
+
+- Fixed ``astrodrizzle`` lowers the case of the path of output images issue.
+  See https://github.com/spacetelescope/drizzlepac/issues/79 for more
+  details.
+
+- Fixed ``tweakreg`` ignores user-specified units of image catalogs (provided
+  through the ``refcat`` parameter) issue. See https://github.com/spacetelescope/drizzlepac/issues/81 for more details.
+
+- Corrected a message printed by tweakreg about used WCS for alignment. Also
+  improved documentation for the ``refimage`` parameter.
+
+DrizzlePac v2.1.17 (13-June-2017)
+=================================
+
+- ``drizzlepac.adrizzle`` updated to work with numpy >=1.12 when they implemented
+  more strict array conversion rules for math. Any input which still has INT
+  format will be converted to a float before any operations are performed, explicitly
+  implementing what was an automatic operation prior to numpy 1.12.
 
 DrizzlePac v2.1.16 (05-June-2017)
 =================================

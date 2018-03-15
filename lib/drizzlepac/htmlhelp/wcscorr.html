@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Functions to Manage WCS Table Extension &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Functions to Manage WCS Table Extension &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" />
     <link rel="prev" title="Classes to manage Catalogs and WCS’s" href="catalogs.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -61,7 +58,7 @@
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="catalogs.html"
-                        title="previous chapter">Classes to manage Catalogs and WCS&#8217;s</a></p>
+                        title="previous chapter">Classes to manage Catalogs and WCS’s</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="tweakutils.html"
                         title="next chapter">TWEAKUTILS: Utility Functions for Tweakreg</a></p>
@@ -110,7 +107,7 @@ The dtype definitions for the string columns are set to the maximum allowed so
 that all new elements will have the same max size which will be automatically
 truncated to this limit upon updating (if needed).</p>
 <p>The table is initialized with rows corresponding to the OPUS solution
-for all the &#8216;SCI&#8217; extensions.</p>
+for all the ‘SCI’ extensions.</p>
 </dd></dl>
 
 <dl class="function">
@@ -137,7 +134,7 @@ the row or set of rows to erase</p>
 <p><strong id="rows: int, list">rows: int, list</strong></p>
 <blockquote class="last">
 <div><p>If specified, will specify what rows from the table to erase regardless
-of the value of &#8216;selections&#8217;</p>
+of the value of ‘selections’</p>
 </div></blockquote>
 </td>
 </tr>
@@ -148,20 +145,20 @@ of the value of &#8216;selections&#8217;</p>
 <dl class="function">
 <dt id="stwcs.wcsutil.wcscorr.find_wcscorr_row">
 <code class="descclassname">stwcs.wcsutil.wcscorr.</code><code class="descname">find_wcscorr_row</code><span class="sig-paren">(</span><em>wcstab</em>, <em>selections</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stwcs/wcsutil/wcscorr.html#find_wcscorr_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stwcs.wcsutil.wcscorr.find_wcscorr_row" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return an array of indices from the table (NOT HDU) &#8216;wcstab&#8217; that matches the
+<dd><p>Return an array of indices from the table (NOT HDU) ‘wcstab’ that matches the
 selections specified by the user.</p>
 <p>The row selection criteria must be specified as a dictionary with
 column name as key and value(s) representing the valid desired row values.
-For example, {&#8216;wcs_id&#8217;:&#8217;OPUS&#8217;,&#8217;extver&#8217;:2}.</p>
+For example, {‘wcs_id’:’OPUS’,’extver’:2}.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="stwcs.wcsutil.wcscorr.init_wcscorr">
 <code class="descclassname">stwcs.wcsutil.wcscorr.</code><code class="descname">init_wcscorr</code><span class="sig-paren">(</span><em>input</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stwcs/wcsutil/wcscorr.html#init_wcscorr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stwcs.wcsutil.wcscorr.init_wcscorr" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function will initialize the WCSCORR table if it is not already present,
-and look for WCS keywords with a prefix of &#8216;O&#8217; as the original OPUS
+and look for WCS keywords with a prefix of ‘O’ as the original OPUS
 generated WCS as the initial row for the table or use the current WCS
-keywords as initial row if no &#8216;O&#8217; prefix keywords are found.</p>
+keywords as initial row if no ‘O’ prefix keywords are found.</p>
 <p>This function will NOT overwrite any rows already present.</p>
 <p>This function works on all SCI extensions at one time.</p>
 </dd></dl>
@@ -221,7 +218,7 @@ headerlet</p>
 <dl class="function">
 <dt id="stwcs.wcsutil.wcscorr.update_wcscorr_column">
 <code class="descclassname">stwcs.wcsutil.wcscorr.</code><code class="descname">update_wcscorr_column</code><span class="sig-paren">(</span><em>wcstab</em>, <em>column</em>, <em>values</em>, <em>selections=None</em>, <em>rows=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stwcs/wcsutil/wcscorr.html#update_wcscorr_column"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stwcs.wcsutil.wcscorr.update_wcscorr_column" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update the values in &#8216;column&#8217; with &#8216;values&#8217; for selected rows</p>
+<dd><p>Update the values in ‘column’ with ‘values’ for selected rows</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -246,7 +243,7 @@ the row or set of rows to erase</p>
 <p><strong id="rows: int, list">rows: int, list</strong></p>
 <blockquote class="last">
 <div><p>If specified, will specify what rows from the table to erase regardless
-of the value of &#8216;selections&#8217;</p>
+of the value of ‘selections’</p>
 </div></blockquote>
 </td>
 </tr>
@@ -259,13 +256,13 @@ of the value of &#8216;selections&#8217;</p>
 <h1>Functions to Manage Legacy OPUS WCS Keywords in the WCS Table<a class="headerlink" href="#functions-to-manage-legacy-opus-wcs-keywords-in-the-wcs-table" title="Permalink to this headline">¶</a></h1>
 <p>The previously released versions of <code class="docutils literal"><span class="pre">makewcs</span></code> provided
 with <code class="xref py py-obj docutils literal"><span class="pre">MultiDrizzle</span></code> <em>archives</em> the original OPUS generated WCS
-keywords using header keywords which have a prefix of &#8220;O&#8221;,
-such as &#8220;OCRPIX1&#8221;.  In order to avoid overwriting or ignoring
+keywords using header keywords which have a prefix of “O”,
+such as “OCRPIX1”.  In order to avoid overwriting or ignoring
 these original values, these functions can be used to convert
 the prefixed OPUS WCS keywords into WCS table entries compatible
 with the new code.</p>
 <p>Strictly to provide complete support for these OPUS keywords,
-the code will also create, if the user desires, prefix &#8220;O&#8221; WCS
+the code will also create, if the user desires, prefix “O” WCS
 keywords from the alternate WCS FITS conventions OPUS keywords.
 This would allow images processed using the new code only can
 then be used with older versions of <code class="xref py py-obj docutils literal"><span class="pre">MultiDrizzle</span></code>, if the user
@@ -274,12 +271,12 @@ needs such compatibility.</p>
 <dt id="stwcs.wcsutil.convertwcs.archive_prefix_OPUS_WCS">
 <code class="descclassname">stwcs.wcsutil.convertwcs.</code><code class="descname">archive_prefix_OPUS_WCS</code><span class="sig-paren">(</span><em>fobj</em>, <em>extname='SCI'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stwcs/wcsutil/convertwcs.html#archive_prefix_OPUS_WCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stwcs.wcsutil.convertwcs.archive_prefix_OPUS_WCS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Identifies WCS keywords which were generated by OPUS and archived
-using a prefix of &#8216;O&#8217; for all &#8216;SCI&#8217; extensions in the file</p>
+using a prefix of ‘O’ for all ‘SCI’ extensions in the file</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/api/hdulists.html#astropy.io.fits.HDUList" title="(in Astropy v1.3.3)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></code></a></p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/api/hdulists.html#astropy.io.fits.HDUList" title="(in Astropy v3.0.1)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></code></a></p>
 <blockquote class="last">
 <div><p>Filename or fits object of a file</p>
 </div></blockquote>
@@ -292,13 +289,13 @@ using a prefix of &#8216;O&#8217; for all &#8216;SCI&#8217; extensions in the fi
 <dl class="function">
 <dt id="stwcs.wcsutil.convertwcs.create_prefix_OPUS_WCS">
 <code class="descclassname">stwcs.wcsutil.convertwcs.</code><code class="descname">create_prefix_OPUS_WCS</code><span class="sig-paren">(</span><em>fobj</em>, <em>extname='SCI'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stwcs/wcsutil/convertwcs.html#create_prefix_OPUS_WCS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stwcs.wcsutil.convertwcs.create_prefix_OPUS_WCS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates alternate WCS with a prefix of &#8216;O&#8217; for OPUS generated WCS values
+<dd><p>Creates alternate WCS with a prefix of ‘O’ for OPUS generated WCS values
 to work with old MultiDrizzle.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/api/hdulists.html#astropy.io.fits.HDUList" title="(in Astropy v1.3.3)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></code></a></p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="fobj">fobj</strong> : str or <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/api/hdulists.html#astropy.io.fits.HDUList" title="(in Astropy v3.0.1)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits.HDUList</span></code></a></p>
 <blockquote>
 <div><p>Filename or fits object of a file</p>
 </div></blockquote>
@@ -306,7 +303,7 @@ to work with old MultiDrizzle.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>IOError:</strong></p>
 <blockquote class="last">
-<div><p>if input FITS object was not opened in &#8216;update&#8217; mode</p>
+<div><p>if input FITS object was not opened in ‘update’ mode</p>
 </div></blockquote>
 </td>
 </tr>
@@ -337,12 +334,12 @@ to work with old MultiDrizzle.</p>
         <li class="right" >
           <a href="catalogs.html" title="Classes to manage Catalogs and WCS’s"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

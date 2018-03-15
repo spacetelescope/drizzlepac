@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Output Image Generation &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Output Image Generation &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="MultiDrizzle Reference Table" href="mdztab.html" />
     <link rel="prev" title="WCS Utilities" href="wcsutils.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="wcsutils.html" title="WCS Utilities"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="util.html" accesskey="U">Utilities</a> &#187;</li> 
       </ul>
     </div>
@@ -106,25 +103,25 @@ which will be used by Drizzle. The three arrays, SCI/WHT/CTX,
 will be setup either as extensions in a
 single multi-extension FITS file, or as separate FITS
 files.</p>
-<p>The object &#8216;plist&#8217; must contain at least the following members:</p>
+<p>The object ‘plist’ must contain at least the following members:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">plist</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span>   <span class="o">-</span> <span class="n">name</span> <span class="n">of</span> <span class="n">output</span> <span class="n">FITS</span> <span class="n">image</span> <span class="p">(</span><span class="k">for</span> <span class="n">SCI</span><span class="p">)</span>
 <span class="n">plist</span><span class="p">[</span><span class="s1">&#39;outnx&#39;</span><span class="p">]</span>    <span class="o">-</span> <span class="n">size</span> <span class="n">of</span> <span class="n">X</span> <span class="n">axis</span> <span class="k">for</span> <span class="n">output</span> <span class="n">array</span>
 <span class="n">plist</span><span class="p">[</span><span class="s1">&#39;outny&#39;</span><span class="p">]</span>    <span class="o">-</span> <span class="n">size</span> <span class="n">of</span> <span class="n">Y</span> <span class="n">axis</span> <span class="k">for</span> <span class="n">output</span> <span class="n">array</span>
 </pre></div>
 </div>
-<p>If &#8216;single=yes&#8217;, then &#8216;plist&#8217; also needs to contain:</p>
+<p>If ‘single=yes’, then ‘plist’ also needs to contain:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">plist</span><span class="p">[</span><span class="s1">&#39;outsingle&#39;</span><span class="p">]</span>
 <span class="n">plist</span><span class="p">[</span><span class="s1">&#39;outsweight&#39;</span><span class="p">]</span>
 <span class="n">plist</span><span class="p">[</span><span class="s1">&#39;outscontext&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>If &#8216;blot=yes&#8217;, then &#8216;plist&#8217; also needs:</p>
+<p>If ‘blot=yes’, then ‘plist’ also needs:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">plist</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
 <span class="n">plist</span><span class="p">[</span><span class="s1">&#39;blotImage&#39;</span><span class="p">]</span>
 <span class="n">plist</span><span class="p">[</span><span class="s1">&#39;blotnx&#39;</span><span class="p">],</span><span class="n">plist</span><span class="p">[</span><span class="s1">&#39;blotny&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>If &#8216;build&#8217; is set to &#8216;no&#8217;, then each extension/array must be
+<p>If ‘build’ is set to ‘no’, then each extension/array must be
 in separate FITS objects.  This would also require:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">plist</span><span class="p">[</span><span class="s1">&#39;outdata&#39;</span><span class="p">]</span>    <span class="o">-</span> <span class="n">name</span> <span class="n">of</span> <span class="n">output</span> <span class="n">SCI</span> <span class="n">FITS</span> <span class="n">image</span>
 <span class="n">plist</span><span class="p">[</span><span class="s1">&#39;outweight&#39;</span><span class="p">]</span>  <span class="o">-</span> <span class="n">name</span> <span class="n">of</span> <span class="n">output</span> <span class="n">WHT</span> <span class="n">FITS</span> <span class="n">image</span>
@@ -169,9 +166,9 @@ the keyword was removed from the output header prior to calling this method.</p>
 <dt id="drizzlepac.outputimage.OutputImage.writeFITS">
 <code class="descname">writeFITS</code><span class="sig-paren">(</span><em>template</em>, <em>sciarr</em>, <em>whtarr</em>, <em>ctxarr=None</em>, <em>versions=None</em>, <em>overwrite=True</em>, <em>blend=True</em>, <em>virtual=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/outputimage.html#OutputImage.writeFITS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.outputimage.OutputImage.writeFITS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate PyFITS objects for each output extension
-using the file given by &#8216;template&#8217; for populating
+using the file given by ‘template’ for populating
 headers.</p>
-<p>The arrays will have the size specified by &#8216;shape&#8217;.</p>
+<p>The arrays will have the size specified by ‘shape’.</p>
 </dd></dl>
 
 </dd></dl>
@@ -199,13 +196,13 @@ headers.</p>
         <li class="right" >
           <a href="wcsutils.html" title="WCS Utilities"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="util.html" >Utilities</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

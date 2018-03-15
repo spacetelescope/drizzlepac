@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Base ImageObject Classes &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Base ImageObject Classes &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="ACS ImageObjects" href="acsobjects.html" />
     <link rel="prev" title="imageObject Classes" href="imageobject.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="imageobject.html" accesskey="U">imageObject Classes</a> &#187;</li> 
       </ul>
     </div>
@@ -102,7 +99,7 @@
 <dl class="class">
 <dt id="drizzlepac.imageObject.baseImageObject">
 <em class="property">class </em><code class="descclassname">drizzlepac.imageObject.</code><code class="descname">baseImageObject</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Base ImageObject which defines the primary set of methods.</p>
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.buildERRmask">
@@ -332,7 +329,7 @@ EXP arrays, namely, WFC3/IR and NICMOS images.</p>
 <dl class="method">
 <dt id="drizzlepac.imageObject.baseImageObject.getflat">
 <code class="descname">getflat</code><span class="sig-paren">(</span><em>chip</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.getflat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.getflat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method for retrieving a detector&#8217;s flat field.</p>
+<dd><p>Method for retrieving a detector’s flat field.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -377,13 +374,13 @@ the skysub step.</p>
 <dd><p>Now that we are removing the data from the object to save memory,
 we need something that cleanly puts the data array back into
 the object so that we can write out everything together  using
-something like fits.writeto....this method is an attempt to
+something like fits.writeto….this method is an attempt to
 make sure that when you add an array back to the .data section
 of the hdu it still matches the header information for that
 section ( ie. update the bitpix to reflect the datatype of the
 array you are adding). The other header stuff is up to you to verify.</p>
 <p>Data should be the data array exten is where you want to stick it,
-either extension number or a string like &#8216;sci,1&#8217;</p>
+either extension number or a string like ‘sci,1’</p>
 </dd></dl>
 
 <dl class="method">
@@ -397,7 +394,7 @@ extname given minus those specified for exclusion (if any).</p>
 <dt id="drizzlepac.imageObject.baseImageObject.saveVirtualOutputs">
 <code class="descname">saveVirtualOutputs</code><span class="sig-paren">(</span><em>outdict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#baseImageObject.saveVirtualOutputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.baseImageObject.saveVirtualOutputs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assign in-memory versions of generated products for this imageObject
-based on dictionary &#8216;outdict&#8217;.</p>
+based on dictionary ‘outdict’.</p>
 </dd></dl>
 
 <dl class="method">
@@ -472,7 +469,7 @@ model information associated with the WCS.</p>
 <code class="descname">setInstrumentParameters</code><span class="sig-paren">(</span><em>instrpars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imageObject.html#imageObject.setInstrumentParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imageObject.imageObject.setInstrumentParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define instrument-specific parameters for use in the code.
 By definition, this definition will need to be overridden by
-methods defined in each instrument&#8217;s sub-class.</p>
+methods defined in each instrument’s sub-class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -517,13 +514,13 @@ methods defined in each instrument&#8217;s sub-class.</p>
         <li class="right" >
           <a href="imageobject.html" title="imageObject Classes"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="imageobject.html" >imageObject Classes</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

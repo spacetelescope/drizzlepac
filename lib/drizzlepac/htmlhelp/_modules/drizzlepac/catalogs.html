@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.catalogs &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.catalogs &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -104,10 +101,9 @@
 <span class="n">REFCAT_ARGS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;rmaxflux&#39;</span><span class="p">,</span><span class="s1">&#39;rminflux&#39;</span><span class="p">,</span><span class="s1">&#39;rfluxunits&#39;</span><span class="p">,</span><span class="s1">&#39;refnbright&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">REFCOL_PARS</span>
 
 <span class="n">sortKeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;minflux&#39;</span><span class="p">,</span><span class="s1">&#39;maxflux&#39;</span><span class="p">,</span><span class="s1">&#39;nbright&#39;</span><span class="p">,</span><span class="s1">&#39;fluxunits&#39;</span><span class="p">]</span>
-<span class="n">sortKeysDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;minflux&#39;</span><span class="p">:</span> <span class="s1">&#39;fluxmin&#39;</span><span class="p">,</span> <span class="s1">&#39;maxflux&#39;</span><span class="p">:</span><span class="s1">&#39;fluxmax&#39;</span><span class="p">,</span> <span class="s1">&#39;nbright&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;fluxunits&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
 
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="generateCatalog"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.generateCatalog">[docs]</a><span class="k">def</span> <span class="nf">generateCatalog</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;automatic&#39;</span><span class="p">,</span> <span class="n">catalog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -138,6 +134,7 @@
             <span class="n">catalog</span> <span class="o">=</span> <span class="n">ImageCatalog</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span><span class="n">catalog</span><span class="p">,</span><span class="n">src_find_filters</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span> <span class="c1"># a catalog file was provided as the catalog source</span>
             <span class="n">catalog</span> <span class="o">=</span> <span class="n">UserCatalog</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span><span class="n">catalog</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">catalog</span></div>
 
 
@@ -147,9 +144,10 @@
 <span class="sd">        .. warning:: This class should never be instantiated by itself,</span>
 <span class="sd">                     as necessary methods are not defined yet.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">PAR_PREFIX</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
+    <span class="n">PAR_PREFIX</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">PAR_NBRIGHT_PREFIX</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wcs</span><span class="p">,</span><span class="n">catalog_source</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">catalog_source</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This class requires the input of a WCS and a source for the catalog,</span>
 <span class="sd">        along with any arguments necessary for interpreting the catalog.</span>
@@ -197,6 +195,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># catalog of sky positions for all sources on this chip/image</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_colnames</span><span class="p">()</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flux_limits</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># used in child class to control</span>
+                                        <span class="c1"># source filtering on flux</span>
+
+        <span class="c1"># parse task parameters to find flux limits:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAR_PREFIX</span> <span class="o">+</span> <span class="s1">&#39;minflux&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAR_PREFIX</span> <span class="o">+</span> <span class="s1">&#39;maxflux&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fluxunits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAR_PREFIX</span> <span class="o">+</span> <span class="s1">&#39;fluxunits&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbright</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAR_NBRIGHT_PREFIX</span> <span class="o">+</span> <span class="s1">&#39;nbright&#39;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Catalog.generateXY"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.generateXY">[docs]</a>    <span class="k">def</span> <span class="nf">generateXY</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Method to generate source catalog in XY positions</span>
@@ -204,17 +210,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-
 <div class="viewcode-block" id="Catalog.set_colnames"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.set_colnames">[docs]</a>    <span class="k">def</span> <span class="nf">set_colnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Method to define how to interpret a catalog file</span>
 <span class="sd">            Only needed when provided a source catalog as input</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-
     <span class="k">def</span> <span class="nf">_readCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
-
 
 <div class="viewcode-block" id="Catalog.generateRaDec"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.generateRaDec">[docs]</a>    <span class="k">def</span> <span class="nf">generateRaDec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Convert XY positions into sky coordinates using STWCS methods</span>
@@ -222,27 +225,38 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAR_PREFIX</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">,</span><span class="n">pywcs</span><span class="o">.</span><span class="n">WCS</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span><span class="s1">&#39;WCS not a valid PyWCS object. Conversion of RA/Dec not possible...&#39;</span><span class="p">),</span>
-                  <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span>
+                    <span class="s1">&#39;WCS not a valid PyWCS object. &#39;</span>
+                    <span class="s1">&#39;Conversion of RA/Dec not possible...&#39;</span>
+                    <span class="p">),</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
+            <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">warnstr</span> <span class="o">=</span> <span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span><span class="s1">&#39;WARNING: </span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span>
-                        <span class="s1">&#39;No objects found for this image...&#39;</span><span class="p">)</span>
+            <span class="n">warnstr</span> <span class="o">=</span> <span class="n">textutil</span><span class="o">.</span><span class="n">textbox</span><span class="p">(</span>
+                <span class="s1">&#39;WARNING: </span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="s1">&#39;No objects found for this image...&#39;</span>
+            <span class="p">)</span>
+
             <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">warnstr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">):</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
             <span class="nb">print</span><span class="p">(</span><span class="n">warnstr</span><span class="p">)</span>
+
             <span class="k">return</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">force</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;     Found </span><span class="si">{:d}</span><span class="s1"> objects.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;     Found </span><span class="si">{:d}</span><span class="s1"> objects.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+                <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="p">[</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">]</span> <span class="o">+</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># If we have no WCS, simply pass along the XY input positions</span>
                 <span class="c1"># under the assumption they were already sky positions.</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span></div>
-
+                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Catalog.apply_exclusions"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.apply_exclusions">[docs]</a>    <span class="k">def</span> <span class="nf">apply_exclusions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exclusions</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Trim sky catalog to remove any sources within regions specified by</span>
@@ -292,116 +306,98 @@
         <span class="sd">&quot;&quot;&quot; Apply any user-specified limits on source selection</span>
 <span class="sd">            Limits based on fluxes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;computesig&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">:</span> <span class="c1"># limits already applied by ndfind()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flux_limits</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="n">limits</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">clip_prefix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sortKeys</span><span class="p">:</span>
-            <span class="n">k_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="n">k</span><span class="p">)</span>
-            <span class="n">k0_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="n">k</span><span class="p">)</span>
+        <span class="c1"># only if limits are set should they be applied</span>
+        <span class="k">if</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fluxunits</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span>
 
-            <span class="k">if</span> <span class="n">k_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">:</span>
-                <span class="n">key_name</span> <span class="o">=</span> <span class="n">k_name</span>
-                <span class="n">clip_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">     Applying flux limits...&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;         minflux = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minflux</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;         maxflux = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;         fluxunits = &#39;</span><span class="si">{:s}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fluxunits</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;         nbright = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbright</span><span class="p">))</span>
 
-            <span class="k">elif</span> <span class="n">k0_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">:</span>
-                <span class="n">key_name</span> <span class="o">=</span> <span class="n">k0_name</span>
-                <span class="n">clip_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="c1"># start by checking to see whether fluxes were read in to use for</span>
+        <span class="c1"># applying the limits</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux_col</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    WARNING: Catalog did not contain fluxes for use in trimming...&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">):</span>
+                <span class="n">src_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">continue</span>
+                <span class="n">src_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">src_cat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span>
 
-            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="n">key_name</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">]:</span>
-                <span class="n">limits</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">if</span> <span class="n">src_cat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No catalogs available for filtering&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Only if limits are set should they be applied</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">limits</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s1">&#39;fluxunits&#39;</span> <span class="ow">in</span> <span class="n">limits</span><span class="p">:</span>
-            <span class="c1"># start by checking to see whether fluxes were read in to use for</span>
-            <span class="c1"># applying the limits</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux_col</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Catalog did not contain fluxes for use in trimming...&quot;</span><span class="p">)</span>
-                <span class="k">return</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">src_cat</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    WARNING: No fluxes read in for catalog for use in trimming...&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
 
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Applying flux limits to catalog...&quot;</span><span class="p">)</span>
-            <span class="c1"># keep a copy of the full catalog before applying limits</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+        <span class="n">fluxes</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">src_cat</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No fluxes read in for catalog for use in trimming...&quot;</span><span class="p">)</span>
-                    <span class="k">return</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="c1"># apply limits equally to all .radec and .xypos entries</span>
+        <span class="c1"># Start by clipping by any specified flux range</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluxunits</span> <span class="o">==</span> <span class="s1">&#39;mag&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">flux_mask</span> <span class="o">=</span> <span class="n">fluxes</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">flux_mask</span> <span class="o">=</span> <span class="n">fluxes</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-
-            <span class="c1"># apply limits equally to all .radec and .xypos entries</span>
-            <span class="c1"># Start by clipping by any specified flux range</span>
-
-            <span class="k">if</span> <span class="s1">&#39;minflux&#39;</span> <span class="ow">in</span> <span class="n">limits</span><span class="p">:</span>
-                <span class="n">fluxmin</span> <span class="o">=</span> <span class="n">limits</span><span class="p">[</span><span class="s1">&#39;minflux&#39;</span><span class="p">]</span>
+                <span class="n">flux_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">fluxes</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fluxes</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">flux_mask</span> <span class="o">=</span> <span class="n">fluxes</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">flux_mask</span> <span class="o">=</span> <span class="n">fluxes</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">fluxmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">flux_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">fluxes</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minflux</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fluxes</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxflux</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="s1">&#39;maxflux&#39;</span> <span class="ow">in</span> <span class="n">limits</span><span class="p">:</span>
-                <span class="n">fluxmax</span> <span class="o">=</span> <span class="n">limits</span><span class="p">[</span><span class="s1">&#39;maxflux&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">all_radec</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">all_radec</span> <span class="o">=</span> <span class="p">[</span><span class="n">rd</span><span class="p">[</span><span class="n">flux_mask</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">rd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">all_xypos</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">all_xypos</span> <span class="o">=</span> <span class="p">[</span><span class="n">xy</span><span class="p">[</span><span class="n">flux_mask</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">xy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">]</span>
+
+        <span class="n">nrem</span> <span class="o">=</span> <span class="n">flux_mask</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">flux_mask</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;     Removed </span><span class="si">{:d}</span><span class="s2"> sources based on flux limits.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nrem</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbright</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Selecting catalog based on </span><span class="si">{}</span><span class="s2"> brightest sources&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbright</span><span class="p">))</span>
+            <span class="n">fluxes</span> <span class="o">=</span> <span class="n">fluxes</span><span class="p">[</span><span class="n">flux_mask</span><span class="p">]</span>
+
+            <span class="c1"># find indices of brightest sources</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">fluxes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluxunits</span> <span class="o">==</span> <span class="s1">&#39;mag&#39;</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">nbright</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">fluxmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">idx</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])[:</span><span class="bp">self</span><span class="o">.</span><span class="n">nbright</span><span class="p">]</span>
 
-            <span class="c1"># apply flux limit clipping</span>
-            <span class="k">if</span> <span class="n">limits</span><span class="p">[</span><span class="s1">&#39;fluxunits&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;counts&#39;</span><span class="p">:</span>
-                <span class="n">minindx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">fluxmin</span>
-                <span class="n">maxindx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">fluxmax</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">minindx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">fluxmin</span>
-                <span class="n">maxindx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">fluxmax</span>
+            <span class="c1"># pick out only the brightest &#39;nbright&#39; sources</span>
+            <span class="k">if</span> <span class="n">all_radec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">all_radec</span> <span class="o">=</span> <span class="p">[</span><span class="n">rd</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">rd</span> <span class="ow">in</span> <span class="n">all_radec</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">all_xypos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">all_xypos</span> <span class="o">=</span> <span class="p">[</span><span class="n">xy</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">xy</span> <span class="ow">in</span> <span class="n">all_xypos</span><span class="p">]</span>
 
-            <span class="n">flux_indx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">minindx</span><span class="p">,</span><span class="n">maxindx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="n">all_radec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span> <span class="o">=</span> <span class="n">all_xypos</span>
 
-            <span class="n">all_radec</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">all_radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">flux_indx</span><span class="p">])</span>
-            <span class="n">all_radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">flux_indx</span><span class="p">])</span>
-            <span class="n">all_radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">flux_indx</span><span class="p">])</span>
-            <span class="n">all_radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">flux_indx</span><span class="p">])))</span>
-
-            <span class="k">if</span> <span class="s1">&#39;nbright&#39;</span> <span class="ow">in</span> <span class="n">limits</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Selecting catalog based on </span><span class="si">{}</span><span class="s2"> brightest sources&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="s1">&#39;nbright&#39;</span><span class="p">]))</span>
-
-                <span class="c1"># pick out only the brightest &#39;nbright&#39; sources</span>
-                <span class="k">if</span> <span class="n">limits</span><span class="p">[</span><span class="s1">&#39;fluxunits&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;mag&#39;</span><span class="p">:</span>
-                    <span class="n">nbslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="n">limits</span><span class="p">[</span><span class="s1">&#39;nbright&#39;</span><span class="p">])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">nbslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="s1">&#39;nbright&#39;</span><span class="p">],</span><span class="kc">None</span><span class="p">)</span>
-
-                <span class="k">if</span> <span class="n">all_radec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="c1"># work on copy of all original data</span>
-                    <span class="n">all_radec</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec_full</span><span class="p">)</span>
-                <span class="c1"># find indices of brightest</span>
-                <span class="n">nbright_indx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">all_radec</span><span class="p">[</span><span class="mi">2</span><span class="p">])[</span><span class="n">nbslice</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_radec</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">nbright_indx</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_radec</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">nbright_indx</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">all_radec</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">nbright_indx</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_radec</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">nbright_indx</span><span class="p">])))</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">all_radec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">all_radec</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; Catalog trimmed to </span><span class="si">{}</span><span class="s2"> objects&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radec</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Trimming of catalog resulted in NO valid sources! &quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span></div>
 
-<div class="viewcode-block" id="Catalog.buildCatalogs"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.buildCatalogs">[docs]</a>    <span class="k">def</span> <span class="nf">buildCatalogs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exclusions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="Catalog.buildCatalogs"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.buildCatalogs">[docs]</a>    <span class="k">def</span> <span class="nf">buildCatalogs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exclusions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Primary interface to build catalogs based on user inputs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generateXY</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -409,8 +405,8 @@
         <span class="k">if</span> <span class="n">exclusions</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">apply_exclusions</span><span class="p">(</span><span class="n">exclusions</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">apply_flux_limits</span><span class="p">()</span> <span class="c1"># apply selection limits as specified by the user</span></div>
-
+        <span class="c1"># apply selection limits as specified by the user:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_flux_limits</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Catalog.plotXYCatalog"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.plotXYCatalog">[docs]</a>    <span class="k">def</span> <span class="nf">plotXYCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -453,7 +449,6 @@
             <span class="n">pl</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="n">pl_cmap</span><span class="p">,</span><span class="n">vmin</span><span class="o">=</span><span class="n">pl_vmin</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">pl_vmax</span><span class="p">)</span>
             <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;marker&#39;</span><span class="p">])</span></div>
 
-
 <div class="viewcode-block" id="Catalog.writeXYCatalog"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.Catalog.writeXYCatalog">[docs]</a>    <span class="k">def</span> <span class="nf">writeXYCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Write out the X,Y catalog to a file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -492,7 +487,7 @@
 <span class="sd">            hmin, conv_width, [roundlim, sharplim]</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wcs</span><span class="p">,</span><span class="n">catalog_source</span><span class="p">,</span><span class="n">src_find_filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">catalog_source</span><span class="p">,</span> <span class="n">src_find_filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="c1"># &#39;src_find_filters&#39; - None or a dictionary. The dictionary</span>
         <span class="c1"># MUST contain keys &#39;region_file&#39; and &#39;region_file_mode&#39;:</span>
         <span class="c1"># - &#39;region_file&#39;: the name of the region file that indicates regions</span>
@@ -505,13 +500,13 @@
         <span class="c1">#   are ignored. If &#39;region_file_mode&#39; = &#39;normal&#39; then normal DS9 interpretation</span>
         <span class="c1">#   of the regions will be applied.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">src_find_filters</span> <span class="o">=</span> <span class="n">src_find_filters</span>
-        <span class="n">Catalog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wcs</span><span class="p">,</span><span class="n">catalog_source</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ImageCatalog</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">catalog_source</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">extind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fname</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fnamenoext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fname</span> <span class="k">if</span> <span class="n">extind</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">fname</span><span class="p">[:</span><span class="n">extind</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">extname</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">extname</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">extname</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbright</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># No GUI parameter defined yet for this filtering</span>
 
     <span class="k">def</span> <span class="nf">_combine_exclude_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
         <span class="c1"># create masks from exclude/include regions and combine it with the</span>
@@ -607,7 +602,6 @@
 
         <span class="k">return</span> <span class="n">mask</span>
 
-
 <div class="viewcode-block" id="ImageCatalog.generateXY"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.ImageCatalog.generateXY">[docs]</a>    <span class="k">def</span> <span class="nf">generateXY</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Generate source catalog from input image using DAOFIND-style algorithm</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -650,7 +644,8 @@
             <span class="n">ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;ratio&#39;</span><span class="p">],</span>
             <span class="n">theta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span>
             <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
-            <span class="n">use_sharp_round</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_sharp_round</span>
+            <span class="n">use_sharp_round</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_sharp_round</span><span class="p">,</span>
+            <span class="n">nbright</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nbright</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -659,7 +654,7 @@
                 <span class="n">hmin</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;threshold&#39;</span><span class="p">]</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;No sources found with original thresholds. Trying automatic settings.&#39;</span><span class="p">)</span>
                 <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">src_id</span><span class="p">,</span> <span class="n">sharp</span><span class="p">,</span> <span class="n">round1</span><span class="p">,</span> <span class="n">round2</span> <span class="o">=</span> <span class="n">tweakutils</span><span class="o">.</span><span class="n">ndfind</span><span class="p">(</span>
-                    <span class="n">source</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
                     <span class="n">hmin</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;conv_width&#39;</span><span class="p">],</span>
                     <span class="n">skymode</span><span class="p">,</span>
@@ -673,7 +668,8 @@
                     <span class="n">ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;ratio&#39;</span><span class="p">],</span>
                     <span class="n">theta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span>
                     <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">,</span>
-                    <span class="n">use_sharp_round</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sharp_round</span>
+                    <span class="n">use_sharp_round</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sharp_round</span><span class="p">,</span>
+                    <span class="n">nbright</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">limits</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nbright&#39;</span><span class="p">)</span>
                 <span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">xypostypes</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="mi">3</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sharp_round</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
@@ -697,15 +693,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">round1</span> <span class="o">=</span> <span class="n">round1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">round2</span> <span class="o">=</span> <span class="n">round2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numcols</span> <span class="o">=</span> <span class="mi">7</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sharp_round</span> <span class="k">else</span> <span class="mi">4</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_objects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_objects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flux_limits</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># limits already applied by &#39;ndfind&#39;</span></div>
 
     <span class="k">def</span> <span class="nf">_compute_sigma</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">src_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)):</span>
             <span class="n">src_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span><span class="p">)]</span>
-        <span class="n">istats</span> <span class="o">=</span> <span class="n">imagestats</span><span class="o">.</span><span class="n">ImageStats</span><span class="p">(</span><span class="n">src_vals</span><span class="p">,</span><span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-                                        <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;mode,stddev&#39;</span><span class="p">,</span><span class="n">binwidth</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+        <span class="n">istats</span> <span class="o">=</span> <span class="n">imagestats</span><span class="o">.</span><span class="n">ImageStats</span><span class="p">(</span><span class="n">src_vals</span><span class="p">,</span> <span class="n">nclip</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                       <span class="n">fields</span><span class="o">=</span><span class="s1">&#39;mode,stddev&#39;</span><span class="p">,</span> <span class="n">binwidth</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">istats</span><span class="o">.</span><span class="n">mode</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">sigma</span></div>
 
@@ -720,6 +716,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">COLNAMES</span> <span class="o">=</span> <span class="n">COLNAME_PARS</span>
     <span class="n">IN_UNITS</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">catalog_source</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">UserCatalog</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">catalog_source</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flux_limits</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="UserCatalog.set_colnames"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.UserCatalog.set_colnames">[docs]</a>    <span class="k">def</span> <span class="nf">set_colnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">colnames</span> <span class="o">=</span> <span class="p">[]</span>
@@ -742,7 +742,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">in_units</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;xyunits&#39;</span><span class="p">]</span></div>
 
-
     <span class="k">def</span> <span class="nf">_readCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># define what columns will be read</span>
         <span class="c1"># The following loops</span>
@@ -755,7 +754,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_blank</span><span class="p">(</span><span class="n">catcols</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">catcols</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">catcols</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">catcols</span>
-
 
 <div class="viewcode-block" id="UserCatalog.generateXY"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.UserCatalog.generateXY">[docs]</a>    <span class="k">def</span> <span class="nf">generateXY</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -788,9 +786,14 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sharp_round</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">),</span> <span class="mi">7</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_objects</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sharp_col</span> <span class="o">=</span> <span class="kc">False</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sharp_col</span> <span class="o">=</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="UserCatalog.plotXYCatalog"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.UserCatalog.plotXYCatalog">[docs]</a>    <span class="k">def</span> <span class="nf">plotXYCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pars</span><span class="p">[</span><span class="s1">&#39;xyunits&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;degrees&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xypos</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UserCatalog.plotXYCatalog"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.UserCatalog.plotXYCatalog">[docs]</a>    <span class="k">def</span> <span class="nf">plotXYCatalog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Plots the source catalog positions using matplotlib&#39;s `pyplot.plot()`</span>
 
@@ -798,7 +801,6 @@
 <span class="sd">        by matplotlib&#39;s `pyplot.plot()` function such as::</span>
 
 <span class="sd">            vmin, vmax, cmap, marker</span>
-
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
@@ -823,11 +825,15 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">COLNAMES</span> <span class="o">=</span> <span class="n">REFCOL_PARS</span>
     <span class="n">IN_UNITS</span> <span class="o">=</span> <span class="s1">&#39;degrees&#39;</span>
-    <span class="n">PAR_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;ref&quot;</span>
+    <span class="n">PAR_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;r&quot;</span>
+    <span class="n">PAR_NBRIGHT_PREFIX</span> <span class="o">=</span> <span class="s1">&#39;ref&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wcs</span><span class="p">,</span> <span class="n">catalog_source</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RefCatalog</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">catalog_source</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flux_limits</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="RefCatalog.generateXY"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.RefCatalog.generateXY">[docs]</a>    <span class="k">def</span> <span class="nf">generateXY</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">pass</span></div>
-
+        <span class="k">return</span></div>
 
 <div class="viewcode-block" id="RefCatalog.generateRaDec"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.RefCatalog.generateRaDec">[docs]</a>    <span class="k">def</span> <span class="nf">generateRaDec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAR_PREFIX</span>
@@ -836,14 +842,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">radec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readCatalog</span><span class="p">()</span></div>
 
-
 <div class="viewcode-block" id="RefCatalog.buildXY"><a class="viewcode-back" href="../../catalogs.html#drizzlepac.catalogs.RefCatalog.buildXY">[docs]</a>    <span class="k">def</span> <span class="nf">buildXY</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">catalogs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">instance</span><span class="p">(</span><span class="n">catalogs</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
-            <span class="c1"># we have chip_catalogs from an ImageClass instance</span>
-            <span class="k">pass</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># create X,Y positions based on self.radec and self.wcs</span>
-            <span class="k">pass</span></div></div>
+        <span class="k">return</span></div></div>
 </pre></div>
 
           </div>
@@ -860,13 +860,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>
