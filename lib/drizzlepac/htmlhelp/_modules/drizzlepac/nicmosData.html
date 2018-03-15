@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.nicmosData &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.nicmosData &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -85,7 +82,7 @@
     <span class="n">SEPARATOR</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">imageObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">imageObject</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeExt</span> <span class="o">=</span> <span class="s1">&#39;TIME&#39;</span>
 
         <span class="c1"># define the cosmic ray bits value to use in the dq array</span>
@@ -283,7 +280,7 @@
 <div class="viewcode-block" id="NIC1InputImage"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC1InputImage">[docs]</a><span class="k">class</span> <span class="nc">NIC1InputImage</span><span class="p">(</span><span class="n">NICMOSInputImage</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mf">1.</span> <span class="c1">#get the gain from the detector subclass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;CAMERA&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="s2">&quot;native&quot;</span>
@@ -353,7 +350,7 @@
 
 <div class="viewcode-block" id="NIC2InputImage"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC2InputImage">[docs]</a><span class="k">class</span> <span class="nc">NIC2InputImage</span><span class="p">(</span><span class="n">NICMOSInputImage</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span><span class="o">=</span><span class="mf">1.</span> <span class="c1">#measured</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;CAMERA&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="s2">&quot;native&quot;</span>
@@ -425,7 +422,7 @@
 
 <div class="viewcode-block" id="NIC3InputImage"><a class="viewcode-back" href="../../nicmosobjects.html#drizzlepac.nicmosData.NIC3InputImage">[docs]</a><span class="k">class</span> <span class="nc">NIC3InputImage</span><span class="p">(</span><span class="n">NICMOSInputImage</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">NICMOSInputImage</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">[</span><span class="s2">&quot;PRIMARY&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;CAMERA&quot;</span><span class="p">]</span> <span class="c1">#returns 1,2,3</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_effGain</span> <span class="o">=</span> <span class="mf">1.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proc_unit</span> <span class="o">=</span> <span class="s2">&quot;native&quot;</span>
@@ -502,13 +499,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

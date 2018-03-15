@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>skytopix: Coordinate transformation from sky coordinates &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>skytopix: Coordinate transformation from sky coordinates &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Updatenpol" href="updatenpol.html" />
     <link rel="prev" title="pixtosky: Coordinate transformation to sky coordinates" href="pixtosky.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -124,9 +121,9 @@ distortion keywords contained in the input image header.</p>
 <h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>input</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>full filename with path of input image, an extension name
-[&#8216;sci&#8217;,1] should be provided if input is a multi-extension
+<dt>input <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>full filename with path of input image, an extension name
+[‘sci’,1] should be provided if input is a multi-extension
 FITS file.</dd>
 </dl>
 </div></blockquote>
@@ -135,27 +132,27 @@ FITS file.</dd>
 <h2>Optional Parameters<a class="headerlink" href="#optional-parameters" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>ra</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span><dd>RA position in either decimal degrees or HMS format
+<dt>ra <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
+<dd>RA position in either decimal degrees or HMS format
 (with or without <code class="docutils literal"><span class="pre">':'</span></code>)
 like <code class="docutils literal"><span class="pre">'19:10:50.337406303'</span></code> or <code class="docutils literal"><span class="pre">'19</span> <span class="pre">10</span> <span class="pre">50.337406303'</span></code></dd>
-<dt>dec</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span><dd>Dec position in either decimal degrees or HMS format
+<dt>dec <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
+<dd>Dec position in either decimal degrees or HMS format
 (with or without <code class="docutils literal"><span class="pre">':'</span></code>)
 like <code class="docutils literal"><span class="pre">'-60:2:22.186557409'</span></code> or <code class="docutils literal"><span class="pre">'-60</span> <span class="pre">2</span> <span class="pre">22.186557409'</span></code></dd>
-<dt>coordfile</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>full filename with path of file with sky coordinates</dd>
-<dt>colnames</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>comma separated list of column names from &#8216;coordfile&#8217; file
+<dt>coordfile <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>full filename with path of file with sky coordinates</dd>
+<dt>colnames <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>comma separated list of column names from ‘coordfile’ file
 containing sky coordinates, respectively. Will default to
 first two columns if None are specified. Column names for ASCII
-files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
-<dt>precision</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span><dd>Number of floating-point digits in output values</dd>
-<dt>output</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>Name of output file with results, if desired</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Print out full list of transformation results (default: <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>)</dd>
+files will use ‘c1’,’c2’,… convention.</dd>
+<dt>precision <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd>Number of floating-point digits in output values</dd>
+<dt>output <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>Name of output file with results, if desired</dd>
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Print out full list of transformation results (default: <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>)</dd>
 </dl>
 </div></blockquote>
 </div>
@@ -163,11 +160,11 @@ files will use &#8216;c1&#8217;,&#8217;c2&#8217;,... convention.</dd>
 <h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="docutils">
-<dt>x</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>X position of pixel. If more than 1 input value, then it will be a
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>X position of pixel. If more than 1 input value, then it will be a
 numpy array.</dd>
-<dt>y</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>Y position of pixel. If more than 1 input value, then it will be a
+<dt>y <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Y position of pixel. If more than 1 input value, then it will be a
 numpy array.</dd>
 </dl>
 </div></blockquote>
@@ -214,9 +211,9 @@ pixel position (X,Y) without using the TEAL GUI:</p>
 <li><dl class="first docutils">
 <dt>Convert a list of (undistorted) sky positions from the file,</dt>
 <dd><dl class="first last docutils">
-<dt>&#8216;radec.dat&#8217; for a calibrated ACS image (j8bt06nyq_flt.fits)</dt>
+<dt>‘radec.dat’ for a calibrated ACS image (j8bt06nyq_flt.fits)</dt>
 <dd>into distorted pixel positions, and write out the result to
-the file &#8216;xypos.dat&#8217; without using the TEAL GUI:</dd>
+the file ‘xypos.dat’ without using the TEAL GUI:</dd>
 </dl>
 </dd>
 </dl>
@@ -258,12 +255,12 @@ read from the input image header.</p>
         <li class="right" >
           <a href="pixtosky.html" title="pixtosky: Coordinate transformation to sky coordinates"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Step 1: Process Input &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Step 1: Process Input &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Step 2: Generate a Static Mask" href="static.html" />
     <link rel="prev" title="WFPC2 ImageObjects" href="wfpc2objects.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -106,7 +103,7 @@
 <div><ul class="simple">
 <li>reads in parameter values from MDRIZTAB reference file and merges those merges those values in with the rest of the parameters from the GUI/configObj, if use of MDRIZTAB was specified</li>
 <li>insure that all input files are multi-extension FITS files and converts them if they are not</li>
-<li>updates all input WCS&#8217;s to be consistent with IDCTAB, if specified</li>
+<li>updates all input WCS’s to be consistent with IDCTAB, if specified</li>
 <li>generates the ImageObject instances for each input file</li>
 <li>resets the DQ bits if specified by the user</li>
 <li>adds info about any user-provided IVM files to the ImageObjects</li>
@@ -138,11 +135,11 @@ No mixture of association tables, &#64;files and regular fits files is allowed.
 Files can be in GEIS or MEF format (but not waiver fits).</p>
 <p>Runs some sanity checks on the input files.
 If necessary converts files to MEF format (this should not be left to <code class="xref py py-obj docutils literal"><span class="pre">makewcs</span></code>
-because <code class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></code> may be <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>).
+because <code class="xref py py-obj docutils literal"><span class="pre">updatewcs</span></code> may be <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>).
 Runs makewcs.
 The function <a class="reference internal" href="#drizzlepac.processInput.process_input" title="drizzlepac.processInput.process_input"><code class="xref py py-obj docutils literal"><span class="pre">process_input</span></code></a> returns an association table, ivmlist, output name</p>
-<p>The common interface interpreter for MultiDrizzle tasks, &#8216;processCommonInput()&#8217;,
-not only runs &#8216;process_input()&#8217; but &#8216;createImageObject()&#8217; and &#8216;defineOutput()&#8217;
+<p>The common interface interpreter for MultiDrizzle tasks, ‘processCommonInput()’,
+not only runs ‘process_input()’ but ‘createImageObject()’ and ‘defineOutput()’
 as well to fully setup all inputs for use with the rest of the MultiDrizzle
 steps either as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <dl class="function">
@@ -217,14 +214,14 @@ to include the suffix.</p>
 <dt id="drizzlepac.processInput.checkDGEOFile">
 <code class="descclassname">drizzlepac.processInput.</code><code class="descname">checkDGEOFile</code><span class="sig-paren">(</span><em>filenames</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#checkDGEOFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.checkDGEOFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Verify that input file has been updated with NPOLFILE</p>
-<p>This function checks for the presence of &#8216;NPOLFILE&#8217; kw in the primary header
-when &#8216;DGEOFILE&#8217; kw is present and valid (i.e. &#8216;DGEOFILE&#8217; is not blank or &#8216;N/A&#8217;).
+<p>This function checks for the presence of ‘NPOLFILE’ kw in the primary header
+when ‘DGEOFILE’ kw is present and valid (i.e. ‘DGEOFILE’ is not blank or ‘N/A’).
 It handles the case of science files downloaded from the archive before the new
 software was installed there.
-If &#8216;DGEOFILE&#8217; is present and &#8216;NPOLFILE&#8217; is missing, print a message and let the user
+If ‘DGEOFILE’ is present and ‘NPOLFILE’ is missing, print a message and let the user
 choose whether to (q)uit and update the headers or (c)ontinue and run astrodrizzle
 without the non-polynomial correction.
-&#8216;NPOLFILE&#8217; will be populated in the pipeline before astrodrizzle is run.</p>
+‘NPOLFILE’ will be populated in the pipeline before astrodrizzle is run.</p>
 <p>In the case of WFPC2 the old style dgeo files are used to create detector to image
 correction at runtime.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -301,7 +298,7 @@ usage (primarily memory) for this run.</p>
 <dl class="function">
 <dt id="drizzlepac.processInput.resetDQBits">
 <code class="descclassname">drizzlepac.processInput.</code><code class="descname">resetDQBits</code><span class="sig-paren">(</span><em>imageObjectList</em>, <em>cr_bits_value=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#resetDQBits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.resetDQBits" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reset the CR bit in each input image&#8217;s DQ array</p>
+<dd><p>Reset the CR bit in each input image’s DQ array</p>
 </dd></dl>
 
 <dl class="function">
@@ -333,7 +330,7 @@ usage (primarily memory) for this run.</p>
 <dt id="drizzlepac.processInput.setCommonInput">
 <code class="descclassname">drizzlepac.processInput.</code><code class="descname">setCommonInput</code><span class="sig-paren">(</span><em>configObj</em>, <em>createOutwcs=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/processInput.html#setCommonInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.processInput.setCommonInput" title="Permalink to this definition">¶</a></dt>
 <dd><p>The common interface interpreter for MultiDrizzle tasks which not only runs
-&#8216;process_input()&#8217; but &#8216;createImageObject()&#8217; and &#8216;defineOutput()&#8217; as well to
+‘process_input()’ but ‘createImageObject()’ and ‘defineOutput()’ as well to
 fully setup all inputs for use with the rest of the MultiDrizzle steps either
 as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -359,7 +356,7 @@ as stand-alone tasks or internally to MultiDrizzle itself.</p>
 <p class="rubric">Notes</p>
 <dl class="docutils">
 <dt>At a minimum, the configObj instance (dictionary) should contain:</dt>
-<dd>configObj = {&#8216;input&#8217;:None,&#8217;output&#8217;:None }</dd>
+<dd>configObj = {‘input’:None,’output’:None }</dd>
 </dl>
 <p>If provided, the configObj should contain the values of all the multidrizzle parameters
 as set by the user with TEAL. If no configObj is given, it will retrieve
@@ -378,8 +375,8 @@ images processed and no output wcs information in necessary; as in:</p>
 <dd><p>Update names in a member dictionary.</p>
 <p>Given an association dictionary with rootnames and a list of full
 file names, it will update the names in the member dictionary to
-contain &#8216;_*&#8217; extension. For example a rootname of &#8216;u9600201m&#8217; will
-be replaced by &#8216;u9600201m_c0h&#8217; making sure that a MEf file is passed
+contain ‘_*’ extension. For example a rootname of ‘u9600201m’ will
+be replaced by ‘u9600201m_c0h’ making sure that a MEf file is passed
 as an input and not the corresponding GEIS file.</p>
 </dd></dl>
 
@@ -407,21 +404,21 @@ such as the DQ array from an HST image, to zero.</p>
 <div class="section" id="parameters">
 <h3>PARAMETERS<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
-<dt>filename</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>full filename with path</dd>
-<dt>bits</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">str</span><dd>sum or list of integers corresponding to all the bits to be reset</dd>
+<dt>filename <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>full filename with path</dd>
+<dt>bits <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>sum or list of integers corresponding to all the bits to be reset</dd>
 </dl>
 </div>
 <div class="section" id="optional-parameters">
 <h3>Optional Parameters<a class="headerlink" href="#optional-parameters" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
-<dt>extver</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span><dd>List of version numbers of the arrays to be corrected
+<dt>extver <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd>List of version numbers of the arrays to be corrected
 (default: None, will reset all matching arrays)</dd>
-<dt>extname</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span><dd>EXTNAME of the arrays in the FITS files to be reset
-(default: &#8216;dq&#8217;)</dd>
+<dt>extname <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd>EXTNAME of the arrays in the FITS files to be reset
+(default: ‘dq’)</dd>
 </dl>
 </div>
 <div class="section" id="notes">
@@ -441,7 +438,7 @@ operating system command line using the syntax:</p>
 <h3>EXAMPLES<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic">
 <li><p class="first">The following command will reset the 4096 bits in all
-the DQ arrays of the file &#8216;input_flt.fits&#8217;:</p>
+the DQ arrays of the file ‘input_flt.fits’:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">resetbits</span> <span class="n">input_flt</span><span class="o">.</span><span class="n">fits</span> <span class="mi">4096</span>
 </pre></div>
 </div>
@@ -452,7 +449,7 @@ the DQ arrays of the file &#8216;input_flt.fits&#8217;:</p>
 </div>
 </li>
 <li><p class="first">To reset the 2,32,64 and 4096 (sum of 4194) bits in the
-second DQ array, specified as &#8216;dq,2&#8217;, in the file &#8216;input_flt.fits&#8217;:</p>
+second DQ array, specified as ‘dq,2’, in the file ‘input_flt.fits’:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">resetbits</span> <span class="n">input_flt</span><span class="o">.</span><span class="n">fits</span> <span class="mi">4194</span> <span class="mi">2</span>
 </pre></div>
 </div>
@@ -514,15 +511,15 @@ to be corrected [Default Value: None, will do all]</p>
 <p><strong id="extname">extname</strong> : str, optional</p>
 <blockquote class="last">
 <div><p>EXTNAME of the DQ arrays in the FITS file
-[Default Value: &#8216;dq&#8217;]</p>
+[Default Value: ‘dq’]</p>
 </div></blockquote>
 </td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>The default value of None for the &#8216;extver&#8217; parameter specifies that all
-extensions with EXTNAME matching &#8216;dq&#8217; (as specified by the &#8216;extname&#8217;
+<p>The default value of None for the ‘extver’ parameter specifies that all
+extensions with EXTNAME matching ‘dq’ (as specified by the ‘extname’
 parameter) will have their bits reset.</p>
 <p class="rubric">Examples</p>
 <ol class="arabic">
@@ -533,7 +530,7 @@ the DQ arrays of the file input_file_flt.fits:</p>
 </div>
 </li>
 <li><p class="first">To reset the 2,32,64 and 4096 bits in the second DQ array,
-specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
+specified as ‘dq,2’, in the file input_file_flt.fits:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">reset_dq_bits</span><span class="p">(</span><span class="s2">&quot;input_file_flt.fits&quot;</span><span class="p">,</span> <span class="s2">&quot;2,32,64,4096&quot;</span><span class="p">,</span> <span class="n">extver</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -572,12 +569,12 @@ specified as &#8216;dq,2&#8217;, in the file input_file_flt.fits:</p>
         <li class="right" >
           <a href="wfpc2objects.html" title="WFPC2 ImageObjects"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

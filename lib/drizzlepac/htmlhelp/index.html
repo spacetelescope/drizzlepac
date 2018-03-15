@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Welcome to drizzlepac’s API documentation! &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Welcome to drizzlepac’s API documentation! &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -28,7 +25,7 @@
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Primary User Interface: AstroDrizzle()" href="astrodrizzle.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -41,7 +38,7 @@
         <li class="right" >
           <a href="astrodrizzle.html" title="Primary User Interface: AstroDrizzle()"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="#">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -51,7 +48,7 @@
             </a></p>
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Welcome to drizzlepac&#8217;s API documentation!</a><ul>
+<li><a class="reference internal" href="#">Welcome to drizzlepac’s API documentation!</a><ul>
 <li><a class="reference internal" href="#drizzlepac-release-notes">DrizzlePac Release Notes</a></li>
 <li><a class="reference internal" href="#image-registration-tasks">Image Registration Tasks</a></li>
 <li><a class="reference internal" href="#coordinate-transformation-tasks">Coordinate Transformation Tasks</a></li>
@@ -91,7 +88,7 @@
           <div class="body" role="main">
             
   <div class="section" id="welcome-to-drizzlepac-s-api-documentation">
-<h1>Welcome to drizzlepac&#8217;s API documentation!<a class="headerlink" href="#welcome-to-drizzlepac-s-api-documentation" title="Permalink to this headline">¶</a></h1>
+<h1>Welcome to drizzlepac’s API documentation!<a class="headerlink" href="#welcome-to-drizzlepac-s-api-documentation" title="Permalink to this headline">¶</a></h1>
 <p>This package supports the use of <code class="xref py py-obj docutils literal"><span class="pre">AstroDrizzle</span></code> as an integrated set of
 modules that can be run in an automated manner to combine images, along
 with other tasks to support image alignment and coordinate transformations
@@ -145,7 +142,7 @@ of the input images.</p>
 <h2>DrizzlePac Release Notes<a class="headerlink" href="#drizzlepac-release-notes" title="Permalink to this headline">¶</a></h2>
 <p>The code for this package gets released through a number of methods: namely,
 the use of the package for pipeline and archive processing of ACS and WFC3
-data, SSB&#8217;s semi-annual public release of the stsci_python package, and a
+data, SSB’s semi-annual public release of the stsci_python package, and a
 weekly beta release of the development version.  The following notes
 provide some details on what has been revised for each version.</p>
 <div class="toctree-wrapper compound">
@@ -156,7 +153,7 @@ provide some details on what has been revised for each version.</p>
 </div>
 <div class="section" id="image-registration-tasks">
 <h2>Image Registration Tasks<a class="headerlink" href="#image-registration-tasks" title="Permalink to this headline">¶</a></h2>
-<p>Documentation for the replacement task for IRAF&#8217;s <code class="xref py py-obj docutils literal"><span class="pre">tweakshifts</span></code>,
+<p>Documentation for the replacement task for IRAF’s <code class="xref py py-obj docutils literal"><span class="pre">tweakshifts</span></code>,
 currently named <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code>, has been added to this package.
 These new modules describe how to run the new TEAL-enabled task,
 as well as use the classes in the task to generate catalogs interactively
@@ -164,8 +161,8 @@ for any chip and work with that catalog. The current implementation of this
 code relies on a very basic source finding algorithm loosely patterned
 after the DAOFIND algorithm and does not provide all the same features
 or outputs found in DAOFIND. The fitting algorithm also reproduces the
-fitting performed by IRAF&#8217;s <code class="xref py py-obj docutils literal"><span class="pre">geomap</span></code> in a limited fashion; primarily,
-it only performs fits equivalent to <code class="xref py py-obj docutils literal"><span class="pre">geomap</span></code>&#8216;s &#8216;shift&#8217; and &#8216;rscale&#8217; solutions.
+fitting performed by IRAF’s <code class="xref py py-obj docutils literal"><span class="pre">geomap</span></code> in a limited fashion; primarily,
+it only performs fits equivalent to <code class="xref py py-obj docutils literal"><span class="pre">geomap</span></code>’s ‘shift’ and ‘rscale’ solutions.
 These algorithms will be upgraded as soon as replacements are available.</p>
 <div class="toctree-wrapper compound">
 <ul>
@@ -173,7 +170,7 @@ These algorithms will be upgraded as soon as replacements are available.</p>
 <li class="toctree-l1"><a class="reference internal" href="refimagefindpars.html">Refmagefindpars: Source finding parameters for the reference image</a></li>
 <li class="toctree-l1"><a class="reference internal" href="imagefindpars.html">Imagefindpars: Source finding parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image.html">Image Class</a></li>
-<li class="toctree-l1"><a class="reference internal" href="catalogs.html">Classes to manage Catalogs and WCS&#8217;s</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalogs.html">Classes to manage Catalogs and WCS’s</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wcscorr.html">Functions to Manage WCS Table Extension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wcscorr.html#functions-to-manage-legacy-opus-wcs-keywords-in-the-wcs-table">Functions to Manage Legacy OPUS WCS Keywords in the WCS Table</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tweakutils.html">TWEAKUTILS: Utility Functions for Tweakreg</a></li>
@@ -197,7 +194,7 @@ distorted and drizzled images.</p>
 </div>
 <div class="section" id="acs-header-update-task">
 <h2>ACS Header Update Task<a class="headerlink" href="#acs-header-update-task" title="Permalink to this headline">¶</a></h2>
-<p>A task, &#8216;updatenpol&#8217;, has been written to automate the updating of ACS image headers with the filename of the appropriate NPOLFILE based on the DGEOFILE specified in the image header.  This task should be used to update all ACS images prior to processing them with &#8216;astrodrizzle&#8217;.</p>
+<p>A task, ‘updatenpol’, has been written to automate the updating of ACS image headers with the filename of the appropriate NPOLFILE based on the DGEOFILE specified in the image header.  This task should be used to update all ACS images prior to processing them with ‘astrodrizzle’.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="updatenpol.html">Updatenpol</a></li>
@@ -206,7 +203,7 @@ distorted and drizzled images.</p>
 </div>
 <div class="section" id="reproducing-pipeline-processing">
 <h2>Reproducing Pipeline Processing<a class="headerlink" href="#reproducing-pipeline-processing" title="Permalink to this headline">¶</a></h2>
-<p>The task &#8216;runastrodriz&#8217; can be used to reproduce the same Drizzle processing that gets performed on HST data when retrieving data from the HST archive.</p>
+<p>The task ‘runastrodriz’ can be used to reproduce the same Drizzle processing that gets performed on HST data when retrieving data from the HST archive.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runastrodriz.html">Running Astrodriz</a><ul>
@@ -248,12 +245,12 @@ distorted and drizzled images.</p>
         <li class="right" >
           <a href="astrodrizzle.html" title="Primary User Interface: AstroDrizzle()"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="#">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>TWEAKUTILS: Utility Functions for Tweakreg &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>TWEAKUTILS: Utility Functions for Tweakreg &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="UPDATEHDR: Functions for Updating WCS with New Solutions" href="updatehdr.html" />
     <link rel="prev" title="Functions to Manage WCS Table Extension" href="wcscorr.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -101,9 +98,9 @@ including finding the objects in the images and plotting the residuals.</p>
 <dl class="function">
 <dt id="drizzlepac.tweakutils.build_pos_grid">
 <code class="descclassname">drizzlepac.tweakutils.</code><code class="descname">build_pos_grid</code><span class="sig-paren">(</span><em>start</em>, <em>end</em>, <em>nstep</em>, <em>mesh=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakutils.html#build_pos_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakutils.build_pos_grid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a grid of positions starting at X,Y given by &#8216;start&#8217;, and ending
-at X,Y given by &#8216;end&#8217;. The grid will be completely filled in X and Y by
-every &#8216;step&#8217; interval.</p>
+<dd><p>Return a grid of positions starting at X,Y given by ‘start’, and ending
+at X,Y given by ‘end’. The grid will be completely filled in X and Y by
+every ‘step’ interval.</p>
 </dd></dl>
 
 <dl class="function">
@@ -192,7 +189,7 @@ plotted can also be adjusted for a linear fit on-the-fly.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="coordfile">coordfile</strong> : string</p>
 <blockquote>
 <div><p>Name of file with matched sets of coordinates. This input file can
-be a file compatible for use with IRAF&#8217;s geomap.</p>
+be a file compatible for use with IRAF’s geomap.</p>
 </div></blockquote>
 <p><strong id="columns">columns</strong> : list [Default: [0,1,2,3]]</p>
 <blockquote>
@@ -294,67 +291,6 @@ label on the generated plot(s).</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="drizzlepac.tweakutils.ndfind_old">
-<code class="descclassname">drizzlepac.tweakutils.</code><code class="descname">ndfind_old</code><span class="sig-paren">(</span><em>array, hmin, fwhm, sharplim=[0.2, 1.0], roundlim=[-1, 1], minpix=5, datamax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakutils.html#ndfind_old"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakutils.ndfind_old" title="Permalink to this definition">¶</a></dt>
-<dd><p>Source finding algorithm based on NDIMAGE routines</p>
-<p>This function provides a simple replacement for the DAOFIND task.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="array">array</strong> : arr</p>
-<blockquote>
-<div><p>Input image as numpy array</p>
-</div></blockquote>
-<p><strong id="hmin">hmin</strong> : float</p>
-<blockquote>
-<div><p>Limit for source detection in pixel values</p>
-</div></blockquote>
-<p><strong id="fwhm">fwhm</strong> : float</p>
-<blockquote>
-<div><p>Full-width half-maximum of the PSF in the image</p>
-</div></blockquote>
-<p><strong id="minpix">minpix</strong> : int</p>
-<blockquote>
-<div><p>Minimum number of pixels for any valid source</p>
-</div></blockquote>
-<p><strong id="sharplim">sharplim</strong> : tuple</p>
-<blockquote>
-<div><p>[Not used at this time]</p>
-</div></blockquote>
-<p><strong id="roundlim">roundlim</strong> : tuple</p>
-<blockquote>
-<div><p>[Not used at this time]</p>
-</div></blockquote>
-<p><strong id="datamax">datamax</strong> : float</p>
-<blockquote>
-<div><p>Maximum good pixel value found in any detected source</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>x</strong> : arr</p>
-<blockquote>
-<div><p>Array of detected source X positions (in array coordinates, 0-based)</p>
-</div></blockquote>
-<p><strong>y</strong> : arr</p>
-<blockquote>
-<div><p>Array of detected source Y positions (in array coordinates, 0-based)</p>
-</div></blockquote>
-<p><strong>flux</strong> : arr</p>
-<blockquote>
-<div><p>Array of detected source fluxes in pixel values</p>
-</div></blockquote>
-<p><strong>id</strong> : arr</p>
-<blockquote class="last">
-<div><p>Array of detected source ID numbers</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="drizzlepac.tweakutils.parse_atfile_cat">
 <code class="descclassname">drizzlepac.tweakutils.</code><code class="descname">parse_atfile_cat</code><span class="sig-paren">(</span><em>input</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakutils.html#parse_atfile_cat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakutils.parse_atfile_cat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the list of catalog filenames specified as part of the input &#64;-file</p>
@@ -399,7 +335,7 @@ into a column number.</p>
 <dl class="function">
 <dt id="drizzlepac.tweakutils.parse_exclusions">
 <code class="descclassname">drizzlepac.tweakutils.</code><code class="descname">parse_exclusions</code><span class="sig-paren">(</span><em>exclusions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/tweakutils.html#parse_exclusions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.tweakutils.parse_exclusions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read in exclusion definitions from file named by &#8216;exclusions&#8217;
+<dd><p>Read in exclusion definitions from file named by ‘exclusions’
 and return a list of positions and distances</p>
 </dd></dl>
 
@@ -409,12 +345,12 @@ and return a list of positions and distances</p>
 <dd><p>Function to parse RA and Dec input values and turn them into decimal degrees</p>
 <dl class="docutils">
 <dt>Input formats could be:</dt>
-<dd>[&#8220;nn&#8221;,&#8221;nn&#8221;,&#8221;nn.nn&#8221;]
-&#8220;nn nn nn.nnn&#8221;
-&#8220;nn:nn:nn.nn&#8221;
-&#8220;nnH nnM nn.nnS&#8221; or &#8220;nnD nnM nn.nnS&#8221;
+<dd>[“nn”,”nn”,”nn.nn”]
+“nn nn nn.nnn”
+“nn:nn:nn.nn”
+“nnH nnM nn.nnS” or “nnD nnM nn.nnS”
 nn.nnnnnnnn
-&#8220;nn.nnnnnnn&#8221;</dd>
+“nn.nnnnnnn”</dd>
 </dl>
 </dd></dl>
 
@@ -458,7 +394,7 @@ conversion to decimal degrees.</p>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference external" href="http://docs.astropy.org/en/stable/coordinates/index.html#module-astropy.coordinates" title="(in Astropy v1.3.3)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.coordinates</span></code></a></p>
+<p class="last"><a class="reference external" href="http://docs.astropy.org/en/stable/coordinates/index.html#module-astropy.coordinates" title="(in Astropy v3.0.1)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.coordinates</span></code></a></p>
 </div>
 <p class="rubric">Notes</p>
 <p>This function supports any specification of RA and Dec as HMS or DMS;
@@ -481,7 +417,7 @@ specifically, the formats:</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>outarr</strong> : list of arrays</p>
 <blockquote class="last">
-<div><p>The return value will be a list of numpy arrays, one for each &#8216;column&#8217;.</p>
+<div><p>The return value will be a list of numpy arrays, one for each ‘column’.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -489,12 +425,12 @@ specifically, the formats:</p>
 </table>
 <p class="rubric">Notes</p>
 <p>The specification of the columns should be expected to have lists for
-each &#8216;column&#8217;, with all columns in each list combined into a single entry.
+each ‘column’, with all columns in each list combined into a single entry.
 For example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1,2,3&#39;</span><span class="p">,</span><span class="s1">&#39;4,5,6&#39;</span><span class="p">,</span><span class="mi">7</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>where &#8216;1,2,3&#8217; represent the X/RA values, &#8216;4,5,6&#8217; represent the Y/Dec values
+<p>where ‘1,2,3’ represent the X/RA values, ‘4,5,6’ represent the Y/Dec values
 and 7 represents the flux value for a total of 3 requested columns of data
 to be returned.</p>
 </dd></dl>
@@ -565,12 +501,12 @@ regardless of the format of the input table (ASCII or FITS table).</p>
         <li class="right" >
           <a href="wcscorr.html" title="Functions to Manage WCS Table Extension"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

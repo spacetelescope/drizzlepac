@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>DrizzlePac Release Notes &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>DrizzlePac Release Notes &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="TWEAKREG: Alignment of Images" href="tweakreg.html" />
     <link rel="prev" title="Tweakback" href="tweakback.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="tweakback.html" title="Tweakback"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -56,6 +53,12 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">DrizzlePac Release Notes</a><ul>
+<li><a class="reference internal" href="#drizzlepac-v2-1-22-15-march-2018">Drizzlepac v2.1.22 (15-March-2018)</a></li>
+<li><a class="reference internal" href="#drizzlepac-v2-1-21-12-january-2018">Drizzlepac v2.1.21 (12-January-2018)</a></li>
+<li><a class="reference internal" href="#drizzlepac-v2-1-20-07-october-2017">DrizzlePac v2.1.20 (07-October-2017)</a></li>
+<li><a class="reference internal" href="#drizzlepac-v2-1-19-29-september-2017">DrizzlePac v2.1.19 (29-September-2017)</a></li>
+<li><a class="reference internal" href="#drizzlepac-v2-1-18-05-september-2017">Drizzlepac v2.1.18 (05-September-2017)</a></li>
+<li><a class="reference internal" href="#drizzlepac-v2-1-17-13-june-2017">DrizzlePac v2.1.17 (13-June-2017)</a></li>
 <li><a class="reference internal" href="#drizzlepac-v2-1-16-05-june-2017">DrizzlePac v2.1.16 (05-June-2017)</a></li>
 <li><a class="reference internal" href="#drizzlepac-v2-1-15-26-may-2017">DrizzlePac v2.1.15 (26-May-2017)</a></li>
 <li><a class="reference internal" href="#drizzlepac-v2-1-14-28-apr-2017">DrizzlePac v2.1.14 (28-Apr-2017)</a></li>
@@ -149,6 +152,84 @@
 <p>The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).</p>
+<div class="section" id="drizzlepac-v2-1-22-15-march-2018">
+<h2>Drizzlepac v2.1.22 (15-March-2018)<a class="headerlink" href="#drizzlepac-v2-1-22-15-march-2018" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Changed the definition of Megabyte used to describe the size of the buffer
+for create median step (<code class="docutils literal"><span class="pre">combine_bufsize</span></code>). Previously a mixed
+(base-2 and base-10) definition was used with 1MB = 1000x1024B = 1024000B.
+Now 1MB is defined in base-2 (MiB) as 1MB = 1024x1024B = 1048576B.</li>
+<li>Redesigned the logic in <code class="docutils literal"><span class="pre">createMedian</span></code> step used to split large
+<code class="docutils literal"><span class="pre">single_sci</span></code> images into smaller chunks: new logic is more straightforward
+and fixes errors in the old algorithm that resulted in crashes or
+unnecessarily small chunk sizes that slowed down <code class="docutils literal"><span class="pre">createMedian</span></code> step.</li>
+<li>Due to the above mentioned redesign in the logic for splitting large images
+into smaller chunks, now <code class="xref py py-obj docutils literal"><span class="pre">overlap</span></code> can be set to 0 if so desired in the
+<code class="docutils literal"><span class="pre">minmed</span></code> combine type. Also, it is automatically ignored (set to 0) for all
+non-<code class="docutils literal"><span class="pre">minmed</span></code> combine types. This will result in additional speed-up in the
+Create Median step.</li>
+<li>Updated documentation.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-v2-1-21-12-january-2018">
+<h2>Drizzlepac v2.1.21 (12-January-2018)<a class="headerlink" href="#drizzlepac-v2-1-21-12-january-2018" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Restore recording of correct <code class="docutils literal"><span class="pre">EXPTIME</span></code> value in the headers of
+single drizzled (“single_sci”) images. See
+<a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/93">https://github.com/spacetelescope/drizzlepac/issues/93</a> for more details.</li>
+<li>Fixed a bug in <code class="xref py py-obj docutils literal"><span class="pre">drizzlepac</span></code> due to which user provided <code class="xref py py-obj docutils literal"><span class="pre">combine_lthresh</span></code> or
+<code class="xref py py-obj docutils literal"><span class="pre">combine_hthresh</span></code> in the <code class="xref py py-obj docutils literal"><span class="pre">CREATE</span> <span class="pre">MEDIAN</span> <span class="pre">IMAGE</span></code> step were not converted
+correctly to electrons (processing unit). This bug affected processing of
+WFPC2, STIS, NICMOS, and WFC3 data. See
+<a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/94">https://github.com/spacetelescope/drizzlepac/issues/94</a> for more details.</li>
+<li>Modified print format so that scales, skew and rotations are printed with
+10 significant digits while shifts are printed with 4 digits after the
+decimal point.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-v2-1-20-07-october-2017">
+<h2>DrizzlePac v2.1.20 (07-October-2017)<a class="headerlink" href="#drizzlepac-v2-1-20-07-october-2017" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fixed a bug in expanding reference catalog in <code class="xref py py-obj docutils literal"><span class="pre">tweakreg</span></code> that would result
+in the code crashing.
+See <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/pull/87">https://github.com/spacetelescope/drizzlepac/pull/87</a> for more details.</li>
+<li>Fixed a bug due to which user catalog fluxes would be interpreted as
+magnitudes when <code class="xref py py-obj docutils literal"><span class="pre">fluxunits</span></code> was set to <code class="xref py py-obj docutils literal"><span class="pre">'cps'</span></code>.
+See <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/pull/88">https://github.com/spacetelescope/drizzlepac/pull/88</a> for more details.</li>
+<li>Fixed a bug due to which user-supplied flux limits were ignored for
+the reference catalog.
+See <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/pull/89">https://github.com/spacetelescope/drizzlepac/pull/89</a> for more details.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-v2-1-19-29-september-2017">
+<h2>DrizzlePac v2.1.19 (29-September-2017)<a class="headerlink" href="#drizzlepac-v2-1-19-29-september-2017" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fixed a bug in computing optimal order of expanding reference catalog that
+resulted in code crashes.
+See <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/pull/86">https://github.com/spacetelescope/drizzlepac/pull/86</a> for more details.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-v2-1-18-05-september-2017">
+<h2>Drizzlepac v2.1.18 (05-September-2017)<a class="headerlink" href="#drizzlepac-v2-1-18-05-september-2017" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fixed <code class="docutils literal"><span class="pre">astrodrizzle</span></code> lowers the case of the path of output images issue.
+See <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/79">https://github.com/spacetelescope/drizzlepac/issues/79</a> for more
+details.</li>
+<li>Fixed <code class="docutils literal"><span class="pre">tweakreg</span></code> ignores user-specified units of image catalogs (provided
+through the <code class="docutils literal"><span class="pre">refcat</span></code> parameter) issue. See <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/81">https://github.com/spacetelescope/drizzlepac/issues/81</a> for more details.</li>
+<li>Corrected a message printed by tweakreg about used WCS for alignment. Also
+improved documentation for the <code class="docutils literal"><span class="pre">refimage</span></code> parameter.</li>
+</ul>
+</div>
+<div class="section" id="drizzlepac-v2-1-17-13-june-2017">
+<h2>DrizzlePac v2.1.17 (13-June-2017)<a class="headerlink" href="#drizzlepac-v2-1-17-13-june-2017" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">drizzlepac.adrizzle</span></code> updated to work with numpy &gt;=1.12 when they implemented
+more strict array conversion rules for math. Any input which still has INT
+format will be converted to a float before any operations are performed, explicitly
+implementing what was an automatic operation prior to numpy 1.12.</li>
+</ul>
+</div>
 <div class="section" id="drizzlepac-v2-1-16-05-june-2017">
 <h2>DrizzlePac v2.1.16 (05-June-2017)<a class="headerlink" href="#drizzlepac-v2-1-16-05-june-2017" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -165,7 +246,7 @@ to reduce the number of file handles used when running either
 <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/39">issue #39</a>
 for more details.</li>
 <li>Fixed bugs and improved the logic for merging WCS that is used to define
-<code class="docutils literal"><span class="pre">astrodrizzle</span></code>&#8216;s output WCS.</li>
+<code class="docutils literal"><span class="pre">astrodrizzle</span></code>’s output WCS.</li>
 <li>Added <code class="docutils literal"><span class="pre">crpix1</span></code> and <code class="docutils literal"><span class="pre">crpix2</span></code> parameters to custom WCS.</li>
 </ul>
 </div>
@@ -182,8 +263,8 @@ for more details.</li>
 <h2>DrizzlePac v2.1.13 (11-Apr-2017)<a class="headerlink" href="#drizzlepac-v2-1-13-11-apr-2017" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed a bug due to which sky background was subtracted by <code class="docutils literal"><span class="pre">astrodrizzle</span></code>
-from the images even though <code class="docutils literal"><span class="pre">skysub</span></code> was set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a> when
-<code class="docutils literal"><span class="pre">MDRIZSKY</span></code> was already present in input images&#8217; headers.</li>
+from the images even though <code class="docutils literal"><span class="pre">skysub</span></code> was set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a> when
+<code class="docutils literal"><span class="pre">MDRIZSKY</span></code> was already present in input images’ headers.</li>
 </ul>
 </div>
 <div class="section" id="drizzlepac-v2-1-12-04-apr-2017">
@@ -216,19 +297,19 @@ This release makes those changes backward compatible.</p>
 <div class="section" id="drizzlepac-v2-1-8-08-feb-2017">
 <h2>DrizzlePac v2.1.8 (08-Feb-2017)<a class="headerlink" href="#drizzlepac-v2-1-8-08-feb-2017" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Drizzlepac code will no longer attempt to delete &#8220;original&#8221; (WCS key &#8216;O&#8217;)
+<li>Drizzlepac code will no longer attempt to delete “original” (WCS key ‘O’)
 resulting in a decreased number of warnings
 (see <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/34">issue #35</a> ).</li>
-<li>Negative values are now zeroed in the &#8216;minmed&#8217; step before attempting to
+<li>Negative values are now zeroed in the ‘minmed’ step before attempting to
 estimate Poisson errors
 (see <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/22">issue #22</a>).</li>
 <li>Fixed a bug in <code class="docutils literal"><span class="pre">tweakreg</span></code> due to incorrect matrix inversion.</li>
-<li>Improved compatibility with <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/index.html#module-astropy.io.fits" title="(in Astropy v1.3.3)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits</span></code></a> (&#8216;clobber&#8217; parameter) and
-<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/index.html#module-numpy" title="(in NumPy v1.12)"><code class="xref py py-obj docutils literal"><span class="pre">numpy</span></code></a> which has reduced the number of deprecation warnings).</li>
+<li>Improved compatibility with <a class="reference external" href="http://docs.astropy.org/en/stable/io/fits/index.html#module-astropy.io.fits" title="(in Astropy v3.0.1)"><code class="xref py py-obj docutils literal"><span class="pre">astropy.io.fits</span></code></a> (‘clobber’ parameter) and
+<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/index.html#module-numpy" title="(in NumPy v1.14)"><code class="xref py py-obj docutils literal"><span class="pre">numpy</span></code></a> which has reduced the number of deprecation warnings).</li>
 <li>Existing static masks in the working directory are now overwritten and not
 simply re-used (see
 <a class="reference external" href="https://github.com/spacetelescope/drizzlepac/issues/23">issue #23</a>).</li>
-<li>Corrected formula for <img class="math" src="_images/math/011e5790a6c33043ceadca81d9657dde6c61d769.png" alt="\sigma"/> computation in the &#8220;create median&#8221; step
+<li>Corrected formula for <img class="math" src="_images/math/011e5790a6c33043ceadca81d9657dde6c61d769.png" alt="\sigma"/> computation in the “create median” step
 to convert background to electrons before computations. This bug was
 producing incorrect <img class="math" src="_images/math/011e5790a6c33043ceadca81d9657dde6c61d769.png" alt="\sigma"/> for instruments whose gain was different
 from one.</li>
@@ -252,7 +333,7 @@ when <code class="docutils literal"><span class="pre">combine_type</span></code>
 <li><code class="docutils literal"><span class="pre">tweakreg</span></code> crashes when run with a single input image and
 a reference catalog.</li>
 <li>Fixes an issue due to which <code class="docutils literal"><span class="pre">tweakreg</span></code>, when updating image headers,
-would not add &#8216;-SIP&#8217; suffix to CTYPE</li>
+would not add ‘-SIP’ suffix to CTYPE</li>
 </ul>
 </div>
 <div class="section" id="drizzlepac-v2-1-3-16-mar-2016">
@@ -301,9 +382,9 @@ part of <code class="docutils literal"><span class="pre">astrodrizzle</span></co
 only fixing some bugs, but also cleaning up/changing/revising some APIs and
 docstrings. The complete list of changes includes:</p>
 <ul class="simple">
-<li>[API Change] The &#8216;updatewcs&#8217; parameter was removed from both the
+<li>[API Change] The ‘updatewcs’ parameter was removed from both the
 <code class="docutils literal"><span class="pre">astrodrizzle</span></code> and <code class="docutils literal"><span class="pre">tweakreg</span></code> interactive TEAL interfaces.
-The &#8216;updatewcs&#8217; parameter can still be used with the Python interface for
+The ‘updatewcs’ parameter can still be used with the Python interface for
 both the <code class="docutils literal"><span class="pre">astrodrizzle</span></code>. <code class="docutils literal"><span class="pre">astrodrizzle``()</span> <span class="pre">and</span> <span class="pre">``tweakreg</span></code>. Call the
 <code class="docutils literal"><span class="pre">stwcs.updatewcs.updatewcs()</span></code> function separately before running
 <code class="docutils literal"><span class="pre">astrodrizzle</span></code> or <code class="docutils literal"><span class="pre">tweakreg</span></code>.</li>
@@ -320,10 +401,10 @@ has identical cross-terms indicating the same scale and orientation in each
 axis (an orthogonal CD matrix). This relies on a revision to the
 <code class="docutils literal"><span class="pre">stwcs.distortion.utils.output_wcs()</span></code> function.</li>
 <li>The user interfaces to all 3 coordinate transformation tasks now use
-&#8216;coordfile&#8217; as the input file of coordinates to transform. The use
-of &#8216;coords&#8217; has been deprecated, but still can be used if needed. However,
-use of &#8216;coordfile&#8217; will always override any input provided simultaneously
-with &#8216;coords&#8217; parameter.  Help files have been updated to document this as
+‘coordfile’ as the input file of coordinates to transform. The use
+of ‘coords’ has been deprecated, but still can be used if needed. However,
+use of ‘coordfile’ will always override any input provided simultaneously
+with ‘coords’ parameter.  Help files have been updated to document this as
 clearly as possible for users.</li>
 <li>User-provided list of input catalogs no longer needs to be matched exactly
 with input files. As long as all input images are included in input catalog
@@ -342,9 +423,9 @@ the correct results.</li>
 <li>Exclusion/inclusion region files that can be used with <code class="docutils literal"><span class="pre">tweakreg</span></code> can now
 be specified in image coordinates and sky coordinates and will only support
 files written out using DS9-compatible format.</li>
-<li>The filename for &#8216;final_refimage&#8217; in <code class="docutils literal"><span class="pre">astrodrizzle</span></code> and &#8216;refimage&#8217; in
+<li>The filename for ‘final_refimage’ in <code class="docutils literal"><span class="pre">astrodrizzle</span></code> and ‘refimage’ in
 <code class="docutils literal"><span class="pre">tweakreg</span></code> can now be specified with OR without an extension, such as
-&#8216;[sci,1]&#8217; or &#8216;[0]&#8217;.  If no extension is specified, it will automatically
+‘[sci,1]’ or ‘[0]’.  If no extension is specified, it will automatically
 look for the first extension with a valid HSTWCS and use that. This makes
 the use of this parameter in both place consistent and more general than
 before.</li>
@@ -417,7 +498,7 @@ use cases, such as:</p>
 <li>DQ flags can now be taken into account when performing source finding in
 <code class="docutils literal"><span class="pre">tweakreg</span></code>.</li>
 <li>all intermediate files generated by <code class="docutils literal"><span class="pre">astrodrizzle</span></code> will now be removed when
-using &#8216;clean&#8217;=&#8217;yes&#8217;.</li>
+using ‘clean’=’yes’.</li>
 <li>a problem was fixed that caused <code class="docutils literal"><span class="pre">createMedian</span></code> to crash where there were no
 good pixels in one of the images (when they did not overlap).</li>
 <li>interpretation of shiftfile now improved to handle arbitrarily-long
@@ -436,7 +517,7 @@ of astropy primarily for WCS and FITS I/O support.</p>
 <li>Support for WFPC2 GEIS input images improved to correctly find the associated
 DQ images.</li>
 <li>Static mask files created for all chips in an image now get deleted when
-using the &#8216;group&#8217; parameter to only drizzle a single chip or subset of chips.</li>
+using the ‘group’ parameter to only drizzle a single chip or subset of chips.</li>
 <li>Fixed problem caused by changes to <code class="docutils literal"><span class="pre">stsci.tools</span></code> code so that
 <code class="docutils literal"><span class="pre">drizzlepac</span></code> will reference the correct extensions in input images.</li>
 </ul>
@@ -472,7 +553,7 @@ This restored the cosmic-ray masks detected during pipeline processing.</li>
 <h2>DrizzlePac(astrodrizzle) v1.1.13dev(11-Oct-2013) in IRAFX<a class="headerlink" href="#drizzlepac-astrodrizzle-v1-1-13dev-11-oct-2013-in-irafx" title="Permalink to this headline">¶</a></h2>
 <p><strong>available starting:</strong> Oct 21, 2013</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">tweakreg</span></code> can now be run in &#8216;batch&#8217; mode. This allows the user to generate
+<li><code class="docutils literal"><span class="pre">tweakreg</span></code> can now be run in ‘batch’ mode. This allows the user to generate
 plots and have them saved to disk automatically without stopping processing
 and requiring any user input.</li>
 </ul>
@@ -483,14 +564,14 @@ and requiring any user input.</li>
 <p>This version fixed a couple of bugs in <code class="docutils literal"><span class="pre">astrodrizzle</span></code>; namely,</p>
 <ul class="simple">
 <li>Logic was updated to support pixfrac = 0.0 without crashing. Ths code will
-now automatically reset the kernel to &#8216;point&#8217; in that case.</li>
+now automatically reset the kernel to ‘point’ in that case.</li>
 <li><code class="docutils literal"><span class="pre">astrodrizzle</span></code> now forcibly removes all OPUS WCS keywords from drizzle
 product headers.</li>
 <li>Default rules for generating drizzle product headers (as used in the archive)
-were modified to add definitions for &#8216;float_one&#8217;, &#8216;int_one&#8217;, &#8216;zero&#8217; that
+were modified to add definitions for ‘float_one’, ‘int_one’, ‘zero’ that
 generate output values of 1.0, 1, and 0 (zero) respectively for use as
-keyword values. This allows the LTM* rules to replace &#8216;first&#8217; with
-&#8216;float_one&#8217; so that the physical and image coordinates for drizzle
+keyword values. This allows the LTM* rules to replace ‘first’ with
+‘float_one’ so that the physical and image coordinates for drizzle
 products are consistent.</li>
 </ul>
 <p>Additionally, changes were made to <code class="docutils literal"><span class="pre">STWCS</span></code> for reprocessing use:</p>
@@ -522,7 +603,7 @@ the entire package, making it compatible with PyFITS 3.2.x and later.</li>
 <p><strong>available starting:</strong> Feb 11, 2013</p>
 <ul class="simple">
 <li>Fixed a bug in <code class="docutils literal"><span class="pre">astrodrizzle</span></code> which caused blot to raise an exception
-when using &#8216;sinc&#8217; interpolation.</li>
+when using ‘sinc’ interpolation.</li>
 <li>Cleaned up the logic for writing out the results from the pixtopix, pixtosky,
 and skytopix tasks to avoid an Exception when a list of inputs are provided
 and no output file is specified.</li>
@@ -589,7 +670,7 @@ a C function that run about 4x faster.</li>
 <li><code class="docutils literal"><span class="pre">tweakreg</span></code> v1.1.0 source finding algorithm now runs many times faster
 (no algorithmic changes). No changes have been made yet to speed
 up the 2d histogram source matching code.</li>
-<li>The &#8216;pixtopix&#8217; task was updated to make the &#8216;outimage&#8217; parameter optional
+<li>The ‘pixtopix’ task was updated to make the ‘outimage’ parameter optional
 by using the input image as the default. This required no API changes, but
 the help files were updated.</li>
 <li>Very minor update to guard against MDRIZTAB being specified without
@@ -608,11 +689,11 @@ from getting improperly cast values from the configObj(TEAL) input.</li>
 <li>Scaling of sky array for WFC3/IR IVM generation now correct.</li>
 <li>template mask files for WFPC2 no longer generated so that WFPC2 data can now
 be processed using num_cores &gt; 1 (parallel processing).</li>
-<li>interpretation of the &#8216;group&#8217; parameter fixed to support a single integer,
-a comma-separated list of integers or a single &#8216;sci,&lt;n&gt;&#8217; value. The values
+<li>interpretation of the ‘group’ parameter fixed to support a single integer,
+a comma-separated list of integers or a single ‘sci,&lt;n&gt;’ value. The values
 correspond to the FITS extension number of the extensions that should be
 combined. This fix may also speed up the initialization step as more direct
-use of pyfits was implemented for the interpretation of the &#8216;group&#8217;
+use of pyfits was implemented for the interpretation of the ‘group’
 parameter.</li>
 </ul>
 </div>
@@ -636,7 +717,7 @@ direct pyfits calls.</li>
 <p><strong>available starting:</strong> Sept 17, 2012</p>
 <ul class="simple">
 <li>Fixed the logic so that crclean images always get created regardless of the
-value of the &#8216;clean&#8217; parameter.</li>
+value of the ‘clean’ parameter.</li>
 </ul>
 </div>
 <div class="section" id="drizzlepac-astrodrizzle-v1-1-2-5-sep-2012-in-irafx">
@@ -662,7 +743,7 @@ remain in memory requiring significantly more memory than usual. This
 improves the overall processing time by eliminating as much disk activity
 as possible as long as the OS does not start disk swapping due to lack
 of RAM.</li>
-<li>revised to turn off &#8216;updatewcs&#8217; when coeffs=False(no) so that exposures with
+<li>revised to turn off ‘updatewcs’ when coeffs=False(no) so that exposures with
 filter combinations not found in the IDCTAB will not cause an error.</li>
 </ul>
 </div>
@@ -738,12 +819,12 @@ images.</p>
         <li class="right" >
           <a href="tweakback.html" title="Tweakback"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

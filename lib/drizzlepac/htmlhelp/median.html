@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Step 5: Create a Median Image &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Step 5: Create a Median Image &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Step 6: Blotting the Median Image" href="ablot.html" />
     <link rel="prev" title="Step 4 and 8: Drizzling the Images" href="adrizzle.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -93,7 +90,7 @@ drizzle images.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack</td>
+<tr class="field-odd field"><th class="field-name">Authors:</th><td class="field-body">Warren Hack, Mihai Cara</td>
 </tr>
 <tr class="field-even field"><th class="field-name">License:</th><td class="field-body"><a class="reference external" href="http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE">http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE</a></td>
 </tr>
@@ -102,9 +99,10 @@ drizzle images.</p>
 <dl class="function">
 <dt id="drizzlepac.createMedian.createMedian">
 <code class="descclassname">drizzlepac.createMedian.</code><code class="descname">createMedian</code><span class="sig-paren">(</span><em>imgObjList</em>, <em>configObj</em>, <em>procSteps=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/createMedian.html#createMedian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.createMedian.createMedian" title="Permalink to this definition">¶</a></dt>
-<dd><p>Top-level interface to createMedian step called from top-level MultiDrizzle.</p>
-<p>This function parses the input parameters then calls the <code class="xref py py-obj docutils literal"><span class="pre">_median()</span></code> function
-to median-combine the input images into a single image.</p>
+<dd><p>Top-level interface to createMedian step called from top-level
+AstroDrizzle.</p>
+<p>This function parses the input parameters then calls the <code class="xref py py-obj docutils literal"><span class="pre">_median()</span></code>
+function to median-combine the input images into a single image.</p>
 </dd></dl>
 
 <dl class="function">
@@ -175,48 +173,48 @@ be used to override the defaults.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>median</strong> : bool (Default = No)</p>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first"><strong>median</strong> : bool (Default = No)</p>
 <blockquote>
-<div><p>This parameter specifies whether or not to create a median image. This median image will be used as the comparison &#8216;truth&#8217; image :in the cosmic ray rejection step.</p>
+<div><p>This parameter specifies whether or not to create a median image. This median image will be used as the comparison ‘truth’ image :in the cosmic ray rejection step.</p>
 </div></blockquote>
 <p><strong>median_newmasks</strong> : bool (Default = Yes)</p>
 <blockquote>
-<div><p>This parameter specifies whether or not new mask files will be created when the median image is created. These masks are generated from weight files previously produced by the &#8220;driz_separate&#8221; step, and contain all bad pixel information used to exclude pixels when calculating the median. Generally this step should be set to &#8220;Yes&#8221;, unless for some reason, it is desirable to include bad pixel information when generating the median.</p>
+<div><p>This parameter specifies whether or not new mask files will be created when the median image is created. These masks are generated from weight files previously produced by the “driz_separate” step, and contain all bad pixel information used to exclude pixels when calculating the median. Generally this step should be set to “Yes”, unless for some reason, it is desirable to include bad pixel information when generating the median.</p>
 </div></blockquote>
 <p><strong>combine_maskpt</strong> : float (Default = 0.7)</p>
 <blockquote>
 <div><p>Percentage of weight image values, below which the are flagged.</p>
 </div></blockquote>
-<p><strong>combine_type</strong> : str {&#8216;average&#8217;, &#8216;median&#8217;, &#8216;sum&#8217;, &#8216;minmed&#8217;} (Default = &#8216;minmed&#8217;)</p>
+<p><strong>combine_type</strong> : str {‘average’, ‘median’, ‘sum’, ‘minmed’} (Default = ‘minmed’)</p>
 <blockquote>
 <div><p>This parameter defines the method that will be used to create the median
-image.  The &#8216;average&#8217;, &#8216;median&#8217;, and &#8216;sum&#8217; options set the calculation
-type when running &#8216;numcombine&#8217;, a numpy method for median-combining arrays
-to create the median image. The &#8220;minmed&#8221; option will produce an image that
+image.  The ‘average’, ‘median’, and ‘sum’ options set the calculation
+type when running ‘numcombine’, a numpy method for median-combining arrays
+to create the median image. The “minmed” option will produce an image that
 is generally the same as the median, except in cases where the median is
 significantly higher than the minimum good pixel value. In this case,
-&#8220;minmed&#8221; will choose the minimum value. The sigma thresholds for this
-decision are provided by the &#8220;combine_nsigma&#8221; parameter. However, as
-the &#8220;combine_nsigma&#8221; parameter does not adjust for the larger probability
-of a single &#8220;nsigma&#8221; event with a greater number of images, &#8220;minmed&#8221; will
+“minmed” will choose the minimum value. The sigma thresholds for this
+decision are provided by the “combine_nsigma” parameter. However, as
+the “combine_nsigma” parameter does not adjust for the larger probability
+of a single “nsigma” event with a greater number of images, “minmed” will
 bias the comparison image low for a large number of images.
 The value of sigma is computed as <img class="math" src="_images/math/efd90f7fd1d28adfecb2a3c48c0b79a336749627.png" alt="\sigma = \sqrt(M + S + R^2)"/>,
 where <em>M</em> is the median image data (in electrons), <em>S</em> is the value of the
 subtracted sky (in electrons), and <em>R</em> is the value of the readout noise
-(in electrons). &#8220;minmed&#8221; is highly recommended for three images, and is
+(in electrons). “minmed” is highly recommended for three images, and is
 good for four to six images, but should be avoided for ten or more images.</p>
-<p>A value of &#8216;median&#8217; is the recommended method for a large number of images,
+<p>A value of ‘median’ is the recommended method for a large number of images,
 and works equally well as minmed down to approximately four images.
-However, the user should set the &#8220;combine_nhigh&#8221; parameter to a value of 1
-when using &#8220;median&#8221; with four images, and consider raising this parameter&#8217;s
+However, the user should set the “combine_nhigh” parameter to a value of 1
+when using “median” with four images, and consider raising this parameter’s
 value for larger numbers of images. As a median averages the two inner
 values when the number of values being considered is even, the user may
-want to keep the total number of images minus &#8220;combine_nhigh&#8221; odd when
-using &#8220;median&#8221;.</p>
+want to keep the total number of images minus “combine_nhigh” odd when
+using “median”.</p>
 </div></blockquote>
-<p><strong>combine_nsigma</strong> : float (Default = &#8216;4 3&#8217;)</p>
+<p><strong>combine_nsigma</strong> : float (Default = ‘4 3’)</p>
 <blockquote>
-<div><p>This parameter defines the sigmas used for accepting minimum values, rather than median values, when using the &#8216;minmed&#8217; combination method. If two values are specified the first value will be used in the initial choice between median and minimum, while the second value will be used in the &#8220;growing&#8221; step to reject additional pixels around those identified in the first step. If only one value is specified, then it is used in both steps.</p>
+<div><p>This parameter defines the sigmas used for accepting minimum values, rather than median values, when using the ‘minmed’ combination method. If two values are specified the first value will be used in the initial choice between median and minimum, while the second value will be used in the “growing” step to reject additional pixels around those identified in the first step. If only one value is specified, then it is used in both steps.</p>
 </div></blockquote>
 <p><strong>combine_nlow</strong> : int (Default = 0)</p>
 <blockquote>
@@ -228,19 +226,29 @@ using &#8220;median&#8221;.</p>
 </div></blockquote>
 <p><strong>combine_lthresh</strong> : float (Default = INDEF)</p>
 <blockquote>
-<div><p>Sets the lower threshold for clipping input pixel values during image combination. This value gets passed directly to &#8216;imcombine&#8217; for use in creating the median image. If the parameter is set to &#8220;None&#8221;, no thresholds will be imposed.</p>
+<div><p>Sets the lower threshold for clipping input pixel values during image combination. This value gets passed directly to ‘imcombine’ for use in creating the median image. If the parameter is set to “None”, no thresholds will be imposed.</p>
 </div></blockquote>
 <p><strong>combine_hthresh</strong> : float (Default = INDEF)</p>
 <blockquote>
-<div><p>This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to &#8216;imcombine&#8217; for use in creating the median image. If the parameter is set to &#8220;None&#8221;, no thresholds will be imposed.</p>
+<div><p>This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to ‘imcombine’ for use in creating the median image. If the parameter is set to “None”, no thresholds will be imposed.</p>
 </div></blockquote>
 <p><strong>combine_grow</strong> : int (Default = 1)</p>
 <blockquote>
-<div><p>Width, in pixels, beyond the limit set by the rejection algorithm being used, for additional pixels to be rejected in an image. This parameter is used to set the &#8216;grow&#8217; parameter in &#8216;imcombine&#8217; for use in creating the median image.</p>
+<div><p>Width, in pixels, beyond the limit set by the rejection algorithm being
+used, for additional pixels to be rejected in an image. This parameter
+is used to set the ‘grow’ parameter in ‘imcombine’ for use in creating
+the median image <strong>only when</strong> <code class="docutils literal"><span class="pre">combine_type</span></code> is <code class="docutils literal"><span class="pre">'(i)minmed'</span></code>.
+When <code class="docutils literal"><span class="pre">combine_type</span></code> is anything other than <code class="docutils literal"><span class="pre">'(i)minmed'</span></code>, this
+parameter is ignored (set to 0).</p>
 </div></blockquote>
 <p><strong>combine_bufsize</strong> : float (Default = None)</p>
 <blockquote class="last">
-<div><p>Size of buffer, in Mb, to use when reading in each section of each input image.  The default buffer size is 1Mb.  The larger the buffer size, the fewer times the code needs to open each input image and the more memory will be required to create the median image.  A larger buffer can be helpful when using compression, since slower copies need to be made of each set of rows from each input image instead of using memory-mapping.</p>
+<div><p>Size of buffer, in MB (MiB), to use when reading in each section of each
+input image. The default buffer size is 1MB. The larger the buffer size,
+the fewer times the code needs to open each input image and the more memory
+will be required to create the median image. A larger buffer can be
+helpful when using compression, since slower copies need to be made of
+each set of rows from each input image instead of using memory-mapping.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -282,12 +290,12 @@ using &#8220;median&#8221;.</p>
         <li class="right" >
           <a href="adrizzle.html" title="Step 4 and 8: Drizzling the Images"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

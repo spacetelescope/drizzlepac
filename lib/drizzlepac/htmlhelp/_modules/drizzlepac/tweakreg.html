@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>drizzlepac.tweakreg &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>drizzlepac.tweakreg &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="../../_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,7 +24,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -91,8 +88,8 @@
 <span class="c1"># in one location only.</span>
 <span class="c1">#</span>
 <span class="c1"># This is specifically NOT intended to match the package-wide version information.</span>
-<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;1.4.3&#39;</span>
-<span class="n">__vdate__</span> <span class="o">=</span> <span class="s1">&#39;01-Jul-2016&#39;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;1.4.5&#39;</span>
+<span class="n">__vdate__</span> <span class="o">=</span> <span class="s1">&#39;7-Oct-2017&#39;</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">tweakutils</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">imgclasses</span>
@@ -108,7 +105,7 @@
 <span class="c1"># TEAL allows its data to stay alongside the expected data during a call to</span>
 <span class="c1"># TweakReg().  All of this needs to be revisited.</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logutil</span><span class="o">.</span><span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_managePsets</span><span class="p">(</span><span class="n">configobj</span><span class="p">,</span> <span class="n">section_name</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">iparsobj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -294,7 +291,6 @@
 
     <span class="c1"># Verify that we have the same number of catalog files as input images</span>
     <span class="k">if</span> <span class="n">catnames</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">catnames</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="n">rcat</span> <span class="o">=</span> <span class="n">configobj</span><span class="p">[</span><span class="s1">&#39;REFERENCE CATALOG DESCRIPTION&#39;</span><span class="p">][</span><span class="s1">&#39;refcat&#39;</span><span class="p">]</span>
         <span class="n">missed_files</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
@@ -562,8 +558,8 @@
         <span class="n">omitted_images</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">refimg</span><span class="p">)</span> <span class="c1"># refimage *must* be first</span>
         <span class="n">do_match_refimg</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s1">Aligning all input images to WCS defined by </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s1">&#39;</span>
-          <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">20</span><span class="p">,</span> <span class="n">refwcs_fname</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Performing alignment in the projection plane defined by the &quot;</span>
+          <span class="s2">&quot;WCS</span><span class="se">\n</span><span class="s2">derived from &#39;</span><span class="si">{1}</span><span class="s2">&#39;</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">63</span><span class="p">,</span> <span class="n">refwcs_fname</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">refimage</span><span class="o">.</span><span class="n">outxy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">cat_src</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -764,7 +760,7 @@
     <span class="n">imgs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">index</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="n">index</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">index</span> <span class="o">//</span> <span class="n">n</span>
     <span class="n">j</span> <span class="o">=</span> <span class="n">index</span> <span class="o">%</span> <span class="n">n</span>
     <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
     <span class="n">sj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span><span class="p">[:,</span><span class="n">j</span><span class="p">])</span>
@@ -839,12 +835,14 @@
 
     <span class="c1"># Get default or user-specified configobj for primary task</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">configobj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">configobj</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">configobj</span> <span class="o">==</span> <span class="s1">&#39;defaults&#39;</span><span class="p">:</span>
+            <span class="n">configobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">configobj</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cannot find .cfg file: &#39;</span><span class="o">+</span><span class="n">configobj</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="n">configobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">configobj</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">configobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">configobj</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">configobj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">configobj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">configobj</span> <span class="o">=</span> <span class="n">teal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="s1">&#39;updatewcs&#39;</span> <span class="ow">in</span> <span class="n">input_dict</span><span class="p">:</span> <span class="c1"># user trying to explicitly turn on updatewcs</span>
@@ -921,7 +919,7 @@
 <span class="sd">    __taskname__.help</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span>
+    <span class="n">install_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
     <span class="n">taskname</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">base_taskname</span><span class="p">(</span><span class="n">__taskname__</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
     <span class="n">htmlfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="s1">&#39;htmlhelp&#39;</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
     <span class="n">helpfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_dir</span><span class="p">,</span> <span class="n">taskname</span> <span class="o">+</span> <span class="s1">&#39;.help&#39;</span><span class="p">)</span>
@@ -934,17 +932,17 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">helpfile</span><span class="p">):</span>
-            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="n">__file__</span><span class="p">)</span>
+            <span class="n">helpString</span> <span class="o">+=</span> <span class="n">teal</span><span class="o">.</span><span class="n">getHelpFileAsString</span><span class="p">(</span><span class="n">taskname</span><span class="p">,</span> <span class="vm">__file__</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">helpString</span> <span class="o">+=</span> <span class="n">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
+            <span class="k">if</span> <span class="vm">__doc__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">helpString</span> <span class="o">+=</span> <span class="vm">__doc__</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">helpString</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">htmlfile</span>
 
     <span class="k">return</span> <span class="n">helpString</span>
 
 
-<span class="n">TweakReg</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">TweakReg</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">getHelpAsString</span><span class="p">(</span><span class="n">docstring</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_ver</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
 </pre></div>
 
           </div>
@@ -961,13 +959,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

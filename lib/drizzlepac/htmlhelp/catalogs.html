@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Classes to manage Catalogs and WCS’s &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Classes to manage Catalogs and WCS’s &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Functions to Manage WCS Table Extension" href="wcscorr.html" />
     <link rel="prev" title="Image Class" href="image.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="image.html" title="Image Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -85,7 +82,7 @@
           <div class="body" role="main">
             
   <div class="section" id="classes-to-manage-catalogs-and-wcs-s">
-<span id="catalogs"></span><h1>Classes to manage Catalogs and WCS&#8217;s<a class="headerlink" href="#classes-to-manage-catalogs-and-wcs-s" title="Permalink to this headline">¶</a></h1>
+<span id="catalogs"></span><h1>Classes to manage Catalogs and WCS’s<a class="headerlink" href="#classes-to-manage-catalogs-and-wcs-s" title="Permalink to this headline">¶</a></h1>
 <p>This module provides the classes used to generate and manage source catalogs
 for each input chip. Those positions can be transformed to undistorted sky
 positions, written out to files, or plotted using various methods defined
@@ -171,30 +168,6 @@ Python-based, daofind-like algorithms</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">xyunits</span><span class="p">,</span> <span class="n">xcol</span><span class="p">,</span> <span class="n">ycol</span><span class="p">[,</span> <span class="n">fluxcol</span><span class="p">,</span> <span class="p">[</span><span class="n">idcol</span><span class="p">]]</span>
 </pre></div>
 </div>
-<p>This class requires the input of a WCS and a source for the catalog,
-along with any arguments necessary for interpreting the catalog.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
-<blockquote>
-<div><p>Input WCS object generated using STWCS or HSTWCS</p>
-</div></blockquote>
-<p><strong id="catalog_source">catalog_source</strong> : str</p>
-<blockquote>
-<div><p>Name of the file from which to read the catalog.</p>
-</div></blockquote>
-<p><strong id="kwargs">kwargs</strong> : dict</p>
-<blockquote class="last">
-<div><p>Parameters for interpreting the catalog file or for performing the source
-extraction from the image. These will be set differently depending on
-the type of catalog being instantiated.</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
 <dl class="method">
 <dt id="drizzlepac.catalogs.UserCatalog.generateXY">
 <code class="descname">generateXY</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#UserCatalog.generateXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.generateXY" title="Permalink to this definition">¶</a></dt>
@@ -204,9 +177,9 @@ the type of catalog being instantiated.</p>
 <dl class="method">
 <dt id="drizzlepac.catalogs.UserCatalog.plotXYCatalog">
 <code class="descname">plotXYCatalog</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#UserCatalog.plotXYCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.UserCatalog.plotXYCatalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots the source catalog positions using matplotlib&#8217;s <code class="xref py py-obj docutils literal"><span class="pre">pyplot.plot()</span></code></p>
+<dd><p>Plots the source catalog positions using matplotlib’s <code class="xref py py-obj docutils literal"><span class="pre">pyplot.plot()</span></code></p>
 <p>Plotting <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code> that can also be passed include any keywords understood
-by matplotlib&#8217;s <code class="xref py py-obj docutils literal"><span class="pre">pyplot.plot()</span></code> function such as:</p>
+by matplotlib’s <code class="xref py py-obj docutils literal"><span class="pre">pyplot.plot()</span></code> function such as:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">cmap</span><span class="p">,</span> <span class="n">marker</span>
 </pre></div>
 </div>
@@ -238,30 +211,6 @@ by matplotlib&#8217;s <code class="xref py py-obj docutils literal"><span class=
 <p>A <em>reference catalog</em> is defined as a catalog of undistorted source positions
 given in RA/Dec which would be used as the master list for subsequent
 matching and fitting.</p>
-<p>This class requires the input of a WCS and a source for the catalog,
-along with any arguments necessary for interpreting the catalog.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="wcs">wcs</strong> : obj</p>
-<blockquote>
-<div><p>Input WCS object generated using STWCS or HSTWCS</p>
-</div></blockquote>
-<p><strong id="catalog_source">catalog_source</strong> : str</p>
-<blockquote>
-<div><p>Name of the file from which to read the catalog.</p>
-</div></blockquote>
-<p><strong id="kwargs">kwargs</strong> : dict</p>
-<blockquote class="last">
-<div><p>Parameters for interpreting the catalog file or for performing the source
-extraction from the image. These will be set differently depending on
-the type of catalog being instantiated.</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
 <dl class="method">
 <dt id="drizzlepac.catalogs.RefCatalog.buildXY">
 <code class="descname">buildXY</code><span class="sig-paren">(</span><em>catalogs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#RefCatalog.buildXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.buildXY" title="Permalink to this definition">¶</a></dt>
@@ -288,8 +237,13 @@ the type of catalog being instantiated.</p>
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="drizzlepac.catalogs.RefCatalog.PAR_NBRIGHT_PREFIX">
+<code class="descname">PAR_NBRIGHT_PREFIX</code><em class="property"> = 'ref'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.PAR_NBRIGHT_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="drizzlepac.catalogs.RefCatalog.PAR_PREFIX">
-<code class="descname">PAR_PREFIX</code><em class="property"> = 'ref'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
+<code class="descname">PAR_PREFIX</code><em class="property"> = 'r'</em><a class="headerlink" href="#drizzlepac.catalogs.RefCatalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -297,7 +251,7 @@ the type of catalog being instantiated.</p>
 <dl class="class">
 <dt id="drizzlepac.catalogs.Catalog">
 <em class="property">class </em><code class="descclassname">drizzlepac.catalogs.</code><code class="descname">Catalog</code><span class="sig-paren">(</span><em>wcs</em>, <em>catalog_source</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Base class for keeping track of a source catalog for an input WCS</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -365,7 +319,7 @@ Implemented by each subclass</p>
 <dt id="drizzlepac.catalogs.Catalog.plotXYCatalog">
 <code class="descname">plotXYCatalog</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/catalogs.html#Catalog.plotXYCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.catalogs.Catalog.plotXYCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method which displays the original image and overlays the positions
-of the detected sources from this image&#8217;s catalog.</p>
+of the detected sources from this image’s catalog.</p>
 <p>Plotting <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code> that can be provided are:</p>
 <blockquote>
 <div>vmin, vmax, cmap, marker</div></blockquote>
@@ -386,8 +340,13 @@ Only needed when provided a source catalog as input</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="drizzlepac.catalogs.Catalog.PAR_NBRIGHT_PREFIX">
+<code class="descname">PAR_NBRIGHT_PREFIX</code><em class="property"> = ''</em><a class="headerlink" href="#drizzlepac.catalogs.Catalog.PAR_NBRIGHT_PREFIX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="drizzlepac.catalogs.Catalog.PAR_PREFIX">
-<code class="descname">PAR_PREFIX</code><em class="property"> = ' '</em><a class="headerlink" href="#drizzlepac.catalogs.Catalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
+<code class="descname">PAR_PREFIX</code><em class="property"> = ''</em><a class="headerlink" href="#drizzlepac.catalogs.Catalog.PAR_PREFIX" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -415,12 +374,12 @@ Only needed when provided a source catalog as input</p>
         <li class="right" >
           <a href="image.html" title="Image Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

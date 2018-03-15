@@ -14,8 +14,8 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-Drizzlepac v2.1.22 (not released)
-=================================
+Drizzlepac v2.1.22 (15-March-2018)
+==================================
 
 - Changed the definition of Megabyte used to describe the size of the buffer
   for create median step (``combine_bufsize``). Previously a mixed
@@ -32,6 +32,8 @@ Drizzlepac v2.1.22 (not released)
   ``minmed`` combine type. Also, it is automatically ignored (set to 0) for all
   non-``minmed`` combine types. This will result in additional speed-up in the
   Create Median step.
+
+- Updated documentation.
 
 Drizzlepac v2.1.21 (12-January-2018)
 ====================================

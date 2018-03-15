@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Updatenpol &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Updatenpol &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Running Astrodrizzle" href="runastrodriz.html" />
     <link rel="prev" title="skytopix: Coordinate transformation from sky coordinates" href="skytopix.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="skytopix.html" title="skytopix: Coordinate transformation from sky coordinates"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -106,8 +103,8 @@ C version of MultiDrizzle (astrodrizzle).</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Command-line Options:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><dl class="first last docutils">
-<dt><a class="reference external" href="https://docs.python.org/2/library/functions.html#input" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a></dt>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><dl class="first last docutils">
+<dt><a class="reference external" href="https://docs.python.org/3/library/functions.html#input" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">input</span></code></a></dt>
 <dd><p class="first last">The specification of the files to be updated, either as a single filename,
 an ASN table name, or wild-card specification
 of a list of files.</p>
@@ -127,7 +124,7 @@ for use with the input files.</p>
 <dt><code class="docutils literal"><span class="pre">-i</span></code></dt>
 <dd><p class="first last">If specified, the program will interactively request the exact
 names of the <code class="docutils literal"><span class="pre">NPOLFILE</span></code> and <code class="docutils literal"><span class="pre">D2IMFILE</span></code> reference files to be used
-for updating the header of each file. The value of &#8216;refdir&#8217;
+for updating the header of each file. The value of ‘refdir’
 will be ignored in interactive mode.</p>
 </dd>
 </dl>
@@ -145,7 +142,7 @@ EACH separate INPUT file when the option <code class="xref py py-obj docutils li
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><p class="first">1. This command will update all the FLT files in the current directory
-with the new <code class="docutils literal"><span class="pre">NPOLFILE</span></code> and <code class="docutils literal"><span class="pre">D2IMFILE</span></code> reference files found in the &#8216;myjref&#8217;
+with the new <code class="docutils literal"><span class="pre">NPOLFILE</span></code> and <code class="docutils literal"><span class="pre">D2IMFILE</span></code> reference files found in the ‘myjref’
 directory as defined in the environment:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span>updatenpol *flt.fits myjref$
 </pre></div>
@@ -153,7 +150,7 @@ directory as defined in the environment:</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Compatability with MultiDrizzle:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">The new version of <code class="docutils literal"><span class="pre">MultiDrizzle</span></code> (<code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle)</span> <span class="pre">and</span> <span class="pre">`updatewcs</span></code>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">The new version of <code class="docutils literal"><span class="pre">MultiDrizzle</span></code> (<code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle)</span> <span class="pre">and</span> <span class="pre">`updatewcs</span></code>
 only work with the new <code class="docutils literal"><span class="pre">NPOLFILE</span></code> reference file for the <code class="docutils literal"><span class="pre">DGEO</span></code> correction
 (to replace the use of DGEOFILE).
 In fact, <code class="xref py py-obj docutils literal"><span class="pre">astrodrizzle</span></code> has been extensively modified to
@@ -328,12 +325,12 @@ to be updated using:</p>
         <li class="right" >
           <a href="skytopix.html" title="skytopix: Coordinate transformation from sky coordinates"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

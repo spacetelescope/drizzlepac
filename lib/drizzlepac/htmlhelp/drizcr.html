@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Step 7: Cosmic-ray identification &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Step 7: Cosmic-ray identification &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Utilities" href="util.html" />
     <link rel="prev" title="Step 6: Blotting the Median Image" href="ablot.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="ablot.html" title="Step 6: Blotting the Median Image"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -113,7 +110,7 @@ file.</p>
 <dd><p>The blotted median images that are now transformed back into the original
 reference frame, get compared to the original input images to detect any
 spurious pixels (which may include pixels impacted by cosmic rays) in
-each input. Those spurious pixels then get flagged as &#8216;bad&#8217; in the output
+each input. Those spurious pixels then get flagged as ‘bad’ in the output
 cosmic ray mask files, which get used as input for the final combination
 so that they do not show up in the final product.
 The identified bad pixels get flagged by updating the input mask files.
@@ -145,7 +142,7 @@ be used to override the defaults.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
-<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first"><strong>driz_cr</strong> : bool (Default = False)</p>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first"><strong>driz_cr</strong> : bool (Default = False)</p>
 <blockquote>
 <div><p>Perform cosmic-ray detection? If set to <code class="docutils literal"><span class="pre">True</span></code>, cosmic-rays will be
 detected and used to create cosmic-ray masks based on the algorithms
@@ -153,12 +150,12 @@ from <code class="xref py py-obj docutils literal"><span class="pre">deriv</span
 </div></blockquote>
 <p><strong>driz_cr_corr</strong> : bool (Default = False)</p>
 <blockquote>
-<div><p>Create a cosmic-ray cleaned input image? I set to <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, a cosmic-ray
+<div><p>Create a cosmic-ray cleaned input image? I set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.6)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, a cosmic-ray
 cleaned <code class="docutils literal"><span class="pre">_cor</span></code> image will be generated directly from the input image,
 and a corresponding <code class="docutils literal"><span class="pre">_crmask</span></code> file will be written to document detected
 pixels affected by cosmic-rays.</p>
 </div></blockquote>
-<p><strong>driz_cr_snr</strong> : list of floats (Default = &#8216;3.5 3.0&#8217;)</p>
+<p><strong>driz_cr_snr</strong> : list of floats (Default = ‘3.5 3.0’)</p>
 <blockquote>
 <div><p>The values for this parameter specify the signal-to-noise ratios for
 the <code class="xref py py-obj docutils literal"><span class="pre">driz_cr</span></code> task to be used in detecting cosmic rays.
@@ -175,7 +172,7 @@ rays will be used.</p>
 <div><p>Length, in pixels, of the CTE tail that should be masked in
 the drizzled output.</p>
 </div></blockquote>
-<p><strong>driz_cr_scale</strong> : str (Default = &#8216;1.2 0.7&#8217;)</p>
+<p><strong>driz_cr_scale</strong> : str (Default = ‘1.2 0.7’)</p>
 <blockquote class="last">
 <div><p>Scaling factor applied to the derivative in <code class="xref py py-obj docutils literal"><span class="pre">driz_cr</span></code> when detecting
 cosmic-rays. See the help file for <code class="xref py py-obj docutils literal"><span class="pre">driz_cr</span></code> for further discussion
@@ -273,12 +270,12 @@ which also been updated with the user overrides.</p>
         <li class="right" >
           <a href="ablot.html" title="Step 6: Blotting the Median Image"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

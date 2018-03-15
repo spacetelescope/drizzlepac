@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Image Class &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>Image Class &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Classes to manage Catalogs and WCS’s" href="catalogs.html" />
     <link rel="prev" title="Imagefindpars: Source finding parameters" href="imagefindpars.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -58,7 +55,7 @@
                         title="previous chapter">Imagefindpars: Source finding parameters</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="catalogs.html"
-                        title="next chapter">Classes to manage Catalogs and WCS&#8217;s</a></p>
+                        title="next chapter">Classes to manage Catalogs and WCS’s</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -106,7 +103,7 @@ Used by <code class="xref py py-obj docutils literal"><span class="pre">TweakReg
 <dl class="class">
 <dt id="drizzlepac.imgclasses.Image">
 <em class="property">class </em><code class="descclassname">drizzlepac.imgclasses.</code><code class="descname">Image</code><span class="sig-paren">(</span><em>filename</em>, <em>input_catalogs=None</em>, <em>exclusions=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imgclasses.html#Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imgclasses.Image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Primary class to keep track of all WCS and catalog information for
 a single input image. This class also performs all matching and fitting.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -264,7 +261,7 @@ It keeps a copy of the original full list in order to support iteration.</p>
 <dl class="class">
 <dt id="drizzlepac.imgclasses.RefImage">
 <em class="property">class </em><code class="descclassname">drizzlepac.imgclasses.</code><code class="descname">RefImage</code><span class="sig-paren">(</span><em>wcs_list</em>, <em>catalog</em>, <em>xycatalog=None</em>, <em>cat_origin=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/imgclasses.html#RefImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.imgclasses.RefImage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>This class provides all the information needed by to define a reference
 tangent plane and list of source positions on the sky.</p>
 <div class="admonition warning">
@@ -343,12 +340,12 @@ to reference tangent plane (self.wcs) to create output X,Y positions.</p>
         <li class="right" >
           <a href="imagefindpars.html" title="Imagefindpars: Source finding parameters"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>

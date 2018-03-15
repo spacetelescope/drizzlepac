@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &#8212; DrizzlePac 2.1.16 (05-June-2017) documentation</title>
-    
+    <title>UPDATEHDR: Functions for Updating WCS with New Solutions &#8212; DrizzlePac 2.1.22 (15-March-2018) documentation</title>
     <link rel="stylesheet" href="_static/stsci_sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.16 (05-June-2017)',
+        VERSION:     '2.1.22 (15-March-2018)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -29,7 +26,7 @@
     <link rel="next" title="Region mapping for TweakReg" href="mapreg.html" />
     <link rel="prev" title="TWEAKUTILS: Utility Functions for Tweakreg" href="tweakutils.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -45,7 +42,7 @@
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -149,7 +146,7 @@ from shiftfile.</p>
 <p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
 <div><p>Label to give to new WCS solution being created by this fit. If
-a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
+a value of None is given, it will automatically use ‘TWEAK’ as the
 label. [Default =None]</p>
 </div></blockquote>
 <p><strong id="force">force</strong> : bool</p>
@@ -168,7 +165,7 @@ wcsname? [Default=False]</p>
 <code class="descclassname">drizzlepac.updatehdr.</code><code class="descname">update_wcs</code><span class="sig-paren">(</span><em>image</em>, <em>extnum</em>, <em>new_wcs</em>, <em>wcsname=''</em>, <em>reusename=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/updatehdr.html#update_wcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.updatehdr.update_wcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates the WCS of the specified extension number with the new WCS
 after archiving the original WCS.</p>
-<p>The value of &#8216;new_wcs&#8217; needs to be the full
+<p>The value of ‘new_wcs’ needs to be the full
 HSTWCS object.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -208,9 +205,9 @@ HSTWCS object.</p>
 <dl class="function">
 <dt id="drizzlepac.updatehdr.updatewcs_with_shift">
 <code class="descclassname">drizzlepac.updatehdr.</code><code class="descname">updatewcs_with_shift</code><span class="sig-paren">(</span><em>image</em>, <em>reference</em>, <em>wcsname=None</em>, <em>reusename=False</em>, <em>fitgeom='rscale'</em>, <em>rot=0.0</em>, <em>scale=1.0</em>, <em>xsh=0.0</em>, <em>ysh=0.0</em>, <em>fit=None</em>, <em>xrms=None</em>, <em>yrms=None</em>, <em>verbose=False</em>, <em>force=False</em>, <em>sciext='SCI'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/drizzlepac/updatehdr.html#updatewcs_with_shift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drizzlepac.updatehdr.updatewcs_with_shift" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update the SCI headers in &#8216;image&#8217; based on the fit provided as determined
-in the WCS specified by &#8216;reference&#8217;.  The fit should be a 2-D matrix as
-generated for use with &#8216;make_vector_plot()&#8217;.</p>
+<dd><p>Update the SCI headers in ‘image’ based on the fit provided as determined
+in the WCS specified by ‘reference’.  The fit should be a 2-D matrix as
+generated for use with ‘make_vector_plot()’.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -218,8 +215,8 @@ generated for use with &#8216;make_vector_plot()&#8217;.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong id="image">image</strong> : str or PyFITS.HDUList object</p>
 <blockquote>
 <div><p>Filename, or PyFITS object, of image with WCS to be updated.
-All extensions with EXTNAME matches the value of the &#8216;sciext&#8217;
-parameter value (by default, all &#8216;SCI&#8217; extensions) will be updated.</p>
+All extensions with EXTNAME matches the value of the ‘sciext’
+parameter value (by default, all ‘SCI’ extensions) will be updated.</p>
 </div></blockquote>
 <p><strong id="reference">reference</strong> : str</p>
 <blockquote>
@@ -230,10 +227,10 @@ used to define the tangent plane in which all the fit parameters
 <p><strong id="wcsname">wcsname</strong> : str</p>
 <blockquote>
 <div><p>Label to give to new WCS solution being created by this fit. If
-a value of None is given, it will automatically use &#8216;TWEAK&#8217; as the
+a value of None is given, it will automatically use ‘TWEAK’ as the
 label. If a WCS has a name with this specific value, the code will
-automatically append a version ID using the format &#8216;_n&#8217;, such as
-&#8216;TWEAK_1&#8217;, &#8216;TWEAK_2&#8217;,or &#8216;TWEAK_update_1&#8217;.
+automatically append a version ID using the format ‘_n’, such as
+‘TWEAK_1’, ‘TWEAK_2’,or ‘TWEAK_update_1’.
 [Default =None]</p>
 </div></blockquote>
 <p><strong id="reusename">reusename</strong> : bool</p>
@@ -290,7 +287,7 @@ wcsname? [Default=False]</p>
 <p><strong id="sciext">sciext</strong> : string</p>
 <blockquote class="last">
 <div><p>Value of FITS EXTNAME keyword for extensions with WCS headers to
-be updated with the fit values. [Default=&#8217;SCI&#8217;]</p>
+be updated with the fit values. [Default=’SCI’]</p>
 </div></blockquote>
 </td>
 </tr>
@@ -299,7 +296,7 @@ be updated with the fit values. [Default=&#8217;SCI&#8217;]</p>
 <p class="rubric">Notes</p>
 <p>The algorithm used to apply the provided fit solution to the image
 involves applying the following steps to the WCS of each of the
-input image&#8217;s chips:</p>
+input image’s chips:</p>
 <ol class="arabic simple">
 <li><dl class="first docutils">
 <dt>compute RA/Dec with full distortion correction for</dt>
@@ -319,11 +316,11 @@ input image&#8217;s chips:</p>
 <li>compute (Rcs_i,Dcs_i) as the sky coordinates for (Xcs_i,Ycs_i)</li>
 <li>compute delta of (Rcs_i-Rc_i, Dcs_i-Dcs_i) as (dRcs_i,dDcs_i)</li>
 <li><dl class="first docutils">
-<dt>apply the fit to the chip&#8217;s undistorted CD matrix, the apply linear</dt>
+<dt>apply the fit to the chip’s undistorted CD matrix, the apply linear</dt>
 <dd>distortion terms back in to create a new CD matrix</dd>
 </dl>
 </li>
-<li>add (dRcs_i,dDcs_i) to CRVAL of the reference chip&#8217;s WCS</li>
+<li>add (dRcs_i,dDcs_i) to CRVAL of the reference chip’s WCS</li>
 <li>update header with new WCS values</li>
 </ol>
 </dd></dl>
@@ -351,12 +348,12 @@ input image&#8217;s chips:</p>
         <li class="right" >
           <a href="tweakutils.html" title="TWEAKUTILS: Utility Functions for Tweakreg"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.16 (05-June-2017) documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">DrizzlePac 2.1.22 (15-March-2018) documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
     </div>
   </body>
 </html>
