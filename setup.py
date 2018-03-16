@@ -53,6 +53,7 @@ if pandokia:
     include_dirs.extend(fctx_includes)
 
 
+
 setup(
     name=NAME,
     version=version.pep386,
@@ -92,6 +93,7 @@ setup(
         '': [
             'pars/*',
             '*.help',
+            'htmlhelp/*',
         ]
     },
     entry_points={

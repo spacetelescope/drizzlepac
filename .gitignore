@@ -1,5 +1,7 @@
 RELIC-INFO
 relic/
+doc/source/.doctrees
+drizzlepac/htmlhelp
 */version.py
 build/
 dist/
