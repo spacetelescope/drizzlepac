@@ -21,10 +21,18 @@ file : str or list of str  (Default = ``'*flt.fits'``)
 
 editpars : bool (Default = False)
     A parameter that allows user to edit input parameters by hand in the GUI.
-    True to use the GUI to edit parameters.
+    `True` to use the GUI to edit parameters.
 
-configObj : configObject (Default = None)
-    An instance of `configObject` which overrides default parameter settings.
+configobj : ConfigObjPars, ConfigObj, dict (Default = None)
+    An instance of `stsci.tools.cfgpars.ConfigObjPars` or
+    `stsci.tools.configobj.ConfigObj` which overrides default parameter
+    settings. When ``configobj`` is `None`, default parameter values are loaded
+    from the user local configuration file usually located in
+    ``~/.teal/tweakreg.cfg``. This configuration file stores most recent
+    settings that an user used when running ``TweakReg`` through the
+    ``TEAL`` interface. When ``configobj='defaults'``, ``TweakReg``
+    parameters not provided explicitly, will be initialized with their
+    default values as described in the "Other Parameters" section.
 
 imagefindcfg : dict, configObject (Default = None)
     An instance of `dict` or `configObject` which overrides default source
@@ -40,23 +48,24 @@ refimagefindcfg : dict, configObject (Default = None)
     parameters that are different from default values **need** to be specified
     here.
 
-inputDict : dict, optional
+input_dict : dict, optional
     An optional list of parameters specified by the user, which can also
     be used to override the defaults.
 
-    .. note:: This list of parameters **can** include the `updatewcs` parameter,
-       even though this parameter no longer can be set through the TEAL GUI.
+    .. note:: This list of parameters **can** include the ``updatewcs``
+       parameter, even though this parameter no longer can be set through
+       the TEAL GUI.
 
     .. note:: This list of parameters **can** contain parameters specific
-       to the `TweakReg` task itself described here in the "Other Parameters"
-       section and **may not** contain parameters from the `refimagefindpars`
+       to the ``TweakReg`` task itself described here in the "Other Parameters"
+       section and **may not** contain parameters from the ``refimagefindpars``
        PSET.
 
-    .. note:: For compatibility purpose with previous `TweakReg` versions,
-       `inputDict` may contain parameters from the the `imagefindpars`
-       PSET. However, if `imagefindcfg` is not `None`, then `imagefindpars`
-       parameters specified through `inputDict` may not duplicate
-       parameters specified through `imagefindcfg`.
+    .. note:: For compatibility purpose with previous ``TweakReg`` versions,
+       ``input_dict`` may contain parameters from the the ``imagefindpars``
+       PSET. However, if ``imagefindcfg`` is not `None`, then ``imagefindpars``
+       parameters specified through ``input_dict`` may not duplicate
+       parameters specified through ``imagefindcfg``.
 
 
 Other Parameters
