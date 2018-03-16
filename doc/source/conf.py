@@ -24,8 +24,6 @@ except ImportError:
     from configparser import ConfigParser
 conf = ConfigParser()
 
-from stsci.sphinxext.conf import *
-del latex_preamble
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -83,7 +81,6 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'numpydoc',
-    'parameter_anchor'
 ]
 
 if on_rtd:
