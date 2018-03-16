@@ -33,6 +33,13 @@ Drizzlepac v2.1.22 (15-March-2018)
   non-``minmed`` combine types. This will result in additional speed-up in the
   Create Median step.
 
+- Both ``AstroDrizzle()`` and ``TweakReg()`` now can be called with
+  ``configobj`` parameter set to ``'defaults'`` in order to indicate that
+  values for the not-explicitly-specified parameters should be set to
+  the default values for the task instead of being loaded from the
+  ``~/.teal/astrodrizzle.cfg`` or ``~/.teal/tweakreg.cfg`` files that store
+  latest used settings.
+
 - Updated documentation.
 
 Drizzlepac v2.1.21 (12-January-2018)
