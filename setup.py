@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import numpy
+import shutil
 import subprocess
 import sys
 
@@ -52,6 +53,20 @@ if pandokia:
                                   'runners', 'maker')]
     include_dirs.extend(fctx_includes)
 
+
+docs_compiled_src = os.path.normpath('build/sphinx/html')
+docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(NAME))
+
+if os.path.exists(docs_compiled_src):
+    if os.path.exists(docs_compiled_dest):
+        shutil.rmtree(docs_compiled_dest)
+
+    shutil.copytree(docs_compiled_src, docs_compiled_dest)
+else:
+    if len(sys.argv) > 1 and 'build_sphinx' not in sys.argv[1]:
+        print('\nwarning: SPHINX DOCUMENTATION WILL NOT BE INSTALLED!\n'
+              '         Please run: python {0} build_sphinx\n'
+              ''.format(sys.argv[0]), file=sys.stderr)
 
 
 setup(
