@@ -36,10 +36,12 @@ else:
             print(e)
             exit(1)
 
+
 NAME = 'drizzlepac'
 version = relic.release.get_info()
 relic.release.write_template(version, NAME)
 
+# Setup C module include directories
 include_dirs = []
 numpy_includes = [numpy.get_include()]
 wcs_includes = [os.path.join(wcs.get_include(), 'astropy_wcs'),
@@ -48,12 +50,14 @@ wcs_includes = [os.path.join(wcs.get_include(), 'astropy_wcs'),
 include_dirs.extend(numpy_includes)
 include_dirs.extend(wcs_includes)
 
+# Deprecation warning:
+#    Pandokia integration will be removed in a later release.
 if pandokia:
     fctx_includes = [os.path.join(os.path.dirname(pandokia.__file__),
                                   'runners', 'maker')]
     include_dirs.extend(fctx_includes)
 
-
+# Distribute compiled documentation alongside the installed package
 docs_compiled_src = os.path.normpath('build/sphinx/html')
 docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(NAME))
 
@@ -90,7 +94,6 @@ setup(
         'nictools',
         'nose',
         'numpy',
-        'pandokia',
         'scipy',
         'sphinx',
         'stsci.tools',
