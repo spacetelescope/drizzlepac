@@ -26,12 +26,13 @@ editpars : bool (Default = False)
 configobj : ConfigObjPars, ConfigObj, dict (Default = None)
     An instance of `stsci.tools.cfgpars.ConfigObjPars` or
     `stsci.tools.configobj.ConfigObj` which overrides default parameter
-    settings. When ``configobj`` is `None`, default parameter values are loaded
-    from the user local configuration file usually located in
-    ``~/.teal/tweakreg.cfg``. This configuration file stores most recent
+    settings. When ``configobj`` is `defaults`, default parameter values are
+    loaded from the user local configuration file usually located in
+    ``~/.teal/tweakreg.cfg`` or a matching configuration file in the
+    current directory. This configuration file stores most recent
     settings that an user used when running ``TweakReg`` through the
-    ``TEAL`` interface. When ``configobj='defaults'``, ``TweakReg``
-    parameters not provided explicitly, will be initialized with their
+    ``TEAL`` interface. When ``configobj`` is `None`, ``TweakReg``
+    parameters not provided explicitly will be initialized with their
     default values as described in the "Other Parameters" section.
 
 imagefindcfg : dict, configObject (Default = None)

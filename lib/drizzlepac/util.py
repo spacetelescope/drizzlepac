@@ -19,6 +19,7 @@ import errno
 
 import numpy as np
 import astropy
+
 from astropy.io import fits
 from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
 from stsci.tools import check_files
@@ -83,9 +84,7 @@ blank_list = [None, '', ' ',"None","INDEF"]
 def is_blank(val):
     """ Determines whether or not a value is considered 'blank'.
     """
-    blank = False
-    if val in blank_list: blank = True
-    return blank
+    return val in blank_list
 
 def check_blank(cvar):
     """ Converts blank value (from configObj?) into a value of None.

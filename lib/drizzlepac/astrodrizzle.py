@@ -35,6 +35,8 @@ from __future__ import absolute_import, division, print_function  # confidence h
 import os
 import sys
 
+from six import string_types
+
 from stsci.tools import teal, logutil, textutil
 
 from . import adrizzle
@@ -51,9 +53,6 @@ from .version import *
 
 __taskname__ = "astrodrizzle"
 
-# Definitions for flags on when to raise an EXCEPTION
-RAISE = 1
-DO_NOT_RAISE = 0
 
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
@@ -61,37 +60,31 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 log = logutil.create_logger(__name__)
 
 
-#
-#### Interactive user interface (functional form)
-#
 def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
                  wcsmap=None, **input_dict):
-    """ AstroDrizzle command-line interface
-    """
-    # support input of filenames from command-line without a parameter name
-    # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if input_dict is None:
-        input_dict = {}
+    """ AstroDrizzle command-line interface """
+    # Support input of filenames from command-line without a parameter name
+    # then copy this into input_dict for merging with TEAL ConfigObj
+    # parameters.
 
-    if input is None and configobj is None:
-        raise TypeError('AstroDrizzle() needs either "input" or "configobj" arg')
+    # Load any user-specified configobj
+    if isinstance(configobj, string_types):
+        if configobj == 'defaults':
+            # load "TEAL"-defaults (from ~/.teal/):
+            configobj = teal.load(__taskname__)
+        else:
+            if not os.path.exists(configobj):
+                raise RuntimeError('Cannot find .cfg file: '+configobj)
+            configobj = teal.load(configobj, strict=False)
+    elif configobj is None:
+        # load 'astrodrizzle' parameter defaults as described in the docs:
+        configobj = teal.load(__taskname__, defaults=True)
 
     if input and not util.is_blank(input):
         input_dict['input'] = input
-
-    # input_dict['mdriztab'] = mdriztab
-
-    # Load any user-specified configobj
-    if isinstance(configobj, str) and configobj != 'defaults':
-        if not os.path.exists(configobj):
-            raise RuntimeError('Cannot find .cfg file: '+configobj)
-        configobj = teal.load(configobj, strict=False)
-
-    if configobj is None:
-        configobj = teal.load(__taskname__)
-
-    elif configobj == 'defaults':
-        configobj = teal.load(__taskname__, defaults=True)
+    elif configobj is None:
+        raise TypeError("AstroDrizzle() needs either 'input' or "
+                        "'configobj' arguments")
 
     if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
         configobj['updatewcs'] = input_dict['updatewcs']
@@ -125,11 +118,9 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     if not editpars:
         run(configObj, wcsmap=wcsmap)
 
-#
-#### Interfaces used by TEAL
-#
-
-
+##############################
+##  Interfaces used by TEAL ##
+##############################
 @util.with_logging
 def run(configobj, wcsmap=None):
     """
@@ -150,8 +141,6 @@ def run(configobj, wcsmap=None):
         The example config files are in drizzlepac/pars
 
     """
-    raise_status = RAISE
-    #
     # turn on logging, redirecting stdout/stderr messages to a log file
     # while also printing them out to stdout as well
     # also, initialize timing of processing steps
@@ -178,22 +167,25 @@ def run(configobj, wcsmap=None):
            (__version__, __vdate__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
-    #try:
     try:
         # Define list of imageObject instances and output WCSObject instance
         # based on input paramters
-        procSteps.addStep('Initialization')
         imgObjList = None
+        procSteps.addStep('Initialization')
         imgObjList, outwcs = processInput.setCommonInput(configobj)
         procSteps.endStep('Initialization')
 
-        if not imgObjList:
+        if imgObjList is None or not imgObjList:
             errmsg = "No valid images found for processing!\n"
             errmsg += "Check log file for full details.\n"
             errmsg += "Exiting AstroDrizzle now..."
-            print(textutil.textbox(errmsg,width=65))
-            raise_status = DO_NOT_RAISE
-            raise ValueError
+            print(textutil.textbox(errmsg, width=65))
+            print(textutil.textbox(
+                'ERROR:\nAstroDrizzle Version %s encountered a problem!  '
+                'Processing terminated at %s.' %
+                (__version__, util._ptime()[0])), file=sys.stderr)
+            procSteps.reportTimes()
+            return
 
         log.info("USER INPUT PARAMETERS common to all Processing Steps:")
         util.printParams(configobj, log=log)
@@ -240,21 +232,15 @@ def run(configobj, wcsmap=None):
             'Processing terminated at %s.' %
             (__version__, util._ptime()[0])), file=sys.stderr)
         procSteps.reportTimes()
-        if imgObjList:
+        if imgObjList is not None:
             for image in imgObjList:
                 image.close()
             del imgObjList
             del outwcs
 
-        # Raise an exception ONLY if requested...
-        if raise_status == RAISE:
-            raise
-        else:
-            return
-
     procSteps.reportTimes()
 
-    if imgObjList:
+    if imgObjList is not None:
         for image in imgObjList:
             if stateObj['clean']:
                 image.clean()
