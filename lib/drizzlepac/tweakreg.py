@@ -11,6 +11,8 @@ import sys
 import numpy as np
 from copy import copy
 
+from six import string_types
+
 from stsci.tools import parseinput, teal
 from stsci.tools import logutil, textutil
 from stsci.tools.cfgpars import DuplicateKeyError
@@ -24,8 +26,8 @@ from . import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.4.5'
-__vdate__ = '7-Oct-2017'
+__version__ = '1.4.6'
+__vdate__ = '19-March-2018'
 
 from . import tweakutils
 from . import imgclasses
@@ -761,25 +763,25 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     """
     # support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
-    if files is None and configobj is None:
-        raise TypeError('TweakReg() needs either "files" or "configobj" arg')
-
-    if files and not util.is_blank(files):
-        if input_dict is None:
-            input_dict = {}
-        input_dict['input'] = files
 
     # Get default or user-specified configobj for primary task
-    if isinstance(configobj, str):
+    if isinstance(configobj, string_types):
         if configobj == 'defaults':
-            configobj = teal.load(__taskname__, defaults=True)
-        elif not os.path.exists(configobj):
-            print('Cannot find .cfg file: '+configobj)
+            # load "TEAL"-defaults (from ~/.teal/):
+            configobj = teal.load(__taskname__)
         else:
+            if not os.path.exists(configobj):
+                raise RuntimeError('Cannot find .cfg file: '+configobj)
             configobj = teal.load(configobj, strict=False)
-
     elif configobj is None:
-        configobj = teal.load(__taskname__)
+        # load 'astrodrizzle' parameter defaults as described in the docs:
+        configobj = teal.load(__taskname__, defaults=True)
+
+    if input and not util.is_blank(input):
+        input_dict['input'] = input
+    elif configobj is None:
+        raise TypeError("TweakReg() needs either 'files' or "
+                        "'configobj' arguments")
 
     if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
         configobj['updatewcs'] = input_dict['updatewcs']
@@ -812,8 +814,8 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     # with a fully populated configObj instance.
     try:
         configObj = util.getDefaultConfigObj(__taskname__, configobj,
-                                            input_dict,
-                                            loadOnly=(not editpars))
+                                             input_dict,
+                                             loadOnly=(not editpars))
     except ValueError:
         print("Problem with input parameters. Quitting...")
         return

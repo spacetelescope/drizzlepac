@@ -14,6 +14,19 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+Drizzlepac v2.1.23 (not yet released)
+=====================================
+
+- Swapped the effect of setting ``configobj`` to `None` or ``'defaults'`` in
+  ``AstroDrizzle`` and ``TweakReg``. When calling one of these tasks with
+  ``configobj`` parameter set to `None`, values for the
+  not-explicitly-specified parameters should be set to the default values
+  for the task. When ``configobj`` is set to ``'defaults'``
+  not-explicitly-specified parameters will be loaded from the
+  ``~/.teal/astrodrizzle.cfg`` or ``~/.teal/tweakreg.cfg`` files that store
+  latest used settings (or from matching configuration files in the current
+  directory).
+
 Drizzlepac v2.1.22 (15-March-2018)
 ==================================
 
