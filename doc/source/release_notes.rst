@@ -25,7 +25,8 @@ Drizzlepac v2.1.23 (not yet released)
   not-explicitly-specified parameters will be loaded from the
   ``~/.teal/astrodrizzle.cfg`` or ``~/.teal/tweakreg.cfg`` files that store
   latest used settings (or from matching configuration files in the current
-  directory).
+  directory). See https://github.com/spacetelescope/drizzlepac/pull/115
+  for more details.
 
 Drizzlepac v2.1.22 (15-March-2018)
 ==================================
