@@ -1,0 +1,19 @@
+name: drizzlepac
+channels:
+  - http://ssb.stsci.edu/astroconda
+dependencies:
+  - astropy
+  - fitsblender
+  - graphviz
+  - matplotlib
+  - nictools
+  - nose
+  - numpy
+  - numpydoc
+  - pyregion
+  - scipy
+  - sphinx
+  - stsci
+  - stwcs
+  - pip:
+    - git+https://github.com/spacetelescope/stsci_rtd_theme.git#egg=stsci_rtd_theme

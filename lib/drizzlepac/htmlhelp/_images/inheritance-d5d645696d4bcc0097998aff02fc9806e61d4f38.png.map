@@ -1,6 +1,0 @@
-<map id="inheritancee4936daf73" name="inheritancee4936daf73">
-<area shape="rect" id="node1" href="#drizzlepac.catalogs.Catalog" target="_top" title="Base class for keeping track of a source catalog for an input WCS" alt="" coords="5,31,124,56"/>
-<area shape="rect" id="node2" href="#drizzlepac.catalogs.ImageCatalog" target="_top" title="Class which generates a source catalog from an image using" alt="" coords="172,5,327,31"/>
-<area shape="rect" id="node4" href="#drizzlepac.catalogs.UserCatalog" target="_top" title="Class to manage user&#45;supplied catalogs as inputs." alt="" coords="176,55,323,80"/>
-<area shape="rect" id="node3" href="#drizzlepac.catalogs.RefCatalog" target="_top" title="Class which manages a reference catalog." alt="" coords="375,55,513,80"/>
-</map>
