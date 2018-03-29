@@ -88,6 +88,11 @@ setup(
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
+    setup_requires=[
+        'graphviz',
+        'sphinx_rtd_theme',
+        'stsci_rtd_theme',
+    ],
     install_requires=[
         'astropy',
         'fitsblender',
@@ -105,7 +110,6 @@ setup(
         'stsci.stimage',
         'stwcs',
     ],
-
     packages=find_packages(),
     package_data={
         '': [
@@ -125,7 +129,6 @@ setup(
     ext_modules=[
         Extension('drizzlepac.cdriz',
                   glob('src/*.c'),
-                  include_dirs=include_dirs,
-                  define_macros=[('PYDRIZZLE', '1')]),
+                  include_dirs=include_dirs),
     ],
 )
