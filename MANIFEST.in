@@ -1,7 +1,7 @@
-include *
-recursive-include * *
-prune doc/build
-prune build
-prune dist
-exclude *.pyc *.pyo
-exclude .git
+include RELIC-INFO
+recursive-include doc *
+global-include *.py *.md *.notes *.yml
+global-include *.x *.c *.par
+prune .eggs
+prune relic
+prune drizzlepac/htmlhelp

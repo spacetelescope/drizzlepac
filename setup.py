@@ -113,10 +113,12 @@ setup(
     ],
     packages=find_packages(),
     package_data={
-        '': [
+        'drizzlepac': [
             'pars/*',
             '*.help',
             'htmlhelp/*',
+            'htmlhelp/_*/*',
+            'htmlhelp/_*/*/*',
         ]
     },
     entry_points={
