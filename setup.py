@@ -100,6 +100,7 @@ setup(
         'nose',
         'numpy',
         'scipy',
+        'spherical_geometry',
         'sphinx',
         'stsci.tools',
         'stsci.convolve',

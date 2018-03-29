@@ -16,7 +16,7 @@ import numpy as np
 from astropy import wcs as pywcs
 import stwcs
 from astropy.io import fits
-from stsci.sphere.polygon import SphericalPolygon
+from spherical_geometry.polygon import SphericalPolygon
 from stsci.skypac.parseat import FileExtMaskInfo, parse_cs_line
 from stsci.skypac import utils as spu
 
