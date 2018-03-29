@@ -12,11 +12,12 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
-import stsci_sphinx_theme
 
 # Check Sphinx version
+import os
+import sys
 import sphinx
+import stsci_rtd_theme
 from distutils.version import LooseVersion
 try:
     from ConfigParser import ConfigParser
@@ -25,12 +26,16 @@ except ImportError:
 conf = ConfigParser()
 
 
+def setup(app):
+    app.add_stylesheet('stsci.css')
+
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../'))
-sys.path.insert(0, os.path.abspath('packagename/'))
-sys.path.insert(0, os.path.abspath('exts/'))
+sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../src/'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
 needs_sphinx = '1.3'
@@ -40,6 +45,9 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # -- General configuration ------------------------------------------------
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 
+
+
+
 def check_sphinx_version(expected_version):
     sphinx_version = LooseVersion(sphinx.__version__)
     expected_version = LooseVersion(expected_version)
@@ -48,6 +56,7 @@ def check_sphinx_version(expected_version):
             "At least Sphinx version {0} is required to build this "
             "documentation.  Found {1}.".format(
                 expected_version, sphinx_version))
+
 
 # Configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
@@ -167,12 +176,11 @@ exclude_patterns = ['_build']
 default_role = 'obj'
 
 
-
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'stsci_sphinx_theme'
+html_theme = 'stsci_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -180,7 +188,7 @@ html_theme = 'stsci_sphinx_theme'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [stsci_sphinx_theme.get_html_theme_path()]
+html_theme_path = [stsci_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".

@@ -4,6 +4,7 @@ channels:
 dependencies:
   - astropy
   - fitsblender
+  - graphviz
   - matplotlib
   - nictools
   - nose
@@ -15,4 +16,4 @@ dependencies:
   - stsci
   - stwcs
   - pip:
-    - git+https://github.com/spacetelescope/stsci_sphinx_theme.git#egg=stsci_sphinx_theme
+    - git+https://github.com/spacetelescope/stsci_rtd_theme.git#egg=stsci_rtd_theme
