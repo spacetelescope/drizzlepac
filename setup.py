@@ -50,6 +50,17 @@ wcs_includes = [os.path.join(wcs.get_include(), 'astropy_wcs'),
 include_dirs.extend(numpy_includes)
 include_dirs.extend(wcs_includes)
 
+# Setup C module macros
+define_macros = []
+
+# Handle MSVC `wcsset` redefinition
+if sys.platform == 'win32':
+    define_macros += [
+        ('_CRT_SECURE_NO_WARNING', None),
+        ('__STDC__', 1)
+    ]
+
+
 # Deprecation warning:
 #    Pandokia integration will be removed in a later release.
 if pandokia:
@@ -72,7 +83,6 @@ else:
               '         Please run: python {0} build_sphinx\n'
               ''.format(sys.argv[0]), file=sys.stderr)
 
-
 setup(
     name=NAME,
     version=version.pep386,
@@ -89,9 +99,9 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     setup_requires=[
-        'graphviz',
-        'sphinx_rtd_theme',
         'stsci_rtd_theme',
+        'sphinx',
+        'sphinx_rtd_theme',
     ],
     install_requires=[
         'astropy',
@@ -101,7 +111,6 @@ setup(
         'numpy',
         'scipy',
         'spherical_geometry',
-        'sphinx',
         'stsci.tools',
         'stsci.convolve',
         'stsci.image',
@@ -132,6 +141,7 @@ setup(
     ext_modules=[
         Extension('drizzlepac.cdriz',
                   glob('src/*.c'),
-                  include_dirs=include_dirs),
+                  include_dirs=include_dirs,
+                  define_macros=define_macros),
     ],
 )
