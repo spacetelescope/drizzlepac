@@ -99,9 +99,9 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     setup_requires=[
-        'graphviz',
-        'sphinx_rtd_theme',
         'stsci_rtd_theme',
+        'sphinx',
+        'sphinx_rtd_theme',
     ],
     install_requires=[
         'astropy',
@@ -111,7 +111,6 @@ setup(
         'numpy',
         'scipy',
         'spherical_geometry',
-        'sphinx',
         'stsci.tools',
         'stsci.convolve',
         'stsci.image',
