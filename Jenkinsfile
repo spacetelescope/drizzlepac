@@ -13,11 +13,12 @@ matrix = []
 
 
 // RUN ONCE:
-//    "sdist" is agnostic enough to work without any dependencies
+//    "sdist" is agnostic enough to work without any big dependencies
 sdist = new BuildConfig()
 sdist.nodetype = "linux-stable"
 sdist.build_mode = "sdist"
-sdist.build_cmds = ["${PY_SETUP} sdist"]
+sdist.build_cmds = ["${CONDA_INST} astropy numpy",
+                     ${PY_SETUP} sdist"]
 matrix += sdist
 
 // Generate installation compatibility matrix
