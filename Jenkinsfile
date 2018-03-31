@@ -18,7 +18,7 @@ sdist = new BuildConfig()
 sdist.nodetype = "linux-stable"
 sdist.build_mode = "sdist"
 sdist.build_cmds = ["${CONDA_INST} astropy numpy",
-                     ${PY_SETUP} sdist"]
+                    "${PY_SETUP} sdist"]
 matrix += sdist
 
 // Generate installation compatibility matrix
