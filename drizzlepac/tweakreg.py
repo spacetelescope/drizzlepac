@@ -27,7 +27,7 @@ from . import util
 #
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.4.6'
-__vdate__ = '19-March-2018'
+__version_date__ = '19-March-2018'
 
 from . import tweakutils
 from . import imgclasses
