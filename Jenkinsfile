@@ -55,7 +55,7 @@ for (python_ver in matrix_python) {
 
         install = new BuildConfig()
         install.nodetype = "linux-stable"
-        install.build_mode = "install ${DEPS}"
+        install.build_mode = "install-${python_ver}"
         install.build_cmds = ["${CONDA_INST} ${DEPS_INST}",
                               "${PY_SETUP} egg_info",
                               "${PY_SETUP} install"]
