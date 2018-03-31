@@ -1,5 +1,11 @@
 // Obtain files from source control system.
-if (utils.scm_checkout()) return
+// if (utils.scm_checkout()) return
+node {
+    stage("Setup") {
+        checkout(scm)
+        stash includes: 'drizzlepac', name: 'source_tree', useDefaultExcludes: false
+    }
+}
 
 // Globals
 PIP_INST = "pip install"
