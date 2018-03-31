@@ -12,6 +12,11 @@ PIP_INST = "pip install"
 CONDA_INST = "conda install -y -q -c http://ssb.stsci.edu/astroconda"
 PY_SETUP = "python setup.py"
 PYTEST_ARGS = "tests --basetemp=tests_output --junitxml results.xml"
+DEPS = "astropy fitsblender graphviz nictools numpy numpydoc \
+        scipy spherical-geometry sphinx sphinx_rtd_theme \
+        stsci_rtd_theme stsci.convolve stsci.image \
+        stsci.imagemanip stsci.imagestats stsci.ndimage \
+        stsci.skypac stsci.stimage stwcs pyregion setuptools"
 
 matrix_python = ["2.7", "3.5", "3.6"]
 matrix_astropy = ["2", "3"]
@@ -27,6 +32,17 @@ sdist.build_cmds = ["${CONDA_INST} astropy numpy",
                     "${PY_SETUP} sdist"]
 matrix += sdist
 
+
+// RUN ONCE:
+//    "build_sphinx" with default python
+docs = new BuildConfig()
+docs.nodetype = "linux-stable"
+docs.build_mode = "docs"
+docs.build_cmds = ["${CONDA_INST} ${DEPS}",
+                   "${PY_SETUP} build build_ext --inplace -- build_sphinx"]
+matrix += docs
+
+
 // Generate installation compatibility matrix
 for (python_ver in matrix_python) {
     for (astropy_ver in matrix_astropy) {
@@ -35,17 +51,12 @@ for (python_ver in matrix_python) {
             continue
         }
 
-        DEPS = "python=${python_ver} astropy=${astropy_ver} \
-                fitsblender graphviz nictools numpy numpydoc \
-                scipy spherical-geometry sphinx sphinx_rtd_theme \
-                stsci_rtd_theme stsci.convolve stsci.image \
-                stsci.imagemanip stsci.imagestats stsci.ndimage \
-                stsci.skypac stsci.stimage stwcs pyregion setuptools"
+        DEPS_INST = "python=${python_ver} astropy=${astropy_ver} " + DEPS
 
         install = new BuildConfig()
         install.nodetype = "linux-stable"
         install.build_mode = "install ${DEPS}"
-        install.build_cmds = ["${CONDA_INST} ${DEPS}",
+        install.build_cmds = ["${CONDA_INST} ${DEPS_INST}",
                               "${PY_SETUP} egg_info",
                               "${PY_SETUP} install"]
         matrix += install
