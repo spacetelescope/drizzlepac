@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
+
 import os
 import numpy
 import shutil
@@ -86,9 +89,12 @@ else:
 setup(
     name=NAME,
     version=version.pep386,
-    author='Megan Sosey, Warren Hack, Christopher Hanley, Chris Sontag, Mihai Cara',
+    author='Megan Sosey, Warren Hack, Christopher Hanley, '
+           'Chris Sontag, Mihai Cara',
     author_email='help@stsci.edu',
-    description='drizzle tools: combines astronomical images, including modeling distortion, removing cosmic rays, and generally improving fidelity of data in the final image',
+    description='drizzle tools: combines astronomical images, including '
+                'modeling distortion, removing cosmic rays, and generally '
+                'improving fidelity of data in the final image',
     url='https://github.com/spacetelescope/drizzlepac',
     classifiers=[
         'Intended Audience :: Science/Research',
