@@ -1,6 +1,6 @@
 // Obtain files from source control system.
 // if (utils.scm_checkout()) return
-node {
+node("on-master") {
     stage("Setup") {
         checkout(scm)
         stash includes: 'drizzlepac', name: 'source_tree', useDefaultExcludes: false
