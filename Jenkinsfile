@@ -3,7 +3,7 @@
 node("on-master") {
     stage("Setup") {
         checkout(scm)
-        stash includes: 'drizzlepac', name: 'source_tree', useDefaultExcludes: false
+        stash includes: '**/*', name: 'source_tree', useDefaultExcludes: false
     }
 }
 
