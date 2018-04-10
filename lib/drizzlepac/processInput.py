@@ -687,7 +687,10 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     filelist, ivmlist = check_files.checkFITSFormat(filelist, ivmlist)
 
     # check for non-polynomial distortion correction
-    filelist = checkDGEOFile(filelist)
+    if not updatewcs:
+        # with updatewcs turned on, any problems will get resolved
+        # so we do not need to be concerned about the state of the DGEOFILEs
+        filelist = checkDGEOFile(filelist)
 
     # run all WCS updating
     updated_input = _process_input_wcs(filelist, wcskey, updatewcs)

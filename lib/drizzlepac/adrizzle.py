@@ -769,7 +769,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Open the SCI image
     _handle = fileutil.openImage(_expname, mode='readonly', memmap=False)
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
-    
+
     # Apply sky subtraction and unit conversion to input array
     if chip.computedSky is None:
         _insci = _sciext.data
