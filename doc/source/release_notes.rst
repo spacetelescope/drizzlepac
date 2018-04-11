@@ -14,8 +14,19 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-Drizzlepac v2.1.23 (not yet released)
-=====================================
+Drizzlepac v2.2.0 (11-April-2018)
+=================================
+
+- Implemented a major refactor of the project directory structure. Building no
+  longer requires ``d2to1`` or ``stsci.distutils``. Drizzlepac's release
+  information (i.e. version, build date, etc) is now handled by ``relic``.
+  See https://github.com/spacetelescope/relic
+
+- Added basic support for compiling Drizzlepac's C extensions under Windows.
+
+- Documentation is now generated during the build process. This ensures the
+  end-user always has access to documentation that applies to the version of
+  ``drizzlepac`` being used.
 
 - Swapped the effect of setting ``configobj`` to `None` or ``'defaults'`` in
   ``AstroDrizzle`` and ``TweakReg``. When calling one of these tasks with
