@@ -2,6 +2,8 @@ include RELIC-INFO
 recursive-include doc *
 global-include *.py *.md *.notes *.yml
 global-include *.x *.c *.par
+exclude */version.py
 prune .eggs
+prune .git
 prune relic
 prune drizzlepac/htmlhelp
