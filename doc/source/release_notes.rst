@@ -14,11 +14,11 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-DrizzlePac v2.2.0 (12-April-2018)
+DrizzlePac v2.2.1 (12-April-2018)
 =================================
 - Fixed problems with processing WFPC2 data provided by the archive.  User will
   need to make sure they run ``updatewcs`` on all input WFPC2 data before
-  combining them with ``astrodrizzle``.  
+  combining them with ``astrodrizzle``.
 
 Drizzlepac v2.2.0 (11-April-2018)
 =================================
