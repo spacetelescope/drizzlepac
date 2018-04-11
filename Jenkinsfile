@@ -1,15 +1,11 @@
 // Obtain files from source control system.
-// if (utils.scm_checkout()) return
-node("on-master") {
-    stage("Setup") {
-        checkout(scm)
-        stash includes: '**/*', name: 'source_tree', useDefaultExcludes: false
-    }
-}
+if (utils.scm_checkout()) return
 
 // Globals
 PIP_INST = "pip install"
-CONDA_INST = "conda install -y -q -c http://ssb.stsci.edu/astroconda"
+CONDA_CHANNEL = "http://ssb.stsci.edu/astroconda"
+CONDA_CREATE = "conda create -y -q -c ${CONDA_CHANNEL}"
+CONDA_INST = "conda install -y -q -c ${CONDA_CHANNEL}"
 PY_SETUP = "python setup.py"
 PYTEST_ARGS = "tests --basetemp=tests_output --junitxml results.xml"
 DEPS = "astropy fitsblender graphviz nictools numpy numpydoc \
@@ -28,8 +24,8 @@ matrix = []
 sdist = new BuildConfig()
 sdist.nodetype = "linux-stable"
 sdist.build_mode = "sdist"
-sdist.build_cmds = ["${CONDA_INST} astropy numpy",
-                    "${PY_SETUP} sdist"]
+sdist.build_cmds = ["${CONDA_CREATE} -n dist astropy numpy",
+                    "with_env -n dist ${PY_SETUP} sdist"]
 matrix += sdist
 
 
@@ -38,8 +34,8 @@ matrix += sdist
 docs = new BuildConfig()
 docs.nodetype = "linux-stable"
 docs.build_mode = "docs"
-docs.build_cmds = ["${CONDA_INST} ${DEPS}",
-                   "${PY_SETUP} build build_ext --inplace -- build_sphinx"]
+docs.build_cmds = ["${CONDA_CREATE} -n docs ${DEPS}",
+                   "with_env -n docs ${PY_SETUP} build build_ext --inplace -- build_sphinx"]
 matrix += docs
 
 
@@ -56,9 +52,9 @@ for (python_ver in matrix_python) {
         install = new BuildConfig()
         install.nodetype = "linux-stable"
         install.build_mode = "install-${python_ver}"
-        install.build_cmds = ["${CONDA_INST} ${DEPS_INST}",
-                              "${PY_SETUP} egg_info",
-                              "${PY_SETUP} install"]
+        install.build_cmds = ["${CONDA_CREATE} -n ${python_ver} ${DEPS_INST}",
+                              "with_env -n ${python_ver} ${PY_SETUP} egg_info",
+                              "with_env -n ${python_ver} ${PY_SETUP} install"]
         matrix += install
     }
 }
