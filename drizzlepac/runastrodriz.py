@@ -140,6 +140,10 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     _new_asn = None
     _calfiles = []
 
+    # Identify WFPC2 inputs to account for differences in WFPC2 inputs
+    wfpc2_input = fits.getval(inFilename, 'instrume') == 'WFPC2'
+    cal_ext = None
+
     # Check input file to see if [DRIZ/DITH]CORR is set to PERFORM
     if '_asn' in inFilename:
         # We are working with an ASN table.
@@ -165,7 +169,11 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         _indx = inFilename.find('_raw')
         if _indx < 0: _indx = len(inFilename)
         # ... and build the CALXXX product rootname.
-        _mname = fileutil.buildRootname(inFilename[:_indx])
+        if wfpc2_input:
+            # force code to define _c0m file as calibrated product to be used
+            cal_ext = ['_c0m.fits']
+        _mname = fileutil.buildRootname(inFilename[:_indx], ext=cal_ext)
+            
         _cal_prodname = inFilename[:_indx]
         # Reset inFilename to correspond to appropriate input for
         # drizzle: calibrated product name.
@@ -200,7 +208,8 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     # ...if product does NOT exist, interrogate input file
     # to find out whether 'dcorr' has been set to PERFORM
     # Check if user wants to process again regardless of DRIZCORR keyword value
-    if force: dcorr = 'PERFORM'
+    if force: 
+        dcorr = 'PERFORM'
     else:
         if _mname :
             _fimg = fits.open(fileutil.buildRootname(_mname,ext=['_raw.fits']), memmap=False)
@@ -223,7 +232,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             # Working with a singleton
             # However, we always want to make sure we always use
             # a calibrated product as input, if available.
-            _infile = fileutil.buildRootname(_cal_prodname)
+            _infile = fileutil.buildRootname(_cal_prodname, ext=cal_ext)
             _infile_flc = fileutil.buildRootname(_cal_prodname,ext=['_flc.fits'])
 
             _cal_prodname = _infile

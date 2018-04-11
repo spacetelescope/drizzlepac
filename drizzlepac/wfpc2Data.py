@@ -119,11 +119,8 @@ class WFPC2InputImage (imageObject):
         pri_header = self._image[0].header
         self.proc_unit = instrpars['proc_unit']
 
-        if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
-            instrpars['gnkeyword'] = 'ATODGAIN'
-
-        if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
-            instrpars['rnkeyword'] = None
+        instrpars['gnkeyword'] = 'ATODGAIN'  # hard-code for WFPC2 data
+        instrpars['rnkeyword'] = None
 
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
@@ -133,7 +130,6 @@ class WFPC2InputImage (imageObject):
                                                      instrpars['gnkeyword'])
             chip._exptime       = self.getInstrParameter(instrpars['exptime'], pri_header,
                                                      instrpars['expkeyword'])
-
             # We need to treat Read Noise as a special case since it is
             # not populated in the WFPC2 primary header
             if instrpars['rnkeyword'] is None:
