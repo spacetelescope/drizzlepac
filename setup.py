@@ -3,9 +3,8 @@ from __future__ import print_function
 
 
 import os
-import numpy
+import pkgutil
 import shutil
-import subprocess
 import sys
 
 try:
@@ -18,27 +17,40 @@ try:
 except (ImportError, NameError, ModuleNotFoundError):
     pandokia = False
 
+try:
+    import numpy
+except ImportError:
+    print("numpy not found, please install it.", file=sys.stderr)
+    exit(1)
+
+try:
+    from astropy import wcs
+except ImportError:
+    print("astropy not found, please install it.", file=sys.stderr)
+    exit(1)
+
 from glob import glob
-from astropy import wcs
 from setuptools import setup, find_packages, Extension
+from subprocess import check_call, CalledProcessError
 
 
-if os.path.exists('relic'):
-    sys.path.insert(1, 'relic')
-    import relic.release
-else:
+if not pkgutil.find_loader('relic'):
+    relic_local = os.path.exists('relic')
+    relic_submodule = (relic_local and
+                       os.path.exists('.gitmodules') and
+                       not os.listdir('relic'))
     try:
-        import relic.release
-    except ImportError:
-        try:
-            subprocess.check_call(['git', 'clone',
-                                   'https://github.com/jhunkeler/relic.git'])
-            sys.path.insert(1, 'relic')
-            import relic.release
-        except subprocess.CalledProcessError as e:
-            print(e)
-            exit(1)
+        if relic_submodule:
+            check_call(['git', 'submodule', 'update', '--init', '--recursive'])
+        elif not relic_local:
+            check_call(['git', 'clone', 'https://github.com/spacetelescope/relic.git'])
 
+        sys.path.insert(1, 'relic')
+    except CalledProcessError as e:
+        print(e)
+        exit(1)
+
+import relic.release
 
 NAME = 'drizzlepac'
 version = relic.release.get_info()
@@ -62,7 +74,6 @@ if sys.platform == 'win32':
         ('_CRT_SECURE_NO_WARNING', None),
         ('__STDC__', 1)
     ]
-
 
 # Deprecation warning:
 #    Pandokia integration will be removed in a later release.
