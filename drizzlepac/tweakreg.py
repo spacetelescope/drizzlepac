@@ -26,8 +26,8 @@ from . import util
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.4.6'
-__version_date__ = '19-March-2018'
+__version__ = '1.4.7'
+__version_date__ = '18-April-2018'
 
 from . import tweakutils
 from . import imgclasses
@@ -125,14 +125,14 @@ def run(configobj):
     util.printParams(configobj, log=log)
 
     # start interpretation of input parameters
-    input = configobj['input']
+    input_files = configobj['input']
     # Start by interpreting the inputs
     use_catfile = True
     expand_refcat = configobj['expand_refcat']
     enforce_user_order = configobj['enforce_user_order']
 
-    filenames,catnames = tweakutils.parse_input(
-        input, sort_wildcards=not enforce_user_order
+    filenames, catnames = tweakutils.parse_input(
+        input_files, sort_wildcards=not enforce_user_order
     )
 
     catdict = {}
@@ -143,7 +143,7 @@ def run(configobj):
             catdict[f] = None
 
     if not filenames:
-        print('No filenames matching input %r were found.' % input)
+        print('No filenames matching input %r were found.' % input_files)
         raise IOError
 
     # Verify that files are writable (based on file permissions) so that
@@ -777,8 +777,8 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         # load 'astrodrizzle' parameter defaults as described in the docs:
         configobj = teal.load(__taskname__, defaults=True)
 
-    if input and not util.is_blank(input):
-        input_dict['input'] = input
+    if files and not util.is_blank(files):
+        input_dict['input'] = files
     elif configobj is None:
         raise TypeError("TweakReg() needs either 'files' or "
                         "'configobj' arguments")
