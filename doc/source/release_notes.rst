@@ -14,6 +14,13 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+
+DrizzlePac v2.2.2 (18-April-2018)
+=================================
+- Fixed a bug in ``TweakReg`` introduced in ``v2.2.0`` due to which, when
+  ``TweakReg`` is run from the interpreter, the code may crash when trying to
+  interpret input files.
+
 DrizzlePac v2.2.1 (12-April-2018)
 =================================
 - Fixed problems with processing WFPC2 data provided by the archive.  User will
