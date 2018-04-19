@@ -14,6 +14,10 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+DrizzlePac v2.2.3 (not yet released)
+====================================
+- Updated links in the documentation to point to latest
+  ``drizzlepac`` website and online API documentation.
 
 DrizzlePac v2.2.2 (18-April-2018)
 =================================
