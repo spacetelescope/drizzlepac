@@ -1,0 +1,49 @@
+import os
+
+from stsci.tools import teal
+import drizzlepac
+from drizzlepac import astrodrizzle
+
+from ..helpers import BaseACS, download_file_cgi, raw_from_asn
+
+
+class TestAsnRegress(BaseACS):
+
+    subdir = 'asn_regress'
+    
+    def test_hrc_asn(self):
+        rootname = 'j8bt06010'
+        asn_file = rootname + '_asn.fits'
+
+        self.input_loc = os.path.join(self.input_loc, self.subdir)
+        self.ref_loc = os.path.join(self.ref_loc, self.subdir)
+        # Prepare input files.
+        download_file_cgi(self.tree, self.input_loc, asn_file,
+                          timeout=self.timeout)
+
+        for raw_file in raw_from_asn(asn_file, suffix='_flt.fits'):
+            self.get_input_file(raw_file)
+
+        # run astrodrizzle now...
+        parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
+        parObj['build'] = True
+        parObj['runfile'] = 'drizzlepac.run'
+        parObj['STATE OF INPUT FILES']['preserve'] = False
+        parObj['STATE OF INPUT FILES']['clean'] = True
+        parObj['STEP 1: STATIC MASK']['static_sig'] = 3.0
+        parObj['STEP 2: SKY SUBTRACTION']['skywidth'] = 0.1
+        parObj['STEP 2: SKY SUBTRACTION']['skylower'] = -50.0
+        parObj['STEP 2: SKY SUBTRACTION']['skyupper'] = 200.0
+        parObj['STEP 3: DRIZZLE SEPARATE IMAGES']['driz_sep_bits'] = 8578
+        parObj['STEP 4: CREATE MEDIAN IMAGE']['combine_maskpt'] = 0.7
+        parObj['STEP 4: CREATE MEDIAN IMAGE']['combine_nsigma'] = '6 3'
+        parObj['STEP 4: CREATE MEDIAN IMAGE']['combine_nhigh'] = 1
+        parObj['STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR']['driz_cr_snr'] = '3.0 2.5'
+        parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_bits'] = 8578
+        parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_units'] = 'counts'
+        
+        astrodrizzle.AstroDrizzle(asn_file, mdriztab=True, configobj=parObj)
+
+        # Compare results
+        outputs = [('j8bt06011_drz.fits', 'reference.fits')]
+        self.compare_outputs(outputs)
