@@ -6,7 +6,7 @@ from drizzlepac import astrodrizzle
 from drizzlepac.helpers.mark import require_bigdata, remote_data
 from drizzlepac.helpers.io import get_bigdata
 
-from ..helpers import BaseACS, download_file_cgi, raw_from_asn
+from ..helpers import BaseACS, raw_from_asn
 
 
 class TestAsnRegress(BaseACS):
