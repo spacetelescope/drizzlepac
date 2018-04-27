@@ -37,7 +37,6 @@ def get_bigdata(*args):
     Returns:
         Absolute path to local copy of data (i.e. /path/to/example.fits)
     """
-
     src = os.path.join(_select_bigdata(), *args)
     filename = os.path.basename(src)
     dest = os.path.abspath(os.path.join(os.curdir, filename))

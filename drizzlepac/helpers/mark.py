@@ -20,7 +20,7 @@ runslow = slow = pytest.mark.skipif(
 
 # Decorator to indicate BIGDATA required
 require_bigdata = pytest.mark.skipif(
-    not pytest.config.getoption('bigdata'),
+    not pytest.config.getoption('--bigdata'),
     reason='need --bigdata option to run'
 )
 
