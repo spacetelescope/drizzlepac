@@ -105,7 +105,7 @@ class BaseCal(object):
     prevdir = os.getcwd()
     use_ftp_crds = False
     timeout = 30  # seconds
-    tree = 'dev'  # Use dev for now
+    tree = 'dev'
 
     # Numpy default for allclose comparison
     rtol = 1e-7
@@ -122,7 +122,7 @@ class BaseCal(object):
     subdir = ''
 
     @pytest.fixture(autouse=True)
-    def setup_class(self, tmpdir):
+    def setup_class(self, tmpdir, envopt):
         """
         Run test in own dir so we can keep results separate from
         other tests.
@@ -144,6 +144,9 @@ class BaseCal(object):
 
         # This controls astropy.io.fits timeout
         conf.remote_timeout = self.timeout
+        
+        # Update tree to point to correct environment 
+        self.tree = envopt
 
     def teardown_class(self):
         """Reset path and variables."""
@@ -158,12 +161,12 @@ class BaseCal(object):
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
-        get_bigdata(self.input_loc, filename)
+        get_bigdata(self.tree, self.input_loc, filename)
         ref_files = ref_from_image(filename)
 
         for ref_file in ref_files:
             if refsep not in ref_file:  # Local file
-                get_bigdata(self.input_loc, ref_file)
+                get_bigdata(self.tree, self.input_loc, ref_file)
             else:  # Download from FTP, if applicable
                 s = ref_file.split(refsep)
                 refdir = s[0]
@@ -196,7 +199,7 @@ class BaseCal(object):
 
         for actual, desired in outputs:
             # Get "truth" image
-            s = get_bigdata(self.ref_loc, desired)
+            s = get_bigdata(self.tree, self.ref_loc, desired)
             if s is not None:
                 desired = s
 

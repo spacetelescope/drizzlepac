@@ -16,7 +16,8 @@ class TestAsnRegress(BaseACS):
         asn_file = rootname + '_asn.fits'
 
         # Prepare input files.
-        get_bigdata(self.input_loc, asn_file)
+        print("Getting data from: {}, {}, {}".format(self.tree, self.input_loc, asn_file))
+        get_bigdata(self.tree, self.input_loc, asn_file)
 
         for raw_file in raw_from_asn(asn_file, suffix='_flt.fits'):
             self.get_input_file(raw_file)

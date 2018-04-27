@@ -9,19 +9,6 @@ from astropy.tests.helper import enable_deprecations_as_exceptions
 # Uncomment the following line to treat all DeprecationWarnings as exceptions
 enable_deprecations_as_exceptions()
 
-"""
-try:
-    PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
-    PYTEST_HEADER_MODULES['asdf'] = 'asdf'
-    del PYTEST_HEADER_MODULES['h5py']
-except (NameError, KeyError):
-    pass
-
-pytest_plugins = [
-    'asdf.tests.schema_tester'
-]
-"""
-
 def pytest_addoption(parser):
     # Add option to run slow tests
     parser.addoption(
@@ -37,6 +24,13 @@ def pytest_addoption(parser):
         help="use big data sets (intranet)"
     )
 
+    parser.addoption(
+        "--env",
+        choices=['dev', 'stable'],
+        default='dev',
+        help="specify what environment to test"
+    )
+
 
 @pytest.fixture(scope='function', autouse=True)
 def _jail(tmpdir):
@@ -44,3 +38,7 @@ def _jail(tmpdir):
     """
     os.chdir(tmpdir.strpath)
     yield
+    
+@pytest.fixture
+def envopt(request):
+    return request.config.getoption("env")
