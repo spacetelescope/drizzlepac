@@ -16,7 +16,7 @@ from astropy.utils.data import conf
 from ..helpers.io import get_bigdata
 
 __all__ = ['slow', 'download_crds',
-           'download_file_cgi', 'ref_from_image', 'raw_from_asn', 'BaseACS',
+           'ref_from_image', 'raw_from_asn', 'BaseACS',
            'BaseSTIS', 'BaseWFC3IR', 'BaseWFC3UVIS', 'BaseWFPC2']
 
 # pytest marker to mark resource-intensive tests that should not be
@@ -48,63 +48,6 @@ def download_crds(refdir, refname, timeout=None):
     except Exception:  # Fall back to FTP
         url = 'ftp://ftp.stsci.edu/cdbs/{}/{}'.format(refdir, refname)
         _download_file(url, refname, timeout=timeout)
-
-
-def download_file_cgi(tree, project, filename, filemode='wb', timeout=30,
-                      allow_remote_ref=False):
-    """
-    Download remote data to current directory from Central Storage
-    or using CGI script interface.
-
-    Parameters
-    ----------
-    tree : {'dev', 'stable', 'null'}
-        Test tree:
-
-        * rt = dev
-        * rtx = stable
-        * null = neither, grab first match (e.g., for STAK)
-
-    project : str
-        Path containing data in the test tree.
-        For example, ``hstcal/acs/calacs_e``.
-
-    filename : str
-        Filename of the data.
-
-    filemode : str
-        Mode of the output file writer. By default, it saves as binary
-        and overwrites existing file.
-
-    timeout : number or `None`
-        This is not a time limit on the entire response download;
-        rather, an exception is raised if the server has not issued
-        a response for timeout seconds (more precisely, if no bytes
-        have been received on the underlying socket for timeout seconds).
-        If no timeout is specified explicitly, requests do not time out.
-
-    allow_remote_ref : bool
-        If set to `True`, instead of copying or downloading to current
-        directory, return the full path. This should only be used for
-        "truth" images.
-
-    """
-    # NOTE: This could be explicitly controlled using pytest fixture
-    #       but too many ways to do the same thing would be confusing.
-    #       Refine this logic if using pytest fixture.
-    cs_file = os.path.join('/eng/ssb2/tests/drizzlepac', tree, project, filename)
-    # cs_file = os.path.join('/user/hack/data/mdtng/RT', project, filename)
-
-    if os.path.isfile(cs_file):
-        if allow_remote_ref:
-            return cs_file
-        shutil.copyfile(cs_file, filename)
-    else:
-        url = ('http://ssb.stsci.edu/cgi-bin/remote_testing.cgi?'
-               'tree={}&project={}&name={}'.format(tree, project, filename))
-        if allow_remote_ref:
-            return url
-        _download_file(url, filename, filemode=filemode, timeout=timeout)
 
 
 def _get_reffile(hdr, key):
@@ -215,14 +158,12 @@ class BaseCal(object):
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
-        download_file_cgi(self.tree, self.input_loc, filename,
-                          timeout=self.timeout)
+        get_bigdata(self.input_loc, filename)
         ref_files = ref_from_image(filename)
 
         for ref_file in ref_files:
             if refsep not in ref_file:  # Local file
-                download_file_cgi(self.tree, self.input_loc, ref_file,
-                                  timeout=self.timeout)
+                get_bigdata(self.input_loc, ref_file)
             else:  # Download from FTP, if applicable
                 s = ref_file.split(refsep)
                 refdir = s[0]
@@ -255,8 +196,6 @@ class BaseCal(object):
 
         for actual, desired in outputs:
             # Get "truth" image
-            #s = download_file_cgi(self.tree, self.ref_loc, desired,
-            #                      allow_remote_ref=True, timeout=self.timeout)
             s = get_bigdata(self.ref_loc, desired)
             if s is not None:
                 desired = s
