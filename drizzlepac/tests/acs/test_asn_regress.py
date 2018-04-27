@@ -3,23 +3,20 @@ import os
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
+from drizzlepac.helpers.mark import require_bigdata, remote_data
+from drizzlepac.helpers.io import get_bigdata
 
 from ..helpers import BaseACS, download_file_cgi, raw_from_asn
 
 
 class TestAsnRegress(BaseACS):
-
-    subdir = 'asn_regress'
     
     def test_hrc_asn(self):
         rootname = 'j8bt06010'
         asn_file = rootname + '_asn.fits'
 
-        self.input_loc = os.path.join(self.input_loc, self.subdir)
-        self.ref_loc = os.path.join(self.ref_loc, self.subdir)
         # Prepare input files.
-        download_file_cgi(self.tree, self.input_loc, asn_file,
-                          timeout=self.timeout)
+        get_bigdata(self.input_loc, asn_file)
 
         for raw_file in raw_from_asn(asn_file, suffix='_flt.fits'):
             self.get_input_file(raw_file)
@@ -42,8 +39,8 @@ class TestAsnRegress(BaseACS):
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_bits'] = 8578
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_units'] = 'counts'
         
-        astrodrizzle.AstroDrizzle(asn_file, mdriztab=True, configobj=parObj)
+        astrodrizzle.AstroDrizzle(asn_file, configobj=parObj)
 
         # Compare results
-        outputs = [('j8bt06011_drz.fits', 'reference.fits')]
+        outputs = [('j8bt06011_drz.fits', 'reference_asn_regress.fits')]
         self.compare_outputs(outputs)

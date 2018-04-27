@@ -4,7 +4,7 @@ from astropy.extern.six.moves import urllib
 
 import os
 import shutil
-from distutils.spawn import find_executable
+from os.path import splitext
 
 import pytest
 import requests
@@ -12,6 +12,8 @@ from astropy.io import fits
 from astropy.io.fits import FITSDiff
 from astropy.table import Table
 from astropy.utils.data import conf
+
+from ..helpers.io import get_bigdata
 
 __all__ = ['slow', 'download_crds',
            'download_file_cgi', 'ref_from_image', 'raw_from_asn', 'BaseACS',
@@ -56,11 +58,11 @@ def download_file_cgi(tree, project, filename, filemode='wb', timeout=30,
 
     Parameters
     ----------
-    tree : {'rt', 'rtx', 'null'}
+    tree : {'dev', 'stable', 'null'}
         Test tree:
 
         * rt = dev
-        * rtx = public
+        * rtx = stable
         * null = neither, grab first match (e.g., for STAK)
 
     project : str
@@ -90,8 +92,8 @@ def download_file_cgi(tree, project, filename, filemode='wb', timeout=30,
     # NOTE: This could be explicitly controlled using pytest fixture
     #       but too many ways to do the same thing would be confusing.
     #       Refine this logic if using pytest fixture.
-    # cs_file = os.path.join('/eng/ssb2/tests', tree, project, filename)
-    cs_file = os.path.join('/user/hack/data/mdtng/RT', project, filename)
+    cs_file = os.path.join('/eng/ssb2/tests/drizzlepac', tree, project, filename)
+    # cs_file = os.path.join('/user/hack/data/mdtng/RT', project, filename)
 
     if os.path.isfile(cs_file):
         if allow_remote_ref:
@@ -160,7 +162,7 @@ class BaseCal(object):
     prevdir = os.getcwd()
     use_ftp_crds = False
     timeout = 30  # seconds
-    tree = 'rt'  # Use dev for now
+    tree = 'dev'  # Use dev for now
 
     # Numpy default for allclose comparison
     rtol = 1e-7
@@ -182,7 +184,10 @@ class BaseCal(object):
         Run test in own dir so we can keep results separate from
         other tests.
         """        
-        p = tmpdir.mkdir(self.subdir).strpath
+        if not tmpdir.ensure(self.subdir, dir=True):
+            p = tmpdir.mkdir(self.subdir).strpath
+        else:
+            p = tmpdir.join(self.subdir).strpath
         os.chdir(p)
 
         # NOTE: This could be explicitly controlled using pytest fixture
@@ -250,8 +255,9 @@ class BaseCal(object):
 
         for actual, desired in outputs:
             # Get "truth" image
-            s = download_file_cgi(self.tree, self.ref_loc, desired,
-                                  allow_remote_ref=True, timeout=self.timeout)
+            #s = download_file_cgi(self.tree, self.ref_loc, desired,
+            #                      allow_remote_ref=True, timeout=self.timeout)
+            s = get_bigdata(self.ref_loc, desired)
             if s is not None:
                 desired = s
 
@@ -271,27 +277,27 @@ class BaseCal(object):
 class BaseACS(BaseCal):
     refstr = 'jref'
     prevref = os.environ.get(refstr)
-    input_loc = 'drizzlepac/acs'
-    ref_loc = 'drizzlepac/acs'
+    input_loc = 'acs'
+    ref_loc = 'acs'
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
                        'history']
 
 
 class BaseACSHRC(BaseACS):
-    input_loc = 'drizzlepac/acs/hrc'
-    ref_loc = 'drizzlepac/acs/hrc/ref'
+    input_loc = 'acs/hrc'
+    ref_loc = 'acs/hrc/ref'
 
 
 class BaseACSWFC(BaseACS):
-    input_loc = 'drizzlepac/acs/wfc'
-    ref_loc = 'drizzlepac/acs/wfc/ref'
+    input_loc = 'acs/wfc'
+    ref_loc = 'acs/wfc/ref'
 
 
 class BaseWFC3(BaseCal):
     refstr = 'iref'
-    input_loc = 'drizzlepac/wf3'
-    ref_loc = 'drizzlepac/wf3/ref'
+    input_loc = 'wf3'
+    ref_loc = 'wf3/ref'
     prevref = os.environ.get(refstr)
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
@@ -301,8 +307,8 @@ class BaseWFC3(BaseCal):
 class BaseSTIS(BaseCal):
     refstr = 'oref'
     prevref = os.environ.get(refstr)
-    input_loc = 'drizzlepac/stis'
-    ref_loc = 'drizzlepac/stis/ref'
+    input_loc = 'stis'
+    ref_loc = 'stis/ref'
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
                        'history']
@@ -310,9 +316,53 @@ class BaseSTIS(BaseCal):
 class BaseWFPC2(BaseCal):
     refstr = 'uref'
     prevref = os.environ.get(refstr)
-    input_loc = 'drizzlepac/wfpc2'
-    ref_loc = 'drizzlepac/wfpc2/ref'
+    input_loc = 'wfpc2'
+    ref_loc = 'wfpc2/ref'
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
                        'history']
 
+
+def add_suffix(fname, suffix, range=None):
+    """Add suffix to file name
+
+    Parameters
+    ----------
+    fname: str
+        The file name to add the suffix to
+
+    suffix: str
+        The suffix to add_suffix
+
+    range: range
+        If specified, the set of indexes will be added to the
+        outputs.
+
+    Returns
+    -------
+    fname, fname_with_suffix
+        2-tuple of the original file name and name with suffix.
+        If `range` is defined, `fname_with_suffix` will be a list.
+
+    """
+    fname_root, fname_ext = splitext(fname)
+    if range is None:
+        with_suffix = ''.join([
+            fname_root,
+            '_',
+            suffix,
+            fname_ext
+        ])
+    else:
+        with_suffix = []
+        for idx in range:
+            with_suffix.append(''.join([
+                fname_root,
+                '_',
+                str(idx),
+                '_',
+                suffix,
+                fname_ext
+            ]))
+
+    return fname, with_suffix
