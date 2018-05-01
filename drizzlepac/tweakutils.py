@@ -18,7 +18,7 @@ import astropy.units as u
 import stsci.imagestats as imagestats
 
 from . import findobj
-from . import cdriz
+import cdriz
 
 
 def parse_input(input, prodonly=False, sort_wildcards=True):
