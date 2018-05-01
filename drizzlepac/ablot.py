@@ -14,17 +14,17 @@ import os
 import sys
 import numpy as np
 from stsci.tools import fileutil, teal, logutil
-from . import outputimage
-from . import wcs_functions
-from . import processInput
-from . import util
+from drizzlepac import outputimage
+from drizzlepac import wcs_functions
+from drizzlepac import processInput
+from drizzlepac  import util
 import stwcs
 from stwcs import distortion
 
 from .version import *
 
 try:
-    from . import cdriz
+    import cdriz
 except ImportError:
     cdriz = None
     print('\n Coordinate transformation and image resampling library NOT found!')
