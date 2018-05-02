@@ -40,6 +40,7 @@ from six import string_types
 from stsci.tools import teal, logutil, textutil
 
 from . import adrizzle
+from . import ablot
 from . import createMedian
 from . import drizCR
 from . import processInput
