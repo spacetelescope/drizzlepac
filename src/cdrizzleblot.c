@@ -45,7 +45,9 @@ ii_bipoly3(const float* coeff /* [len_coeff][len_coeff] */,
            /* Output parameters */
            float* zfit /* [npts] */) {
   float sx, tx, sx2m1, tx2m1, sy, ty;
-  float cd20[4], cd21[4], ztemp[4];
+  float cd20[4] = {0.0, 0.0, 0.0, 0.0};
+  float cd21[4] = {0.0, 0.0, 0.0, 0.0};
+  float ztemp[4];
   float cd20y, cd21y;
   integer_t nxold, nyold;
   integer_t nx, ny;
@@ -687,7 +689,6 @@ interpolate_sinc_(const float* data, const integer_t firstt,
   integer_t nx, ny;
   integer_t i, j, k, m, index;
   integer_t indices[3][4];
-  integer_t dnx,dny;
 
   assert(x);
   assert(y);
@@ -795,9 +796,6 @@ interpolate_sinc_(const float* data, const integer_t firstt,
     indices[2][1] = ny + nsinc;
     indices[2][2] = firstt + (lenary - 1) * len_coeff;
     indices[2][3] = 0;
-
-    dnx = len_coeff;
-    dny = lenary;
 
     for (m = 0; m < 3; ++m) {
       for (j = indices[m][0]; j <= indices[m][1]; ++j) {
@@ -989,7 +987,7 @@ doblot(struct driz_param_t* p,
   double dx, dy;
   double yv;
   float xo, yo, v;
-  float nx, ny;
+  /*float nx, ny;*/
   integer_t i, j;
   interp_function* interpolate;
   struct sinc_param_t sinc;
@@ -1083,9 +1081,10 @@ doblot(struct driz_param_t* p,
      correction to separate the distortion-induced scale change.
   */
 
-  /* Image subset size */
+  /* Image subset size
   nx = (float)(p->xmax - p->xmin + 1);
   ny = (float)(p->ymax - p->ymin + 1);
+  */
 
   /* Offsets */
   dx = (double)(p->xmin);

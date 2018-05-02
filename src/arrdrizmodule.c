@@ -828,7 +828,7 @@ arrxyround(PyObject *obj, PyObject *args)
   PyArrayObject *ker2d = NULL;
   long nyk,nxk;
 
-  double xc,yc,round;
+  double xc, yc, round;
   long j, k;
   double xhalf, yhalf;
   long xmiddle, ymiddle;
@@ -841,8 +841,6 @@ arrxyround(PyObject *obj, PyObject *args)
   long n;
   double dxk, dgdx, dyj;
   double hx, hy, hx1, hy1, dy, dx, dy1, skylvl;
-  integer_t return_val = 0;
-
 
   if (!PyArg_ParseTuple(args,"OdddOdddd:arrxyround", &oimg, &x0, &y0, &skymode,
                         &oker2d, &xsigsq, &ysigsq, &datamin, &datamax)){
@@ -850,13 +848,12 @@ arrxyround(PyObject *obj, PyObject *args)
   }
 
   img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, NPY_FLOAT32, 2, 2);
-  if (!img) {
-    goto _exit;
-  }
+  if (!img) return Py_BuildValue("");
 
   ker2d = (PyArrayObject *)PyArray_ContiguousFromAny(oker2d, NPY_FLOAT64, 2, 2);
   if (!ker2d) {
-    goto _exit;
+    Py_DECREF(img);
+    return Py_BuildValue("");
   }
 
   nxk = PyArray_DIMS(ker2d)[1];
@@ -924,8 +921,9 @@ arrxyround(PyObject *obj, PyObject *args)
   and local sky brightness of the star.
   */
   if ( (sg == DBL_MIN) || ((n <= 2) || (p <= 0.0))){
-      return_val = -1;
-      goto _exit;
+    Py_DECREF(img);
+    Py_DECREF(ker2d);
+    return Py_BuildValue("");
   }
 
   /*
@@ -934,13 +932,16 @@ arrxyround(PyObject *obj, PyObject *args)
   */
   hx1 = sumgsq - (pow(sumg,2)) / p;
   if (hx1 <= 0.0){
-      return_val = -1;
-      goto _exit;
+    Py_DECREF(img);
+    Py_DECREF(ker2d);
+    return Py_BuildValue("");
   }
+
   hx = (sumgd - sumg * sumd / p) / hx1;
   if (hx <= 0.0){
-      return_val = -1;
-      goto _exit;
+    Py_DECREF(img);
+    Py_DECREF(ker2d);
+    return Py_BuildValue("");
   }
 
   /* Solve for the new x centroid. */
@@ -1014,8 +1015,9 @@ arrxyround(PyObject *obj, PyObject *args)
   */
 
   if ((sg == DBL_MIN) || ((n <= 2) || (p <= 0.0))){
-      return_val = -1;
-      goto _exit;
+    Py_DECREF(img);
+    Py_DECREF(ker2d);
+    return Py_BuildValue("");
   }
   /*
   Solve for the height of the best-fitting gaussian to the
@@ -1024,14 +1026,16 @@ arrxyround(PyObject *obj, PyObject *args)
 
   hy1 = sumgsq - (pow(sumg, 2) / p);
   if (hy1 <= 0.0){
-      return_val = -1;
-      goto _exit;
+    Py_DECREF(img);
+    Py_DECREF(ker2d);
+    return Py_BuildValue("");
   }
 
   hy = (sumgd - ((sumg * sumd) / p)) / hy1;
   if (hy <= 0.0){
-      return_val = -1;
-      goto _exit;
+    Py_DECREF(img);
+    Py_DECREF(ker2d);
+    return Py_BuildValue("");
   }
 
   /* Solve for the new x centroid. */
@@ -1053,15 +1057,9 @@ arrxyround(PyObject *obj, PyObject *args)
 
   round = 2.0 * (hx - hy) / (hx + hy);
 
- _exit:
   Py_DECREF(img);
   Py_DECREF(ker2d);
-
-  if (return_val < 0){
-      return Py_BuildValue("");
-  } else {
-      return Py_BuildValue("ddd",xc,yc,round);
-  }
+  return Py_BuildValue("ddd", xc, yc, round);
 }
 
 /* ==== Allocate a double *vector (vec of pointers) ======================
