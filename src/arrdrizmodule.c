@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include <float.h>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 
 #include "astropy_wcs_api.h"
@@ -54,11 +55,11 @@ py_mapping_callback(void* state,
   PyObject* callback_tuple = NULL;
   int result = TRUE;
 
-  py_xin = (PyArrayObject*)PyArray_SimpleNewFromData(1, &dims, PyArray_DOUBLE, (double*)xin);
+  py_xin = (PyArrayObject*)PyArray_SimpleNewFromData(1, &dims, NPY_FLOAT64, (double*)xin);
   if (py_xin == NULL)
     goto _py_mapping_callback_exit;
 
-  py_yin = (PyArrayObject*)PyArray_SimpleNewFromData(1, &dims, PyArray_DOUBLE, (double*)yin);
+  py_yin = (PyArrayObject*)PyArray_SimpleNewFromData(1, &dims, NPY_FLOAT64, (double*)yin);
   if (py_yin == NULL)
     goto _py_mapping_callback_exit;
 
@@ -74,11 +75,11 @@ py_mapping_callback(void* state,
   if (!PyArg_UnpackTuple(callback_tuple, "result", 2, 2, &py_xout_obj, &py_yout_obj))
     goto _py_mapping_callback_exit;
 
-  py_xout = (PyArrayObject*)PyArray_ContiguousFromAny(py_xout_obj, PyArray_DOUBLE, 1, 1);
+  py_xout = (PyArrayObject*)PyArray_ContiguousFromAny(py_xout_obj, NPY_FLOAT64, 1, 1);
   if (py_xout == NULL)
     goto _py_mapping_callback_exit;
 
-  py_yout = (PyArrayObject*)PyArray_ContiguousFromAny(py_yout_obj, PyArray_DOUBLE, 1, 1);
+  py_yout = (PyArrayObject*)PyArray_ContiguousFromAny(py_yout_obj, NPY_FLOAT64, 1, 1);
   if (py_yout == NULL)
     goto _py_mapping_callback_exit;
 
@@ -225,12 +226,12 @@ PyWCSMap_call(PyWCSMap* self, PyObject* args, PyObject* kwargs)
     return NULL;
   }
 
-  py_xin = (PyArrayObject*)PyArray_ContiguousFromAny(py_xin_obj, PyArray_DOUBLE, 1, 1);
+  py_xin = (PyArrayObject*)PyArray_ContiguousFromAny(py_xin_obj, NPY_FLOAT64, 1, 1);
   if (py_xin == NULL) {
     goto _py_wcsmap_call_exit;
   }
 
-  py_yin = (PyArrayObject*)PyArray_ContiguousFromAny(py_yin_obj, PyArray_DOUBLE, 1, 1);
+  py_yin = (PyArrayObject*)PyArray_ContiguousFromAny(py_yin_obj, NPY_FLOAT64, 1, 1);
   if (py_yin == NULL) {
     goto _py_wcsmap_call_exit;
   }
@@ -245,12 +246,12 @@ PyWCSMap_call(PyWCSMap* self, PyObject* args, PyObject* kwargs)
   dims = PyArray_DIM(py_xin, 0);
 
   /* Generate output arrays */
-  py_xout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, PyArray_DOUBLE);
+  py_xout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, NPY_FLOAT64);
   if (py_xout == NULL) {
     goto _py_wcsmap_call_exit;
   }
 
-  py_yout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, PyArray_DOUBLE);
+  py_yout = (PyArrayObject*)PyArray_SimpleNew(1, &dims, NPY_FLOAT64);
   if (py_yout == NULL) {
     goto _py_wcsmap_call_exit;
   }
@@ -320,7 +321,7 @@ static PyTypeObject WCSMapType = {
   0,                                               /* tp_alloc */
   PyWCSMap_new,                                    /* tp_new */
 };
- 
+
 static PyObject *
 tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 {
@@ -394,31 +395,31 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
   }
 
   /* Get raw C-array data */
-  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
+  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, NPY_FLOAT32, 2, 2);
   if (!img) {
     driz_error_set_message(&error, "Invalid input array");
     goto _exit;
   }
 
-  wei = (PyArrayObject *)PyArray_ContiguousFromAny(owei, PyArray_FLOAT, 2, 2);
+  wei = (PyArrayObject *)PyArray_ContiguousFromAny(owei, NPY_FLOAT32, 2, 2);
   if (!wei) {
     driz_error_set_message(&error, "Invalid weights array");
     goto _exit;
   }
 
-  out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, PyArray_FLOAT, 2, 2);
+  out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, NPY_FLOAT32, 2, 2);
   if (!out) {
     driz_error_set_message(&error, "Invalid output array");
     goto _exit;
   }
 
-  wht = (PyArrayObject *)PyArray_ContiguousFromAny(owht, PyArray_FLOAT, 2, 2);
+  wht = (PyArrayObject *)PyArray_ContiguousFromAny(owht, NPY_FLOAT32, 2, 2);
   if (!wht) {
     driz_error_set_message(&error, "Invalid array");
     goto _exit;
   }
 
-  con = (PyArrayObject *)PyArray_ContiguousFromAny(ocon, PyArray_INT32, 2, 2);
+  con = (PyArrayObject *)PyArray_ContiguousFromAny(ocon, NPY_INT32, 2, 2);
   if (!con) {
     driz_error_set_message(&error, "Invalid context array");
     goto _exit;
@@ -457,10 +458,10 @@ tdriz(PyObject *obj UNUSED_PARAM, PyObject *args)
 #endif
   }
 
-  nx = img->dimensions[1];
-  ny = img->dimensions[0];
-  onx = out->dimensions[1];
-  ony = out->dimensions[0];
+  nx = PyArray_DIMS(img)[1];
+  ny = PyArray_DIMS(img)[0];
+  onx = PyArray_DIMS(out)[1];
+  ony = PyArray_DIMS(out)[0];
 
   nmiss = 0;
   nskip = 0;
@@ -668,12 +669,12 @@ tblot(PyObject *obj, PyObject *args)
   callback = py_mapping_callback;
   callback_state = (void *)callback_obj;
 
-  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
+  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, NPY_FLOAT32, 2, 2);
   if (!img) {
     driz_error_set_message(&error, "Invalid input array");
     goto _exit;
   }
-  out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, PyArray_FLOAT, 2, 2);
+  out = (PyArrayObject *)PyArray_ContiguousFromAny(oout, NPY_FLOAT32, 2, 2);
   if (!out) {
     driz_error_set_message(&error, "Invalid output array");
     goto _exit;
@@ -684,10 +685,10 @@ tblot(PyObject *obj, PyObject *args)
     goto _exit;
   }
 
-  nx = img->dimensions[1];
-  ny = img->dimensions[0];
-  onx = out->dimensions[1];
-  ony = out->dimensions[0];
+  nx = PyArray_DIMS(img)[1];
+  ny = PyArray_DIMS(img)[0];
+  onx = PyArray_DIMS(out)[1];
+  ony = PyArray_DIMS(out)[0];
 
   driz_param_init(&p);
 
@@ -743,9 +744,7 @@ void cdriz_log_func(const char *format, ...) {
 
   if (logging == NULL) {
     logging = PyImport_ImportModuleNoBlock("logging");
-    if (logging == NULL) {
-      return;
-    }
+    if (logging == NULL) return;
   }
 
   n = PyOS_vsnprintf(msg, sizeof(msg), format, args);
@@ -759,19 +758,17 @@ void cdriz_log_func(const char *format, ...) {
 
   /* XXX: Provide a way to specify the log level to use */
   string = Py_BuildValue("s", msg);
-  if (string == NULL) {
-    goto cleanup;
-  }
+  if (string == NULL) return;
 
   logger = PyObject_CallMethod(logging, "getLogger", "s",
                                "drizzlepac.cdriz");
   if (logger == NULL) {
-      goto cleanup;
+      Py_XDECREF(string);
+      return;
   }
 
   PyObject_CallMethod(logger, "info", "O", string);
 
-cleanup:
   Py_XDECREF(logger);
   Py_XDECREF(string);
   return;
@@ -788,7 +785,7 @@ arrmoments(PyObject *obj, PyObject *args)
   /* Derived values */
   PyArrayObject *img = NULL;
   long x,y;
-  double moment;
+  double moment = 0.0;
   integer_t i,j;
   double val;
 
@@ -796,19 +793,18 @@ arrmoments(PyObject *obj, PyObject *args)
     return PyErr_Format(gl_Error, "cdriz.arrmoments: Invalid Parameters.");
   }
 
-  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
+  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, NPY_FLOAT32, 2, 2);
   if (!img) {
     goto _exit;
   }
 
-  x = img->dimensions[1];
-  y = img->dimensions[0];
+  x = PyArray_DIMS(img)[1];
+  y = PyArray_DIMS(img)[0];
 
-  moment = 0.0;
   /* Perform computation */
   for (i = 0; i < y; i++) {
     for (j = 0; j < x; j++) {
-      val = *(float *)(img->data + j*img->strides[1] + i*img->strides[0]);
+      val = *(float *)(PyArray_DATA(img) + j*PyArray_STRIDES(img)[1] + i*PyArray_STRIDES(img)[0]);
       moment += pow(i,p)*pow(j,q)*val;
     }
   }
@@ -816,7 +812,7 @@ arrmoments(PyObject *obj, PyObject *args)
  _exit:
   Py_DECREF(img);
 
-  return Py_BuildValue("d",moment);
+  return Py_BuildValue("d", moment);
 }
 
 static PyObject *
@@ -853,18 +849,18 @@ arrxyround(PyObject *obj, PyObject *args)
     return PyErr_Format(gl_Error, "cdriz.arrxyround: Invalid Parameters.");
   }
 
-  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, PyArray_FLOAT, 2, 2);
+  img = (PyArrayObject *)PyArray_ContiguousFromAny(oimg, NPY_FLOAT32, 2, 2);
   if (!img) {
     goto _exit;
   }
 
-  ker2d = (PyArrayObject *)PyArray_ContiguousFromAny(oker2d, PyArray_DOUBLE, 2, 2);
+  ker2d = (PyArrayObject *)PyArray_ContiguousFromAny(oker2d, NPY_FLOAT64, 2, 2);
   if (!ker2d) {
     goto _exit;
   }
 
-  nxk = ker2d->dimensions[1];
-  nyk = ker2d->dimensions[0];
+  nxk = PyArray_DIMS(ker2d)[1];
+  nyk = PyArray_DIMS(ker2d)[0];
 
   /* Perform computation */
   /*These are all 0-based indices */
@@ -891,10 +887,10 @@ arrxyround(PyObject *obj, PyObject *args)
       sg = 0.0;
       sd = 0.0;
       for (j=0; j < nyk; j++){
-          wt = (float)(ymiddle+1 - abs (j - ymiddle));
+          wt = (float)(ymiddle+1 - labs (j - ymiddle));
           px = x0-xmiddle+k;
           py = y0-ymiddle+j;
-          pixval = *(float *)(img->data + px*img->strides[1] + py*img->strides[0]);
+          pixval = *(float *)(PyArray_DATA(img) + px*PyArray_STRIDES(img)[1] + py*PyArray_STRIDES(img)[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
               sg=DBL_MIN;
@@ -902,14 +898,14 @@ arrxyround(PyObject *obj, PyObject *args)
           }
 
           sd += (pixval - skymode) * wt;
-          ker2dval = *(double *)(ker2d->data + k*ker2d->strides[1] + j*ker2d->strides[0]);
+          ker2dval = *(double *)(PyArray_DATA(ker2d) + k*PyArray_STRIDES(ker2d)[1] + j*PyArray_STRIDES(ker2d)[0]);
           sg += ker2dval * wt;
       }
       if (sg == DBL_MIN){
           break;
       }
       dxk = xmiddle-k;
-      wt = (float)(xmiddle+1 - abs(dxk));
+      wt = (float)(xmiddle+1L - labs(xmiddle-k));
       sumgd += wt * sg * sd;
       sumgsq += wt * pow(sg, 2);
       sumg += wt * sg;
@@ -980,24 +976,24 @@ arrxyround(PyObject *obj, PyObject *args)
       sg = 0.0;
       sd = 0.0;
       for (k=0; k<nxk; k++){
-          wt = (float)(xmiddle+1 - abs(k - xmiddle));
+          wt = (float)(xmiddle+1L - labs(k - xmiddle));
           px = x0-xmiddle+k;
           py = y0-ymiddle+j;
-          pixval = *(float *)(img->data + px*img->strides[1] + py*img->strides[0]);
+          pixval = *(float *)(PyArray_DATA(img) + px*PyArray_STRIDES(img)[1] + py*PyArray_STRIDES(img)[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
               sg = DBL_MIN;
               break;
           }
           sd += (pixval - skymode) * wt;
-          ker2dval = *(double *)(ker2d->data + k*ker2d->strides[1] + j*ker2d->strides[0]);
+          ker2dval = *(double *)(PyArray_DATA(ker2d) + k*PyArray_STRIDES(ker2d)[1] + j*PyArray_STRIDES(ker2d)[0]);
           sg += ker2dval * wt;
       }
       if (sg == DBL_MIN){
           break;
       }
       dyj = ymiddle-j;
-      wt = (float)(ymiddle+1 - abs(j - ymiddle));
+      wt = (float)(ymiddle+1L - labs(j - ymiddle));
 
       sumgd += wt * sg * sd;
       sumgsq += wt * pow(sg, 2);
@@ -1026,11 +1022,12 @@ arrxyround(PyObject *obj, PyObject *args)
   y marginal. Reject the star if the height is non-positive.
   */
 
-  hy1 = sumgsq - (pow(sumg,2) / p);
+  hy1 = sumgsq - (pow(sumg, 2) / p);
   if (hy1 <= 0.0){
       return_val = -1;
       goto _exit;
   }
+
   hy = (sumgd - ((sumg * sumd) / p)) / hy1;
   if (hy <= 0.0){
       return_val = -1;
@@ -1086,10 +1083,11 @@ double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
     double **c, *a;
     long i,n,m;
 
-    n=arrayin->dimensions[0];
-    m=arrayin->dimensions[1];
+    n=PyArray_DIMS(arrayin)[0];
+    m=PyArray_DIMS(arrayin)[1];
+
     c=(double **)ptrvector(n);
-    a=(double *) arrayin->data;  /* pointer to arrayin data as double */
+    a=(double *) PyArray_DATA(arrayin);  /* pointer to arrayin data as double */
     for ( i=0; i<n; i++)  {
         c[i]=a+i*m;  }
     return c;
@@ -1111,26 +1109,24 @@ arrxyzero(PyObject *obj, PyObject *args)
   PyArrayObject *imgxy = NULL;
   PyArrayObject *refxy = NULL;
   PyArrayObject *ozpmat = NULL;
-  double **zpmat;
-  long *a;
+  double **zpmat = NULL;
 
   long imgnum, refnum;
   integer_t dimensions[2];
   integer_t xind, yind;
   double dx, dy;
   long j, k;
-  long nsource = 0;
 
   if (!PyArg_ParseTuple(args,"OOd:arrxyzero", &oimgxy, &orefxy, &searchrad)){
     return PyErr_Format(gl_Error, "cdriz.arrxyzero: Invalid Parameters.");
   }
 
-  imgxy = (PyArrayObject *)PyArray_ContiguousFromAny(oimgxy, PyArray_FLOAT, 2, 2);
+  imgxy = (PyArrayObject *)PyArray_ContiguousFromAny(oimgxy, NPY_FLOAT32, 2, 2);
   if (!imgxy) {
     goto _exit;
   }
 
-  refxy = (PyArrayObject *)PyArray_ContiguousFromAny(orefxy, PyArray_FLOAT, 2, 2);
+  refxy = (PyArrayObject *)PyArray_ContiguousFromAny(orefxy, NPY_FLOAT32, 2, 2);
   if (!refxy) {
     goto _exit;
   }
@@ -1142,18 +1138,18 @@ arrxyzero(PyObject *obj, PyObject *args)
     goto _exit;
   }
   /* Allocate memory for return matrix */
-  zpmat=pymatrix_to_Carrayptrs(ozpmat);
+  zpmat = pymatrix_to_Carrayptrs(ozpmat);
 
-  imgnum = imgxy->dimensions[0];
-  refnum = refxy->dimensions[0];
+  imgnum = PyArray_DIMS(imgxy)[0];
+  refnum = PyArray_DIMS(refxy)[0];
 
   /* For each entry in the input image...*/
   for (j=0; j< imgnum; j++){
     /* compute the delta relative to each source in ref image */
     for (k = 0; k < refnum; k++){
-        dx = *(float *)(imgxy->data + j*imgxy->strides[0]) - *(float *)(refxy->data + k*refxy->strides[0]);
-        dy = *(float *)(imgxy->data + j*imgxy->strides[0]+ imgxy->strides[1]) -
-             *(float *)(refxy->data + k*refxy->strides[0]+ refxy->strides[1]);
+        dx = *(float *)(PyArray_DATA(imgxy) + j*PyArray_STRIDES(imgxy)[0]) - *(float *)(PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]);
+        dy = *(float *)(PyArray_DATA(imgxy) + j*PyArray_STRIDES(imgxy)[0]+ PyArray_STRIDES(imgxy)[1]) -
+             *(float *)(PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]+ PyArray_STRIDES(refxy)[1]);
         if ((fabs(dx) < searchrad) && (fabs(dy) < searchrad)) {
             xind = (integer_t)(dx+searchrad);
             yind = (integer_t)(dy+searchrad);
@@ -1226,7 +1222,7 @@ void initcdriz(void)
 
   Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
-  
+
 #if PY_MAJOR_VERSION >= 3
   return m;
 #endif
