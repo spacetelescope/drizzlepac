@@ -31,6 +31,7 @@ except ImportError:
 
 from glob import glob
 from setuptools import setup, find_packages, Extension
+from setuptools.command.install import install
 from subprocess import check_call, CalledProcessError
 
 
@@ -87,6 +88,21 @@ if pandokia:
 docs_compiled_src = os.path.normpath('build/sphinx/html')
 docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(NAME))
 
+
+class InstallCommand(install):
+    """Drizzlepac requires C extensions to import at the project level.
+    This ensures RTD can import the package relative to the documentation post-install"""
+    def run(self):
+        build_cmd = self.reinitialize_command('build_ext')
+        build_cmd.inplace = 1
+        self.run_command('build_ext')
+        install.run(self)
+        if not os.path.exists(docs_compiled_dest):
+            print('warning: Sphinx "htmlhelp" documentation was NOT bundled!', file=sys.stderr)
+
+CMDCLASS['install'] = InstallCommand
+
+
 try:
     from sphinx.cmd.build import build_main
     from sphinx.setup_command import BuildDoc
@@ -117,8 +133,7 @@ try:
     CMDCLASS['build_sphinx'] = BuildSphinx
 
 except ImportError:
-    print('!\n! Sphinx is not installed!\n!', file=sys.stderr)
-    exit(1)
+    print('warning: Sphinx is not installed! "htmlhelp" documention cannot be compiled!', file=sys.stderr)
 
 
 setup(
