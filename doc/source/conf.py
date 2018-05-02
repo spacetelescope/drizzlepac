@@ -33,15 +33,18 @@ def setup(app):
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../'))
-sys.path.insert(0, os.path.abspath('../../'))
-sys.path.insert(0, os.path.abspath('../../src/'))
 
-
+#sys.path.insert(0, os.path.abspath('../../'))
 #sys.path.insert(0, os.path.abspath('../'))
 #sys.path.insert(0, os.path.abspath('packagename/'))
 #sys.path.insert(0, os.path.abspath('exts/'))
 
+drizzlepac_package_path = os.path.abspath('../../')
+npths = len(sys.path) - 1
+for i, p in enumerate(sys.path[::-1]):
+    if os.path.exists(p) and os.path.samefile(drizzlepac_package_path, p):
+        del sys.path[npths - i]
+sys.path.append(drizzlepac_package_path)
 
 # If your documentation needs a minimal Sphinx version, state it here.
 needs_sphinx = '1.3'
