@@ -1,13 +1,12 @@
-#include "driz_portability.h"
-#include "cdrizzleutil.h"
-
 #include <Python.h>
-
 #include <assert.h>
-#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */ 
+#define _USE_MATH_DEFINES       /* needed for MS Windows to define M_PI */
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "driz_portability.h"
+#include "cdrizzleutil.h"
 
 #ifdef _WIN32
 #define ssize_t SSIZE_T
@@ -284,7 +283,7 @@ get_geometric_distortion_filename_from_header(fitsfile* input_data_file,
   return 0;
 }
 
-#endif 
+#endif
 #ifndef BUFSIZ
 #define BUFSIZ (1 << 16)
 #endif
