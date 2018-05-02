@@ -40,6 +40,7 @@ Contents:
    drizcr
    util
    tweakback
+   LICENSE
 
 DrizzlePac Release Notes
 ------------------------
@@ -52,7 +53,7 @@ provide some details on what has been revised for each version.
 .. toctree::
     :maxdepth: 1
 
-    release_notes
+    CHANGELOG
 
 Image Registration Tasks
 ------------------------
@@ -112,7 +113,7 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
 
 .. toctree::
    :maxdepth: 2
-   
+
    Running Astrodriz <runastrodriz.rst>
 
 

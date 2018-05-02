@@ -26,7 +26,7 @@ aspects of each of the processing steps.
 
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import absolute_import, division, print_function  # confidence high
@@ -311,23 +311,27 @@ def _dbg_dump_virtual_outputs(imgObjList):
             FITSOBJ = iii.virtualOutputs[vok]
             log.info(tag+': '+str(vok)+' = '+str(FITSOBJ))
             if vok.endswith('.fits'):
-              if not hasattr(FITSOBJ, 'data'):  FITSOBJ = FITSOBJ[0] # list of PrimaryHDU ?
-              if not hasattr(FITSOBJ, 'data'):  FITSOBJ = FITSOBJ[0] # was list of HDUList ?
-              dbgname = 'DEBUG_%02d_'%(_fidx,); dbgname+=os.path.basename(vok); _fidx+=1
-              FITSOBJ.writeto(dbgname)
-              log.info(tag+'  wrote: '+dbgname)
-              log.info('\n'+vok)
-              if hasattr(FITSOBJ, 'data'):
-                log.info(str(FITSOBJ._summary()))
-                log.info('min and max are: '+str( (FITSOBJ.data.min(),
-                                                   FITSOBJ.data.max()) ))
-                log.info('avg and sum are: '+str( (FITSOBJ.data.mean(),
-                                                   FITSOBJ.data.sum()) ))
-#               log.info(str(FITSOBJ.data)[:75])
-              else:
-                log.info(vok+' has no .data attr')
-                log.info(str(type(FITSOBJ)))
-              log.info(vok+'\n')
+                if not hasattr(FITSOBJ, 'data'):
+                    FITSOBJ = FITSOBJ[0] # list of PrimaryHDU ?
+                if not hasattr(FITSOBJ, 'data'):
+                    FITSOBJ = FITSOBJ[0] # was list of HDUList ?
+                dbgname = 'DEBUG_%02d_'%(_fidx,)
+                dbgname+=os.path.basename(vok)
+                _fidx+=1
+                FITSOBJ.writeto(dbgname)
+                log.info(tag+'  wrote: '+dbgname)
+                log.info('\n'+vok)
+                if hasattr(FITSOBJ, 'data'):
+                    log.info(str(FITSOBJ._summary()))
+                    log.info('min and max are: '+str( (FITSOBJ.data.min(),
+                                                       FITSOBJ.data.max()) ))
+                    log.info('avg and sum are: '+str( (FITSOBJ.data.mean(),
+                                                       FITSOBJ.data.sum()) ))
+#                    log.info(str(FITSOBJ.data)[:75])
+                else:
+                    log.info(vok+' has no .data attr')
+                    log.info(str(type(FITSOBJ)))
+                log.info(vok+'\n')
     log.info('-'*80)
 
 AstroDrizzle.__doc__ = getHelpAsString(docstring = True, show_ver = False)

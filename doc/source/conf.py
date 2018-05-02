@@ -37,6 +37,12 @@ sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../../'))
 sys.path.insert(0, os.path.abspath('../../src/'))
 
+
+#sys.path.insert(0, os.path.abspath('../'))
+#sys.path.insert(0, os.path.abspath('packagename/'))
+#sys.path.insert(0, os.path.abspath('exts/'))
+
+
 # If your documentation needs a minimal Sphinx version, state it here.
 needs_sphinx = '1.3'
 
@@ -124,7 +130,7 @@ copyright = u'2017, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Mich
 #
 # The short X.Y version.
 #version = '1.0.6'
-from drizzlepac import __version__,__version_date__
+from drizzlepac import __version__, __version_date__
 version = __version__
 # The full version, including alpha/beta/rc tags.
 #release = '1.0.6 (14-Aug-2012)'
@@ -147,11 +153,8 @@ release = "{:s} ({:s})".format(__version__, __version_date__)
 # for source files.
 exclude_trees = []
 
-# The reST default role (used for this markup: `text`) to use for all documents.
-default_role = 'autolink'
-
 # If true, '()' will be appended to :func: etc. cross-reference text.
-add_function_parentheses = False
+# add_function_parentheses = False
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
@@ -174,6 +177,33 @@ exclude_patterns = ['_build']
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 default_role = 'obj'
+
+
+
+
+# Don't show summaries of the members in each class along with the
+# class' docstring
+numpydoc_show_class_members = False
+
+autosummary_generate = True
+
+automodapi_toctreedirnm = 'api'
+
+# Class documentation should contain *both* the class docstring and
+# the __init__ docstring
+autoclass_content = "both"
+
+# Render inheritance diagrams in SVG
+graphviz_output_format = "svg"
+
+graphviz_dot_args = [
+    '-Nfontsize=10',
+    '-Nfontname=Helvetica Neue, Helvetica, Arial, sans-serif',
+    '-Efontsize=10',
+    '-Efontname=Helvetica Neue, Helvetica, Arial, sans-serif',
+    '-Gfontsize=10',
+    '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
+]
 
 
 # -- Options for HTML output ---------------------------------------------------

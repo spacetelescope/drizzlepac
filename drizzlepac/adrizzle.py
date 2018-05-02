@@ -3,7 +3,7 @@ Interfaces to main drizzle functions.
 
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import absolute_import, division, print_function # confidence medium
@@ -29,6 +29,12 @@ except ImportError:
 
 if util.can_parallel:
     import multiprocessing
+
+__all__ = ['drizzle', 'run', 'drizSeparate', 'drizFinal', 'mergeDQarray',
+           'updateInputDQArray', 'buildDrizParamDict', 'interpret_maskval',
+           'run_driz', 'run_driz_img', 'run_driz_chip', 'do_driz',
+           'get_data', 'create_output', 'help', 'getHelpAsString']
+
 
 __taskname__ = "drizzlepac.adrizzle"
 _single_step_num_ = 3
@@ -769,7 +775,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Open the SCI image
     _handle = fileutil.openImage(_expname, mode='readonly', memmap=False)
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
-    
+
     # Apply sky subtraction and unit conversion to input array
     if chip.computedSky is None:
         _insci = _sciext.data

@@ -3,7 +3,7 @@ A class which makes image objects for each input filename.
 
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import absolute_import, division, print_function  # confidence medium
@@ -18,12 +18,12 @@ from astropy.io import fits
 from . import util
 from . import wcs_functions
 from . import buildmask
+from .version import *
+
+__all__ = ['baseImageObject', 'imageObject', 'WCSObject']
 
 
 IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
-
-
-from .version import *
 
 log = logutil.create_logger(__name__)
 
@@ -32,6 +32,8 @@ class baseImageObject(object):
     """ Base ImageObject which defines the primary set of methods.
     """
     def __init__(self,filename):
+        """
+        """
 
         self.scienceExt= "SCI" # the extension the science image is stored in
         self.maskExt="DQ" #the extension with the mask image in it

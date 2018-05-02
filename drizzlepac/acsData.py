@@ -3,14 +3,14 @@ Class used to model ACS specific instrument data.
 
 :Authors: Christopher Hanley, Warren Hack, Ivo Busko, David Grumm
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import absolute_import, division, print_function # confidence high
 
 from stsci.tools import fileutil
 import numpy as np
-from .imageObject import imageObject
+from .imageObject import imageObject, baseImageObject
 
 
 class ACSInputImage(imageObject):
