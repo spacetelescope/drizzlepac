@@ -8,10 +8,11 @@ Main program for running MultiDrizzle from the command line.
 
 """
 from __future__ import absolute_import, division, print_function # confidence high
+import getopt
 import sys, os
-from drizzlepac import AstroDrizzle
+from drizzlepac.astrodrizzle import AstroDrizzle
 from drizzlepac.version import __version__
-from . import util
+from drizzlepac import util
 
 
 #-------------------------------------------------------------------------------
