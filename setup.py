@@ -155,8 +155,10 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     setup_requires=[
+        'numpydoc',
         'stsci_rtd_theme',
         'sphinx',
+        'sphinx-automodapi',
         'sphinx_rtd_theme',
     ],
     install_requires=[
