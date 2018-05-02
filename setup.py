@@ -100,7 +100,6 @@ else:
 setup(
     name=NAME,
     version=version.pep386,
-    zip_safe=False,
     author='Megan Sosey, Warren Hack, Christopher Hanley, '
            'Chris Sontag, Mihai Cara',
     author_email='help@stsci.edu',
@@ -157,7 +156,7 @@ setup(
         ],
     },
     ext_modules=[
-        Extension('cdriz',
+        Extension('drizzlepac.cdriz',
                   glob('src/*.c'),
                   include_dirs=include_dirs,
                   define_macros=define_macros),

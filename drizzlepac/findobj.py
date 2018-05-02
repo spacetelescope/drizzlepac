@@ -16,7 +16,7 @@ from stsci import convolve
 from stsci import ndimage as ndim
 
 import stsci.imagestats as imagestats
-import cdriz
+from . import cdriz
 
 
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):

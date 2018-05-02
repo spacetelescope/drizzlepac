@@ -9,18 +9,18 @@ Interfaces to main drizzle functions.
 from __future__ import absolute_import, division, print_function # confidence medium
 
 import sys,os,copy,time
-from drizzlepac import util
+from . import util
 import numpy as np
 from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
-from drizzlepac  import outputimage, wcs_functions, processInput, util
+from . import outputimage, wcs_functions, processInput, util
 import stwcs
 from stwcs import distortion
 
 from .version import *
 
 try:
-    import cdriz
+    from . import cdriz
 except ImportError:
     cdriz = None
     print('\n Coordinate transformation and image resampling library, cdriz, NOT found!')
@@ -769,7 +769,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     # Open the SCI image
     _handle = fileutil.openImage(_expname, mode='readonly', memmap=False)
     _sciext = _handle[chip.header['extname'],chip.header['extver']]
-
+    
     # Apply sky subtraction and unit conversion to input array
     if chip.computedSky is None:
         _insci = _sciext.data
