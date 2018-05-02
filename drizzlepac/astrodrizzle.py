@@ -155,16 +155,16 @@ def run(configobj, wcsmap=None):
         def_logname = input_list[0]
     else:
         print(textutil.textbox(
-            'ERROR:\nNo valid input files found!   Please restart the task '
-            'and check the value for the "input" parameter.'), file=sys.stderr)
+            "ERROR:\nNo valid input files found!   Please restart the task "
+            "and check the value for the 'input' parameter."), file=sys.stderr)
         def_logname = None
         return
 
-    stateObj = configobj['STATE OF INPUT FILES']
+    clean = configobj['STATE OF INPUT FILES']['clean']
     procSteps = util.ProcSteps()
 
-    print('AstroDrizzle Version %s(%s) started at: %s\n' %
-           (__version__, __version_date__, util._ptime()[0]))
+    print("AstroDrizzle Version {:s} ({:s}) started at: {:s}\n"
+          .format(__version__, __version_date__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
     try:
@@ -181,10 +181,9 @@ def run(configobj, wcsmap=None):
             errmsg += "Exiting AstroDrizzle now..."
             print(textutil.textbox(errmsg, width=65))
             print(textutil.textbox(
-                'ERROR:\nAstroDrizzle Version %s encountered a problem!  '
-                'Processing terminated at %s.' %
-                (__version__, util._ptime()[0])), file=sys.stderr)
-            procSteps.reportTimes()
+                'ERROR:\nAstroDrizzle Version {:s} encountered a problem!  '
+                'Processing terminated at {:s}.'
+                .format(__version__, util._ptime()[0])), file=sys.stderr)
             return
 
         log.info("USER INPUT PARAMETERS common to all Processing Steps:")
@@ -207,47 +206,40 @@ def run(configobj, wcsmap=None):
 #       _dbg_dump_virtual_outputs(imgObjList)
 
         #create the median images from the driz sep images
-        createMedian.createMedian(imgObjList, configobj,
-                                  procSteps=procSteps)
+        createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
 
         #blot the images back to the original reference frame
         ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                       procSteps=procSteps)
 
         #look for cosmic rays
-        drizCR.rundrizCR(imgObjList, configobj,
-                         procSteps=procSteps)
+        drizCR.rundrizCR(imgObjList, configobj, procSteps=procSteps)
 
         #Make your final drizzled image
         adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                            procSteps=procSteps)
 
         print()
-        print(' '.join(['AstroDrizzle Version', __version__,
-                        'is finished processing at ',
-                        util._ptime()[0]]) + '!\n')
+        print("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
+              .format(__version__, util._ptime()[0]))
+
     except:
+        clean = False
         print(textutil.textbox(
-            'ERROR:\nAstroDrizzle Version %s encountered a problem!  '
-            'Processing terminated at %s.' %
-            (__version__, util._ptime()[0])), file=sys.stderr)
+            "ERROR:\nAstroDrizzle Version {:s} encountered a problem!  "
+            "Processing terminated at {:s}."
+            .format(__version__, util._ptime()[0])), file=sys.stderr)
+        raise
+
+    finally:
         procSteps.reportTimes()
-        if imgObjList is not None:
+        if imgObjList:
             for image in imgObjList:
+                if clean:
+                    image.clean()
                 image.close()
             del imgObjList
             del outwcs
-
-    procSteps.reportTimes()
-
-    if imgObjList is not None:
-        for image in imgObjList:
-            if stateObj['clean']:
-                image.clean()
-            image.close()
-
-        del imgObjList
-        del outwcs
 
 
 def help(file=None):
