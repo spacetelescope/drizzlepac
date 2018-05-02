@@ -288,7 +288,6 @@ default_wcsmap_direct(struct wcsmap_param_t* m,
 
   integer_t  i;
   int        status;
-  int        result = 1;
   double    *memory = NULL;
   double    *ptr    = NULL;
   double    *xyin   = NULL;
@@ -301,7 +300,8 @@ default_wcsmap_direct(struct wcsmap_param_t* m,
 
   /* Allocate memory for new 2-D array */
   ptr = memory = (double *) malloc(n * 10 * sizeof(double));
-  if (memory == NULL) goto exit;
+  if (memory == NULL) return 1;
+
   xyin = ptr;
   ptr += n * 2;
   xyout = ptr;
@@ -313,8 +313,12 @@ default_wcsmap_direct(struct wcsmap_param_t* m,
   phi = ptr;
   ptr += n;
   theta = ptr;
+
   stat = (int *)malloc(n * sizeof(int));
-  if (stat == NULL) goto exit;
+  if (stat == NULL) {
+      free(memory);
+      return 1;
+  }
 
   /* The input arrays need to be converted to 2-D arrays for input
      to the PyWCS (and related) functions. */
@@ -333,7 +337,9 @@ default_wcsmap_direct(struct wcsmap_param_t* m,
   status = pipeline_all_pixel2world(m->input_wcs, n, 2, xyin, skyout);
   wcsprm_c2python(m->input_wcs->wcs);
   if (status) {
-    goto exit;
+    free(memory);
+    free(stat);
+    return 1;
   }
 
   /*
@@ -344,7 +350,9 @@ default_wcsmap_direct(struct wcsmap_param_t* m,
                   skyout, phi, theta, imgcrd, xyout, stat);
   wcsprm_c2python(m->output_wcs->wcs);
   if (status) {
-    goto exit;
+    free(memory);
+    free(stat);
+    return 1;
   }
 
   /*
@@ -355,16 +363,10 @@ default_wcsmap_direct(struct wcsmap_param_t* m,
     yout[i] = xyout[2*i+1];
   }
 
-  result = 0;
-
- exit:
-  /*
-  Free memory allocated to internal 2-D arrays
-  */
+  /* Free memory allocated to internal 2-D arrays */
   free(memory);
   free(stat);
-
-  return result;
+  return 0;
 }
 
 static int
@@ -377,7 +379,6 @@ default_wcsmap_interpolate(struct wcsmap_param_t* m,
                            struct driz_error_t* error) {
 
   int     i;
-  int     result = 1;
   double *xiptr;
   double *yiptr;
   double *xoptr;
@@ -438,11 +439,7 @@ default_wcsmap_interpolate(struct wcsmap_param_t* m,
 #undef TABLE_X
 #undef TABLE_Y
 
-  result = 0;
-
- exit:
-
-  return result;
+  return 0;
 }
 
 
@@ -486,11 +483,10 @@ default_wcsmap_init(struct wcsmap_param_t* m,
   double *theta  = NULL;
   double *imgcrd = NULL;
   int    *stat   = NULL;
-  int     snx;
-  int     sny;
+  int     snx = nx + 2;
+  int     sny = ny + 2;
   int     i;
   int     j;
-  int     status = 1;
   int     istat;
 
   assert(m);
@@ -589,8 +585,6 @@ default_wcsmap_init(struct wcsmap_param_t* m,
   m->sny = sny;
   m->factor = factor;
 
-  status = 0;
-
  exit:
 
   free(pixcrd);
@@ -600,7 +594,7 @@ default_wcsmap_init(struct wcsmap_param_t* m,
   free(imgcrd);
   free(stat);
 
-  return status;
+  return 0;
 }
 
 void
