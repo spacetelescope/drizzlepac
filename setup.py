@@ -106,7 +106,7 @@ try:
             build_cmd = self.reinitialize_command('build_ext')
             build_cmd.inplace = 1
             self.run_command('build_ext')
-            build_main(['-b', 'html', 'doc', 'build/sphinx/html'])
+            build_main(['-b', 'html', 'doc/source', 'build/sphinx/html'])
 
             if os.path.exists(docs_compiled_src):
                 if os.path.exists(docs_compiled_dest):
