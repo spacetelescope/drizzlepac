@@ -5,7 +5,7 @@ IS RETURNED BY :py:func:`quickderiv`.
 
 :Authors: CHRISTOPHER HANLEY
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 #

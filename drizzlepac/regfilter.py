@@ -3,7 +3,7 @@
 
 :Authors: Mihai Cara
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 # This is specifically NOT intended to match the package-wide version information.

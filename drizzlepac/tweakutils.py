@@ -1,7 +1,7 @@
 """
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import absolute_import, division, print_function
@@ -19,6 +19,16 @@ import stsci.imagestats as imagestats
 
 from . import findobj
 from . import cdriz
+
+__all__ = [
+    'parse_input', 'atfile_sci', 'parse_atfile_cat', 'ndfind',
+    'get_configobj_root', 'isfloat', 'parse_skypos', 'make_val_float',
+    'radec_hmstodd', 'parse_exclusions', 'parse_colname', 'readcols',
+    'read_FITS_cols', 'read_ASCII_cols', 'write_shiftfile', 'createWcsHDU',
+    'idlgauss_convolve', 'gauss_array', 'gauss', 'make_vector_plot',
+    'apply_db_fit', 'write_xy_file', 'find_xy_peak', 'plot_zeropoint',
+    'build_xy_zeropoint', 'build_pos_grid'
+]
 
 
 def parse_input(input, prodonly=False, sort_wildcards=True):

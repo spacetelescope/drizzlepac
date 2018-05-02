@@ -3,6 +3,8 @@
 """ runastrodriz.py - Module to control operation of astrodrizzle to
         remove distortion and combine HST images in the pipeline.
 
+:License: :doc:`LICENSE`
+
 USAGE: runastrodriz.py [-fhibn] inputFilename [newpath]
 
 Alternative USAGE:
@@ -173,7 +175,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             # force code to define _c0m file as calibrated product to be used
             cal_ext = ['_c0m.fits']
         _mname = fileutil.buildRootname(inFilename[:_indx], ext=cal_ext)
-            
+
         _cal_prodname = inFilename[:_indx]
         # Reset inFilename to correspond to appropriate input for
         # drizzle: calibrated product name.
@@ -208,7 +210,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     # ...if product does NOT exist, interrogate input file
     # to find out whether 'dcorr' has been set to PERFORM
     # Check if user wants to process again regardless of DRIZCORR keyword value
-    if force: 
+    if force:
         dcorr = 'PERFORM'
     else:
         if _mname :

@@ -4,7 +4,7 @@ processing as used in the pipeline.
 
 :Authors: Warren Hack, Ivo Busko, Christopher Hanley
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import division, print_function # confidence high

@@ -19,6 +19,17 @@ DrizzlePac v2.2.3 (not yet released)
 - Updated links in the documentation to point to latest
   ``drizzlepac`` website and online API documentation.
 
+- Code cleanup.
+
+- Updated C code to be more compatible with latest numpy releases in order
+  to reduce numerous compile warnings.
+
+- Updated documentation to eliminate (at this moment) all sphinx documentation
+  generation warnings.
+
+- Moved ``'release_notes.rst'`` to ``'CHANGELOG.rst'`` in the top-level
+  directory.
+
 DrizzlePac v2.2.2 (18-April-2018)
 =================================
 - Fixed a bug in ``TweakReg`` introduced in ``v2.2.0`` due to which, when

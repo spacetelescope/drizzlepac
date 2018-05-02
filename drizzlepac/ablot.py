@@ -5,7 +5,7 @@ cosmic-rays.
 
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import absolute_import, division, print_function  # confidence medium
@@ -21,8 +21,6 @@ from . import util
 import stwcs
 from stwcs import distortion
 
-from .version import *
-
 try:
     from . import cdriz
 except ImportError:
@@ -31,6 +29,9 @@ except ImportError:
     print('\n Please check the installation of this package to insure C code was built successfully.')
     raise ImportError
 
+from .version import *
+
+__all__ = ['blot', 'runBlot', 'help', 'getHelpAsString']
 
 __taskname__ = 'drizzlepac.ablot'
 _blot_step_num_ = 5

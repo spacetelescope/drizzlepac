@@ -4,7 +4,7 @@ Main program for running MultiDrizzle from the command line.
 
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`LICENSE`
 
 """
 from __future__ import absolute_import, division, print_function # confidence high
