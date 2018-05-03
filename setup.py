@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 
+import inspect
 import os
 import pkgutil
 import shutil
@@ -99,7 +100,16 @@ class InstallCommand(install):
         build_cmd = self.reinitialize_command('build_ext')
         build_cmd.inplace = 1
         self.run_command('build_ext')
-        install.run(self)
+
+        # Explicit request for old-style install?  Just do it
+        if self.old_and_unmanageable or self.single_version_externally_managed:
+            install.run(self)
+        elif not self._called_from_setup(inspect.currentframe()):
+            # Run in backward-compatibility mode to support bdist_* commands.
+            install.run(self)
+        else:
+            self.do_egg_install()
+
         if not os.path.exists(docs_compiled_dest):
             print('warning: Sphinx "htmlhelp" documentation was '
                   'NOT bundled!', file=sys.stderr)
