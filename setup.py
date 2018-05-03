@@ -31,6 +31,7 @@ except ImportError:
 
 from glob import glob
 from setuptools import setup, find_packages, Extension
+from setuptools.command.install import install
 from subprocess import check_call, CalledProcessError
 
 
@@ -53,6 +54,7 @@ if not pkgutil.find_loader('relic'):
 import relic.release
 
 NAME = 'drizzlepac'
+CMDCLASS = {}
 version = relic.release.get_info()
 relic.release.write_template(version, NAME)
 
@@ -86,16 +88,60 @@ if pandokia:
 docs_compiled_src = os.path.normpath('build/sphinx/html')
 docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(NAME))
 
-if os.path.exists(docs_compiled_src):
-    if os.path.exists(docs_compiled_dest):
-        shutil.rmtree(docs_compiled_dest)
 
-    shutil.copytree(docs_compiled_src, docs_compiled_dest)
-else:
-    if len(sys.argv) > 1 and 'build_sphinx' not in sys.argv[1]:
-        print('\nwarning: SPHINX DOCUMENTATION WILL NOT BE INSTALLED!\n'
-              '         Please run: python {0} build_sphinx\n'
-              ''.format(sys.argv[0]), file=sys.stderr)
+class InstallCommand(install):
+    """Ensure drizzlepac's C extensions are available when imported relative
+    to the documentation, instead of relying on `site-packages`. What comes
+    from `site-packages` may not be the same drizzlepac that was *just*
+    compiled.
+    """
+    def run(self):
+        build_cmd = self.reinitialize_command('build_ext')
+        build_cmd.inplace = 1
+        self.run_command('build_ext')
+        install.run(self)
+        if not os.path.exists(docs_compiled_dest):
+            print('warning: Sphinx "htmlhelp" documentation was '
+                  'NOT bundled!', file=sys.stderr)
+
+
+CMDCLASS['install'] = InstallCommand
+
+
+try:
+    from sphinx.cmd.build import build_main
+    from sphinx.setup_command import BuildDoc
+
+    class BuildSphinx(BuildDoc):
+        """Build Sphinx documentation after compiling C extensions"""
+
+        description = 'Build Sphinx documentation'
+
+        def initialize_options(self):
+            BuildDoc.initialize_options(self)
+
+        def finalize_options(self):
+            BuildDoc.finalize_options(self)
+
+        def run(self):
+            build_cmd = self.reinitialize_command('build_ext')
+            build_cmd.inplace = 1
+            self.run_command('build_ext')
+            build_main(['-b', 'html', 'doc/source', 'build/sphinx/html'])
+
+            # Bundle documentation inside of drizzlepac
+            if os.path.exists(docs_compiled_src):
+                if os.path.exists(docs_compiled_dest):
+                    shutil.rmtree(docs_compiled_dest)
+
+                shutil.copytree(docs_compiled_src, docs_compiled_dest)
+
+    CMDCLASS['build_sphinx'] = BuildSphinx
+
+except ImportError:
+    print('warning: Sphinx is not installed! "htmlhelp" documention cannot '
+          'be compiled!', file=sys.stderr)
+
 
 setup(
     name=NAME,
@@ -116,8 +162,10 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     setup_requires=[
+        'numpydoc',
         'stsci_rtd_theme',
         'sphinx',
+        'sphinx-automodapi',
         'sphinx_rtd_theme',
     ],
     install_requires=[
@@ -161,4 +209,5 @@ setup(
                   include_dirs=include_dirs,
                   define_macros=define_macros),
     ],
+    cmdclass=CMDCLASS,
 )
