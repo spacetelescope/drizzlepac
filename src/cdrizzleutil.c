@@ -362,7 +362,7 @@ create_lanczos_lut(const int kernel_order, const size_t npix,
   /* Set the first value to avoid arithmetic problems */
   lanczos_lut[0] = 1.0;
 
-  for (i = 1; i < npix; ++i) {
+  for (i = 1; i < (integer_t)npix; ++i) {
     poff = M_PI * (float)i * del;
     if (poff < M_PI * forder) {
       lanczos_lut[i] = sin(poff) / poff * sin(poff / forder) / (poff / forder);
