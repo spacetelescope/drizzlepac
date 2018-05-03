@@ -15,6 +15,11 @@ from drizzlepac.version import __version__
 from drizzlepac import util
 
 
+ruler = '-' * 80
+print('{0:s}\nDEPRECATION WARNING:\n'
+      '    This module (mdriz) will be removed in a future release.\n'
+      '    Please execute "runastrodriz" instead.\n{0:s}\n'.format(ruler), file=sys.stderr)
+
 #-------------------------------------------------------------------------------
 # a main program for running MultiDrizzle from the command line
 
