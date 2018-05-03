@@ -101,7 +101,9 @@ class InstallCommand(install):
         self.run_command('build_ext')
         install.run(self)
         if not os.path.exists(docs_compiled_dest):
-            print('warning: Sphinx "htmlhelp" documentation was NOT bundled!', file=sys.stderr)
+            print('warning: Sphinx "htmlhelp" documentation was '
+                  'NOT bundled!', file=sys.stderr)
+
 
 CMDCLASS['install'] = InstallCommand
 
@@ -111,7 +113,7 @@ try:
     from sphinx.setup_command import BuildDoc
 
     class BuildSphinx(BuildDoc):
-        """Build Sphinx documentation after compiling C source files"""
+        """Build Sphinx documentation after compiling C extensions"""
 
         description = 'Build Sphinx documentation'
 
@@ -127,6 +129,7 @@ try:
             self.run_command('build_ext')
             build_main(['-b', 'html', 'doc/source', 'build/sphinx/html'])
 
+            # Bundle documentation inside of drizzlepac
             if os.path.exists(docs_compiled_src):
                 if os.path.exists(docs_compiled_dest):
                     shutil.rmtree(docs_compiled_dest)
@@ -136,7 +139,8 @@ try:
     CMDCLASS['build_sphinx'] = BuildSphinx
 
 except ImportError:
-    print('warning: Sphinx is not installed! "htmlhelp" documention cannot be compiled!', file=sys.stderr)
+    print('warning: Sphinx is not installed! "htmlhelp" documention cannot '
+          'be compiled!', file=sys.stderr)
 
 
 setup(
