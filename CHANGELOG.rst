@@ -30,6 +30,11 @@ DrizzlePac v2.2.3 (not yet released)
 - Moved ``'release_notes.rst'`` to ``'CHANGELOG.rst'`` in the top-level
   directory.
 
+- Improved setup to allow documentation build. See
+  `drizzlepac PR #142 <https://github.com/spacetelescope/drizzlepac/pull/142>`_
+  and `Issue #129 <https://github.com/spacetelescope/drizzlepac/issues/129>`_
+  for more details.
+
 DrizzlePac v2.2.2 (18-April-2018)
 =================================
 - Fixed a bug in ``TweakReg`` introduced in ``v2.2.0`` due to which, when
