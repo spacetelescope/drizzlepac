@@ -90,8 +90,11 @@ docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(NAME))
 
 
 class InstallCommand(install):
-    """Drizzlepac requires C extensions to import at the project level.
-    This ensures RTD can import the package relative to the documentation post-install"""
+    """Ensure drizzlepac's C extensions are available when imported relative
+    to the documentation, instead of relying on `site-packages`. What comes
+    from `site-packages` may not be the same drizzlepac that was *just*
+    compiled.
+    """
     def run(self):
         build_cmd = self.reinitialize_command('build_ext')
         build_cmd.inplace = 1
