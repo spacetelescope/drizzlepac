@@ -8,11 +8,17 @@ Main program for running MultiDrizzle from the command line.
 
 """
 from __future__ import absolute_import, division, print_function # confidence high
+import getopt
 import sys, os
-from drizzlepac import AstroDrizzle
+from drizzlepac.astrodrizzle import AstroDrizzle
 from drizzlepac.version import __version__
-from . import util
+from drizzlepac import util
 
+
+ruler = '-' * 80
+print('{0:s}\nDEPRECATION WARNING:\n'
+      '    This module (mdriz) will be removed in a future release.\n'
+      '    Please execute "runastrodriz" instead.\n{0:s}\n'.format(ruler), file=sys.stderr)
 
 #-------------------------------------------------------------------------------
 # a main program for running MultiDrizzle from the command line
