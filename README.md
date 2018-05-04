@@ -1,5 +1,8 @@
 # Drizzlepac
 
+[![Build Status](https://ssbjenkins.stsci.edu/job/STScI/job/drizzlepac/job/master/badge/icon)](https://ssbjenkins.stsci.edu/job/STScI/job/drizzlepac/job/master/) [![Documentation Status](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](http://drizzlepac.readthedocs.io/en/latest/?badge=latest)
+
+
 The use of this software on HST data is described at:
 
     http://drizzlepac.stsci.edu/
