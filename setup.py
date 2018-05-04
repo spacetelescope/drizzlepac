@@ -111,8 +111,10 @@ class InstallCommand(install):
             self.do_egg_install()
 
         if not os.path.exists(docs_compiled_dest):
-            print('warning: Sphinx "htmlhelp" documentation was '
-                  'NOT bundled!', file=sys.stderr)
+            print('\nwarning: Sphinx "htmlhelp" documentation was NOT bundled!\n'
+                  '         Execute the following then reinstall:\n\n'
+                  '         $ python setup.py build_sphinx\n\n',
+                  file=sys.stderr)
 
 
 CMDCLASS['install'] = InstallCommand
