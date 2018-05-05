@@ -35,6 +35,9 @@ DrizzlePac v2.2.3 (not yet released)
   and `Issue #129 <https://github.com/spacetelescope/drizzlepac/issues/129>`_
   for more details.
 
+- Fixed a bug in a print statement in the create median step due to which
+  background values for input images used in this step were not printed.
+
 DrizzlePac v2.2.2 (18-April-2018)
 =================================
 - Fixed a bug in ``TweakReg`` introduced in ``v2.2.0`` due to which, when

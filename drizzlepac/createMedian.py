@@ -289,7 +289,7 @@ def _median(imageObjectList, paramDict):
             backgroundValueList.append(bsky)
             readnoiseList.append(rdnoise)
 
-            print("reference sky value for image '{}' is "
+            print("reference sky value for image '{}' is {}"
                   .format(image._filename, backgroundValueList[-1]))
         #
         # END Loop over input image list
