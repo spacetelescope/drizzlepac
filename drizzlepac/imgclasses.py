@@ -180,8 +180,8 @@ class Image(object):
                 source = input_catalogs[sci_extn-1]
                 catalog_mode='user'
 
-            if exclusions[sci_extn-1] not in [ None, 'None', '', ' ', 'INDEF' ]:
-                excludefile = { 'region_file': exclusions[sci_extn-1] }
+            if exclusions[sci_extn-1] not in [None, 'None', '', ' ', 'INDEF']:
+                excludefile = {'region_file': exclusions[sci_extn-1]}
             else:
                 excludefile = None
 
@@ -285,7 +285,8 @@ class Image(object):
                 self.catalog_names['input_xy'].append(catname)
             self.catalog_names['fitmatch'] = self.rootname+"_catalog_fit.match"
 
-        print('\n')
+        print()
+
         # Set up products which need to be computed by methods of this class
         self.outxy = None
         self.refWCS = None # reference WCS assigned for the final fit
