@@ -99,7 +99,10 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         configObj = util.getDefaultConfigObj(__taskname__, configobj,
                                              input_dict,
                                              loadOnly=(not editpars))
-        print("INPUT_DICT: {}".format(input_dict))
+        log.debug('')
+        log.debug("INPUT_DICT:")
+        util.print_cfg(input_dict, log.debug)
+        log.debug('')
         # If user specifies optional parameter for final_wcs specification in input_dict,
         #    insure that the final_wcs step gets turned on
         util.applyUserPars_steps(configObj, input_dict, step='3a')
@@ -166,6 +169,13 @@ def run(configobj, wcsmap=None):
     print("AstroDrizzle Version {:s} ({:s}) started at: {:s}\n"
           .format(__version__, __version_date__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
+
+    log.debug('')
+    log.debug(
+        "==== AstroDrizzle was invoked with the following parameters: ===="
+    )
+    log.debug('')
+    util.print_cfg(configobj, log.debug)
 
     try:
         # Define list of imageObject instances and output WCSObject instance

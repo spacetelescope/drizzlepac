@@ -120,7 +120,13 @@ def run(configobj):
         _managePsets(configobj, PSET_SECTION_REFIMG,
                      refimagefindpars.__taskname__)
 
+    log.debug('')
+    log.debug("==== TweakReg was invoked with the following parameters: ====")
+    log.debug('')
+    util.print_cfg(configobj, log.debug)
+
     # print out user set input parameter values for running this task
+    log.info('')
     log.info("USER INPUT PARAMETERS common to all Processing Steps:")
     util.printParams(configobj, log=log)
 
@@ -274,12 +280,15 @@ def run(configobj):
     # verify a valid hdrname was provided, if headerlet was set to True
     imgclasses.verify_hdrname(**hdrlet_par)
 
-    print('\nFinding shifts for: ')
+    print('')
+    print('Finding shifts for: ')
     for f in filenames:
         print('    {}'.format(f))
+    print('')
 
     log.info("USER INPUT PARAMETERS for finding sources for each input image:")
     util.printParams(catfile_kwargs, log=log)
+    log.info('')
 
     try:
         minsources = max(1, catfit_pars['minobj'])
@@ -339,6 +348,7 @@ def run(configobj):
         ref_catfile_kwargs.update(ref_sourcefind_pars)
         ref_catfile_kwargs['updatehdr'] = False
 
+        log.info('')
         log.info("USER INPUT PARAMETERS for finding sources for "
                  "the reference image:")
         util.printParams(ref_catfile_kwargs, log=log)
@@ -427,6 +437,7 @@ def run(configobj):
         ref_catfile_kwargs.update(ref_sourcefind_pars)
         ref_catfile_kwargs['updatehdr'] = False
 
+        log.info('')
         log.info("USER INPUT PARAMETERS for finding sources for "
                  "the reference image (not used):")
         util.printParams(ref_catfile_kwargs, log=log)
@@ -507,14 +518,17 @@ def run(configobj):
             log.info("USER INPUT PARAMETERS for matching sources:")
             util.printParams(objmatch_par, log=log)
 
+            log.info('')
             log.info("USER INPUT PARAMETERS for fitting source lists:")
             util.printParams(configobj['CATALOG FITTING PARAMETERS'], log=log)
 
             if hdrlet_par['headerlet']:
+                log.info('')
                 log.info("USER INPUT PARAMETERS for creating headerlets:")
                 util.printParams(hdrlet_par, log=log)
 
             if shiftpars['shiftfile']:
+                log.info('')
                 log.info("USER INPUT PARAMETERS for creating a shiftfile:")
                 util.printParams(shiftpars, log=log)
 

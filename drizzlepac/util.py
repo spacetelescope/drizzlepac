@@ -165,7 +165,6 @@ def end_logging(filename=None):
         print('No trailer file saved...')
 
 
-
 class WithLogging(object):
     def __init__(self):
         self.depth = 0
@@ -249,7 +248,11 @@ def print_pkg_versions(packages=None, git=False, svn=False, log=None):
 
     output('Version Information')
     output('-' * 20)
-    output('Python Version %s' % sys.version)
+    sysver = sys.version.split('\n')
+    output('Python Version %s' % sysver.pop())
+    for ver in sysver:
+        output(ver)
+
     for software in pkgs:
         try:
             package = __import__(software)
@@ -322,6 +325,7 @@ class ProcSteps(object):
         self.end = ptime
 
         print('==== Processing Step ',key,' finished at ',ptime[0])
+        print('')
 
     def reportTimes(self):
         """
@@ -799,6 +803,37 @@ def printParams(paramDictionary, all=False, log=None):
                                          str(paramDictionary[key])]))
         if log is None:
             output('\n')
+
+
+def print_key(key, val, lev=0, logfn=print):
+    if isinstance(val, dict):
+        logfn('')
+        logfn('{}{}:'.format(2*lev*' ', key))
+        for kw, vl in val.items():
+            print_key(kw, vl, lev+1, logfn=logfn)
+        return
+    elif isinstance(val, str):
+        logfn("{}{}: '{:s}'".format(2*lev*' ', key, val))
+    else:
+        logfn("{}{}: {}".format(2*lev*' ', key, val))
+
+
+def print_cfg(cfg, logfn=None):
+    if logfn is None:
+        logfn = print
+
+    if not cfg:
+        logfn('No parameters were supplied')
+        return
+
+    keys = cfg.keys()
+    smkeys = [k for k in keys if k.islower() and k[0] != '_']
+    sectkeys = [k for k in keys if k.isupper() and k[0] != '_']
+    stepkeys = [k for k in sectkeys if k.startswith('STEP ')]
+    sectkeys = [k for k in sectkeys if k not in stepkeys]
+    for k in smkeys + sectkeys + stepkeys:
+        print_key(k, cfg[k], logfn=logfn)
+    logfn('')
 
 
 def isASNTable(inputFilelist):
