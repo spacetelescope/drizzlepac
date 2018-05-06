@@ -35,7 +35,7 @@ _step_num_ = 4  # this relates directly to the syntax in the cfg file
 
 BUFSIZE = 1024*1024   # 1MB cache size
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 # this is the user access function

@@ -25,7 +25,7 @@ __all__ = ['baseImageObject', 'imageObject', 'WCSObject']
 
 IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 class baseImageObject(object):

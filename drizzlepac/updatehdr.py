@@ -26,8 +26,7 @@ from . import linearfit
 __version__ = '0.2.0'
 __version_date__ = '10-Oct-2014'
 
-
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2',
             'CRPIX1','CRPIX2','ORIENTAT']

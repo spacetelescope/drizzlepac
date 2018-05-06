@@ -10,7 +10,7 @@ import string,os
 import numpy as np
 import stsci.ndimage as ndimage
 
-from stsci.tools import asnutil, irafglob, parseinput, fileutil
+from stsci.tools import asnutil, irafglob, parseinput, fileutil, logutil
 from astropy.io import fits
 import astropy.coordinates as coords
 import astropy.units as u
@@ -30,6 +30,8 @@ __all__ = [
     'build_xy_zeropoint', 'build_pos_grid'
 ]
 
+
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 def parse_input(input, prodonly=False, sort_wildcards=True):
     catlist = None

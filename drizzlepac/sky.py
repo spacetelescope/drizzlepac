@@ -13,7 +13,6 @@ from __future__ import absolute_import, division, print_function  # confidence m
 
 import os, sys
 
-import logging
 from .imageObject import imageObject
 from stsci.tools import fileutil, teal, logutil
 try:
@@ -39,7 +38,7 @@ __taskname__= "drizzlepac.sky" #looks in drizzlepac for sky.cfg
 _step_num_ = 2  #this relates directly to the syntax in the cfg file
 
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 #this is the user access function

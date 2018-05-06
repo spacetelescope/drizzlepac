@@ -24,8 +24,7 @@ DEFAULT_WCS_PARS = {'ra':None,'dec':None,'scale':None,'rot':None,
                     'outnx':None,'outny':None,
                     'crpix1':None,'crpix2':None}
 
-import logging
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 # Default mapping function based on PyWCS
@@ -483,29 +482,37 @@ def removeAllAltWCS(hdulist,extlist):
     """
     Removes all alternate WCS solutions from the header
     """
-    log.setLevel(logging.WARNING)
-    hdr = hdulist[extlist[0]].header
-    wkeys = altwcs.wcskeys(hdr)
-    if ' ' in wkeys:
-        wkeys.remove(' ')
-    for extn in extlist:
-        for wkey in wkeys:
-            if wkey == 'O':
+    original_logging_level = log.level
+    log.setLevel(logutil.logging.WARNING)
+
+    try:
+        hdr = hdulist[extlist[0]].header
+        wkeys = altwcs.wcskeys(hdr)
+        if ' ' in wkeys:
+            wkeys.remove(' ')
+        for extn in extlist:
+            for wkey in wkeys:
+                if wkey == 'O':
+                    continue
+                altwcs.deleteWCS(hdulist,extn,wkey)
+
+            # Forcibly remove OPUS WCS Keywords, since deleteWCS will not do it
+            hwcs = readAltWCS(hdulist,extn,wcskey='O')
+
+            if hwcs is None:
                 continue
-            altwcs.deleteWCS(hdulist,extn,wkey)
 
-        # Forcibly remove OPUS WCS Keywords, since deleteWCS will not do it
-        hwcs = readAltWCS(hdulist,extn,wcskey='O')
+            for k in hwcs.keys():
+                if k not in ['DATE-OBS','MJD-OBS'] and k in hdr:
+                    try:
+                        del hdr[k]
+                    except KeyError:
+                        pass
+    except:
+        raise
 
-        if hwcs is None:
-            continue
-        for k in hwcs.keys():
-            if k not in ['DATE-OBS','MJD-OBS'] and k in hdr:
-                try:
-                    del hdr[k]
-                except KeyError:
-                    pass
-    log.setLevel(logging.INFO)
+    finally:
+        log.setLevel(original_logging_level) # restore original logging level
 
 
 def updateImageWCS(imageObjectList, output_wcs):
@@ -1013,22 +1020,26 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
     hdr: fits.Header
         header object with ONLY the keywords for specified alternate WCS
     """
-    log.setLevel(logging.WARNING)
     if isinstance(fobj, str):
         fobj = fits.open(fobj, memmap=False)
 
     hdr = altwcs._getheader(fobj, ext)
     try:
+        original_logging_level = log.level
+        log.setLevel(logutil.logging.WARNING)
         nwcs = pywcs.WCS(hdr, fobj=fobj, key=wcskey)
+
     except KeyError:
         if verbose:
             print('readAltWCS: Could not read WCS with key %s' % wcskey)
             print('            Skipping %s[%s]' % (fobj.filename(), str(ext)))
         return None
 
+    finally:
+        log.setLevel(original_logging_level) # restore original logging level
+
     hwcs = nwcs.to_header()
 
     if nwcs.wcs.has_cd():
         hwcs = altwcs.pc2cd(hwcs, key=wcskey)
-    log.setLevel(logging.INFO)
     return hwcs

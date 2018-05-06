@@ -30,7 +30,7 @@ __taskname__ = "drizzlepac.staticMask"
 _step_num_ = 1
 
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 #this is called by the user

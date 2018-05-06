@@ -43,7 +43,7 @@ PSET_SECTION_REFIMG = '_REF IMAGE SOURCE FINDING PARS_'
 # TEAL allows its data to stay alongside the expected data during a call to
 # TweakReg().  All of this needs to be revisited.
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 def _managePsets(configobj, section_name, task_name, iparsobj=None, input_dict=None):

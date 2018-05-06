@@ -135,14 +135,15 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
         _log_file_handler.setLevel(level)
         _log_file_handler.setFormatter(
             logging.Formatter('[%(levelname)-8s] %(message)s'))
+        root_logger.setLevel(level)
         root_logger.addHandler(_log_file_handler)
 
         print('Setting up logfile : ', logname)
 
-        stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
+        #stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
         # Disable display of prints to stdout from all packages except
         # drizzlepac
-        stdout_logger.addFilter(logutil.EchoFilter(include=['drizzlepac']))
+        #stdout_logger.addFilter(logutil.EchoFilter(include=['drizzlepac']))
     else:
         print('No trailer file created...')
 
@@ -201,7 +202,7 @@ class WithLogging(object):
                     verbose_level=logging.INFO
                     if 'verbose' in configobj and configobj['verbose']:
                         verbose_level=logging.DEBUG
-                    init_logging(filename,level=verbose_level)
+                    init_logging(filename, level=verbose_level)
                 except (KeyError, IndexError, TypeError):
                     pass
 

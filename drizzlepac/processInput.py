@@ -55,7 +55,7 @@ from . import util
 from . import resetbits
 from . import mdzhandler
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 # list parameters which correspond to steps where multiprocessing can be used
 parallel_steps = [(3,'driz_separate'),(6,'driz_cr')]

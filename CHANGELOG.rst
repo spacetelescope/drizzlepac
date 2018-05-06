@@ -38,6 +38,9 @@ DrizzlePac v2.2.3 (not yet released)
 - Fixed a bug in a print statement in the create median step due to which
   background values for input images used in this step were not printed.
 
+- Fixed a bug due to which ``TweakReg`` may have effectively ignored
+  ``verbose`` setting.
+
 DrizzlePac v2.2.2 (18-April-2018)
 =================================
 - Fixed a bug in ``TweakReg`` introduced in ``v2.2.0`` due to which, when
