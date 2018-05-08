@@ -3,8 +3,12 @@ from __future__ import absolute_import, division, print_function
 from astropy.extern.six.moves import urllib
 
 import os
+import sys
+from io import StringIO
 import shutil
+import datetime
 from os.path import splitext
+from difflib import unified_diff
 
 import pytest
 import requests
@@ -13,16 +17,11 @@ from astropy.io.fits import FITSDiff
 from astropy.table import Table
 from astropy.utils.data import conf
 
-from ..helpers.io import get_bigdata
+from ..helpers.io import get_bigdata, upload_results
 
-__all__ = ['slow', 'download_crds',
+__all__ = ['download_crds',
            'ref_from_image', 'raw_from_asn', 'BaseACS',
            'BaseSTIS', 'BaseWFC3IR', 'BaseWFC3UVIS', 'BaseWFPC2']
-
-# pytest marker to mark resource-intensive tests that should not be
-# executed with every commit.
-slow = pytest.mark.slow
-
 
 def _download_file(url, filename, filemode='wb', timeout=None):
     """Generic remote data download."""
@@ -99,13 +98,13 @@ def raw_from_asn(asn_file, suffix='_raw.fits'):
 
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
-
-@pytest.mark.remote_data
+@pytest.mark.require_bigdata
 class BaseCal(object):
     prevdir = os.getcwd()
     use_ftp_crds = False
     timeout = 30  # seconds
     tree = 'dev'
+    results_root = 'rt-drizzlepac-dev'
 
     # Numpy default for allclose comparison
     rtol = 1e-7
@@ -147,7 +146,7 @@ class BaseCal(object):
         
         # Update tree to point to correct environment 
         self.tree = envopt
-
+        
     def teardown_class(self):
         """Reset path and variables."""
         conf.reset('remote_timeout')
@@ -155,18 +154,28 @@ class BaseCal(object):
         if self.use_ftp_crds and self.prevref is not None:
             os.environ[self.refstr] = self.prevref
 
+    def get_data(self, *args):
+        """
+        Download `filename` into working directory using 
+        `helpers/io/get_bigdata`.  This will then return the full path to
+        the local copy of the file.
+        """
+        local_file = get_bigdata(self.tree, self.input_loc, *args)
+        
+        return local_file
+        
     def get_input_file(self, filename, refsep='$'):
         """
         Download or copy input file (e.g., RAW) into the working directory.
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
-        get_bigdata(self.tree, self.input_loc, filename)
+        self.get_data('input', filename)
         ref_files = ref_from_image(filename)
 
         for ref_file in ref_files:
             if refsep not in ref_file:  # Local file
-                get_bigdata(self.tree, self.input_loc, ref_file)
+                self.get_data('customRef', ref_file)
             else:  # Download from FTP, if applicable
                 s = ref_file.split(refsep)
                 refdir = s[0]
@@ -176,7 +185,10 @@ class BaseCal(object):
 
     def compare_outputs(self, outputs, raise_error=True):
         """
-        Compare CALXXX output with "truth" using ``fitsdiff``.
+        Compare output with "truth" using appropriate 
+        diff routine; namely, 
+            ``fitsdiff`` for FITS file comparisons
+            ``unified_diff`` for ASCII products.
 
         Parameters
         ----------
@@ -186,7 +198,7 @@ class BaseCal(object):
 
         raise_error : bool
             Raise ``AssertionError`` if difference is found.
-
+                        
         Returns
         -------
         report : str
@@ -196,23 +208,72 @@ class BaseCal(object):
         """
         all_okay = True
         creature_report = ''
+        # Create instructions for uploading results to artifactory for use
+        # as new comparison/truth files
+        testpath, testname = os.path.split(os.path.abspath(os.curdir))
+        # organize results by day test was run...could replace with git-hash
+        dt = datetime.datetime.now().strftime("%d%b%YT") 
+        ttime = datetime.datetime.now().strftime("%H_%M_%S")
+        testdir = "{}_{}".format(testname, ttime)
+        tree = os.path.join(self.results_root, 'results', self.input_loc, 
+                            dt, testdir)
 
+        updated_outputs = []
         for actual, desired in outputs:
             # Get "truth" image
-            s = get_bigdata(self.tree, self.ref_loc, desired)
+            s = self.get_data('truth', desired)
             if s is not None:
                 desired = s
 
-            fdiff = FITSDiff(actual, desired, rtol=self.rtol, atol=self.atol,
-                             ignore_keywords=self.ignore_keywords)
-            creature_report += fdiff.report()
+            if actual.endswith('fits'):
+                # Working with FITS files...
+                fdiff = FITSDiff(actual, desired, rtol=self.rtol, atol=self.atol,
+                                 ignore_keywords=self.ignore_keywords)
+                creature_report += fdiff.report()
+                if not fdiff.identical:
+                    # Only keep track of failed results which need to 
+                    # be used to replace the truth files (if OK).
+                    updated_outputs.append((actual, desired))
+                if not fdiff.identical and all_okay:
+                    all_okay = False
+            else:
+                # Try ASCII-based diff 
+                with open(actual) as afile:
+                    actual_lines = afile.readlines()
+                with open(desired) as dfile:
+                    desired_lines = dfile.readlines()
+                udiff = unified_diff(actual_lines, desired_lines,
+                                     fromfile=actual, tofile=desired)
 
-            if not fdiff.identical and all_okay:
-                all_okay = False
+                old_stdout = sys.stdout
+                udiffIO = StringIO()
+                sys.stdout = udiffIO
+                sys.stdout.writelines(udiff)
+                sys.stdout = old_stdout
+                udiff_report = udiffIO.getvalue()
+                creature_report += udiff_report
+                if len(udiff_report) > 2 and all_okay:
+                    all_okay = False
+                if len(udiff_report) > 2:
+                    # Only keep track of failed results which need to 
+                    # be used to replace the truth files (if OK).
+                    updated_outputs.append((actual, desired))
+
+        if not all_okay:
+            # Write out JSON file to enable retention of different results
+            new_truths = [os.path.basename(i[1]) for i in updated_outputs]
+            for files in updated_outputs:
+                print("Renaming {} as new 'truth' file: {}".format(
+                      files[0], files[1]))
+                shutil.move(files[0], files[1])
+            upload_results(pattern=new_truths+['*.log'],
+                           testname=testname,
+                           target= tree)
 
         if not all_okay and raise_error:
             raise AssertionError(os.linesep + creature_report)
 
+       
         return creature_report
 
 
