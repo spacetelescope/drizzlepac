@@ -1,14 +1,28 @@
 import os
 import shutil
+import json 
 
 from .utils import check_url, download
 
-__all__ = ['BigdataError', 'get_bigdata']
+UPLOAD_SCHEMA = {"files":[ 
+                    { "pattern": "",
+                      "target": "",
+                      "props": None,
+                      "recursive": "false",
+                      "flat" : "true",
+                      "regexp": "false",
+                      "explode": "false",
+                      "excludePatterns": []
+                    }
+                  ]
+                }
+
+__all__ = ['BigdataError', 'get_bigdata', 'upload_results']
 
 
 BIGDATA_PATHS = [
-    os.environ.get('TEST_BIGDATA', '/data4/jwst_test_data'),
-    'https://bytesalad.stsci.edu/artifactory/rt-drizzlepac-dev'
+    os.environ.get('TEST_BIGDATA', '/srv/rt/betadrizzle'),
+    'https://bytesalad.stsci.edu/artifactory/drizzlepac'
 ]
 
 
@@ -54,3 +68,52 @@ def get_bigdata(*args):
         raise BigdataError('Failed to retrieve data: {}'.format(src))
 
     return dest
+    
+    
+def upload_results(**kwargs):
+    """Write out JSON file to upload results from test to storage area.
+    
+    This function relies on the JFROG JSON schema for uploading data into
+    artifactory using the Jenkins plugin.  Docs can be found at::
+    
+        https://www.jfrog.com/confluence/display/RTF/Using+File+Specs
+
+    Parameters
+    ----------
+    pattern : str or list of strings
+        Specifies the local file system path to test results which should be 
+        uploaded to Artifactory. You can specify multiple artifacts by using 
+        wildcards or a regular expression as designated by the regexp property.
+        
+    target : str
+        Specifies the target path in Artifactory in the following format: 
+            [repository_name]/[repository_path]
+    
+    testname : str
+        Name of test that generate the results.  This will be used to create the
+        name of the JSON file to enable these results to be uploaded to Artifactory.
+
+    recursive : bool, optional
+        Specify whether or not to identify files listed in sub-directories
+        for uploading.  Default: False    
+        
+    """
+    # Interpret mandatory inputs 
+    pattern = kwargs.get("pattern")
+    target = kwargs.get("target")    
+    testname = kwargs.get("testname")
+                
+    # Finish interpreting inputs
+    jsonfile = "{}_results.json".format(testname)
+    recursive = repr(kwargs.get("recursive", False)).lower()
+        
+    # Populate schema for this test's data
+    upload_schema = UPLOAD_SCHEMA.copy()
+    upload_schema['files'][0]['pattern'] = pattern
+    upload_schema['files'][0]['target'] = target
+    upload_schema['files'][0]['recursive'] = recursive
+            
+    # Write out JSON file with description of test results
+    with open(jsonfile, 'w') as outfile:
+        json.dump(upload_schema, outfile)
+

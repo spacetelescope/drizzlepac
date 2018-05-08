@@ -3,20 +3,18 @@ import os
 import pytest
 import re
 
-__all__ = ['runslow', 'require_bigdata', 'remote_data',
-           'internet_off', 'not_under_travis', 'require_crds_context']
+__all__ = ['runslow', 'require_bigdata', 'slow',
+           'not_under_travis', 'require_crds_context']
 
-
-# Wrap/provide markers from pytest-remotedata plugin
-remote_data = pytest.mark.remote_data
-internet_off = pytest.mark.internet_off
+# pytest marker to mark resource-intensive tests that should not be
+# executed with every commit.
+slow = pytest.mark.slow
 
 # Decorator to indicate slow tests
-runslow = slow = pytest.mark.skipif(
+runslow = pytest.mark.skipif(
     not pytest.config.getoption("--runslow"),
     reason="need --runslow option to run"
 )
-
 
 # Decorator to indicate BIGDATA required
 require_bigdata = pytest.mark.skipif(
