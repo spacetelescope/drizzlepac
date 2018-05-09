@@ -39,7 +39,7 @@ REFCAT_ARGS = ['rmaxflux','rminflux','rfluxunits','refnbright']+REFCOL_PARS
 sortKeys = ['minflux','maxflux','nbright','fluxunits']
 
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 def generateCatalog(wcs, mode='automatic', catalog=None,

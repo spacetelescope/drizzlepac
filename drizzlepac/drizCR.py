@@ -27,7 +27,7 @@ __taskname__= "drizzlepac.drizCR"  # looks in drizzlepac for sky.cfg
 _step_num_ = 6  # this relates directly to the syntax in the cfg file
 
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 #this is the user access function

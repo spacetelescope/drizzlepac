@@ -36,7 +36,7 @@ __version__ = '0.4.0'
 __version_date__ = '14-Oct-2014'
 
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 if hasattr(np, 'float128'):
     ndfloat128 = np.float128

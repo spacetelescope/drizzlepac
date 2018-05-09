@@ -83,7 +83,7 @@ __version__ = '1.0.1'
 __version_date__ = '23-March-2017'
 
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 def reset_dq_bits(input,bits,extver=None,extname='dq'):

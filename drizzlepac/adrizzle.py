@@ -40,7 +40,7 @@ __taskname__ = "drizzlepac.adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 
-log = logutil.create_logger(__name__)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 time_pre_all = []
 time_driz_all = []
