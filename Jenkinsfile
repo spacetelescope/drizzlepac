@@ -35,7 +35,7 @@ docs = new BuildConfig()
 docs.nodetype = "linux-stable"
 docs.build_mode = "docs"
 docs.build_cmds = ["${CONDA_CREATE} -n docs ${DEPS}",
-                   "with_env -n docs ${PY_SETUP} build build_ext --inplace -- build_sphinx"]
+                   "with_env -n docs ${PY_SETUP} build build_ext --inplace -- build_sphinx -w"]
 matrix += docs
 
 
