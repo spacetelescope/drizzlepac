@@ -2,10 +2,12 @@
 from __future__ import print_function
 
 
+import inspect
 import os
 import pkgutil
 import shutil
 import sys
+
 
 try:
     _mnfe = ModuleNotFoundError
@@ -30,7 +32,7 @@ except ImportError:
     exit(1)
 
 from glob import glob
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, find_packages, Extension, _install_setup_requires
 from setuptools.command.install import install
 from subprocess import check_call, CalledProcessError
 
@@ -54,7 +56,13 @@ if not pkgutil.find_loader('relic'):
 import relic.release
 
 NAME = 'drizzlepac'
-CMDCLASS = {}
+SETUP_REQUIRES = [
+    'numpydoc',
+    'stsci_rtd_theme',
+    'sphinx',
+    'sphinx-automodapi',
+    'sphinx_rtd_theme',
+],
 version = relic.release.get_info()
 relic.release.write_template(version, NAME)
 
@@ -84,6 +92,11 @@ if pandokia:
                                   'runners', 'maker')]
     include_dirs.extend(fctx_includes)
 
+# Due to overriding `install` and `build_sphinx` we need to download
+# setup_requires dependencies before reaching `setup()`. This allows
+# `sphinx` to exist before the `BuildSphinx` class is injected.
+_install_setup_requires(dict(setup_requires=SETUP_REQUIRES))
+
 # Distribute compiled documentation alongside the installed package
 docs_compiled_src = os.path.normpath('build/sphinx/html')
 docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(NAME))
@@ -99,48 +112,50 @@ class InstallCommand(install):
         build_cmd = self.reinitialize_command('build_ext')
         build_cmd.inplace = 1
         self.run_command('build_ext')
-        install.run(self)
+
+        # Explicit request for old-style install?  Just do it
+        if self.old_and_unmanageable or self.single_version_externally_managed:
+            install.run(self)
+        elif not self._called_from_setup(inspect.currentframe()):
+            # Run in backward-compatibility mode to support bdist_* commands.
+            install.run(self)
+        else:
+            self.do_egg_install()
+
         if not os.path.exists(docs_compiled_dest):
-            print('warning: Sphinx "htmlhelp" documentation was '
-                  'NOT bundled!', file=sys.stderr)
+            print('\nwarning: Sphinx "htmlhelp" documentation was NOT bundled!\n'
+                  '         Execute the following then reinstall:\n\n'
+                  '         $ python setup.py build_sphinx\n\n',
+                  file=sys.stderr)
 
 
-CMDCLASS['install'] = InstallCommand
+from sphinx.cmd.build import build_main
+from sphinx.setup_command import BuildDoc
 
 
-try:
-    from sphinx.cmd.build import build_main
-    from sphinx.setup_command import BuildDoc
+class BuildSphinx(BuildDoc):
+    """Build Sphinx documentation after compiling C extensions"""
 
-    class BuildSphinx(BuildDoc):
-        """Build Sphinx documentation after compiling C extensions"""
+    description = 'Build Sphinx documentation'
 
-        description = 'Build Sphinx documentation'
+    def initialize_options(self):
+        BuildDoc.initialize_options(self)
 
-        def initialize_options(self):
-            BuildDoc.initialize_options(self)
+    def finalize_options(self):
+        BuildDoc.finalize_options(self)
 
-        def finalize_options(self):
-            BuildDoc.finalize_options(self)
+    def run(self):
+        build_cmd = self.reinitialize_command('build_ext')
+        build_cmd.inplace = 1
+        self.run_command('build_ext')
+        build_main(['-b', 'html', 'doc/source', 'build/sphinx/html'])
 
-        def run(self):
-            build_cmd = self.reinitialize_command('build_ext')
-            build_cmd.inplace = 1
-            self.run_command('build_ext')
-            build_main(['-b', 'html', 'doc/source', 'build/sphinx/html'])
+        # Bundle documentation inside of drizzlepac
+        if os.path.exists(docs_compiled_src):
+            if os.path.exists(docs_compiled_dest):
+                shutil.rmtree(docs_compiled_dest)
 
-            # Bundle documentation inside of drizzlepac
-            if os.path.exists(docs_compiled_src):
-                if os.path.exists(docs_compiled_dest):
-                    shutil.rmtree(docs_compiled_dest)
-
-                shutil.copytree(docs_compiled_src, docs_compiled_dest)
-
-    CMDCLASS['build_sphinx'] = BuildSphinx
-
-except ImportError:
-    print('warning: Sphinx is not installed! "htmlhelp" documention cannot '
-          'be compiled!', file=sys.stderr)
+            shutil.copytree(docs_compiled_src, docs_compiled_dest)
 
 
 setup(
@@ -161,13 +176,7 @@ setup(
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    setup_requires=[
-        'numpydoc',
-        'stsci_rtd_theme',
-        'sphinx',
-        'sphinx-automodapi',
-        'sphinx_rtd_theme',
-    ],
+    setup_requires=SETUP_REQUIRES,
     install_requires=[
         'astropy',
         'fitsblender',
@@ -209,5 +218,8 @@ setup(
                   include_dirs=include_dirs,
                   define_macros=define_macros),
     ],
-    cmdclass=CMDCLASS,
+    cmdclass={
+        'install': InstallCommand,
+        'build_sphinx': BuildSphinx,
+    },
 )
