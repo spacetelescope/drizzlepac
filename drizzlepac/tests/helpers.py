@@ -1,9 +1,9 @@
 """HSTCAL regression test helpers."""
-from __future__ import absolute_import, division, print_function
 from astropy.extern.six.moves import urllib
 
 import os
 import sys
+import math
 from io import StringIO
 import shutil
 import datetime
@@ -16,6 +16,10 @@ from astropy.io import fits
 from astropy.io.fits import FITSDiff
 from astropy.table import Table
 from astropy.utils.data import conf
+
+import numpy as np
+import stwcs
+from stsci.tools import fileutil
 
 from ..helpers.io import get_bigdata, upload_results
 
@@ -141,6 +145,9 @@ class BaseCal(object):
             os.environ[self.refstr] = p + os.sep
             self.use_ftp_crds = True
 
+        # Turn off Astrometry updates 
+        os.environ['ASTROMETRY_STEP_CONTROL'] = 'OFF'
+        
         # This controls astropy.io.fits timeout
         conf.remote_timeout = self.timeout
         
@@ -299,8 +306,8 @@ class BaseACSWFC(BaseACS):
 
 class BaseWFC3(BaseCal):
     refstr = 'iref'
-    input_loc = 'wf3'
-    ref_loc = 'wf3/ref'
+    input_loc = 'wfc3'
+    ref_loc = 'wfc3/ref'
     prevref = os.environ.get(refstr)
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
@@ -325,6 +332,247 @@ class BaseWFPC2(BaseCal):
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
                        'history']
 
+def centroid_compare(centroid):
+    return centroid[1]
+
+class BaseUnit(BaseCal):
+    buff = 0
+    refstr = 'jref'
+    prevref = os.environ.get(refstr)
+    input_loc = 'acs'
+    ref_loc = 'acs'
+    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
+                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
+                       'history']
+    atol = 1.0e-5
+
+    def bound_image(self, image):
+        """
+        Compute region where image is non-zero
+        """
+        coords = np.nonzero(image)
+        ymin = coords[0].min()
+        ymax = coords[0].max()
+        xmin = coords[1].min()
+        xmax = coords[1].max()
+        return (ymin, ymax, xmin, xmax)
+
+    def centroid(self, image, size, center):
+        """
+        Compute the centroid of a rectangular area
+        """
+        ylo = int(center[0]) - size // 2
+        yhi = min(ylo + size, image.shape[0])
+        xlo = int(center[1]) - size // 2
+        xhi = min(xlo + size, image.shape[1])
+
+        center = [0.0, 0.0, 0.0]
+        for y in range(ylo, yhi):
+            for x in range(xlo, xhi):
+                center[0] += y * image[y,x]
+                center[1] += x * image[y,x]
+                center[2] += image[y,x]
+
+        if center[2] == 0.0: return None
+
+        center[0] /= center[2]
+        center[1] /= center[2]
+        return center
+
+    def centroid_close(self, list_of_centroids, size, point):
+        """
+        Find if any centroid is close to a point
+        """
+        for i in range(len(list_of_centroids)-1, -1, -1):
+            if (abs(list_of_centroids[i][0] - point[0]) < size / 2 and
+                abs(list_of_centroids[i][1] - point[1]) < size / 2):
+                return 1
+
+        return 0
+
+    def centroid_distances(self, image1, image2, amp, size):
+        """
+        Compute a list of centroids and the distances between them in two images
+        """
+        distances = []
+        list_of_centroids, lst_pts = self.centroid_list(image2, amp, size)
+
+        for center2, pt in zip(list_of_centroids, lst_pts):
+            center1 = self.centroid(image1, size, pt)
+            if center1 is None: continue
+
+            disty = center2[0] - center1[0]
+            distx = center2[1] - center1[1]
+            dist = math.sqrt(disty * disty + distx * distx)
+            dflux = abs(center2[2] - center1[2])
+            distances.append([dist, dflux, center1, center2])
+
+        distances.sort(key=centroid_compare)
+        return distances
+
+    def centroid_list(self, image, amp, size):
+        """
+        Find the next centroid
+        """
+        list_of_centroids = []
+        list_of_points = []
+        points = np.transpose(np.nonzero(image > amp))
+
+        for point in points:
+            if not self.centroid_close(list_of_centroids, size, point):
+                center = self.centroid(image, size, point)
+                list_of_centroids.append(center)
+                list_of_points.append(point)
+
+        return list_of_centroids, list_of_points
+
+    def centroid_statistics(self, title, fname, image1, image2, amp, size):
+        """
+        write centroid statistics to compare differences btw two images
+        """
+        stats = ("minimum", "median", "maximum")
+        images = (None, None, image1, image2)
+        im_type = ("", "", "test", "reference")
+
+        diff = []
+        distances = self.centroid_distances(image1, image2, amp, size)
+        indexes = (0, len(distances)//2, len(distances)-1)
+        fd = open(fname, 'w')
+        fd.write("*** %s ***\n" % title)
+
+        if len(distances) == 0:
+            diff = [0.0, 0.0, 0.0]
+            fd.write("No matches!!\n")
+
+        elif len(distances) == 1:
+            diff = [distances[0][0], distances[0][0], distances[0][0]]
+
+            fd.write("1 match\n")
+            fd.write("distance = %f flux difference = %f\n" % (distances[0][0], distances[0][1]))
+
+            for j in range(2, 4):
+                ylo = int(distances[0][j][0]) - (1+self.buff)
+                yhi = int(distances[0][j][0]) + (2+self.buff)
+                xlo = int(distances[0][j][1]) - (1+self.buff)
+                xhi = int(distances[0][j][1]) + (2+self.buff)
+                subimage = images[j][ylo:yhi,xlo:xhi]
+                fd.write("\n%s image centroid = (%f,%f) image flux = %f\n" %
+                         (im_type[j], distances[0][j][0], distances[0][j][1], distances[0][j][2]))
+                fd.write(str(subimage) + "\n")
+
+        else:
+            fd.write("%d matches\n" % len(distances))
+
+            for k in range(0,3):
+                i = indexes[k]
+                diff.append(distances[i][0])
+                fd.write("\n%s distance = %f flux difference = %f\n" % (stats[k], distances[i][0], distances[i][1]))
+
+                for j in range(2, 4):
+                    ylo = int(distances[i][j][0]) - (1+self.buff)
+                    yhi = int(distances[i][j][0]) + (2+self.buff)
+                    xlo = int(distances[i][j][1]) - (1+self.buff)
+                    xhi = int(distances[i][j][1]) + (2+self.buff)
+                    subimage = images[j][ylo:yhi,xlo:xhi]
+                    fd.write("\n%s %s image centroid = (%f,%f) image flux = %f\n" %
+                             (stats[k], im_type[j], distances[i][j][0], distances[i][j][1], distances[i][j][2]))
+                    fd.write(str(subimage) + "\n")
+
+        fd.close()
+        return tuple(diff)
+
+    def make_point_image(self, input_image, point, value):
+        """
+        Create an image with a single point set
+        """
+        output_image = np.zeros(input_image.shape, dtype=input_image.dtype)
+        output_image[point] = value
+        return output_image
+
+    def make_grid_image(self, input_image, spacing, value):
+        """
+        Create an image with points on a grid set
+        """
+        output_image = np.zeros(input_image.shape, dtype=input_image.dtype)
+
+        shape = output_image.shape
+        for y in range(spacing//2, shape[0], spacing):
+            for x in range(spacing//2, shape[1], spacing):
+                output_image[y,x] = value
+
+        return output_image
+
+    def print_wcs(self, title, wcs):
+        """
+        Print the wcs header cards
+        """
+        print("=== %s ===" % title)
+        print(wcs.to_header_string())
+
+
+    def read_image(self, filename):
+        """
+        Read the image from a fits file
+        """
+        hdu = fits.open(filename)
+
+        image = hdu[1].data
+        hdu.close()
+        return image
+
+    def read_wcs(self, filename):
+        """
+        Read the wcs of a fits file
+        """
+        hdu = fits.open(filename)
+
+        wcs = stwcs.wcsutil.HSTWCS(hdu, 1)
+        hdu.close()
+        return wcs
+
+    def write_wcs(self, hdu, image_wcs):
+        """
+        Update header with WCS keywords
+        """
+        hdu.header['ORIENTAT'] = image_wcs.orientat
+        hdu.header['CD1_1'] = image_wcs.wcs.cd[0][0]
+        hdu.header['CD1_2'] = image_wcs.wcs.cd[0][1]
+        hdu.header['CD2_1'] = image_wcs.wcs.cd[1][0]
+        hdu.header['CD2_2'] = image_wcs.wcs.cd[1][1]
+        hdu.header['CRVAL1'] = image_wcs.wcs.crval[0]
+        hdu.header['CRVAL2'] = image_wcs.wcs.crval[1]
+        hdu.header['CRPIX1'] = image_wcs.wcs.crpix[0]
+        hdu.header['CRPIX2'] = image_wcs.wcs.crpix[1]
+        hdu.header['CTYPE1'] = image_wcs.wcs.ctype[0]
+        hdu.header['CTYPE2'] = image_wcs.wcs.ctype[1]
+        hdu.header['VAFACTOR'] = 1.0
+
+    def write_image(self, filename, wcs, *args):
+        """
+        Read the image from a fits file
+        """
+        extarray = ['SCI', 'WHT', 'CTX']
+
+        pimg = fits.HDUList()
+        phdu = fits.PrimaryHDU()
+        phdu.header['NDRIZIM'] = 1
+        phdu.header['ROOTNAME'] = filename
+        pimg.append(phdu)
+
+        for img in args:
+            # Create a MEF file with the specified extname
+            extn = extarray.pop(0)
+            extname = fileutil.parseExtn(extn)
+
+            ehdu = fits.ImageHDU(data=img)
+            ehdu.header['EXTNAME'] = extname[0]
+            ehdu.header['EXTVER'] = extname[1]
+            self.write_wcs(ehdu, wcs)
+            pimg.append(ehdu)
+
+        pimg.writeto(filename)
+        del pimg
+    
 
 def add_suffix(fname, suffix, range=None):
     """Add suffix to file name
