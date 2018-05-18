@@ -12,11 +12,10 @@ class TestWFPC2(BaseWFPC2):
     def test_waiver_single(self):
         """ This test confirms that drizzlepac can correcly process .
         """
-        print("[test_waiver_single] WORKING Dir: {}".format(os.path.abspath(os.curdir)))
         # Prepare input files.
         raw_inputs = ["u40x010hm_c0f.fits", "u40x010hm_c1f.fits"]
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
-        inputs = [os.path.basename(i) for i in all_inputs]
+        inputs = [os.path.basename(self.get_data('input', i))
+                  for i in raw_inputs]
 
         output = 'wfpc2_single_waiver'
         outfile = '{}_drz.fits'.format(output)
@@ -24,7 +23,6 @@ class TestWFPC2(BaseWFPC2):
 
         # Update WCS for all inputs
         driz_inputs = updatewcs.updatewcs(inputs[0], use_db=False)
-        print("[test_waiver_single] Updated Inputs: {}".format(driz_inputs))
 
         # run astrodrizzle now...
         adriz_parobj = teal.load('astrodrizzle', defaults=True)
@@ -62,8 +60,8 @@ class TestWFPC2(BaseWFPC2):
                       'u40x010jm_c0f.fits', 'u40x010km_c0f.fits',
                       'u40x010hm_c1f.fits', 'u40x010im_c1f.fits',
                       'u40x010jm_c1f.fits', 'u40x010km_c1f.fits']
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
-        inputs = [os.path.basename(i) for i in all_inputs]
+        inputs = [os.path.basename(self.get_data('input', i))
+                  for i in raw_inputs]
 
         output = 'wfpc2_waiver'
         outfile = '{}_drz.fits'.format(output)
@@ -96,8 +94,8 @@ class TestWFPC2(BaseWFPC2):
 
         # Prepare input files.
         raw_inputs = ["u9yq0703m_c0m.fits", "u9yq0703m_c1m.fits"]
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
-        inputs = [os.path.basename(i) for i in all_inputs]
+        inputs = [os.path.basename(self.get_data('input', i))
+                  for i in raw_inputs]
 
         output = 'wfpc2_single_mef'
         outfile = '{}_drz.fits'.format(output)
@@ -137,8 +135,8 @@ class TestWFPC2(BaseWFPC2):
                       'u9yq0707m_c0m.fits', 'u9yq0708m_c0m.fits',
                       'u9yq0703m_c1m.fits', 'u9yq0704m_c1m.fits',
                       'u9yq0707m_c1m.fits', 'u9yq0708m_c1m.fits']
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
-        inputs = [os.path.basename(i) for i in all_inputs]
+        inputs = [os.path.basename(self.get_data('input', i))
+                  for i in raw_inputs]
 
         output = 'wfpc2_mef'
         outfile = '{}_drz.fits'.format(output)
