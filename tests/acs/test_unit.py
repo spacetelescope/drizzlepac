@@ -11,7 +11,7 @@ import drizzlepac
 import drizzlepac.adrizzle as adrizzle
 import drizzlepac.ablot as ablot
 
-from ..helpers import BaseUnit
+from ..resources import BaseUnit
 
 
 class TestDriz(BaseUnit):

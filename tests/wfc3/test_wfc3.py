@@ -3,11 +3,11 @@ import os
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
-from drizzlepac.helpers.mark import require_bigdata
+from ..helpers.mark import require_bigdata
 
 from stwcs import updatewcs
 
-from ..helpers import BaseWFC3, raw_from_asn
+from ..resources import BaseWFC3, raw_from_asn
 
 
 class TestWFC3(BaseWFC3):

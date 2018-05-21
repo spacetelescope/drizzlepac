@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import nose
-import imageObject
+import pytest
+from drizzlepac import imageObject
 
 #from http://blog.moertel.com/articles/2008/03/19/property-checking-with-pythons-nose-testing-framework
 def forall_cases(cases):
@@ -14,17 +14,17 @@ def forall_cases(cases):
     return decorate
 
 
-
-class test_imageObject():
+@pytest.mark.xfail(reason="Broken")
+class TestimageObject():
     """test the implementation of imageObject by creating and examining an object
        from an image file thats on disk
     """
 
     #not sure if this is the correct way to do it
-    def testNoFilename(self,filename=''):
+    def test_NoFilename(self,filename=''):
         self.assertRaises(IOError,imageObject.imageObect,filename)
 
-    def testAttributes(self, filename="./j8uq10lbq_flt.fits"):
+    def test_Attributes(self, filename="./j8uq10lbq_flt.fits"):
         image=imageObject.imageObject(filename)
 
         #just check to make sure the global attributes are not empty

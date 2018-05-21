@@ -3,12 +3,12 @@ import os
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
-from drizzlepac.helpers.mark import require_bigdata
-from drizzlepac.helpers.io import get_bigdata
+from ..helpers.mark import require_bigdata
+from ..helpers.io import get_bigdata
 
 from stwcs import updatewcs
 
-from ..helpers import BaseWFC3
+from ..resources import BaseWFC3
 
 def pytest_generate_tests(metafunc):
     # called once per each test function

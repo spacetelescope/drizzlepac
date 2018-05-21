@@ -7,7 +7,7 @@ from drizzlepac import astrodrizzle, tweakreg
 from drizzlepac import pixtopix, pixtosky, skytopix
 from stwcs import updatewcs
 
-from ..helpers import BaseACS, raw_from_asn
+from ..resources import BaseACS, raw_from_asn
 
 class TestAcsTweak(BaseACS):
             

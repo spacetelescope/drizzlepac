@@ -6,7 +6,7 @@ from drizzlepac import astrodrizzle
 from drizzlepac import pixtopix, pixtosky, skytopix
 from stwcs import updatewcs
 
-from ..helpers import BaseSTIS
+from ..resources import BaseSTIS
 
 
 class TestSTIS(BaseSTIS):

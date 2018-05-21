@@ -4,7 +4,7 @@ from stsci.tools import teal
 from drizzlepac import astrodrizzle
 from stwcs import updatewcs
 
-from ..helpers import BaseWFPC2
+from ..resources import BaseWFPC2
 
 
 class TestWFPC2(BaseWFPC2):

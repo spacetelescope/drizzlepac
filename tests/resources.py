@@ -21,7 +21,7 @@ import numpy as np
 import stwcs
 from stsci.tools import fileutil
 
-from ..helpers.io import get_bigdata, upload_results
+from .helpers.io import get_bigdata, upload_results
 
 __all__ = ['download_crds',
            'ref_from_image', 'raw_from_asn', 'BaseACS',
@@ -74,7 +74,7 @@ def ref_from_image(input_image):
     # Map mandatory CRDS reference file for instrument/detector combo.
 
     reffile_lookup = ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE']
-    
+
     ref_files = []
     hdr = fits.getheader(input_image, ext=0)
 
@@ -129,7 +129,7 @@ class BaseCal(object):
         """
         Run test in own dir so we can keep results separate from
         other tests.
-        """        
+        """
         if not tmpdir.ensure(self.subdir, dir=True):
             p = tmpdir.mkdir(self.subdir).strpath
         else:
@@ -145,15 +145,15 @@ class BaseCal(object):
             os.environ[self.refstr] = p + os.sep
             self.use_ftp_crds = True
 
-        # Turn off Astrometry updates 
+        # Turn off Astrometry updates
         os.environ['ASTROMETRY_STEP_CONTROL'] = 'OFF'
-        
+
         # This controls astropy.io.fits timeout
         conf.remote_timeout = self.timeout
-        
-        # Update tree to point to correct environment 
+
+        # Update tree to point to correct environment
         self.tree = envopt
-        
+
     def teardown_class(self):
         """Reset path and variables."""
         conf.reset('remote_timeout')
@@ -163,14 +163,14 @@ class BaseCal(object):
 
     def get_data(self, *args):
         """
-        Download `filename` into working directory using 
+        Download `filename` into working directory using
         `helpers/io/get_bigdata`.  This will then return the full path to
         the local copy of the file.
         """
         local_file = get_bigdata(self.tree, self.input_loc, *args)
-        
+
         return local_file
-        
+
     def get_input_file(self, filename, refsep='$'):
         """
         Download or copy input file (e.g., RAW) into the working directory.
@@ -192,8 +192,8 @@ class BaseCal(object):
 
     def compare_outputs(self, outputs, raise_error=True):
         """
-        Compare output with "truth" using appropriate 
-        diff routine; namely, 
+        Compare output with "truth" using appropriate
+        diff routine; namely,
             ``fitsdiff`` for FITS file comparisons
             ``unified_diff`` for ASCII products.
 
@@ -205,7 +205,7 @@ class BaseCal(object):
 
         raise_error : bool
             Raise ``AssertionError`` if difference is found.
-                        
+
         Returns
         -------
         report : str
@@ -219,10 +219,10 @@ class BaseCal(object):
         # as new comparison/truth files
         testpath, testname = os.path.split(os.path.abspath(os.curdir))
         # organize results by day test was run...could replace with git-hash
-        dt = datetime.datetime.now().strftime("%d%b%YT") 
+        dt = datetime.datetime.now().strftime("%d%b%YT")
         ttime = datetime.datetime.now().strftime("%H_%M_%S")
         testdir = "{}_{}".format(testname, ttime)
-        tree = os.path.join(self.results_root, 'results', self.input_loc, 
+        tree = os.path.join(self.results_root, 'results', self.input_loc,
                             dt, testdir)
 
         updated_outputs = []
@@ -238,13 +238,13 @@ class BaseCal(object):
                                  ignore_keywords=self.ignore_keywords)
                 creature_report += fdiff.report()
                 if not fdiff.identical:
-                    # Only keep track of failed results which need to 
+                    # Only keep track of failed results which need to
                     # be used to replace the truth files (if OK).
                     updated_outputs.append((actual, desired))
                 if not fdiff.identical and all_okay:
                     all_okay = False
             else:
-                # Try ASCII-based diff 
+                # Try ASCII-based diff
                 with open(actual) as afile:
                     actual_lines = afile.readlines()
                 with open(desired) as dfile:
@@ -262,7 +262,7 @@ class BaseCal(object):
                 if len(udiff_report) > 2 and all_okay:
                     all_okay = False
                 if len(udiff_report) > 2:
-                    # Only keep track of failed results which need to 
+                    # Only keep track of failed results which need to
                     # be used to replace the truth files (if OK).
                     updated_outputs.append((actual, desired))
 
@@ -280,7 +280,7 @@ class BaseCal(object):
         if not all_okay and raise_error:
             raise AssertionError(os.linesep + creature_report)
 
-       
+
         return creature_report
 
 
@@ -291,7 +291,7 @@ class BaseACS(BaseCal):
     ref_loc = 'acs'
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history']
+                       'history', 'prod_ver', 'rulefile']
 
 
 class BaseACSHRC(BaseACS):
@@ -311,7 +311,7 @@ class BaseWFC3(BaseCal):
     prevref = os.environ.get(refstr)
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history']
+                       'history', 'prod_ver', 'rulefile']
 
 
 class BaseSTIS(BaseCal):
@@ -321,7 +321,8 @@ class BaseSTIS(BaseCal):
     ref_loc = 'stis/ref'
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history']
+                       'history', 'prod_ver', 'rulefile']
+
 
 class BaseWFPC2(BaseCal):
     refstr = 'uref'
@@ -330,7 +331,7 @@ class BaseWFPC2(BaseCal):
     ref_loc = 'wfpc2/ref'
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history']
+                       'history', 'prod_ver', 'rulefile']
 
 def centroid_compare(centroid):
     return centroid[1]
@@ -343,7 +344,7 @@ class BaseUnit(BaseCal):
     ref_loc = 'acs'
     ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
                        'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history']
+                       'history', 'prod_ver', 'rulefile']
     atol = 1.0e-5
 
     def bound_image(self, image):
@@ -572,7 +573,7 @@ class BaseUnit(BaseCal):
 
         pimg.writeto(filename)
         del pimg
-    
+
 
 def add_suffix(fname, suffix, range=None):
     """Add suffix to file name
