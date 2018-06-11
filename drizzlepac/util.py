@@ -216,7 +216,8 @@ class WithLogging(object):
             # finally clause is reached.
             try:
                 func(*args, **kwargs)
-            except Exception as errorobj:
+            except Exception as e:
+                errorobj = e
                 raise
             finally:
                 self.depth -= 1
