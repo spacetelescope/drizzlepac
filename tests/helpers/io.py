@@ -1,18 +1,19 @@
+import copy
+import json
 import os
 import shutil
-import json
 
 from .utils import check_url, download
 
-UPLOAD_SCHEMA = {"files":[
-                    { "pattern": "",
-                      "target": "",
-                      "props": None,
-                      "recursive": "false",
-                      "flat" : "true",
-                      "regexp": "false",
-                      "explode": "false",
-                      "excludePatterns": []
+UPLOAD_SCHEMA = {"files": [
+                    {"pattern": "",
+                     "target": "",
+                     "props": None,
+                     "recursive": "false",
+                     "flat": "true",
+                     "regexp": "false",
+                     "explode": "false",
+                     "excludePatterns": []
                     }
                   ]
                 }
@@ -107,13 +108,20 @@ def upload_results(**kwargs):
     jsonfile = "{}_results.json".format(testname)
     recursive = repr(kwargs.get("recursive", False)).lower()
 
-    # Populate schema for this test's data
-    upload_schema = UPLOAD_SCHEMA.copy()
-    upload_schema['files'][0]['pattern'] = pattern
-    upload_schema['files'][0]['target'] = target
-    upload_schema['files'][0]['recursive'] = recursive
+    if isinstance(pattern, list):
+        # Populate schema for this test's data
+        upload_schema = {"files": []}
+
+        for p in pattern:
+            temp_schema = copy.deepcopy(UPLOAD_SCHEMA["files"][0])
+            temp_schema.update({"pattern": p, "target": target, "recursive": recursive})
+            upload_schema["files"].append(temp_schema)
+
+    else:
+        # Populate schema for this test's data
+        upload_schema = copy.deepcopy(UPLOAD_SCHEMA)
+        upload_schema["files"][0].update({"pattern": pattern, "target": target, "recursive": recursive})
 
     # Write out JSON file with description of test results
     with open(jsonfile, 'w') as outfile:
         json.dump(upload_schema, outfile)
-

@@ -17,6 +17,12 @@ def pytest_addoption(parser):
         help="run slow tests"
     )
 
+    parser.addoption(
+        "--slow",
+        action="store_true",
+        help="run slow tests"
+    )
+
     # Add option to use big data sets
     parser.addoption(
         "--bigdata",
@@ -38,7 +44,7 @@ def _jail(tmpdir):
     """
     os.chdir(tmpdir.strpath)
     yield
-    
+
 @pytest.fixture
 def envopt(request):
     return request.config.getoption("env")

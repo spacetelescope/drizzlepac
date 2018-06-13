@@ -1,33 +1,41 @@
+// @Library('utils@master') _ // For testing unreleased utils library
+
 // Obtain files from source control system.
 if (utils.scm_checkout()) return
 
-def test_bin(env_name, bin) {
-    def result = "with_env -n ${env_name} ${bin}"
-    return result
-}
-
-def test_import(env_name, module) {
-    def result = "with_env -n ${env_name} python -c 'import ${module}'"
-    return result
-}
 
 // Globals
-PIP_INST = "pip install"
+PIP_INST = "pip install --upgrade --upgrade-strategy 'only-if-needed'"
 CONDA_CHANNEL = "http://ssb.stsci.edu/astroconda"
-CONDA_CREATE = "conda create -y -q -c ${CONDA_CHANNEL}"
-CONDA_INST = "conda install -y -q -c ${CONDA_CHANNEL}"
+CONDA_ARGS = "-y -q -c ${CONDA_CHANNEL}"
+CONDA_CREATE = "conda create ${CONDA_ARGS}"
+CONDA_INST = "conda install ${CONDA_ARGS}"
 PY_SETUP = "python setup.py"
-PYTEST_ARGS = "tests --basetemp=tests_output --junitxml results.xml"
-DEPS = "astropy fitsblender graphviz nictools numpy numpydoc \
+PYTEST = "pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"
+
+// The minimum modules required to execute setup.py at all
+BASE_DEPS = "astropy numpy"
+TEST_DEPS = "pytest pytest-remotedata crds"
+
+// Conda needs explicit dependencies listed
+DEPS = "fitsblender graphviz nictools numpydoc \
+        pytest pytest-remotedata pyregion \
         scipy spherical-geometry sphinx sphinx_rtd_theme \
         stsci_rtd_theme stsci.convolve stsci.image \
         stsci.imagemanip stsci.imagestats stsci.ndimage \
-        stsci.skypac stsci.stimage stwcs pyregion setuptools"
+        stsci.skypac stsci.stimage stwcs setuptools python"
 
-matrix_python = ["2.7", "3.5", "3.6"]
-matrix_astropy = ["2", "3"]
-matrix_numpy = ["latest"]
+matrix_python = ["3.6", "3.7"]
+matrix_astropy = [">=3.0.5"]
+matrix_numpy = [">=1.14", "==1.15.0rc1"]
 matrix = []
+
+
+// Configure artifactory ingest
+data_config = new DataConfig()
+data_config.server_id = 'bytesalad'
+data_config.root = 'tests_output'
+data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
 
 // RUN ONCE:
@@ -35,103 +43,60 @@ matrix = []
 sdist = new BuildConfig()
 sdist.nodetype = "linux"
 sdist.name = "sdist"
-sdist.build_cmds = ["${CONDA_CREATE} -n dist astropy numpy",
-                    "with_env -n dist ${PY_SETUP} sdist"]
+sdist.build_cmds = ["${PIP_INST} ${BASE_DEPS}",
+                    "${PY_SETUP} sdist"]
 matrix += sdist
 
 
 // RUN ONCE:
 //    "build_sphinx" with default python
+/*
 docs = new BuildConfig()
 docs.nodetype = "linux"
 docs.name = "docs"
-docs.build_cmds = ["${CONDA_CREATE} -n docs ${DEPS}",
-                   "with_env -n docs ${PY_SETUP} build_sphinx"]
+docs.build_cmds = ["${PIP_INST} ${BASE_DEPS}",
+                   "${PY_SETUP} install build_sphinx"]
 matrix += docs
-
+*/
 
 // Generate installation compatibility matrix
+int matrix_id = 0
 for (python_ver in matrix_python) {
-    for (astropy_ver in matrix_astropy) {
-        for (numpy_ver in matrix_numpy) {
-            // Astropy >=3.0 no longer supports Python 2.7
-            if (python_ver == "2.7" && astropy_ver == "3") {
-                continue
-            }
+for (astropy_ver in matrix_astropy) {
+for (numpy_ver in matrix_numpy) {
+    MATRIX_SUFFIX = "${matrix_id}_py${python_ver}_np${numpy_ver}_ap${astropy_ver}"
+                    .replaceAll("[<>=\\!\\.]", "")
+    MATRIX_TITLE = "mtx-${MATRIX_SUFFIX}"
+    DEPS_PYTHON= "python=${python_ver} "
+    DEPS_EX = ""
+    DEPS_EX += "astropy${astropy_ver} "
+    DEPS_EX += "numpy${numpy_ver} "
 
-            DEPS_INST = "python=${python_ver} "
+    // "with_env" is a `source activate [env]` wrapper for conda environments
+    WRAPPER = "with_env -n ${python_ver}"
 
-            if (astropy_ver != "latest") {
-                DEPS_INST += "astropy=${astropy_ver} "
-            }
+    install = new BuildConfig()
+    install.nodetype = "linux"
+    install.name = MATRIX_TITLE
+    install.env_vars = ["BUILD_MATRIX_SUFFIX=${MATRIX_SUFFIX}",
+                        "BUILD_MATRIX_ID=${matrix_id}",]
+    install.build_cmds = [
+        // Install python @ version
+        "${CONDA_CREATE} -n ${python_ver} ${DEPS_PYTHON}",
 
-            if (numpy_ver != "latest") {
-                DEPS_INST += "numpy=${numpy_ver} "
-            }
+        // Install custom required packages @ version
+        "${WRAPPER} ${PIP_INST} ${DEPS_EX}",
 
-            DEPS_INST += DEPS
+        // Install self from source
+        "${WRAPPER} ${PY_SETUP} install",
+    ]
 
-            install = new BuildConfig()
-            install.nodetype = "linux"
-            install.name = "install-py=${python_ver},np=${numpy_ver},ap=${astropy_ver}"
-            install.build_cmds = ["${CONDA_CREATE} -n ${python_ver} ${DEPS_INST}",
-                                  "with_env -n ${python_ver} ${PY_SETUP} egg_info",
-                                  "with_env -n ${python_ver} ${PY_SETUP} install",
-
-                                  test_bin(python_ver, 'mdriz -h'),
-                                  test_bin(python_ver, 'resetbits -h'),
-                                  test_bin(python_ver, 'updatenpol -h'),
-                                  test_bin(python_ver, 'runastrodriz -h'),
-
-                                  test_import(python_ver, 'drizzlepac'),
-                                  test_import(python_ver, 'drizzlepac.ablot'),
-                                  test_import(python_ver, 'drizzlepac.acsData'),
-                                  test_import(python_ver, 'drizzlepac.adrizzle'),
-                                  test_import(python_ver, 'drizzlepac.astrodrizzle'),
-                                  test_import(python_ver, 'drizzlepac.buildmask'),
-                                  test_import(python_ver, 'drizzlepac.buildwcs'),
-                                  test_import(python_ver, 'drizzlepac.catalogs'),
-                                  test_import(python_ver, 'drizzlepac.cdriz'),
-                                  test_import(python_ver, 'drizzlepac.createMedian'),
-                                  test_import(python_ver, 'drizzlepac.drizCR'),
-                                  test_import(python_ver, 'drizzlepac.findobj'),
-                                  test_import(python_ver, 'drizzlepac.imageObject'),
-                                  test_import(python_ver, 'drizzlepac.imagefindpars'),
-                                  test_import(python_ver, 'drizzlepac.imgclasses'),
-                                  test_import(python_ver, 'drizzlepac.irData'),
-                                  test_import(python_ver, 'drizzlepac.linearfit'),
-                                  test_import(python_ver, 'drizzlepac.mapreg'),
-                                  test_import(python_ver, 'drizzlepac.mdriz'),
-                                  test_import(python_ver, 'drizzlepac.mdzhandler'),
-                                  test_import(python_ver, 'drizzlepac.minmed'),
-                                  test_import(python_ver, 'drizzlepac.nicmosData'),
-                                  test_import(python_ver, 'drizzlepac.outputimage'),
-                                  test_import(python_ver, 'drizzlepac.photeq'),
-                                  test_import(python_ver, 'drizzlepac.pixreplace'),
-                                  test_import(python_ver, 'drizzlepac.pixtopix'),
-                                  test_import(python_ver, 'drizzlepac.pixtosky'),
-                                  test_import(python_ver, 'drizzlepac.processInput'),
-                                  test_import(python_ver, 'drizzlepac.quickDeriv'),
-                                  test_import(python_ver, 'drizzlepac.refimagefindpars'),
-                                  test_import(python_ver, 'drizzlepac.regfilter'),
-                                  test_import(python_ver, 'drizzlepac.resetbits'),
-                                  test_import(python_ver, 'drizzlepac.runastrodriz'),
-                                  test_import(python_ver, 'drizzlepac.sky'),
-                                  test_import(python_ver, 'drizzlepac.skytopix'),
-                                  test_import(python_ver, 'drizzlepac.staticMask'),
-                                  test_import(python_ver, 'drizzlepac.stisData'),
-                                  test_import(python_ver, 'drizzlepac.tweakback'),
-                                  test_import(python_ver, 'drizzlepac.tweakreg'),
-                                  test_import(python_ver, 'drizzlepac.updatehdr'),
-                                  test_import(python_ver, 'drizzlepac.updatenpol'),
-                                  test_import(python_ver, 'drizzlepac.util'),
-                                  test_import(python_ver, 'drizzlepac.wcs_functions'),
-                                  test_import(python_ver, 'drizzlepac.wfc3Data'),
-                                  test_import(python_ver, 'drizzlepac.wfpc2Data'),]
-            matrix += install
-        }
-    }
-}
+    install.test_cmds = ["${WRAPPER} pip install ${TEST_DEPS}",
+                         "${WRAPPER} ${PYTEST}",]
+    install.test_configs = [data_config]
+    matrix += install
+    matrix_id++
+}}}
 
 // Iterate over configurations that define the (distibuted) build matrix.
 // Spawn a host of the given nodetype for each combination and run in parallel.

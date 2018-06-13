@@ -22,7 +22,7 @@ class TestSTIS(BaseSTIS):
                       'o60q02fbq_flt.fits', 'o60q02fcq_flt.fits',
                       'o60q02feq_flt.fits', 'o60q02fgq_flt.fits',
                       'o60q02fiq_flt.fits']
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
+        all_inputs = [self.get_input_file('input', i) for i in raw_inputs]
         inputs = [os.path.basename(i) for i in all_inputs]
         print("[STIS_01] Found inputs: \n{}".format(inputs))
 
@@ -66,7 +66,7 @@ class TestSTIS(BaseSTIS):
 
         # Prepare input files.
         raw_inputs = ['o6bz05pfq_flt.fits', 'o6bz05phq_flt.fits']
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
+        all_inputs = [self.get_input_file('input', i) for i in raw_inputs]
         inputs = [os.path.basename(i) for i in all_inputs]
 
         output = 'final_stis_03'
@@ -113,7 +113,7 @@ class TestSTIS(BaseSTIS):
                       'o6cl10axq_flt.fits', 'o6cl10ayq_flt.fits',
                       'o6cl10azq_flt.fits', 'o6cl10b0q_flt.fits']
 
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
+        all_inputs = [self.get_input_file('input', i) for i in raw_inputs]
         inputs = [os.path.basename(i) for i in all_inputs]
 
         output = 'final_stis_04'
@@ -158,7 +158,7 @@ class TestSTIS(BaseSTIS):
         # Prepare input files.
         raw_inputs = ['o47m05f8q_flt.fits', 'o47m05f9q_flt.fits',
                       'o47m05faq_flt.fits', 'o47m05fbq_flt.fits']
-        all_inputs = [self.get_data('input', i) for i in raw_inputs]
+        all_inputs = [self.get_input_file('input', i) for i in raw_inputs]
         inputs = [os.path.basename(i) for i in all_inputs]
 
         output = 'final_stis_09'

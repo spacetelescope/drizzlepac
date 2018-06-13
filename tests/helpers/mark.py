@@ -3,18 +3,19 @@ import os
 import pytest
 import re
 
-__all__ = ['runslow', 'require_bigdata', 'slow',
+__all__ = ['runslow', 'slow', 'require_bigdata',
            'not_under_travis', 'require_crds_context']
 
-# pytest marker to mark resource-intensive tests that should not be
-# executed with every commit.
-slow = pytest.mark.slow
 
 # Decorator to indicate slow tests
 runslow = pytest.mark.skipif(
     not pytest.config.getoption("--runslow"),
     reason="need --runslow option to run"
 )
+
+# pytest marker to mark resource-intensive tests that should not be
+# executed with every commit.
+slow = runslow
 
 # Decorator to indicate BIGDATA required
 require_bigdata = pytest.mark.skipif(

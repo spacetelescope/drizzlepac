@@ -19,7 +19,7 @@ def pytest_generate_tests(metafunc):
 
 
 class TestVaryPerf(BaseWFC3):
-    
+
     params = {
         'test_perf' : [dict(output='wfc3_default_perf', in_memory=False,
                             num_cores=None, use_static=True, skywidth=0.1),
@@ -37,16 +37,16 @@ class TestVaryPerf(BaseWFC3):
                             num_cores=None, use_static=False, skywidth=0.3),
                       ],
              }
-        
+
     ignore_keywords = ['origin', 'filename', 'date', 'iraftlm', 'fitsdate', 'upwtim',
            'wcscdate', 'upwcsver', 'pywcsver', 'prod_ver', 'rulefile',
            'history']
-           
+
     def test_perf(self, output, in_memory, num_cores, use_static, skywidth):
 
         # Prepare input files.
         raw_inputs = ["ib6m02d9q_flt.fits", "ib6m02daq_flt.fits"]
-        inputs = [os.path.basename(self.get_data('input', i)) 
+        inputs = [os.path.basename(self.get_input_file('input', i)) 
                       for i in raw_inputs]
 
         # Merge common parameter settings with test-specific settings
@@ -59,12 +59,12 @@ class TestVaryPerf(BaseWFC3):
         input_pars['skywidth'] = skywidth
         run_file = '{}.log'.format(output)
         input_pars['runfile'] = run_file
-        
+
         # Update WCS for all inputs
         driz_inputs = updatewcs.updatewcs(inputs, use_db=False)
 
         # run astrodrizzle now...
-        parObj = teal.load('astrodrizzle', defaults=True)  # get all default values        
+        parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
         astrodrizzle.AstroDrizzle(driz_inputs, configobj=parObj, **input_pars)
 
         # Compare results

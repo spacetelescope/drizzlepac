@@ -9,7 +9,7 @@ from ..resources import BaseACS, raw_from_asn
 
 
 class TestAsnRegress(BaseACS):
-    
+
     def test_hrc_asn(self):
         rootname = 'j8bt06010'
         asn_file = rootname + '_asn.fits'
@@ -18,7 +18,7 @@ class TestAsnRegress(BaseACS):
         input_file = self.get_data('input', asn_file)
 
         for raw_file in raw_from_asn(asn_file, suffix='_flt.fits'):
-            self.get_input_file(raw_file)
+            self.get_input_file('input', raw_file)
 
         # run astrodrizzle now...
         parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
@@ -37,7 +37,7 @@ class TestAsnRegress(BaseACS):
         parObj['STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR']['driz_cr_snr'] = '3.0 2.5'
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_bits'] = 8578
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_units'] = 'counts'
-        
+
         astrodrizzle.AstroDrizzle(asn_file, configobj=parObj)
 
         # Compare results

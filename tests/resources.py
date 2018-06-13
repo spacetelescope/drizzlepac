@@ -1,6 +1,7 @@
 """HSTCAL regression test helpers."""
 from astropy.extern.six.moves import urllib
 
+import getpass
 import os
 import sys
 import math
@@ -21,11 +22,13 @@ import numpy as np
 import stwcs
 from stsci.tools import fileutil
 
+from .helpers.mark import require_bigdata
 from .helpers.io import get_bigdata, upload_results
 
 __all__ = ['download_crds',
            'ref_from_image', 'raw_from_asn', 'BaseACS',
            'BaseSTIS', 'BaseWFC3IR', 'BaseWFC3UVIS', 'BaseWFPC2']
+
 
 def _download_file(url, filename, filemode='wb', timeout=None):
     """Generic remote data download."""
@@ -47,6 +50,8 @@ def download_crds(refdir, refname, timeout=None):
 
     try:
         url = 'http://ssb.stsci.edu/cdbs/{}/{}'.format(refdir, refname)
+        local_file = os.path.abspath(refname)
+        print("Downloading CRDS file: {}".format(local_file))
         _download_file(url, refname, timeout=timeout)
     except Exception:  # Fall back to FTP
         url = 'ftp://ftp.stsci.edu/cdbs/{}/{}'.format(refdir, refname)
@@ -102,13 +107,13 @@ def raw_from_asn(asn_file, suffix='_raw.fits'):
 
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
-@pytest.mark.require_bigdata
+#@pytest.mark.require_bigdata
 class BaseCal(object):
     prevdir = os.getcwd()
-    use_ftp_crds = False
+    use_ftp_crds = True
     timeout = 30  # seconds
     tree = 'dev'
-    results_root = 'rt-drizzlepac-dev'
+    results_root = 'drizzlepac-results'
 
     # Numpy default for allclose comparison
     rtol = 1e-7
@@ -171,24 +176,28 @@ class BaseCal(object):
 
         return local_file
 
-    def get_input_file(self, filename, refsep='$'):
+    def get_input_file(self, *args, refsep='$'):
         """
         Download or copy input file (e.g., RAW) into the working directory.
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
-        self.get_data('input', filename)
+        filename = self.get_data(*args)
         ref_files = ref_from_image(filename)
+        print("Looking for REF_FILES: {}".format(ref_files))
 
         for ref_file in ref_files:
+            if ref_file.strip() == '':
+                continue
             if refsep not in ref_file:  # Local file
-                self.get_data('customRef', ref_file)
+                refname = self.get_data('customRef', ref_file)
             else:  # Download from FTP, if applicable
                 s = ref_file.split(refsep)
                 refdir = s[0]
                 refname = s[1]
                 if self.use_ftp_crds:
                     download_crds(refdir, refname, timeout=self.timeout)
+        return filename
 
     def compare_outputs(self, outputs, raise_error=True):
         """
@@ -219,11 +228,15 @@ class BaseCal(object):
         # as new comparison/truth files
         testpath, testname = os.path.split(os.path.abspath(os.curdir))
         # organize results by day test was run...could replace with git-hash
+        whoami = getpass.getuser() or 'nobody'
         dt = datetime.datetime.now().strftime("%d%b%YT")
         ttime = datetime.datetime.now().strftime("%H_%M_%S")
-        testdir = "{}_{}".format(testname, ttime)
-        tree = os.path.join(self.results_root, 'results', self.input_loc,
-                            dt, testdir)
+        user_tag = 'NOT_CI_{}_{}'.format(whoami, ttime)
+        build_tag = os.environ.get('BUILD_TAG',  user_tag)
+        build_suffix = os.environ.get('BUILD_MATRIX_SUFFIX', 'standalone')
+        testdir = "{}_{}_{}".format(testname, build_tag, build_suffix)
+        tree = os.path.join(self.results_root, self.input_loc,
+                            dt, testdir) + os.sep
 
         updated_outputs = []
         for actual, desired in outputs:
@@ -268,12 +281,13 @@ class BaseCal(object):
 
         if not all_okay:
             # Write out JSON file to enable retention of different results
-            new_truths = [os.path.basename(i[1]) for i in updated_outputs]
+            new_truths = [os.path.abspath(i[1]) for i in updated_outputs]
             for files in updated_outputs:
                 print("Renaming {} as new 'truth' file: {}".format(
                       files[0], files[1]))
                 shutil.move(files[0], files[1])
-            upload_results(pattern=new_truths+['*.log'],
+            log_pattern = [os.path.join(os.path.dirname(x), '*.log') for x in new_truths]
+            upload_results(pattern=new_truths + log_pattern,
                            testname=testname,
                            target= tree)
 

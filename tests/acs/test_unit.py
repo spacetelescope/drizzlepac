@@ -20,7 +20,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz square kernel with point
         """
-        input = os.path.basename(self.get_data('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
         output = 'output_square_point.fits'
         output_difference = os.path.basename(self.get_data(
                                              'truth',
@@ -51,7 +51,7 @@ class TestDriz(BaseUnit):
 
         output_bounds = self.bound_image(outsci)
         self.write_image(output, output_wcs, outsci, outwht, outcon[0])
-        
+
         template_data = self.read_image(output_template)
         template_bounds = self.bound_image(template_data)
 
@@ -65,7 +65,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz square kernel with grid
         """
-        input = os.path.basename(self.get_data('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
         output = 'output_square_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_square_grid.txt'))
@@ -107,7 +107,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz turbo kernel with grid
         """
-        input = os.path.basename(self.get_data('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
         output = 'output_turbo_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_turbo_grid.txt'))
@@ -150,7 +150,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz gaussian kernel with grid
         """
-        input = os.path.basename(self.get_data('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
         output = 'output_gaussian_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_gaussian_grid.txt'))
@@ -193,7 +193,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz lanczos kernel with grid
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_lanczos_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_lanczos_grid.txt'))
@@ -236,7 +236,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz tophat kernel with grid
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_tophat_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_tophat_grid.txt'))
@@ -279,7 +279,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz point kernel with grid
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_point_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_point_grid.txt'))
@@ -322,7 +322,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz square kernel
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_square_image.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_square_image.txt'))
@@ -359,7 +359,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz turbo kernel
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_turbo_image.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_turbo_image.txt'))
@@ -393,18 +393,18 @@ class TestDriz(BaseUnit):
 
 class TestBlot(BaseUnit):
     buff = 1
-    
+
     def test_blot_with_point(self):
         """
         Test do_blot with point image
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_blot_point.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_blot_point.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_blot_point.fits'))
-        
+
         insci = self.read_image(input)
         input_wcs = self.read_wcs(input)
         insci = self.make_point_image(insci, (500, 200), 40.0)
@@ -429,13 +429,13 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with default grid image
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_blot_default.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_blot_default.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_blot_default.fits'))
-        
+
         insci = self.read_image(input)
         insci = self.make_grid_image(insci, 64, 100.0)
         input_wcs = self.read_wcs(input)
@@ -458,13 +458,13 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with lan3 grid image
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_blot_lan3.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_blot_lan3.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_blot_lan3.fits'))
-        
+
         insci = self.read_image(input)
         insci = self.make_grid_image(insci, 64, 100.0)
         input_wcs = self.read_wcs(input)
@@ -487,13 +487,13 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with lan5 grid image
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_blot_lan5.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_blot_lan5.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_blot_lan5.fits'))
-        
+
         insci = self.read_image(input)
         insci = self.make_grid_image(insci, 64, 100.0)
         input_wcs = self.read_wcs(input)
@@ -516,11 +516,11 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with full image
         """
-        input = os.path.basename(self.get_data('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
         output = 'output_blot_image.fits'
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_blot_image.fits'))
-        
+
         insci = self.read_image(input)
         input_wcs = self.read_wcs(input)
         output_wcs = self.read_wcs(output_template)
@@ -530,5 +530,3 @@ class TestBlot(BaseUnit):
         self.write_image(output, output_wcs, outsci)
 
         self.compare_outputs([(output, output_template)])
-        
-

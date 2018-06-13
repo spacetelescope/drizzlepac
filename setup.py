@@ -191,6 +191,7 @@ setup(
         'stsci.imagemanip',
         'stsci.imagestats',
         'stsci.ndimage',
+        'stsci.skypac',
         'stsci.stimage',
         'stwcs',
         'stregion',

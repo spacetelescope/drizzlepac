@@ -32,6 +32,3 @@ class TestimageObject():
         assert(image._naxis1 > 0)
         assert(image._naxis2 > 0)
         assert(image._instrument != '')
-
-if __name__ == "__main__":
-    nose.run()

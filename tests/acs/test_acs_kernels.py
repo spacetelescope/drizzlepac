@@ -17,7 +17,7 @@ def pytest_generate_tests(metafunc):
 
 
 class TestAcsKernels(BaseACS):
-    
+
     params = {
         'test_kernels' : [dict(output='acs_square', kernel='square'),
                           dict(output='acs_turbo', kernel='turbo'),
@@ -26,14 +26,14 @@ class TestAcsKernels(BaseACS):
                           dict(output='acs_lanczos3', kernel='lanczos3'),
                           dict(output='acs_gaussian', kernel='gaussian'),],
         }
-        
+
     def test_kernels(self, output, kernel):
-        
+
         input_file = 'j8bt06nyq_flt.fits'
         print("Running the test for kernel={}".format(kernel))
 
         # Prepare input files.
-        input_file = self.get_data('input', input_file)
+        input_file = self.get_input_file('input', input_file)
 
         # run astrodrizzle now...
         parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
@@ -51,7 +51,7 @@ class TestAcsKernels(BaseACS):
         parObj['STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR']['driz_cr'] = False
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_kernel'] = kernel
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_units'] = 'counts'
-        
+
         astrodrizzle.AstroDrizzle(input_file, configobj=parObj)
 
         # Compare results

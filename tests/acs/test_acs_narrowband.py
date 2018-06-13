@@ -3,13 +3,13 @@ import os
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
-from ..helpers.mark import require_bigdata
+from ..helpers.mark import require_bigdata, runslow, slow
 
 from ..resources import BaseACS, raw_from_asn
 
-
+@require_bigdata
 class TestAsnNarrowband(BaseACS):
-    
+
     def test_acs_narrowband(self):
         rootname = 'j8dw01010'
         asn_file = rootname + '_asn.fits'
@@ -18,7 +18,7 @@ class TestAsnNarrowband(BaseACS):
         input_file = self.get_data('input', asn_file)
 
         for raw_file in raw_from_asn(asn_file, suffix='_flt.fits'):
-            self.get_input_file(raw_file)
+            self.get_input_file('input', raw_file)
 
         # run astrodrizzle now...
         parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
@@ -35,7 +35,7 @@ class TestAsnNarrowband(BaseACS):
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_bits'] = 8578
         parObj['STEP 7a: CUSTOM WCS FOR FINAL OUTPUT']['final_wcs'] = True
         parObj['STEP 7a: CUSTOM WCS FOR FINAL OUTPUT']['final_rot'] = 0.0
-        
+
         astrodrizzle.AstroDrizzle(asn_file, configobj=parObj)
 
         # Compare results

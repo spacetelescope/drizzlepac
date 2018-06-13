@@ -14,7 +14,7 @@ class TestWFPC2(BaseWFPC2):
         """
         # Prepare input files.
         raw_inputs = ["u40x010hm_c0f.fits", "u40x010hm_c1f.fits"]
-        inputs = [os.path.basename(self.get_data('input', i))
+        inputs = [os.path.basename(self.get_input_file('input', i))
                   for i in raw_inputs]
 
         output = 'wfpc2_single_waiver'
@@ -60,7 +60,7 @@ class TestWFPC2(BaseWFPC2):
                       'u40x010jm_c0f.fits', 'u40x010km_c0f.fits',
                       'u40x010hm_c1f.fits', 'u40x010im_c1f.fits',
                       'u40x010jm_c1f.fits', 'u40x010km_c1f.fits']
-        inputs = [os.path.basename(self.get_data('input', i))
+        inputs = [os.path.basename(self.get_input_file('input', i))
                   for i in raw_inputs]
 
         output = 'wfpc2_waiver'
@@ -94,7 +94,7 @@ class TestWFPC2(BaseWFPC2):
 
         # Prepare input files.
         raw_inputs = ["u9yq0703m_c0m.fits", "u9yq0703m_c1m.fits"]
-        inputs = [os.path.basename(self.get_data('input', i))
+        inputs = [os.path.basename(self.get_input_file('input', i))
                   for i in raw_inputs]
 
         output = 'wfpc2_single_mef'
@@ -135,7 +135,7 @@ class TestWFPC2(BaseWFPC2):
                       'u9yq0707m_c0m.fits', 'u9yq0708m_c0m.fits',
                       'u9yq0703m_c1m.fits', 'u9yq0704m_c1m.fits',
                       'u9yq0707m_c1m.fits', 'u9yq0708m_c1m.fits']
-        inputs = [os.path.basename(self.get_data('input', i))
+        inputs = [os.path.basename(self.get_input_file('input', i))
                   for i in raw_inputs]
 
         output = 'wfpc2_mef'
