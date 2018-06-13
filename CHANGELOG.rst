@@ -41,6 +41,11 @@ DrizzlePac v2.2.3 (not yet released)
 - Fixed a bug due to which ``TweakReg`` may have effectively ignored
   ``verbose`` setting.
 
+- Fixed a bug in ``drizzlepac.util.WithLogging`` due to which ``astrodrizzle``
+  would throw an error trying when to raise another error.
+  See `Issue #129 <https://github.com/spacetelescope/drizzlepac/issues/157>`_
+  for more details.
+
 DrizzlePac v2.2.2 (18-April-2018)
 =================================
 - Fixed a bug in ``TweakReg`` introduced in ``v2.2.0`` due to which, when
