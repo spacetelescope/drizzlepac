@@ -34,7 +34,7 @@ matrix = []
 //    "sdist" is agnostic enough to work without any big dependencies
 sdist = new BuildConfig()
 sdist.nodetype = "linux"
-sdist.build_mode = "sdist"
+sdist.name = "sdist"
 sdist.build_cmds = ["${CONDA_CREATE} -n dist astropy numpy",
                     "with_env -n dist ${PY_SETUP} sdist"]
 matrix += sdist
@@ -44,7 +44,7 @@ matrix += sdist
 //    "build_sphinx" with default python
 docs = new BuildConfig()
 docs.nodetype = "linux"
-docs.build_mode = "docs"
+docs.name = "docs"
 docs.build_cmds = ["${CONDA_CREATE} -n docs ${DEPS}",
                    "with_env -n docs ${PY_SETUP} build_sphinx"]
 matrix += docs
@@ -73,7 +73,7 @@ for (python_ver in matrix_python) {
 
             install = new BuildConfig()
             install.nodetype = "linux"
-            install.build_mode = "install-py=${python_ver},np=${numpy_ver},ap=${astropy_ver}"
+            install.name = "install-py=${python_ver},np=${numpy_ver},ap=${astropy_ver}"
             install.build_cmds = ["${CONDA_CREATE} -n ${python_ver} ${DEPS_INST}",
                                   "with_env -n ${python_ver} ${PY_SETUP} egg_info",
                                   "with_env -n ${python_ver} ${PY_SETUP} install",
