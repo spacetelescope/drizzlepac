@@ -193,6 +193,7 @@ setup(
         'stsci.ndimage',
         'stsci.stimage',
         'stwcs',
+        'stregion',
     ],
     packages=find_packages(),
     package_data={
