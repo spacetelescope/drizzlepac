@@ -22,7 +22,7 @@ import stwcs
 from stwcs import wcsutil
 from astropy.io import fits
 import stsci.imagestats as imagestats
-import pyregion
+import stregion as pyregion
 
 #import idlphot
 from . import tweakutils, util

@@ -10,7 +10,8 @@ of multiple images using the WCS information from the images.
 """
 from __future__ import absolute_import, division, print_function
 from astropy.io import fits
-import pyregion, stwcs
+import stregion as pyregion
+import stwcs
 import os
 from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
