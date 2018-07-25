@@ -1,7 +1,7 @@
 include RELIC-INFO
 recursive-include doc *
 global-include *.py *.md *.notes *.yml
-global-include *.x *.c *.par
+global-include *.x *.c *.h *.par
 exclude */version.py
 prune .eggs
 prune .git
