@@ -1056,7 +1056,7 @@ def plot_zeropoint(pars):
         plt.ioff()
 
     a=plt.imshow(pars['data'],vmin=0,vmax=pars['vmax'],interpolation='nearest')
-    plt.jet()#gray()
+    plt.viridis()
     plt.colorbar()
     plt.title(pars['title_str'])
     plt.plot(xp+searchrad,yp+searchrad,color='red',marker='+',markersize=24)
