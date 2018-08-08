@@ -14,6 +14,10 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+DrizzlePac v2.2.4 (Not yet released)
+====================================
+- Changed the color scheme of the ``hist2d`` plots to ``viridis``. [#167]
+
 DrizzlePac v2.2.3 (13-June-2018)
 ================================
 - Updated links in the documentation to point to latest
