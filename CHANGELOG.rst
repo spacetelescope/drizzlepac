@@ -16,8 +16,7 @@ of the list).
 
 DrizzlePac v2.2.4 (Not yet released)
 ====================================
-- Changed the color scheme of the ``hist2d`` plots to ``viridis``.
-  See https://github.com/spacetelescope/drizzlepac/pull/167
+- Changed the color scheme of the ``hist2d`` plots to ``viridis``. [#167]
 
 DrizzlePac v2.2.3 (13-June-2018)
 ================================
