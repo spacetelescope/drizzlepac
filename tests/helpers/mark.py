@@ -4,7 +4,7 @@ import pytest
 import re
 
 __all__ = ['runslow', 'slow', 'require_bigdata',
-           'not_under_travis', 'require_crds_context']
+           'require_crds_context']
 
 
 # Decorator to indicate slow tests
