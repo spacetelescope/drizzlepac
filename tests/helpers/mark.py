@@ -23,12 +23,6 @@ require_bigdata = pytest.mark.skipif(
     reason='need --bigdata option to run'
 )
 
-# Decorator to skip test if running under a TravisCI
-not_under_travis = pytest.mark.skipif(
-    "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-    reason='Temporarily disable due to performance issues'
-)
-
 
 # Decorator to skip if CRDS_CONTEXT is not at lest a certain level.
 def require_crds_context(required_context):
