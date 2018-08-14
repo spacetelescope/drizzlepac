@@ -14,9 +14,21 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-DrizzlePac v2.2.4 (Not yet released)
-====================================
+DrizzlePac (DEVELOPMENT)
+========================
+- N/A
+
+DrizzlePac v2.2.5 (14-Aug-2018)
+===============================
 - Changed the color scheme of the ``hist2d`` plots to ``viridis``. [#167]
+
+- Refactored test suite
+
+- ``sdist`` now packages C extension source code
+
+DrizzlePac v2.2.4 (28-June-2018)
+================================
+- Replace ``pyregion`` with ``stregion``
 
 DrizzlePac v2.2.3 (13-June-2018)
 ================================
