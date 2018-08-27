@@ -16,6 +16,8 @@ of the list).
 
 DrizzlePac (DEVELOPMENT)
 ========================
+- Updated unit_tests to use original inputs, rather than updated inputs used by
+  nightly regression tests.
 - Fix ``numpy`` "floating" deprecation warnings. [#175]
 
 DrizzlePac v2.2.5 (14-Aug-2018)
