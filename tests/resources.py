@@ -78,7 +78,7 @@ def ref_from_image(input_image):
     # NOTE: Add additional mapping as needed.
     # Map mandatory CRDS reference file for instrument/detector combo.
 
-    reffile_lookup = ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE']
+    reffile_lookup = ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE', 'DGEOFILE']
 
     ref_files = []
     hdr = fits.getheader(input_image, ext=0)
