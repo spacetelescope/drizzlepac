@@ -73,6 +73,8 @@ class TestAcsTweak(BaseACS):
         outfile = '{}_drz.fits'.format(output)
         reffile = 'reference_tweak.fits'
         outputs = [(outfile, reffile)]
+        for i in range(1,5):
+            self.ignore_keywords += ['D00{}DATA'.format(i), 'D00{}MASK'.format(i)]
         self.compare_outputs(outputs)
 
     def test_pixsky1(self):

@@ -58,4 +58,5 @@ class TestAcsKernels(BaseACS):
         outfile = '{}_drz.fits'.format(output)
         reffile = 'reference_{}.fits'.format(kernel)
         outputs = [(outfile, reffile)]
+        self.ignore_keywords += ['D001DATA', 'D001MASK']
         self.compare_outputs(outputs)
