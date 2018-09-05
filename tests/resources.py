@@ -116,7 +116,7 @@ class BaseCal(object):
     results_root = 'drizzlepac-results'
 
     # Numpy default for allclose comparison
-    rtol = 1e-7
+    rtol = 1e-6
     atol = 0
 
     # To be defined by instrument
