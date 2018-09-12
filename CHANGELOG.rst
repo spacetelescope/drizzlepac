@@ -16,6 +16,7 @@ of the list).
 
 DrizzlePac v2.2.4 (Not yet released)
 ====================================
+- Fix ``numpy`` "floating" deprecation warnings. [#175]
 - Changed the color scheme of the ``hist2d`` plots to ``viridis``. [#167]
 
 DrizzlePac v2.2.3 (13-June-2018)
