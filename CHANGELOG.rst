@@ -16,7 +16,7 @@ of the list).
 
 DrizzlePac (DEVELOPMENT)
 ========================
-- N/A
+- Fix ``numpy`` "floating" deprecation warnings. [#175]
 
 DrizzlePac v2.2.5 (14-Aug-2018)
 ===============================
