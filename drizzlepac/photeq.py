@@ -444,7 +444,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
 
                 # correct data:
                 if has_data:
-                    if np.issubdtype(whdu.data.dtype, np.float):
+                    if np.issubdtype(whdu.data.dtype, np.floating):
                         whdu.data *= pri_conv
                         _mlinfo("     - Data have been multiplied by {}"
                                 .format(pri_conv))
@@ -465,7 +465,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
                         continue
 
                     if hasattr(whdu, 'data') and whdu.data is not None:
-                        if np.issubdtype(whdu.data.dtype, np.float):
+                        if np.issubdtype(whdu.data.dtype, np.floating):
                             whdu.data *= pri_conv
                             _mlinfo("     - Error array (ext={}) has been "
                                     "multiplied by {}".format(eext, pri_conv))
@@ -494,7 +494,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
             has_data = (hasattr(whdu, 'data') and
                         whdu.data is not None)
 
-            if has_data and not np.issubdtype(whdu.data.dtype, np.float):
+            if has_data and not np.issubdtype(whdu.data.dtype, np.floating):
                 _mlinfo("   * EXT: {} contains non-floating point data. "
                         "Skipping this extension".format(ext))
 
@@ -547,7 +547,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
                 if conv is None:
                     _mlinfo("   * EXT: {}".format(ext))
 
-                if np.issubdtype(whdu.data.dtype, np.float):
+                if np.issubdtype(whdu.data.dtype, np.floating):
                     whdu.data *= conv
                     _mlinfo("     - Data have been multiplied by {}"
                             .format(conv))
@@ -564,7 +564,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
                     continue
 
                 if hasattr(whdu, 'data') and whdu.data is not None:
-                    if np.issubdtype(whdu.data.dtype, np.float):
+                    if np.issubdtype(whdu.data.dtype, np.floating):
                         whdu.data *= conv
                         _mlinfo("     - Error array (ext={}) has been "
                                 "multiplied by {}".format(eext, conv))
