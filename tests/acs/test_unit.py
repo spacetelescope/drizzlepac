@@ -1,10 +1,10 @@
 import os
+import pytest
 
 import numpy as np
 from stwcs import distortion
 from ..resources import BaseUnit
 
-import drizzlepac
 import drizzlepac.adrizzle as adrizzle
 import drizzlepac.ablot as ablot
 
@@ -310,14 +310,12 @@ class TestDriz(BaseUnit):
         assert(med_diff < 1.0e-6)
         assert(max_diff < 1.0e-5)
 
-    def not_test_square_with_image(self):
+    def test_square_with_image(self):
         """
         Test do_driz square kernel
         """
         input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_square_image.fits'
-        output_difference = os.path.basename(self.get_data('truth',
-                                             'difference_square_image.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_square_image.fits'))
 
@@ -345,16 +343,15 @@ class TestDriz(BaseUnit):
 
         template_data = self.read_image(output_template)
 
+        self.ignore_keywords += ['rootname']
         self.compare_outputs([(output, output_template)])
 
-    def not_test_turbo_with_image(self):
+    def test_turbo_with_image(self):
         """
         Test do_driz turbo kernel
         """
         input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_turbo_image.fits'
-        output_difference = os.path.basename(self.get_data('truth',
-                                             'difference_turbo_image.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_turbo_image.fits'))
 
@@ -381,6 +378,8 @@ class TestDriz(BaseUnit):
         self.write_image(output, output_wcs, outsci, outwht, outcon[0])
 
         template_data = self.read_image(output_template)
+
+        self.ignore_keywords += ['rootname']
         self.compare_outputs([(output, output_template)])
 
 class TestBlot(BaseUnit):
@@ -504,7 +503,8 @@ class TestBlot(BaseUnit):
         assert(med_diff < 1.0e-6)
         assert(max_diff < 1.0e-5)
 
-    def not_test_blot_with_image(self):
+    @pytest.mark.xfail(reason='Input with different distortion')
+    def test_blot_with_image(self):
         """
         Test do_blot with full image
         """
