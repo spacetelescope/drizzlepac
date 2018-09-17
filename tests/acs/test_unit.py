@@ -1,17 +1,12 @@
 import os
+import pytest
 
 import numpy as np
-import numpy.testing as npt
-from astropy.io import fits
-
-import stwcs
 from stwcs import distortion
+from ..resources import BaseUnit
 
-import drizzlepac
 import drizzlepac.adrizzle as adrizzle
 import drizzlepac.ablot as ablot
-
-from ..resources import BaseUnit
 
 
 class TestDriz(BaseUnit):
@@ -20,11 +15,9 @@ class TestDriz(BaseUnit):
         """
         Test do_driz square kernel with point
         """
-        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_unit.fits'))
         output = 'output_square_point.fits'
-        output_difference = os.path.basename(self.get_data(
-                                             'truth',
-                                             'difference_square_point.txt'))
+        output_difference = 'difference_square_point.txt'
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_square_point.fits'))
 
@@ -65,10 +58,9 @@ class TestDriz(BaseUnit):
         """
         Test do_driz square kernel with grid
         """
-        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_unit.fits'))
         output = 'output_square_grid.fits'
-        output_difference = os.path.basename(self.get_data('truth',
-                                             'difference_square_grid.txt'))
+        output_difference = 'difference_square_grid.txt'
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_square_grid.fits'))
 
@@ -107,7 +99,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz turbo kernel with grid
         """
-        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_unit.fits'))
         output = 'output_turbo_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_turbo_grid.txt'))
@@ -150,7 +142,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz gaussian kernel with grid
         """
-        input = os.path.basename(self.get_input_file('input','j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input','j8bt06nyq_unit.fits'))
         output = 'output_gaussian_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_gaussian_grid.txt'))
@@ -193,7 +185,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz lanczos kernel with grid
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_lanczos_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_lanczos_grid.txt'))
@@ -236,7 +228,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz tophat kernel with grid
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_tophat_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_tophat_grid.txt'))
@@ -279,7 +271,7 @@ class TestDriz(BaseUnit):
         """
         Test do_driz point kernel with grid
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_point_grid.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_point_grid.txt'))
@@ -318,14 +310,12 @@ class TestDriz(BaseUnit):
         assert(med_diff < 1.0e-6)
         assert(max_diff < 1.0e-5)
 
-    def not_test_square_with_image(self):
+    def test_square_with_image(self):
         """
         Test do_driz square kernel
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_square_image.fits'
-        output_difference = os.path.basename(self.get_data('truth',
-                                             'difference_square_image.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_square_image.fits'))
 
@@ -353,16 +343,15 @@ class TestDriz(BaseUnit):
 
         template_data = self.read_image(output_template)
 
+        self.ignore_keywords += ['rootname']
         self.compare_outputs([(output, output_template)])
 
-    def not_test_turbo_with_image(self):
+    def test_turbo_with_image(self):
         """
         Test do_driz turbo kernel
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_turbo_image.fits'
-        output_difference = os.path.basename(self.get_data('truth',
-                                             'difference_turbo_image.txt'))
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_turbo_image.fits'))
 
@@ -389,6 +378,8 @@ class TestDriz(BaseUnit):
         self.write_image(output, output_wcs, outsci, outwht, outcon[0])
 
         template_data = self.read_image(output_template)
+
+        self.ignore_keywords += ['rootname']
         self.compare_outputs([(output, output_template)])
 
 class TestBlot(BaseUnit):
@@ -398,7 +389,7 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with point image
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_blot_point.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_blot_point.txt'))
@@ -429,7 +420,7 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with default grid image
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_blot_default.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_blot_default.txt'))
@@ -458,7 +449,7 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with lan3 grid image
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_blot_lan3.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                              'difference_blot_lan3.txt'))
@@ -487,7 +478,7 @@ class TestBlot(BaseUnit):
         """
         Test do_blot with lan5 grid image
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_blot_lan5.fits'
         output_difference = os.path.basename(self.get_data('truth',
                                          'difference_blot_lan5.txt'))
@@ -512,11 +503,12 @@ class TestBlot(BaseUnit):
         assert(med_diff < 1.0e-6)
         assert(max_diff < 1.0e-5)
 
+    @pytest.mark.xfail(reason='Input with different distortion')
     def test_blot_with_image(self):
         """
         Test do_blot with full image
         """
-        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_flt.fits'))
+        input = os.path.basename(self.get_input_file('input', 'j8bt06nyq_unit.fits'))
         output = 'output_blot_image.fits'
         output_template = os.path.basename(self.get_data('truth',
                                            'reference_blot_image.fits'))

@@ -78,7 +78,7 @@ def ref_from_image(input_image):
     # NOTE: Add additional mapping as needed.
     # Map mandatory CRDS reference file for instrument/detector combo.
 
-    reffile_lookup = ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE']
+    reffile_lookup = ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE', 'DGEOFILE']
 
     ref_files = []
     hdr = fits.getheader(input_image, ext=0)
@@ -116,7 +116,7 @@ class BaseCal(object):
     results_root = 'drizzlepac-results'
 
     # Numpy default for allclose comparison
-    rtol = 1e-7
+    rtol = 1e-6
     atol = 0
 
     # To be defined by instrument
