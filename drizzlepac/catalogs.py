@@ -605,7 +605,7 @@ class ImageCatalog(Catalog):
                     theta=self.pars['theta'],
                     mask = mask,
                     use_sharp_round = self.use_sharp_round,
-                    nbright=self.limits.get('nbright')
+                    nbright=self.nbright
                 )
         if len(x) == 0:
             xypostypes = 3*[float]+[int]+(3 if self.use_sharp_round else 0)*[float]
