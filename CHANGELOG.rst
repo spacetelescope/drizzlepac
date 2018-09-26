@@ -16,8 +16,14 @@ of the list).
 
 DrizzlePac (DEVELOPMENT)
 ========================
+
+- Fix a bug that results in ``tweakreg`` crashing when no sources are found
+  with user-specified source-finding parameters and when ``tweakreg`` then
+  attempts to find sources using default parameters. [#181]
+
 - Updated unit_tests to use original inputs, rather than updated inputs used by
   nightly regression tests.
+
 - Fix ``numpy`` "floating" deprecation warnings. [#175]
 
 DrizzlePac v2.2.5 (14-Aug-2018)
