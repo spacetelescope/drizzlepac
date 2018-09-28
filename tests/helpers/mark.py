@@ -4,7 +4,7 @@ import pytest
 import re
 
 __all__ = ['runslow', 'slow', 'require_bigdata',
-           'not_under_travis', 'require_crds_context']
+           'require_crds_context']
 
 
 # Decorator to indicate slow tests
@@ -21,12 +21,6 @@ slow = runslow
 require_bigdata = pytest.mark.skipif(
     not pytest.config.getoption('--bigdata'),
     reason='need --bigdata option to run'
-)
-
-# Decorator to skip test if running under a TravisCI
-not_under_travis = pytest.mark.skipif(
-    "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-    reason='Temporarily disable due to performance issues'
 )
 
 
