@@ -1,5 +1,6 @@
+type: sphinx
 python:
+    version: 3.5
     setup_py_install: true
-
 conda:
     file: doc/environment.yml

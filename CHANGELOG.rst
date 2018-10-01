@@ -67,7 +67,7 @@ DrizzlePac v2.2.3 (13-June-2018)
 
 - Fixed a bug in ``drizzlepac.util.WithLogging`` due to which ``astrodrizzle``
   would throw an error trying when to raise another error.
-  See `Issue #129 <https://github.com/spacetelescope/drizzlepac/issues/157>`_
+  See `Issue #157 <https://github.com/spacetelescope/drizzlepac/issues/157>`_
   for more details.
 
 DrizzlePac v2.2.2 (18-April-2018)

@@ -7,6 +7,7 @@ import os
 import pkgutil
 import shutil
 import sys
+import importlib
 
 
 try:
@@ -18,18 +19,6 @@ try:
     import pandokia
 except (ImportError, NameError, ModuleNotFoundError):
     pandokia = False
-
-try:
-    import numpy
-except ImportError:
-    print("numpy not found, please install it.", file=sys.stderr)
-    exit(1)
-
-try:
-    from astropy import wcs
-except ImportError:
-    print("astropy not found, please install it.", file=sys.stderr)
-    exit(1)
 
 from glob import glob
 from setuptools import setup, find_packages, Extension, _install_setup_requires
@@ -55,16 +44,34 @@ if not pkgutil.find_loader('relic'):
 
 import relic.release
 
-NAME = 'drizzlepac'
+PACKAGENAME = 'drizzlepac'
 SETUP_REQUIRES = [
-    'numpydoc',
-    'stsci_rtd_theme',
+    'numpy',
+    'astropy',
     'sphinx',
-    'sphinx-automodapi',
-    'sphinx_rtd_theme',
-],
+]
+
+# Due to overriding `install` and `build_sphinx` we need to download
+# setup_requires dependencies before reaching `setup()`. This allows
+# `sphinx` to exist before the `BuildSphinx` class is injected.
+_install_setup_requires(dict(setup_requires=SETUP_REQUIRES))
+
+for dep_pkg in SETUP_REQUIRES:
+    try:
+        importlib.import_module(dep_pkg)
+    except ImportError:
+        print("{0} is required in order to install '{1}'.\n"
+              "Please install {0} first.".format(dep_pkg, PACKAGENAME),
+              file=sys.stderr)
+        exit(1)
+
+import numpy
+from astropy import wcs
+from sphinx.cmd.build import build_main
+from sphinx.setup_command import BuildDoc
+
 version = relic.release.get_info()
-relic.release.write_template(version, NAME)
+relic.release.write_template(version, PACKAGENAME)
 
 # Setup C module include directories
 include_dirs = []
@@ -92,15 +99,9 @@ if pandokia:
                                   'runners', 'maker')]
     include_dirs.extend(fctx_includes)
 
-# Due to overriding `install` and `build_sphinx` we need to download
-# setup_requires dependencies before reaching `setup()`. This allows
-# `sphinx` to exist before the `BuildSphinx` class is injected.
-_install_setup_requires(dict(setup_requires=SETUP_REQUIRES))
-
 # Distribute compiled documentation alongside the installed package
 docs_compiled_src = os.path.normpath('build/sphinx/html')
-docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(NAME))
-
+docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(PACKAGENAME))
 
 class InstallCommand(install):
     """Ensure drizzlepac's C extensions are available when imported relative
@@ -129,9 +130,6 @@ class InstallCommand(install):
                   file=sys.stderr)
 
 
-from sphinx.cmd.build import build_main
-from sphinx.setup_command import BuildDoc
-
 
 class BuildSphinx(BuildDoc):
     """Build Sphinx documentation after compiling C extensions"""
@@ -159,7 +157,7 @@ class BuildSphinx(BuildDoc):
 
 
 setup(
-    name=NAME,
+    name=PACKAGENAME,
     version=version.pep386,
     author='Megan Sosey, Warren Hack, Christopher Hanley, '
            'Chris Sontag, Mihai Cara',
@@ -184,7 +182,7 @@ setup(
         'nose',
         'numpy',
         'scipy',
-        'spherical_geometry',
+        'spherical-geometry',
         'stsci.tools',
         'stsci.convolve',
         'stsci.image>=2.3.0',
@@ -198,6 +196,7 @@ setup(
     ],
     packages=find_packages(),
     package_data={
+        '': ['README.md', 'LICENSE.txt'],
         'drizzlepac': [
             'pars/*',
             '*.help',
@@ -223,5 +222,10 @@ setup(
     cmdclass={
         'install': InstallCommand,
         'build_sphinx': BuildSphinx,
+    },
+    project_urls={
+        'Bug Reports': 'https://github.com/spacetelescope/drizzlepac/issues/',
+        'Source': 'https://github.com/spacetelescope/drizzlepac/',
+        'Help': 'https://hsthelp.stsci.edu/',
     },
 )
