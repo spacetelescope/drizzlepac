@@ -5,19 +5,17 @@ channels:
 dependencies:
     - python=3.5
     - numpy
+    - scipy
     - numpydoc
     - graphviz
     - matplotlib
     - astropy
     - fitsblender
     - nictools
-    - nose
     - pyregion
-    - scipy
-    - sphinx
-    - stsci
     - stwcs
+    - sphinx
     - pip:
       - sphinx_rtd_theme
-      - sphinx_automodapi
       - git+https://github.com/spacetelescope/stsci_rtd_theme.git#egg=stsci_rtd_theme
+      - sphinx_automodapi
