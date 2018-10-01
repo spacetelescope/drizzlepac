@@ -182,7 +182,7 @@ setup(
         'nose',
         'numpy',
         'scipy',
-        'spherical_geometry',
+        'spherical-geometry',
         'stsci.tools',
         'stsci.convolve',
         'stsci.image>=2.3.0',
