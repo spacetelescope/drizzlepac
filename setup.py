@@ -20,18 +20,6 @@ try:
 except (ImportError, NameError, ModuleNotFoundError):
     pandokia = False
 
-#try:
-    #import numpy
-#except ImportError:
-    #print("numpy not found, please install it.", file=sys.stderr)
-    #exit(1)
-
-#try:
-    #from astropy import wcs
-#except ImportError:
-    #print("astropy not found, please install it.", file=sys.stderr)
-    #exit(1)
-
 from glob import glob
 from setuptools import setup, find_packages, Extension, _install_setup_requires
 from setuptools.command.install import install
@@ -60,12 +48,7 @@ PACKAGENAME = 'drizzlepac'
 SETUP_REQUIRES = [
     'numpy',
     'astropy',
-    #'numpydoc',
     'sphinx',
-    #'sphinx-automodapi',
-    #'stsci_rtd_theme.git'
-    #'sphinx_rtd_theme',
-    #'stsci_rtd_theme',
 ]
 
 # Due to overriding `install` and `build_sphinx` we need to download
@@ -84,6 +67,8 @@ for dep_pkg in SETUP_REQUIRES:
 
 import numpy
 from astropy import wcs
+from sphinx.cmd.build import build_main
+from sphinx.setup_command import BuildDoc
 
 version = relic.release.get_info()
 relic.release.write_template(version, PACKAGENAME)
@@ -118,7 +103,6 @@ if pandokia:
 docs_compiled_src = os.path.normpath('build/sphinx/html')
 docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(PACKAGENAME))
 
-
 class InstallCommand(install):
     """Ensure drizzlepac's C extensions are available when imported relative
     to the documentation, instead of relying on `site-packages`. What comes
@@ -145,9 +129,6 @@ class InstallCommand(install):
                   '         $ python setup.py build_sphinx\n\n',
                   file=sys.stderr)
 
-
-from sphinx.cmd.build import build_main
-from sphinx.setup_command import BuildDoc
 
 
 class BuildSphinx(BuildDoc):
