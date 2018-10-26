@@ -32,7 +32,6 @@ for (numpy_ver in matrix_numpy) {
                          'graphviz',
                          'nictools',
                          'numpydoc',
-                         'pyregion',
                          'crds',
                          'scipy',
                          'spherical-geometry',
