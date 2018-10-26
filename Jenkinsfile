@@ -19,7 +19,7 @@ TEST_DEPS = "pytest pytest-remotedata crds"
 
 // Conda needs explicit dependencies listed
 DEPS = "fitsblender graphviz nictools numpydoc \
-        pytest pytest-remotedata pyregion \
+        pytest=3.8.2 pytest-remotedata pyregion \
         scipy spherical-geometry sphinx sphinx_rtd_theme \
         stsci_rtd_theme stsci.convolve stsci.image \
         stsci.imagemanip stsci.imagestats stsci.ndimage \
