@@ -33,8 +33,6 @@ for (numpy_ver in matrix_numpy) {
                          'nictools',
                          'numpydoc',
                          'pyregion',
-                         'pytest=3.8.2',
-                         'pytest-remotedata',
                          'crds',
                          'scipy',
                          'spherical-geometry',
@@ -51,7 +49,7 @@ for (numpy_ver in matrix_numpy) {
                          'stsci.stimage',
                          'setuptools',
                          // test dependencies
-                         'pytest',
+                         'pytest=3.8.2',
                          'pytest-remotedata',
                          'crds']
     // Dependencies that change based on build matrix entry.
