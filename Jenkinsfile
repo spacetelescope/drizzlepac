@@ -4,7 +4,7 @@ if (utils.scm_checkout()) return
 // Generate installation compatibility matrix
 matrix_python = ["3.6", "3.7"]
 matrix_astropy = [">=3.0.5"]
-matrix_numpy = [">=1.14", "==1.15.0rc1"]
+matrix_numpy = [">=1.14", "==1.15.0"]
 matrix = []
 
 // Configure artifactory ingest
