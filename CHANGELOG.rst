@@ -14,8 +14,12 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-DrizzlePac (DEVELOPMENT)
-========================
+..
+  DrizzlePac (DEVELOPMENT)
+  ========================
+
+DrizzlePac v2.2.6 (02-Nov-2018)
+===============================
 
 - Fix a bug that results in ``tweakreg`` crashing when no sources are found
   with user-specified source-finding parameters and when ``tweakreg`` then
