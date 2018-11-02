@@ -306,8 +306,8 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
             np.bitwise_and(__dqMask,__crMask,__dqMask)
 
             ####### Create the corr file
-            __corrFile = np.zeros(__inputImage.shape,dtype=__inputImage.dtype)
-            __corrFile = np.where(np.equal(__dqMask,0),__blotData,__inputImage)
+            __corrFile = np.where(__dqMask, __inputImage, __blotData)
+            __corrFile /= scienceChip._conversionFactor
             __corrDQMask = np.where(np.equal(__dqMask,0),
                                     paramDict['crbit'],0).astype(np.uint16)
 

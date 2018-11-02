@@ -26,6 +26,9 @@ DrizzlePac (DEVELOPMENT)
 
 - Fix ``numpy`` "floating" deprecation warnings. [#175]
 
+- Fix incorrect units in CR-cleaned images created by ``astrodrizzle``. Now
+  CR-cleaned images should have the same units as input images. [#190]
+
 DrizzlePac v2.2.5 (14-Aug-2018)
 ===============================
 - Changed the color scheme of the ``hist2d`` plots to ``viridis``. [#167]
