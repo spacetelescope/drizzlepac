@@ -614,9 +614,6 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
         ker = np.ones((boxsize, boxsize)) / float(boxsize**2)
         minimum_grow_file = signal.convolve2d(minimum_flag_file, ker,
                                               boundary='fill', mode='same')
-        #boxcar(minimum_flag_file, (boxsize, boxsize), output=minimum_grow_file,
-               #mode='constant', cval=0)
-        #del minimum_flag_file
 
         median_rms_file = np.where(
             np.equal(minimum_grow_file, 0),
