@@ -9,14 +9,16 @@ image and the derivative of the model image.
 """
 from __future__ import absolute_import, division, print_function # confidence medium
 
-import numpy as np
-import stsci.convolve as NC
-from astropy.io import fits
 import os
-from . import quickDeriv
-from . import util
+import re
+
+import numpy as np
+from scipy import signal
+from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
 
+from . import quickDeriv
+from . import util
 
 if util.can_parallel:
     import multiprocessing
@@ -135,221 +137,167 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
 
     grow = paramDict["driz_cr_grow"]
     ctegrow = paramDict["driz_cr_ctegrow"]
-
-#    try:
-#        assert(chip is not None), 'Please specify a chip to process for blotting'
-#        assert(sciImage is not None), 'Please specify a science image object for blotting'
-
-#    except AssertionError:
-#        print "Problem with value of chip or sciImage to drizCR"
-#        print sciImage
-#        raise # raise orig error
     crcorr_list =[]
-    crMaskDict = {}
+    cr_mask_dict = {}
 
     for chip in range(1, sciImage._numchips + 1, 1):
         exten = sciImage.scienceExt + ',' +str(chip)
-        scienceChip = sciImage[exten]
+        sci_chip = sciImage[exten]
 
-        if scienceChip.group_member:
-            blotImagePar = 'blotImage'
-            blotImageName = scienceChip.outputNames[blotImagePar]
-            if sciImage.inmemory:
-                __blotImage = sciImage.virtualOutputs[blotImageName]
-            else:
-                try:
-                    os.access(blotImageName,os.F_OK)
-                except IOError:
-                    print("Could not find the Blotted image on disk:",blotImageName)
-                    raise # raise orig error
+        if not sci_chip.group_member:
+            continue
 
-                try:
-                    __blotImage = fits.open(blotImageName, mode="readonly", memmap=False)
-                except IOError:
-                    print("Problem opening blot images")
-                    raise
+        blot_image_name = sci_chip.outputNames['blotImage']
 
-            #blotImageName=scienceChip.outputNames["blotImage"] # input file
-            crMaskImage=scienceChip.outputNames["crmaskImage"] # output file
-            ctedir=scienceChip.cte_dir
+        if sciImage.inmemory:
+            blot_image = sciImage.virtualOutputs[blot_image_name]
+        else:
+            if not os.path.isfile(blot_image_name):
+                raise IOError("Blotted image not found: {:s}"
+                              .format(blot_image_name))
 
-            #check that sciImage and blotImage are the same size?
+            try:
+                blot_image = fits.open(blot_image_name, memmap=False)
+            except IOError:
+                print("Problem opening blot images")
+                raise
 
-            #grab the actual image from disk
-            __inputImage=sciImage.getData(exten)
+        input_image = sciImage.getData(exten)
 
-            # Apply any unit conversions to input image here for comparison
-            # with blotted image in units of electrons
-            __inputImage *= scienceChip._conversionFactor
+        # Apply any unit conversions to input image here for comparison
+        # with blotted image in units of electrons
+        input_image *= sci_chip._conversionFactor
 
-            #make the derivative blot image
-            __blotData=__blotImage[0].data*scienceChip._conversionFactor #simple fits
-            __blotDeriv = quickDeriv.qderiv(__blotData)
-            if not sciImage.inmemory:
-                __blotImage.close()
+        #make the derivative blot image
+        blot_data = blot_image[0].data * sci_chip._conversionFactor
+        blot_deriv = quickDeriv.qderiv(blot_data)
+        if not sciImage.inmemory:
+            blot_image.close()
 
-            #this grabs the original dq mask from the science image
-            # This mask needs to take into account any crbits values
-            # specified by the user to be ignored. A call to the
-            # buildMask() method may work better here...
-            #__dq = sciImage.maskExt + ',' + str(chip)
-            #__dqMask=sciImage.getData(__dq)
-            __dqMask = sciImage.buildMask(chip,paramDict['crbit']) # both args are ints
+        # Boolean mask needs to take into account any crbits values
+        # specified by the user to be ignored when converting DQ array.
+        dq_mask = sciImage.buildMask(chip, paramDict['crbit'])
 
-            #parse out the SNR information
-            __SNRList=(paramDict["driz_cr_snr"]).split()
-            __snr1=float(__SNRList[0])
-            __snr2=float(__SNRList[1])
+        #parse out the SNR information
+        snr1, snr2 = map(
+            float, filter(None, re.split("[,;\s]+", paramDict["driz_cr_snr"]))
+        )
 
-            #parse out the scaling information
-            __scaleList = (paramDict["driz_cr_scale"]).split()
-            __mult1 = float(__scaleList[0])
-            __mult2 = float(__scaleList[1])
+        # parse out the scaling information
+        mult1, mult2 = map(
+            float, filter(None, re.split("[,;\s]+", paramDict["driz_cr_scale"]))
+        )
 
-            __gain=scienceChip._effGain
-            __rn=scienceChip._rdnoise
-            __backg = scienceChip.subtractedSky*scienceChip._conversionFactor
+        gain = sci_chip._effGain
+        rn = sci_chip._rdnoise
+        backg = sci_chip.subtractedSky * sci_chip._conversionFactor
 
-            # Define output cosmic ray mask to populate
-            __crMask = np.zeros(__inputImage.shape,dtype=np.uint8)
-
-            # Set scaling factor (used by MultiDrizzle) to 1 since scaling has
-            # already been accounted for in blotted image
-            __expmult = 1.
+        # Set scaling factor (used by MultiDrizzle) to 1 since scaling has
+        # already been accounted for in blotted image
+        # expmult = 1.
 
         ##################   COMPUTATION PART I    ###################
-            # Create a temporary array mask
-            __t1 = np.absolute(__inputImage - __blotData)
-            __ta = np.sqrt(__gain * np.absolute(__blotData * __expmult + __backg * __expmult) + __rn * __rn)
-            __tb = ( __mult1 * __blotDeriv + __snr1 * __ta / __gain )
-            del __ta
-            __t2 = __tb / __expmult
-            del __tb
-            __tmp1 = np.logical_not(np.greater(__t1, __t2))
-            del __t1
-            del __t2
+        # Create a temporary array mask
+        t1 = np.absolute(input_image - blot_data)
+        # ta = np.sqrt(gain * np.abs((blot_data + backg) * expmult) + rn**2)
+        ta = np.sqrt(gain * np.abs(blot_data + backg) + rn**2)
+        tb = mult1 * blot_deriv + snr1 * ta / gain
+        t2 = tb # / expmult
+        tmp1 = t1 <= t2
 
-            # Create a convolution kernel that is 3 x 3 of 1's
-            __kernel = np.ones((3,3),dtype=np.uint8)
-            # Create an output tmp file the same size as the input temp mask array
-            __tmp2 = np.zeros(__tmp1.shape,dtype=np.int16)
-            # Convolve the mask with the kernel
-            NC.convolve2d(__tmp1,__kernel,output=__tmp2,fft=0,mode='nearest',cval=0)
-            del __kernel
-            del __tmp1
+        # Create a convolution kernel that is 3 x 3 of 1's
+        kernel = np.ones((3, 3), dtype=np.uint16)
+        # Convolve the mask with the kernel
+        tmp2 = signal.convolve2d(tmp1, kernel, boundary='symm', mode='same')
 
         ##################   COMPUTATION PART II    ###################
-            # Create the CR Mask
-            __xt1 = np.absolute(__inputImage - __blotData)
-            __xta = np.sqrt(__gain * np.absolute(__blotData * __expmult + __backg * __expmult) + __rn * __rn)
-            __xtb = ( __mult2 *__blotDeriv + __snr2 * __xta / __gain )
-            del __xta
-            __xt2 = __xtb / __expmult
-            del __xtb
-            # It is necessary to use a bitwise 'and' to create the mask with numarray objects.
-            __crMask = np.logical_not(np.greater(__xt1, __xt2) & np.less(__tmp2,9) )
+        # Create the CR Mask
+        tb = mult2 * blot_deriv + snr2 * ta / gain
+        t2 = tb # / expmult
+        cr_mask = (t1 <= t2) | (tmp2 >= 9)
 
-            del __xt1
-            del __xt2
-            del __tmp2
+        ##################   COMPUTATION PART III    ##################
+        # flag additional cte 'radial' and 'tail' pixels surrounding CR pixels
+        # as CRs
 
+        # In both the 'radial' and 'length' kernels below, 0->good and 1->bad,
+        # so that upon convolving the kernels with cr_mask, the convolution
+        # output will have low->bad and high->good from which 2 new arrays are
+        # created having 0->bad and 1->good. These 2 new arrays are then
+        # 'anded' to create a new cr_mask.
 
+        # make radial convolution kernel and convolve it with original cr_mask
+        cr_grow_kernel = np.ones((grow, grow), dtype=np.uint16)
+        cr_grow_kernel_conv = signal.convolve2d(
+            cr_mask, cr_grow_kernel, boundary='symm', mode='same'
+        )
 
-        ##################   COMPUTATION PART III    ###################
-        #flag additional cte 'radial' and 'tail' pixels surrounding CR pixels as CRs
+        # make tail convolution kernel and convolve it with original cr_mask
+        cr_ctegrow_kernel = np.zeros((2 * ctegrow + 1, 2 * ctegrow + 1))
 
-            # In both the 'radial' and 'length' kernels below, 0->good and 1->bad, so that upon
-            # convolving the kernels with __crMask, the convolution output will have low->bad and high->good
-            # from which 2 new arrays are created having 0->bad and 1->good. These 2 new arrays are then 'anded'
-            # to create a new __crMask.
+        # which pixels are masked by tail kernel depends on sign of
+        # sci_chip.cte_dir (i.e.,readout direction):
+        if sci_chip.cte_dir == 1:
+            # 'positive' direction:  HRC: amp C or D; WFC: chip = sci,1; WFPC2
+            cr_ctegrow_kernel[0:ctegrow, ctegrow] = 1
+        elif sci_chip.cte_dir == -1:
+            # 'negative' direction:  HRC: amp A or B; WFC: chip = sci,2
+            cr_ctegrow_kernel[ctegrow+1:2*ctegrow+1, ctegrow] = 1
 
-            # recast __crMask to int for manipulations below; will recast to Bool at end
-            __crMask_orig_bool= __crMask.copy()
-            __crMask= __crMask_orig_bool.astype( np.int8 )
+        # do the convolution
+        cr_ctegrow_kernel_conv = signal.convolve2d(
+            cr_mask, cr_ctegrow_kernel, boundary='symm', mode='same'
+        )
 
-            # make radial convolution kernel and convolve it with original __crMask
-            cr_grow_kernel = np.ones((grow, grow))     # kernel for radial masking of CR pixel
-            cr_grow_kernel_conv = __crMask.copy()   # for output of convolution
-            NC.convolve2d( __crMask, cr_grow_kernel, output = cr_grow_kernel_conv)
+        # select high pixels from both convolution outputs;
+        # then 'and' them to create new cr_mask
+        cr_grow_mask = cr_grow_kernel_conv >= grow**2 # radial
+        cr_ctegrow_mask = cr_ctegrow_kernel_conv >= ctegrow # length
+        cr_mask = cr_grow_mask & cr_ctegrow_mask
 
-            # make tail convolution kernel and convolve it with original __crMask
-            cr_ctegrow_kernel = np.zeros((2*ctegrow+1,2*ctegrow+1))  # kernel for tail masking of CR pixel
-            cr_ctegrow_kernel_conv = __crMask.copy()  # for output convolution
+        # Apply CR mask to the DQ array in place
+        dq_mask &= cr_mask
 
-            # which pixels are masked by tail kernel depends on sign of ctedir (i.e.,readout direction):
-            if ( ctedir == 1 ):  # HRC: amp C or D ; WFC: chip = sci,1 ; WFPC2
-                cr_ctegrow_kernel[ 0:ctegrow, ctegrow ]=1    #  'positive' direction
-            if ( ctedir == -1 ): # HRC: amp A or B ; WFC: chip = sci,2
-                cr_ctegrow_kernel[ ctegrow+1:2*ctegrow+1, ctegrow ]=1    #'negative' direction
-            if ( ctedir == 0 ):  # NICMOS: no cte tail correction
-                pass
+        ####### Create the corr file
+        corrFile = np.where(dq_mask, input_image, blot_data)
+        corrFile /= sci_chip._conversionFactor
+        corrDQMask = np.where(dq_mask, 0, paramDict['crbit']).astype(np.uint16)
 
-            # do the convolution
-            NC.convolve2d( __crMask, cr_ctegrow_kernel, output = cr_ctegrow_kernel_conv)
+        if paramDict['driz_cr_corr']:
+            crcorr_list.append({
+                'sciext': fileutil.parseExtn(exten),
+                'corrFile': corrFile.copy(),
+                'dqext': fileutil.parseExtn(sci_chip.dq_extn),
+                'dqMask': corrDQMask
+            })
 
-            # select high pixels from both convolution outputs; then 'and' them to create new __crMask
-            where_cr_grow_kernel_conv    = np.where( cr_grow_kernel_conv < grow*grow,0,1 )        # radial
-            where_cr_ctegrow_kernel_conv = np.where( cr_ctegrow_kernel_conv < ctegrow, 0, 1 )     # length
+        # Save the cosmic ray mask file to disk
+        cr_mask_image = sci_chip.outputNames["crmaskImage"]
+        if paramDict['inmemory']:
+            print('Creating in-memory(virtual) FITS file...')
+            _pf = util.createFile(cr_mask.astype(np.uint8),
+                                  outfile=None, header=None)
+            cr_mask_dict[cr_mask_image] = _pf
+            sciImage.saveVirtualOutputs(cr_mask_dict)
 
-            __crMask = np.logical_and( where_cr_ctegrow_kernel_conv, where_cr_grow_kernel_conv) # combine masks
-            __crMask = __crMask.astype(np.uint8) # cast back to Bool
-
-            del __crMask_orig_bool
-            del cr_grow_kernel
-            del cr_grow_kernel_conv
-            del cr_ctegrow_kernel
-            del cr_ctegrow_kernel_conv
-            del where_cr_grow_kernel_conv
-            del where_cr_ctegrow_kernel_conv
-
-            # Apply CR mask to the DQ array in place
-            np.bitwise_and(__dqMask,__crMask,__dqMask)
-
-            ####### Create the corr file
-            __corrFile = np.where(__dqMask, __inputImage, __blotData)
-            __corrFile /= scienceChip._conversionFactor
-            __corrDQMask = np.where(np.equal(__dqMask,0),
-                                    paramDict['crbit'],0).astype(np.uint16)
-
-            if paramDict['driz_cr_corr']:
-                crcorr_list.append({'sciext':fileutil.parseExtn(exten),
-                                'corrFile':__corrFile.copy(),
-                                'dqext':fileutil.parseExtn(scienceChip.dq_extn),
-                                'dqMask':__corrDQMask.copy()})
-
-
-            ######## Save the cosmic ray mask file to disk
-            _cr_file = np.zeros(__inputImage.shape,np.uint8)
-            _cr_file = np.where(__crMask,1,0).astype(np.uint8)
-
-            if not paramDict['inmemory']:
-                outfile = crMaskImage
-                # Always write out crmaskimage, as it is required input for
-                # the final drizzle step. The final drizzle step combines this
-                # image with the DQ information on-the-fly.
-                #
-                # Remove the existing mask file if it exists
-                if(os.access(crMaskImage, os.F_OK)):
-                    os.remove(crMaskImage)
-                    print("Removed old cosmic ray mask file:",crMaskImage)
-                print('Creating output : ',outfile)
-            else:
-                print('Creating in-memory(virtual) FITS file...')
-                outfile = None
-
-            _pf = util.createFile(_cr_file, outfile=outfile, header = None)
-
-            if paramDict['inmemory']:
-                crMaskDict[crMaskImage] = _pf
+        else:
+            # Always write out crmaskimage, as it is required input for
+            # the final drizzle step. The final drizzle step combines this
+            # image with the DQ information on-the-fly.
+            #
+            # Remove the existing mask file if it exists
+            if os.path.isfile(cr_mask_image):
+                os.remove(cr_mask_image)
+                print("Removed old cosmic ray mask file: '{:s}'"
+                      .format(cr_mask_image))
+            print("Creating output: {:s}".format(cr_mask_image))
+            util.createFile(cr_mask.astype(np.uint8),
+                            outfile=cr_mask_image, header=None)
 
     if paramDict['driz_cr_corr']:
-        #util.createFile(__corrFile,outfile=crCorImage,header=None)
-        createCorrFile(sciImage.outputNames["crcorImage"],
-                        crcorr_list, sciImage._filename)
-    del crcorr_list
-    if paramDict['inmemory']:
-        sciImage.saveVirtualOutputs(crMaskDict)
-        virtual_outputs = sciImage.virtualOutputs
+        createCorrFile(sciImage.outputNames["crcorImage"], crcorr_list,
+                       sciImage._filename)
+
 
 #### Create _cor file based on format of original input image
 def createCorrFile(outfile, arrlist, template):

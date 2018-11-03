@@ -184,7 +184,6 @@ setup(
         'scipy',
         'spherical-geometry',
         'stsci.tools',
-        'stsci.convolve',
         'stsci.image>=2.3.0',
         'stsci.imagemanip',
         'stsci.imagestats',
