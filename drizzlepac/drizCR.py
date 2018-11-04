@@ -158,7 +158,8 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
                               .format(blot_image_name))
 
             try:
-                blot_image = fits.open(blot_image_name, memmap=False)
+                blot_data = fits.getdata(blot_image_name, ext=0)
+                blot_data *= sci_chip._conversionFactor
             except IOError:
                 print("Problem opening blot images")
                 raise
@@ -170,10 +171,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
         input_image *= sci_chip._conversionFactor
 
         # make the derivative blot image
-        blot_data = blot_image[0].data * sci_chip._conversionFactor
         blot_deriv = quickDeriv.qderiv(blot_data)
-        if not sciImage.inmemory:
-            blot_image.close()
 
         # Boolean mask needs to take into account any crbits values
         # specified by the user to be ignored when converting DQ array.
@@ -204,8 +202,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
         t1 = np.absolute(input_image - blot_data)
         # ta = np.sqrt(gain * np.abs((blot_data + backg) * expmult) + rn**2)
         ta = np.sqrt(gain * np.abs(blot_data + backg) + rn**2)
-        tb = mult1 * blot_deriv + snr1 * ta / gain
-        t2 = tb  # / expmult
+        t2 = (mult1 * blot_deriv + snr1 * ta / gain)  # / expmult
         tmp1 = t1 <= t2
 
         # Create a convolution kernel that is 3 x 3 of 1's
@@ -215,8 +212,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
 
         # #################   COMPUTATION PART II    ###################
         # Create the CR Mask
-        tb = mult2 * blot_deriv + snr2 * ta / gain
-        t2 = tb  # / expmult
+        t2 = (mult2 * blot_deriv + snr2 * ta / gain)  # / expmult
         cr_mask = (t1 <= t2) | (tmp2 >= 9)
 
         # #################   COMPUTATION PART III    ##################
