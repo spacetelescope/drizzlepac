@@ -7,7 +7,7 @@ image and the derivative of the model image.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
+from __future__ import absolute_import, division, print_function
 
 import os
 import re
@@ -17,27 +17,24 @@ from scipy import signal
 from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
 
+
 from . import quickDeriv
 from . import util
-
+from . import processInput
+from . version import __version__, __version_date__
 if util.can_parallel:
     import multiprocessing
 
-from .version import *
 
-__taskname__= "drizzlepac.drizCR"  # looks in drizzlepac for sky.cfg
-_step_num_ = 6  # this relates directly to the syntax in the cfg file
+__taskname__ = "drizzlepac.drizCR"  # looks in drizzlepac for sky.cfg
+_STEP_NUM = 6  # this relates directly to the syntax in the cfg file
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-#this is the user access function
 def drizCR(input=None, configObj=None, editpars=False, **inputDict):
-    """
-        Look for cosmic rays.
-    """
-
+    """ Look for cosmic rays. """
     log.debug(inputDict)
     inputDict["input"] = input
     configObj = util.getDefaultConfigObj(__taskname__, configObj, inputDict,
@@ -49,24 +46,23 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
         run(configObj)
 
 
-#this is the function that will be called from TEAL
+# this is the function that will be called from TEAL
 def run(configObj):
     # outwcs is not neaded here
-    imgObjList,outwcs = processInput.setCommonInput(configObj,
-                                                    createOutwcs=False)
+    imgObjList, outwcs = processInput.setCommonInput(configObj,
+                                                     createOutwcs=False)
     rundrizCR(imgObjList, configObj)
 
 
-#the final function that calls the workhorse
-def rundrizCR(imgObjList,configObj,procSteps=None):
-
+def rundrizCR(imgObjList, configObj, procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Driz_CR')
 
-    step_name = util.getSectionName(configObj,_step_num_)
+    step_name = util.getSectionName(configObj, _STEP_NUM)
     if not configObj[step_name]['driz_cr']:
         log.info('Cosmic-ray identification (driz_cr) step not performed.')
         return
+
     paramDict = configObj[step_name]
     paramDict['crbit'] = configObj['crbit']
     paramDict['inmemory'] = imgObjList[0].inmemory
@@ -77,71 +73,76 @@ def rundrizCR(imgObjList,configObj,procSteps=None):
     # if we have the cpus and s/w, ok, but still allow user to set pool size
     pool_size = util.get_pool_size(configObj.get('num_cores'), len(imgObjList))
     if imgObjList[0].inmemory:
-        pool_size = 1 # reason why is output in drizzle step
+        pool_size = 1  # reason why is output in drizzle step
 
     subprocs = []
     if pool_size > 1:
-        log.info('Executing %d parallel workers' % pool_size)
+        log.info('Executing {:d} parallel workers'.format(pool_size))
         for image in imgObjList:
             manager = multiprocessing.Manager()
             mgr = manager.dict({})
-            #mgr = manager.dict(image.virtualOutputs)
 
-            p = multiprocessing.Process(target=_drizCr,
-                name='drizCR._drizCr()', # for err msgs
-                args=(image, mgr, paramDict.dict()))
+            p = multiprocessing.Process(
+                target=_driz_cr,
+                name='drizCR._driz_cr()',  # for err msgs
+                args=(image, mgr, paramDict.dict())
+            )
             subprocs.append(p)
             image.virtualOutputs.update(mgr)
-        mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
+        mputil.launch_and_wait(subprocs, pool_size)  # blocks till all done
+
     else:
         log.info('Executing serially')
         for image in imgObjList:
-            _drizCr(image,image.virtualOutputs,paramDict)
+            _driz_cr(image, image.virtualOutputs, paramDict)
 
     if procSteps is not None:
         procSteps.endStep('Driz_CR')
 
 
-#the workhorse function
-def _drizCr(sciImage, virtual_outputs, paramDict):
+def _driz_cr(sciImage, virtual_outputs, paramDict):
     """mask blemishes in dithered data by comparison of an image
     with a model image and the derivative of the model image.
 
-    sciImage is an imageObject which contains the science data
-    blotImage is inferred from the sciImage object here which knows the name of its blotted image :)
-    chip should be the science chip that corresponds to the blotted image that was sent
-    paramDict contains the user parameters derived from the full configObj instance
-    dgMask is inferred from the sciImage object, the name of the mask file to combine with the generated Cosmic ray mask
+    - ``sciImage`` is an imageObject which contains the science data
+    - ``blotImage`` is inferred from the ``sciImage`` object here which knows
+        the name of its blotted image
+    - ``chip`` should be the science chip that corresponds to the blotted
+        image that was sent
+    - ``paramDict`` contains the user parameters derived from the full
+        ``configObj`` instance
+    - ``dqMask`` is inferred from the ``sciImage`` object, the name of the mask
+        file to combine with the generated Cosmic ray mask
 
-    here are the options you can override in configObj
+    Here are the options you can override in ``configObj``
 
-    gain     = 7               # Detector gain, e-/ADU
-    grow     = 1               # Radius around CR pixel to mask [default=1 for 3x3 for non-NICMOS]
-    ctegrow  = 0               # Length of CTE correction to be applied
-    rn       = 5               # Read noise in electrons
-    snr      = "4.0 3.0"       # Signal-to-noise ratio
-    scale    = "0.5 0.4"       # scaling factor applied to the derivative
-    backg    = 0              # Background value
-    expkey   = "exptime"        # exposure time keyword
+    ``gain``     = 7          # Detector gain, e-/ADU
+    ``grow``     = 1          # Radius around CR pixel to mask
+                              # [default=1 for 3x3 for non-NICMOS]
+    ``ctegrow``  = 0          # Length of CTE correction to be applied
+    ``rn``       = 5          # Read noise in electrons
+    ``snr``      = "4.0 3.0"  # Signal-to-noise ratio
+    ``scale``    = "0.5 0.4"  # scaling factor applied to the derivative
+    ``backg``    = 0          # Background value
+    ``expkey``   = "exptime"  # exposure time keyword
 
-    blot images are saved out to simple fits files with 1 chip in them
+    Blot images are saved out to simple fits files with 1 chip in them
     so for example in ACS, there will be 1 image file with 2 chips that is
     the original image and 2 blotted image files, each with 1 chip
 
-    so I'm imagining calling this function twice, once for each chip,
+    So I'm imagining calling this function twice, once for each chip,
     but both times with the same original science image file, output files
-    and some input (output from previous steps) are referenced in the imageobject
-    itself
+    and some input (output from previous steps) are referenced in the
+    imageobject itself
 
     """
-
     grow = paramDict["driz_cr_grow"]
     ctegrow = paramDict["driz_cr_ctegrow"]
-    crcorr_list =[]
+    crcorr_list = []
     cr_mask_dict = {}
 
     for chip in range(1, sciImage._numchips + 1, 1):
-        exten = sciImage.scienceExt + ',' +str(chip)
+        exten = sciImage.scienceExt + ',' + str(chip)
         sci_chip = sciImage[exten]
 
         if not sci_chip.group_member:
@@ -168,7 +169,7 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
         # with blotted image in units of electrons
         input_image *= sci_chip._conversionFactor
 
-        #make the derivative blot image
+        # make the derivative blot image
         blot_data = blot_image[0].data * sci_chip._conversionFactor
         blot_deriv = quickDeriv.qderiv(blot_data)
         if not sciImage.inmemory:
@@ -178,14 +179,16 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
         # specified by the user to be ignored when converting DQ array.
         dq_mask = sciImage.buildMask(chip, paramDict['crbit'])
 
-        #parse out the SNR information
+        # parse out the SNR information
         snr1, snr2 = map(
             float, filter(None, re.split("[,;\s]+", paramDict["driz_cr_snr"]))
         )
 
         # parse out the scaling information
         mult1, mult2 = map(
-            float, filter(None, re.split("[,;\s]+", paramDict["driz_cr_scale"]))
+            float, filter(
+                None, re.split("[,;\s]+", paramDict["driz_cr_scale"])
+            )
         )
 
         gain = sci_chip._effGain
@@ -196,13 +199,13 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
         # already been accounted for in blotted image
         # expmult = 1.
 
-        ##################   COMPUTATION PART I    ###################
+        # #################   COMPUTATION PART I    ###################
         # Create a temporary array mask
         t1 = np.absolute(input_image - blot_data)
         # ta = np.sqrt(gain * np.abs((blot_data + backg) * expmult) + rn**2)
         ta = np.sqrt(gain * np.abs(blot_data + backg) + rn**2)
         tb = mult1 * blot_deriv + snr1 * ta / gain
-        t2 = tb # / expmult
+        t2 = tb  # / expmult
         tmp1 = t1 <= t2
 
         # Create a convolution kernel that is 3 x 3 of 1's
@@ -210,13 +213,13 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
         # Convolve the mask with the kernel
         tmp2 = signal.convolve2d(tmp1, kernel, boundary='symm', mode='same')
 
-        ##################   COMPUTATION PART II    ###################
+        # #################   COMPUTATION PART II    ###################
         # Create the CR Mask
         tb = mult2 * blot_deriv + snr2 * ta / gain
-        t2 = tb # / expmult
+        t2 = tb  # / expmult
         cr_mask = (t1 <= t2) | (tmp2 >= 9)
 
-        ##################   COMPUTATION PART III    ##################
+        # #################   COMPUTATION PART III    ##################
         # flag additional cte 'radial' and 'tail' pixels surrounding CR pixels
         # as CRs
 
@@ -251,14 +254,14 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
 
         # select high pixels from both convolution outputs;
         # then 'and' them to create new cr_mask
-        cr_grow_mask = cr_grow_kernel_conv >= grow**2 # radial
-        cr_ctegrow_mask = cr_ctegrow_kernel_conv >= ctegrow # length
+        cr_grow_mask = cr_grow_kernel_conv >= grow**2  # radial
+        cr_ctegrow_mask = cr_ctegrow_kernel_conv >= ctegrow  # length
         cr_mask = cr_grow_mask & cr_ctegrow_mask
 
         # Apply CR mask to the DQ array in place
         dq_mask &= cr_mask
 
-        ####### Create the corr file
+        # Create the corr file
         corrFile = np.where(dq_mask, input_image, blot_data)
         corrFile /= sci_chip._conversionFactor
         corrDQMask = np.where(dq_mask, 0, paramDict['crbit']).astype(np.uint16)
@@ -299,60 +302,53 @@ def _drizCr(sciImage, virtual_outputs, paramDict):
                        sciImage._filename)
 
 
-#### Create _cor file based on format of original input image
 def createCorrFile(outfile, arrlist, template):
     """
-    Create a _cor file with the same format as the original input image
+    Create a _cor file with the same format as the original input image.
 
     The DQ array will be replaced with the mask array used to create the _cor
     file.
     """
     # Remove the existing cor file if it exists
-    if(os.access(outfile, os.F_OK)):
+    if os.path.isfile(outfile):
         os.remove(outfile)
-        print("Removing old corr file:",outfile)
+        print("Removing old corr file: '{:s}'".format(outfile))
 
-    ftemplate = fits.open(template, memmap=False)
-    for arr in arrlist:
-        ftemplate[arr['sciext']].data = arr['corrFile']
-        if arr['dqext'][0] != arr['sciext'][0]:
-            ftemplate[arr['dqext']].data = arr['dqMask']
-    ftemplate.writeto(outfile)
-    print('Created CR corrected file: ',outfile)
+    with fits.open(template, memmap=False) as ftemplate:
+        for arr in arrlist:
+            ftemplate[arr['sciext']].data = arr['corrFile']
+            if arr['dqext'][0] != arr['sciext'][0]:
+                ftemplate[arr['dqext']].data = arr['dqMask']
+        ftemplate.writeto(outfile)
+        print("Created CR corrected file: '{:s}'".format(outfile))
+
 
 def setDefaults(configObj={}):
     """ Return a dictionary of the default parameters
         which also been updated with the user overrides.
     """
-    gain     = 7               # Detector gain, e-/ADU
-    grow     = 1               # Radius around CR pixel to mask [default=1 for 3x3 for non-NICMOS]
-    ctegrow  = 0               # Length of CTE correction to be applied
-    rn       = 5               # Read noise in electrons
-    snr      = "4.0 3.0"       # Signal-to-noise ratio
-    scale    = "0.5 0.4"       # scaling factor applied to the derivative
-    backg    = 0              # Background value
-    expkey   = "exptime"        # exposure time keyword
+    paramDict = {
+        'gain': 7,           # Detector gain, e-/ADU
+        'grow': 1,           # Radius around CR pixel to mask [default=1 for
+                             #     3x3 for non-NICMOS]
+        'ctegrow': 0,        # Length of CTE correction to be applied
+        'rn': 5,             # Read noise in electrons
+        'snr': '4.0 3.0',    # Signal-to-noise ratio
+        'scale': '0.5 0.4',  # scaling factor applied to the derivative
+        'backg': 0,          # Background value
+        'expkey': 'exptime'  # exposure time keyword
+    }
 
-    paramDict={"gain":gain,
-                "grow": grow,
-                "ctegrow":ctegrow,
-                "rn":rn,
-                "snr":snr,
-                "scale":scale,
-                "backg":backg,
-                "expkey":expkey}
-
-    if (len(configObj) != 0):
+    if len(configObj) > 0:
         for key in configObj:
-            paramDict[key]=configObj[key]
-
+            paramDict[key] = configObj[key]
 
     return paramDict
 
 
 def help(file=None):
     """
-    Print out syntax help for running astrodrizzle
+    Print out syntax help for running ``astrodrizzle``
 
     Parameters
     ----------
@@ -362,20 +358,18 @@ def help(file=None):
         writing out the help.
 
     """
-    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    helpstr = getHelpAsString(docstring=True, show_ver=True)
     if file is None:
         print(helpstr)
     else:
-        if os.path.exists(file): os.remove(file)
-        f = open(file, mode = 'w')
-        f.write(helpstr)
-        f.close()
+        with open(file, mode='w') as f:
+            f.write(helpstr)
 
 
-def getHelpAsString(docstring = False, show_ver = True):
+def getHelpAsString(docstring=False, show_ver=True):
     """
-    return useful help from a file in the script directory called
-    __taskname__.help
+    Return useful help from a file in the script directory called
+    ``__taskname__.help``
 
     """
     install_dir = os.path.dirname(__file__)
@@ -385,20 +379,21 @@ def getHelpAsString(docstring = False, show_ver = True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = os.linesep + \
-                ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+            helpString = "\n{:s} Version {:s} updated on {:s}\n\n".format(
+                __taskname__, __version__, __version_date__
+            )
         else:
             helpString = ''
+
         if os.path.exists(helpfile):
             helpString += teal.getHelpFileAsString(taskname, __file__)
-        else:
-            if __doc__ is not None:
+        elif __doc__ is not None:
                 helpString += __doc__ + os.linesep
+
     else:
         helpString = 'file://' + htmlfile
 
     return helpString
 
 
-drizCR.__doc__ = getHelpAsString(docstring = True, show_ver = False)
+drizCR.__doc__ = getHelpAsString(docstring=True, show_ver=False)
