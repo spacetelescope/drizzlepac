@@ -28,7 +28,7 @@ from __future__ import (absolute_import, division, unicode_literals,
                         print_function)
 import warnings
 import numpy as np
-from stsci.convolve import boxcar
+from scipy import signal
 from stsci.image.numcombine import numCombine, num_combine
 from .version import *
 
@@ -295,8 +295,9 @@ class minmed:
                 raise ValueError(errormsg2)
 
             # Attempt the boxcar convolution using the boxshape based upon the user input value of "grow"
-            boxcar(minimum_flag_file, boxshape, output=minimum_grow_file,
-                   mode='constant', cval=0)
+            ker = np.ones(boxshape) / float(boxsize**2)
+            minimum_grow_file = signal.convolve2d(minimum_flag_file, ker,
+                                                  boundary='fill', mode='same')
 
             del(minimum_flag_file)
 
@@ -610,9 +611,9 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
 
         # Attempt the boxcar convolution using the boxshape based upon the user
         # input value of "grow"
-        boxcar(minimum_flag_file, boxshape, output=minimum_grow_file,
-               mode='constant', cval=0)
-        del minimum_flag_file
+        ker = np.ones((boxsize, boxsize)) / float(boxsize**2)
+        minimum_grow_file = signal.convolve2d(minimum_flag_file, ker,
+                                              boundary='fill', mode='same')
 
         median_rms_file = np.where(
             np.equal(minimum_grow_file, 0),
