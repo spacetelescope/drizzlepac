@@ -151,7 +151,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
         blot_image_name = sci_chip.outputNames['blotImage']
 
         if sciImage.inmemory:
-            blot_image = sciImage.virtualOutputs[blot_image_name]
+            blot_data = sciImage.virtualOutputs[blot_image_name][0].data
         else:
             if not os.path.isfile(blot_image_name):
                 raise IOError("Blotted image not found: {:s}"
@@ -159,10 +159,11 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
 
             try:
                 blot_data = fits.getdata(blot_image_name, ext=0)
-                blot_data *= sci_chip._conversionFactor
             except IOError:
                 print("Problem opening blot images")
                 raise
+        # Scale blot image, as needed, to match original input data units.
+        blot_data *= sci_chip._conversionFactor
 
         input_image = sciImage.getData(exten)
 
