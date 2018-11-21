@@ -47,7 +47,7 @@ for (numpy_ver in matrix_numpy) {
                          'stsci.stimage',
                          'setuptools',
                          // test dependencies
-                         'pytest=3.8.2',
+                         'pytest',
                          'pytest-remotedata',
                          'crds']
     // Dependencies that change based on build matrix entry.
