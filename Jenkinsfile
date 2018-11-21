@@ -38,7 +38,6 @@ for (numpy_ver in matrix_numpy) {
                          'sphinx',
                          'sphinx_rtd_theme',
                          'stsci_rtd_theme',
-                         'stsci.convolve',
                          'stsci.image',
                          'stsci.imagemanip',
                          'stsci.imagestats',
@@ -58,7 +57,7 @@ for (numpy_ver in matrix_numpy) {
     bc.build_cmds = ["python setup.py install"]
     bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
     bc.test_configs = [data_config]
-    matrix += bc 
+    matrix += bc
     matrix_id++
 }}}
 
