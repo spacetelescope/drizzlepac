@@ -1110,7 +1110,7 @@ arrxyzero(PyObject *obj, PyObject *args)
   double **zpmat = NULL;
 
   long imgnum, refnum;
-  integer_t dimensions[2];
+  npy_intp dimensions[2];
   integer_t xind, yind;
   double dx, dy;
   long j, k;
