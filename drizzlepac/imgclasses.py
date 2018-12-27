@@ -1009,7 +1009,7 @@ class Image(object):
                     img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[3]
                     chip_min = img_indx_orig.min()
                     chip_max = img_indx_orig.max()
-                    cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
+                    cid = np.logical_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
                     img_chip_id[cid] = sci_extn
             #
             f.write('#\n')
