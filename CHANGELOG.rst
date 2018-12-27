@@ -14,7 +14,7 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-..
+
 DrizzlePac (DEVELOPMENT)
 ========================
 - The intermediate fit match catalog, with the name ``_catalog_fit.match``
