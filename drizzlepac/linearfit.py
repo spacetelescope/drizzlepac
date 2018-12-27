@@ -163,6 +163,7 @@ def iter_fit_all(xy,uv,xyindx,uvindx,
     fit['ref_indx'] = uvindx
     fit['img_orig_xy'] = xyorig
     fit['ref_orig_xy'] = uvorig
+    fit['fit_xy'] = np.dot(xy, fit['fit_matrix'])+center - fit['offset']
 
     return fit
 
