@@ -20,7 +20,6 @@ from spherical_geometry.polygon import SphericalPolygon
 from stsci.skypac.parseat import FileExtMaskInfo, parse_cs_line
 from stsci.skypac import utils as spu
 
-from stwcs import distortion
 from stwcs.distortion import utils
 from stwcs.wcsutil import wcscorr
 from stwcs.wcsutil import headerlet
@@ -660,9 +659,7 @@ class Image(object):
                     verbose=self.verbose)
 
                 self.fit['rms_keys'] = self.compute_fit_rms()
-                xy_fit = self.fit['img_coords']+self.fit['resids']
-                self.fit['fit_xy'] = xy_fit
-                radec_fit = self.refWCS.all_pix2world(xy_fit, 1)
+                radec_fit = self.refWCS.all_pix2world(self.fit['fit_xy'],1)
                 self.fit['fit_RA'] = radec_fit[:,0]
                 self.fit['fit_DEC'] = radec_fit[:,1]
                 self.fit['src_origin'] = self.matches['src_origin']
@@ -1009,11 +1006,11 @@ class Image(object):
             for sci_extn in range(1,self.nvers+1):
                 catalog = self.chip_catalogs[sci_extn]['catalog']
                 if catalog.xypos is not None:
-                    img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[-1]
+                    img_indx_orig = self.chip_catalogs[sci_extn]['catalog'].xypos[3]
                     chip_min = img_indx_orig.min()
                     chip_max = img_indx_orig.max()
-                    cid = np.bitwise_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
-                    img_chip_id = np.where(cid, sci_extn, img_chip_id)
+                    cid = np.logical_and((img_chip_id >= chip_min),(img_chip_id <= chip_max))
+                    img_chip_id[cid] = sci_extn
             #
             f.write('#\n')
             f.close()
