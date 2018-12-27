@@ -5,15 +5,16 @@
 identifying cosmic-rays, removing distortion, and then combining the images
 after removing the identified cosmic-rays.
 
-This process involves a number of steps, namely:
-  1.  Processing the input images and input parameters
-  2.  Creating a static mask
-  3.  Performing sky subtraction
-  4.  Drizzling onto separate output images
-  5.  Creating the median image
-  6.  Blotting the median image
-  7.  Identifying and flagging cosmic-rays
-  8.  Final combination
+This process involves a number of steps, such as:
+  *  Processing the input images and input parameters
+  *  Creating a static mask
+  *  Performing sky subtraction
+  *  Drizzling onto separate output images
+  *  Creating the median image
+  *  Blotting the median image
+  *  Identifying and flagging cosmic-rays
+  *  Final combination
+  *  Cleaning-up of temporary files (when applicable)
 
 A full description of this process can be found
 in the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_\ .
