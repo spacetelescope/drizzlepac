@@ -137,8 +137,8 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'}, optional (Def
       input images whose sky value will be set to (reported to be) 0.
       This setting will "equalize" sky values between the images in
       large mosaics. However, this method is not recommended when used
-      in conjunction with `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
-      because it computes relative sky values while `astrodrizzle` needs
+      in conjunction with `AstroDrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
+      because it computes relative sky values while ``AstroDrizzle`` needs
       "measured" sky values for median image generation and CR rejection.
 
     * **'globalmin+match'**\ : first find a minimum "global" sky value
@@ -198,7 +198,11 @@ sky_bits : int, None, optional (Default = 0)
 
 
 skyfile : str, optional (Default Value = '')
-    Name of file containing user-computed sky values to be used with each input image. This ASCII file should only contain 2 columns: image filename in column 1 and sky value in column 2.  The sky value should be provided in units that match the units of the input image and for multi-chip images, the same value will be applied to all chips.
+    Name of file containing user-computed sky values to be used with each input
+    image. This ASCII file should only contain 2 columns: image filename in
+    column 1 and sky value in column 2. The sky value should be provided in
+    units that match the units of the input image and for multi-chip images,
+    the same value will be applied to all chips.
 
 
 skyuser : str (Default = '')
@@ -207,12 +211,16 @@ skyuser : str (Default = '')
     `skysub` is set to `yes`.
 
     .. note::
-      When `skysub`=`no` and `skyuser` field is empty, then `AstroDrizzle` will
-      assume that sky background is 0.0 for the purpose of cosmic-ray rejection.
+      When `skysub`=`no` and `skyuser` field is empty, then ``AstroDrizzle``
+      will assume that sky background is 0.0 for the purpose of cosmic-ray
+      rejection.
 
 
 in_memory : bool, optional (Default Value = False)
-    Specifies whether to optimize execution for speed (maximum memory usage) or use a balanced approach in which a minimal amount of image data is kept in memory and retrieved from disk as needed. The default setting is recommended for most systems.
+    Specifies whether to optimize execution for speed (maximum memory usage) or
+    use a balanced approach in which a minimal amount of image data is kept in
+    memory and retrieved from disk as needed. The default setting is
+    recommended for most systems.
 
 
 Returns
@@ -282,13 +290,13 @@ Second, two new methods have been introduced: ``'globalmin'`` and
     reference image (which will have its sky value set to 0), the sky
     values computed with this method usually are smaller than the
     "absolute" sky values computed, e.g., with the ``'localmin'``
-    algorithm. Since `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_ expects
+    algorithm. Since `AstroDrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_ expects
     "true" (as opposite to *relative*) sky values in order to
     correctly compute the median image or to perform cosmic-ray
     detection, this algorithm in not recommended to be used *alone*
-    for sky computations to be used with `astrodrizzle`.
+    for sky computations to be used with ``AstroDrizzle``.
 
-    For the same reason, IVM weighting in `astrodrizzle` should **not**
+    For the same reason, IVM weighting in ``AstroDrizzle`` should **not**
     be used with ``'match'`` method: sky values reported in ``MDRIZSKY``
     header keyword will be relative sky values (sky offsets) and derived
     weights will be incorrect.
@@ -301,7 +309,7 @@ Second, two new methods have been introduced: ``'globalmin'`` and
   Thus, the sky value of the "reference" image will be equal to the
   baseline sky value (instead of 0 in ``'match'`` algorithm alone)
   making this method acceptable for use in conjunction with
-  `astrodrizzle`\ .
+  ``AstroDrizzle``.
 
 **Glossary:**
   **Exposure** -- a *subset* of FITS image extensions in an input image
@@ -384,19 +392,19 @@ Second, two new methods have been introduced: ``'globalmin'`` and
 
   * In general images can have different "true" background values
     (we could measure it if images were not affected by large diffuse
-    sources). However, arguments such as `lower` and `upper` will
+    sources). However, arguments such as ``lower`` and ``upper`` will
     apply to all images regardless of the intrinsic differences
     in sky levels.
 
 **How to use the tasks stand alone interface in your own scripts:**
   These tasks are designed to work together seemlessly when run in the
-  full `AstroDrizzle` interface. More advanced users may wish to create
+  full ``AstroDrizzle`` interface. More advanced users may wish to create
   specialized scripts for their own datasets, making use of only a subset
-  of the predefined `AstroDrizzle` tasks, or add additional processing,
+  of the predefined ``AstroDrizzle`` tasks, or add additional processing,
   which may be usefull for their particular data. In these cases,
   individual access to the tasks is important.
 
-Something to keep in mind is that the full `AstroDrizzle` interface will
+Something to keep in mind is that the full ``AstroDrizzle`` interface will
 make backup copies of your original files and place them in the ``OrIg/``
 directory of your current working directory. If you are working with
 the stand alone interfaces, it is assumed that the user has already taken

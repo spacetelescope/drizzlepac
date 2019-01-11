@@ -1,4 +1,4 @@
-""" `TweakReg` - A replacement for IRAF-based `tweakshifts`
+""" ``TweakReg`` - A replacement for IRAF-based ``tweakshifts``
 
 :Authors: Warren Hack, Mihai Cara
 

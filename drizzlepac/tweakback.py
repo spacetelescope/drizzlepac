@@ -74,18 +74,17 @@ def tweakback(drzfile, input=None,  origwcs = None,
 
         .. note:: A blank value will indicate that the task should derive the
            filenames from the 'drzfile' itself, if possible. The filenames will be
-           derived from the ``D*DATA`` keywords written out by astrodrizzle
-           (or MultiDrizzle or drizzle).
-           If they can not be found, the task will quit.
+           derived from the ``D*DATA`` keywords written out by
+           ``AstroDrizzle``. If they can not be found, the task will quit.
 
     origwcs : str (Default = None)
         Value of ``WCSNAME`` keyword prior to the drzfile image being updated
-        by tweakreg.  If left blank or None, it will default to using the
+        by ``TweakReg``.  If left blank or None, it will default to using the
         second to last ``WCSNAME*`` keyword value found in the header.
 
     wcsname : str (Default = None)
-        Value of WCSNAME for updated solution written out by `tweakreg` as
-        specified by the `wcsname` parameter from `tweakreg`.  If this is
+        Value of WCSNAME for updated solution written out by ``TweakReg`` as
+        specified by the `wcsname` parameter from ``TweakReg``.  If this is
         left blank or `None`, it will default to the current ``WCSNAME``
         value from the input drzfile.
 

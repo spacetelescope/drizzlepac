@@ -148,7 +148,7 @@ what regions should be avoided (*exclude* regions) and transforms/maps
 this region file onto a number of image files that need to be alighned.
 
 The idea behind this task is automate the creation of region files that then can
-be passed to *exclusions* parameter of the `TweakReg` task.
+be passed to *exclusions* parameter of the ``TweakReg`` task.
 
 The same thing can be achieved manually using, for example, external FITS
 viewers, e.g., SAO DS9. For example, based on some image ``refimg.fits`` we can

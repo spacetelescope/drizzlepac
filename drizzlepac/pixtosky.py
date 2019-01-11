@@ -53,9 +53,10 @@
     This task performs a full distortion-correction coordinate transformation
     based on all WCS keywords and any recognized distortion keywords from the
     input image header. The transformation recognizes the conventions for
-    describing distortion implemented as part of the SIP and Paper IV conventions
-    used with `AstroDrizzle`.  Input images can be updated to use these conventions
-    through the use of the `updatewcs` module the STWCS package.
+    describing distortion implemented as part of the SIP and Paper IV
+    conventions used with ``AstroDrizzle``. Input images can be updated to use
+    these conventions through the use of the ``updatewcs`` module the ``STWCS``
+    package.
 
 
     See Also

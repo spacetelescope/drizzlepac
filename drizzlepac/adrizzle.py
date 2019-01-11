@@ -350,7 +350,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         util.printParams(paramDict, log=log)
 
         # override configObj[build] value with the value of the build parameter
-        # this is necessary in order for MultiDrizzle to always have build=False
+        # this is necessary in order for AstroDrizzle to always have build=False
         # for single-drizzle step when called from the top-level.
         run_driz(imageObjectList, output_wcs.single_wcs, paramDict, single=True,
                  build=False, wcsmap=wcsmap)

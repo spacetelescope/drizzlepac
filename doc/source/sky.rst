@@ -1,8 +1,8 @@
 .. _subtractsky:
 
-***************************
-Step 3: Subtracting the Sky
-***************************
+********************
+Sky-Subtraction Step
+********************
 
 .. moduleauthor:: Christopher Hanley, Megan Sosey, Mihai Cara <help@stsci.edu>
 

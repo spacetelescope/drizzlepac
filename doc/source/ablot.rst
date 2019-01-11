@@ -1,8 +1,8 @@
 .. _ablot:
 
-*********************************
-Step 6: Blotting the Median Image
-*********************************
+**************************
+Median Image Blotting Step
+**************************
 
 .. moduleauthor:: Warren Hack <help@stsci.edu>
 

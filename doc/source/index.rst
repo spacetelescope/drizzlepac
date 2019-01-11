@@ -5,18 +5,18 @@
 
 Welcome to drizzlepac's API documentation!
 ===========================================
-This package supports the use of `AstroDrizzle` as an integrated set of
+This package supports the use of ``AstroDrizzle`` as an integrated set of
 modules that can be run in an automated manner to combine images, along
 with other tasks to support image alignment and coordinate transformations
-with distortion included.  The version of `DrizzlePac` described here
-implements a single task to run the entire `AstroDrizzle` processing pipeline,
-while also providing the framework for users to create their own custom
-pipeline based on the modules in this package merged with their own custom
-code if desired. These pages document what functions and classes are available
-for use under Python while providing the syntax for calling those functions
-from Python tasks.
+with distortion included.  The version of ``DrizzlePac`` described here
+implements a single task to run the entire ``AstroDrizzle`` processing
+pipeline, while also providing the framework for users to create their own
+custom pipeline based on the modules in this package merged with their own
+custom code if desired. These pages document what functions and classes are
+available for use under Python while providing the syntax for calling those
+functions from Python tasks.
 
-Full documentation of how to run the primary `AstroDrizzle` and `TweakReg`
+Full documentation of how to run the primary ``AstroDrizzle`` and ``TweakReg``
 tasks, along with fully worked examples, can be found in the
 `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_.
 
@@ -57,17 +57,18 @@ provide some details on what has been revised for each version.
 
 Image Registration Tasks
 ------------------------
-Documentation for the replacement task for IRAF's `tweakshifts`\ ,
-currently named `tweakreg`, has been added to this package.
-These new modules describe how to run the new TEAL-enabled task,
+Documentation for the replacement task for IRAF's ``tweakshifts``,
+currently named ``TweakReg``, has been added to this package.
+These new modules describe how to run the new ``TEAL``-enabled task,
 as well as use the classes in the task to generate catalogs interactively
 for any chip and work with that catalog. The current implementation of this
 code relies on a very basic source finding algorithm loosely patterned
 after the DAOFIND algorithm and does not provide all the same features
 or outputs found in DAOFIND. The fitting algorithm also reproduces the
-fitting performed by IRAF's `geomap` in a limited fashion; primarily,
-it only performs fits equivalent to `geomap`'s 'shift' and 'rscale' solutions.
-These algorithms will be upgraded as soon as replacements are available.
+fitting performed by IRAF's ``geomap`` in a limited fashion; primarily,
+it only performs fits equivalent to ``geomap``'s 'shift' and 'rscale'
+solutions. These algorithms will be upgraded as soon as replacements
+are available.
 
 .. toctree::
    :maxdepth: 2

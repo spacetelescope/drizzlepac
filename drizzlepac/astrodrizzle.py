@@ -1,7 +1,7 @@
 """
-`AstroDrizzle` - Python implementation of `MultiDrizzle`
+``AstroDrizzle`` - Python implementation of ``MultiDrizzle``
 
-`AstroDrizzle` automates the process of aligning images in an output frame,
+``AstroDrizzle`` automates the process of aligning images in an output frame,
 identifying cosmic-rays, removing distortion, and then combining the images
 after removing the identified cosmic-rays.
 
