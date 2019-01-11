@@ -1,7 +1,7 @@
 """
 A tool to adjust data values of images by equalizing each chip's PHOTFLAM value
 to a single common value so that all chips can be treated equally
-by `AstroDrizzle`.
+by ``AstroDrizzle``.
 
 :Authors: Mihai Cara
 
@@ -73,7 +73,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
     """
     Adjust data values of images by equalizing each chip's PHOTFLAM value
     to a single common value so that all chips can be treated equally
-    by `AstroDrizzle`.
+    by ``AstroDrizzle``.
 
     Parameters
     ----------
@@ -187,10 +187,11 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
 
     .. warning::
 
-       If images are intended to be used with `AstroDrizzle`, it is recommended
-       that sky background measurement be performed on "equalized" images as
-       the `photeq` is not aware of sky user keyword in the image headers and
-       thus it cannot correct sky values already recorded in the headers.
+       If images are intended to be used with ``AstroDrizzle``, it is
+       recommended that sky background measurement be performed on "equalized"
+       images as the `photeq` is not aware of sky user keyword in the image
+       headers and thus it cannot correct sky values already recorded in the
+       headers.
 
     Examples
     --------

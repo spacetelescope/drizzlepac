@@ -53,10 +53,10 @@ C version of MultiDrizzle (astrodrizzle).
 
 
 :Compatability with MultiDrizzle:
-    The new version of ``MultiDrizzle`` (`astrodrizzle) and `updatewcs`
+    The new version of ``MultiDrizzle`` (``AstroDrizzle``) and `updatewcs`
     only work with the new ``NPOLFILE`` reference file for the ``DGEO`` correction
     (to replace the use of DGEOFILE).
-    In fact, `astrodrizzle` has been extensively modified to
+    In fact, ``AstroDrizzle`` has been extensively modified to
     prompt the user with a very lengthy explanation on whether it should
     stop and allow the user to update the header or continue without
     applying the ``DGEO`` correction under circumstances when the ``NPOLFILE``

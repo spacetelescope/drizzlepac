@@ -1,6 +1,6 @@
 """
 Classes to keep track of all WCS and catalog information.
-Used by `TweakReg`\ .
+Used by ``TweakReg``.
 
 :Authors: Warren Hack, Mihai Cara
 

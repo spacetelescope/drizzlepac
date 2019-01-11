@@ -69,9 +69,7 @@ def run(configObj=None,input_dict={},loadOnly=False):
     # Build DQ masks for all input images.
     buildMask(imgObjList,configObj)
 
-#
-#### Functional interface for MultiDrizzle
-#
+
 def buildDQMasks(imageObjectList,configObj):
     """ Build DQ masks for all input images.
     """

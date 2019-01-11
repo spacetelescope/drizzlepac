@@ -154,8 +154,8 @@ Drizzlepac v2.1.21 (12-January-2018)
   single drizzled ("single_sci") images. See
   https://github.com/spacetelescope/drizzlepac/issues/93 for more details.
 
-- Fixed a bug in `drizzlepac` due to which user provided `combine_lthresh` or
-  `combine_hthresh` in the `CREATE MEDIAN IMAGE` step were not converted
+- Fixed a bug in `drizzlepac` due to which user provided ``combine_lthresh`` or
+  ``combine_hthresh`` in the ``CREATE MEDIAN IMAGE`` step were not converted
   correctly to electrons (processing unit). This bug affected processing of
   WFPC2, STIS, NICMOS, and WFC3 data. See
   https://github.com/spacetelescope/drizzlepac/issues/94 for more details.
@@ -167,12 +167,12 @@ Drizzlepac v2.1.21 (12-January-2018)
 DrizzlePac v2.1.20 (07-October-2017)
 ====================================
 
-- Fixed a bug in expanding reference catalog in `tweakreg` that would result
+- Fixed a bug in expanding reference catalog in ``TweakReg`` that would result
   in the code crashing.
   See https://github.com/spacetelescope/drizzlepac/pull/87 for more details.
 
 - Fixed a bug due to which user catalog fluxes would be interpreted as
-  magnitudes when `fluxunits` was set to `'cps'`.
+  magnitudes when ``fluxunits`` was set to ``'cps'``.
   See https://github.com/spacetelescope/drizzlepac/pull/88 for more details.
 
 - Fixed a bug due to which user-supplied flux limits were ignored for

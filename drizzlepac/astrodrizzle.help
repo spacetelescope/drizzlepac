@@ -977,9 +977,9 @@ make backup copies of your original files and place them in the
 ``'OrIg_files'`` directory of you current working directory.
 
 All calibrated input images must have been updated using
-`updatewcs` from the ``STWCS`` package, to include the full
+``updatewcs`` from the ``STWCS`` package, to include the full
 distortion model in the header. Alternatively, one can set
-`updatewcs` parameter to `True` when running either `TweakReg`
+``updatewcs`` parameter to `True` when running either ``TweakReg``
 or ``AstroDrizzle`` from command line (Python interpreter)
 **the first time** on such images.
 
@@ -993,7 +993,7 @@ syntax options available.
 
 **Example 1:**  Drizzle a set of calibrated (``_flt.fits``) images using
 mostly default parameters.  Select the 'World Coordinate System' keyword
-to the updated solution computed from `tweakreg`.  When combining images,
+to the updated solution computed from ``TweakReg``.  When combining images,
 ignore pixel flags of 64 and 32 in the DQ array of the (``_flt.fits``)
 images.  Align the final product such that North is
 up, and set the final pixel scale to 0.05 arcseconds/pixel.
