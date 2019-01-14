@@ -3,7 +3,7 @@ if (utils.scm_checkout()) return
 
 
 def test_env = [
-    'PATH=./miniconda-bconf0/bin:$PATH',
+    'PATH=./miniconda/bin:$PATH',
     'HOME=./',
     'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory'
 ]
