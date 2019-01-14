@@ -2,7 +2,6 @@
 if (utils.scm_checkout()) return
 
 
-    //'PATH=./miniconda-bconf0/bin:$PATH',
 def test_env = [
     'PATH=./miniconda/bin:$PATH',
     'HOME=./',
@@ -46,8 +45,7 @@ bc.conda_packages = ['numpy',
                      'stsci.stimage',
                      'setuptools',
                      'python=3.6']
-bc.build_cmds = ["env",
-                 "conda install -q astropy stwcs -c http://ssb.stsci.edu/astroconda-dev",
+bc.build_cmds = ["conda install -q astropy stwcs -c http://ssb.stsci.edu/astroconda-dev",
                  "python setup.py install"]
 bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
 bc.test_configs = [data_config]
