@@ -313,25 +313,6 @@ def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
     return (np.asarray([u1, u2]).T, p[0])
 
 
-def _inv2x2(x):
-    assert(x.shape == (2,2))
-    inv = x.astype(ndfloat128)
-    det = inv[0,0]*inv[1,1] - inv[0,1]*inv[1,0]
-    if np.abs(det) < np.finfo(np.float64).tiny:
-        raise ArithmeticError('Singular matrix.')
-    a = inv[0, 0]
-    d = inv[1, 1]
-    inv[1, 0] *= -1.0
-    inv[0, 1] *= -1.0
-    inv[0, 0] = d
-    inv[1, 1] = a
-    inv /= det
-    inv = inv.astype(np.float64)
-    if not np.all(np.isfinite(inv)):
-        raise ArithmeticError('Singular matrix.')
-    return inv
-
-
 def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
                               rot=0.0, scale=1.0, xsh=0.0, ysh=0.0,
                               fit=None, xrms=None, yrms=None):
@@ -375,7 +356,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
 
     shift = np.asarray([xsh, ysh]) - np.dot(wcslin.wcs.crpix, fit) + wcslin.wcs.crpix
 
-    fit = _inv2x2(fit).T if fit.shape == (2,2) else np.linalg.inv(fit).T
+    fit = np.linalg.inv(fit).T
 
     cwcs = chip_wcs.deepcopy()
     cd_eye = np.eye(chip_wcs.wcs.cd.shape[0], dtype=ndfloat128)
