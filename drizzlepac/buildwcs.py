@@ -6,8 +6,6 @@ Provides function for manipulating WCS in images.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 import sys, types, os, copy
 from . import util
 import numpy as np
@@ -261,9 +259,8 @@ def mergewcs(outwcs, customwcs, wcspars):
         if wcspars['crpix1'] is not None:
             outwcs.wcs.crpix = np.array([wcspars['crpix1'],wcspars['crpix2']])
         if wcspars['naxis1'] is not None:
-            outwcs._naxis1 = wcspars['naxis1']
-            outwcs._naxis2 = wcspars['naxis2']
-            outwcs.wcs.crpix = np.array([outwcs._naxis1/2.,outwcs._naxis2/2.])
+            outwcs.pixel_shape = (wcspars['naxis1'], wcspars['naxis2'])
+            outwcs.wcs.crpix = np.array(outwcs.pixel_shape) / 2.0
 
         pscale = wcspars['pscale']
         orient = wcspars['orientat']
@@ -281,8 +278,7 @@ def mergewcs(outwcs, customwcs, wcspars):
         outwcs.wcs.cd = customwcs.wcs.cd
         outwcs.wcs.crval = customwcs.wcs.crval
         outwcs.wcs.crpix = customwcs.wcs.crpix
-        outwcs._naxis1 = customwcs._naxis1
-        outwcs._naxis2 = customwcs._naxis2
+        outwcs.pixel_shape = customwcs.pixel_shape
     return outwcs
 
 def add_model(refwcs, newcoeffs):
@@ -345,8 +341,7 @@ def undistortWCS(refwcs):
     outwcs.inst_kw = refwcs.inst_kw
     for kw in refwcs.inst_kw:
         outwcs.__dict__[kw] = refwcs.__dict__[kw]
-    outwcs._naxis1 = wcslin._naxis1
-    outwcs._naxis2 = wcslin._naxis2
+    outwcs.pixel_shape = wcslin.pixel_shape
 
     return outwcs
 
@@ -365,8 +360,8 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
     if outwcs.sip is None:
         siphdr = False
     outwcs_hdr = outwcs.wcs2header(sip2hdr=siphdr)
-    outwcs_hdr['NPIX1'] = outwcs._naxis1
-    outwcs_hdr['NPIX2'] = outwcs._naxis2
+    outwcs_hdr['NPIX1'] = outwcs.pixel_shape[0]
+    outwcs_hdr['NPIX2'] = outwcs.pixel_shape[1]
 
     # create headerlet object in memory; either from a file or from scratch
     if template is not None and siphdr:

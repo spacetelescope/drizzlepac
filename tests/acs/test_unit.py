@@ -27,8 +27,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
         output_wcs = self.read_wcs(output_template)
 
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -70,8 +69,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
         output_wcs = self.read_wcs(output_template)
 
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -112,8 +110,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
         output_wcs = self.read_wcs(output_template)
 
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -155,8 +152,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
         output_wcs = self.read_wcs(output_template)
 
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -198,8 +194,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
         output_wcs = self.read_wcs(output_template)
 
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -241,8 +236,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
         output_wcs = self.read_wcs(output_template)
 
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -284,8 +278,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
         output_wcs = self.read_wcs(output_template)
 
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -324,8 +317,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
 
         output_wcs = self.read_wcs(output_template)
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')
@@ -360,8 +352,7 @@ class TestDriz(BaseUnit):
         inwht = np.ones(insci.shape,dtype=insci.dtype)
 
         output_wcs = self.read_wcs(output_template)
-        naxis1 = output_wcs._naxis1
-        naxis2 = output_wcs._naxis2
+        naxis1, naxis2 = output_wcs.pixel_shape
         outsci = np.zeros((naxis2, naxis1), dtype='float32')
         outwht = np.zeros((naxis2, naxis1), dtype='float32')
         outcon = np.zeros((1, naxis2, naxis1), dtype='i4')

@@ -9,8 +9,6 @@ input image while recording the subtracted value in the image header.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function  # confidence medium
-
 import os, sys
 
 from .imageObject import imageObject

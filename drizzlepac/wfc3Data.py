@@ -6,10 +6,6 @@
 :License: :doc:`LICENSE`
 
 """
-
-from __future__ import absolute_import, division, print_function # confidence high
-
-
 from stsci.tools import fileutil
 from nictools import readTDD
 from .imageObject import imageObject

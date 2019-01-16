@@ -14,7 +14,6 @@ the "aligned" (to the new drizzled WCS) image coordinates.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function
 import os
 
 import numpy as np
@@ -281,10 +280,10 @@ def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
     cd_eye = np.eye(chip_wcs.wcs.cd.shape[0])
 
     # estimate precision necessary for iterative processes:
+    naxis1, naxis2 = chip_wcs.pixel_shape
     maxiter = 100
     crpix2corners = np.dstack([i.flatten() for i in np.meshgrid(
-        [1, chip_wcs._naxis1],
-        [1, chip_wcs._naxis2])])[0] - chip_wcs.wcs.crpix
+        [1, naxis1], [1, naxis2])])[0] - chip_wcs.wcs.crpix
     maxUerr = 1.0e-5 / np.amax(np.linalg.norm(crpix2corners, axis=1))
 
     # estimate step for numerical differentiation. We need a step
@@ -293,9 +292,9 @@ def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
     # TODO: The logic below should be revised at a later time so that it
     # better takes into account the two competing requirements.
     hx = max(1.0, min(20.0, (chip_wcs.wcs.crpix[0] - 1.0)/100.0,
-                      (chip_wcs._naxis1 - chip_wcs.wcs.crpix[0])/100.0))
+                      (naxis1 - chip_wcs.wcs.crpix[0])/100.0))
     hy = max(1.0, min(20.0, (chip_wcs.wcs.crpix[1] - 1.0)/100.0,
-                      (chip_wcs._naxis2 - chip_wcs.wcs.crpix[1])/100.0))
+                      (naxis2 - chip_wcs.wcs.crpix[1])/100.0))
 
     # compute new CRVAL for the image WCS:
     chip_wcs_orig = chip_wcs.deepcopy()

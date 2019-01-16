@@ -6,8 +6,6 @@ Class used to model IR specific instrument data.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division # confidence high
-
 from .imageObject import imageObject
 
 class IRInputImage(imageObject):

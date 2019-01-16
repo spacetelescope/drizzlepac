@@ -8,8 +8,6 @@ cosmic-rays.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function  # confidence medium
-
 import os
 import sys
 import numpy as np
@@ -367,7 +365,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
             `drizzlepac.wcs_functions.WCSMap`.
 
     """
-    _outsci = np.zeros((blot_wcs._naxis2,blot_wcs._naxis1),dtype=np.float32)
+    _outsci = np.zeros(blot_wcs.array_shape, dtype=np.float32)
 
     # Now pass numpy objects to callable version of Blot...
     build=False
@@ -375,9 +373,8 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
     kscale = 1.0
 
     xmin = 1
-    xmax = source_wcs._naxis1
     ymin = 1
-    ymax = source_wcs._naxis2
+    xmax, ymax = source_wcs.pixel_shape
 
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
@@ -394,7 +391,11 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         Use default C mapping function.
         """
         print('Using default C-based coordinate transformation...')
-        mapping = cdriz.DefaultWCSMapping(blot_wcs,source_wcs,int(blot_wcs._naxis1),int(blot_wcs._naxis2),stepsize)
+        mapping = cdriz.DefaultWCSMapping(
+            blot_wcs, source_wcs,
+            blot_wcs.pixel_shape[0], blot_wcs.pixel_shape[1],
+            stepsize
+        )
         pix_ratio = source_wcs.pscale/wcslin.pscale
     else:
         #

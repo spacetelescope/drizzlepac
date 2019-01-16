@@ -12,7 +12,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import division, print_function
 import numpy as np
 from numpy import linalg as npla
 from stsci.tools import logutil

@@ -32,8 +32,6 @@ Functions to build mask files for PyDrizzle.
 #                   added output filename as input parameter to 'buildMask'
 #                   functions. WJH
 #
-from __future__ import absolute_import, division, print_function # confidence high
-
 import os
 
 from stsci.tools import fileutil, readgeis
@@ -45,13 +43,13 @@ except ImportError:
 from astropy.io import fits
 import numpy as np
 
-from . import processInput,util
+from . import processInput, util
 
 __taskname__ = 'drizzlepac.buildmask'
 #
 #### Interactive interface
 #
-def run(configObj=None,input_dict={},loadOnly=False):
+def run(configObj=None, input_dict={}, loadOnly=False):
     """ Build DQ masks from all input images, then apply static mask(s).
     """
     # If called from interactive user-interface, configObj will not be

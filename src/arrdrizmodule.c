@@ -1176,7 +1176,6 @@ static PyMethodDef cdriz_methods[] =
     {0, 0, 0, 0}                             /* sentinel */
   };
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "cdriz",
@@ -1188,18 +1187,12 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
-#endif
 
-#if PY_MAJOR_VERSION >= 3
 PyObject *PyInit_cdriz(void)
-#else
-void initcdriz(void)
-#endif
 {
   PyObject* m;
   driz_log_func = &cdriz_log_func;
 
-#if PY_MAJOR_VERSION >= 3
   if (PyType_Ready(&WCSMapType) < 0) {
     return NULL;
   }
@@ -1208,21 +1201,11 @@ void initcdriz(void)
     return NULL;
   }
 
-#else
-  if (PyType_Ready(&WCSMapType) < 0)
-    return;
-  m = Py_InitModule("cdriz", cdriz_methods);
-  if (m == NULL)
-    return;
-#endif
-
   import_array();
   import_astropy_wcs();
 
   Py_INCREF(&WCSMapType);
   PyModule_AddObject(m, "DefaultWCSMapping", (PyObject *)&WCSMapType);
 
-#if PY_MAJOR_VERSION >= 3
   return m;
-#endif
 }

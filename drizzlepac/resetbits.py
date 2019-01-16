@@ -63,8 +63,6 @@
             >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
 """
-
-from __future__ import absolute_import, division, print_function
 import os
 import numpy as np
 from stsci.tools import stpyfits as fits

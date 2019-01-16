@@ -8,8 +8,6 @@ A library of utility functions
 :License: :doc:`LICENSE`
 
 """
-
-from __future__ import absolute_import, division, print_function # confidence medium
 import logging
 import functools
 import os

@@ -63,8 +63,6 @@ C version of MultiDrizzle (astrodrizzle).
     keyword can not be found for ACS.
 
 """
-
-from __future__ import absolute_import, division, print_function
 __docformat__ = 'restructuredtext'
 
 __taskname__ = "updatenpol"

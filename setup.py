@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
-
-
 import inspect
 import os
 import pkgutil
@@ -175,13 +172,16 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     setup_requires=SETUP_REQUIRES,
+    python_requires='>=3.5',
     install_requires=[
-        'astropy',
+        'astropy>=3.1',
         'fitsblender',
         'nictools',
         'nose',
         'numpy',
         'scipy',
+        'matplotlib',
+        'acstools',
         'spherical-geometry',
         'stsci.tools',
         'stsci.image>=2.3.0',
@@ -192,7 +192,9 @@ setup(
         'stsci.stimage',
         'stwcs',
         'stregion',
+        'requests',
     ],
+    tests_require=['crds', 'pytest'],
     packages=find_packages(),
     package_data={
         '': ['README.md', 'LICENSE.txt'],

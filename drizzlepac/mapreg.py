@@ -8,7 +8,6 @@ of multiple images using the WCS information from the images.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function
 from astropy.io import fits
 import stregion as pyregion
 import stwcs

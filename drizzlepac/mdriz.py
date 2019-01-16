@@ -7,7 +7,6 @@ Main program for running MultiDrizzle from the command line.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence high
 import getopt
 import sys, os
 from drizzlepac.astrodrizzle import AstroDrizzle

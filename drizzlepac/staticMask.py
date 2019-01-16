@@ -9,9 +9,6 @@ For `staticMask`, the user interface function is :py:func:`createMask`.
 :License: :doc:`LICENSE`
 
 """
-
-from __future__ import absolute_import, division, print_function  # confidence high
-
 import os
 import sys
 from distutils.version import LooseVersion
@@ -23,8 +20,6 @@ from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util
 from . import processInput
-
-ASTROPY_VER_GE13 = LooseVersion(astropy.__version__) >= LooseVersion('1.3')
 
 __taskname__ = "drizzlepac.staticMask"
 _step_num_ = 1
@@ -285,10 +280,7 @@ class staticMask(object):
 
             else:
                 try:
-                    if ASTROPY_VER_GE13:
-                        newHDU.writeto(filename, overwrite=True)
-                    else:
-                        newHDU.writeto(filename, clobber=True)
+                    newHDU.writeto(filename, overwrite=True)
                     log.info("Saving static mask to disk: %s" % filename)
 
                 except IOError:

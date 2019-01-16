@@ -4,7 +4,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function
 import string,os
 
 import numpy as np
@@ -596,8 +595,8 @@ def createWcsHDU(wcs):
     header['EXTVER'] = 1
 
     # Now, update original image size information
-    header['NPIX1'] = (wcs._naxis1, "Length of array axis 1")
-    header['NPIX2'] = (wcs._naxis2, "Length of array axis 2")
+    header['NPIX1'] = (wcs.pixel_shape[0], "Length of array axis 1")
+    header['NPIX2'] = (wcs.pixel_shape[1], "Length of array axis 2")
     header['PIXVALUE'] = (0.0, "values of pixels in array")
 
     if hasattr(wcs, 'orientat'):

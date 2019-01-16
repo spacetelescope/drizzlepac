@@ -95,8 +95,6 @@
                     output="xy_flt1.dat")
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 import os,copy
 import warnings
 import numpy as np

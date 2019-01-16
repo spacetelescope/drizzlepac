@@ -14,9 +14,6 @@ supported by this package include:
 cosmic-ray cleaned, and combined image as a FITS file.
 
 """
-
-from __future__ import absolute_import, division, print_function  # confidence high
-
 import os
 
 from .version import *

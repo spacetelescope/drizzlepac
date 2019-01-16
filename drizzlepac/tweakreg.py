@@ -5,13 +5,10 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function
 import os
 import sys
 import numpy as np
 from copy import copy
-
-from six import string_types
 
 from stsci.tools import parseinput, teal
 from stsci.tools import logutil, textutil
@@ -779,7 +776,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     # then copy this into input_dict for merging with TEAL ConfigObj parameters
 
     # Get default or user-specified configobj for primary task
-    if isinstance(configobj, string_types):
+    if isinstance(configobj, (str, bytes)):
         if configobj == 'defaults':
             # load "TEAL"-defaults (from ~/.teal/):
             configobj = teal.load(__taskname__)

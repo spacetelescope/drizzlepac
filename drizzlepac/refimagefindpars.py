@@ -5,7 +5,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, print_function
 import os
 from stsci.tools import teal
 from . import util

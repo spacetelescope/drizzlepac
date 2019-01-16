@@ -53,7 +53,6 @@ W.J. Hack  26 Nov 2012: Option to write out headerlets added and debugged
 
 """
 # Import standard Python modules
-from __future__ import division, print_function # confidence high
 import glob
 import os
 import shutil
