@@ -181,7 +181,7 @@ def findstars(jdata, fwhm, threshold, skymode,
     ysigsq = (ratio**2) * xsigsq
 
     # convolve image with gaussian kernel
-    convdata = signal.convolve2d(jdata, nkern, boundary='symm', mode='same')
+    convdata = signal.convolve2d(jdata, nkern, boundary='symm', mode='same').astype(np.float32)
 
     # clip image to create regions around each source for segmentation
     if mask is None:
@@ -293,18 +293,17 @@ def findstars(jdata, fwhm, threshold, skymode,
         # Filter sources:
         if px is None:
             continue
-        if use_sharp_round:
-            if not satur and \
-               (round2 is None or round2 < roundlo or round2 > roundhi):
-                continue
 
-        fitind.append((px+xr0,py+yr0,sharp, round1, round2))
+        if use_sharp_round and not satur and \
+           (round2 is None or round2 < roundlo or round2 > roundhi):
+            continue
+
+        fitind.append((px + xr0, py + yr0, sharp, round1, round2))
         # compute a source flux value
         fluxes.append(src_flux)
 
-    fitindc,fluxesc = apply_nsigma_separation(fitind,fluxes,fwhm*nsigma/2)
+    fitindc, fluxesc = apply_nsigma_separation(fitind, fluxes, fwhm*nsigma / 2)
 
-    #print 'ninit: ',ninit,'   ninit2: ',ninit2,' final n: ',len(fitind)
     return fitindc, fluxesc
 
 
