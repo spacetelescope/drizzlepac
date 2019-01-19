@@ -3,7 +3,7 @@ if (utils.scm_checkout()) return
 
 // Generate installation compatibility matrix
 matrix_python = ["3.6", "3.7"]
-matrix_astropy = [">=3.0.5"]
+matrix_astropy = [">=3.1.0"]
 matrix_numpy = [">=1.14", "==1.15.0"]
 matrix = []
 
@@ -58,7 +58,7 @@ for (numpy_ver in matrix_numpy) {
     bc.build_cmds = ["python setup.py install"]
     bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
     bc.test_configs = [data_config]
-    matrix += bc 
+    matrix += bc
     matrix_id++
 }}}
 
