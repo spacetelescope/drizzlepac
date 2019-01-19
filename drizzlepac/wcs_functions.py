@@ -5,8 +5,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 import os,copy
 import numpy as np
 from numpy import linalg
@@ -648,6 +646,7 @@ def mergeWCS(default_wcs, user_pars):
             _crpix = ((shape[0] + 1.0) / 2.0, (shape[1] + 1.0) / 2.0)
 
     else:
+        naxis1, naxis2 = outwcs.pixel_shape
         if _delta_rot is None:
             # no rotation is involved
 
@@ -656,8 +655,8 @@ def mergeWCS(default_wcs, user_pars):
 
                 # compute output image shape:
                 shape = (
-                    max(1, int(_py2round(_ratio * outwcs._naxis1))),
-                    max(1, int(_py2round(_ratio * outwcs._naxis2)))
+                    max(1, int(_py2round(_ratio * naxis1))),
+                    max(1, int(_py2round(_ratio * naxis2)))
                 )
 
                 # update CRPIX:
@@ -667,9 +666,9 @@ def mergeWCS(default_wcs, user_pars):
         else:
             _corners = np.array(
                 [[0.5, 0.5],
-                 [outwcs._naxis1 + 0.5, 0.5],
-                 [0.5, outwcs._naxis2 + 0.5],
-                 [outwcs._naxis1 + 0.5, outwcs._naxis2 + 0.5]]
+                 [naxis1 + 0.5, 0.5],
+                 [0.5, naxis2 + 0.5],
+                 [naxis1 + 0.5, naxis2 + 0.5]]
             ) - outwcs.wcs.crpix
 
             if _ratio is not None:
@@ -705,7 +704,7 @@ def mergeWCS(default_wcs, user_pars):
 
     if shape is not None:
         # update size:
-        outwcs._naxis1, outwcs._naxis2 = shape
+        outwcs.pixel_shape = shape
 
     # update reference position
     if _crpix is not None:

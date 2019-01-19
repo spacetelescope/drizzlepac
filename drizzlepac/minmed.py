@@ -24,8 +24,6 @@ or median image based up bad pixel identification.
 #        -- CJH -- 03/29/05
 #      Version 0.3.0: Rewritten to optimize the code and to bring
 #        code up to modern standards.-- Mihai Cara -- 02/19/2018
-from __future__ import (absolute_import, division, unicode_literals,
-                        print_function)
 import warnings
 import numpy as np
 from scipy import signal

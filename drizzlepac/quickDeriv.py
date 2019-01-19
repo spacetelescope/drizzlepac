@@ -12,11 +12,8 @@ IS RETURNED BY :py:func:`quickderiv`.
 # VERSION:
 #   Version 0.1.0: created -- CJH
 #
-from __future__ import absolute_import, division # confidence high
-
-from .version import *
-# IMPORT EXTERNAL MODULES
 import numpy as np
+from .version import *
 
 def qderiv(array): # TAKE THE ABSOLUTE DERIVATIVE OF A NUMARRY OBJECT
     """Take the absolute derivate of an image in memory."""

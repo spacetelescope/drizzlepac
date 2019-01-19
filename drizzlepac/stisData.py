@@ -6,8 +6,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 from stsci.tools import fileutil
 import numpy as np
 from stsci.imagemanip import interp2d

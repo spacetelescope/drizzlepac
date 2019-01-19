@@ -6,8 +6,6 @@ A class which makes image objects for each input filename.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function  # confidence medium
-
 import copy, os, re, sys
 
 import numpy as np
@@ -457,8 +455,7 @@ class baseImageObject(object):
         outputvals = self.outputValues
 
         outputvals['output'] = output_wcs.outputNames['outFinal']
-        outputvals['outnx'] = output_wcs.wcs._naxis1
-        outputvals['outny'] = output_wcs.wcs._naxis2
+        outputvals['outnx'], outputvals['outny'] = output_wcs.wcs.pixel_shape
         outputvals['texptime'] = output_wcs._exptime
         outputvals['texpstart'] = output_wcs._expstart
         outputvals['texpend'] = output_wcs._expend

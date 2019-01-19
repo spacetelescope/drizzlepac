@@ -81,8 +81,6 @@
        ...                      colnames=['c3','c4'], output="radec_sci1.dat")
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 import os,copy
 import warnings
 import numpy as np

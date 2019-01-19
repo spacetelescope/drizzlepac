@@ -7,8 +7,6 @@ processing as used in the pipeline.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import division, print_function # confidence high
-
 import string, os
 
 from astropy.io import fits

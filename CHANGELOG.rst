@@ -18,6 +18,11 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
+- Replaced the use of ``WCS._naxis1`` and ``WCS._naxis2`` with
+  ``WCS.pixel_shape`` [#207]
+
+- Removed support for Python 2. Only versions >= 3.5 are supported. [#207]
+
 - Use a more numerically stable ``numpy.linalg.inv`` instead of own matrix
   inversion. [#205]
 

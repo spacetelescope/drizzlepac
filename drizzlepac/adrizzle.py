@@ -6,8 +6,6 @@ Interfaces to main drizzle functions.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 import sys,os,copy,time
 from . import util
 import numpy as np
@@ -174,8 +172,7 @@ def run(configObj, wcsmap=None):
     # Set up the output data array and insure that the units for that array is 'cps'
     if outsci is None:
         # Define a default blank array based on definition of output_wcs
-        #outsci = np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
-        outsci = np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        outsci = np.empty(output_wcs.array_shape, dtype=np.float32)
         outsci.fill(np.nan)
     else:
         # Convert array to units of 'cps', if needed
@@ -191,7 +188,7 @@ def run(configObj, wcsmap=None):
         outwht = get_data(configObj['outweight'])
 
     if outwht is None:
-        outwht = np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        outwht = np.zeros(output_wcs.array_shape, dtype=np.float32)
     else:
         outwht = outwht.astype(np.float32)
 
@@ -202,7 +199,7 @@ def run(configObj, wcsmap=None):
         outcon = get_data(configObj['outcontext'])
         keep_con = True
         if outcon is None:
-            outcon = np.zeros((1,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
+            outcon = np.zeros((1,) + output_wcs.array_shape, dtype=np.int32)
         else:
             outcon = outcon.astype(np.int32)
             planeid = int((uniqid - 1)/ 32)
@@ -608,15 +605,14 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     #
     _outsci = _outwht = _outctx = _hdrlist = None
     if (not single) or \
-       ( (single) and (not will_parallel) and (not imageObjectList[0].inmemory) ):
+       (single and (not will_parallel) and (not imageObjectList[0].inmemory)):
         # Note there are four cases/combinations for single drizzle alone here:
         # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
-        #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
-        _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outsci=np.empty(output_wcs.array_shape, dtype=np.float32)
         _outsci.fill(maskval)
-        _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outwht=np.zeros(output_wcs.array_shape, dtype=np.float32)
         # initialize context to 3-D array but only pass appropriate plane to drizzle as needed
-        _outctx=np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
+        _outctx=np.zeros((_nplanes,) + output_wcs.array_shape, dtype=np.int32)
         _hdrlist = []
 
     # Keep track of how many chips have been processed
@@ -704,16 +700,15 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     # Check for unintialized inputs
     here = _outsci is None and _outwht is None and _outctx is None
     if _outsci is None:
-        #_outsci=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
-        _outsci=np.empty((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outsci=np.empty(output_wcs.array_shape, dtype=np.float32)
         if single:
             _outsci.fill(0)
         else:
             _outsci.fill(maskval)
     if _outwht is None:
-        _outwht=np.zeros((output_wcs._naxis2,output_wcs._naxis1),dtype=np.float32)
+        _outwht=np.zeros(output_wcs.array_shape, dtype=np.float32)
     if _outctx is None:
-        _outctx = np.zeros((_nplanes,output_wcs._naxis2,output_wcs._naxis1),dtype=np.int32)
+        _outctx = np.zeros((_nplanes,) + output_wcs.array_shape, dtype=np.int32)
     if _hdrlist is None:
         _hdrlist = []
 
@@ -1062,7 +1057,11 @@ def do_driz(insci, input_wcs, inwht,
     if wcsmap is None and cdriz is not None:
         log.info('Using WCSLIB-based coordinate transformation...')
         log.info('stepsize = %s' % stepsize)
-        mapping = cdriz.DefaultWCSMapping(input_wcs,output_wcs,int(input_wcs._naxis1),int(input_wcs._naxis2),stepsize)
+        mapping = cdriz.DefaultWCSMapping(
+            input_wcs, output_wcs,
+            input_wcs.pixel_shape[0], input_wcs.pixel_shape[1],
+            stepsize
+        )
     else:
         #
         ##Using the Python class for the WCS-based transformation
@@ -1084,7 +1083,7 @@ def do_driz(insci, input_wcs, inwht,
     #
     _dny = insci.shape[0]
     # Call 'drizzle' to perform image combination
-    if (insci.dtype > np.float32):
+    if insci.dtype > np.float32:
         #WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 

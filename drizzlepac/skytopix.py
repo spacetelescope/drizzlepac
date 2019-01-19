@@ -70,8 +70,6 @@
                 colnames=['c3','c4'], output="xy_sci1.dat")
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 import os,copy
 import numpy as np
 

@@ -28,8 +28,6 @@ as well to fully setup all inputs for use with the rest of the MultiDrizzle
 steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
-
-from __future__ import absolute_import, division, print_function  # confidence high
 import datetime
 import os
 import shutil
@@ -250,7 +248,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
             owcs = outwcs.final_wcs
         else:
             owcs = outwcs
-        output_mem = owcs._naxis1*owcs._naxis2*4*3 # bytes used for output arrays
+        output_mem = np.prod(owcs.pixel_shape) * 4 * 3  # bytes used for output arrays
     img1 = imageObjectList[0]
     numchips = 0
     input_mem = 0
@@ -276,7 +274,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     print('*'*80)
     print('*')
     print('*  Estimated memory usage:  up to %d Mb.'%(max_mem))
-    print('*  Output image size:       %d X %d pixels. '%(owcs._naxis1,owcs._naxis2))
+    print('*  Output image size:       {:d} X {:d} pixels. '.format(*owcs.pixel_shape))
     print('*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024)))
     print('*  Cores available:         %d'%(pool_size))
     print('*')

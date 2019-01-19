@@ -6,7 +6,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
 import os
 
 from astropy.io import fits

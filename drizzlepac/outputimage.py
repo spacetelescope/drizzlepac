@@ -6,8 +6,6 @@ This module manages the creation of the output image FITS file.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 from astropy.io import fits
 from stsci.tools import fileutil, readgeis, logutil
 

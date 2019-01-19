@@ -6,16 +6,15 @@ A suite of functions for finding sources in images.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function
 import sys
-
 import math
+
 import numpy as np
+from scipy import signal
 
-from stsci import convolve
-from stsci import ndimage as ndim
-
+import stsci.ndimage as ndim
 import stsci.imagestats as imagestats
+
 from . import cdriz
 
 __all__ = ['gaussian1', 'gausspars', 'gaussian', 'moments', 'errfunc',
@@ -28,7 +27,7 @@ __all__ = ['gaussian1', 'gausspars', 'gaussian', 'moments', 'errfunc',
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):
 #from numpy import *
 
-fwhm2sig = 2*np.sqrt(2*np.log(2))
+FWHM2SIG = 2*np.sqrt(2*np.log(2))
 
 #def gaussian1(height, x0, y0, fwhm, nsigma=1.5, ratio=1., theta=0.0):
 def gaussian1(height, x0, y0, a, b, c):
@@ -56,7 +55,7 @@ def gausspars(fwhm, nsigma=1.5, ratio=1, theta=0.):
         quadratic form: a*(x-x0)^2+b(x-x0)*(y-y0)+c*(y-y0)^2 <= 2*f
     """
 
-    xsigma = fwhm/fwhm2sig
+    xsigma = fwhm / FWHM2SIG
     ysigma = ratio * xsigma
 
     f = nsigma**2/2.
@@ -178,11 +177,11 @@ def findstars(jdata, fwhm, threshold, skymode,
     # initialize values used for getting source centers
     relerr = 1./((rmask**2).sum() - (rmask.sum()**2/xyrmask.sum()))
 
-    xsigsq = (fwhm/fwhm2sig)**2
+    xsigsq = (fwhm / FWHM2SIG)**2
     ysigsq = (ratio**2) * xsigsq
 
     # convolve image with gaussian kernel
-    convdata = convolve.convolve2d(jdata, nkern).astype(np.float32)
+    convdata = signal.convolve2d(jdata, nkern, boundary='symm', mode='same').astype(np.float32)
 
     # clip image to create regions around each source for segmentation
     if mask is None:
@@ -294,18 +293,17 @@ def findstars(jdata, fwhm, threshold, skymode,
         # Filter sources:
         if px is None:
             continue
-        if use_sharp_round:
-            if not satur and \
-               (round2 is None or round2 < roundlo or round2 > roundhi):
-                continue
 
-        fitind.append((px+xr0,py+yr0,sharp, round1, round2))
+        if use_sharp_round and not satur and \
+           (round2 is None or round2 < roundlo or round2 > roundhi):
+            continue
+
+        fitind.append((px + xr0, py + yr0, sharp, round1, round2))
         # compute a source flux value
         fluxes.append(src_flux)
 
-    fitindc,fluxesc = apply_nsigma_separation(fitind,fluxes,fwhm*nsigma/2)
+    fitindc, fluxesc = apply_nsigma_separation(fitind, fluxes, fwhm*nsigma / 2)
 
-    #print 'ninit: ',ninit,'   ninit2: ',ninit2,' final n: ',len(fitind)
     return fitindc, fluxesc
 
 

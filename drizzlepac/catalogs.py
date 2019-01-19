@@ -4,7 +4,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function
 import os, sys
 import copy
 from distutils.version import LooseVersion
@@ -28,7 +27,6 @@ import stregion as pyregion
 from . import tweakutils, util
 from .mapreg import _AuxSTWCS
 
-ASTROPY_VER_GE13 = LooseVersion(astropy.__version__) >= LooseVersion('1.3')
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
 CATALOG_ARGS = ['sharpcol','roundcol','hmin','fwhm','maxflux','minflux','fluxunits','nbright']+COLNAME_PARS
@@ -531,10 +529,7 @@ class ImageCatalog(Catalog):
         #DEBUG:
         if mask is not None:
             fn = os.path.splitext(self.fname)[0] + '_srcfind_mask.fits'
-            if ASTROPY_VER_GE13:
-                fits.writeto(fn, mask.astype(dtype=np.uint8), overwrite=True)
-            else:
-                fits.writeto(fn, mask.astype(dtype=np.uint8), clobber=True)
+            fits.writeto(fn, mask.astype(dtype=np.uint8), overwrite=True)
 
         return mask
 

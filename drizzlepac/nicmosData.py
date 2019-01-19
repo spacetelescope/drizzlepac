@@ -6,8 +6,6 @@ Class used to model NICMOS specific instrument data.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function # confidence medium
-
 from stsci.tools import fileutil
 from nictools import readTDD
 import numpy as np

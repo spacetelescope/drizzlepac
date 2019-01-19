@@ -30,13 +30,8 @@ aspects of each of the processing steps.
 :License: :doc:`LICENSE`
 
 """
-from __future__ import absolute_import, division, print_function  # confidence high
-
-
 import os
 import sys
-
-from six import string_types
 
 from stsci.tools import teal, logutil, textutil
 
@@ -69,7 +64,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     # parameters.
 
     # Load any user-specified configobj
-    if isinstance(configobj, string_types):
+    if isinstance(configobj, (str, bytes)):
         if configobj == 'defaults':
             # load "TEAL"-defaults (from ~/.teal/):
             configobj = teal.load(__taskname__)

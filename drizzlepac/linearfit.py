@@ -12,7 +12,6 @@
 :License: :doc:`LICENSE`
 
 """
-from __future__ import division, print_function
 import numpy as np
 from numpy import linalg as npla
 from stsci.tools import logutil
@@ -256,7 +255,7 @@ def fit_general(xy, uv):
     #   v = Q0 + Q1*x + Q2*y
     #
     try:
-        invM = np.linalg.inv(M)
+        invM = np.linalg.inv(M.astype(np.float64))
     except np.linalg.LinAlgError:
         raise SingularMatrixError(
             "Singular matrix: suspected colinear points."
@@ -333,7 +332,7 @@ def fit_arrays(uv, xy):
     #   v = Q0 + Q1*x + Q2*y
     #
     try:
-        invM = np.linalg.inv(M)
+        invM = np.linalg.inv(M.astype(np.float64))
     except np.linalg.LinAlgError:
         raise SingularMatrixError(
             "Singular matrix: suspected colinear points."
@@ -342,9 +341,6 @@ def fit_arrays(uv, xy):
     Q = np.dot(invM, V).astype(np.float64)
     if not (np.all(np.isfinite(P)) and np.all(np.isfinite(Q))):
         raise ArithmeticError('Singular matrix.')
-
-    #P = N.array([-0.434589, -0.893084, 285.420816])
-    #Q = N.array([0.907435, -0.433864, 45.553862])
 
     # Return the shift, rotation, and scale changes
     return build_fit(P, Q, 'general')
