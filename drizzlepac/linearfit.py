@@ -210,9 +210,10 @@ def fit_shifts(xy, uv):
 
     fit = build_fit(Pcoeffs, Qcoeffs, 'shift')
     resids = diff_pts - fit['offset']
-    rms = [resids[:,0].std(),resids[:,1].std()]
     fit['resids'] = resids
-    fit['rms'] = rms
+    fit['rms'] = resids.std(axis=0)
+    fit['rmse'] = float(np.sqrt(np.mean(2 * resids**2)))
+    fit['mae'] = float(np.mean(np.linalg.norm(resids, axis=1)))
 
     return fit
 
@@ -268,9 +269,10 @@ def fit_general(xy, uv):
     # Return the shift, rotation, and scale changes
     result = build_fit(P, Q, 'general')
     resids = xy - np.dot(uv, result['fit_matrix']) - result['offset']
-    rms = [resids[:,0].std(), resids[:,1].std()]
-    result['rms'] = rms
+    result['rms'] = resids.std(axis=0)
     result['resids'] = resids
+    result['rmse'] = float(np.sqrt(np.mean(2 * resids**2)))
+    result['mae'] = float(np.mean(np.linalg.norm(resids, axis=1)))
 
     return result
 
@@ -561,8 +563,9 @@ def geomap_rscale(xyin,xyref,center=None):
     # Return the shift, rotation, and scale changes
     result = build_fit(P, Q, fitgeom='rscale')
     resids = xyin - np.dot((xyref), result['fit_matrix']) - result['offset']
-    rms = [resids[:,0].std(), resids[:,1].std()]
-    result['rms'] = rms
+    result['rms'] = resids.std(axis=0)
     result['resids'] = resids
+    result['rmse'] = float(np.sqrt(np.mean(2 * resids**2)))
+    result['mae'] = float(np.mean(np.linalg.norm(resids, axis=1)))
 
     return result

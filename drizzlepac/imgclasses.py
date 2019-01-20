@@ -696,8 +696,10 @@ class Image(object):
                 else:
                     assert(False)
 
-                print('XRMS: %.2g    YRMS: %.2g\n'%(
-                        self.fit['rms'][0],self.fit['rms'][1]))
+                print('FIT XRMS: {:<7.2g}    FIT YRMS: {:<7.2g}'
+                      .format(*self.fit['rms']))
+                print('FIT RMSE: {:<7.2g}    FIT MAE: {:<7.2g}\n'
+                      .format(self.fit['rmse'], self.fit['mae']))
                 print('RMS_RA: %.2g (deg)   RMS_DEC: %.2g (deg)\n'%(
                         self.fit['rms_keys']['RMS_RA'],
                         self.fit['rms_keys']['RMS_DEC']))
