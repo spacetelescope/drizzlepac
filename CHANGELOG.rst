@@ -18,8 +18,10 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
-- Add computation and reporting of the fit's Root-Mean-Square Error (RMSE) and
-  Mean Absolute Error (MAE). [#210]
+- Add computation and reporting of the fit's
+  `Root-Mean-Square Error (RMSE) <https://en.wikipedia.org/wiki/Root-mean-square_deviation>`_
+  and `Mean Absolute Error (MAE) <https://en.wikipedia.org/wiki/Mean_absolute_error>`_.
+  [#210]
 
 - Replaced the use of ``WCS._naxis1`` and ``WCS._naxis2`` with
   ``WCS.pixel_shape`` [#207]
