@@ -75,7 +75,6 @@ __version_date__ = "(03-Apr-2013)"
 pipeline_pars = {'mdriztab':True,
                  'stepsize':10,
                  'output':'',
-                 'updatewcs':True,
                  'preserve':False,
                  'resetbits':4096}
 
@@ -113,7 +112,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     # We only need to import this package if a user run the task
     import drizzlepac
     from drizzlepac import processInput # used for creating new ASNs for _flc inputs
-    import stwcs
+    from stwcs import updatewcs
 
     if headerlets:
         from stwcs.wcsutil import headerlet
@@ -153,7 +152,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         _new_asn = [inFilename]
         _asndict = asnutil.readASNTable(inFilename,None,prodonly=False)
         _cal_prodname = _asndict['output'].lower()
-        _fname = fileutil.buildRootname(_cal_prodname,ext=['_drz.fits'])
+        #_fname = fileutil.buildRootname(_cal_prodname,ext=['_drz.fits'])
 
         # Retrieve the first member's rootname for possible use later
         _fimg = fits.open(inFilename, memmap=False)
@@ -259,6 +258,35 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             _cal_prodname = inFilename
             _new_asn.extend(_inlist) # kept so we can delete it when finished
 
+        # check to see whether FLC files are also present, and need to be updated
+        # generate list of FLC files
+        align_files = None
+        _calfiles_flc = [f.replace('_flt.fits','_flc.fits') for f in _calfiles]
+        # insure these files exist, if not, blank them out
+        # Also pick out what files will be used for additional alignment to GAIA
+        if not os.path.exists(_calfiles_flc[0]):
+            _calfiles_flc = None
+            align_files = _calfiles
+            align_update_files = None
+        else:
+            align_files = _calfiles_flc
+            align_update_files = _calfiles
+
+        # Run updatewcs on each list of images
+        updatewcs.updatewcs(_calfiles)
+        if _calfiles_flc:
+            updatewcs.updatewcs(_calfiles_flc)
+        # Perform additional alignment on the FLC files, if present
+        ###############
+        #
+        # call hlapipeline code here on align_files list of files
+        #
+        ###############
+        # results = hlapipeline.alignimages.perform_align(align_files)
+        #
+        if align_update_files:
+            # Apply headerlets from alignment to FLT version of the files
+            pass
 
         # Run astrodrizzle and send its processing statements to _trlfile
         _pyver = drizzlepac.astrodrizzle.__version__
@@ -329,7 +357,6 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         ftmp.close()
         _appendTrlFile(_trlfile,_tmptrl)
 
-    _fmsg = None
     # Append final timestamp to trailer file...
     _final_msg = '%s: Finished processing %s \n' % (time_str,inFilename)
     _final_msg += _timestamp('astrodrizzle completed ')
@@ -351,6 +378,9 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             os.rmdir("OrIg_files")
         else:
             print('OrIg_files directory NOT removed as it still contained images...')
+
+    # If headerlets have already been written out by alignment code,
+    # do NOT write out this version of the headerlets
     if headerlets:
         # Generate headerlets for each updated FLT image
         hlet_msg = _timestamp("Writing Headerlets started")
