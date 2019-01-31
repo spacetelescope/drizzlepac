@@ -5,7 +5,7 @@
 
 :License: :doc:`LICENSE`
 
-USAGE: runastrodriz.py [-fhibn] inputFilename [newpath]
+USAGE: runastrodriz.py [-fhibng] inputFilename [newpath]
 
 Alternative USAGE:
     python
@@ -42,6 +42,11 @@ for each input image.
 The '-n' option allows the user to specify the number of cores to be used in
 running AstroDrizzle.
 
+The '-g' option allows the user to attempt to align the images to an external
+astrometric catalog, such as GAIA, as accessible through the MAST interface.  If
+the attempt fails, no changes will be made to the data's WCS.
+
+
 *** INITIAL VERSION
 W.J. Hack  12 Aug 2011: Initial version based on Version 1.2.0 of
                         STSDAS$pkg/hst_calib/wfc3/runwf3driz.py
@@ -67,8 +72,8 @@ from stsci.tools import fileutil, asnutil
 __taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "1.5.2"
-__version_date__ = "(03-Apr-2013)"
+__version__ = "1.6.0"
+__version_date__ = "(03-Feb-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -105,7 +110,7 @@ def run(configobj=None):
 
 #### Primary user interface
 def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
-            headerlets=True):
+            headerlets=True, align_to_gaia=True):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -113,8 +118,9 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     import drizzlepac
     from drizzlepac import processInput # used for creating new ASNs for _flc inputs
     from stwcs import updatewcs
+    from hlapipeline import alignimages
 
-    if headerlets:
+    if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
 
     # Open the input file
@@ -282,20 +288,49 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         # call hlapipeline code here on align_files list of files
         #
         ###############
-        # results = hlapipeline.alignimages.perform_align(align_files)
-        #
-        if align_update_files:
+        _trlmsg = _timestamp("Align to GAIA started\n")
+        _trlmsg += __trlmarker__
+        try:
+            align_table = alignimages.perform_align(align_files)
+            for row in align_table:
+                if row['status'] == 0:
+                    trlstr = "Successfully aligned {} to {} astrometric frame\n"
+                    _trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                else:
+                    trlstr = "Could not align {} to absolute astrometric frame\n"
+                    _trlmsg += trlstr.format(row['imageName'])
+
+        except Exception:
+            # Something went wrong with alignment to GAIA, so report this in
+            # trailer file
+            _trlmsg = "EXCEPTION encountered in alignimages...\n"
+            _trlmsg = "   No correction to absolute astrometric frame applied!\n"
+
+        #Check to see whether there are any additional input files that need to
+        # be aligned (namely, FLT images)
+        if align_update_files and align_table:
             # Apply headerlets from alignment to FLT version of the files
-            pass
+            for fltfile, flcfile in zip(align_update_files, align_files):
+                row = align_table[align_table['imageName']==flcfile]
+                headerletFile = row['headerletFile'][0]
+                if headerletFile != "None":
+                    headerlet.apply_headerlet_as_primary(fltfile, headerletFile,
+                                                        attach=True, archive=True)
+                    # append log file contents to _trlmsg for inclusion in trailer file
+                    _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
+                    _trlmsg += _trlstr.format(headerletFile, fltfile)
+                else:
+                    _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
+        print(_trlmsg)
 
         # Run astrodrizzle and send its processing statements to _trlfile
         _pyver = drizzlepac.astrodrizzle.__version__
 
         for _infile in _inlist: # Run astrodrizzle for all inputs
             # Create trailer marker message for start of astrodrizzle processing
-            _trlmsg = _timestamp('astrodrizzle started ')
-            _trlmsg = _trlmsg+ __trlmarker__
-            _trlmsg = _trlmsg + '%s: Processing %s with astrodrizzle Version %s\n' % (time_str,_infile,_pyver)
+            _trlmsg += _timestamp('astrodrizzle started ')
+            _trlmsg += __trlmarker__
+            _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (time_str,_infile,_pyver)
             print(_trlmsg)
 
             # Write out trailer comments to trailer file...
@@ -530,9 +565,12 @@ def main():
     inmemory = False
     num_cores = None
     headerlets= True
+    align_to_gaia = True
 
     # read options
     for opt, value in optlist:
+        if opt == "-g":
+            align_to_gaia = True
         if opt == "-h":
             help = 1
         if opt == "-f":
@@ -548,7 +586,7 @@ def main():
             # turn off writing headerlets
             headerlets=False
     if len(args) < 1:
-        print("syntax: runastrodriz.py [-fhibn] inputFilename [newpath]")
+        print("syntax: runastrodriz.py [-fhibng] inputFilename [newpath]")
         sys.exit()
     if len(args) > 1:
         newdir = args[-1]
@@ -558,7 +596,8 @@ def main():
     else:
         try:
             process(args[0],force=force,newpath=newdir, inmemory=inmemory,
-                    num_cores=num_cores, headerlets=headerlets)
+                    num_cores=num_cores, headerlets=headerlets,
+                    align_to_gaia=align_to_gaia)
         except Exception as errorobj:
             print(str(errorobj))
             print("ERROR: Cannot run astrodrizzle on %s." % sys.argv[1])
