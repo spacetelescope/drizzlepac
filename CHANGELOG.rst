@@ -18,6 +18,9 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
+- Update runastrodriz to compute and apply absolute astrometric corrections to
+  GAIA (or related) frame to images where possible.
+
 - Add computation and reporting of the fit's
   `Root-Mean-Square Error (RMSE) <https://en.wikipedia.org/wiki/Root-mean-square_deviation>`_
   and `Mean Absolute Error (MAE) <https://en.wikipedia.org/wiki/Mean_absolute_error>`_.
