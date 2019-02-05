@@ -291,7 +291,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         _trlmsg = _timestamp("Align to GAIA started\n")
         _trlmsg += __trlmarker__
         try:
-            align_table = alignimages.perform_align(align_files)
+            align_table = alignimages.perform_align(align_files,update_hdr_wcs=True)
             for row in align_table:
                 if row['status'] == 0:
                     trlstr = "Successfully aligned {} to {} astrometric frame\n"
