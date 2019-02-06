@@ -18,7 +18,7 @@ bc = new BuildConfig()
 bc.nodetype = 'linux'
 bc.env_vars = test_env
 bc.name = '3.6'
-bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
+bc.conda_channels = ['http://ssb.stsci.edu/conda-dev']
 bc.conda_packages = ['numpy',
                      'fitsblender',
                      'graphviz',
@@ -40,11 +40,13 @@ bc.conda_packages = ['numpy',
                      'stsci.ndimage',
                      'stsci.skypac',
                      'stregion',
+                     'stsci.tools',
+                     'stwcs',
+                     'astropy',
                      'stsci.stimage',
                      'setuptools',
                      'python=3.6']
-bc.build_cmds = ["./miniconda/bin/conda install -q astropy stwcs -c http://ssb.stsci.edu/astroconda-dev",
-                 "python setup.py install"]
+bc.build_cmds = ["pip install --no-deps"]
 bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
 bc.test_configs = [data_config]
 
