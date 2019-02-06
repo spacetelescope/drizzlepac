@@ -40,6 +40,8 @@ DrizzlePac (DEVELOPMENT)
 
 - Simplify logic for determining the chip ID for each source. [#200]
 
+- Added hlapipeline alignment code to package. [#216]
+
 DrizzlePac v2.2.6 (02-Nov-2018)
 ===============================
 
