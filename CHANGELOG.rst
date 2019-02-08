@@ -18,8 +18,6 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
-- Updated code that relies on ``tweakwcs`` to use new API. [#217]
-
 - Added hlapipeline alignment code to package. [#216]
 
 - Update runastrodriz to compute and apply absolute astrometric corrections to
