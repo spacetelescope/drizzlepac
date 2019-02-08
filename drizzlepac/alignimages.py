@@ -172,17 +172,17 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
     """
 
     # Define astrometric catalog list in priority order
-    catalogList = ['GAIADR2', 'GSC241']
+    catalogList = ['GAIADR2', 'GAIADR1']
 
     # 0: print git info
     if print_git_info:
         print("-------------------- STEP 0: Display Git revision info  --------------------")
-        full_path = os.path.dirname(__file__)+"/utils"
+        full_path = os.path.dirname(__file__)
         repo_path=None
-        if "hlapipeline/hlapipeline" in full_path:
-            repo_path = full_path.split("hlapipeline/hlapipeline")[0]+"hlapipeline"
+        if "drizzlepac/drizzlepac" in full_path:
+            repo_path = full_path.split("drizzlepac/drizzlepac")[0]+"drizzlepac"
         elif "hlapipeline" in full_path:
-            repo_path = full_path.split("hlapipeline")[0]+"hlapipeline"
+            repo_path = full_path.split("drizzlepac")[0]+"drizzlepac"
         else:
             pass
         if not os.path.exists(repo_path): repo_path = None # protect against non-existent paths
@@ -190,7 +190,6 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
             get_git_rev_info.print_rev_id(repo_path) # Display git repository information
         else:
             print("WARNING: Unable to display Git repository revision information.")
-
     # 1: Interpret input data and optional parameters
     print("-------------------- STEP 1: Get data --------------------")
     zeroDT = startingDT = datetime.datetime.now()
