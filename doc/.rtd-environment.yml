@@ -15,6 +15,7 @@ dependencies:
       - stsci_rtd_theme
       - sphinx_automodapi
       - matplotlib
+      - acstools
       - spherical_geometry
       - fitsblender
       - nictools
@@ -22,7 +23,6 @@ dependencies:
       - stwcs
       - spherical-geometry
       - stsci.tools
-      - stsci.convolve
       - "stsci.image>=2.3.0"
       - stsci.imagemanip
       - stsci.imagestats
