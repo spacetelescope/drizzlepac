@@ -172,7 +172,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
     """
 
     # Define astrometric catalog list in priority order
-    catalogList = ['GAIADR1', 'GAIADR2']
+    catalogList = ['GAIADR2', 'GAIADR1']
 
     # 0: print git info
     if print_git_info:
