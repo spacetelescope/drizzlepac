@@ -21,11 +21,11 @@ from stwcs.wcsutil import HSTWCS
 import sys
 import tweakwcs
 
-from . import updatehdr
-from .hlautils import astrometric_utils as amutils
-from .hlautils import astroquery_utils as aqutils
-from .hlautils import analyze as filter
-from .hlautils import get_git_rev_info
+from drizzlepac import updatehdr
+from drizzlepac.hlautils import astrometric_utils as amutils
+from drizzlepac.hlautils import astroquery_utils as aqutils
+from drizzlepac.hlautils import analyze as filter
+from drizzlepac.hlautils import get_git_rev_info
 
 MIN_CATALOG_THRESHOLD = 3
 MIN_OBSERVABLE_THRESHOLD = 10
