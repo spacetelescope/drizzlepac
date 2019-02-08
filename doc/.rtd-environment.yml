@@ -3,7 +3,7 @@ channels:
     - http://ssb.stsci.edu/astroconda
     - conda-forge
 dependencies:
-    - python=3.5
+    - "python>=3.5"
     - numpy
     - scipy
     - numpydoc
@@ -17,14 +17,14 @@ dependencies:
     - spherical-geometry
     - stsci.tools
     - stsci.convolve
-    - stsci.image>=2.3.0
+    - "stsci.image>=2.3.0"
     - stsci.imagemanip
     - stsci.imagestats
     - stsci.ndimage
     - stsci.skypac
     - stsci.stimage
     - stwcs
-    - tweakwcs>=0.3.3
+    - "tweakwcs>=0.3.3"
     - stregion
     - sphinx
     - astroquery
