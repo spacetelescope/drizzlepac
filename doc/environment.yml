@@ -24,6 +24,7 @@ dependencies:
     - stsci.skypac
     - stsci.stimage
     - stwcs
+    - tweakwcs>=0.3.3
     - stregion
     - sphinx
     - astroquery
