@@ -5,6 +5,14 @@ import pdb
 from astroquery.mast import Observations
 from astropy.table import Table
 
+import logging
+from drizzlepac import util
+from stsci.tools import logutil
+
+__taskname__ = 'astroquery_utils'
+
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+
 
 def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     """Simple interface for retrieving an observation from the MAST archive
@@ -42,7 +50,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     obsTable = Observations.query_criteria(obs_id=obsid, obstype='all')
     # Catch the case where no files are found for download
     if len(obsTable) == 0:
-        print("WARNING: Query for {} returned NO RESULTS!".format(obsid))
+        log.debug("WARNING: Query for {} returned NO RESULTS!".format(obsid))
         return local_files
 
     dpobs = Observations.get_product_list(obsTable)
@@ -55,7 +63,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     # If the table is empty, look for FLT images in lieu of FLC images. Only want one
     # or the other (not both!), so just do the filtering again.
     if len(dataProductsByID) == 0:
-        print("WARNING: No FLC files found for {} - will look for FLT files instead.".format(obsid))
+        log.debug("WARNING: No FLC files found for {} - will look for FLT files instead.".format(obsid))
         suffix = ['FLT']
         dataProductsByID = Observations.filter_products(dpobs,
                                               productSubGroupDescription=suffix,
@@ -65,17 +73,17 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
         # If still no data, then return.  An exception will eventually be thrown in
         # the higher level code.
         if len(dataProductsByID) == 0:
-            print("WARNING: No FLC or FLT files found for {}.".format(obsid))
+            log.debug("WARNING: No FLC or FLT files found for {}.".format(obsid))
             return local_files
     allImages = []
     for tableLine in dataProductsByID:
         allImages.append(tableLine['productFilename'])
-    print(allImages)
+    log.debug(allImages)
     if not clobber:
         rowsToRemove = []
         for rowCtr in range(0,len(dataProductsByID)):
             if os.path.exists(dataProductsByID[rowCtr]['productFilename']):
-                print("{} already exists. File download skipped.".format(dataProductsByID[rowCtr]['productFilename']))
+                log.debug("{} already exists. File download skipped.".format(dataProductsByID[rowCtr]['productFilename']))
                 rowsToRemove.append(rowCtr)
         if rowsToRemove:
             rowsToRemove.reverse()

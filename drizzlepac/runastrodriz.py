@@ -233,6 +233,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     _tmptrl = _trlroot + '_tmp.tra'
     _drizfile = _trlroot + '_pydriz'
     _drizlog = _drizfile + ".log" # the '.log' gets added automatically by astrodrizzle
+    _alignlog = 'alignimages.log'
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
             # Working with a singleton
@@ -290,6 +291,14 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         ###############
         _trlmsg = _timestamp("Align to GAIA started\n")
         _trlmsg += __trlmarker__
+        print(_trlmsg)
+
+        # Write out trailer comments to trailer file...
+        ftmp = open(_tmptrl,'w')
+        ftmp.writelines(_trlmsg)
+        ftmp.close()
+        _appendTrlFile(_trlfile,_tmptrl)
+
         try:
             align_table = alignimages.perform_align(align_files,update_hdr_wcs=True)
             for row in align_table:
@@ -347,6 +356,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
                                             num_cores=num_cores, **pipeline_pars)
             except Exception as errorobj:
                 _appendTrlFile(_trlfile,_drizlog)
+                _appendTrlFile(_trlfile,_alignlog)
                 _appendTrlFile(_trlfile,_pyd_err)
                 _ftrl = open(_trlfile,'a')
                 _ftrl.write('ERROR: Could not complete astrodrizzle processing of %s.\n' % _infile)
@@ -360,6 +370,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             # Now, append comments created by PyDrizzle to CALXXX trailer file
             print('Updating trailer file %s with astrodrizzle comments.' % _trlfile)
             _appendTrlFile(_trlfile,_drizlog)
+            _appendTrlFile(_trlfile,_alignlog)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch

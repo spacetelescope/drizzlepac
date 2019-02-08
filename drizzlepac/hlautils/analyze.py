@@ -11,6 +11,16 @@ from astropy.io.fits import getheader
 from astropy.table import Table
 import math
 import pdb
+
+import logging
+from drizzlepac import util
+from stsci.tools import logutil
+
+__taskname__ = 'analyze'
+
+# Seems to be a no-opt
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+
 __all__ = ['analyze_data']
 
 from enum import Enum
@@ -256,10 +266,9 @@ def generate_msg(filename, msg, key, value):
         with alignment.
     """
 
-    print('\nDataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
-    print(msg)
+    log.debug('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
     if msg == Messages.NOPROC.value:
-        print('Dataset cannot be aligned.\n')
+        log.debug('Dataset cannot be aligned.')
     else:
-        print('Dataset can be aligned, but the result may be compromised.')
+        log.debug('Dataset can be aligned, but the result may be compromised.')
 

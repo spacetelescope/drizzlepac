@@ -23,6 +23,14 @@ Get git revision info on git repository "foo"::
     hlapipeline/hlapipeline/utils/get_git_rev_info.py foo
 """
 import os, sys
+import logging
+from drizzlepac import util
+from stsci.tools import logutil
+
+__taskname__ = 'get_git_rev_info'
+
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+
 #-----------------------------------------------------------------------------------------------------------------------
 def print_rev_id(localRepoPath):
 	"""prints information about the specified local repository to STDOUT. Expected method of execution: command-line or
@@ -40,23 +48,23 @@ def print_rev_id(localRepoPath):
 	"""
 	start_path = os.getcwd()
 	try:
-		print("Local repository path: {}".format(localRepoPath))
+		log.debug("Local repository path: {}".format(localRepoPath))
 		os.chdir(localRepoPath)
-		print("\n== Remote URL")
+		log.debug("\n== Remote URL")
 		os.system('git remote -v')
                 
-		# print("\n== Remote Branches")
+		# log.debug("\n== Remote Branches")
 		# os.system("git branch -r")
 
-		print("\n== Local Branches")
+		log.debug("\n== Local Branches")
 		os.system("git branch")
 
-		print("\n== Most Recent Commit")
+		log.debug("\n== Most Recent Commit")
 		os.system("git log |head -1")
 		rv = 0
 	except:
 		rv = 111
-		print("WARNING! get_git_rev_info.print_rev_id() encountered a problem and cannot continue.")
+		log.debug("WARNING! get_git_rev_info.print_rev_id() encountered a problem and cannot continue.")
 	finally:
 		os.chdir(start_path)
 		if rv != 0:
