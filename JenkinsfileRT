@@ -1,31 +1,27 @@
 // Obtain files from source control system.
 if (utils.scm_checkout()) return
 
-
-def test_env = [
-    'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory'
-]
-
-
 // Configure artifactory ingest
 data_config = new DataConfig()
 data_config.server_id = 'bytesalad'
 data_config.root = 'tests_output'
 data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
-
 bc = new BuildConfig()
 bc.nodetype = 'linux'
-bc.env_vars = test_env
+bc.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc.name = '3.6'
-bc.conda_channels = ['http://ssb.stsci.edu/conda-dev']
+bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
 bc.conda_packages = ['numpy',
+                     'astroquery',
                      'fitsblender',
                      'graphviz',
                      'nictools',
                      'numpydoc',
+                     'photutils',
                      'pyregion',
-                     'pytest=3.8.2',
+                     'pysynphot',
+                     'pytest',
                      'pytest-remotedata',
                      'crds',
                      'scipy',
@@ -44,11 +40,17 @@ bc.conda_packages = ['numpy',
                      'stwcs',
                      'astropy',
                      'stsci.stimage',
+                     'tweakwcs',
                      'setuptools',
+                     'pip',
                      'python=3.6']
-bc.build_cmds = ["pip install --no-deps"]
+bc.build_cmds = ["python setup.py install"]
 bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
 bc.test_configs = [data_config]
 
-utils.run([bc])
+bc1 = utils.copy(bc)
+bc1.name = '3.6-dev'
+bc1.conda_channels = ['http://ssb.stsci.edu/conda-dev']
+bc1.build_cmds = ["pip install --no-deps -e ."]
 
+utils.run([bc, bc1])
