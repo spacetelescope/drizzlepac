@@ -18,8 +18,12 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
+- Updated code that relies on ``tweakwcs`` to use new API. [#217]
+
+- Added hlapipeline alignment code to package. [#216]
+
 - Update runastrodriz to compute and apply absolute astrometric corrections to
-  GAIA (or related) frame to images where possible.
+  GAIA (or related) frame to images where possible. [#213]
 
 - Add computation and reporting of the fit's
   `Root-Mean-Square Error (RMSE) <https://en.wikipedia.org/wiki/Root-mean-square_deviation>`_
@@ -40,7 +44,6 @@ DrizzlePac (DEVELOPMENT)
 
 - Simplify logic for determining the chip ID for each source. [#200]
 
-- Added hlapipeline alignment code to package. [#216]
 
 DrizzlePac v2.2.6 (02-Nov-2018)
 ===============================

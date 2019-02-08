@@ -10,28 +10,22 @@ from astropy.table import Table
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 from collections import OrderedDict
-from drizzlepac import updatehdr
 import glob
 import math
 import numpy as np
 import os
-import pdb
 import pickle
 from stsci.tools import fileutil
 from stwcs.wcsutil import headerlet
 from stwcs.wcsutil import HSTWCS
 import sys
 import tweakwcs
-try:
-    from drizzlepac.hlautils import astrometric_utils as amutils
-    from drizzlepac.hlautils import astroquery_utils as aqutils
-    from drizzlepac.hlautils import analyze as filter
-    from drizzlepac.hlautils import get_git_rev_info
-except:
-    from drizzlepac.hlautils import astrometric_utils as amutils
-    from drizzlepac.hlautils import astroquery_utils as aqutils
-    from drizzlepac.hlautils import analyze as filter
-    from drizzlepac.hlautils import get_git_rev_info
+
+from . import updatehdr
+from .hlautils import astrometric_utils as amutils
+from .hlautils import astroquery_utils as aqutils
+from .hlautils import analyze as filter
+from .hlautils import get_git_rev_info
 
 MIN_CATALOG_THRESHOLD = 3
 MIN_OBSERVABLE_THRESHOLD = 10
@@ -107,8 +101,9 @@ def check_and_get_data(input_list,**pars):
         if len(filelist) > 0:
             totalInputList += filelist
 
-    if len(filelist) > 0: totalInputList = sorted(
-        list(set(totalInputList)))  # remove duplicate list elements, sort resulting list of unique elements
+    if len(filelist) > 0:
+        # remove duplicate list elements, sort resulting list of unique elements:
+        totalInputList = sorted(list(set(totalInputList)))
     print("TOTAL INPUT LIST: ",totalInputList)
     # TODO: add trap to deal with non-existent (incorrect) rootnames
     # TODO: Address issue about how the code will retrieve association information if there isn't a local file to get 'ASN_ID' header info
@@ -382,12 +377,12 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
     startingDT = currentDT
     # 6: Populate the filteredTable
     print("-------------------- STEP 6: Collect up information and populate the filtered table --------------------")
-    if best_fit_rms > 0 and best_fit_rms < MAX_FIT_RMS:
+    if 0 < best_fit_rms < MAX_FIT_RMS:
         print("The fitting process was successful with a best fit total rms of {} mas".format(best_fit_rms))
     else:
         print("The fitting process was unsuccessful with a best fit total rms of {} mas".format(best_fit_rms))
 
-    if best_fit_rms > 0 and best_fit_rms < MAX_FIT_LIMIT:
+    if 0 < best_fit_rms < MAX_FIT_LIMIT:
         # update to the meta information with the lowest rms if it is reasonable
         for item in imglist:
             item.meta = item.best_meta.copy()
@@ -401,7 +396,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
             imgname = item.meta['name']
             index = np.where(filteredTable['imageName'] == imgname)[0][0]
 
-            if item.meta['tweakwcs_info']['status'].startswith("FAILED") != True:
+            if not item.meta['tweakwcs_info']['status'].startswith("FAILED"):
                 for tweakwcs_info_key in info_keys:
                     if not tweakwcs_info_key.startswith("matched"):
                         if tweakwcs_info_key.lower() == 'rms':

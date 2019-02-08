@@ -1,44 +1,44 @@
-""" Utility to analyze an input dataset and determine whether the dataset can be aligned 
+""" Utility to analyze an input dataset and determine whether the dataset can be aligned
 
-The function analyze_data opens an input list containing FLT and/or FLC FITS filenames 
+The function analyze_data opens an input list containing FLT and/or FLC FITS filenames
 in order to access the primary header data.  Based upon the values of specific
-FITS keywords, the function determines whether or not each file within this dataset 
-can or should be reconciled against an astrometric catalog and, for multiple images, used 
+FITS keywords, the function determines whether or not each file within this dataset
+can or should be reconciled against an astrometric catalog and, for multiple images, used
 to create a mosaic.
 
 """
 from astropy.io.fits import getheader
 from astropy.table import Table
 import math
-import pdb
+
 __all__ = ['analyze_data']
 
 from enum import Enum
- 
+
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
 class Messages(Enum):
     OK, WARN, NOPROC = 1, -1, -2
- 
+
 def analyze_data(inputFileList, **kwargs):
     """
     Determine if images within the dataset can be aligned
-   
+
     Parameters
     ==========
     inputFileList: list
-        List containing FLT and/or FLC filenames for all input images which comprise an associated 
-        dataset where 'associated dataset' may be a single image, multiple images, an HST association, 
+        List containing FLT and/or FLC filenames for all input images which comprise an associated
+        dataset where 'associated dataset' may be a single image, multiple images, an HST association,
         or a number of HST associations
 
     Returns
     =======
     outputTable: object
-        Astropy Table object containing data pertaining to the associated dataset, including 
+        Astropy Table object containing data pertaining to the associated dataset, including
         the doProcess bool.  It is intended this table is updated by subsequent functions for
         bookkeeping purposes.
 
-    Notes 
+    Notes
     =====
     The keyword/value pairs below define the "cannot process categories".
     OBSTYPE : is not IMAGING
@@ -49,7 +49,7 @@ def analyze_data(inputFileList, **kwargs):
     FILTER2 : G*, *POL*, *PRISM*
     APERTURE : *GRISM*, G*-REF, RAMP, *POL*, *PRISM*
     TARGNAME : DARK, TUNGSTEN, BIAS, FLAT, EARTH-CALIB, DEUTERIUM
-    EXPTIME : 0 
+    EXPTIME : 0
     CHINJECT : is not NONE
 
     The keyword/value pairs below define the category which the data can be processed, but
@@ -60,7 +60,7 @@ def analyze_data(inputFileList, **kwargs):
     FITS Keywords only for ACS data: FILTER1 and FILTER2
 
     Please be aware of the FITS keyword value NONE vs the Python None.
-    
+
     FIX: improve robustness when analyzing filter and aperture names, possibly use PHOTMODE instead
     """
     OBSKEY = 'OBSTYPE'
@@ -113,7 +113,7 @@ def analyze_data(inputFileList, **kwargs):
     # Loop over the list of images to determine viability for alignment processing
     #
     # Capture the data characteristics before any evaluation so the information is
-    # available for the output table regardless of which keyword is used to 
+    # available for the output table regardless of which keyword is used to
     # to determine the data is not viable for alignment.
 
     for inputFile in inputFileList:
@@ -131,7 +131,7 @@ def analyze_data(inputFileList, **kwargs):
         # Obtain keyword values for analysis of viability
         obstype  = (header_data[OBSKEY]).upper()
         mtflag   = (header_data[MTKEY]).upper()
-        
+
         scan_typ = ''
         if instrume == 'WFC3':
             scan_typ = (header_data[SCNKEY]).upper()
@@ -144,7 +144,7 @@ def analyze_data(inputFileList, **kwargs):
         if instrume == 'ACS':
             for filtname in acsFiltNameList:
 
-                # The filter keyword value could be zero or more blank spaces 
+                # The filter keyword value could be zero or more blank spaces
                 # Strip off any leading or trailing blanks
                 if len(header_data[filtname].upper().strip()) > 0:
 
@@ -172,12 +172,12 @@ def analyze_data(inputFileList, **kwargs):
         # Imaging vs spectroscopic or coronagraphic
         if obstype != 'IMAGING':
             noProcKey   = OBSKEY
-            noProcValue = obstype 
+            noProcValue = obstype
 
         # Moving target
         elif mtflag == 'T':
             noProcKey   = MTKEY
-            noProcValue = mtflag 
+            noProcValue = mtflag
 
         # Bostrophidon without or with dwell (WFC3 only)
         elif any ([scan_typ == 'C', scan_typ == 'D']):
@@ -186,7 +186,7 @@ def analyze_data(inputFileList, **kwargs):
 
         # Filter which does not begin with: 'F'(F###), 'C'(CLEAR), 'N'(N/A), and is not blank
         # The sfilter variable may be the concatenation of two filters (F160_CLEAR)
-        elif sfilter[0] != 'F' and sfilter[0] != '' and sfilter[0] != 'C' and sfilter[0] != 'N': 
+        elif sfilter and not sfilter.startswith(('F', 'C', 'N')):
             noProcKey   = FILKEY
             noProcValue = sfilter
 
@@ -194,14 +194,14 @@ def analyze_data(inputFileList, **kwargs):
             pos = sfilter.index('_')
             pos += 1
 
-            if sfilter[pos] != 'F' and sfilter[pos] != '' and sfilter[pos] != 'C' and sfilter[pos] != 'N': 
+            if sfilter[pos] != 'F' and sfilter[pos] != '' and sfilter[pos] != 'C' and sfilter[pos] != 'N':
                 noProcKey   = FILKEY
                 noProcValue = sfilter
 
-        # Ramp, polarizer, grism, or prism 
+        # Ramp, polarizer, grism, or prism
         elif any (x in aperture for x in ['RAMP', 'POL', 'GRISM', '-REF', 'PRISM']):
             noProcKey   = APKEY
-            noProcValue = aperture 
+            noProcValue = aperture
 
         # Calibration target
         elif any (x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
@@ -211,7 +211,7 @@ def analyze_data(inputFileList, **kwargs):
         # Exposure time of effectively zero
         elif math.isclose(exptime, 0.0, abs_tol=1e-5):
             noProcKey   = EXPKEY
-            noProcValue = exptime 
+            noProcValue = exptime
 
         # Commanded FGS lock
         elif any (x in fgslock for x in ['GY', 'COARSE']):
@@ -234,15 +234,15 @@ def analyze_data(inputFileList, **kwargs):
 
             processMsg = noProcKey + '=' + str(noProcValue)
 
-            # Issue message to log file for this data indicating no processing to be done or 
-            # processing should be allowed, but there may be some issue with the result (e.g., 
+            # Issue message to log file for this data indicating no processing to be done or
+            # processing should be allowed, but there may be some issue with the result (e.g.,
             # GYROS mode so some drift)
             generate_msg(inputFile, msgType, noProcKey, noProcValue)
 
         # Populate a row of the table
         outputTable.add_row([inputFile, instrume, detector, sfilter, aperture, obstype,
-                             subarray, dateObs, mjdutc, doProcess, processMsg, catalog, 
-                             foundSources, catalogSources, matchSources, rms_x, rms_y, 
+                             subarray, dateObs, mjdutc, doProcess, processMsg, catalog,
+                             foundSources, catalogSources, matchSources, rms_x, rms_y,
                              rms_ra, rms_dec, completed, fit_rms, total_rms, datasetKey,
                              status, headerletFile])
     #outputTable.pprint(max_width=-1)

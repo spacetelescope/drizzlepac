@@ -42,15 +42,22 @@ from photutils import Background2D, MedianBackground
 from photutils import DAOStarFinder
 from scipy import ndimage
 
-import matplotlib.pyplot as plt
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 
 import pysynphot as S
 
-from drizzlepac.tweakutils import build_xy_zeropoint
+try:
+    from matplotlib import pyplot as plt
+except:
+    plt = None
 
-from . import bitmask
+from ..tweakutils import build_xy_zeropoint
+
+try:
+    from stsci.tools.bitmask import bitfield_to_boolean_mask
+except ImportError:
+    from stsci.tools.bitmask import bitmask2mask as bitfield_to_boolean_mask
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
@@ -519,7 +526,7 @@ def extract_sources(img, **pars):
         tbl.write(output, format='ascii.commented_header')
         print("Wrote source catalog: {}".format(output))
 
-    if plot:
+    if plot and plt is not None:
         norm = None
         if vmax is None:
             norm = ImageNormalize(stretch=SqrtStretch())
@@ -643,7 +650,7 @@ def generate_source_catalog(image, **kwargs):
         dqmask = None
         if image.index_of(dqname):
             dqarr = image[dqname,chip].data
-            dqmask = bitmask.bitfield_to_boolean_mask(dqarr, good_mask_value=False)
+            dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
         seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, **kwargs)
         seg_tab_phot = seg_tab #compute_photometry(seg_tab,photmode)
 

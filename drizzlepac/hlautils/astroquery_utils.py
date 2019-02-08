@@ -1,7 +1,6 @@
 """Wrappers for astroquery-related functionality"""
 import shutil
 import os
-import pdb
 from astroquery.mast import Observations
 from astropy.table import Table
 
