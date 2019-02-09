@@ -187,7 +187,6 @@ setup(
         'stsci.image>=2.3.0',
         'stsci.imagemanip',
         'stsci.imagestats',
-        'stsci.ndimage',
         'stsci.skypac',
         'stsci.stimage',
         'stwcs',

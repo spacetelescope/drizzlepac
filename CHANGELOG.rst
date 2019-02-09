@@ -18,6 +18,9 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
+- Removed the dependency on ``stsci.ndimage`` (using ``scipy`` routines
+  instead). [#225]
+
 - Added hlapipeline alignment code to package. [#216]
 
 - Update runastrodriz to compute and apply absolute astrometric corrections to

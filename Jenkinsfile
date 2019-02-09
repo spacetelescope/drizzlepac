@@ -42,7 +42,6 @@ for (numpy_ver in matrix_numpy) {
                          'stsci.image',
                          'stsci.imagemanip',
                          'stsci.imagestats',
-                         'stsci.ndimage',
                          'stsci.skypac',
                          'stregion',
                          'stsci.stimage',
