@@ -38,7 +38,6 @@ for (numpy_ver in matrix_numpy) {
                          'sphinx',
                          'sphinx_rtd_theme',
                          'stsci_rtd_theme',
-                         'stsci.convolve',
                          'stsci.image',
                          'stsci.imagemanip',
                          'stsci.imagestats',
