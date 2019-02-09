@@ -7,7 +7,7 @@
 import string,os
 
 import numpy as np
-import stsci.ndimage as ndimage
+from scipy import signal, ndimage
 
 from stsci.tools import asnutil, irafglob, parseinput, fileutil, logutil
 from astropy.io import fits
@@ -652,7 +652,8 @@ def idlgauss_convolve(image,fwhm):
     sumc1sq = (c1**2).sum() - sumc1
     c1 = (c1-c1.mean())/((c1**2).sum() - c1.mean())
 
-    h = ndimage.convolve(image,c,mode='constant',cval=0.0) # Convolve image with kernel "c"
+    # Convolve image with kernel "c":
+    h = signal.convolve2d(image, c, boundary='fill', mode='same', fillvalue=0)
     h[:nhalf,:] = 0 # Set the sides to zero in order to avoid border effects
     h[-nhalf:,:] = 0
     h[:,:nhalf] = 0
@@ -1004,7 +1005,7 @@ def find_xy_peak(img,center=None,sigma=3.0):
     # take sum of at most a 7x7 pixel box around peak
     xp_slice = (slice(ymin,ymax),
                 slice(xmin,xmax))
-    yp,xp = ndimage.center_of_mass(img[xp_slice])
+    yp, xp = ndimage.measurements.center_of_mass(img[xp_slice])
     if np.isnan(xp) or np.isnan(yp):
         xp=0.0
         yp=0.0

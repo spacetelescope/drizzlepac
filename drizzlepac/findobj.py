@@ -10,9 +10,8 @@ import sys
 import math
 
 import numpy as np
-from scipy import signal
+from scipy import signal, ndimage
 
-import stsci.ndimage as ndim
 import stsci.imagestats as imagestats
 
 from . import cdriz
@@ -185,16 +184,14 @@ def findstars(jdata, fwhm, threshold, skymode,
 
     # clip image to create regions around each source for segmentation
     if mask is None:
-        #tdata=np.where(convdata > skymode*2.0, convdata, 0)
         tdata=np.where(convdata > threshold, convdata, 0)
     else:
         tdata=np.where((convdata > threshold) & mask, convdata, 0)
 
     # segment image and find sources
-    s = ndim.generate_binary_structure(2,2)
-    ldata,nobj=ndim.label(tdata,structure=s)
-    fobjects = ndim.find_objects(ldata)
-    #print 'Number of potential sources: ',nobj
+    s = ndimage.morphology.generate_binary_structure(2, 2)
+    ldata, nobj = ndimage.label(tdata, structure=s)
+    fobjects = ndimage.find_objects(ldata)
 
     fluxes = []
     fitind = []
@@ -206,8 +203,6 @@ def findstars(jdata, fwhm, threshold, skymode,
     # applying limits defined by the user
     ninit  = 0
     ninit2 = 0
-    #minxx  = grx * 2 + 1
-    #minxy  = gry * 2 + 1
 
     s2m, s4m = precompute_sharp_round(nx, ny, xc, yc)
 
@@ -225,20 +220,13 @@ def findstars(jdata, fwhm, threshold, skymode,
         yr0 = ss[0].start - gry
         yr1 = ss[0].stop  + gry + 1
         if yr0 <= 0 or yr1 >= img_ny: continue # ignore sources within ny//2 of edge
-        #if yr0 <= 0: yr0 = 0
-        #if yr1 >= jdata.shape[0]: yr1 = jdata.shape[0]
 
         xr0 = ss[1].start - grx
         xr1 = ss[1].stop  + grx + 1
         if xr0 <= 0 or xr1 >= img_nx: continue # ignore sources within nx//2 of edge
-        #if xr0 <= 0: xr0 = 0
-        #if xr1 >= jdata.shape[1]: xr1 = jdata.shape[1]
 
         ssnew = (slice(yr0,yr1),slice(xr0,xr1))
         region = tdata[ssnew]
-
-        #if region.shape[0] < minxy or region.shape[1] < minxy:
-        #    continue
 
         cntr = centroid(region)
 
@@ -255,7 +243,6 @@ def findstars(jdata, fwhm, threshold, skymode,
         if xr0 < 0 or xr1 > img_nx:
             continue
 
-        #ninit += 1
         # Simple Centroid on the region from the input image
         jregion = jdata[yr0:yr1,xr0:xr1]
         src_flux = jregion.sum()
@@ -271,7 +258,6 @@ def findstars(jdata, fwhm, threshold, skymode,
         if fluxmax and src_flux >= fluxmax:
             continue
 
-        #ninit2 += 1
         datamin = jregion.min()
         datamax = jregion.max()
 
@@ -287,8 +273,8 @@ def findstars(jdata, fwhm, threshold, skymode,
             if round1 is None or (round1 < roundlo or round1 > roundhi):
                 continue
 
-        px,py,round2 = xy_round(jregion, grx, gry, skymode,
-                                kernel, xsigsq, ysigsq, datamin, datamax)
+        px, py, round2 = xy_round(jregion, grx, gry, skymode,
+                                  kernel, xsigsq, ysigsq, datamin, datamax)
 
         # Filter sources:
         if px is None:
