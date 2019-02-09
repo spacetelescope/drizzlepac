@@ -15,6 +15,7 @@ dependencies:
       - stsci_rtd_theme
       - sphinx_automodapi
       - matplotlib
+      - acstools
       - spherical_geometry
       - fitsblender
       - nictools
