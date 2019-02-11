@@ -116,7 +116,7 @@ class BaseCal(object):
 
     # Numpy default for allclose comparison
     rtol = 1e-6
-    atol = 0
+    atol = 1e-5
 
     # To be defined by instrument
     refstr = ''
