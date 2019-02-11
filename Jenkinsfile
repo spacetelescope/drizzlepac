@@ -40,7 +40,6 @@ for (numpy_ver in matrix_numpy) {
                          'sphinx_rtd_theme',
                          'stsci_rtd_theme',
                          'stsci.image',
-                         'stsci.imagemanip',
                          'stsci.imagestats',
                          'stsci.skypac',
                          'stregion',
