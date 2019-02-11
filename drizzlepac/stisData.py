@@ -1,14 +1,14 @@
 """
-`stisData` module provides classes used to import STIS specific instrument data.
+``stisData`` module provides classes used to import STIS specific instrument
+data.
 
-:Authors: Megan Sosey, Christopher Hanley
+:Authors: Megan Sosey, Christopher Hanley, Mihai Cara
 
 :License: :doc:`LICENSE`
 
 """
 from stsci.tools import fileutil
 import numpy as np
-from stsci.imagemanip import interp2d
 from .imageObject import imageObject
 
 
@@ -16,16 +16,16 @@ class STISInputImage (imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self,filename=None,group=None):
-        imageObject.__init__(self,filename,group=group)
+    def __init__(self,filename=None, group=None):
+        super().__init__(filename, group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 8192
         self._effGain = 1.
-        self._instrument=self._image["PRIMARY"].header["INSTRUME"] #this just shows instrument, not detector, detector asigned by subclass
-        self.native_units='COUNTS'
+        self._instrument = self._image["PRIMARY"].header["INSTRUME"]  # this just shows instrument, not detector, detector asigned by subclass
+        self.native_units = 'COUNTS'
 
-    def getflat(self,chip):
+    def getflat(self, chip):
         """
         Method for retrieving a detector's flat field. For STIS there are three.
         This method will return an array the same shape as the image.
@@ -45,7 +45,7 @@ class STISInputImage (imageObject):
             hdu = fileutil.getExtn(handle,extn=exten)
             lfltdata = hdu.data
             if lfltdata.shape != self.full_shape:
-                lfltdata = interp2d.expand2d(lfltdata,self.full_shape)
+                lfltdata = expand_image(lfltdata, self.full_shape)
         except IOError:
             lfltdata = np.ones(self.full_shape, dtype=sci_chip.data.dtype)
             print("Cannot find file '{:s}'. Treating flatfield constant value "
@@ -77,7 +77,6 @@ class STISInputImage (imageObject):
         _handle = fileutil.openImage(self._filename, mode='readonly', memmap=False)
 
         for det in range(1,self._numchips+1,1):
-
             chip=self._image[self.scienceExt,det]
             if chip._gain is not None:
 
@@ -114,24 +113,18 @@ class STISInputImage (imageObject):
         sci_chip.signature=sig #signature is a tuple
 
 
-
 class CCDInputImage(STISInputImage):
+    def __init__(self, filename=None, group=None):
+        super().__init__(filename, group=group)
 
-    def __init__(self,filename=None,group=None):
-        STISInputImage.__init__(self,filename,group=group)
-
-        self.full_shape = (1024,1024)
+        self.full_shape = (1024, 1024)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
-
-        #if ( self.amp == 'D' or self.amp == 'C' ) : # cte direction depends on amp
         for chip in range(1,self._numchips+1,1):
             self._image[self.scienceExt,chip].cte_dir = 1
             self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent()
 
         self.cte_dir =  1
-        #if ( self.amp == 'A' or self.amp == 'B' ) :
-        #    self.cte_dir =  -1
 
     def getdarkcurrent(self):
         """
@@ -188,19 +181,16 @@ class CCDInputImage(STISInputImage):
                 raise ValueError
 
             chip._effGain = chip._gain
-
             self._assignSignature(chip._chip) #this is used in the static mask
-
 
         self.doUnitConversions()
 
 
 class NUVInputImage(STISInputImage):
     def __init__(self, filename, group=None):
-
         self.effGain = 1.0
 
-        STISInputImage.__init__(self,filename, group=None)
+        super().__init__(filename, group=None)
 
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
@@ -215,7 +205,6 @@ class NUVInputImage(STISInputImage):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
-
         pri_header = self._image[0].header
 
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
@@ -225,7 +214,7 @@ class NUVInputImage(STISInputImage):
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
 
-       # We need to determine if the user has used the default readnoise/gain value
+        # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
         usingDefaultGain = instrpars['gnkeyword'] is None
         usingDefaultReadnoise = instrpars['rnkeyword'] is None
@@ -258,9 +247,6 @@ class NUVInputImage(STISInputImage):
                 chip._gain = self._setMAMADefaultGain()
 
             self._assignSignature(chip._chip) #this is used in the static mask
-
-
-
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], chip.header,
                                                      instrpars['expkeyword'])
 
@@ -270,22 +256,18 @@ class NUVInputImage(STISInputImage):
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()
 
-
     def _setMAMAchippars(self):
         self._setMAMADefaultGain()
         self._setMAMADefaultReadnoise()
-
 
     def _setMAMADefaultGain(self):
         self._gain = 1
         self.effGain = 1
         return self._gain
 
-
     def _setMAMADefaultReadnoise(self):
         self._rdnoise = 0
         return self._rdnoise
-
 
     def getdarkcurrent(self):
         """
@@ -296,7 +278,6 @@ class NUVInputImage(STISInputImage):
         darkcurrent : float
             Dark current value in **units of electrons** (or counts, if proc_unit=='native').
         """
-
         darkcurrent = 0.0013 #electrons/sec
         if self.proc_unit == 'native':
             return darkcurrent / self._gain()
@@ -310,7 +291,6 @@ class NUVInputImage(STISInputImage):
         the data inside the chips already in memory is altered as well.
 
         """
-
         for det in range(1,self._numchips+1,1):
 
             chip=self._image[self.scienceExt,det]
@@ -320,11 +300,11 @@ class NUVInputImage(STISInputImage):
             chip.effGain = self.effGain
             chip._conversionFactor = conversionFactor #1.
 
+
 class FUVInputImage(STISInputImage):
     def __init__(self,filename=None,group=None):
         self.effGain=1.0
-
-        STISInputImage.__init__(self,filename,group=group)
+        super().__init__(filename, group=group)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
         # no cte correction for STIS/FUV-MAMA so set cte_dir=0.
@@ -337,7 +317,6 @@ class FUVInputImage(STISInputImage):
         """ This method overrides the superclass to set default values into
             the parameter dictionary, in case empty entries are provided.
         """
-
         pri_header = self._image[0].header
         usingDefaultGain = False
         usingDefaultReadnoise = False
@@ -397,7 +376,6 @@ class FUVInputImage(STISInputImage):
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()
 
-
     def getdarkcurrent(self):
         """
         Returns the dark current for the STIS FUV detector.
@@ -407,12 +385,10 @@ class FUVInputImage(STISInputImage):
         darkcurrent : float
             Dark current value in **units of electrons** (or counts, if proc_unit=='native').
         """
-
         darkcurrent = 0.07 #electrons/sec
         if self.proc_unit == 'native':
             return darkcurrent / self._gain()
         return darkcurrent
-
 
     def _setMAMADefaultGain(self):
         return 1
@@ -428,12 +404,64 @@ class FUVInputImage(STISInputImage):
         the data inside the chips already in memory is altered as well.
 
         """
-
         for det in range(1,self._numchips+1,1):
-
             chip=self._image[self.scienceExt,det]
-
             conversionFactor = self.effGain
             chip._gain = self.effGain #1.
             chip.effGain = self.effGain
             chip._conversionFactor = conversionFactor #1.
+
+
+def expand_image(image, shape):
+    """ Expand image from original shape to requested shape. Output shape
+    must be an integer multiple of input image shape for each axis. """
+    if (shape[0] % image.shape[0]) or (shape[1] % image.shape[1]):
+        raise ValueError("Output shape must be an integer multiple of input "
+                         "image shape.")
+    sx = shape[1] // image.shape[1]
+    sy = shape[0] // image.shape[0]
+
+    ox = (sx - 1.0) / (2.0 * sx)
+    oy = (sy - 1.0) / (2.0 * sy)
+
+    # generate output coordinates:
+    y, x = np.indices(shape, dtype=np.float)
+    x = x / sx - ox
+    y = y / sy - oy
+
+    # interpolate:
+    return bilinear_interp(image, x, y)
+
+
+def bilinear_interp(data, x, y):
+    """ Interpolate input ``data`` at "pixel" coordinates ``x`` and ``y``. """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    if x.shape != y.shape:
+        raise ValueError("X- and Y-coordinates must have identical shapes.")
+
+    out_shape = x.shape
+    out_size = x.size
+    x = x.ravel()
+    y = y.ravel()
+
+    x0 = np.empty(out_size, dtype=np.int)
+    y0 = np.empty(out_size, dtype=np.int)
+    np.clip(x, 0, data.shape[1] - 2, out=x0)
+    np.clip(y, 0, data.shape[0] - 2, out=y0)
+    x1 = x0 + 1
+    y1 = y0 + 1
+
+    f00 = data[(y0, x0)]
+    f10 = data[(y1, x0)]
+    f01 = data[(y0, x1)]
+    f11 = data[(y1, x1)]
+
+    w00 = (x1 - x) * (y1 - y)
+    w10 = (x1 - x) * (y - y0)
+    w01 = (x - x0) * (y1 - y)
+    w11 = (x - x0) * (y - y0)
+
+    interp = w00 * f00 + w10 * f10 + w01 * f01 + w11 * f11
+
+    return interp.reshape(out_shape).astype(data.dtype.type)

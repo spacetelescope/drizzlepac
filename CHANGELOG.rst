@@ -18,13 +18,17 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
+- Fixed a bug in the computation of interpolated large scale flat field
+  for STIS data. The bug was inconsequential in practice.
+  Removed the dependency on ``stsci.imagemanip`` package. [#227]
+
 - Removed the dependency on ``stsci.ndimage`` (using ``scipy`` routines
   instead). [#225]
 
-- Added hlapipeline alignment code to package. [#216]
+- Added ``hlapipeline`` alignment code to package. [#216]
 
-- Update runastrodriz to compute and apply absolute astrometric corrections to
-  GAIA (or related) frame to images where possible. [#213]
+- Update ``runastrodriz`` to compute and apply absolute astrometric corrections
+  to GAIA (or related) frame to images where possible. [#213]
 
 - Add computation and reporting of the fit's
   `Root-Mean-Square Error (RMSE) <https://en.wikipedia.org/wiki/Root-mean-square_deviation>`_

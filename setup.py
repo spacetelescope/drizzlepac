@@ -185,7 +185,6 @@ setup(
         'spherical-geometry',
         'stsci.tools',
         'stsci.image>=2.3.0',
-        'stsci.imagemanip',
         'stsci.imagestats',
         'stsci.skypac',
         'stsci.stimage',
