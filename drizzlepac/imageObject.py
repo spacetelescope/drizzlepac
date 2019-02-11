@@ -21,9 +21,14 @@ from .version import *
 __all__ = ['baseImageObject', 'imageObject', 'WCSObject']
 
 
-IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
-
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+
+
+_NUMPY_TO_IRAF_DTYPES = {'float64': -64, 'float32': -32, 'uint8': 8,
+                         'int16': 16, 'int32': 32, 'int64': 64}
+
+_IRAF_DTYPES_TO_NUMPY = {-64: 'float64', -32: 'float32', 8: 'uint8',
+                         16: 'int16', 32: 'int32', 64: 'int64'}
 
 
 class baseImageObject(object):
@@ -238,7 +243,7 @@ class baseImageObject(object):
             ext = self._image[extnum]
             # update the bitpix to the current datatype, this aint fancy and
             # ignores bscale
-            ext.header['BITPIX'] = IRAF_DTYPES[data.dtype.name]
+            ext.header['BITPIX'] = _NUMPY_TO_IRAF_DTYPES[data.dtype.name]
             ext.data = data
 
     def getAllData(self,extname=None,exclude=None):
@@ -646,24 +651,24 @@ class baseImageObject(object):
         """
         pass
 
-#the following two functions are basically doing the same thing,
-#how are they used differently in the code?
-    def getExtensions(self,extname='SCI',section=None):
-        ''' Return the list of EXTVER values for extensions with name specified in extname.
-        '''
+    # the following two functions are basically doing the same thing,
+    # how are they used differently in the code?
+    def getExtensions(self, extname='SCI', section=None):
+        """ Return the list of EXTVER values for extensions with name specified
+        in extname.
+
+        """
         if section is None:
             numext = 0
             section = []
             for hdu in self._image:
-               if 'extname' in hdu.header and hdu.header['extname'] == extname:
+                if 'extname' in hdu.header and hdu.header['extname'] == extname:
                     section.append(hdu.header['extver'])
         else:
             if not isinstance(section,list):
                 section = [section]
 
         return section
-
-
 
     def _countEXT(self,extname="SCI"):
         """
@@ -691,13 +696,9 @@ class baseImageObject(object):
                         count=count+1
         return count
 
-    def getNumpyType(self,irafType):
-        """ Return the corresponding numpy data type.
-        """
-
-        iraf={-64:'float64',-32:'float32',8:'uint8',16:'int16',32:'int32',64:'int64'}
-
-        return iraf[irafType]
+    def getNumpyType(self, irafType):
+        """ Return the corresponding numpy data type. """
+        return _IRAF_DTYPES_TO_NUMPY[irafType]
 
     def buildMask(self,chip,bits=0,write=False):
         """
@@ -762,7 +763,6 @@ class baseImageObject(object):
             ivm.close()
 
         else:
-
             log.info("Automatically creating IVM files for chip %s" % chip)
             # If no IVM files were provided by the user we will
             # need to automatically generate them based upon
@@ -976,7 +976,7 @@ class imageObject(baseImageObject):
     """
 
     def __init__(self,filename,group=None,inmemory=False):
-        baseImageObject.__init__(self,filename)
+        super().__init__(filename)
 
         #filutil open returns a fits object
         try:
@@ -1143,8 +1143,8 @@ class imageObject(baseImageObject):
                 sci_chip.image_shape = (sci_chip.header['NAXIS2'],sci_chip.header['NAXIS1'])
 
                 # Interpret the array dtype by translating the IRAF BITPIX value
-                for dtype in IRAF_DTYPES.keys():
-                    if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:
+                for dtype, iraf_type in _NUMPY_TO_IRAF_DTYPES.items():
+                    if sci_chip.header['BITPIX'] == iraf_type:
                         sci_chip.image_dtype = dtype
                         break
 
@@ -1200,10 +1200,9 @@ class imageObject(baseImageObject):
         sci_chip.in_units = _in_units
 
 
-
 class WCSObject(baseImageObject):
     def __init__(self,filename,suffix='_drz'):
-        baseImageObject.__init__(self,filename)
+        super().__init__(filename)
 
         self._image = fits.HDUList()
         self._image.append(fits.PrimaryHDU())

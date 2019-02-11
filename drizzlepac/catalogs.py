@@ -434,7 +434,7 @@ class ImageCatalog(Catalog):
         #   are ignored. If 'region_file_mode' = 'normal' then normal DS9 interpretation
         #   of the regions will be applied.
         self.src_find_filters = src_find_filters
-        super(ImageCatalog, self).__init__(wcs, catalog_source, **kwargs)
+        super().__init__(wcs, catalog_source, **kwargs)
         extind = self.fname.rfind('[')
         self.fnamenoext = self.fname if extind < 0 else self.fname[:extind]
         if self.wcs.extname == ('',None):
@@ -649,7 +649,7 @@ class UserCatalog(Catalog):
     IN_UNITS = None
 
     def __init__(self, wcs, catalog_source, **kwargs):
-        super(UserCatalog, self).__init__(wcs, catalog_source, **kwargs)
+        super().__init__(wcs, catalog_source, **kwargs)
         self._apply_flux_limits = True
 
     def set_colnames(self):
@@ -760,7 +760,7 @@ class RefCatalog(UserCatalog):
     PAR_NBRIGHT_PREFIX = 'ref'
 
     def __init__(self, wcs, catalog_source, **kwargs):
-        super(RefCatalog, self).__init__(wcs, catalog_source, **kwargs)
+        super().__init__(wcs, catalog_source, **kwargs)
         self._apply_flux_limits = True
 
     def generateXY(self, **kwargs):

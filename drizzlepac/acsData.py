@@ -8,7 +8,7 @@ Class used to model ACS specific instrument data.
 """
 from stsci.tools import fileutil
 import numpy as np
-from .imageObject import imageObject, baseImageObject
+from .imageObject import imageObject
 
 
 class ACSInputImage(imageObject):
@@ -16,7 +16,7 @@ class ACSInputImage(imageObject):
     SEPARATOR = '_'
 
     def __init__(self,filename=None,group=None):
-        imageObject.__init__(self,filename,group=group)
+        super().__init__(filename, group=group)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
@@ -52,8 +52,8 @@ class ACSInputImage(imageObject):
         detnum = sci_chip.detnum
         instr=self._instrument
 
-        sig=(instr+self._detector,(nx,ny),int(chip)) #signature is a tuple
-        sci_chip.signature=sig #signature is a tuple
+        sig = (instr + self._detector, (nx, ny), int(chip))  # signature is a tuple
+        sci_chip.signature=sig  # signature is a tuple
 
     def getdarkcurrent(self,extver):
         """
@@ -68,7 +68,6 @@ class ACSInputImage(imageObject):
             Dark current value for the ACS detector in **units of electrons**.
 
         """
-
         darkcurrent=0.
         try:
             darkcurrent = self._image[self.scienceExt,extver].header['MEANDARK']
@@ -86,24 +85,21 @@ class ACSInputImage(imageObject):
             str += "#############################################\n"
             raise ValueError(str)
 
-
         return darkcurrent
 
 
 class WFCInputImage(ACSInputImage):
-
-    def __init__(self,filename=None,group=None):
-        ACSInputImage.__init__(self,filename,group=group)
-        self.full_shape = (4096,2048)
+    def __init__(self, filename=None, group=None):
+        super().__init__(filename, group=group)
+        self.full_shape = (4096, 2048)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
         # get cte direction, which depends on which chip but is independent of amp
-        for chip in range(1,self._numchips+1,1):
+        for chip in range(1, self._numchips + 1, 1):
             self._assignSignature(chip) #this is used in the static mask
-
-            if ( chip == 1) :
+            if chip == 1:
                 self._image[self.scienceExt,chip].cte_dir = -1
-            if ( chip == 2) :
+            elif chip == 2:
                 self._image[self.scienceExt,chip].cte_dir = 1
 
     def setInstrumentParameters(self,instrpars):
@@ -151,21 +147,21 @@ class WFCInputImage(ACSInputImage):
 
 
 class HRCInputImage (ACSInputImage):
-
-    def __init__(self, filename=None,group=None):
-        ACSInputImage.__init__(self, filename,group=group)
-        self._detector=self._image['PRIMARY'].header["DETECTOR"]
-        self.full_shape = (1024,1024)
-        amp=self._image['PRIMARY'].header["CCDAMP"]
-        self._detector=self._image['PRIMARY'].header["DETECTOR"]
+    def __init__(self, filename=None, group=None):
+        super().__init__(filename, group=group)
+        self._detector = self._image['PRIMARY'].header["DETECTOR"]
+        self.full_shape = (1024, 1024)
+        amp = self._image['PRIMARY'].header["CCDAMP"]
+        self._detector = self._image['PRIMARY'].header["DETECTOR"]
 
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
 
-            if ( amp == 'A' or amp == 'B' ) : # cte direction depends on amp (but is independent of chip)
-                self._image[self.scienceExt,chip].cte_dir = 1
-            if ( amp == 'C' or amp == 'D' ) :
-                self._image[self.scienceExt,chip].cte_dir = -1
+            # cte direction depends on amp (but is independent of chip):
+            if amp in ['A', 'B']:
+                self._image[self.scienceExt, chip].cte_dir = 1
+            elif amp in ['C', 'D']:
+                self._image[self.scienceExt, chip].cte_dir = -1
 
     def setInstrumentParameters(self,instrpars):
         """ This method overrides the superclass to set default values into
@@ -212,18 +208,16 @@ class HRCInputImage (ACSInputImage):
 
 
 class SBCInputImage (ACSInputImage):
-
-    def __init__(self, filename=None,group=None):
-        ACSInputImage.__init__(self,filename,group=group)
-        self.full_shape = (1024,1024)
-        self._detector=self._image['PRIMARY'].header["DETECTOR"]
+    def __init__(self, filename=None, group=None):
+        super().__init__(filename, group=group)
+        self.full_shape = (1024, 1024)
+        self._detector = self._image['PRIMARY'].header["DETECTOR"]
 
         # no cte correction for SBC so set cte_dir=0.
         print('WARNING: No cte correction will be made for this SBC data.')
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
             self._image[self.scienceExt,chip].cte_dir = 0
-
 
     def _setSBCchippars(self):
         self._setDefaultSBCGain()
