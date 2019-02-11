@@ -1143,15 +1143,12 @@ class imageObject(baseImageObject):
                 sci_chip.image_shape = (sci_chip.header['NAXIS2'],sci_chip.header['NAXIS1'])
 
                 # Interpret the array dtype by translating the IRAF BITPIX value
-                for dtype, iraf_type in _NUMPY_TO_IRAF_DTYPES.items():
-                    if sci_chip.header['BITPIX'] == iraf_type:
-                        sci_chip.image_dtype = dtype
-                        break
+                if sci_chip.header['BITPIX'] in _IRAF_DTYPES_TO_NUMPY:
+                    sci_chip.image_dtype = _IRAF_DTYPES_TO_NUMPY[sci_chip.header['BITPIX']]
 
                 if self.inmemory:
                     # read image data array into memory
                     shape = sci_chip.data.shape
-
 
     def setInstrumentParameters(self,instrpars):
         """ Define instrument-specific parameters for use in the code.
