@@ -28,7 +28,8 @@ for (numpy_ver in matrix_numpy) {
     bc.env_vars = ['BUILD_MATRIX_SUFFIX=' + MATRIX_SUFFIX,
                         'BUILD_MATRIX_ID=' + matrix_id]
     bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
-    bc.conda_packages = ['fitsblender',
+    bc.conda_packages = ['acstools',
+                         'fitsblender',
                          'graphviz',
                          'nictools',
                          'numpydoc',
@@ -38,11 +39,8 @@ for (numpy_ver in matrix_numpy) {
                          'sphinx',
                          'sphinx_rtd_theme',
                          'stsci_rtd_theme',
-                         'stsci.convolve',
                          'stsci.image',
-                         'stsci.imagemanip',
                          'stsci.imagestats',
-                         'stsci.ndimage',
                          'stsci.skypac',
                          'stregion',
                          'stsci.stimage',

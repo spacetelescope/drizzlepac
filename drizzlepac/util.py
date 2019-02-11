@@ -181,25 +181,40 @@ class WithLogging(object):
                 # The first arg must be the configobj
                 try:
                     configobj = args[0]
-                    input = processFilenames(configobj['input'])
-                    inputs, output, _, _ = input
-                    if output is not None:
-                        default = output
-                    elif inputs:
-                        default = inputs[0]
-                    else:
-                        default = None
-
-                    if default is not None:
-                        # astrodrizzle and tweakreg have this parameter.
-                        # Could we do away with it altogether?
-                        if 'runfile' in configobj:
-                            filename = configobj['runfile']
+                    if 'input' in configobj:
+                        # We are working with a fully defined configobj instance
+                        input = processFilenames(configobj['input'])
+                        inputs, output, _, _ = input
+                        if output is not None:
+                            default = output
+                        elif inputs:
+                            default = inputs[0]
                         else:
-                            filename = default
-                    verbose_level=logging.INFO
-                    if 'verbose' in configobj and configobj['verbose']:
-                        verbose_level=logging.DEBUG
+                            default = None
+
+                        if default is not None:
+                            # astrodrizzle and tweakreg have this parameter.
+                            # Could we do away with it altogether?
+                            if 'runfile' in configobj:
+                                filename = configobj['runfile']
+                            else:
+                                filename = default
+                        verbose_level=logging.INFO
+                        if 'verbose' in configobj and configobj['verbose']:
+                            verbose_level=logging.DEBUG
+                    else:
+                        # Calling this for a non-teal function
+                        filename = "{}.log".format(func.__name__)
+                        logfile = kwargs.get('runfile', None)
+                        if logfile:
+                            filename = logfile
+                        verbose_level = logging.INFO  # Default level 
+                        # If either `debug` or `verbose` are set to True in kwargs
+                        # set logging level to DEBUG
+                        debug = kwargs.get('debug',False)   
+                        verbose = kwargs.get('verbose', False)
+                        if debug or verbose:
+                            verbose_level = logging.DEBUG
                     init_logging(filename, level=verbose_level)
                 except (KeyError, IndexError, TypeError):
                     pass
