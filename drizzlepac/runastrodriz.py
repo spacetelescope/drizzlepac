@@ -299,26 +299,16 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         ftmp.writelines(_trlmsg)
         ftmp.close()
         _appendTrlFile(_trlfile,_tmptrl)
-        #_trlmsg = ""
+        _trlmsg = ""
         try:
             align_table = alignimages.perform_align(align_files,update_hdr_wcs=True)
-            print("After return from alignimages.")
-            align_table.pprint()
-            print("After print table.")
-            if align_table is None:
-            #if align_table['doProcess'].sum() == 0:
-                print("INSIDE if ALIGN")
-                #_trlmsg = ("Dataset {} cannot be corrected to absolute astrometric frame.".format(align_files))
-            else:
-                print("INSIDE row through table doprocess")
-                for row in align_table:
-                    if row['status'] == 0:
-                        trlstr = "Successfully aligned {} to {} astrometric frame\n"
-                        _trlmsg += trlstr.format(row['imageName'], row['catalog'])
-                    else:
-                        trlstr = "Could not align {} to absolute astrometric frame\n"
-                        _trlmsg += trlstr.format(row['imageName'])
-
+            for row in align_table:
+                if row['status'] == 0:
+                    trlstr = "Successfully aligned {} to {} astrometric frame\n"
+                    _trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                else:
+                    trlstr = "Could not align {} to absolute astrometric frame\n"
+                    _trlmsg += trlstr.format(row['imageName'])
         except Exception:
             # Something went wrong with alignment to GAIA, so report this in
             # trailer file
@@ -333,6 +323,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         ftmp.writelines(_trlmsg)
         ftmp.close()
         _appendTrlFile(_trlfile,_tmptrl)
+        _trlmsg = ""
 
         #Check to see whether there are any additional input files that need to
         # be aligned (namely, FLT images)
@@ -351,8 +342,8 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
                     _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
 
         # Finally, append any further messages associated with alignement from this calling routine
-        _final_msg = _timestamp('Align_to_GAIA completed ')
-        _trlmsg += _final_msg
+        _trlmsg += _timestamp('Align_to_GAIA completed ')
+        print(_trlmsg)
         ftmp = open(_tmptrl,'w')
         ftmp.writelines(_trlmsg)
         ftmp.close()

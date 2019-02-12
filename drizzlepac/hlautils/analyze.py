@@ -263,11 +263,11 @@ def generate_msg(filename, msg, key, value):
         with alignment.
     """
 
-    log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
-    print('\nDataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
+    #log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
+    print('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
     if msg == Messages.NOPROC.value:
-        log.info('Dataset cannot be aligned.')
-        print('Dataset cannot be aligned.\n')
+        #log.info('Dataset cannot be aligned.')
+        print('Dataset cannot be aligned.')
     else:
-        log.info('Dataset can be aligned, but the result may be compromised.')
+        #log.info('Dataset can be aligned, but the result may be compromised.')
         print('Dataset can be aligned, but the result may be compromised.')

@@ -23,6 +23,8 @@ from stwcs.wcsutil import HSTWCS
 import sys
 import tweakwcs
 
+import logging
+
 __taskname__ = 'alignimages'
 
 from drizzlepac import updatehdr
@@ -65,6 +67,7 @@ detector_specific_params = {"acs":
                                       "threshold": None}}} # fwhmpsf in units of arcsec
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+util.init_logging('perform_align.log', level=logging.INFO)
 
 __version__ = 0.1
 __version_date__ = ' 01-Feb-2019'
@@ -139,7 +142,7 @@ def convert_string_tf_to_boolean(invalue):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@util.with_logging
+#@util.with_logging
 def perform_align(input_list, archive=False, clobber=False, debug=True, update_hdr_wcs=False,
                   print_fit_parameters=True, print_git_info=False, output=True): # TODO: set 'debug' and 'output' back to 'False' before release.
     """Main calling function.
@@ -176,7 +179,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
 
     Returns
     -------
-    int value 0 if successful, int value 1 if unsuccessful
+    filteredTable: Astropy Table
+        Table which contains processing information and alignment results for every raw image evaluated
 
     """
 
@@ -225,6 +229,9 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
     if filteredTable['doProcess'].sum() == 0:
         log.warning("No viable images in filtered table - no processing done.\n")
         print("No viable images in filtered table - no processing done.\n")
+        currentDT = datetime.datetime.now()
+        deltaDT = (currentDT - startingDT).total_seconds()
+        log.info('Processing time of [STEP 2]: {} sec'.format(deltaDT))
         return(filteredTable)
 
     # Get the list of all "good" files to use for the alignment
@@ -277,6 +284,9 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
             log.warning("No sources found in image {}".format(imgname))
             filteredTable[:]['status'] = 1
             filteredTable[:]['processMsg'] = "No sources found"
+            currentDT = datetime.datetime.now()
+            deltaDT = (currentDT - startingDT).total_seconds()
+            log.info('Processing time of [STEP 4]: {} sec'.format(deltaDT))
             return(filteredTable)
 
         # The catalog of observable sources must have at least MIN_OBSERVABLE_THRESHOLD entries to be useful
@@ -291,6 +301,9 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
             log.warning("Not enough sources ({}) found in image {}".format(total_num_sources,imgname))
             filteredTable[:]['status'] = 1
             filteredTable[:]['processMsg'] = "Not enough sources found"
+            currentDT = datetime.datetime.now()
+            deltaDT = (currentDT - startingDT).total_seconds()
+            log.info('Processing time of [STEP 4]: {} sec'.format(deltaDT))
             return(filteredTable)
     log.info("SUCCESS")
     currentDT = datetime.datetime.now()
@@ -333,6 +346,9 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
                 log.warning("ERROR! No astrometric sources found in any catalog. Exiting...") #bail out if not enough sources can be found any of the astrometric catalogs
                 filteredTable['status'][:] = 1
                 filteredTable['processMsg'][:] = "No astrometric sources found"
+                currentDT = datetime.datetime.now()
+                deltaDT = (currentDT - startingDT).total_seconds()
+                log.info('Processing time of [STEP 5]: {} sec'.format(deltaDT))
                 return (filteredTable)
         else:
             log.info("-------------------- STEP 5b: Cross matching and fitting -----------------------------------------------")
@@ -453,9 +469,10 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
 
     currentDT = datetime.datetime.now()
     deltaDT = (currentDT - startingDT).total_seconds()
-    print('Processing time of [STEP 7]: {} sec'.format(deltaDT))
-    print('TOTAL Processing time of {} sec'.format((currentDT- zeroDT).total_seconds()))
-    print(best_fitStatusDict)
+    log.info('Processing time of [STEP 7]: {} sec'.format(deltaDT))
+    log.info('TOTAL Processing time of {} sec'.format((currentDT- zeroDT).total_seconds()))
+    log.info(best_fitStatusDict)
+    log.info("--------------------------------------------------------------------------------------------------------")
     return (filteredTable)
 
 
