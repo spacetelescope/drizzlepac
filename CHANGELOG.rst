@@ -51,6 +51,8 @@ DrizzlePac (DEVELOPMENT)
 
 - Added hlapipeline alignment code to package. [#216]
 
+- Added logging to the hlapipeline alignment code [#223]
+
 DrizzlePac v2.2.6 (02-Nov-2018)
 ===============================
 
