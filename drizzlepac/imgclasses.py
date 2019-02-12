@@ -46,9 +46,9 @@ IMAGE_USE_CONVEX_HULL = True
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
-sortKeys = ['minflux','maxflux','nbright','fluxunits']
+sortKeys = ['minflux', 'maxflux', 'nbright', 'fluxunits']
 
-class Image(object):
+class Image:
     """ Primary class to keep track of all WCS and catalog information for
         a single input image. This class also performs all matching and fitting.
     """
@@ -368,8 +368,7 @@ class Image(object):
                 self.all_radec_orig = copy.deepcopy(self.all_radec)
 
     def buildDefaultRefWCS(self):
-        """ Generate a default reference WCS for this image.
-        """
+        """ Generate a default reference WCS for this image. """
         self.default_refWCS = None
         if self.use_wcs:
             wcslist = []
@@ -396,8 +395,9 @@ class Image(object):
 
     def sortSkyCatalog(self):
         """ Sort and clip the source catalog based on the flux range specified
-            by the user.
-            It keeps a copy of the original full list in order to support iteration.
+        by the user. It keeps a copy of the original full list in order to
+        support iteration.
+
         """
         if len(self.all_radec_orig[2].nonzero()[0]) == 0:
             warn_str = "Source catalog NOT trimmed by flux/mag. No fluxes read in for sources!"
@@ -504,8 +504,6 @@ class Image(object):
 
         # Check to see whether or not it is being matched to itself
         if (refname.strip() == self.name.strip()):# or (
-#                ref_outxy.shape == self.outxy.shape) and (
-#                ref_outxy == self.outxy).all():
             self.identityfit = True
             if not quiet_identity:
                 log.info('NO fit performed for reference image: %s\n'%self.name)
@@ -622,7 +620,6 @@ class Image(object):
                     log.warning(line)
                 print(warnstr)
                 self.goodmatch = False
-
 
     def performFit(self,**kwargs):
         """ Perform a fit between the matched sources.
@@ -757,7 +754,6 @@ class Image(object):
                 self.fit['offset'] = [np.nan,np.nan]
                 self.fit['rot'] = np.nan
                 self.fit['scale'] = [np.nan]
-
 
     def compute_fit_rms(self):
         # start by interpreting the fit to get the RMS values
@@ -901,7 +897,6 @@ class Image(object):
             wcscorr.update_wcscorr(self._im.hdu, wcs_id=wcsname,
                                    extname=self.ext_name)
 
-
     def writeHeaderlet(self,**kwargs):
         """ Write and/or attach a headerlet based on update to PRIMARY WCS
         """
@@ -932,7 +927,6 @@ class Image(object):
                 attach=pars['attach'], clobber=pars['clobber']
             )
 
-
     def write_skycatalog(self,filename):
         """ Write out the all_radec catalog for this image to a file.
         """
@@ -948,7 +942,6 @@ class Image(object):
             f.write('%0.12f  %0.12f\n'%(ralist[i],declist[i]))
         f.close()
 
-
     def get_xy_catnames(self):
         """ Return a string with the names of input_xy catalog names
         """
@@ -957,7 +950,6 @@ class Image(object):
             for xycat in self.catalog_names['input_xy']:
                 catstr += '  '+xycat
         return catstr + '\n'
-
 
     def write_fit_catalog(self):
         """ Write out the catalog of all sources and resids used in the final fit.
@@ -1032,7 +1024,6 @@ class Image(object):
             tweakutils.write_xy_file(self.catalog_names['fitmatch'],xydata,
                 append=True,format=["%15.6f","%8d","%20.12f","   %s"])
 
-
     def write_outxy(self,filename):
         """ Write out the output(transformed) XY catalog for this image to a file.
         """
@@ -1043,7 +1034,6 @@ class Image(object):
         for i in range(self.all_radec[0].shape[0]):
             f.write('%f  %f\n'%(self.outxy[i,0],self.outxy[i,1]))
         f.close()
-
 
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
@@ -1057,7 +1047,6 @@ class Image(object):
         else:
             rowstr = None
         return rowstr
-
 
     def clean(self):
         """ Remove intermediate files created.
@@ -1076,13 +1065,13 @@ class Image(object):
                         os.remove(extn)
 
 
-class RefImage(object):
+class RefImage:
     """ This class provides all the information needed by to define a reference
-        tangent plane and list of source positions on the sky.
+    tangent plane and list of source positions on the sky.
 
-        .. warning::
-          When `wcs_list` is a Python list of `WCS` objects,
-          each element must be an instance of `stwcs.wcsutil.HSTWCS`.
+    .. warning::
+        When ``wcs_list`` is a Python list of ``WCS`` objects,
+        each element must be an instance of `stwcs.wcsutil.HSTWCS`.
 
     """
     def __init__(self, wcs_list, catalog, xycatalog=None, cat_origin=None, **kwargs):
@@ -1303,14 +1292,11 @@ class RefImage(object):
         else:
             self.skyline = SphericalPolygon([])
 
-
     def clear_dirty_flag(self):
         self.dirty = False
 
-
     def set_dirty(self):
         self.dirty = True
-
 
     def write_skycatalog(self, filename, show_flux=False, show_id=False):
         """ Write out the all_radec catalog for this image to a file.
@@ -1354,7 +1340,6 @@ class RefImage(object):
             f.write(src_line + '\n')
         f.close()
 
-
     def transformToRef(self):
         """ Transform reference catalog sky positions (self.all_radec)
         to reference tangent plane (self.wcs) to create output X,Y positions.
@@ -1372,7 +1357,6 @@ class RefImage(object):
             outxy = self.wcs.wcs_world2pix(self.all_radec[0],self.all_radec[1],self.origin)
             # convert outxy list to a Nx2 array
             self.outxy = np.column_stack([outxy[0][:,np.newaxis],outxy[1][:,np.newaxis]])
-
 
     def append_not_matched_sources(self, image):
         assert(hasattr(image, 'fit') and hasattr(image, 'matches'))
@@ -1434,7 +1418,6 @@ class RefImage(object):
 
         self.set_dirty()
 
-
     def get_shiftfile_row(self):
         """ Return the information for a shiftfile for this image to provide
             compatability with the IRAF-based MultiDrizzle.
@@ -1442,13 +1425,11 @@ class RefImage(object):
         rowstr = '%s    0.0  0.0    0.0     1.0    0.0 0.0\n'%(self.name)
         return rowstr
 
-
     def clean(self):
         """ Remove intermediate files created
         """
         if not util.is_blank(self.catalog.catname) and os.path.exists(self.catalog.catname):
             os.remove(self.catalog.catname)
-
 
     def close(self):
         pass

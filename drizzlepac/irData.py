@@ -20,12 +20,11 @@ class IRInputImage(imageObject):
     """
     SEPARATOR = '_'
 
-
     def __init__(self,filename=None,proc_unit="native"):
         """
         Constructor for IRInputImage class object.
         """
-        imageObject.__init__(self,filename)
+        super().__init__(filename)
 
     def isCountRate(self):
         """

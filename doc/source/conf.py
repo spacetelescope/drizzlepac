@@ -288,7 +288,7 @@ latex_elements = {
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '11pt',
     # Additional stuff for the LaTeX preamble.
-    'preamble': r'''\usepackage{enumitem} \setlistdepth{99}'''
+    'preamble': r"""\usepackage{enumitem} \setlistdepth{99}"""
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

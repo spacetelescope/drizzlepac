@@ -21,18 +21,21 @@ from .version import *
 __all__ = ['baseImageObject', 'imageObject', 'WCSObject']
 
 
-IRAF_DTYPES={'float64':-64,'float32':-32,'uint8':8,'int16':16,'int32':32}
-
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-class baseImageObject(object):
-    """ Base ImageObject which defines the primary set of methods.
-    """
+_NUMPY_TO_IRAF_DTYPES = {'float64': -64, 'float32': -32, 'uint8': 8,
+                         'int16': 16, 'int32': 32, 'int64': 64}
+
+_IRAF_DTYPES_TO_NUMPY = {-64: 'float64', -32: 'float32', 8: 'uint8',
+                         16: 'int16', 32: 'int32', 64: 'int64'}
+
+
+class baseImageObject:
+    """ Base ImageObject which defines the primary set of methods. """
     def __init__(self,filename):
         """
         """
-
         self.scienceExt= "SCI" # the extension the science image is stored in
         self.maskExt="DQ" #the extension with the mask image in it
         self.errExt = "ERR"  # the extension the ERR array can be found in
@@ -63,7 +66,6 @@ class baseImageObject(object):
             use getData or getHeader to re-read the file.
         """
         return fileutil.getExtn(self._image,extn=exten)
-
 
     def __cmp__(self, other):
         """ Overload the comparison operator
@@ -238,7 +240,7 @@ class baseImageObject(object):
             ext = self._image[extnum]
             # update the bitpix to the current datatype, this aint fancy and
             # ignores bscale
-            ext.header['BITPIX'] = IRAF_DTYPES[data.dtype.name]
+            ext.header['BITPIX'] = _NUMPY_TO_IRAF_DTYPES[data.dtype.name]
             ext.data = data
 
     def getAllData(self,extname=None,exclude=None):
@@ -316,7 +318,6 @@ class baseImageObject(object):
 
     def findExtNum(self, extname=None, extver=1):
         """Find the extension number of the give extname and extver."""
-
         extnum = None
         extname = extname.upper()
 
@@ -331,9 +332,7 @@ class baseImageObject(object):
         return extnum
 
     def _assignRootname(self, chip):
-        """ Assign a unique rootname for the image based in the expname.
-        """
-
+        """ Assign a unique rootname for the image based in the expname. """
         extname=self._image[self.scienceExt,chip].header["EXTNAME"].lower()
         extver=self._image[self.scienceExt,chip].header["EXTVER"]
         expname = self._rootname
@@ -345,7 +344,6 @@ class baseImageObject(object):
         # Needed to keep EXPNAMEs associated properly (1 EXPNAME for all chips)
         self._image[self.scienceExt,chip]._expname=expname
         self._image[self.scienceExt,chip]._chip =chip
-
 
     def _setOutputNames(self,rootname,suffix='_drz'):
         """ Define the default output filenames for drizzle products,
@@ -374,19 +372,19 @@ class baseImageObject(object):
 
         # Build outputNames dictionary
         fnames={
-            'origFilename':origFilename,
-            'outFinal':outFinal,
-            'outMedian':outMedian,
-            'outSci':outSci,
-            'outWeight':outWeight,
-            'outContext':outContext,
-            'outSingle':outSingle,
-            'outSWeight':outSWeight,
-            'outSContext':None,
-            'outSky':outSky,
-            'crcorImage':crCorImage,
-            'ivmFile':None}
-
+            'origFilename': origFilename,
+            'outFinal': outFinal,
+            'outMedian': outMedian,
+            'outSci': outSci,
+            'outWeight': outWeight,
+            'outContext': outContext,
+            'outSingle': outSingle,
+            'outSWeight': outSWeight,
+            'outSContext': None,
+            'outSky': outSky,
+            'crcorImage': crCorImage,
+            'ivmFile': None
+        }
 
         return fnames
 
@@ -410,33 +408,32 @@ class baseImageObject(object):
         fnames['data'] = sci_chip.sciname
         return fnames
 
-##############################################################
-#
-# Methods related to managing virtual intermediate output products
-# as opposed to writing them out as files on disk
-#
-##############################################################
+    ##############################################################
+    #
+    # Methods related to managing virtual intermediate output products
+    # as opposed to writing them out as files on disk
+    #
+    ##############################################################
     def _initVirtualOutputs(self):
         """ Sets up the structure to hold all the output data arrays for
-            this image in memory.
+        this image in memory.
         """
         self.virtualOutputs = {}
         for product in self.outputNames:
             self.virtualOutputs[product] = None
 
     def saveVirtualOutputs(self,outdict):
-        """ Assign in-memory versions of generated products for this imageObject
-            based on dictionary 'outdict'.
+        """ Assign in-memory versions of generated products for this
+        ``imageObject`` based on dictionary 'outdict'.
         """
         if not self.inmemory:
             return
         for outname in outdict:
-#           log.info('saveVirtualOutputs: writing key '+outname+' for id: '+str(id(self)))
             self.virtualOutputs[outname] = outdict[outname]
 
     def getOutputName(self,name):
         """ Return the name of the file or PyFITS object associated with that
-            name, depending on the setting of self.inmemory.
+        name, depending on the setting of self.inmemory.
         """
         val = self.outputNames[name]
         if self.inmemory: # if inmemory was turned on...
@@ -444,14 +441,13 @@ class baseImageObject(object):
             val = self.virtualOutputs[val]
         return val
 
-##############################################################
-# Methods for managing output values associated with this input
-##############################################################
+    ##############################################################
+    # Methods for managing output values associated with this input
+    ##############################################################
     def updateOutputValues(self,output_wcs):
         """ Copy info from output WCSObject into outputnames for each chip
-            for use in creating outputimage object.
+        for use in creating outputimage object.
         """
-
         outputvals = self.outputValues
 
         outputvals['output'] = output_wcs.outputNames['outFinal']
@@ -472,10 +468,10 @@ class baseImageObject(object):
         outnames['outContext'] = output_wcs.outputNames['outContext']
 
     def updateContextImage(self, contextpar):
-        """
-        Reset the name of the context image to None if parameter `context` == False.
-        """
+        """ Reset the name of the context image to `None` if parameter
+        ``context`` is `False`.
 
+        """
         self.createContext = contextpar
         if not contextpar:
             log.info('No context image will be created for %s' %
@@ -483,11 +479,9 @@ class baseImageObject(object):
             self.outputNames['outContext'] = None
 
     def find_DQ_extension(self):
+        """ Return the suffix for the data quality extension and the name of
+        the file which that DQ extension should be read from.
         """
-        Return the suffix for the data quality extension and the name of the
-        file which that DQ extension should be read from.
-        """
-
         dqfile = None
         dq_suffix=None
         if(self.maskExt is not None):
@@ -500,13 +494,12 @@ class baseImageObject(object):
 
         return dqfile,dq_suffix
 
-
     def getKeywordList(self, kw):
         """
         Return lists of all attribute values for all active chips in the
-        imageObject.
-        """
+        ``imageObject``.
 
+        """
         kwlist = []
         for chip in range(1,self._numchips+1,1):
             sci_chip = self._image[self.scienceExt,chip]
@@ -529,7 +522,6 @@ class baseImageObject(object):
             **units of electrons**.
 
         """
-
         sci_chip = self._image[self.scienceExt, chip]
         exten = '%s,%d' % (self.scienceExt, chip)
         # The keyword for ACS flat fields in the primary header of the flt
@@ -539,7 +531,6 @@ class baseImageObject(object):
         # The use of fileutil.osfn interprets any environment variable, such as jref$,
         # used in the specification of the reference filename
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
-
         try:
             handle = fileutil.openImage(filename, mode='readonly', memmap=False)
             hdu = fileutil.getExtn(handle,extn=exten)
@@ -575,9 +566,7 @@ class baseImageObject(object):
         :units: electrons
 
         """
-
         sci_chip = self._image[self.scienceExt,chip]
-
         return np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype) * sci_chip._rdnoise
 
     def getexptimeimg(self,chip):
@@ -646,16 +635,18 @@ class baseImageObject(object):
         """
         pass
 
-#the following two functions are basically doing the same thing,
-#how are they used differently in the code?
-    def getExtensions(self,extname='SCI',section=None):
-        ''' Return the list of EXTVER values for extensions with name specified in extname.
-        '''
+    # the following two functions are basically doing the same thing,
+    # how are they used differently in the code?
+    def getExtensions(self, extname='SCI', section=None):
+        """ Return the list of EXTVER values for extensions with name specified
+        in extname.
+
+        """
         if section is None:
             numext = 0
             section = []
             for hdu in self._image:
-               if 'extname' in hdu.header and hdu.header['extname'] == extname:
+                if 'extname' in hdu.header and hdu.header['extname'] == extname:
                     section.append(hdu.header['extver'])
         else:
             if not isinstance(section,list):
@@ -663,12 +654,10 @@ class baseImageObject(object):
 
         return section
 
-
-
     def _countEXT(self,extname="SCI"):
-        """
-            Count the number of extensions in the file
-            with the given name (EXTNAME).
+        """ Count the number of extensions in the file with the given name
+        (``EXTNAME``).
+
         """
         count=0 #simple fits image
 
@@ -691,13 +680,9 @@ class baseImageObject(object):
                         count=count+1
         return count
 
-    def getNumpyType(self,irafType):
-        """ Return the corresponding numpy data type.
-        """
-
-        iraf={-64:'float64',-32:'float32',8:'uint8',16:'int16',32:'int32',64:'int64'}
-
-        return iraf[irafType]
+    def getNumpyType(self, irafType):
+        """ Return the corresponding numpy data type. """
+        return _IRAF_DTYPES_TO_NUMPY[irafType]
 
     def buildMask(self,chip,bits=0,write=False):
         """
@@ -762,7 +747,6 @@ class baseImageObject(object):
             ivm.close()
 
         else:
-
             log.info("Automatically creating IVM files for chip %s" % chip)
             # If no IVM files were provided by the user we will
             # need to automatically generate them based upon
@@ -976,7 +960,7 @@ class imageObject(baseImageObject):
     """
 
     def __init__(self,filename,group=None,inmemory=False):
-        baseImageObject.__init__(self,filename)
+        super().__init__(filename)
 
         #filutil open returns a fits object
         try:
@@ -1143,15 +1127,12 @@ class imageObject(baseImageObject):
                 sci_chip.image_shape = (sci_chip.header['NAXIS2'],sci_chip.header['NAXIS1'])
 
                 # Interpret the array dtype by translating the IRAF BITPIX value
-                for dtype in IRAF_DTYPES.keys():
-                    if sci_chip.header['BITPIX'] == IRAF_DTYPES[dtype]:
-                        sci_chip.image_dtype = dtype
-                        break
+                if sci_chip.header['BITPIX'] in _IRAF_DTYPES_TO_NUMPY:
+                    sci_chip.image_dtype = _IRAF_DTYPES_TO_NUMPY[sci_chip.header['BITPIX']]
 
                 if self.inmemory:
                     # read image data array into memory
                     shape = sci_chip.data.shape
-
 
     def setInstrumentParameters(self,instrpars):
         """ Define instrument-specific parameters for use in the code.
@@ -1200,10 +1181,9 @@ class imageObject(baseImageObject):
         sci_chip.in_units = _in_units
 
 
-
 class WCSObject(baseImageObject):
     def __init__(self,filename,suffix='_drz'):
-        baseImageObject.__init__(self,filename)
+        super().__init__(filename)
 
         self._image = fits.HDUList()
         self._image.append(fits.PrimaryHDU())

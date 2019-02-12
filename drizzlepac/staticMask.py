@@ -115,7 +115,7 @@ def buildSignatureKey(signature):
     """
     return signature[0]+"_"+str(signature[1][0])+"x"+str(signature[1][1])+"_"+str(signature[2])+"_staticMask.fits"
 
-class staticMask(object):
+class staticMask:
     """
     This class manages the creation of the global static mask which
     masks pixels that are unwanted in the SCI array.
@@ -129,7 +129,6 @@ class staticMask(object):
         sigma BELOW the mode computed for the image.
 
     """
-
     def __init__(self, configObj=None):
 
         # the signature is created in the imageObject class
@@ -142,7 +141,6 @@ class staticMask(object):
         else:
             self.static_sig = 4. # define a reasonable number
             log.warning('Using default of 4. for static mask sigma.')
-
 
     def addMember(self, imagePtr=None):
         """
@@ -163,9 +161,7 @@ class staticMask(object):
         The signature is defined in the image object for each chip
 
         """
-
         numchips=imagePtr._numchips
-
         log.info("Computing static mask:\n")
 
         chips = imagePtr.group
@@ -208,7 +204,6 @@ class staticMask(object):
                                self.masklist[signature])
             del chipimage
 
-
     def _buildMaskArray(self,signature):
         """ Creates empty  numpy array for static mask array signature. """
         return np.ones(signature[1],dtype=np.int16)
@@ -241,9 +236,7 @@ class staticMask(object):
         The signature is in the image object and the
         name of the static mask file is saved as sci_chip.outputNames["staticMask"].
         """
-
         return self._image[chipid].outputNames["staticMask"]
-
 
     def close(self):
         """ Deletes all static mask objects. """

@@ -1,72 +1,72 @@
 #!/usr/bin/env python
 
-""" resetbits - A module to set the value of specified array pixels to zero
+"""
+resetbits - A module to set the value of specified array pixels to zero
 
-    This module allows a user to reset the pixel values of any integer array,
-    such as the DQ array from an HST image, to zero.
+This module allows a user to reset the pixel values of any integer array,
+such as the DQ array from an HST image, to zero.
 
-    :Authors: Warren Hack
+:Authors: Warren Hack
 
-    :License: :doc:`LICENSE`
+:License: :doc:`LICENSE`
 
-    PARAMETERS
-    ----------
-    filename : str
-        full filename with path
-    bits : str
-        sum or list of integers corresponding to all the bits to be reset
+PARAMETERS
+----------
+filename : str
+    full filename with path
+bits : str
+    sum or list of integers corresponding to all the bits to be reset
 
-    Optional Parameters
-    -------------------
-    extver : int, optional
-        List of version numbers of the arrays to be corrected
-        (default: None, will reset all matching arrays)
-    extname : str, optional
-        EXTNAME of the arrays in the FITS files to be reset
-        (default: 'dq')
+Optional Parameters
+-------------------
+extver : int, optional
+    List of version numbers of the arrays to be corrected
+    (default: None, will reset all matching arrays)
+extname : str, optional
+    EXTNAME of the arrays in the FITS files to be reset
+    (default: 'dq')
 
-    NOTES
-    -----
-    This module performs a simple bitwise-and on all the pixels in the specified
-    array and the integer value provided as input using the operation (array & ~bits).
+NOTES
+-----
+This module performs a simple bitwise-and on all the pixels in the specified
+array and the integer value provided as input using the operation (array & ~bits).
 
-    Usage
-    -----
-    It can be called not only from within Python, but also from the host-level
-    operating system command line using the syntax::
+Usage
+-----
+It can be called not only from within Python, but also from the host-level
+operating system command line using the syntax::
 
-        resetbits filename bits [extver [extname]]
-
-
-    EXAMPLES
-    --------
-
-    1. The following command will reset the 4096 bits in all
-       the DQ arrays of the file 'input_flt.fits'::
-
-            resetbits input_flt.fits 4096
-
-       or from the Python command line::
-
-            >>> import resetbits
-            >>> resetbits.reset_dq_bits("input_file_flt.fits", 4096)
+    resetbits filename bits [extver [extname]]
 
 
-    2. To reset the 2,32,64 and 4096 (sum of 4194) bits in the
-       second DQ array, specified as 'dq,2', in the file 'input_flt.fits'::
+EXAMPLES
+--------
+1. The following command will reset the 4096 bits in all
+   the DQ arrays of the file 'input_flt.fits'::
 
-            resetbits input_flt.fits 4194 2
+        resetbits input_flt.fits 4096
 
-       or from the Python command line::
+   or from the Python command line::
 
-            >>> import resetbits
-            >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
+        >>> import resetbits
+        >>> resetbits.reset_dq_bits("input_file_flt.fits", 4096)
+
+2. To reset the 2,32,64 and 4096 (sum of 4194) bits in the
+   second DQ array, specified as 'dq,2', in the file 'input_flt.fits'::
+
+        resetbits input_flt.fits 4194 2
+
+   or from the Python command line::
+
+        >>> import resetbits
+        >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
 """
 import os
 import numpy as np
 from stsci.tools import stpyfits as fits
 from stsci.tools import parseinput, logutil
+
 try:
     from stsci.tools.bitmask import interpret_bit_flags
 except ImportError:
@@ -159,14 +159,11 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
 #### Interfaces used by TEAL
 #
 def run(configobj=None):
-    ''' Teal interface for running this code. '''
-
+    """ Teal interface for running this code. """
     reset_dq_bits(configobj['input'],configobj['bits'],
                   extver=configobj['extver'],extname=configobj['extname'])
 
-
 def main():
-
     import getopt, sys
 
     try:
@@ -194,6 +191,7 @@ def main():
         print("\t", __version__+'('+__version_date__+')')
     else:
         reset_dq_bits(args[0],args[1],args[2], args[3])
+
 
 if __name__ == "__main__":
     main()
@@ -248,4 +246,3 @@ def getHelpAsString(docstring = False, show_ver = True):
         helpString = 'file://' + htmlfile
 
     return helpString
-

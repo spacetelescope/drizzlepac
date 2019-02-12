@@ -15,13 +15,12 @@ class WFC3InputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self,filename=None,group=None):
-        imageObject.__init__(self,filename,group=group)
+    def __init__(self, filename=None, group=None):
+        super().__init__(filename, group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
-
         self.flatkey = 'PFLTFILE'
 
     def _assignSignature(self, chip):
@@ -34,23 +33,21 @@ class WFC3InputImage(imageObject):
 
         """
         sci_chip = self._image[self.scienceExt,chip]
-        ny=sci_chip._naxis1
-        nx=sci_chip._naxis2
+        ny = sci_chip._naxis1
+        nx = sci_chip._naxis2
         detnum = sci_chip.detnum
-        instr=self._instrument
-
-        sig=(instr+self._detector,(nx,ny),int(chip)) #signature is a tuple
+        instr = self._instrument
+        sig = (instr + self._detector, (nx, ny), int(chip)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
 
 
 class WFC3UVISInputImage(WFC3InputImage):
-
     def __init__(self,filename=None,group=None):
-        WFC3InputImage.__init__(self,filename,group=group)
+        super().__init__(filename, group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.full_shape = (4096,2051)
-        self._detector=self._image["PRIMARY"].header["DETECTOR"]
+        self._detector = self._image["PRIMARY"].header["DETECTOR"]
 
         # get cte direction, which depends on which chip but is independent of amp
         for chip in range(1,self._numchips+1,1):
@@ -146,12 +143,12 @@ class WFC3UVISInputImage(WFC3InputImage):
 
 class WFC3IRInputImage(WFC3InputImage):
 
-    def __init__(self,filename=None,group=None):
-        WFC3InputImage.__init__(self,filename,group=group)
+    def __init__(self, filename=None, group=None):
+        super().__init__(filename, group=group)
         self.timeExt = 'TIME'
 
         # define the cosmic ray bits value to use in the dq array
-        self.full_shape = (1024,1024)
+        self.full_shape = (1024, 1024)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
         self.native_units = 'ELECTRONS/S'
 
@@ -184,7 +181,6 @@ class WFC3IRInputImage(WFC3InputImage):
             chip._conversionFactor = conversionFactor #1.
 
         _handle.close()
-
         self._effGain= 1.0 #conversionFactor #1.0
 
     def setInstrumentParameters(self, instrpars):
@@ -212,7 +208,6 @@ class WFC3IRInputImage(WFC3InputImage):
         self.proc_unit = instrpars['proc_unit']
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-
             chip._gain      = self.getInstrParameter(instrpars['gain'], pri_header,
                                                      instrpars['gnkeyword'])
             chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
@@ -266,9 +261,9 @@ class WFC3IRInputImage(WFC3InputImage):
         # what we know about the detector dark current and assume a
         # constant dark current for the whole image.
         except:
-            darkobj = np.ones(sci_chip.image_shape,dtype=sci_chip.image_dtype)*self.getdarkcurrent()
-
-
+            darkobj = (np.ones(sci_chip.image_shape,
+                               dtype=sci_chip.image_dtype) *
+                       self.getdarkcurrent())
         return darkobj
 
     def getskyimg(self,chip):
@@ -298,9 +293,7 @@ class WFC3IRInputImage(WFC3InputImage):
         darkcurrent: float
             The dark current value in **units of electrons**.
         """
-
         darkcurrent = 0
-
         try:
             darkcurrent = self._image[self.scienceExt,1].header['MEANDARK']
         except:

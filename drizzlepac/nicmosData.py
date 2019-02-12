@@ -16,7 +16,7 @@ class NICMOSInputImage(imageObject):
     SEPARATOR = '_'
 
     def __init__(self, filename=None):
-        imageObject.__init__(self,filename)
+        super().__init__(filename)
         self.timeExt = 'TIME'
 
         # define the cosmic ray bits value to use in the dq array
@@ -124,7 +124,7 @@ class NICMOSInputImage(imageObject):
         """
         return self._image[self.timeExt,chip].data
 
-    def getflat(self,chip):
+    def getflat(self, chip):
         """
         Method for retrieving a detector's flat field.
 
@@ -133,10 +133,9 @@ class NICMOSInputImage(imageObject):
         flat : array
             The flat field array in the same shape as the input image with **units of cps**.
         """
-
-        flat = (1.0/super(NICMOSInputImage,self).getflat(chip))# The reference flat field is inverted
+        # The reference flat field is inverted:
+        flat = 1.0 / super().getflat(chip)
         return flat
-
 
     def getdarkcurrent(self):
         """
@@ -212,13 +211,11 @@ class NICMOSInputImage(imageObject):
 
 
 class NIC1InputImage(NICMOSInputImage):
-
     def __init__(self, filename=None):
-        NICMOSInputImage.__init__(self,filename)
+        super().__init__(filename)
         self._effGain = 1. #get the gain from the detector subclass
-        self._detector=self._image["PRIMARY"].header["CAMERA"]
+        self._detector = self._image["PRIMARY"].header["CAMERA"]
         self.proc_unit = "native"
-
 
     def _getDarkRate(self):
         _darkrate = 0.08 #electrons/s
@@ -241,7 +238,6 @@ class NIC1InputImage(NICMOSInputImage):
             the parameter dictionary, in case empty entries are provided.
         """
         pri_header = self._image[0].header
-
         self.proc_unit = instrpars['proc_unit']
 
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
@@ -249,13 +245,12 @@ class NIC1InputImage(NICMOSInputImage):
 
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = None
+
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-
             chip._gain= 5.4 #measured gain
-
             chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
                                                      instrpars['rnkeyword'])
             chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
@@ -276,15 +271,13 @@ class NIC1InputImage(NICMOSInputImage):
             chip._effGain = chip._gain
             self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
 
-
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()
 
 
-
 class NIC2InputImage(NICMOSInputImage):
     def __init__(self,filename=None):
-        NICMOSInputImage.__init__(self,filename)
+        super().__init__(filename)
         self._effGain=1. #measured
         self._detector=self._image["PRIMARY"].header["CAMERA"]
         self.proc_unit = "native"
@@ -308,7 +301,6 @@ class NIC2InputImage(NICMOSInputImage):
             the parameter dictionary, in case empty entries are provided.
         """
         pri_header = self._image[0].header
-
         self.proc_unit = instrpars['proc_unit']
 
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
@@ -316,17 +308,18 @@ class NIC2InputImage(NICMOSInputImage):
 
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = None
+
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-
             chip._gain= 5.4 #measured gain
-
-            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                     instrpars['rnkeyword'])
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                     instrpars['expkeyword'])
+            chip._rdnoise   = self.getInstrParameter(
+                instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+            )
+            chip._exptime   = self.getInstrParameter(
+                instrpars['exptime'], pri_header, instrpars['expkeyword']
+            )
 
             if chip._gain is None or self._exptime is None:
                 print('ERROR: invalid instrument task parameter')
@@ -341,22 +334,22 @@ class NIC2InputImage(NICMOSInputImage):
             chip.darkcurrent = self.getdarkcurrent()
 
             chip._effGain = chip._gain
-            self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
-
+            # this is used in the static mask, static mask name also defined
+            # here, must be done after outputNames
+            self._assignSignature(chip._chip)
 
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()
 
-
     def createHoleMask(self):
-        """Add in a mask for the coronographic hole to the general static pixel mask.
-        """
+        """Add in a mask for the coronographic hole to the general static
+        pixel mask. """
         pass
 
 
 class NIC3InputImage(NICMOSInputImage):
-    def __init__(self,filename=None):
-        NICMOSInputImage.__init__(self,filename)
+    def __init__(self, filename=None):
+        super().__init__(filename)
         self._detector=self._image["PRIMARY"].header["CAMERA"] #returns 1,2,3
         self._effGain = 1.
         self.proc_unit = "native"
@@ -380,24 +373,25 @@ class NIC3InputImage(NICMOSInputImage):
             the parameter dictionary, in case empty entries are provided.
         """
         pri_header = self._image[0].header
-
         self.proc_unit = instrpars['proc_unit']
 
         if self._isNotValid (instrpars['gain'], instrpars['gnkeyword']):
             instrpars['gnkeyword'] = 'ADCGAIN'
+
         if self._isNotValid (instrpars['rdnoise'], instrpars['rnkeyword']):
             instrpars['rnkeyword'] = None
+
         if self._isNotValid (instrpars['exptime'], instrpars['expkeyword']):
             instrpars['expkeyword'] = 'EXPTIME'
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-
             chip._gain= 6.5 #measured gain
-
-            chip._rdnoise   = self.getInstrParameter(instrpars['rdnoise'], pri_header,
-                                                     instrpars['rnkeyword'])
-            chip._exptime   = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                     instrpars['expkeyword'])
+            chip._rdnoise   = self.getInstrParameter(
+                instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
+            )
+            chip._exptime   = self.getInstrParameter(
+                instrpars['exptime'], pri_header, instrpars['expkeyword']
+            )
 
             if chip._gain is None or self._exptime is None:
                 print('ERROR: invalid instrument task parameter')
@@ -413,7 +407,6 @@ class NIC3InputImage(NICMOSInputImage):
 
             chip._effGain = chip._gain
             self._assignSignature(chip._chip) #this is used in the static mask, static mask name also defined here, must be done after outputNames
-
 
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()

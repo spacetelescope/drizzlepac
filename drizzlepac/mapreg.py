@@ -25,7 +25,7 @@ __taskname__ = 'mapreg'
 __author__ = 'Mihai Cara'
 
 
-class _AuxSTWCS(object):
+class _AuxSTWCS:
     def __init__(self, fobj=None, ext=None, minerr=0.0, wcskey=" "):
         if isinstance(fobj, stwcs.wcsutil.HSTWCS):
             self._stwcs = fobj

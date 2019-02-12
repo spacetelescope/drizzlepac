@@ -1,5 +1,5 @@
 
-'''
+"""
 To compile another package that wants to link with the C code in astropy.wcs:
 
 [build_ext]
@@ -9,15 +9,12 @@ pre-hook.wcs = drizzlepac.hooks.setup
 include_dirs = numpy wcs
 libraries = wcs m
 
-'''
-
-
+"""
 import os
 import os.path
 from distutils import log
 
 def wcs_include(command_obj) :
-
     # warning if we somehow get called when not building a c extension
     command_name = command_obj.get_command_name()
     if command_name != 'build_ext':
@@ -33,7 +30,6 @@ def wcs_include(command_obj) :
 
     for extension in command_obj.extensions:
             extension.include_dirs.extend(includes)
-
 
 #####
 #
@@ -69,4 +65,3 @@ def pdk_fctx(command_obj) :
         for inc in includes:
             extension.include_dirs.insert(idx, inc)
         extension.include_dirs.remove('pdk_fctx')
-

@@ -120,21 +120,17 @@ class LinearMap:
     def forward(self,pixx,pixy):
         return np.dot(self.transform,[pixx,pixy])+self.offset
 
-##
-#
-#### Stand-alone functions for WCS handling
-#
-##
-def get_hstwcs(filename,hdulist,extnum):
-    ''' Return the HSTWCS object for a given chip.
 
-    '''
+# Stand-alone functions for WCS handling
+def get_hstwcs(filename,hdulist,extnum):
+    """ Return the HSTWCS object for a given chip. """
     hdrwcs = wcsutil.HSTWCS(hdulist,ext=extnum)
     hdrwcs.filename = filename
     hdrwcs.expname = hdulist[extnum].header['expname']
     hdrwcs.extver = hdulist[extnum].header['extver']
 
     return hdrwcs
+
 
 def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orientat):
     """ Create an HSTWCS object for a default instrument without distortion
@@ -154,6 +150,7 @@ def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orienta
 
     return wcsout
 
+
 def update_linCD(cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0,1.0], cy=[1.0,0.0]):
     """ Modify an existing linear CD matrix with rotation and/or scale changes
         and return a new CD matrix.  If 'cx' and 'cy' are specified, it will
@@ -169,8 +166,9 @@ def update_linCD(cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0,1.0], cy=[1.0,0.
 
     return new_cd
 
+
 def create_CD(orient, scale, cx=None, cy=None):
-    """ Create a (un?)distorted CD matrix from the basic inputs
+    """ Create a (un?)distorted CD matrix from the basic inputs.
 
     The 'cx' and 'cy' parameters, if given, provide the X and Y coefficients of
     the distortion as returned by reading the IDCTAB.  Only the first 2 elements
@@ -180,23 +178,18 @@ def create_CD(orient, scale, cx=None, cy=None):
     The units of 'scale' should be 'arcseconds/pixel' of the reference pixel.
     The value of 'orient' should be the absolute orientation on the sky of the
     reference pixel.
-    """
 
+    """
     cxymat = np.array([[cx[1],cx[0]],[cy[1],cy[0]]])
     rotmat = fileutil.buildRotMatrix(orient)*scale/3600.
-
     new_cd = np.dot(rotmat,cxymat)
-
     return new_cd
 
 def ddtohms(xsky,ysky,verbose=False,precision=6):
-
-    """ Convert sky position(s) from decimal degrees to HMS format."""
-
+    """ Convert sky position(s) from decimal degrees to HMS format. """
     xskyh = xsky /15.
     xskym = (xskyh - np.floor(xskyh)) * 60.
     xskys = (xskym - np.floor(xskym)) * 60.
-
     yskym = (np.abs(ysky) - np.floor(np.abs(ysky))) * 60.
     yskys = (yskym - np.floor(yskym)) * 60.
 
@@ -219,8 +212,8 @@ def ddtohms(xsky,ysky,verbose=False,precision=6):
             print('RA = ',rastr,', Dec = ',decstr)
 
     return rah,dech
-#
-#### Functions for applying pixel-based transformations
+
+# Functions for applying pixel-based transformations
 #
 def build_pixel_transform(chip,output_wcs):
     driz_pars = {}
@@ -258,7 +251,6 @@ def build_pixel_transform(chip,output_wcs):
 
     return driz_pars
 
-
 #
 # Possibly need to generate a stand-alone interface for this function.
 #
@@ -272,8 +264,8 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
         updated with the information from the computed output WCS.
         It then returns this WCS as a WCSObject(imageObject)
         instance.
-    """
 
+    """
     if not isinstance(imageObjectList,list):
         imageObjectList = [imageObjectList]
 

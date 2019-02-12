@@ -18,21 +18,23 @@ from . import buildmask
 
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
-DQ_EXTNS = {'c0h':'sdq','c0f':'sci','c0m':'sci'}
+DQ_EXTNS = {'c0h': 'sdq', 'c0f': 'sci', 'c0m': 'sci'}
 
 #### Calibrated gain and readnoise values for each chip
-WFPC2_GAINS = { 1:{7:[7.12,5.24],15:[13.99,7.02]},
-                2:{7:[7.12,5.51],15:[14.50,7.84]},
-                3:{7:[6.90,5.22],15:[13.95,6.99]},
-                4:{7:[7.10,5.19],15:[13.95,8.32]}}
-WFPC2_DETECTOR_NAMES = {1:"PC",2:"WF2",3:"WF3",4:"WF4"}
+WFPC2_GAINS = {
+    1: {7:[7.12,5.24],15:[13.99,7.02]},
+    2: {7:[7.12,5.51],15:[14.50,7.84]},
+    3: {7:[6.90,5.22],15:[13.95,6.99]},
+    4: {7:[7.10,5.19],15:[13.95,8.32]}
+}
+WFPC2_DETECTOR_NAMES = {1: "PC", 2: "WF2", 3: "WF3", 4: "WF4"}
 
 class WFPC2InputImage (imageObject):
 
     SEPARATOR = '_'
 
     def __init__(self, filename, group=None):
-        imageObject.__init__(self,filename, group=group)
+        super().__init__(filename, group=group)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
@@ -40,15 +42,12 @@ class WFPC2InputImage (imageObject):
         self.errExt = None
 
         # Attribute defining the pixel dimensions of WFPC2 chips.
-        self.full_shape = (800,800)
+        self.full_shape = (800, 800)
         self.native_units = "COUNTS"
-
         self.flatkey = 'FLATFILE'
 
         # Reference Plate Scale used for updates to MDRIZSKY, we should get this from the wcs class
         #self.refplatescale = 0.0996 # arcsec / pixel
-
-
         for chip in range(1,self._numchips+1,1):
             self._assignSignature(chip) #this is used in the static mask
             self._image[self.scienceExt,chip].cte_dir = -1 # independent of amp, chip
@@ -57,9 +56,10 @@ class WFPC2InputImage (imageObject):
             self._image[self.scienceExt,chip].darkcurrent = self.getdarkcurrent(chip)
 
     def find_DQ_extension(self):
-        ''' Return the suffix for the data quality extension and the name of the file
-            which that DQ extension should be read from.
-        '''
+        """ Return the suffix for the data quality extension and the name of
+        the file which that DQ extension should be read from.
+
+        """
         dqfile = None
         # Look for additional file with DQ array, primarily for WFPC2 data
 
@@ -83,20 +83,18 @@ class WFPC2InputImage (imageObject):
                 # assume extension name is 'SDQ' for WFPC2 GEIS files
                 dq_suffix = 'SDQ'
             hdulist.close()
-
             return dqfile,dq_suffix
 
         else:
             raise ValueError("Input file {} does not appear to be neither " \
                         "a FITS file nor a GEIS file.".format(self._filename))
 
-        #dq_suffix = DQ_EXTNS[suffix[1:]]
         if os.path.exists(dqfile):
             dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1, memmap=False)
         else:
             dq_suffix = "SCI"
 
-        return dqfile,dq_suffix
+        return dqfile, dq_suffix
 
     def getEffGain(self):
         """
@@ -108,7 +106,6 @@ class WFPC2InputImage (imageObject):
         gain : float
             The effective gain.
         """
-
         return self._effGain
 
     def setInstrumentParameters(self, instrpars):
@@ -117,7 +114,6 @@ class WFPC2InputImage (imageObject):
         """
         pri_header = self._image[0].header
         self.proc_unit = instrpars['proc_unit']
-
         instrpars['gnkeyword'] = 'ATODGAIN'  # hard-code for WFPC2 data
         instrpars['rnkeyword'] = None
 
@@ -125,16 +121,18 @@ class WFPC2InputImage (imageObject):
             instrpars['expkeyword'] = 'EXPTIME'
 
         for chip in self.returnAllChips(extname=self.scienceExt):
-            chip._headergain    = self.getInstrParameter(instrpars['gain'], pri_header,
-                                                     instrpars['gnkeyword'])
-            chip._exptime       = self.getInstrParameter(instrpars['exptime'], pri_header,
-                                                     instrpars['expkeyword'])
+            chip._headergain = self.getInstrParameter(
+                instrpars['gain'], pri_header, instrpars['gnkeyword']
+            )
+            chip._exptime = self.getInstrParameter(
+                instrpars['exptime'], pri_header, instrpars['expkeyword']
+            )
             # We need to treat Read Noise as a special case since it is
             # not populated in the WFPC2 primary header
             if instrpars['rnkeyword'] is None:
                 chip._rdnoise = None
             else:
-                chip._rdnoise   = self.getInstrParameter(
+                chip._rdnoise = self.getInstrParameter(
                     instrpars['rdnoise'], pri_header, instrpars['rnkeyword']
                 )
 
@@ -144,7 +142,6 @@ class WFPC2InputImage (imageObject):
 
         # We need to determine if the user has used the default readnoise/gain value
         # since if not, they will need to supply a gain/readnoise value as well
-
         usingDefaultGain = instrpars['gnkeyword'] == 'ATODGAIN'
         usingDefaultReadnoise = instrpars['rnkeyword'] in [None, 'None']
 
@@ -179,7 +176,7 @@ class WFPC2InputImage (imageObject):
         """
         # For the WFPC2 flat we need to invert
         # for use in Multidrizzle
-        flat = (1.0/super(WFPC2InputImage,self).getflat(chip))
+        flat = 1.0 / super().getflat(chip)
         return flat
 
     def doUnitConversions(self):
@@ -192,7 +189,6 @@ class WFPC2InputImage (imageObject):
 
         # Now convert the SCI array(s) units
         for det in range(1,self._numchips+1):
-
             chip=self._image[self.scienceExt,det]
             conversionFactor = 1.0
             # add D2IMFILE to outputNames for removal by 'clean()' method later
@@ -228,7 +224,6 @@ class WFPC2InputImage (imageObject):
 
         # Close the files and clean-up
         _handle.close()
-
         self._effGain = conversionFactor # 1.
 
     def getdarkcurrent(self,exten):
@@ -268,7 +263,7 @@ class WFPC2InputImage (imageObject):
 
         return darkcurrent
 
-    def getReadNoise(self,exten):
+    def getReadNoise(self, exten):
         """
         Method for returning the readnoise of a detector (in counts).
 
@@ -278,17 +273,15 @@ class WFPC2InputImage (imageObject):
             The readnoise of the detector in **units of counts/electrons**.
 
         """
-
         rn = self._image[exten]._rdnoise
         if self.proc_unit == 'native':
             rn = self._rdnoise / self.getGain(exten)
         return rn
 
-    def buildMask(self,chip,bits=0,write=False):
+    def buildMask(self, chip, bits=0, write=False):
         """ Build masks as specified in the user parameters found in the
             configObj object.
         """
-
         sci_chip = self._image[self.scienceExt,chip]
         ### For WFPC2 Data, build mask files using:
         maskname = sci_chip.dqrootname+'_dqmask.fits'
@@ -309,12 +302,11 @@ class WFPC2InputImage (imageObject):
 
         """
         sci_chip = self._image[self.scienceExt,chip]
-        ny=sci_chip._naxis1
-        nx=sci_chip._naxis2
+        ny = sci_chip._naxis1
+        nx = sci_chip._naxis2
         detnum = sci_chip.detnum
-        instr=self._instrument
-
-        sig=(instr+WFPC2_DETECTOR_NAMES[detnum],(nx,ny),chip) #signature is a tuple
+        instr = self._instrument
+        sig = (instr + WFPC2_DETECTOR_NAMES[detnum], (nx, ny), chip) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
 
     def _setchippars(self):
