@@ -164,7 +164,7 @@ def end_logging(filename=None):
         print('No trailer file saved...')
 
 
-class WithLogging(object):
+class WithLogging:
     def __init__(self):
         self.depth = 0
 
@@ -277,7 +277,7 @@ def print_pkg_versions(packages=None, git=False, svn=False, log=None):
         output(vstr)
 
 
-class ProcSteps(object):
+class ProcSteps:
     """ This class allows MultiDrizzle to keep track of the
         start and end times of each processing step that gets run
         as well as computing/reporting the elapsed time for each step.
