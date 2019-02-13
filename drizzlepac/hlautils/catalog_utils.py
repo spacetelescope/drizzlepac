@@ -22,7 +22,7 @@ def randomSelectFromCSV(tableName, numEntries, seedValue):
 
     Parameters
     ==========
-    filename : str
+    tableName: str
         Filename of the input master CSV file containing individual
         images or association names, as well as observational
         information regarding the images

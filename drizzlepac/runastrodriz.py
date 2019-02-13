@@ -66,7 +66,11 @@ import time
 
 # THIRD-PARTY
 from astropy.io import fits
+from astropy.table import Table
 from stsci.tools import fileutil, asnutil
+import numpy as np
+
+import math
 
 
 __taskname__ = "runastrodriz"
@@ -233,6 +237,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     _tmptrl = _trlroot + '_tmp.tra'
     _drizfile = _trlroot + '_pydriz'
     _drizlog = _drizfile + ".log" # the '.log' gets added automatically by astrodrizzle
+    _alignlog = _trlroot + '_align.log'
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
             # Working with a singleton
@@ -288,10 +293,19 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         # call hlapipeline code here on align_files list of files
         #
         ###############
-        _trlmsg = _timestamp("Align to GAIA started\n")
-        _trlmsg += __trlmarker__
+        # Create trailer marker message for start of align_to_GAIA processing
+        _trlmsg = _timestamp("Align_to_GAIA started ")
+        print(_trlmsg)
+        ftmp = open(_tmptrl,'w')
+        ftmp.writelines(_trlmsg)
+        ftmp.close()
+        _appendTrlFile(_trlfile,_tmptrl)
+        _trlmsg = ""
+
+        # Create an empty astropy table so it can be used as input/output for the perform_align function
+        align_table = Table()
         try:
-            align_table = alignimages.perform_align(align_files,update_hdr_wcs=True)
+            alignimages.perform_align(align_files,update_hdr_wcs=True,result=align_table, runfile=_alignlog)
             for row in align_table:
                 if row['status'] == 0:
                     trlstr = "Successfully aligned {} to {} astrometric frame\n"
@@ -299,12 +313,21 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
                 else:
                     trlstr = "Could not align {} to absolute astrometric frame\n"
                     _trlmsg += trlstr.format(row['imageName'])
-
         except Exception:
             # Something went wrong with alignment to GAIA, so report this in
             # trailer file
             _trlmsg = "EXCEPTION encountered in alignimages...\n"
-            _trlmsg = "   No correction to absolute astrometric frame applied!\n"
+            _trlmsg += "   No correction to absolute astrometric frame applied!\n"
+
+        # Write the perform_align log to the trailer file...(this will delete the _alignlog)
+        _appendTrlFile(_trlfile,_alignlog)
+
+        # Append messages from this calling routine post-perform_align
+        ftmp = open(_tmptrl,'w')
+        ftmp.writelines(_trlmsg)
+        ftmp.close()
+        _appendTrlFile(_trlfile,_tmptrl)
+        _trlmsg = ""
 
         #Check to see whether there are any additional input files that need to
         # be aligned (namely, FLT images)
@@ -321,14 +344,21 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
                     _trlmsg += _trlstr.format(headerletFile, fltfile)
                 else:
                     _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
+
+        # Finally, append any further messages associated with alignement from this calling routine
+        _trlmsg += _timestamp('Align_to_GAIA completed ')
         print(_trlmsg)
+        ftmp = open(_tmptrl,'w')
+        ftmp.writelines(_trlmsg)
+        ftmp.close()
+        _appendTrlFile(_trlfile,_tmptrl)
 
         # Run astrodrizzle and send its processing statements to _trlfile
         _pyver = drizzlepac.astrodrizzle.__version__
 
         for _infile in _inlist: # Run astrodrizzle for all inputs
             # Create trailer marker message for start of astrodrizzle processing
-            _trlmsg += _timestamp('astrodrizzle started ')
+            _trlmsg = _timestamp('astrodrizzle started ')
             _trlmsg += __trlmarker__
             _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (time_str,_infile,_pyver)
             print(_trlmsg)

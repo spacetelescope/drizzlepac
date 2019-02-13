@@ -1,6 +1,8 @@
 """Utilities to support creation of astrometrically accurate reference catalogs
+        print("No detected sources!")
 
 The function, create_astrometric_catalog, allows the user to query an
+        print("No detected sources!")
 astrometric catalog online to generate a catalog of astrometric sources that
 should fall within the field-of-view of all the input images.
 
@@ -15,7 +17,6 @@ reference catalog.
 """
 import os
 from io import BytesIO
-
 import csv
 import requests
 from lxml import etree
@@ -42,10 +43,20 @@ from photutils import Background2D, MedianBackground
 from photutils import DAOStarFinder
 from scipy import ndimage
 
+import matplotlib.pyplot as plt
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 
 import pysynphot as S
+
+#from . import bitmask
+
+import logging
+from drizzlepac import util
+from stsci.tools import logutil
+__taskname__ = 'astrometric_utils'
+
+log = logutil.create_logger(__name__, level=logutil.logging.INFO)
 
 try:
     from matplotlib import pyplot as plt
@@ -208,7 +219,7 @@ def create_astrometric_catalog(inputs, **pars):
     # Write out table to a file, if specified
     if output:
         ref_table.write(output, format=table_format)
-        print("Created catalog '{}' with {} sources".format(output, num_sources))
+        log.info("Created catalog '{}' with {} sources".format(output, num_sources))
 
     return ref_table
 
@@ -320,7 +331,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType,spec)
     rawcat = requests.get(serviceUrl)
     if not rawcat.ok:
-        print("Problem accessing service with:\n{{}".format(serviceUrl))
+        log.info("Problem accessing service with:\n{{}".format(serviceUrl))
         raise ValueError
 
     delta_ra = delta_dec = None
@@ -421,7 +432,7 @@ def extract_sources(img, **pars):
             if threshold is None or threshold < 0.0:
                 if threshold is not None and threshold < 0.0:
                     threshold = -1*threshold*default_threshold
-                    print("{} based on {}".format(threshold.max(), default_threshold.max()))
+                    log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
                     bkg_rms_mean = threshold.max()
                 else:
                     threshold = default_threshold
@@ -460,14 +471,14 @@ def extract_sources(img, **pars):
     if centering_mode == 'starfind':
         src_table = None
         #daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
-        print("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
+        log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
         daofind = DAOStarFinder(fwhm=fwhm, threshold=bkg_rms_mean)
         # Identify nbrightest/largest sources
         if nlargest is not None:
             if nlargest > len(segm.labels):
                 nlargest = len(segm.labels)
             large_labels = np.flip(np.argsort(segm.areas)+1)[:nlargest]
-        print("Looking for sources in {} segments".format(len(segm.labels)))
+        log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
         for label in segm.labels:
             if nlargest is not None and label not in large_labels:
@@ -505,9 +516,9 @@ def extract_sources(img, **pars):
         src_table.rename_column('source_sum_err', 'flux_err')
 
     if src_table is not None:
-        print("Total Number of detected sources: {}".format(len(src_table)))
+        log.info("Total Number of detected sources: {}".format(len(src_table)))
     else:
-        print("No detected sources!")
+        log.info("No detected sources!")
         return None, None
 
     # Move 'id' column from first to last position
@@ -524,7 +535,7 @@ def extract_sources(img, **pars):
         if not output.endswith('.cat'):
             output += '.cat'
         tbl.write(output, format='ascii.commented_header')
-        print("Wrote source catalog: {}".format(output))
+        log.info("Wrote source catalog: {}".format(output))
 
     if plot and plt is not None:
         norm = None
@@ -1069,21 +1080,21 @@ def find_hist2d_offset(filename, reference,  refwcs = None, refnames=['ra', 'dec
 
     # check to see whether reference catalog can be found
     if not os.path.exists(reference):
-        print("Could not find input reference catalog: {}".format(reference))
+        log.info("Could not find input reference catalog: {}".format(reference))
         raise FileNotFoundError
 
     # Extract reference WCS from image
     if refwcs is None:
         refwcs = build_self_reference(image, clean_wcs=True)
-    print("Computing offset for field-of-view defined by:")
-    print(refwcs)
+    log.info("Computing offset for field-of-view defined by:")
+    log.info(refwcs)
 
     # read in reference catalog
     if isinstance(reference, str):
         refcat = ascii.read(reference)
     else:
         refcat = reference
-    print("\nRead in reference catalog with {} sources.".format(len(refcat)))
+    log.info("\nRead in reference catalog with {} sources.".format(len(refcat)))
 
     ref_ra = refcat[refnames[0]]
     ref_dec = refcat[refnames[1]]
@@ -1104,7 +1115,7 @@ def find_hist2d_offset(filename, reference,  refwcs = None, refnames=['ra', 'dec
     # determine the offset
     xref, yref = within_footprint(image, refwcs, xref, yref)
     ref_xy = np.column_stack((xref, yref))
-    print("\nWorking with {} astrometric sources for this field".format(len(ref_xy)))
+    log.info("\nWorking with {} astrometric sources for this field".format(len(ref_xy)))
 
     # write out astrometric reference catalog that was actually used
     ref_ra_img, ref_dec_img = refwcs.all_pix2world(xref, yref, 1)
@@ -1119,7 +1130,7 @@ def find_hist2d_offset(filename, reference,  refwcs = None, refnames=['ra', 'dec
                                                histplot=False,figure_id=1,
                                                plotname=None, interactive=False)
     hist2d_offset = (xp,yp)
-    print('best offset {} based on {} cross-matches'.format(hist2d_offset, nmatches))
+    log.info('best offset {} based on {} cross-matches'.format(hist2d_offset, nmatches))
 
     return hist2d_offset, seg_xy, ref_xy
 
@@ -1162,7 +1173,7 @@ def build_nddata(image, group_id, source_catalog):
     elif isinstance(image, pf.HDUList):
         hdulist = image
     else:
-        print("Wrong type of input, {}, for build_nddata...".format(type(image)))
+        log.info("Wrong type of input, {}, for build_nddata...".format(type(image)))
         raise ValueError
 
     images = []

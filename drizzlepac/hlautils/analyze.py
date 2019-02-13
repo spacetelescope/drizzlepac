@@ -5,21 +5,26 @@ in order to access the primary header data.  Based upon the values of specific
 FITS keywords, the function determines whether or not each file within this dataset
 can or should be reconciled against an astrometric catalog and, for multiple images, used
 to create a mosaic.
-
 """
 from astropy.io.fits import getheader
 from astropy.table import Table
 import math
 
+import logging
+from stsci.tools import logutil
+
+__taskname__ = 'analyze'
+
+log = logutil.create_logger(__name__, level=logutil.logging.INFO)
+
 __all__ = ['analyze_data']
 
 from enum import Enum
-
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
 class Messages(Enum):
     OK, WARN, NOPROC = 1, -1, -2
-
+ 
 def analyze_data(inputFileList, **kwargs):
     """
     Determine if images within the dataset can be aligned
@@ -60,7 +65,6 @@ def analyze_data(inputFileList, **kwargs):
     FITS Keywords only for ACS data: FILTER1 and FILTER2
 
     Please be aware of the FITS keyword value NONE vs the Python None.
-
     FIX: improve robustness when analyzing filter and aperture names, possibly use PHOTMODE instead
     """
     OBSKEY = 'OBSTYPE'
@@ -131,7 +135,6 @@ def analyze_data(inputFileList, **kwargs):
         # Obtain keyword values for analysis of viability
         obstype  = (header_data[OBSKEY]).upper()
         mtflag   = (header_data[MTKEY]).upper()
-
         scan_typ = ''
         if instrume == 'WFC3':
             scan_typ = (header_data[SCNKEY]).upper()
@@ -256,10 +259,8 @@ def generate_msg(filename, msg, key, value):
         with alignment.
     """
 
-    print('\nDataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
-    print(msg)
+    log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
     if msg == Messages.NOPROC.value:
-        print('Dataset cannot be aligned.\n')
+        log.info('Dataset cannot be aligned.')
     else:
-        print('Dataset can be aligned, but the result may be compromised.')
-
+        log.info('Dataset can be aligned, but the result may be compromised.')
