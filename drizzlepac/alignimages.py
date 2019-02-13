@@ -832,10 +832,12 @@ def generate_source_catalogs(imglist, **pars):
         # Allow user to decide when and how to write out catalogs to files
         if output:
             for chip in range(1,numSci+1):
-                regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
-                out_table = Table(sourcecatalogdict[imgname]["catalog_table"][chip])
-                out_table.write(regfilename, include_names=["xcentroid", "ycentroid"], format="ascii.fast_commented_header")
-                log.info("Wrote region file {}\n".format(regfilename))
+                chip_cat = sourcecatalogdict[imgname]["catalog_table"][chip]
+                if chip_cat and len(chip_cat) > 0:
+                    regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
+                    out_table = Table(chip_cat)
+                    out_table.write(regfilename, include_names=["xcentroid", "ycentroid"], format="ascii.fast_commented_header")
+                    log.info("Wrote region file {}\n".format(regfilename))
         imghdu.close()
     return(sourcecatalogdict)
 
