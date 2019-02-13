@@ -1,7 +1,6 @@
 """Wrappers for astroquery-related functionality"""
 import shutil
 import os
-import sys
 from astroquery.mast import Observations
 from astropy.table import Table
 
@@ -11,7 +10,7 @@ from stsci.tools import logutil
 
 __taskname__ = 'astroquery_utils'
 
-log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
+log = logutil.create_logger(__name__, level=logutil.logging.INFO)
 
 def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     """Simple interface for retrieving an observation from the MAST archive

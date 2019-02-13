@@ -9,14 +9,13 @@ to create a mosaic.
 from astropy.io.fits import getheader
 from astropy.table import Table
 import math
-import sys
 
 import logging
 from stsci.tools import logutil
 
 __taskname__ = 'analyze'
 
-log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
+log = logutil.create_logger(__name__, level=logutil.logging.INFO)
 
 __all__ = ['analyze_data']
 

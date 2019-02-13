@@ -66,8 +66,7 @@ detector_specific_params = {"acs":
                                       "classify": True,
                                       "threshold": None}}} # fwhmpsf in units of arcsec
 
-import sys
-log = logutil.create_logger('alignimages', level=logutil.logging.INFO, filename='perform_align.log', stream=sys.stderr, filemode='w')
+log = logutil.create_logger('alignimages', level=logutil.logging.INFO)
 
 __version__ = 0.1
 __version_date__ = '15-Feb-2019'
@@ -141,8 +140,8 @@ def convert_string_tf_to_boolean(invalue):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
-def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False,
+@util.with_logging
+def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None, runfile=None,
                   print_fit_parameters=True, print_git_info=False, output=False): # TODO: set 'debug' and 'output' back to 'False' before release.
     """Main calling function.
 
@@ -164,6 +163,10 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
 
     update_hdr_wcs : Boolean
         Write newly computed WCS information to image image headers?
+
+    result : Astropy Table
+        Write the contents of the filteredTable to the result so that it can be passed back to the calling routine
+        as a parameter versus a returned value as the @util.with_logging decorator does not allow returned values
 
     print_fit_parameters : Boolean
         Specify whether or not to print out FIT results for each chip.
@@ -470,7 +473,12 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
     log.info('TOTAL Processing time of {} sec'.format((currentDT- zeroDT).total_seconds()))
     log.info(best_fitStatusDict)
     log.info("--------------------------------------------------------------------------------------------------------")
-    return (filteredTable)
+
+    # Now update the result with the filteredTable contents
+    result.meta = filteredTable.meta
+    for col in filteredTable.colnames:
+        result.add_column(filteredTable[col], name=col)
+    filteredTable.pprint(max_width=-1)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

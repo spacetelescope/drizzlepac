@@ -17,8 +17,6 @@ reference catalog.
 """
 import os
 from io import BytesIO
-import sys
-
 import csv
 import requests
 from lxml import etree
@@ -58,7 +56,7 @@ from drizzlepac import util
 from stsci.tools import logutil
 __taskname__ = 'astrometric_utils'
 
-log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
+log = logutil.create_logger(__name__, level=logutil.logging.INFO)
 
 try:
     from matplotlib import pyplot as plt

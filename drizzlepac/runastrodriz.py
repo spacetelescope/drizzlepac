@@ -68,6 +68,7 @@ import time
 from astropy.io import fits
 from astropy.table import Table
 from stsci.tools import fileutil, asnutil
+import numpy as np
 
 import math
 
@@ -236,7 +237,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     _tmptrl = _trlroot + '_tmp.tra'
     _drizfile = _trlroot + '_pydriz'
     _drizlog = _drizfile + ".log" # the '.log' gets added automatically by astrodrizzle
-    _alignlog = 'perform_align.log' # This will be set in util.py too, but should be upgraded to dataset-dependent
+    _alignlog = _trlroot + '_align.log'
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
             # Working with a singleton
@@ -300,8 +301,12 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         ftmp.close()
         _appendTrlFile(_trlfile,_tmptrl)
         _trlmsg = ""
+
+        # Create an empty astropy table so it can be used as input/output for the perform_align function
+        align_table = Table()
         try:
-            align_table = alignimages.perform_align(align_files,update_hdr_wcs=True)
+            alignimages.perform_align(align_files,update_hdr_wcs=True,result=align_table, runfile=_alignlog)
+            align_table.pprint(max_width=-1)
             for row in align_table:
                 if row['status'] == 0:
                     trlstr = "Successfully aligned {} to {} astrometric frame\n"

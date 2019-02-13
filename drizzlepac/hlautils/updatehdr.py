@@ -9,7 +9,6 @@ from __future__ import absolute_import, division, print_function
 import re
 import math
 import warnings
-import sys
 
 from astropy.io import fits
 import numpy as np
@@ -25,7 +24,7 @@ from stsci.tools import logutil
 
 __taskname__ = 'updatehdr'
 
-log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
+log = logutil.create_logger(__name__, level=logutil.logging.INFO)
 
 __version__ = '0.3.0'
 __version_date__ = '26-Oct-2018'

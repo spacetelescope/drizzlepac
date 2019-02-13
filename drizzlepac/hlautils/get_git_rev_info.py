@@ -29,7 +29,7 @@ from stsci.tools import logutil
 
 __taskname__ = 'get_git_rev_info'
 
-log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
+log = logutil.create_logger(__name__, level=logutil.logging.INFO)
 
 #-----------------------------------------------------------------------------------------------------------------------
 def print_rev_id(localRepoPath):
