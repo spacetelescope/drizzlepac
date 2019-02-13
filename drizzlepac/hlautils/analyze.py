@@ -9,16 +9,14 @@ to create a mosaic.
 from astropy.io.fits import getheader
 from astropy.table import Table
 import math
-import pdb
+import sys
 
 import logging
-from drizzlepac import util
 from stsci.tools import logutil
 
 __taskname__ = 'analyze'
 
-# Seems to be a no-opt
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
 
 __all__ = ['analyze_data']
 
@@ -192,8 +190,7 @@ def analyze_data(inputFileList, **kwargs):
 
         # Filter which does not begin with: 'F'(F###), 'C'(CLEAR), 'N'(N/A), and is not blank
         # The sfilter variable may be the concatenation of two filters (F160_CLEAR)
-        elif sfilter[0] != 'F' and sfilter[0] != '' and sfilter[0] != 'C' and sfilter[0] != 'N': 
-        #elif sfilter and not sfilter.startswith(('F', 'C', 'N')):
+        elif sfilter and not sfilter.startswith(('F', 'C', 'N')):
             noProcKey   = FILKEY
             noProcValue = sfilter
 
@@ -263,11 +260,8 @@ def generate_msg(filename, msg, key, value):
         with alignment.
     """
 
-    #log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
-    print('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
+    log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
     if msg == Messages.NOPROC.value:
-        #log.info('Dataset cannot be aligned.')
-        print('Dataset cannot be aligned.')
+        log.info('Dataset cannot be aligned.')
     else:
-        #log.info('Dataset can be aligned, but the result may be compromised.')
-        print('Dataset can be aligned, but the result may be compromised.')
+        log.info('Dataset can be aligned, but the result may be compromised.')

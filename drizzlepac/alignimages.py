@@ -66,11 +66,11 @@ detector_specific_params = {"acs":
                                       "classify": True,
                                       "threshold": None}}} # fwhmpsf in units of arcsec
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
-util.init_logging('perform_align.log', level=logging.INFO)
+import sys
+log = logutil.create_logger('alignimages', level=logutil.logging.INFO, filename='perform_align.log', stream=sys.stderr, filemode='w')
 
 __version__ = 0.1
-__version_date__ = ' 01-Feb-2019'
+__version_date__ = '15-Feb-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ def check_and_get_data(input_list,**pars):
     if len(filelist) > 0:
         # remove duplicate list elements, sort resulting list of unique elements:
         totalInputList = sorted(list(set(totalInputList)))
-    print("TOTAL INPUT LIST: ",totalInputList)
+    log.info("TOTAL INPUT LIST: {}".format(totalInputList))
     # TODO: add trap to deal with non-existent (incorrect) rootnames
     # TODO: Address issue about how the code will retrieve association information if there isn't a local file to get 'ASN_ID' header info
     return(totalInputList)
@@ -142,9 +142,8 @@ def convert_string_tf_to_boolean(invalue):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-#@util.with_logging
-def perform_align(input_list, archive=False, clobber=False, debug=True, update_hdr_wcs=False,
-                  print_fit_parameters=True, print_git_info=False, output=True): # TODO: set 'debug' and 'output' back to 'False' before release.
+def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False,
+                  print_fit_parameters=True, print_git_info=False, output=False): # TODO: set 'debug' and 'output' back to 'False' before release.
     """Main calling function.
 
     Parameters
@@ -184,8 +183,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
 
     """
 
-    log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n"
-          .format(__version__, __version_date__, util._ptime()[0]))
+    log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
 
     # Define astrometric catalog list in priority order
     catalogList = ['GAIADR2', 'GAIADR1']
@@ -228,7 +226,6 @@ def perform_align(input_list, archive=False, clobber=False, debug=True, update_h
     # (the status value by default), so there is no need to update the filteredTable here.
     if filteredTable['doProcess'].sum() == 0:
         log.warning("No viable images in filtered table - no processing done.\n")
-        print("No viable images in filtered table - no processing done.\n")
         currentDT = datetime.datetime.now()
         deltaDT = (currentDT - startingDT).total_seconds()
         log.info('Processing time of [STEP 2]: {} sec'.format(deltaDT))
@@ -879,7 +876,7 @@ def update_image_wcs_info(tweakwcs_output):
                                  reusename=True, verbose=True)
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
-            log.info("CLOSE {}\n".format(imageName))  # TODO: Remove before deployment
+            #log.info("CLOSE {}\n".format(imageName))  # TODO: Remove before deployment
             hdulist.flush()
             hdulist.close()
 

@@ -29,7 +29,7 @@ from stsci.tools import logutil
 
 __taskname__ = 'get_git_rev_info'
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
 
 #-----------------------------------------------------------------------------------------------------------------------
 def print_rev_id(localRepoPath):
@@ -49,28 +49,22 @@ def print_rev_id(localRepoPath):
     start_path = os.getcwd()
     try:
         log.info("Local repository path: {}".format(localRepoPath))
-        print("Local repository path: {}".format(localRepoPath))
         os.chdir(localRepoPath)
         log.info("\n== Remote URL")
-        print("\n== Remote URL")
         os.system('git remote -v')
 
         # log.info("\n== Remote Branches")
-        # print("\n== Remote Branches")
         # os.system("git branch -r")
 
         log.info("\n== Local Branches")
-        print("\n== Local Branches")
         os.system("git branch")
 
         log.info("\n== Most Recent Commit")
-        print("\n== Most Recent Commit")
         os.system("git log |head -1")
         rv = 0
     except:
         rv = 111
         log.info("WARNING! get_git_rev_info.print_rev_id() encountered a problem and cannot continue.")
-        print("WARNING! get_git_rev_info.print_rev_id() encountered a problem and cannot continue.")
     finally:
         os.chdir(start_path)
         if rv != 0:

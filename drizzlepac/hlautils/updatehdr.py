@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function
 import re
 import math
 import warnings
+import sys
 
 from astropy.io import fits
 import numpy as np
@@ -24,7 +25,7 @@ from stsci.tools import logutil
 
 __taskname__ = 'updatehdr'
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logutil.create_logger('alignimages', filename='perform_align.log', stream=sys.stderr, filemode='w')
 
 __version__ = '0.3.0'
 __version_date__ = '26-Oct-2018'
@@ -177,9 +178,9 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
     # continue with the update
     logstr = "....Updating header for {:s}...".format(filename)
     if verbose:
-        log.debug("\n{:s}\n".format(logstr))
+        log.info("\n{:s}\n".format(logstr))
     else:
-        log.debug(logstr)
+        log.info(logstr)
 
     # reset header WCS keywords to original (OPUS generated) values
     extlist = get_ext_list(image, extname='SCI')
@@ -206,9 +207,9 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
         logstr = "Processing {:s}[{:s}]".format(fimg.filename(),
                                                 ext2str(ext))
         if verbose:
-            log.debug("\n{:s}\n".format(logstr))
+            log.info("\n{:s}\n".format(logstr))
         else:
-            log.debug(logstr)
+            log.info(logstr)
         chip_wcs = wcsutil.HSTWCS(fimg,ext=ext)
 
         update_refchip_with_shift(chip_wcs, wref, fitgeom=fitgeom,
@@ -442,16 +443,16 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
     try:
         logstr = 'Updating header for %s[%s]'%(fimg.filename(),str(extnum))
         if verbose:
-            log.debug(logstr)
+            log.info(logstr)
         else:
-            log.debug(logstr)
+            log.info(logstr)
 
         hdr = fimg[extnum].header
 
         if verbose:
-            log.debug('    with WCS of')
+            log.info('    with WCS of')
             new_wcs.printwcs()
-            log.debug("WCSNAME  : ",wcsname)
+            log.info("WCSNAME  : ",wcsname)
 
         # Insure that if a copy of the WCS has not been created yet, it will be now
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr, relax=True)
@@ -746,7 +747,7 @@ def remove_distortion_keywords(hdr):
                 del hdr[k[0]+'.*']
                 del hdr[k[0]+'.*.*']
             except:
-                log.debug("ERROR (bleandheaders.remove_distortion_keywords) trying to delete \'{:s}\' in the header.".format(k[0]+'*'))
+                log.info("ERROR (bleandheaders.remove_distortion_keywords) trying to delete \'{:s}\' in the header.".format(k[0]+'*'))
                 pass
         if (k[0][:2] == 'CP'):
             try:
