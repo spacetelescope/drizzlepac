@@ -462,9 +462,10 @@ def extract_sources(img, **pars):
     # If classify is turned on, it should modify the segmentation map
     if classify:
         cat = source_properties(imgarr, segm)
-        # Remove likely cosmic-rays based on central_moments classification
-        bad_srcs = np.where(classify_sources(cat) == 0)[0]+1
-        segm.remove_labels(bad_srcs) # CAUTION: May be time-consuming!!!
+        if len(cat) > 0:
+            # Remove likely cosmic-rays based on central_moments classification
+            bad_srcs = np.where(classify_sources(cat) == 0)[0]+1
+            segm.remove_labels(bad_srcs) # CAUTION: May be time-consuming!!!
 
 
     # convert segm to mask for daofind

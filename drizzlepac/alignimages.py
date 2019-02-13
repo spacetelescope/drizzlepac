@@ -73,6 +73,7 @@ __version_date__ = '15-Feb-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def check_and_get_data(input_list,**pars):
     """Verify that all specified files are present. If not, retrieve them from MAST.
 
@@ -179,7 +180,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         generate_source_catalogs() generate the .reg region files for every chip of every input image and should
         generate_astrometric_catalog() generate file 'refcatalog.cat'?
 
-    Returns
+    Updates
     -------
     filteredTable: Astropy Table
         Table which contains processing information and alignment results for every raw image evaluated
@@ -393,6 +394,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                     filteredTable['status'][:] = 1
                     filteredTable['processMsg'][:] = "Fitting failure"
                     # It may be there are additional catalogs and algorithms to try, so keep going
+                    fitQual = 5 # Flag this fit with the 'bad' quality value
                     continue
 
                 if fitQual == 1:  # break out of inner fit algorithm loop
