@@ -306,7 +306,6 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         align_table = Table()
         try:
             alignimages.perform_align(align_files,update_hdr_wcs=True,result=align_table, runfile=_alignlog)
-            align_table.pprint(max_width=-1)
             for row in align_table:
                 if row['status'] == 0:
                     trlstr = "Successfully aligned {} to {} astrometric frame\n"
