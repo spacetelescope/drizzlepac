@@ -66,14 +66,7 @@ import time
 
 # THIRD-PARTY
 from astropy.io import fits
-from astropy.table import Table
 from stsci.tools import fileutil, asnutil
-import numpy as np
-
-import math
-
-import math
-
 
 __taskname__ = "runastrodriz"
 
