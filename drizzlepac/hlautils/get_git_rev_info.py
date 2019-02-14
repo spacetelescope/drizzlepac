@@ -29,7 +29,7 @@ from stsci.tools import logutil
 
 __taskname__ = 'get_git_rev_info'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 #-----------------------------------------------------------------------------------------------------------------------
 def print_rev_id(localRepoPath):

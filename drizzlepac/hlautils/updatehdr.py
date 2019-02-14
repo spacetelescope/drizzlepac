@@ -19,12 +19,13 @@ from stwcs import wcsutil, updatewcs
 from stwcs.wcsutil import wcscorr
 
 import logging
+import sys
 from drizzlepac import util
 from stsci.tools import logutil
 
 __taskname__ = 'updatehdr'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 __version__ = '0.3.0'
 __version_date__ = '26-Oct-2018'

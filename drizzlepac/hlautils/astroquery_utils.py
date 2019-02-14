@@ -5,12 +5,13 @@ from astroquery.mast import Observations
 from astropy.table import Table
 
 import logging
+import sys
 from drizzlepac import util
 from stsci.tools import logutil
 
 __taskname__ = 'astroquery_utils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     """Simple interface for retrieving an observation from the MAST archive

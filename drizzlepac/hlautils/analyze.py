@@ -9,13 +9,14 @@ to create a mosaic.
 from astropy.io.fits import getheader
 from astropy.table import Table
 import math
+import sys
 
 import logging
 from stsci.tools import logutil
 
 __taskname__ = 'analyze'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 __all__ = ['analyze_data']
 
