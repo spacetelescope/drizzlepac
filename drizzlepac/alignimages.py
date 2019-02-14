@@ -313,11 +313,11 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     startingDT = currentDT
     # 5: Retrieve list of astrometric sources from database
 
-    # Convert input images to tweakwcs-compatible NDData objects and
+    # Convert input images to tweakwcs-compatible FITSWCS objects and
     # attach source catalogs to them.
     imglist = []
     for group_id, image in enumerate(processList):
-        img = amutils.build_nddata(image, group_id,
+        img = amutils.build_wcscat(image, group_id,
                                    extracted_sources[image]['catalog_table'])
         # add the name of the image to the imglist object
         for im in img:
@@ -355,48 +355,48 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             log.info("-------------------- STEP 5b: Cross matching and fitting -----------------------------------------------")
             for algorithm_name in fit_algorithm_list: #loop over fit algorithm type
                 log.info("------------------ Catalog {} matched using {} ------------------ ".format(catalogList[catalogIndex],algorithm_name.__name__))
-                try:
-                    #execute the correct fitting/matching algorithm
-                    imglist = algorithm_name(imglist, reference_catalog)
+                #try:
+                #execute the correct fitting/matching algorithm
+                imglist = algorithm_name(imglist, reference_catalog)
 
-                    # determine the quality of the fit
-                    fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
+                # determine the quality of the fit
+                fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
 
-                    # Figure out which fit solution to go with based on fitQual value and maybe also total_rms
-                    if fitQual < 5:
-                        if fitQual == 1: #valid, non-comprimised solution with total rms < 10 mas...go with this solution.
-                            best_fit_rms = fit_rms
-                            best_fit_num = fit_num
-                            for item in imglist:
-                                item.best_meta = item.meta.copy()
-                            best_fitStatusDict = fitStatusDict.copy()
-                            break #break out of while loop
-                        elif fitQual < best_fitQual: # better solution found. keep looping but with the better solution as "best" for now.
-                            log.info("Better solution found!")
-                            best_fit_rms = fit_rms
-                            best_fit_num = fit_num
-                            for item in imglist:
-                                item.best_meta = item.meta.copy()
-                            best_fitStatusDict = fitStatusDict.copy()
-                            best_fitQual = fitQual
-                        elif fitQual == best_fitQual: # new solution same level of fitQual. Choose whichever one has the lowest total rms as "best" and keep looping.
-                            if best_fit_rms >= 0.:
-                                if fit_rms < best_fit_rms:
-                                    best_fit_rms = fit_rms
-                                    best_fit_num = fit_num
-                                    for item in imglist:
-                                        item.best_meta = item.meta.copy()
-                                    best_fitStatusDict = fitStatusDict.copy()
-                        else: # new solution has worse fitQual. discard and continue looping.
-                            continue
-                except Exception:
+                # Figure out which fit solution to go with based on fitQual value and maybe also total_rms
+                if fitQual < 5:
+                    if fitQual == 1: #valid, non-comprimised solution with total rms < 10 mas...go with this solution.
+                        best_fit_rms = fit_rms
+                        best_fit_num = fit_num
+                        for item in imglist:
+                            item.best_meta = item.meta.copy()
+                        best_fitStatusDict = fitStatusDict.copy()
+                        break #break out of while loop
+                    elif fitQual < best_fitQual: # better solution found. keep looping but with the better solution as "best" for now.
+                        log.info("Better solution found!")
+                        best_fit_rms = fit_rms
+                        best_fit_num = fit_num
+                        for item in imglist:
+                            item.best_meta = item.meta.copy()
+                        best_fitStatusDict = fitStatusDict.copy()
+                        best_fitQual = fitQual
+                    elif fitQual == best_fitQual: # new solution same level of fitQual. Choose whichever one has the lowest total rms as "best" and keep looping.
+                        if best_fit_rms >= 0.:
+                            if fit_rms < best_fit_rms:
+                                best_fit_rms = fit_rms
+                                best_fit_num = fit_num
+                                for item in imglist:
+                                    item.best_meta = item.meta.copy()
+                                best_fitStatusDict = fitStatusDict.copy()
+                    else: # new solution has worse fitQual. discard and continue looping.
+                        continue
+                """except Exception:
                     log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching algorithm {}.".format(catalogList[catalogIndex],algorithm_name.__name__))
                     filteredTable['status'][:] = 1
                     filteredTable['processMsg'][:] = "Fitting failure"
                     # It may be there are additional catalogs and algorithms to try, so keep going
                     fitQual = 5 # Flag this fit with the 'bad' quality value
                     continue
-
+                """
                 if fitQual == 1:  # break out of inner fit algorithm loop
                     break
         if fitQual == 1: #break out of outer astrometric catalog loop
@@ -415,31 +415,31 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     if 0 < best_fit_rms < MAX_FIT_LIMIT:
         # update to the meta information with the lowest rms if it is reasonable
         for item in imglist:
-            item.meta = item.best_meta.copy()
+            item.meta.update(item.best_meta)
         filteredTable['status'][:] = 0
         fitStatusDict = best_fitStatusDict.copy()
 
         # Protect the writing of the table within the best_fit_rms
-        info_keys = OrderedDict(imglist[0].meta['tweakwcs_info']).keys()
+        info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
         # Update filtered table with number of matched sources and other information
         for item in imglist:
             imgname = item.meta['name']
             index = np.where(filteredTable['imageName'] == imgname)[0][0]
 
-            if not item.meta['tweakwcs_info']['status'].startswith("FAILED"):
+            if not item.meta['fit_info']['status'].startswith("FAILED"):
                 for tweakwcs_info_key in info_keys:
                     if not tweakwcs_info_key.startswith("matched"):
                         if tweakwcs_info_key.lower() == 'rms':
-                            filteredTable[index]['rms_x'] = item.meta['tweakwcs_info'][tweakwcs_info_key][0]
-                            filteredTable[index]['rms_y'] = item.meta['tweakwcs_info'][tweakwcs_info_key][1]
+                            filteredTable[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
+                            filteredTable[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
 
-                filteredTable[index]['catalog'] = item.meta['tweakwcs_info']['catalog']
+                filteredTable[index]['catalog'] = item.meta['fit_info']['catalog']
                 filteredTable[index]['catalogSources'] = len(reference_catalog)
-                filteredTable[index]['matchSources'] = item.meta['tweakwcs_info']['nmatches']
-                filteredTable[index]['rms_ra'] = item.meta['tweakwcs_info']['RMS_RA'].value
-                filteredTable[index]['rms_dec'] = item.meta['tweakwcs_info']['RMS_DEC'].value
-                filteredTable[index]['fit_rms'] = item.meta['tweakwcs_info']['FIT_RMS']
-                filteredTable[index]['total_rms'] = item.meta['tweakwcs_info']['TOTAL_RMS']
+                filteredTable[index]['matchSources'] = item.meta['fit_info']['nmatches']
+                filteredTable[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
+                filteredTable[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
+                filteredTable[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
+                filteredTable[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
                 # populate filteredTable fields "status", "compromised" and
                 # "processMsg" with fitStatusDict fields "valid", "compromised"
                 # and "reason".
@@ -492,7 +492,7 @@ def match_default_fit(imglist, reference_catalog):
     Parameters
     ----------
     imglist : list
-        List of input image NDData objects with metadata and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
@@ -500,14 +500,14 @@ def match_default_fit(imglist, reference_catalog):
     Returns
     --------
     imglist : list
-        List of input image NDData objects with metadata and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
                              tolerance=100, use2dhist=False)
     # Align images and correct WCS
-    tweakwcs.tweak_image_wcs(imglist, reference_catalog, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -524,7 +524,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     Parameters
     ----------
     imglist : list
-        List of input image NDData objects with metadata and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
@@ -532,7 +532,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     Returns
     --------
     imglist : list
-        List of input image NDData objects with metadata and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
     log.info("-------------------- STEP 5b: (match_2dhist_fit) Cross matching and fitting ----------------------------")
@@ -540,7 +540,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
                              tolerance=2.0, use2dhist=True)
     # Align images and correct WCS
-    tweakwcs.tweak_image_wcs(imglist, reference_catalog, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -565,7 +565,7 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
             * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
             * 'NUM_FITS': number of images/group_id's with successful fits included in the TOTAL_RMS
 
-        These entries are added to the 'tweakwcs_info' dictionary.
+        These entries are added to the 'fit_info' dictionary.
 
     filteredTable : object
         Astropy Table object containing data pertaining to the associated dataset, including
@@ -603,7 +603,7 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
             fit compromised status (Boolean)
             reason fit is considered 'compromised' (only populated if 'compromised' field is "True")
     """
-    tweakwcs_info_keys = OrderedDict(imglist[0].meta['tweakwcs_info']).keys()
+    tweakwcs_info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
     max_rms_val = 1e9
     num_xmatches = 0
     fitStatusDict={}
@@ -612,23 +612,13 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
     overall_valid = True
     overall_comp = False
     for item in imglist:
-        xshifts.append(item.meta['tweakwcs_info']['shift'][0])
-        yshifts.append(item.meta['tweakwcs_info']['shift'][1])
+        if item.meta['fit_info']['status'].startswith('FAILED') != True:
+            xshifts.append(item.meta['fit_info']['shift'][0])
+            yshifts.append(item.meta['fit_info']['shift'][1])
 
     for item in imglist:
         image_name = item.meta['name']
         chip_num = item.meta['chip']
-        #Handle fitting failures (no matches found)
-        if item.meta['tweakwcs_info']['status'].startswith("FAILED") == True:
-                log.warning("No cross matches found in any catalog for {} - no processing done.".format(image_name))
-                continue
-        fit_rms_val = item.meta['tweakwcs_info']['FIT_RMS']
-        max_rms_val = item.meta['tweakwcs_info']['TOTAL_RMS']
-        num_xmatches = item.meta['tweakwcs_info']['nmatches']
-        if num_xmatches < MIN_CROSS_MATCHES:
-            if catalogIndex < numCatalogs-1:
-                log.warning("Not enough cross matches found between astrometric catalog and sources found in {}".format(image_name))
-                continue
 
         # Build fitStatusDict entry
         dictKey = "{},{}".format(image_name, chip_num)
@@ -637,14 +627,30 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
                                   'num_matches': num_xmatches,
                                   'compromised': False,
                                   'reason': ""} # Initialize dictionary entry for current image/chip
+
+        #Handle fitting failures (no matches found)
+        if item.meta['fit_info']['status'].startswith("FAILED") == True:
+                log.warning("No cross matches found in any catalog for {} - no processing done.".format(image_name))
+                continue
+        fit_rms_val = item.meta['fit_info']['FIT_RMS']
+        max_rms_val = item.meta['fit_info']['TOTAL_RMS']
+        num_xmatches = item.meta['fit_info']['nmatches']
+        fitStatusDict[dictKey]['max_rms'] = max_rms_val
+        fitStatusDict[dictKey]['num_matches'] = num_xmatches
+
+        if num_xmatches < MIN_CROSS_MATCHES:
+            if catalogIndex < numCatalogs-1:
+                log.warning("Not enough cross matches found between astrometric catalog and sources found in {}".format(image_name))
+                continue
+
         # Execute checks
         nmatchesCheck = False
         if num_xmatches > 4:
             nmatchesCheck = True
 
         radialOffsetCheck = False
-        radialOffset = math.sqrt(float(item.meta['tweakwcs_info']['shift'][0])**2 +
-                                 float(item.meta['tweakwcs_info']['shift'][0])**2)*item.wcs.pscale #radial offset in arssec
+        radialOffset = math.sqrt(float(item.meta['fit_info']['shift'][0])**2 +
+                                 float(item.meta['fit_info']['shift'][0])**2)*item.wcs.pscale #radial offset in arssec
         if float(num_xmatches) * 0.36 > 0.8 + (radialOffset/10.0)**8:
             radialOffsetCheck = True
 
@@ -657,7 +663,7 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
         #     fitRmsCheck = True
 
         consistencyCheck = True
-        rms_limit = max(item.meta['tweakwcs_info']['TOTAL_RMS'], 10.)
+        rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
         if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(np.asarray(yshifts)) ** 2) <= (
                     rms_limit / 1000.0) / (item.wcs.pscale):
             consistencyCheck = False
@@ -700,7 +706,7 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
             log.info("group_id: {}".format(item.meta['group_id']))
             for tweakwcs_info_key in tweakwcs_info_keys:
                 if not tweakwcs_info_key.startswith("matched"):
-                    log.info("{} : {}".format(tweakwcs_info_key,item.meta['tweakwcs_info'][tweakwcs_info_key]))
+                    log.info("{} : {}".format(tweakwcs_info_key,item.meta['fit_info'][tweakwcs_info_key]))
             log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             log.info("nmatchesCheck: {} radialOffsetCheck: {} largeRmsCheck: {}, consistencyCheck: {}".format(nmatchesCheck,radialOffsetCheck,largeRmsCheck,consistencyCheck))
 
@@ -822,7 +828,6 @@ def generate_source_catalogs(imglist, **pars):
         # Identify sources in image, convert coords from chip x, y form to reference WCS sky RA, Dec form.
         imgwcs = HSTWCS(imghdu, 1)
         fwhmpsf_pix = sourcecatalogdict[imgname]["params"]['fwhmpsf']/imgwcs.pscale #Convert fwhmpsf from arsec to pixels
-
         sourcecatalogdict[imgname]["catalog_table"] = amutils.generate_source_catalog(imghdu, fwhm=fwhmpsf_pix, **detector_pars)
 
         # write out coord lists to files for diagnostic purposes. Protip: To display the sources in these files in DS9,
@@ -874,9 +879,9 @@ def update_image_wcs_info(tweakwcs_output):
             else:
                 wname = hdulist['sci', 1].header['wcsname']
                 if "-" in wname:
-                    wcsName = '{}-FIT_{}'.format(wname[:wname.index('-')], item.meta['tweakwcs_info']['catalog'])
+                    wcsName = '{}-FIT_{}'.format(wname[:wname.index('-')], item.meta['fit_info']['catalog'])
                 else:
-                    wcsName = '{}-FIT_{}'.format(wname, item.meta['tweakwcs_info']['catalog'])
+                    wcsName = '{}-FIT_{}'.format(wname, item.meta['fit_info']['catalog'])
 
             # establish correct mapping to the science extensions
             sciExtDict = {}
@@ -926,17 +931,17 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     """
 
     # Get the data to be used as values for FITS keywords
-    rms_ra = tweakwcs_item.meta['tweakwcs_info']['RMS_RA'].value
-    rms_dec = tweakwcs_item.meta['tweakwcs_info']['RMS_DEC'].value
-    fit_rms = tweakwcs_item.meta['tweakwcs_info']['FIT_RMS']
-    nmatch = tweakwcs_item.meta['tweakwcs_info']['nmatches']
-    catalog = tweakwcs_item.meta['tweakwcs_info']['catalog']
+    rms_ra = tweakwcs_item.meta['fit_info']['RMS_RA'].value
+    rms_dec = tweakwcs_item.meta['fit_info']['RMS_DEC'].value
+    fit_rms = tweakwcs_item.meta['fit_info']['FIT_RMS']
+    nmatch = tweakwcs_item.meta['fit_info']['nmatches']
+    catalog = tweakwcs_item.meta['fit_info']['catalog']
 
-    x_shift = (tweakwcs_item.meta['tweakwcs_info']['shift'])[0]
-    y_shift = (tweakwcs_item.meta['tweakwcs_info']['shift'])[1]
-    rot = tweakwcs_item.meta['tweakwcs_info']['rot']
-    scale = tweakwcs_item.meta['tweakwcs_info']['scale'][0]
-    skew = tweakwcs_item.meta['tweakwcs_info']['skew']
+    x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
+    y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
+    rot = tweakwcs_item.meta['fit_info']['rot']
+    scale = tweakwcs_item.meta['fit_info']['scale'][0]
+    skew = tweakwcs_item.meta['fit_info']['skew']
 
     # Update the existing FITS keywords
     primary_header = headerlet[0].header
@@ -975,7 +980,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
             * 'NUM_FITS': number of images/group_id's with successful fits included in the TOTAL_RMS
 
-        These entries are added to the 'tweakwcs_info' dictionary.
+        These entries are added to the 'fit_info' dictionary.
 
     reference_catalog : astropy.Table
         Table of reference source positions used for the fit
@@ -990,17 +995,21 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     obs_rms = []
     for group_id in group_ids:
         for item in tweakwcs_output:
-            if item.meta['tweakwcs_info']['status'].startswith('FAILED'):
+            if item.meta['fit_info']['status'].startswith('FAILED'):
                 continue
             if item.meta['group_id'] == group_id and \
                group_id not in group_dict:
                     group_dict[group_id] = {'ref_idx':None, 'FIT_RMS':None}
-                    tinfo = item.meta['tweakwcs_info']
-                    ref_idx = tinfo['fit_ref_idx']
+                    log.debug("fit_info: {}".format(item.meta['fit_info']))
+                    tinfo = item.meta['fit_info']
+                    ref_idx = tinfo['matched_ref_idx']
+                    fitmask = tinfo['fitmask']
                     group_dict[group_id]['ref_idx'] = ref_idx
-                    ref_RA = reference_catalog[ref_idx]['RA']
-                    ref_DEC = reference_catalog[ref_idx]['DEC']
-                    img_coords = SkyCoord(tinfo['fit_RA'], tinfo['fit_DEC'],
+                    ref_RA = reference_catalog[ref_idx]['RA'][fitmask]
+                    ref_DEC = reference_catalog[ref_idx]['DEC'][fitmask]
+                    input_RA = tinfo['fit_RA']
+                    input_DEC = tinfo['fit_DEC']
+                    img_coords = SkyCoord(input_RA, input_DEC,
                                           unit='deg',frame='icrs')
                     ref_coords = SkyCoord(ref_RA, ref_DEC, unit='deg',frame='icrs')
                     dra, ddec = img_coords.spherical_offsets_to(ref_coords)
@@ -1027,12 +1036,12 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             ra_rms = None
             dec_rms = None
 
-        item.meta['tweakwcs_info']['FIT_RMS'] = fit_rms
-        item.meta['tweakwcs_info']['TOTAL_RMS'] = total_rms
-        item.meta['tweakwcs_info']['NUM_FITS'] = len(group_ids)
-        item.meta['tweakwcs_info']['RMS_RA'] = ra_rms
-        item.meta['tweakwcs_info']['RMS_DEC'] = dec_rms
-        item.meta['tweakwcs_info']['catalog'] = reference_catalog.meta['catalog']
+        item.meta['fit_info']['FIT_RMS'] = fit_rms
+        item.meta['fit_info']['TOTAL_RMS'] = total_rms
+        item.meta['fit_info']['NUM_FITS'] = len(group_ids)
+        item.meta['fit_info']['RMS_RA'] = ra_rms
+        item.meta['fit_info']['RMS_DEC'] = dec_rms
+        item.meta['fit_info']['catalog'] = reference_catalog.meta['catalog']
 
 
 # ----------------------------------------------------------------------------------------------------------------------
