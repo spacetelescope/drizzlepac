@@ -52,11 +52,12 @@ import pysynphot as S
 #from . import bitmask
 
 import logging
+import sys
 from drizzlepac import util
 from stsci.tools import logutil
 __taskname__ = 'astrometric_utils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 try:
     from matplotlib import pyplot as plt
