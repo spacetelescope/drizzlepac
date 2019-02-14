@@ -18,6 +18,8 @@ of the list).
 DrizzlePac (DEVELOPMENT)
 ========================
 
+- Updated code that relies on ``tweakwcs`` to use new API. [#234]
+
 - Fixed a bug in the computation of interpolated large scale flat field
   for STIS data. The bug was inconsequential in practice.
   Removed the dependency on ``stsci.imagemanip`` package. [#227]
