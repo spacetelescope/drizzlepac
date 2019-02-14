@@ -140,10 +140,7 @@ def convert_string_tf_to_boolean(invalue):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-
-@util.with_logging
-def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None, runfile=None,
-                  print_fit_parameters=True, print_git_info=False, output=False): # TODO: set 'debug' and 'output' back to 'False' before release.
+def perform_align(input_list, **kwargs):
     """Main calling function.
 
     Parameters
@@ -165,10 +162,6 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
     update_hdr_wcs : Boolean
         Write newly computed WCS information to image image headers?
 
-    result : Astropy Table
-        Write the contents of the filteredTable to the result so that it can be passed back to the calling routine
-        as a parameter versus a returned value as the @util.with_logging decorator does not allow returned values
-
     print_fit_parameters : Boolean
         Specify whether or not to print out FIT results for each chip.
 
@@ -186,6 +179,13 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         Table which contains processing information and alignment results for every raw image evaluated
 
     """
+    filteredTable = Table()
+    run_align(input_list, result=filteredTable, **kwargs)
+    return filteredTable
+
+@util.with_logging
+def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None, runfile=None,
+                  print_fit_parameters=True, print_git_info=False, output=False):
 
     log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
 

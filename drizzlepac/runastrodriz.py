@@ -66,12 +66,7 @@ import time
 
 # THIRD-PARTY
 from astropy.io import fits
-from astropy.table import Table
 from stsci.tools import fileutil, asnutil
-import numpy as np
-
-import math
-
 
 __taskname__ = "runastrodriz"
 
@@ -303,9 +298,9 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         _trlmsg = ""
 
         # Create an empty astropy table so it can be used as input/output for the perform_align function
-        align_table = Table()
+        #align_table = Table()
         try:
-            alignimages.perform_align(align_files,update_hdr_wcs=True,result=align_table, runfile=_alignlog)
+            align_table = alignimages.perform_align(align_files,update_hdr_wcs=True, runfile=_alignlog)
             for row in align_table:
                 if row['status'] == 0:
                     trlstr = "Successfully aligned {} to {} astrometric frame\n"
@@ -313,6 +308,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
                 else:
                     trlstr = "Could not align {} to absolute astrometric frame\n"
                     _trlmsg += trlstr.format(row['imageName'])
+
         except Exception:
             # Something went wrong with alignment to GAIA, so report this in
             # trailer file
