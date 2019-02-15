@@ -57,6 +57,8 @@ DrizzlePac (DEVELOPMENT)
 
 - Improved the logging to write to STDOUT, as well as a file [#235]
 
+- Code pushed to Release branch, 3.0.0x, on 15 February 2019.  
+
 DrizzlePac v2.2.6 (02-Nov-2018)
 ===============================
 
