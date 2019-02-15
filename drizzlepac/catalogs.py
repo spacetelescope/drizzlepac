@@ -416,7 +416,7 @@ class Catalog:
         f.close()
 
 
-class ImageCatalog:
+class ImageCatalog(Catalog):
     """ Class which generates a source catalog from an image using
         Python-based, daofind-like algorithms
 
