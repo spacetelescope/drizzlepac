@@ -117,7 +117,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     import drizzlepac
     from drizzlepac import processInput # used for creating new ASNs for _flc inputs
     from stwcs import updatewcs
-    import alignimages
+    from drizzlepac import alignimages
 
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
