@@ -18,6 +18,9 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Fix logic so that code no longer tries to update headers when no valid fit
+  could be determined. [#241] 
+
 - Updated code that relies on ``tweakwcs`` to use new API. [#234]
 
 - Fixed a bug in the computation of interpolated large scale flat field
