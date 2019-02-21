@@ -19,15 +19,17 @@ import os
 from io import BytesIO
 import csv
 import requests
-from lxml import etree
 import inspect
+import logging
+import sys
 
 import numpy as np
-
-from stwcs.distortion import utils
-from stwcs import wcsutil
-from stsci.tools import fileutil as fu
-from stsci.tools import parseinput
+from scipy import ndimage
+from lxml import etree
+try:
+    from matplotlib import pyplot as plt
+except Exception:
+    plt = None
 
 from astropy import units as u
 from astropy.table import Table, vstack
@@ -37,40 +39,29 @@ from astropy.io import ascii
 from astropy.nddata import NDData
 from astropy.convolution import Gaussian2DKernel
 from astropy.stats import gaussian_fwhm_to_sigma
+from astropy.nddata.bitmask import bitfield_to_boolean_mask
+from astropy.visualization import SqrtStretch
+from astropy.visualization.mpl_normalize import ImageNormalize
+
 import photutils
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D, MedianBackground
 from photutils import DAOStarFinder
-from scipy import ndimage
 from tweakwcs import FITSWCS
-
-import matplotlib.pyplot as plt
-from astropy.visualization import SqrtStretch
-from astropy.visualization.mpl_normalize import ImageNormalize
-
+from stwcs.distortion import utils
+from stwcs import wcsutil
+from stsci.tools import fileutil as fu
+from stsci.tools import parseinput
+from stsci.tools import logutil
 import pysynphot as S
 
-#from . import bitmask
+from ..tweakutils import build_xy_zeropoint
 
-import logging
-import sys
-from drizzlepac import util
-from stsci.tools import logutil
 __taskname__ = 'astrometric_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-try:
-    from matplotlib import pyplot as plt
-except Exception:
-    plt = None
 
-from ..tweakutils import build_xy_zeropoint
-
-try:
-    from stsci.tools.bitmask import bitfield_to_boolean_mask
-except ImportError:
-    from stsci.tools.bitmask import bitmask2mask as bitfield_to_boolean_mask
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
@@ -93,14 +84,8 @@ Utility functions.
 
 Many were originally released in stsci.tools.fileutil.
 """
-def DEGTORAD(deg):
-    return (deg * np.pi / 180.)
-
-def RADTODEG(rad):
-    return (rad * 180. / np.pi)
-
 def buildRotMatrix(theta):
-    _theta = DEGTORAD(theta)
+    _theta = np.deg2rad(theta)
     _mrot = np.zeros(shape=(2,2), dtype=np.float64)
     _mrot[0] = (np.cos(_theta), np.sin(_theta))
     _mrot[1] = (-np.sin(_theta), np.cos(_theta))

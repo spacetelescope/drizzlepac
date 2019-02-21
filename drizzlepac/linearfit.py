@@ -32,14 +32,6 @@ else:
     ndfloat128 = np.float64
 
 
-def RADTODEG(rad):
-    return (rad * 180. / np.pi)
-
-
-def DEGTORAD(deg):
-    return (deg * np.pi / 180.)
-
-
 def iter_fit_shifts(xy,uv,nclip=3,sigma=3.0):
     """ Perform an iterative-fit with 'nclip' iterations
     """
@@ -443,7 +435,7 @@ def apply_old_coeffs(xy,coeffs):
     """ Apply the offset/shift/rot values from a linear fit
         to an array of x,y positions.
     """
-    _theta = DEGTORAD(coeffs[1])
+    _theta = np.deg2rad(coeffs[1])
     _mrot = np.zeros(shape=(2,2),dtype=np.float64)
     _mrot[0] = (np.cos(_theta),np.sin(_theta))
     _mrot[1] = (-np.sin(_theta),np.cos(_theta))

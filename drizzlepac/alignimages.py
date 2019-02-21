@@ -3,29 +3,23 @@
 """This script is a modernized implementation of tweakreg.
 
 """
-
 import datetime
+import sys
+import glob
+import math
+import os
+import pickle
+from collections import OrderedDict
+import logging
+
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
-from collections import OrderedDict
-from drizzlepac import updatehdr
-import glob
-import math
-import numpy as np
-import os
-import pickle
-from stsci.tools import fileutil
-from stsci.tools import logutil
-from stwcs.wcsutil import headerlet
-from stwcs.wcsutil import HSTWCS
-import sys
+from stsci.tools import fileutil, logutil
+from stwcs.wcsutil import headerlet, HSTWCS
 import tweakwcs
-
-import logging
-
-__taskname__ = 'alignimages'
 
 from drizzlepac import updatehdr
 from drizzlepac import util
@@ -33,6 +27,10 @@ from drizzlepac.hlautils import astrometric_utils as amutils
 from drizzlepac.hlautils import astroquery_utils as aqutils
 from drizzlepac.hlautils import analyze as filter
 from drizzlepac.hlautils import get_git_rev_info
+
+
+__taskname__ = 'alignimages'
+
 
 MIN_CATALOG_THRESHOLD = 3
 MIN_OBSERVABLE_THRESHOLD = 10
