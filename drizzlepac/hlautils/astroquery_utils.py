@@ -6,7 +6,6 @@ from astropy.table import Table
 
 import logging
 import sys
-from drizzlepac import util
 from stsci.tools import logutil
 
 __taskname__ = 'astroquery_utils'

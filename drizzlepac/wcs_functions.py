@@ -243,7 +243,7 @@ def build_pixel_transform(chip,output_wcs):
     driz_pars['abxt'] = abxt
     driz_pars['cdyt'] = cdyt
 
-    driz_pars['delta_rot'] = fileutil.RADTODEG(np.arctan2(abxt[1],cdyt[0]))
+    driz_pars['delta_rot'] = np.rad2deg(np.arctan2(abxt[1],cdyt[0]))
     # Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly
     driz_pars['scale'] = 1./np.sqrt(abxt[0]**2 + abxt[1]**2)
     driz_pars['tddalpha'] = chip.header['tddalpha']
@@ -434,15 +434,15 @@ def calcNewEdges(wcs, shape):
 
 
 def computeEdgesCenter(edges):
-    alpha = fileutil.DEGTORAD(edges[0])
-    dec = fileutil.DEGTORAD(edges[1])
+    alpha = np.deg2rad(edges[0])
+    dec = np.deg2rad(edges[1])
 
     xmean = np.mean(np.cos(dec)*np.cos(alpha))
     ymean = np.mean(np.cos(dec)*np.sin(alpha))
     zmean = np.mean(np.sin(dec))
 
-    crval1 = fileutil.RADTODEG(np.arctan2(ymean,xmean))%360.0
-    crval2 = fileutil.RADTODEG(np.arctan2(zmean,np.sqrt(xmean*xmean+ymean*ymean)))
+    crval1 = np.rad2deg(np.arctan2(ymean,xmean))%360.0
+    crval2 = np.rad2deg(np.arctan2(zmean,np.sqrt(xmean*xmean+ymean*ymean)))
 
     return crval1,crval2
 
@@ -891,7 +891,7 @@ def fitlin_rscale(xy,uv,verbose=False):
     YY = Suy - p*Svx
 
     # derive output values
-    theta_deg = fileutil.RADTODEG(np.arctan2(YY,XX))% 360.0
+    theta_deg = np.rad2deg(np.arctan2(YY,XX))% 360.0
     scale = np.sqrt(XX**2 + YY**2) / (Sxx+Syy)
     shift = (mu-mx,mv-my)
     if verbose:
