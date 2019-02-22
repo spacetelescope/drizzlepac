@@ -6,16 +6,6 @@ import sys
 import numpy
 from astropy import wcs
 
-try:
-    _mnfe = ModuleNotFoundError
-except NameError:
-    ModuleNotFoundError = ImportError
-
-try:
-    import pandokia
-except (ImportError, NameError, ModuleNotFoundError):
-    pandokia = False
-
 from glob import glob
 from setuptools import setup, find_packages, Extension
 from subprocess import check_call, CalledProcessError
@@ -63,13 +53,6 @@ if sys.platform == 'win32':
         ('_CRT_SECURE_NO_WARNING', None),
         ('__STDC__', 1)
     ]
-
-# Deprecation warning:
-#    Pandokia integration will be removed in a later release.
-if pandokia:
-    fctx_includes = [os.path.join(os.path.dirname(pandokia.__file__),
-                                  'runners', 'maker')]
-    include_dirs.extend(fctx_includes)
 
 
 setup(
