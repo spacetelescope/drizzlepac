@@ -2,9 +2,14 @@
 if (utils.scm_checkout()) return
 
 // Generate installation compatibility matrix
+/*
 matrix_python = ["3.6", "3.7"]
 matrix_astropy = [">=3.1.0"]
-matrix_numpy = [">=1.14", "==1.15.0"]
+matrix_numpy = ["<1.15", "<1.16"]
+*/
+matrix_python = ["3.7"]
+matrix_astropy = [">=3.1.0"]
+matrix_numpy = ["<1.16"]
 matrix = []
 
 // Configure artifactory ingest
@@ -53,8 +58,10 @@ for (numpy_ver in matrix_numpy) {
     bc.conda_packages += ["astropy${astropy_ver}",
                           "numpy${numpy_ver}",
                           "python=${python_ver}"]
-    bc.build_cmds = ["pip install -e ."]
-    bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
+    bc.build_cmds = ["pip install codecov",
+                     "pip install --no-deps -e ."]
+    bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any",
+                    "codecov"]
     bc.test_configs = [data_config]
     matrix += bc
     matrix_id++
