@@ -1,6 +1,9 @@
 // Obtain files from source control system.
 if (utils.scm_checkout()) return
 
+withCredentials([string(
+    credentialsId: 'drizzlepac-codecov',
+    variable: 'codecov_token')]) {
 // Generate installation compatibility matrix
 /*
 matrix_python = ["3.6", "3.7"]
@@ -61,7 +64,7 @@ for (numpy_ver in matrix_numpy) {
     bc.build_cmds = ["pip install codecov pytest-cov",
                      "pip install --no-deps -e ."]
     bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any",
-                    "codecov"]
+                    "codecov --token=${codecov_token}"]
     bc.test_configs = [data_config]
     matrix += bc
     matrix_id++
@@ -92,3 +95,4 @@ matrix += sdist
 // Iterate over configurations that define the (distibuted) build matrix.
 // Spawn a host of the given nodetype for each combination and run in parallel.
 utils.run(matrix)
+}
