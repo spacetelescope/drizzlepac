@@ -34,7 +34,7 @@ for (numpy_ver in matrix_numpy) {
     bc.nodetype = "linux"
     bc.name = MATRIX_TITLE
     bc.env_vars = ['BUILD_MATRIX_SUFFIX=' + MATRIX_SUFFIX,
-                        'BUILD_MATRIX_ID=' + matrix_id]
+                   'BUILD_MATRIX_ID=' + matrix_id]
     bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
     bc.conda_packages = ['acstools',
                          'fitsblender',
@@ -62,7 +62,7 @@ for (numpy_ver in matrix_numpy) {
                           "numpy${numpy_ver}",
                           "python=${python_ver}"]
     bc.build_cmds = ["pip install codecov pytest-cov",
-                     "pip install --no-deps -e ."]
+                     "python setup.py develop"]
     bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any",
                     "codecov --token=${codecov_token}"]
     bc.test_configs = [data_config]
