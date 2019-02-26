@@ -1,0 +1,2 @@
+[tool.stsci-bot]
+check_milestone = false
