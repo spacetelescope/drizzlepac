@@ -353,48 +353,48 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             log.info("-------------------- STEP 5b: Cross matching and fitting -----------------------------------------------")
             for algorithm_name in fit_algorithm_list: #loop over fit algorithm type
                 log.info("------------------ Catalog {} matched using {} ------------------ ".format(catalogList[catalogIndex],algorithm_name.__name__))
-                #try:
-                #execute the correct fitting/matching algorithm
-                imglist = algorithm_name(imglist, reference_catalog)
+                try:
+                    #execute the correct fitting/matching algorithm
+                    imglist = algorithm_name(imglist, reference_catalog)
 
-                # determine the quality of the fit
-                fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
+                    # determine the quality of the fit
+                    fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
 
-                # Figure out which fit solution to go with based on fitQual value and maybe also total_rms
-                if fitQual < 5:
-                    if fitQual == 1: #valid, non-comprimised solution with total rms < 10 mas...go with this solution.
-                        best_fit_rms = fit_rms
-                        best_fit_num = fit_num
-                        for item in imglist:
-                            item.best_meta = item.meta.copy()
-                        best_fitStatusDict = fitStatusDict.copy()
-                        break #break out of while loop
-                    elif fitQual < best_fitQual: # better solution found. keep looping but with the better solution as "best" for now.
-                        log.info("Better solution found!")
-                        best_fit_rms = fit_rms
-                        best_fit_num = fit_num
-                        for item in imglist:
-                            item.best_meta = item.meta.copy()
-                        best_fitStatusDict = fitStatusDict.copy()
-                        best_fitQual = fitQual
-                    elif fitQual == best_fitQual: # new solution same level of fitQual. Choose whichever one has the lowest total rms as "best" and keep looping.
-                        if best_fit_rms >= 0.:
-                            if fit_rms < best_fit_rms:
-                                best_fit_rms = fit_rms
-                                best_fit_num = fit_num
-                                for item in imglist:
-                                    item.best_meta = item.meta.copy()
-                                best_fitStatusDict = fitStatusDict.copy()
-                    else: # new solution has worse fitQual. discard and continue looping.
-                        continue
-                """except Exception:
+                    # Figure out which fit solution to go with based on fitQual value and maybe also total_rms
+                    if fitQual < 5:
+                        if fitQual == 1: #valid, non-comprimised solution with total rms < 10 mas...go with this solution.
+                            best_fit_rms = fit_rms
+                            best_fit_num = fit_num
+                            for item in imglist:
+                                item.best_meta = item.meta.copy()
+                            best_fitStatusDict = fitStatusDict.copy()
+                            break #break out of while loop
+                        elif fitQual < best_fitQual: # better solution found. keep looping but with the better solution as "best" for now.
+                            log.info("Better solution found!")
+                            best_fit_rms = fit_rms
+                            best_fit_num = fit_num
+                            for item in imglist:
+                                item.best_meta = item.meta.copy()
+                            best_fitStatusDict = fitStatusDict.copy()
+                            best_fitQual = fitQual
+                        elif fitQual == best_fitQual: # new solution same level of fitQual. Choose whichever one has the lowest total rms as "best" and keep looping.
+                            if best_fit_rms >= 0.:
+                                if fit_rms < best_fit_rms:
+                                    best_fit_rms = fit_rms
+                                    best_fit_num = fit_num
+                                    for item in imglist:
+                                        item.best_meta = item.meta.copy()
+                                    best_fitStatusDict = fitStatusDict.copy()
+                        else: # new solution has worse fitQual. discard and continue looping.
+                            continue
+                except Exception:
                     log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching algorithm {}.".format(catalogList[catalogIndex],algorithm_name.__name__))
                     filteredTable['status'][:] = 1
                     filteredTable['processMsg'][:] = "Fitting failure"
                     # It may be there are additional catalogs and algorithms to try, so keep going
                     fitQual = 5 # Flag this fit with the 'bad' quality value
                     continue
-                """
+                
                 if fitQual == 1:  # break out of inner fit algorithm loop
                     break
         if fitQual == 1: #break out of outer astrometric catalog loop
