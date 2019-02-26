@@ -18,7 +18,7 @@ of the list).
 3.0.2 (unreleased)
 ==================
 - Trap problems importing astroquery with any problems leading to not trying to
-  get any remote data through astroquery. [#246]
+  get any remote data through astroquery. [#248]
 
 - Restore logic to flag failed fits with a fit quality of 5 in an except block. [#244]
 
