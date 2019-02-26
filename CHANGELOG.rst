@@ -17,6 +17,7 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+- Restore logic to flag failed fits with a fit quality of 5 in an except block. [#243]
 
 - Fix logic so that code no longer tries to update headers when no valid fit
   could be determined. [#241] 
