@@ -18,7 +18,7 @@ of the list).
 3.0.2 (unreleased)
 ==================
 - Insure new a posteriori solution gets appended to FLC file as well as FLT file
-  as a HDRLET extension. [#248]
+  as a HDRLET extension. [#249]
 
 - Restore logic to flag failed fits with a fit quality of 5 in an except block. [#244]
 
