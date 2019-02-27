@@ -1110,6 +1110,8 @@ if __name__ == '__main__':
     output = convert_string_tf_to_boolean(ARGS.output)
 
     # Get to it!
-    return_value = perform_align(input_list,archive,clobber,debug,update_hdr_wcs,print_fit_parameters,print_git_info)
+    return_value = perform_align(input_list, archive=archive, clobber=clobber, debug=debug,
+                                 update_hdr_wcs=update_hdr_wcs, print_fit_parameters=print_fit_parameters,
+                                 print_git_info=print_git_info, output=output)
 
     log.info(return_value)
