@@ -394,7 +394,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     # It may be there are additional catalogs and algorithms to try, so keep going
                     fitQual = 5 # Flag this fit with the 'bad' quality value
                     continue
-                
+
                 if fitQual == 1:  # break out of inner fit algorithm loop
                     break
         if fitQual == 1: #break out of outer astrometric catalog loop
@@ -909,6 +909,9 @@ def update_image_wcs_info(tweakwcs_output):
             out_headerlet.writeto(headerlet_filename, clobber=True)
             log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
             out_headerlet_dict[imageName] = headerlet_filename
+
+            # Attach headerlet as HDRLET extension
+            headerlet.attach_headerlet(imageName, headerlet_filename)
 
         chipctr +=1
     return (out_headerlet_dict)
