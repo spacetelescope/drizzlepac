@@ -17,6 +17,9 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+- Trap problems importing astroquery with any problems leading to not trying to
+  get any remote data through astroquery. [#248]
+
 - Insure new a posteriori solution gets appended to FLC file as well as FLT file
   as a HDRLET extension. [#249]
 

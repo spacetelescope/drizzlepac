@@ -89,7 +89,10 @@ def check_and_get_data(input_list,**pars):
     totalInputList = []
     retrieve_list = [] # list of already retrieved ASNs, only request each once
     for input_item in input_list:
-        filelist = aqutils.retrieve_observation(input_item,**pars)
+        try:
+            filelist = aqutils.retrieve_observation(input_item,**pars)
+        except Exception:
+            filelist = []
         if len(filelist) == 0:
             # look for local copy of the file
             input_rootname = input_item[:input_item.find('_')]
@@ -104,8 +107,11 @@ def check_and_get_data(input_list,**pars):
                 except KeyError:
                     asnid = None
                 if asnid and asnid not in retrieve_list:
-                    filelist = aqutils.retrieve_observation(asnid,**pars)
-                    retrieve_list.append(asnid) # record asn's already retrieved
+                    try:
+                        filelist = aqutils.retrieve_observation(asnid,**pars)
+                        retrieve_list.append(asnid) # record asn's already retrieved
+                    except Exception:
+                        filelist = []
 
         if len(filelist) > 0:
             totalInputList += filelist
