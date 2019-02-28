@@ -17,6 +17,9 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+- Insure a posteriori headerlet does not get overwritten by runastrodriz, so that
+  info about fit is preserved. [#250]
+
 - Trap problems importing astroquery with any problems leading to not trying to
   get any remote data through astroquery. [#248]
 
