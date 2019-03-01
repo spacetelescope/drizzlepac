@@ -47,11 +47,17 @@ astrometric catalog, such as GAIA, as accessible through the MAST interface.
 
 Additional control over whether or not to attempt to align to an external 
 astrometric catalog, such as GAIA, is provided through the use of the 
-environment variable.  This environment variable will ALWAYS override any
-setting of the '-g' switch. The variable is:  
+environment variables:  
 
-    - ASTROMETRY_COMPUTE_APOSTERIORI : Values (case-insensitive) can be
-      'on', 'off', 'yes', 'no'
+    - ASTROMETRY_COMPUTE_APOSTERIORI : Turn on/off alignment step.
+      This environment variable will ALWAYS override any setting of the '-g' switch.
+      Values (case-insensitive) can be 'on', 'off', 'yes', 'no'.
+
+    - ASTROMETRY_APPLY_APRIORI : Replaces/resets ASTROMETRY_STEP_CONTROL
+      variable used by `stwcs.updatewcs` to control whether or not a priori WCS
+      solutions from the astrometry database should be applied to the data.
+      If this is set, it will override any value set in the old variable.
+      Values (case-insensitive) can be 'on','off','yes','no'.
       
 *** INITIAL VERSION
 W.J. Hack  12 Aug 2011: Initial version based on Version 1.2.0 of
@@ -92,7 +98,12 @@ pipeline_pars = {'mdriztab':True,
 __trlmarker__ = '*** astrodrizzle Processing Version '+__version__+__version_date__+'***\n'
 
 envvar_bool_dict = {'off': False, 'on': True, 'no':False, 'yes':True, 'false':False, 'true':True}
+envvar_dict = {'off':'off', 'on':'on', 'yes':'on', 'no':'off', 'true':'on', 'false':'off'}
+
 envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
+# Replace ASTROMETRY_STEP_CONTROL with this new related name
+envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
+envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 
 # History:
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
@@ -130,11 +141,28 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     
     # interpret envvar variable, if specified
     if envvar_compute_name in os.environ:
-        align_to_gaia = envvar_bool_dict[os.environ[envvar_compute_name].lower()]
+        val = os.environ[envvar_compute_name].lower()
+        if val not in envvar_bool_dict:
+            msg = "ERROR: invalid value for {}.".format(envvar_compute_name)
+            msg += "  \n    Valid Values: on, off, yes, no, true, false"
+            raise ValueError(msg)            
+        align_to_gaia = envvar_bool_dict[val]
+
+    if envvar_new_apriori_name in os.environ:
+        # Reset ASTROMETRY_STEP_CONTROL based on this variable
+        # This provides backward-compatibility until ASTROMETRY_STEP_CONTROL
+        # gets removed entirely.
+        val = os.environ[envvar_new_apriori_name].lower()
+        if val not in envvar_dict:
+            msg = "ERROR: invalid value for {}.".format(envvar_new_apriori_name)
+            msg += "  \n    Valid Values: on, off, yes, no, true, false"
+            raise ValueError(msg)
+
+        os.environ[envvar_old_apriori_name] = envvar_dict[val]
 
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
-    
+
     # Open the input file
     try:
         # Make sure given filename is complete and exists...
