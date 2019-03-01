@@ -17,6 +17,9 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+- Implement environment variable control, and command-line control, over running
+  alignment step in runastrodriz. [#251]
+  
 - Insure a posteriori headerlet does not get overwritten by runastrodriz, so that
   info about fit is preserved. [#250]
 

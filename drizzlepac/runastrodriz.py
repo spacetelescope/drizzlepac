@@ -42,11 +42,23 @@ for each input image.
 The '-n' option allows the user to specify the number of cores to be used in
 running AstroDrizzle.
 
-The '-g' option allows the user to attempt to align the images to an external
-astrometric catalog, such as GAIA, as accessible through the MAST interface.  If
-the attempt fails, no changes will be made to the data's WCS.
+The '-g' option allows the user to TURN OFF alignment of the images to an external
+astrometric catalog, such as GAIA, as accessible through the MAST interface.
 
+Additional control over whether or not to attempt to align to an external 
+astrometric catalog, such as GAIA, is provided through the use of the 
+environment variables:  
 
+    - ASTROMETRY_COMPUTE_APOSTERIORI : Turn on/off alignment step.
+      This environment variable will ALWAYS override any setting of the '-g' switch.
+      Values (case-insensitive) can be 'on', 'off', 'yes', 'no'.
+
+    - ASTROMETRY_APPLY_APRIORI : Replaces/resets ASTROMETRY_STEP_CONTROL
+      variable used by `stwcs.updatewcs` to control whether or not a priori WCS
+      solutions from the astrometry database should be applied to the data.
+      If this is set, it will override any value set in the old variable.
+      Values (case-insensitive) can be 'on','off','yes','no'.
+      
 *** INITIAL VERSION
 W.J. Hack  12 Aug 2011: Initial version based on Version 1.2.0 of
                         STSDAS$pkg/hst_calib/wfc3/runwf3driz.py
@@ -72,7 +84,7 @@ __taskname__ = "runastrodriz"
 
 # Local variables
 __version__ = "1.6.0"
-__version_date__ = "(03-Feb-2019)"
+__version_date__ = "(01-Mar-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -84,6 +96,14 @@ pipeline_pars = {'mdriztab':True,
 
 #default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version '+__version__+__version_date__+'***\n'
+
+envvar_bool_dict = {'off': False, 'on': True, 'no':False, 'yes':True, 'false':False, 'true':True}
+envvar_dict = {'off':'off', 'on':'on', 'yes':'on', 'no':'off', 'true':'on', 'false':'off'}
+
+envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
+# Replace ASTROMETRY_STEP_CONTROL with this new related name
+envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
+envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 
 # History:
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
@@ -118,6 +138,27 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     from drizzlepac import processInput # used for creating new ASNs for _flc inputs
     from stwcs import updatewcs
     from drizzlepac import alignimages
+    
+    # interpret envvar variable, if specified
+    if envvar_compute_name in os.environ:
+        val = os.environ[envvar_compute_name].lower()
+        if val not in envvar_bool_dict:
+            msg = "ERROR: invalid value for {}.".format(envvar_compute_name)
+            msg += "  \n    Valid Values: on, off, yes, no, true, false"
+            raise ValueError(msg)            
+        align_to_gaia = envvar_bool_dict[val]
+
+    if envvar_new_apriori_name in os.environ:
+        # Reset ASTROMETRY_STEP_CONTROL based on this variable
+        # This provides backward-compatibility until ASTROMETRY_STEP_CONTROL
+        # gets removed entirely.
+        val = os.environ[envvar_new_apriori_name].lower()
+        if val not in envvar_dict:
+            msg = "ERROR: invalid value for {}.".format(envvar_new_apriori_name)
+            msg += "  \n    Valid Values: on, off, yes, no, true, false"
+            raise ValueError(msg)
+
+        os.environ[envvar_old_apriori_name] = envvar_dict[val]
 
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
@@ -282,72 +323,74 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         updatewcs.updatewcs(_calfiles)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
-        # Perform additional alignment on the FLC files, if present
-        ###############
-        #
-        # call hlapipeline code here on align_files list of files
-        #
-        ###############
-        # Create trailer marker message for start of align_to_GAIA processing
-        _trlmsg = _timestamp("Align_to_GAIA started ")
-        print(_trlmsg)
-        ftmp = open(_tmptrl,'w')
-        ftmp.writelines(_trlmsg)
-        ftmp.close()
-        _appendTrlFile(_trlfile,_tmptrl)
-        _trlmsg = ""
 
-        # Create an empty astropy table so it can be used as input/output for the perform_align function
-        #align_table = Table()
-        try:
-            align_table = alignimages.perform_align(align_files,update_hdr_wcs=True, runfile=_alignlog)
-            for row in align_table:
-                if row['status'] == 0:
-                    trlstr = "Successfully aligned {} to {} astrometric frame\n"
-                    _trlmsg += trlstr.format(row['imageName'], row['catalog'])
-                else:
-                    trlstr = "Could not align {} to absolute astrometric frame\n"
-                    _trlmsg += trlstr.format(row['imageName'])
+        if align_to_gaia:
+            # Perform additional alignment on the FLC files, if present
+            ###############
+            #
+            # call hlapipeline code here on align_files list of files
+            #
+            ###############
+            # Create trailer marker message for start of align_to_GAIA processing
+            _trlmsg = _timestamp("Align_to_GAIA started ")
+            print(_trlmsg)
+            ftmp = open(_tmptrl,'w')
+            ftmp.writelines(_trlmsg)
+            ftmp.close()
+            _appendTrlFile(_trlfile,_tmptrl)
+            _trlmsg = ""
 
-        except Exception:
-            # Something went wrong with alignment to GAIA, so report this in
-            # trailer file
-            _trlmsg = "EXCEPTION encountered in alignimages...\n"
-            _trlmsg += "   No correction to absolute astrometric frame applied!\n"
+            # Create an empty astropy table so it can be used as input/output for the perform_align function
+            #align_table = Table()
+            try:
+                align_table = alignimages.perform_align(align_files,update_hdr_wcs=True, runfile=_alignlog)
+                for row in align_table:
+                    if row['status'] == 0:
+                        trlstr = "Successfully aligned {} to {} astrometric frame\n"
+                        _trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                    else:
+                        trlstr = "Could not align {} to absolute astrometric frame\n"
+                        _trlmsg += trlstr.format(row['imageName'])
 
-        # Write the perform_align log to the trailer file...(this will delete the _alignlog)
-        _appendTrlFile(_trlfile,_alignlog)
+            except Exception:
+                # Something went wrong with alignment to GAIA, so report this in
+                # trailer file
+                _trlmsg = "EXCEPTION encountered in alignimages...\n"
+                _trlmsg += "   No correction to absolute astrometric frame applied!\n"
 
-        # Append messages from this calling routine post-perform_align
-        ftmp = open(_tmptrl,'w')
-        ftmp.writelines(_trlmsg)
-        ftmp.close()
-        _appendTrlFile(_trlfile,_tmptrl)
-        _trlmsg = ""
+            # Write the perform_align log to the trailer file...(this will delete the _alignlog)
+            _appendTrlFile(_trlfile,_alignlog)
 
-        #Check to see whether there are any additional input files that need to
-        # be aligned (namely, FLT images)
-        if align_update_files and align_table:
-            # Apply headerlets from alignment to FLT version of the files
-            for fltfile, flcfile in zip(align_update_files, align_files):
-                row = align_table[align_table['imageName']==flcfile]
-                headerletFile = row['headerletFile'][0]
-                if headerletFile != "None":
-                    headerlet.apply_headerlet_as_primary(fltfile, headerletFile,
-                                                        attach=True, archive=True)
-                    # append log file contents to _trlmsg for inclusion in trailer file
-                    _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
-                    _trlmsg += _trlstr.format(headerletFile, fltfile)
-                else:
-                    _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
+            # Append messages from this calling routine post-perform_align
+            ftmp = open(_tmptrl,'w')
+            ftmp.writelines(_trlmsg)
+            ftmp.close()
+            _appendTrlFile(_trlfile,_tmptrl)
+            _trlmsg = ""
 
-        # Finally, append any further messages associated with alignement from this calling routine
-        _trlmsg += _timestamp('Align_to_GAIA completed ')
-        print(_trlmsg)
-        ftmp = open(_tmptrl,'w')
-        ftmp.writelines(_trlmsg)
-        ftmp.close()
-        _appendTrlFile(_trlfile,_tmptrl)
+            #Check to see whether there are any additional input files that need to
+            # be aligned (namely, FLT images)
+            if align_update_files and align_table:
+                # Apply headerlets from alignment to FLT version of the files
+                for fltfile, flcfile in zip(align_update_files, align_files):
+                    row = align_table[align_table['imageName']==flcfile]
+                    headerletFile = row['headerletFile'][0]
+                    if headerletFile != "None":
+                        headerlet.apply_headerlet_as_primary(fltfile, headerletFile,
+                                                            attach=True, archive=True)
+                        # append log file contents to _trlmsg for inclusion in trailer file
+                        _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
+                        _trlmsg += _trlstr.format(headerletFile, fltfile)
+                    else:
+                        _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
+
+            # Finally, append any further messages associated with alignement from this calling routine
+            _trlmsg += _timestamp('Align_to_GAIA completed ')
+            print(_trlmsg)
+            ftmp = open(_tmptrl,'w')
+            ftmp.writelines(_trlmsg)
+            ftmp.close()
+            _appendTrlFile(_trlfile,_tmptrl)
 
         # Run astrodrizzle and send its processing statements to _trlfile
         _pyver = drizzlepac.astrodrizzle.__version__
@@ -581,7 +624,7 @@ def main():
     import getopt
 
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'bhfin:')
+        optlist, args = getopt.getopt(sys.argv[1:], 'bhfgin:')
     except getopt.error as e:
         print(str(e))
         print(__doc__)
@@ -599,7 +642,7 @@ def main():
     # read options
     for opt, value in optlist:
         if opt == "-g":
-            align_to_gaia = True
+            align_to_gaia = False
         if opt == "-h":
             help = 1
         if opt == "-f":
