@@ -657,7 +657,11 @@ def generate_source_catalog(image, **kwargs):
             4: combine the two binary masks together to produce a single final binary DQ mask
             5: done!
             """
-            dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
+            non_sat_mask = bitfield_to_boolean_mask(dqarr,ignore_flags = ~256, good_mask_value=False)
+            sat_mask = bitfield_to_boolean_mask(dqarr,ignore_flags = 256, good_mask_value=False)
+            grown_sat_mask = scipy.ndimage.binary_dilation(sat_mask,iterations = 5)
+            dqmask = np.bitwise_and(non_sat_mask,grown_sat_mask)
+            # dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
         seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, **kwargs)
         seg_tab_phot = seg_tab #compute_photometry(seg_tab,photmode)
 
