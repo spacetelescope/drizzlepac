@@ -1092,8 +1092,13 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
 if __name__ == '__main__':
     import argparse
     PARSER = argparse.ArgumentParser(description='Align images')
-    PARSER.add_argument('raw_input_list', nargs='+', help='A space-separated list of fits files to align, or a simple '
-                    'text file containing a list of fits files to align, one per line')
+    PARSER.add_argument('raw_input_list', nargs='+', help='The Images one '
+                    'wishes to align. Valid input formats: 1. An association '
+                    'name; Example; j92c12345. 2. A space-separated list of '
+                    'flc.fits (or flt.fits) files to align; Example: '
+                    'aaa_flc.fits bbb_flc.fits  ccc_flc.fits 3. a simple text '
+                    'file containing a list of fits files to align, one per '
+                    'line; Example: input_list.txt')
 
     PARSER.add_argument( '-a', '--archive', required=False,choices=['True','False'],default='False',help='Retain '
                     'copies of the downloaded files in the astroquery created sub-directories? Unless explicitly set, '
