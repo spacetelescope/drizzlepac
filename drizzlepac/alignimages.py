@@ -331,7 +331,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     best_fit_rms = -99999.0
     best_fitStatusDict={}
     best_fitQual = 5
-    fit_algorithm_list= [match_relative_fit, match_2dhist_fit,match_default_fit]
+    fit_algorithm_list= [match_relative_fit]#, match_2dhist_fit,match_default_fit]
     for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
         log.info("-------------------- STEP 5: Detect astrometric sources ------------------------------------------------")
         log.info("Astrometric Catalog: %s",str(catalogList[catalogIndex]))
@@ -507,13 +507,15 @@ def match_relative_fit(imglist, reference_catalog):
 
     """
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
-                             tolerance=100, use2dhist=False)
+    match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
+                             tolerance=2, use2dhist=True)
+    # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
+    #                          tolerance=100, use2dhist=False)
     # Align images and correct WCS
-    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True) #TODO: turn on 'expand_refcat' option in future development
+    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
     for image in imglist:
         image.meta["group_id"] = 1234567
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
+    #tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
