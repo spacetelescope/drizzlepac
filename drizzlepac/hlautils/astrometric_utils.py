@@ -649,6 +649,14 @@ def generate_source_catalog(image, **kwargs):
         dqmask = None
         if image.index_of(dqname):
             dqarr = image[dqname,chip].data
+            """
+            TODO:
+            1: run bitfield_to_boolean_mask() with ignore_flags = 256 to create binary mask of all bad bits EXCEPT 256 (saturated pixels)
+            2: run bitfield_to_boolean_mask() with ignore_flags = all bad bits EXCEPT 256 to create seperate binary mask of only pixels flagged as saturated.
+            3: execute scipy.ndimage.binary_dialation() on saturation-only boolean mask to "grow" out saturated pixels
+            4: combine the two binary masks together to produce a single final binary DQ mask
+            5: done!
+            """
             dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
         seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, **kwargs)
         seg_tab_phot = seg_tab #compute_photometry(seg_tab,photmode)
