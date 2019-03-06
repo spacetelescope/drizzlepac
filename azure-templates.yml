@@ -1,0 +1,59 @@
+jobs:
+- job: ${{ format(parameters.name) }}
+  pool:
+    ${{ if eq(parameters.os, 'windows') }}:
+      vmImage: vs2017-win2016
+    ${{ if eq(parameters.os, 'macos') }}:
+      vmImage: macOS-10.13
+    ${{ if eq(parameters.os, 'linux') }}:
+      vmImage: ubuntu-16.04
+
+  strategy:
+    matrix:
+      Python27:
+        python.version: '2.7'
+      Python35:
+        python.version: '3.5'
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+    maxParallel: 4
+
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+        architecture: 'x64'
+
+    - bash: |
+        export PIP_INSTALL='pip install --upgrade'
+        echo "##vso[task.setvariable variable=PIP_INSTALL]$PIP_INSTALL"
+      condition: ne( variables['Agent.OS'], 'Windows_NT' )
+      displayName: Pip on Linux/Darwin
+
+    - powershell: |
+        Set-Variable -Name PIP_INSTALL -Value 'python -m pip install --upgrade'
+        Write-Host "##vso[task.setvariable variable=PIP_INSTALL]$PIP_INSTALL"
+      condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      displayName: Pip on Windows
+
+    - script: |
+        $(PIP_INSTALL) pip
+      displayName: upgrade pip
+
+    - script: |
+        $(PIP_INSTALL) pytest
+      displayName: install pytest
+
+    - script: |
+        $(PIP_INSTALL) -e .
+        pytest --doctest-modules --junitxml=junit/test-results.xml
+      displayName: run test
+
+    - task: PublishTestResults@2
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFiles: '**/test-*.xml'
+        testRunTitle: 'Python $(python.version)-${{ format(parameters.name) }}'
+
