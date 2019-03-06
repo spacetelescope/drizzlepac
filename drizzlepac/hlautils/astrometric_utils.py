@@ -649,19 +649,17 @@ def generate_source_catalog(image, **kwargs):
         dqmask = None
         if image.index_of(dqname):
             dqarr = image[dqname,chip].data
-            """
-            TODO:
-            1: run bitfield_to_boolean_mask() with ignore_flags = 256 to create binary mask of all bad bits EXCEPT 256 (saturated pixels)
-            2: run bitfield_to_boolean_mask() with ignore_flags = all bad bits EXCEPT 256 to create seperate binary mask of only pixels flagged as saturated.
-            3: execute scipy.ndimage.binary_dialation() on saturation-only boolean mask to "grow" out saturated pixels
-            4: combine the two binary masks together to produce a single final binary DQ mask
-            5: done!
-            """
-            non_sat_mask = bitfield_to_boolean_mask(dqarr,ignore_flags = ~256, good_mask_value=False)
-            sat_mask = bitfield_to_boolean_mask(dqarr,ignore_flags = 256, good_mask_value=False)
-            grown_sat_mask = scipy.ndimage.binary_dilation(sat_mask,iterations = 5)
-            dqmask = np.bitwise_and(non_sat_mask,grown_sat_mask)
-            # dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
+
+            # "grow out" regions in DQ mask flagged as saturated by several pixels in every direction to prevent the
+            # source match algorithm from trying to match multiple sources from one image to a single source in the
+            # other or vice-versa.
+            non_sat_mask = bitfield_to_boolean_mask(dqarr,ignore_flags =256) # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
+            sat_mask = bitfield_to_boolean_mask(dqarr,ignore_flags =~256) # Create temp DQ mask containing saturated pixels ONLY
+            grown_sat_mask = ndimage.binary_dilation(sat_mask,iterations = 5) # Grow out saturated pixels by a few pixels in every direction
+            dqmask = np.bitwise_or(non_sat_mask,grown_sat_mask) # combine the two temporary DQ masks into a single composite DQ mask.
+
+            # dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False) #TODO: <---Remove this old no-sat bit grow line once this thing works
+
         seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, **kwargs)
         seg_tab_phot = seg_tab #compute_photometry(seg_tab,photmode)
 
