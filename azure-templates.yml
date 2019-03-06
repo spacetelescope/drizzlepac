@@ -10,8 +10,6 @@ jobs:
 
   strategy:
     matrix:
-      Python27:
-        python.version: '2.7'
       Python35:
         python.version: '3.5'
       Python36:
@@ -45,6 +43,10 @@ jobs:
     - script: |
         $(PIP_INSTALL) pytest
       displayName: install pytest
+
+    - script: |
+        $(PIP_INSTALL) numpy
+      displayName: install numpy
 
     - script: |
         $(PIP_INSTALL) -e .
