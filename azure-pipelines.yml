@@ -1,0 +1,39 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+- master
+
+jobs:
+- template: azure-templates.yml
+  parameters:
+    name: Linux
+    os: linux
+
+- template: azure-templates.yml
+  parameters:
+    name: MacOS
+    os: macos
+
+- template: azure-templates.yml
+  parameters:
+    name: Windows
+    os: windows
+
+- job: 'Publish'
+  dependsOn: 'Linux'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      architecture: 'x64'
+
+  - script: |
+          python -m pip install astropy
+          python setup.py sdist
+    displayName: 'Build sdist'
