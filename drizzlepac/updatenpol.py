@@ -120,8 +120,8 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
        the NPOLFILEs and D2IMFILE found in the local directory defined using
        the `myjref$` environment variable under PyRAF using::
 
-            >>>import updatenpol
-            >>>updatenpol.update('j8bt06010_asn.fits', 'myref$')
+            >>> import updatenpol
+            >>> updatenpol.update('j8bt06010_asn.fits', 'myref$')
 
     2. Another use under Python would be to feed it a specific list of files
        to be updated using::
