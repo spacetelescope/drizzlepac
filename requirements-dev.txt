@@ -2,6 +2,7 @@
 stsci.distutils
 crds
 pysynphot
+sphinx
 git+https://github.com/spacetelescope/stsci.imagestats
 git+https://github.com/spacetelescope/stsci.skypac
 git+https://github.com/spacetelescope/tweakwcs
