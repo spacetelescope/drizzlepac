@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import inspect
 import os
 import pkgutil
-import shutil
 import sys
-import importlib
 
+import numpy
+from astropy import wcs
 
 try:
     _mnfe = ModuleNotFoundError
@@ -18,8 +17,7 @@ except (ImportError, NameError, ModuleNotFoundError):
     pandokia = False
 
 from glob import glob
-from setuptools import setup, find_packages, Extension, _install_setup_requires
-from setuptools.command.install import install
+from setuptools import setup, find_packages, Extension
 from subprocess import check_call, CalledProcessError
 
 
@@ -42,30 +40,7 @@ if not pkgutil.find_loader('relic'):
 import relic.release
 
 PACKAGENAME = 'drizzlepac'
-SETUP_REQUIRES = [
-    'numpy',
-    'astropy',
-    'sphinx',
-]
 
-# Due to overriding `install` and `build_sphinx` we need to download
-# setup_requires dependencies before reaching `setup()`. This allows
-# `sphinx` to exist before the `BuildSphinx` class is injected.
-_install_setup_requires(dict(setup_requires=SETUP_REQUIRES))
-
-for dep_pkg in SETUP_REQUIRES:
-    try:
-        importlib.import_module(dep_pkg)
-    except ImportError:
-        print("{0} is required in order to install '{1}'.\n"
-              "Please install {0} first.".format(dep_pkg, PACKAGENAME),
-              file=sys.stderr)
-        exit(1)
-
-import numpy
-from astropy import wcs
-from sphinx.cmd.build import build_main
-from sphinx.setup_command import BuildDoc
 
 version = relic.release.get_info()
 relic.release.write_template(version, PACKAGENAME)
@@ -96,62 +71,6 @@ if pandokia:
                                   'runners', 'maker')]
     include_dirs.extend(fctx_includes)
 
-# Distribute compiled documentation alongside the installed package
-docs_compiled_src = os.path.normpath('build/sphinx/html')
-docs_compiled_dest = os.path.normpath('{0}/htmlhelp'.format(PACKAGENAME))
-
-class InstallCommand(install):
-    """Ensure drizzlepac's C extensions are available when imported relative
-    to the documentation, instead of relying on `site-packages`. What comes
-    from `site-packages` may not be the same drizzlepac that was *just*
-    compiled.
-    """
-    def run(self):
-        build_cmd = self.reinitialize_command('build_ext')
-        build_cmd.inplace = 1
-        self.run_command('build_ext')
-
-        # Explicit request for old-style install?  Just do it
-        if self.old_and_unmanageable or self.single_version_externally_managed:
-            install.run(self)
-        elif not self._called_from_setup(inspect.currentframe()):
-            # Run in backward-compatibility mode to support bdist_* commands.
-            install.run(self)
-        else:
-            self.do_egg_install()
-
-        if not os.path.exists(docs_compiled_dest):
-            print('\nwarning: Sphinx "htmlhelp" documentation was NOT bundled!\n'
-                  '         Execute the following then reinstall:\n\n'
-                  '         $ python setup.py build_sphinx\n\n',
-                  file=sys.stderr)
-
-
-
-class BuildSphinx(BuildDoc):
-    """Build Sphinx documentation after compiling C extensions"""
-
-    description = 'Build Sphinx documentation'
-
-    def initialize_options(self):
-        BuildDoc.initialize_options(self)
-
-    def finalize_options(self):
-        BuildDoc.finalize_options(self)
-
-    def run(self):
-        build_cmd = self.reinitialize_command('build_ext')
-        build_cmd.inplace = 1
-        self.run_command('build_ext')
-        build_main(['-b', 'html', 'doc/source', 'build/sphinx/html'])
-
-        # Bundle documentation inside of drizzlepac
-        if os.path.exists(docs_compiled_src):
-            if os.path.exists(docs_compiled_dest):
-                shutil.rmtree(docs_compiled_dest)
-
-            shutil.copytree(docs_compiled_src, docs_compiled_dest)
-
 
 setup(
     name=PACKAGENAME,
@@ -171,7 +90,6 @@ setup(
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    setup_requires=SETUP_REQUIRES,
     python_requires='>=3.5',
     install_requires=[
         'astropy>=3.1',
@@ -224,10 +142,6 @@ setup(
                   include_dirs=include_dirs,
                   define_macros=define_macros),
     ],
-    cmdclass={
-        'install': InstallCommand,
-        'build_sphinx': BuildSphinx,
-    },
     project_urls={
         'Bug Reports': 'https://github.com/spacetelescope/drizzlepac/issues/',
         'Source': 'https://github.com/spacetelescope/drizzlepac/',
