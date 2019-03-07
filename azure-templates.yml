@@ -49,8 +49,9 @@ jobs:
       displayName: install numpy
 
     - script: |
+        $(PIP_INSTALL) -r requirements-dev.txt
         $(PIP_INSTALL) -e .
-        pytest --doctest-modules --junitxml=junit/test-results.xml
+        pytest -v --doctest-modules --junitxml=junit/test-results.xml
       displayName: run test
 
     - task: PublishTestResults@2
