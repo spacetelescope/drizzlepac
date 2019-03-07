@@ -53,7 +53,7 @@ for (numpy_ver in matrix_numpy) {
     bc.conda_packages += ["astropy${astropy_ver}",
                           "numpy${numpy_ver}",
                           "python=${python_ver}"]
-    bc.build_cmds = ["pip install ."]
+    bc.build_cmds = ["pip install -e ."]
     bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
     bc.test_configs = [data_config]
     matrix += bc
