@@ -3,6 +3,7 @@
 """This script is a modernized implementation of tweakreg.
 
 """
+import copy
 import datetime
 import sys
 import glob
@@ -11,6 +12,8 @@ import os
 import pickle
 from collections import OrderedDict
 import logging
+import pdb
+import traceback
 
 import numpy as np
 from astropy.io import fits
@@ -195,6 +198,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
     # Define astrometric catalog list in priority order
     catalogList = ['GAIADR2', 'GAIADR1']
+#    catalogList = ['GAIADR1', 'GAIADR2']
 
     # 0: print git info
     if print_git_info:
@@ -327,11 +331,18 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         for im in img:
             im.meta['name'] = image
         imglist.extend(img)
+    #store mapping of group_id to filename/chip
+    group_id_dict={}
+    for image in imglist:
+        group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])] = image.meta["group_id"]
 
     best_fit_rms = -99999.0
     best_fitStatusDict={}
     best_fitQual = 5
-    fit_algorithm_list= [match_relative_fit]#, match_2dhist_fit,match_default_fit]
+    # fit_algorithm_list= [match_2dhist_fit] #TODO: REMOVE/COMMENT PRIOR TO DEPLOYMENT
+    # fit_algorithm_list = [match_relative_fit] #TODO: REMOVE/COMMENT PRIOR TO DEPLOYMENT
+    # fit_algorithm_list = [match_relative_fit,match_2dhist_fit,match_default_fit]
+    fit_algorithm_list = [match_default_fit,match_2dhist_fit,match_relative_fit] #TODO: UNCOMMENT PRIOR TO DEPLOYMENT
     for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
         log.info("-------------------- STEP 5: Detect astrometric sources ------------------------------------------------")
         log.info("Astrometric Catalog: %s",str(catalogList[catalogIndex]))
@@ -361,7 +372,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("------------------ Catalog {} matched using {} ------------------ ".format(catalogList[catalogIndex],algorithm_name.__name__))
                 try:
                     #execute the correct fitting/matching algorithm
-                    imglist = algorithm_name(imglist, reference_catalog)
+                    imglist = algorithm_name(imglist, reference_catalog,group_id_dict)
 
                     # determine the quality of the fit
                     fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
@@ -394,7 +405,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         else: # new solution has worse fitQual. discard and continue looping.
                             continue
                 except Exception:
-                    log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching algorithm {}.".format(catalogList[catalogIndex],algorithm_name.__name__))
+                    print("\a\a\a")
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+                    log.warning(
+                        "WARNING: Catastrophic fitting failure with catalog {} and matching algorithm {}.".format(
+                            catalogList[catalogIndex], algorithm_name.__name__))
                     filteredTable['status'][:] = 1
                     filteredTable['processMsg'][:] = "Fitting failure"
                     # It may be there are additional catalogs and algorithms to try, so keep going
@@ -489,7 +505,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_relative_fit(imglist, reference_catalog):
+def match_relative_fit(imglist, reference_catalog,group_id_dict):
     """Perform cross-matching and final fit using 2dHistogram matching
 
     Parameters
@@ -507,15 +523,21 @@ def match_relative_fit(imglist, reference_catalog):
 
     """
     # Specify matching algorithm to use
+    #restore group IDs to their pristine state prior to each run.
+    for image in imglist:
+        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])]
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
                              tolerance=2, use2dhist=True)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
+
     # Align images and correct WCS
-    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
+    #  Perform relative alignment
+    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True)
     for image in imglist:
         image.meta["group_id"] = 1234567
-    #tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False) #TODO: turn on 'expand_refcat' option in future development
+    #  Perform absolute alignment
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -525,7 +547,7 @@ def match_relative_fit(imglist, reference_catalog):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_default_fit(imglist, reference_catalog):
+def match_default_fit(imglist, reference_catalog,group_id_dict):
     """Perform cross-matching and final fit using 2dHistogram matching
 
     Parameters
@@ -557,7 +579,7 @@ def match_default_fit(imglist, reference_catalog):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_2dhist_fit(imglist, reference_catalog):
+def match_2dhist_fit(imglist, reference_catalog,group_id_dict):
     """Perform cross-matching and final fit using 2dHistogram matching
 
     Parameters
