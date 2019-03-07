@@ -3,6 +3,7 @@ requires = [
     "setuptools>=38.2.5",
     "wheel",
     "numpy",
+    "astropy"
 ]
 
 [tool.stsci-bot]
