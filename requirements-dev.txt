@@ -1,0 +1,4 @@
+# This is going away. Do not keep.
+git+https://github.com/spacetelescope/stsci.imagestats
+git+https://github.com/spacetelescope/stsci.skypac
+git+https://github.com/spacetelescope/tweakwcs
