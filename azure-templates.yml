@@ -37,21 +37,17 @@ jobs:
       displayName: Pip on Windows
 
     - script: |
-        $(PIP_INSTALL) pip
-      displayName: upgrade pip
-
-    - script: |
-        $(PIP_INSTALL) pytest
-      displayName: install pytest
-
-    - script: |
-        $(PIP_INSTALL) pytest numpy
+        $(PIP_INSTALL) pip pytest numpy
         $(PIP_INSTALL) -r requirements-dev.txt
       displayName: install dependencies
 
     - script: |
         $(PIP_INSTALL) -e .
-        pytest -v --doctest-modules --junitxml=junit/test-results.xml
+      displayName: build package
+
+    # TODO: Clean up doctest and enable --doctest-modules
+    - script: |
+        pytest -v --junitxml=junit/test-results.xml
       displayName: run test
 
     - task: PublishTestResults@2
