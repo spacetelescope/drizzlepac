@@ -45,11 +45,11 @@ jobs:
       displayName: install pytest
 
     - script: |
-        $(PIP_INSTALL) numpy
-      displayName: install numpy
+        $(PIP_INSTALL) pytest numpy
+        $(PIP_INSTALL) -r requirements-dev.txt
+      displayName: install dependencies
 
     - script: |
-        $(PIP_INSTALL) -r requirements-dev.txt
         $(PIP_INSTALL) -e .
         pytest -v --doctest-modules --junitxml=junit/test-results.xml
       displayName: run test
