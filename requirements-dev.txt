@@ -8,4 +8,5 @@ sphinx_rtd_theme
 git+https://github.com/spacetelescope/stsci.image
 git+https://github.com/spacetelescope/stsci.imagestats
 git+https://github.com/spacetelescope/stsci.skypac
+git+https://github.com/spacetelescope/spherical_geometry
 git+https://github.com/jhunkeler/tweakwcs@fix-void-unknown-size
