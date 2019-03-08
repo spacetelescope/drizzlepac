@@ -17,6 +17,9 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+
+- Fix Windows VS2017 compilation error ``"void *": unknown size`` [#258]
+
 - Implement environment variable control, and command-line control, over running
   alignment step in runastrodriz. [#251]
   
