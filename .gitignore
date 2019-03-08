@@ -5,6 +5,7 @@ drizzlepac/htmlhelp
 */version.py
 build/
 dist/
+pip-wheel-metadata/
 *.eggs
 *.pyc
 *.o
