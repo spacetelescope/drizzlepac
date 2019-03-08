@@ -10,8 +10,10 @@ jobs:
 
   strategy:
     matrix:
-      Python35:
-        python.version: '3.5'
+      # spherical_geometry will not build on windows:py35
+      # py35 is mostly dead at this point anyway
+      #Python35:
+      #  python.version: '3.5'
       Python36:
         python.version: '3.6'
       Python37:
