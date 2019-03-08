@@ -90,6 +90,8 @@ of the list).
 
 - Modified the check on the tweakwcs_output to be more robust[#260]
 
+- Ensure singletons do not use the match_relative_fit algorithm [#259]
+
 
 2.2.6 (02-Nov-2018)
 ===================
