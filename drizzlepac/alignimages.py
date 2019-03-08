@@ -998,12 +998,17 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     """
     # Start by collecting information by group_id
     group_ids = [info.meta['group_id'] for info in tweakwcs_output]
+    # Compress the list to have only unique group_id values to avoid some unnecessary iterations
+    group_ids = list(set(group_ids))
     group_dict = {'avg_RMS':None}
     obs_rms = []
     for group_id in group_ids:
         for item in tweakwcs_output:
-            if item.meta['fit_info']['status'].startswith('FAILED'):
+            # When status = FAILED (fit failed) or REFERENCE (relative alignment done with first image
+            # as the reference), skip to the beginning of the loop as there is no 'fit_info'.
+            if item.meta['fit_info']['status'] != 'SUCCESS':
                 continue
+            # Make sure to store data for any particular group_id only once.
             if item.meta['group_id'] == group_id and \
                group_id not in group_dict:
                     group_dict[group_id] = {'ref_idx':None, 'FIT_RMS':None}
