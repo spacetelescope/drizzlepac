@@ -198,7 +198,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
     # Define astrometric catalog list in priority order
     catalogList = ['GAIADR2', 'GAIADR1']
-#    catalogList = ['GAIADR1', 'GAIADR2']
+    # catalogList = ['GAIADR1', 'GAIADR2']
 
     # 0: print git info
     if print_git_info:
@@ -339,10 +339,9 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     best_fit_rms = -99999.0
     best_fitStatusDict={}
     best_fitQual = 5
-    # fit_algorithm_list= [match_2dhist_fit] #TODO: REMOVE/COMMENT PRIOR TO DEPLOYMENT
-    # fit_algorithm_list = [match_relative_fit] #TODO: REMOVE/COMMENT PRIOR TO DEPLOYMENT
-    # fit_algorithm_list = [match_relative_fit,match_2dhist_fit,match_default_fit]
-    fit_algorithm_list = [match_default_fit,match_2dhist_fit,match_relative_fit] #TODO: UNCOMMENT PRIOR TO DEPLOYMENT
+    fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit]
+    orig_imglist = copy.deepcopy(imglist)
+    temp_imglist = []
     for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
         log.info("-------------------- STEP 5: Detect astrometric sources ------------------------------------------------")
         log.info("Astrometric Catalog: %s",str(catalogList[catalogIndex]))
@@ -369,6 +368,11 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         else:
             log.info("-------------------- STEP 5b: Cross matching and fitting -----------------------------------------------")
             for algorithm_name in fit_algorithm_list: #loop over fit algorithm type
+                imglist = copy.deepcopy(orig_imglist) #reset imglist to pristine state
+                if temp_imglist:
+                    for temp_item,item in zip(temp_imglist,imglist): # migrate best_meta to new imglist
+                        item.best_meta = temp_item.best_meta.copy()
+
                 log.info("------------------ Catalog {} matched using {} ------------------ ".format(catalogList[catalogIndex],algorithm_name.__name__))
                 try:
                     #execute the correct fitting/matching algorithm
@@ -404,6 +408,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                     best_fitStatusDict = fitStatusDict.copy()
                         else: # new solution has worse fitQual. discard and continue looping.
                             continue
+                        temp_imglist = copy.deepcopy(imglist) # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
+                        # print("\a")
+                        # print(imglist[0].meta['fit_info']['TOTAL_RMS'],imglist[0].best_meta['fit_info']['TOTAL_RMS'])
+                        # pdb.set_trace()
                 except Exception:
                     print("\a\a\a")
                     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -416,7 +424,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     # It may be there are additional catalogs and algorithms to try, so keep going
                     fitQual = 5 # Flag this fit with the 'bad' quality value
                     continue
-
                 if fitQual == 1:  # break out of inner fit algorithm loop
                     break
         if fitQual == 1: #break out of outer astrometric catalog loop
