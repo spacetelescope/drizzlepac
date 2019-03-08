@@ -33,5 +33,7 @@ jobs:
       versionSpec: '3.x'
       architecture: 'x64'
 
-  - script: python setup.py sdist
+  - script: |
+          python -m pip install astropy
+          python setup.py sdist
     displayName: 'Build sdist'
