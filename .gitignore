@@ -5,6 +5,10 @@ drizzlepac/htmlhelp
 */version.py
 build/
 dist/
+htmlcov/
+coverage.xml
+.coverage
+*.coverage.*
 *.eggs
 *.pyc
 *.o
