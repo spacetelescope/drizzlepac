@@ -8,6 +8,3 @@ requires = [
 
 [tool.stsci-bot]
 check_milestone = false
-
-[build_system]
-requires = ["setuptools", "wheel", "astropy", "numpy", "sphinx"]
