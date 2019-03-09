@@ -5,14 +5,9 @@ withCredentials([string(
     credentialsId: 'drizzlepac-codecov',
     variable: 'codecov_token')]) {
 // Generate installation compatibility matrix
-/*
 matrix_python = ["3.6", "3.7"]
 matrix_astropy = [">=3.1.0"]
 matrix_numpy = ["<1.15", "<1.16"]
-*/
-matrix_python = ["3.7"]
-matrix_astropy = [">=3.1.0"]
-matrix_numpy = ["<1.16"]
 matrix = []
 
 // Configure artifactory ingest
@@ -94,5 +89,5 @@ matrix += sdist
 
 // Iterate over configurations that define the (distibuted) build matrix.
 // Spawn a host of the given nodetype for each combination and run in parallel.
-utils.run(matrix)
+utils.run(matrix, false)
 }
