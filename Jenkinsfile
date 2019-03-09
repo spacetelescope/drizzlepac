@@ -57,7 +57,7 @@ for (numpy_ver in matrix_numpy) {
                           "numpy${numpy_ver}",
                           "python=${python_ver}"]
     bc.build_cmds = ["pip install codecov pytest-cov",
-                     "python setup.py develop"]
+                     "pip install --no-deps -e ."]
     bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any",
                     "codecov --token=${codecov_token}"]
     bc.test_configs = [data_config]
