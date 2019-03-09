@@ -56,7 +56,8 @@ for (numpy_ver in matrix_numpy) {
     bc.conda_packages += ["astropy${astropy_ver}",
                           "numpy${numpy_ver}",
                           "python=${python_ver}"]
-    bc.build_cmds = ["pip install codecov pytest-cov",
+    bc.build_cmds = ["conda update --yes --all",
+                     "pip install codecov pytest-cov",
                      "pip install --no-deps ."]
     bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any",
                     "codecov --token=${codecov_token}"]
