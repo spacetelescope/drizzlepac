@@ -1,2 +1,10 @@
+[build-system]
+requires = [
+    "setuptools>=38.2.5",
+    "wheel",
+    "numpy",
+    "astropy"
+]
+
 [tool.stsci-bot]
 check_milestone = false

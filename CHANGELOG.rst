@@ -17,6 +17,12 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+- Implement environment variable control, and command-line control, over running
+  alignment step in runastrodriz. [#251]
+  
+- Insure a posteriori headerlet does not get overwritten by runastrodriz, so that
+  info about fit is preserved. [#250]
+
 - Trap problems importing astroquery with any problems leading to not trying to
   get any remote data through astroquery. [#248]
 
@@ -66,6 +72,8 @@ of the list).
 - Added logging to the hlapipeline alignment code [#223]
 
 - Improved the logging to write to STDOUT, as well as a file [#235]
+
+- Modified the check on the tweakwcs_output to be more robust[#260]
 
 
 2.2.6 (02-Nov-2018)

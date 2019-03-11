@@ -1,10 +1,18 @@
 // Obtain files from source control system.
 if (utils.scm_checkout()) return
 
+withCredentials([string(
+    credentialsId: 'drizzlepac-codecov',
+    variable: 'codecov_token')]) {
 // Generate installation compatibility matrix
+/*
 matrix_python = ["3.6", "3.7"]
 matrix_astropy = [">=3.1.0"]
-matrix_numpy = [">=1.14", "==1.15.0"]
+matrix_numpy = ["<1.15", "<1.16"]
+*/
+matrix_python = ["3.7"]
+matrix_astropy = [">=3.1.0"]
+matrix_numpy = ["<1.16"]
 matrix = []
 
 // Configure artifactory ingest
@@ -26,7 +34,7 @@ for (numpy_ver in matrix_numpy) {
     bc.nodetype = "linux"
     bc.name = MATRIX_TITLE
     bc.env_vars = ['BUILD_MATRIX_SUFFIX=' + MATRIX_SUFFIX,
-                        'BUILD_MATRIX_ID=' + matrix_id]
+                   'BUILD_MATRIX_ID=' + matrix_id]
     bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
     bc.conda_packages = ['acstools',
                          'fitsblender',
@@ -53,8 +61,10 @@ for (numpy_ver in matrix_numpy) {
     bc.conda_packages += ["astropy${astropy_ver}",
                           "numpy${numpy_ver}",
                           "python=${python_ver}"]
-    bc.build_cmds = ["python setup.py install"]
-    bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
+    bc.build_cmds = ["pip install codecov pytest-cov",
+                     "python setup.py develop"]
+    bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any",
+                    "codecov --token=${codecov_token}"]
     bc.test_configs = [data_config]
     matrix += bc
     matrix_id++
@@ -85,3 +95,4 @@ matrix += sdist
 // Iterate over configurations that define the (distibuted) build matrix.
 // Spawn a host of the given nodetype for each combination and run in parallel.
 utils.run(matrix)
+}
