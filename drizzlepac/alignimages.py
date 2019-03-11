@@ -12,7 +12,6 @@ import os
 import pickle
 from collections import OrderedDict
 import logging
-import pdb
 import traceback
 
 import numpy as np
@@ -198,7 +197,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
     # Define astrometric catalog list in priority order
     catalogList = ['GAIADR2', 'GAIADR1']
-    # catalogList = ['GAIADR1', 'GAIADR2']
 
     # 0: print git info
     if print_git_info:
@@ -339,7 +337,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     best_fit_rms = -99999.0
     best_fitStatusDict={}
     best_fitQual = 5
-    fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit]
+    # fit_algorithm_list = [match_default_fit,match_2dhist_fit,match_relative_fit] #TODO: UNCOMMENT before deployment
+    fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
     orig_imglist = copy.deepcopy(imglist)
     temp_imglist = []
     for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
@@ -409,9 +408,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         else: # new solution has worse fitQual. discard and continue looping.
                             continue
                         temp_imglist = copy.deepcopy(imglist) # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
-                        # print("\a")
-                        # print(imglist[0].meta['fit_info']['TOTAL_RMS'],imglist[0].best_meta['fit_info']['TOTAL_RMS'])
-                        # pdb.set_trace()
                 except Exception:
                     print("\a\a\a")
                     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -438,7 +434,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info("The fitting process was successful with a best fit total rms of {} mas".format(best_fit_rms))
     else:
         log.info("The fitting process was unsuccessful with a best fit total rms of {} mas".format(best_fit_rms))
-
     if 0 < best_fit_rms < MAX_FIT_LIMIT:
         # update to the meta information with the lowest rms if it is reasonable
         for item in imglist:
@@ -695,7 +690,6 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
                                   'num_matches': num_xmatches,
                                   'compromised': False,
                                   'reason': ""} # Initialize dictionary entry for current image/chip
-
         #Handle fitting failures (no matches found)
         if item.meta['fit_info']['status'].startswith("FAILED") == True:
                 log.warning("No cross matches found in any catalog for {} - no processing done.".format(image_name))
@@ -757,7 +751,6 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
             fitStatusDict[dictKey]['valid'] = True
             fitStatusDict[dictKey]['compromised'] = False
             fitStatusDict[dictKey]['reason'] = ""
-
         # for now, generate overall valid and compromised values. Basically, if any of the entries for "valid" is False,
         # treat the whole dataset as not valid. Same goes for compromised.
         if fitStatusDict[dictKey]['valid'] == False:
@@ -786,6 +779,8 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
         for ctr in range(0, len(filteredTable)):
             filteredTable[ctr]['processMsg'] = fitStatusDict[filteredTable[ctr]['imageName'] + ",1"]["reason"]
     else:
+        for ctr in range(0, len(filteredTable)):
+            filteredTable[ctr]['processMsg'] = ""
         if overall_comp == False and max_rms_val < 10.:
             log.info("Valid solution with RMS < 10 mas found!")
             fitQual = 1
