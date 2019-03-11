@@ -73,6 +73,8 @@ of the list).
 
 - Improved the logging to write to STDOUT, as well as a file [#235]
 
+- Modified the check on the tweakwcs_output to be more robust[#260]
+
 
 2.2.6 (02-Nov-2018)
 ===================
