@@ -804,7 +804,7 @@ arrmoments(PyObject *obj, PyObject *args)
   /* Perform computation */
   for (i = 0; i < y; i++) {
     for (j = 0; j < x; j++) {
-      val = (*(float *)PyArray_DATA(img) + j*(long)PyArray_STRIDES(img)[1] + i*(long)PyArray_STRIDES(img)[0]);
+      val = *((float *)PyArray_DATA(img) + j*(long)PyArray_STRIDES(img)[1] + i*(long)PyArray_STRIDES(img)[0]);
       moment += pow(i,p)*pow(j,q)*val;
     }
   }
@@ -887,7 +887,7 @@ arrxyround(PyObject *obj, PyObject *args)
           wt = (float)(ymiddle+1 - labs (j - ymiddle));
           px = x0-xmiddle+k;
           py = y0-ymiddle+j;
-          pixval = (*(float *)PyArray_DATA(img) + px*(long)PyArray_STRIDES(img)[1] + (long)py*PyArray_STRIDES(img)[0]);
+          pixval = *((float *)PyArray_DATA(img) + px*(long)PyArray_STRIDES(img)[1] + (long)py*PyArray_STRIDES(img)[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
               sg=DBL_MIN;
@@ -895,7 +895,7 @@ arrxyround(PyObject *obj, PyObject *args)
           }
 
           sd += (pixval - skymode) * wt;
-          ker2dval = (*(double *)PyArray_DATA(ker2d) + k*(long)PyArray_STRIDES(ker2d)[1] + j*(long)PyArray_STRIDES(ker2d)[0]);
+          ker2dval = *((double *)PyArray_DATA(ker2d) + k*(long)PyArray_STRIDES(ker2d)[1] + j*(long)PyArray_STRIDES(ker2d)[0]);
           sg += ker2dval * wt;
       }
       if (sg == DBL_MIN){
@@ -980,14 +980,14 @@ arrxyround(PyObject *obj, PyObject *args)
           wt = (float)(xmiddle+1L - labs(k - xmiddle));
           px = x0-xmiddle+k;
           py = y0-ymiddle+j;
-          pixval = (*(float *)PyArray_DATA(img) + px*(long)PyArray_STRIDES(img)[1] + py*(long)PyArray_STRIDES(img)[0]);
+          pixval = *((float *)PyArray_DATA(img) + px*(long)PyArray_STRIDES(img)[1] + py*(long)PyArray_STRIDES(img)[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
               sg = DBL_MIN;
               break;
           }
           sd += (pixval - skymode) * wt;
-          ker2dval = (*(double *)PyArray_DATA(ker2d) + k*(long)PyArray_STRIDES(ker2d)[1] + j*(long)PyArray_STRIDES(ker2d)[0]);
+          ker2dval = *((double *)PyArray_DATA(ker2d) + k*(long)PyArray_STRIDES(ker2d)[1] + j*(long)PyArray_STRIDES(ker2d)[0]);
           sg += ker2dval * wt;
       }
       if (sg == DBL_MIN){
@@ -1146,9 +1146,9 @@ arrxyzero(PyObject *obj, PyObject *args)
   for (j=0; j< imgnum; j++){
     /* compute the delta relative to each source in ref image */
     for (k = 0; k < refnum; k++){
-        dx = (*(float *)PyArray_DATA(imgxy) + j*(long)PyArray_STRIDES(imgxy)[0]) - (*(float *)PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]);
-        dy = (*(float *)PyArray_DATA(imgxy) + j*(long)PyArray_STRIDES(imgxy)[0]+ (long)PyArray_STRIDES(imgxy)[1]) -
-             (*(float *)PyArray_DATA(refxy) + k*(long)PyArray_STRIDES(refxy)[0]+ (long)PyArray_STRIDES(refxy)[1]);
+        dx = *((float *)PyArray_DATA(imgxy) + j*(long)PyArray_STRIDES(imgxy)[0]) - *((float *)PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]);
+        dy = *((float *)PyArray_DATA(imgxy) + j*(long)PyArray_STRIDES(imgxy)[0]+ (long)PyArray_STRIDES(imgxy)[1]) -
+             *((float *)PyArray_DATA(refxy) + k*(long)PyArray_STRIDES(refxy)[0]+ (long)PyArray_STRIDES(refxy)[1]);
         if ((fabs(dx) < searchrad) && (fabs(dy) < searchrad)) {
             xind = (integer_t)(dx+searchrad);
             yind = (integer_t)(dy+searchrad);
