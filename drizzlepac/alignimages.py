@@ -199,8 +199,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     catalogList = ['GAIADR2', 'GAIADR1']
 
     # Define fitting algorithm list in priority order
-    # fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit] #TODO: UNCOMMENT before deployment
-    fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
+    fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit] #TODO: UNCOMMENT before deployment
+    #fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
 
     # 0: print git info
     if print_git_info:
@@ -379,8 +379,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
                 log.info("------------------ Catalog {} matched using {} ------------------ ".format(catalogList[catalogIndex],algorithm_name.__name__))
                 try:
+                    # restore group IDs to their pristine state prior to each run.
+                    for image in imglist:
+                        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
+
                     #execute the correct fitting/matching algorithm
-                    imglist = algorithm_name(imglist, reference_catalog,group_id_dict)
+                    imglist = algorithm_name(imglist, reference_catalog)
 
                     # determine the quality of the fit
                     fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
@@ -512,7 +516,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_relative_fit(imglist, reference_catalog,group_id_dict):
+def match_relative_fit(imglist, reference_catalog):
     """Perform cross-matching and final fit using 2dHistogram matching
 
     Parameters
@@ -530,10 +534,6 @@ def match_relative_fit(imglist, reference_catalog,group_id_dict):
 
     """
     log.info("------------------- STEP 5b: (match_relative_fit) Cross matching and fitting ---------------------------")
-    #restore group IDs to their pristine state prior to each run.
-    for image in imglist:
-        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])]
-
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
                              tolerance=2, use2dhist=True)
@@ -556,7 +556,7 @@ def match_relative_fit(imglist, reference_catalog,group_id_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_default_fit(imglist, reference_catalog,group_id_dict):
+def match_default_fit(imglist, reference_catalog):
     """Perform cross-matching and final fit using 2dHistogram matching
 
     Parameters
@@ -574,10 +574,6 @@ def match_default_fit(imglist, reference_catalog,group_id_dict):
 
     """
     log.info("-------------------- STEP 5b: (match_default_fit) Cross matching and fitting ---------------------------")
-    #restore group IDs to their pristine state prior to each run.
-    for image in imglist:
-        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])]
-
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
                              tolerance=100, use2dhist=False)
@@ -593,7 +589,7 @@ def match_default_fit(imglist, reference_catalog,group_id_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_2dhist_fit(imglist, reference_catalog,group_id_dict):
+def match_2dhist_fit(imglist, reference_catalog):
     """Perform cross-matching and final fit using 2dHistogram matching
 
     Parameters
@@ -611,11 +607,6 @@ def match_2dhist_fit(imglist, reference_catalog,group_id_dict):
 
     """
     log.info("-------------------- STEP 5b: (match_2dhist_fit) Cross matching and fitting ----------------------------")
-
-    #restore group IDs to their pristine state prior to each run.
-    for image in imglist:
-        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])]
-
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
                              tolerance=2.0, use2dhist=True)
