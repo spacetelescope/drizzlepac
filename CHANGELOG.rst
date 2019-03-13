@@ -17,10 +17,9 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
-- Added code to iteratively "grow out" saturated pixels in the DQ binary bitmask [#268]
+- Added relative fit source matching algorithm to alignimages. [#271]
 
-- Added relative fit source matching algorithm to alignimages. New algorithm currently
-  commented out pending optimization [#268]
+- Added code to iteratively "grow out" saturated pixels in the DQ binary bitmask [#268]
 
 - Implement environment variable control, and command-line control, over running
   alignment step in runastrodriz. [#251]
