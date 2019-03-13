@@ -199,8 +199,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     catalogList = ['GAIADR2', 'GAIADR1']
 
     # Define fitting algorithm list in priority order
-    fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit] #TODO: UNCOMMENT before deployment
-    #fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
+    # fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit] #TODO: UNCOMMENT before deployment
+    fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
 
     # 0: print git info
     if print_git_info:
