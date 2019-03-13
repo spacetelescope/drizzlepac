@@ -3,6 +3,7 @@
 """This script is a modernized implementation of tweakreg.
 
 """
+import copy
 import datetime
 import sys
 import glob
@@ -11,6 +12,7 @@ import os
 import pickle
 from collections import OrderedDict
 import logging
+import traceback
 
 import numpy as np
 from astropy.io import fits
@@ -196,6 +198,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     # Define astrometric catalog list in priority order
     catalogList = ['GAIADR2', 'GAIADR1']
 
+    # Define fitting algorithm list in priority order
+    # fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit] #TODO: UNCOMMENT before deployment
+    fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
+
     # 0: print git info
     if print_git_info:
         log.info("-------------------- STEP 0: Display Git revision info  ------------------------------------------------")
@@ -327,11 +333,19 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         for im in img:
             im.meta['name'] = image
         imglist.extend(img)
+    #store mapping of group_id to filename/chip
+    group_id_dict={}
+    for image in imglist:
+        group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])] = image.meta["group_id"]
 
     best_fit_rms = -99999.0
     best_fitStatusDict={}
     best_fitQual = 5
-    fit_algorithm_list= [match_2dhist_fit,match_default_fit]
+    # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
+    # for each run.
+    orig_imglist = copy.deepcopy(imglist)
+    # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
+    temp_imglist = []
     for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
         log.info("-------------------- STEP 5: Detect astrometric sources ------------------------------------------------")
         log.info("Astrometric Catalog: %s",str(catalogList[catalogIndex]))
@@ -358,8 +372,17 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         else:
             log.info("-------------------- STEP 5b: Cross matching and fitting -----------------------------------------------")
             for algorithm_name in fit_algorithm_list: #loop over fit algorithm type
+                imglist = copy.deepcopy(orig_imglist) #reset imglist to pristine state
+                if temp_imglist:
+                    for temp_item,item in zip(temp_imglist,imglist): # migrate best_meta to new imglist
+                        item.best_meta = temp_item.best_meta.copy()
+
                 log.info("------------------ Catalog {} matched using {} ------------------ ".format(catalogList[catalogIndex],algorithm_name.__name__))
                 try:
+                    # restore group IDs to their pristine state prior to each run.
+                    for image in imglist:
+                        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
+
                     #execute the correct fitting/matching algorithm
                     imglist = algorithm_name(imglist, reference_catalog)
 
@@ -393,14 +416,19 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                     best_fitStatusDict = fitStatusDict.copy()
                         else: # new solution has worse fitQual. discard and continue looping.
                             continue
+                        temp_imglist = copy.deepcopy(imglist) # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
                 except Exception:
-                    log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching algorithm {}.".format(catalogList[catalogIndex],algorithm_name.__name__))
+                    print("\a\a\a")
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+                    log.warning(
+                        "WARNING: Catastrophic fitting failure with catalog {} and matching algorithm {}.".format(
+                            catalogList[catalogIndex], algorithm_name.__name__))
                     filteredTable['status'][:] = 1
                     filteredTable['processMsg'][:] = "Fitting failure"
                     # It may be there are additional catalogs and algorithms to try, so keep going
                     fitQual = 5 # Flag this fit with the 'bad' quality value
                     continue
-
                 if fitQual == 1:  # break out of inner fit algorithm loop
                     break
         if fitQual == 1: #break out of outer astrometric catalog loop
@@ -415,7 +443,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info("The fitting process was successful with a best fit total rms of {} mas".format(best_fit_rms))
     else:
         log.info("The fitting process was unsuccessful with a best fit total rms of {} mas".format(best_fit_rms))
-
     if 0 < best_fit_rms < MAX_FIT_LIMIT:
         # update to the meta information with the lowest rms if it is reasonable
         for item in imglist:
@@ -486,6 +513,51 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         result.add_column(filteredTable[col], name=col)
     filteredTable.pprint(max_width=-1)
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def match_relative_fit(imglist, reference_catalog):
+    """Perform cross-matching and final fit using 2dHistogram matching
+
+    Parameters
+    ----------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    reference_catalog : Table
+        Astropy Table of reference sources for this field
+
+    Returns
+    --------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    """
+    log.info("------------------- STEP 5b: (match_relative_fit) Cross matching and fitting ---------------------------")
+    # 0: Specify matching algorithm to use
+    match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
+                             tolerance=2, use2dhist=True)
+    # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
+    #                          tolerance=100, use2dhist=False)
+
+    # Align images and correct WCS
+    # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
+    # a relative way using the first input image as the reference.
+    # 1: Perform relative alignment
+    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True)
+
+    # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
+    # reference catalog as an ensemble.
+    # BEWARE: If additional iterations of solutions are to be done, the group_id values need to be restored.
+    for image in imglist:
+        image.meta["group_id"] = 1234567
+    # 2: Perform absolute alignment
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match)
+
+    # 3: Interpret RMS values from tweakwcs
+    interpret_fit_rms(imglist, reference_catalog)
+
+    return imglist
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -507,6 +579,7 @@ def match_default_fit(imglist, reference_catalog):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
+    log.info("-------------------- STEP 5b: (match_default_fit) Cross matching and fitting ---------------------------")
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
                              tolerance=100, use2dhist=False)
@@ -631,7 +704,6 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
                                   'num_matches': num_xmatches,
                                   'compromised': False,
                                   'reason': ""} # Initialize dictionary entry for current image/chip
-
         #Handle fitting failures (no matches found)
         if item.meta['fit_info']['status'].startswith("FAILED") == True:
                 log.warning("No cross matches found in any catalog for {} - no processing done.".format(image_name))
@@ -693,7 +765,6 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
             fitStatusDict[dictKey]['valid'] = True
             fitStatusDict[dictKey]['compromised'] = False
             fitStatusDict[dictKey]['reason'] = ""
-
         # for now, generate overall valid and compromised values. Basically, if any of the entries for "valid" is False,
         # treat the whole dataset as not valid. Same goes for compromised.
         if fitStatusDict[dictKey]['valid'] == False:
@@ -722,6 +793,8 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
         for ctr in range(0, len(filteredTable)):
             filteredTable[ctr]['processMsg'] = fitStatusDict[filteredTable[ctr]['imageName'] + ",1"]["reason"]
     else:
+        for ctr in range(0, len(filteredTable)):
+            filteredTable[ctr]['processMsg'] = ""
         if overall_comp == False and max_rms_val < 10.:
             log.info("Valid solution with RMS < 10 mas found!")
             fitQual = 1
@@ -1062,8 +1135,13 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
 if __name__ == '__main__':
     import argparse
     PARSER = argparse.ArgumentParser(description='Align images')
-    PARSER.add_argument('raw_input_list', nargs='+', help='A space-separated list of fits files to align, or a simple '
-                    'text file containing a list of fits files to align, one per line')
+    PARSER.add_argument('raw_input_list', nargs='+', help='The Images one '
+                    'wishes to align. Valid input formats: 1. An association '
+                    'name; Example; j92c12345. 2. A space-separated list of '
+                    'flc.fits (or flt.fits) files to align; Example: '
+                    'aaa_flc.fits bbb_flc.fits  ccc_flc.fits 3. a simple text '
+                    'file containing a list of fits files to align, one per '
+                    'line; Example: input_list.txt')
 
     PARSER.add_argument( '-a', '--archive', required=False,choices=['True','False'],default='False',help='Retain '
                     'copies of the downloaded files in the astroquery created sub-directories? Unless explicitly set, '
