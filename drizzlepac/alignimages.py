@@ -198,6 +198,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     # Define astrometric catalog list in priority order
     catalogList = ['GAIADR2', 'GAIADR1']
 
+    # Define fitting algorithm list in priority order
+    # fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit] #TODO: UNCOMMENT before deployment
+    fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
+
     # 0: print git info
     if print_git_info:
         log.info("-------------------- STEP 0: Display Git revision info  ------------------------------------------------")
@@ -337,8 +341,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     best_fit_rms = -99999.0
     best_fitStatusDict={}
     best_fitQual = 5
-    # fit_algorithm_list = [match_default_fit,match_2dhist_fit,match_relative_fit] #TODO: UNCOMMENT before deployment
-    fit_algorithm_list = [match_default_fit,match_2dhist_fit] #TODO: REMOVE before deployment
+
     orig_imglist = copy.deepcopy(imglist)
     temp_imglist = []
     for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
@@ -524,10 +527,12 @@ def match_relative_fit(imglist, reference_catalog,group_id_dict):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
-    # Specify matching algorithm to use
+    log.info("------------------- STEP 5b: (match_relative_fit) Cross matching and fitting ---------------------------")
     #restore group IDs to their pristine state prior to each run.
     for image in imglist:
         image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])]
+
+    # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
                              tolerance=2, use2dhist=True)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
@@ -566,6 +571,11 @@ def match_default_fit(imglist, reference_catalog,group_id_dict):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
+    log.info("-------------------- STEP 5b: (match_default_fit) Cross matching and fitting ---------------------------")
+    #restore group IDs to their pristine state prior to each run.
+    for image in imglist:
+        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])]
+
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
                              tolerance=100, use2dhist=False)
@@ -599,6 +609,11 @@ def match_2dhist_fit(imglist, reference_catalog,group_id_dict):
 
     """
     log.info("-------------------- STEP 5b: (match_2dhist_fit) Cross matching and fitting ----------------------------")
+
+    #restore group IDs to their pristine state prior to each run.
+    for image in imglist:
+        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])]
+
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
                              tolerance=2.0, use2dhist=True)
