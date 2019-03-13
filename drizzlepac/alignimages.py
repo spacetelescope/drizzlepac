@@ -534,21 +534,27 @@ def match_relative_fit(imglist, reference_catalog):
 
     """
     log.info("------------------- STEP 5b: (match_relative_fit) Cross matching and fitting ---------------------------")
-    # Specify matching algorithm to use
+    # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1,
                              tolerance=2, use2dhist=True)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
 
     # Align images and correct WCS
-    #  Perform relative alignment
+    # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
+    # a relative way using the first input image as the reference.
+    # 1: Perform relative alignment
     tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True)
+
+    # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
+    # reference catalog as an ensemble.
+    # BEWARE: If additional iterations of solutions are to be done, the group_id values need to be restored.
     for image in imglist:
         image.meta["group_id"] = 1234567
-    #  Perform absolute alignment
+    # 2: Perform absolute alignment
     tweakwcs.align_wcs(imglist, reference_catalog, match=match)
 
-    # Interpret RMS values from tweakwcs
+    # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
 
     return imglist
