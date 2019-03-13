@@ -341,8 +341,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     best_fit_rms = -99999.0
     best_fitStatusDict={}
     best_fitQual = 5
-
+    # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
+    # for each run.
     orig_imglist = copy.deepcopy(imglist)
+    # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
     temp_imglist = []
     for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
         log.info("-------------------- STEP 5: Detect astrometric sources ------------------------------------------------")
