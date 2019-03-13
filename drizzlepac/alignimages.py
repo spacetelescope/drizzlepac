@@ -265,8 +265,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     # 4: Extract catalog of observable sources from each input image
     log.info("-------------------- STEP 4: Source finding ------------------------------------------------------------")
     if debug:
-        pickle_filename = "{}.source_catalog.pickle".format(
-            processList[0])  # TODO: All this pickle stuff is only here for debugging. <START>
+        pickle_filename = "{}.source_catalog.pickle".format(processList[0])
         if os.path.exists(pickle_filename):
             pickle_in = open(pickle_filename, "rb")
             extracted_sources = pickle.load(pickle_in)
