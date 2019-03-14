@@ -17,13 +17,15 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+- Fixed VS compiler errors with pointer artithmetic on void pointers. [#273]
+
 - Added relative fit source matching algorithm to alignimages. [#271]
 
 - Added code to iteratively "grow out" saturated pixels in the DQ binary bitmask [#268]
 
 - Implement environment variable control, and command-line control, over running
   alignment step in runastrodriz. [#251]
-  
+
 - Insure a posteriori headerlet does not get overwritten by runastrodriz, so that
   info about fit is preserved. [#250]
 

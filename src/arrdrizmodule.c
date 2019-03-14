@@ -802,12 +802,10 @@ arrmoments(PyObject *obj, PyObject *args)
   y = PyArray_DIMS(img)[0];
 
   /* Perform computation */
-  for (i = 0; i < y; i++) {
-    for (j = 0; j < x; j++) {
-      val = *(float *)(PyArray_DATA(img) + j*PyArray_STRIDES(img)[1] + i*PyArray_STRIDES(img)[0]);
-      moment += pow(i,p)*pow(j,q)*val;
-    }
-  }
+  for (i = 0; i < y; i++)
+    for (j = 0; j < x; j++)
+      moment += pow(i,p) * pow(j,q)* (*(float *)((char*)PyArray_DATA(img) +
+                j*PyArray_STRIDES(img)[1] + i*PyArray_STRIDES(img)[0]));
 
  _exit:
   Py_DECREF(img);
@@ -887,7 +885,7 @@ arrxyround(PyObject *obj, PyObject *args)
           wt = (float)(ymiddle+1 - labs (j - ymiddle));
           px = x0-xmiddle+k;
           py = y0-ymiddle+j;
-          pixval = *(float *)(PyArray_DATA(img) + px*PyArray_STRIDES(img)[1] + py*PyArray_STRIDES(img)[0]);
+          pixval = *(float *)((char*)PyArray_DATA(img) + px*PyArray_STRIDES(img)[1] + py*PyArray_STRIDES(img)[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
               sg=DBL_MIN;
@@ -895,7 +893,7 @@ arrxyround(PyObject *obj, PyObject *args)
           }
 
           sd += (pixval - skymode) * wt;
-          ker2dval = *(double *)(PyArray_DATA(ker2d) + k*PyArray_STRIDES(ker2d)[1] + j*PyArray_STRIDES(ker2d)[0]);
+          ker2dval = *(double *)((char*)PyArray_DATA(ker2d) + k*PyArray_STRIDES(ker2d)[1] + j*PyArray_STRIDES(ker2d)[0]);
           sg += ker2dval * wt;
       }
       if (sg == DBL_MIN){
@@ -980,14 +978,14 @@ arrxyround(PyObject *obj, PyObject *args)
           wt = (float)(xmiddle+1L - labs(k - xmiddle));
           px = x0-xmiddle+k;
           py = y0-ymiddle+j;
-          pixval = *(float *)(PyArray_DATA(img) + px*PyArray_STRIDES(img)[1] + py*PyArray_STRIDES(img)[0]);
+          pixval = *(float *)((char*)PyArray_DATA(img) + px*PyArray_STRIDES(img)[1] + py*PyArray_STRIDES(img)[0]);
           /* pixval = data[y0-ymiddle+j,x0-xmiddle+k]; */
           if ((pixval < datamin) || (pixval > datamax)){
               sg = DBL_MIN;
               break;
           }
           sd += (pixval - skymode) * wt;
-          ker2dval = *(double *)(PyArray_DATA(ker2d) + k*PyArray_STRIDES(ker2d)[1] + j*PyArray_STRIDES(ker2d)[0]);
+          ker2dval = *(double *)((char*)PyArray_DATA(ker2d) + k*PyArray_STRIDES(ker2d)[1] + j*PyArray_STRIDES(ker2d)[0]);
           sg += ker2dval * wt;
       }
       if (sg == DBL_MIN){
@@ -1043,15 +1041,14 @@ arrxyround(PyObject *obj, PyObject *args)
   dy1 = sgdgdx - (sddgdx - (sdgdx * ((hy * sumg) + (skylvl * p))));
   dy = dy1 / (hy * sdgdxsq / ysigsq);
 
-  if (fabs(dy) > yhalf){
-      if (sumd == 0.0){
-          dy = 0.0;
-      } else {
-          dy = sumdx / sumd;
-      }
-      if (fabs(dy) > yhalf){
-          dy = 0.0;
-      }
+  if (fabs(dy) > yhalf) {
+      if (sumd == 0.0)
+        dy = 0.0;
+      else
+        dy = sumdx / sumd;
+
+      if (fabs(dy) > yhalf)
+        dy = 0.0;
   }
   yc = (int)floor(y0) + dy;
 
@@ -1069,7 +1066,8 @@ double **ptrvector(long n)  {
     v=(double **)malloc((size_t) (n*sizeof(double)));
     if (!v)   {
         printf("In **ptrvector. Allocation of memory for double array failed.");
-        exit(0);  }
+        exit(0);
+    }
     return v;
 }
 
@@ -1079,15 +1077,15 @@ double **ptrvector(long n)  {
     Memory is allocated!                                    */
 double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
     double **c, *a;
-    long i,n,m;
+    integer_t i,n,m;
 
     n=PyArray_DIMS(arrayin)[0];
     m=PyArray_DIMS(arrayin)[1];
 
     c=(double **)ptrvector(n);
     a=(double *) PyArray_DATA(arrayin);  /* pointer to arrayin data as double */
-    for ( i=0; i<n; i++)  {
-        c[i]=a+i*m;  }
+    for ( i=0; i<n; i++)
+      c[i]=a+i*m;
     return c;
 }
 
@@ -1109,25 +1107,23 @@ arrxyzero(PyObject *obj, PyObject *args)
   PyArrayObject *ozpmat = NULL;
   double **zpmat = NULL;
 
-  long imgnum, refnum;
+  integer_t imgnum, refnum;
   npy_intp dimensions[2];
   integer_t xind, yind;
   double dx, dy;
-  long j, k;
+  integer_t j, k;
 
   if (!PyArg_ParseTuple(args,"OOd:arrxyzero", &oimgxy, &orefxy, &searchrad)){
     return PyErr_Format(gl_Error, "cdriz.arrxyzero: Invalid Parameters.");
   }
 
   imgxy = (PyArrayObject *)PyArray_ContiguousFromAny(oimgxy, NPY_FLOAT32, 2, 2);
-  if (!imgxy) {
+  if (!imgxy)
     goto _exit;
-  }
 
   refxy = (PyArrayObject *)PyArray_ContiguousFromAny(orefxy, NPY_FLOAT32, 2, 2);
-  if (!refxy) {
+  if (!refxy)
     goto _exit;
-  }
 
   dimensions[0] = (integer_t)(searchrad*2) + 1;
   dimensions[1] = (integer_t)(searchrad*2) + 1;
@@ -1143,19 +1139,21 @@ arrxyzero(PyObject *obj, PyObject *args)
   refnum = PyArray_DIMS(refxy)[0];
 
   /* For each entry in the input image...*/
-  for (j=0; j< imgnum; j++){
+  for (j=0; j< imgnum; j++)
     /* compute the delta relative to each source in ref image */
     for (k = 0; k < refnum; k++){
-        dx = *(float *)(PyArray_DATA(imgxy) + j*PyArray_STRIDES(imgxy)[0]) - *(float *)(PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]);
-        dy = *(float *)(PyArray_DATA(imgxy) + j*PyArray_STRIDES(imgxy)[0]+ PyArray_STRIDES(imgxy)[1]) -
-             *(float *)(PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]+ PyArray_STRIDES(refxy)[1]);
+        dx = *((float *)((char*)PyArray_DATA(imgxy) + j*PyArray_STRIDES(imgxy)[0]) -
+             *(float *)((char*)PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]));
+        dy = *((float *)((char*)PyArray_DATA(imgxy) +
+               j*PyArray_STRIDES(imgxy)[0]+ PyArray_STRIDES(imgxy)[1]))
+           - *((float *)((char*)PyArray_DATA(refxy) +
+               k*PyArray_STRIDES(refxy)[0]+ PyArray_STRIDES(refxy)[1]));
         if ((fabs(dx) < searchrad) && (fabs(dy) < searchrad)) {
             xind = (integer_t)(dx+searchrad);
             yind = (integer_t)(dy+searchrad);
             zpmat[yind][xind] += 1;
         }
     }
-  }
 
  _exit:
   Py_DECREF(imgxy);
