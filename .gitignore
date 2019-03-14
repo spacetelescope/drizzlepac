@@ -6,6 +6,7 @@ drizzlepac/htmlhelp
 build/
 dist/
 htmlcov/
+pip-wheel-metadata/
 coverage.xml
 .coverage
 *.coverage.*

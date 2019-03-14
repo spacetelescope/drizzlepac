@@ -106,7 +106,7 @@ def raw_from_asn(asn_file, suffix='_raw.fits'):
 
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
-#@pytest.mark.require_bigdata
+@require_bigdata
 class BaseCal:
     prevdir = os.getcwd()
     use_ftp_crds = True

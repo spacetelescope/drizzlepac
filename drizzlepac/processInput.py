@@ -94,7 +94,7 @@ def setCommonInput(configObj, createOutwcs=True):
     You can set *createOutwcs=False* for the cases where you only want the
     images processed and no output wcs information in necessary; as in:
 
-    >>>imageObjectList,outwcs = processInput.processCommonInput(configObj)
+    >>> imageObjectList,outwcs = processInput.processCommonInput(configObj)
 
 
     """
