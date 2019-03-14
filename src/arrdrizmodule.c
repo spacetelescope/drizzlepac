@@ -1142,8 +1142,8 @@ arrxyzero(PyObject *obj, PyObject *args)
   for (j=0; j< imgnum; j++)
     /* compute the delta relative to each source in ref image */
     for (k = 0; k < refnum; k++){
-        dx = *((float *)((char*)PyArray_DATA(imgxy) + j*PyArray_STRIDES(imgxy)[0]) -
-             *(float *)((char*)PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]));
+        dx = *(float *)((char*)PyArray_DATA(imgxy) + j*PyArray_STRIDES(imgxy)[0]) -
+             *(float *)((char*)PyArray_DATA(refxy) + k*PyArray_STRIDES(refxy)[0]);
         dy = *((float *)((char*)PyArray_DATA(imgxy) +
                j*PyArray_STRIDES(imgxy)[0]+ PyArray_STRIDES(imgxy)[1]))
            - *((float *)((char*)PyArray_DATA(refxy) +
