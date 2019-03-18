@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-"""This script is development space for code that will be most likely abosorbed into a larger script later on.
+"""This script is development space for code that will be most likely
+    absorbed into a larger script later on.
 
 """
 import pdb
@@ -14,10 +15,11 @@ def run_generator(product_category,obs_info):
     ----------
     product_category : string
         The type of final output product which filenames will be generated for
-    :param obs_info: string
-        A string containing space-separated items that will be used to generate the filenames.
+    obs_info : string
+        A string containing space-separated items that will be used to
+        generate the filenames.
 
-    :return: dictionary
+    return : dictionary
         A dictionary containing the generated filenames.
     """
     category_generator_mapping = {'single exposure product': single_exposure_product_filename_generator,
@@ -41,6 +43,21 @@ def run_generator(product_category,obs_info):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def single_exposure_product_filename_generator(obs_info,nn):
+    """
+    Generate image and sourcelist filenames for single-exposure products
+
+    Parameters
+    ----------
+    obs_info: list
+        list of items that will be used to generate the filenames: proposal_id,
+        visit_id, instrument, detector, filter, and ipppssoot
+    nn: string
+        the single-exposure image number (NOTE: only used in
+        single_exposure_product_filename_generator())
+
+    return : dictionary
+        A dictionary containing the generated filenames.
+    """
     proposal_id = obs_info[0]
     visit_id = obs_info[1]
     instrument = obs_info[2]
@@ -57,6 +74,21 @@ def single_exposure_product_filename_generator(obs_info,nn):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def filter_product_filename_generator(obs_info,nn):
+    """
+    Generate image and sourcelist filenames for filter products
+
+    Parameters
+    ----------
+    obs_info: list
+        list of items that will be used to generate the filenames: proposal_id,
+        visit_id, instrument, detector, and filter
+    nn: string
+        the single-exposure image number (NOTE: only used in
+        single_exposure_product_filename_generator())
+
+    return : dictionary
+        A dictionary containing the generated filenames.
+    """
     proposal_id = obs_info[0]
     visit_id = obs_info[1]
     instrument = obs_info[2]
@@ -73,6 +105,21 @@ def filter_product_filename_generator(obs_info,nn):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def total_detection_product_filename_generator(obs_info,nn):
+    """
+    Generate image and sourcelist filenames for total detection products
+
+    Parameters
+    ----------
+    obs_info: list
+        list of items that will be used to generate the filenames: proposal_id,
+        visit_id, instrument, and detector
+    nn: string
+        the single-exposure image number (NOTE: only used in
+        single_exposure_product_filename_generator())
+
+    return : dictionary
+        A dictionary containing the generated filenames.
+    """
     proposal_id = obs_info[0]
     visit_id = obs_info[1]
     instrument = obs_info[2]
@@ -87,6 +134,21 @@ def total_detection_product_filename_generator(obs_info,nn):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def multivisit_mosaic_product_filename_generator(obs_info,nn):
+    """
+    Generate image and sourcelist filenames for multi-visit mosaic products
+
+    Parameters
+    ----------
+    obs_info: list
+        list of items that will be used to generate the filenames: group_id,
+        instrument, detector, and filter
+    nn: string
+        the single-exposure image number (NOTE: only used in
+        single_exposure_product_filename_generator())
+
+    return : dictionary
+        A dictionary containing the generated filenames.
+    """
     group_num = obs_info[0]
     instrument = obs_info[1]
     detector = obs_info[2]
@@ -103,14 +165,15 @@ def multivisit_mosaic_product_filename_generator(obs_info,nn):
 if __name__ == '__main__':
     #FOR TESTING!
     obs_info_dict = {}
-    obs_info_dict["single exposure product 00"] = "1150 A1S WFC3 IR F110W ia1s70jrq"
-    obs_info_dict["single exposure product 01"] = "11150 A1S WFC3 IR F110W ia1s70jtq"
+    obs_info_dict["single exposure product 00"] = "50 A1S WFC3 IR F110W ia1s70jrq" #test proposal_id padding
+    obs_info_dict["single exposure product 01"] = "11150 A1S WFC3 UVIS F110W ia1s70jtq"
     obs_info_dict["single exposure product 02"] = "11150 A1S WFC3 IR F110W ia1s70jvq"
     obs_info_dict["single exposure product 03"] = "11150 A1S WFC3 IR F110W ia1s70jwq"
     obs_info_dict["single exposure product 04"] = "11150 A1S WFC3 IR F160W ia1s70jkq"
     obs_info_dict["single exposure product 05"] = "11150 A1S WFC3 IR F160W ia1s70jmq"
     obs_info_dict["single exposure product 06"] = "11150 A1S WFC3 IR F160W ia1s70joq"
     obs_info_dict["single exposure product 07"] = "11150 A1S WFC3 IR F160W ia1s70jpq"
+    obs_info_dict["single exposure product 08"] = "10182 A1S ACS HRC PR200LPOL120UV j90za1hyq" #determine maximum generated name length
     obs_info_dict["filter product 00"] = "11150 A1S WFC3 IR F110W"
     obs_info_dict["filter product 01"] = "11150 A1S WFC3 IR F160W"
     obs_info_dict["total detection product 00"] = "11150 A1S WFC3 IR"
