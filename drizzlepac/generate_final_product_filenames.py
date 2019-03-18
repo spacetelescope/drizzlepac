@@ -19,7 +19,9 @@ def run_generator(product_category,obs_info):
         A string containing space-separated items that will be used to
         generate the filenames.
 
-    return : dictionary
+    Returns
+    --------
+    product_filename_dict : dictionary
         A dictionary containing the generated filenames.
     """
     category_generator_mapping = {'single exposure product': single_exposure_product_filename_generator,
@@ -55,7 +57,9 @@ def single_exposure_product_filename_generator(obs_info,nn):
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
-    return : dictionary
+    Returns
+    --------
+    product_filename_dict : dictionary
         A dictionary containing the generated filenames.
     """
     proposal_id = obs_info[0]
@@ -86,7 +90,9 @@ def filter_product_filename_generator(obs_info,nn):
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
-    return : dictionary
+    Returns
+    --------
+    product_filename_dict : dictionary
         A dictionary containing the generated filenames.
     """
     proposal_id = obs_info[0]
@@ -117,7 +123,9 @@ def total_detection_product_filename_generator(obs_info,nn):
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
-    return : dictionary
+    Returns
+    --------
+    product_filename_dict : dictionary
         A dictionary containing the generated filenames.
     """
     proposal_id = obs_info[0]
@@ -146,7 +154,9 @@ def multivisit_mosaic_product_filename_generator(obs_info,nn):
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
-    return : dictionary
+    Returns
+    --------
+    product_filename_dict : dictionary
         A dictionary containing the generated filenames.
     """
     group_num = obs_info[0]
