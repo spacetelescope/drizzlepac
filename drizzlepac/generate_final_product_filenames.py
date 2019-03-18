@@ -4,7 +4,7 @@
     absorbed into a larger script later on.
 
 """
-import pdb
+
 def run_generator(product_category,obs_info):
     """
     This is the main calling subroutine. It decides which filename generation subroutine should be run based on the
@@ -48,10 +48,10 @@ def single_exposure_product_filename_generator(obs_info,nn):
 
     Parameters
     ----------
-    obs_info: list
+    obs_info : list
         list of items that will be used to generate the filenames: proposal_id,
         visit_id, instrument, detector, filter, and ipppssoot
-    nn: string
+    nn : string
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
@@ -79,10 +79,10 @@ def filter_product_filename_generator(obs_info,nn):
 
     Parameters
     ----------
-    obs_info: list
+    obs_info : list
         list of items that will be used to generate the filenames: proposal_id,
         visit_id, instrument, detector, and filter
-    nn: string
+    nn : string
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
@@ -110,10 +110,10 @@ def total_detection_product_filename_generator(obs_info,nn):
 
     Parameters
     ----------
-    obs_info: list
+    obs_info : list
         list of items that will be used to generate the filenames: proposal_id,
         visit_id, instrument, and detector
-    nn: string
+    nn : string
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
@@ -139,10 +139,10 @@ def multivisit_mosaic_product_filename_generator(obs_info,nn):
 
     Parameters
     ----------
-    obs_info: list
+    obs_info : list
         list of items that will be used to generate the filenames: group_id,
         instrument, detector, and filter
-    nn: string
+    nn : string
         the single-exposure image number (NOTE: only used in
         single_exposure_product_filename_generator())
 
@@ -188,5 +188,4 @@ if __name__ == '__main__':
             print("----> ", len(product_filename_dict[key]), key,
                   product_filename_dict[key])
         input()
-
         ctr+=1
