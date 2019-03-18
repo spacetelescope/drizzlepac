@@ -29,18 +29,23 @@ def run_generator(product_category,obs_info):
                                   'total detection product': total_detection_product_filename_generator,
                                   'multivisit mosaic product': multivisit_mosaic_product_filename_generator}
 
+    # Determine which name generator to use based on input product_category
     for key in category_generator_mapping.keys():
         if product_category.startswith(key):
             generator_name = category_generator_mapping[key]
             category_num = product_category.replace(key+" ","")
             break
 
+    # parse out obs_info into a list
     obs_info = obs_info.split(" ")
-    if key != "multivisit mosaic product":
+
+    # pad 4-character proposal_id values with leading 0s so that proposal_id is
+    # a 5-character sting.
+    if key != "multivisit mosaic product": # pad
         obs_info[0] = "{}{}".format("0"*(5-len(obs_info[0])),obs_info[0])
 
+    # generate and return filenames
     product_filename_dict=generator_name(obs_info,category_num)
-
     return(product_filename_dict)
 # ----------------------------------------------------------------------------------------------------------------------
 
