@@ -22,6 +22,23 @@ jobs:
     name: Windows
     os: windows
 
+- job: 'PEP8'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      architecture: 'x64'
+
+  # TODO: autopep8 entire project then remove --exit-zero argument
+  - script: |
+      python -m pip install --upgrade flake8
+      flake8 --exit-zero
+    displayName: 'Run check'
+
+
 - job: 'Publish'
   dependsOn: 'Linux'
   pool:
@@ -34,6 +51,6 @@ jobs:
       architecture: 'x64'
 
   - script: |
-          python -m pip install astropy
-          python setup.py sdist
+      python -m pip install astropy
+      python setup.py sdist
     displayName: 'Build sdist'
