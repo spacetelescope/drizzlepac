@@ -6,6 +6,7 @@
 import argparse
 from drizzlepac import generate_final_product_filenames
 from drizzlepac import runastrodriz
+from drizzlepac import util
 import pdb
 from stsci.tools import logutil
 import sys
@@ -18,6 +19,7 @@ log = logutil.create_logger('runhlaprocessing', level=logutil.logging.INFO, stre
 __version__ = 0.1
 __version_date__ = '19-Mar-2019'
 # ----------------------------------------------------------------------------------------------------------------------
+@util.with_logging
 def run_processing(input_filename,debug = True):
     """
     Main calling subroutine.
@@ -62,7 +64,6 @@ def run_processing(input_filename,debug = True):
             product_filename_dict = generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category])
             for key in product_filename_dict.keys():
                 log.info("{}: {}".format(key, product_filename_dict[key]))
-            input()
             ctr += 1
         #   3.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the newly defined output name
 
@@ -86,9 +87,12 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
     PARSER.add_argument('input_filename',help = 'Name of the input csv file containing information about the files to be processed')
     PARSER.add_argument( '-d', '--debug', required=False,choices=['True','False'],default='True',help='display all tracebacks, and debug information? If not otherwise specifed, the default value is "True".')
+    ARGS = PARSER.parse_args()
+
     if ARGS.debug == "True":
         ARGS.debug = True
     else:
         ARGS.debug = False
+
     rv = run_processing(ARGS.input_filename,ARGS.debug)
     print(rv)
