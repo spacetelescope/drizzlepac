@@ -83,6 +83,16 @@ def check_and_get_data(input_list,**pars):
     imglist : list
         List of one or more calibrated fits images that will be used for catalog generation.
 
+    regtest: Boolean
+        Flag to signal the use of PyTest to run regresssion tests.  When using PyTest with individual images
+        which are part of an association (e.g., *_flt.fits), the files cannot be obtained from MAST as 
+        singletons. They are stored in Artifactory as part of the regression test suite.  
+
+    test_data_path : List of strings  
+        List of comma separated strings defining the path on Artifactory where the *_fl[t|c].fits files are stored.
+        The root of the path is defined by the environment variables TEST_BIGDATA.
+
+
     Returns
     =======
     input_file_list : list
@@ -90,38 +100,55 @@ def check_and_get_data(input_list,**pars):
 
     """
     totalInputList = []
-    retrieve_list = [] # list of already retrieved ASNs, only request each once
-    for input_item in input_list:
-        try:
-            filelist = aqutils.retrieve_observation(input_item,**pars)
-        except Exception:
-            filelist = []
-        if len(filelist) == 0:
-            # look for local copy of the file
-            input_rootname = input_item[:input_item.find('_')]
-            fitsfilenames = sorted(glob.glob("{}_fl?.fits".format(input_rootname)))
-            if len(fitsfilenames) > 0:
-                imghdu = fits.open(fitsfilenames[0])
-                imgprimaryheader = imghdu[0].header
-                try:
-                    asnid = imgprimaryheader['ASN_ID'].strip().lower()
-                    if asnid == 'NONE':
-                        asnid = None
-                except KeyError:
-                    asnid = None
-                if asnid and asnid not in retrieve_list:
+
+    # If the regression test flag is True, a regression test has been invoked where the input_list 
+    # actually contains the full filename(s) (e.g., *_flt.fits).  Note that not all regression tests use 
+    # this functionality as Artifactory is accessed for the data source with the use of this flag.
+    if pars['regtest'] == True:
+        # Artifactory root name and test folder containing the data
+        remote_root=os.environ['TEST_BIGDATA']
+        data_path = pars['test_data_path']
+        from ci_watson.artifactory_helpers import get_bigdata
+        for infile in input_list:
+            full_file_path = get_bigdata(data_path[0],data_path[1],data_path[2],infile)
+            totalInputList.append(infile)
+    else:
+        archive = pars['archive']
+        clobber = pars['clobber']
+        retrieve_list = [] # list of already retrieved ASNs, only request each once
+        for input_item in input_list:
+            try:
+                filelist = aqutils.retrieve_observation(input_item,archive=archive,clobber=clobber)
+                #filelist = aqutils.retrieve_observation(input_item)
+            except Exception:
+                filelist = []
+            if len(filelist) == 0:
+                # look for local copy of the file
+                input_rootname = input_item[:input_item.find('_')]
+                fitsfilenames = sorted(glob.glob("{}_fl?.fits".format(input_rootname)))
+                if len(fitsfilenames) > 0:
+                    imghdu = fits.open(fitsfilenames[0])
+                    imgprimaryheader = imghdu[0].header
                     try:
-                        filelist = aqutils.retrieve_observation(asnid,**pars)
-                        retrieve_list.append(asnid) # record asn's already retrieved
-                    except Exception:
-                        filelist = []
+                        asnid = imgprimaryheader['ASN_ID'].strip().lower()
+                        if asnid == 'NONE':
+                            asnid = None
+                    except KeyError:
+                        asnid = None
+                    if asnid and asnid not in retrieve_list:
+                        try:
+                            filelist = aqutils.retrieve_observation(asnid,**pars)
+                            retrieve_list.append(asnid) # record asn's already retrieved
+                        except Exception:
+                            filelist = []
+
+            if len(filelist) > 0:
+                totalInputList += filelist
 
         if len(filelist) > 0:
-            totalInputList += filelist
+            # remove duplicate list elements, sort resulting list of unique elements:
+            totalInputList = sorted(list(set(totalInputList)))
 
-    if len(filelist) > 0:
-        # remove duplicate list elements, sort resulting list of unique elements:
-        totalInputList = sorted(list(set(totalInputList)))
     log.info("TOTAL INPUT LIST: {}".format(totalInputList))
     # TODO: add trap to deal with non-existent (incorrect) rootnames
     # TODO: Address issue about how the code will retrieve association information if there isn't a local file to get 'ASN_ID' header info
@@ -161,6 +188,15 @@ def perform_align(input_list, **kwargs):
         Should utils.astrometric_utils.create_astrometric_catalog() generate file 'ref_cat.ecsv' and should
         generate_source_catalogs() generate the .reg region files for every chip of every input image and should
         generate_astrometric_catalog() generate file 'refcatalog.cat'?
+ 
+    regtest: Boolean
+        Flag to signal the use of PyTest to run regresssion tests.  When using PyTest with individual images
+        which are part of an association (e.g., *_flt.fits), the files cannot be obtained from MAST as 
+        singletons. They are stored in Artifactory as part of the regression test suite.  
+
+    test_data_path : str
+        List of comma separated strings defining the path on Artifactory where the *_fl[t|c].fits files are stored.
+        The root of the path is defined by the environment variables TEST_BIGDATA.
 
     Updates
     -------
@@ -174,7 +210,7 @@ def perform_align(input_list, **kwargs):
 
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None, runfile=None,
-                  print_fit_parameters=True, print_git_info=False, output=False):
+                  print_fit_parameters=True, print_git_info=False, output=False, regtest=False, test_data_path=None):
 
     log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
 
@@ -198,11 +234,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         else:
             log.warning("WARNING: Unable to display Git repository revision information.")
 
+    print(input_list)
     # 1: Interpret input data and optional parameters
     log.info("-------------------- STEP 1: Get data ------------------------------------------------------------------")
     zeroDT = startingDT = datetime.datetime.now()
     log.info(str(startingDT))
-    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
+    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, regtest=regtest, test_data_path=test_data_path)
     log.info("SUCCESS")
 
     currentDT = datetime.datetime.now()
