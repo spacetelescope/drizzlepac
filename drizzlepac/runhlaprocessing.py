@@ -53,7 +53,7 @@ def run_processing(input_filename, result=None, debug=True):
 
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
         # PLACEHOLDER TO TEST STEP 3 FUNCTIONALITY UNTIL STEP 2 IS COMPLETED
-        obs_info_dict = {}
+        obs_info_dict = {} # TODO: Remove this and the below obs_inf_dict lines of code once steps 1 and 2 are complete
         obs_info_dict["single exposure product 00"] = "50 A1S WFC3 IR F110W ia1s70jrq" #test proposal_id padding
         obs_info_dict["single exposure product 01"] = "11150 A1S WFC3 UVIS F110W ia1s70jtq"
         obs_info_dict["single exposure product 02"] = "11150 A1S WFC3 IR F110W ia1s70jvq"
@@ -76,6 +76,10 @@ def run_processing(input_filename, result=None, debug=True):
                 log.info("{}: {}".format(key, product_filename_dict[key]))
 
         #   3.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the newly defined output name
+        #   3.2.1: set up runastrodriz input 'configobj'
+
+        #   3.2.2: execute runastrodriz
+        #     runastrodriz.run(configobj=driz_config) #TODO: uncomment once steps 1, 2, and 3.2.1 are up and running
 
         #   3.3: Create source catalog from newly defined product (HLA-204)
 
