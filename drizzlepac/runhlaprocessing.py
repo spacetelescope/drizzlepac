@@ -18,30 +18,41 @@ log = logutil.create_logger('runhlaprocessing', level=logutil.logging.INFO, stre
 
 __version__ = 0.1
 __version_date__ = '19-Mar-2019'
+
 # ----------------------------------------------------------------------------------------------------------------------
-@util.with_logging
-def run_processing(input_filename,debug = True):
+
+def perform_processing(input_filename, **kwargs):
     """
     Main calling subroutine.
 
     Parameters
     ----------
     input_filename : string
-        Name of the input csv file containing information about the files to be processed
+        Name of the input csv file containing information about the files to
+        be processed
 
     debug : Boolean
         display all tracebacks, and debug information?
-        
-    Returns
-    --------
-    return_value : integer
-        a simple status value. '0' for a successful run and '1' for a failed run
+
+    Updates
+    -------
+    return_value : list
+        a simple status value. '0' for a successful run and '1' for a failed
+        run
     """
+    return_value = []
+    run_processing(input_filename,result=return_value,**kwargs)
+    return(return_value[0])
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+@util.with_logging
+def run_processing(input_filename, result=None, debug=True):
     try:
         # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
 
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
-        # PLACEHOLDER UNTIL STEP 2 IS COMPLETED
+        # PLACEHOLDER TO TEST STEP 3 FUNCTIONALITY UNTIL STEP 2 IS COMPLETED
         obs_info_dict = {}
         obs_info_dict["single exposure product 00"] = "50 A1S WFC3 IR F110W ia1s70jrq" #test proposal_id padding
         obs_info_dict["single exposure product 01"] = "11150 A1S WFC3 UVIS F110W ia1s70jtq"
@@ -58,13 +69,12 @@ def run_processing(input_filename,debug = True):
         obs_info_dict['multivisit mosaic product 00'] = "1234567 ACS WFC F606W"
 
         # 3: For each defined product...
-        ctr=1
         for obs_category in obs_info_dict.keys():
         #   3.1: generate an output name
             product_filename_dict = generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category])
             for key in product_filename_dict.keys():
                 log.info("{}: {}".format(key, product_filename_dict[key]))
-            ctr += 1
+
         #   3.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the newly defined output name
 
         #   3.3: Create source catalog from newly defined product (HLA-204)
@@ -76,12 +86,16 @@ def run_processing(input_filename,debug = True):
         # 5: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except:
+        return_value = 1
         if debug:
-            print("\a\a")
+
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-        return_value = 1
-    return(return_value)
+
+    result.append(return_value)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
@@ -94,5 +108,5 @@ if __name__ == '__main__':
     else:
         ARGS.debug = False
 
-    rv = run_processing(ARGS.input_filename,ARGS.debug)
+    rv = perform_processing(ARGS.input_filename,debug=ARGS.debug)
     print(rv)
