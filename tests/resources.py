@@ -1,5 +1,3 @@
-"""HSTCAL regression test helpers."""
-import urllib
 import getpass
 import os
 import sys
@@ -11,102 +9,21 @@ from os.path import splitext
 from difflib import unified_diff
 
 import pytest
-import requests
 from astropy.io import fits
 from astropy.io.fits import FITSDiff
-from astropy.table import Table
 from astropy.utils.data import conf
 
 import numpy as np
 import stwcs
 from stsci.tools import fileutil
 
-from .helpers.mark import require_bigdata
-from .helpers.io import get_bigdata, upload_results
-
-__all__ = ['download_crds',
-           'ref_from_image', 'raw_from_asn', 'BaseACS',
-           'BaseSTIS', 'BaseWFC3IR', 'BaseWFC3UVIS', 'BaseWFPC2']
-
-
-def _download_file(url, filename, filemode='wb', timeout=None):
-    """Generic remote data download."""
-    if url.startswith('http'):
-        r = requests.get(url, timeout=timeout)
-        with open(filename, filemode) as fout:
-            fout.write(r.content)
-    elif url.startswith('ftp'):  # TODO: Support filemode and timeout.
-        urllib.request.urlretrieve(url, filename=filename)
-    else:  # pragma: no cover
-        raise ValueError('Unsupported protocol for {}'.format(url))
-
-
-def download_crds(refdir, refname, timeout=None):
-    """Download a CRDS file from HTTP or FTP to current directory."""
-    # CRDS file for given name never changes, so no need to re-download.
-    if os.path.exists(refname):
-        return
-
-    try:
-        url = 'http://ssb.stsci.edu/cdbs/{}/{}'.format(refdir, refname)
-        local_file = os.path.abspath(refname)
-        print("Downloading CRDS file: {}".format(local_file))
-        _download_file(url, refname, timeout=timeout)
-    except Exception:  # Fall back to FTP
-        url = 'ftp://ftp.stsci.edu/cdbs/{}/{}'.format(refdir, refname)
-        _download_file(url, refname, timeout=timeout)
-
-
-def _get_reffile(hdr, key):
-    """Get ref file from given key in given FITS header."""
-    ref_file = None
-    if key in hdr:  # Keyword might not exist
-        ref_file = hdr[key].strip()
-        if ref_file.upper() == 'N/A':  # Not all ref file is defined
-            ref_file = None
-    return ref_file
-
-
-def ref_from_image(input_image):
-    """
-    Return a list of reference filenames, as defined in the primary
-    header of the given input image, necessary for calibration; i.e.,
-    only those associated with ``*CORR`` set to ``PERFORM`` will be
-    considered.
-    """
-    # NOTE: Add additional mapping as needed.
-    # Map mandatory CRDS reference file for instrument/detector combo.
-
-    reffile_lookup = ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE', 'DGEOFILE']
-
-    ref_files = []
-    hdr = fits.getheader(input_image, ext=0)
-
-    for reffile in reffile_lookup:
-        s = _get_reffile(hdr, reffile)
-        if s is not None:
-            ref_files.append(s)
-
-    return ref_files
-
-
-def raw_from_asn(asn_file, suffix='_raw.fits'):
-    """Return a list of RAW input files in a given ASN."""
-    raw_files = []
-    tab = Table.read(asn_file, format='fits')
-
-    for row in tab:
-        if row['MEMTYPE'].startswith('PROD'):
-            continue
-        pfx = row['MEMNAME'].lower().strip().replace('\x00', '')
-        raw_files.append(pfx + suffix)
-
-    return raw_files
+from ci_watson.artifactory_helpers import get_bigdata, generate_upload_schema
+from ci_watson.hst_helpers import download_crds, ref_from_image
 
 
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
-@require_bigdata
+@pytest.mark.bigdata
 class BaseCal:
     prevdir = os.getcwd()
     use_ftp_crds = True
@@ -182,7 +99,7 @@ class BaseCal:
         downloaded, if necessary.
         """
         filename = self.get_data(*args)
-        ref_files = ref_from_image(filename)
+        ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE'])
         print("Looking for REF_FILES: {}".format(ref_files))
 
         for ref_file in ref_files:
@@ -191,11 +108,9 @@ class BaseCal:
             if refsep not in ref_file:  # Local file
                 refname = self.get_data('customRef', ref_file)
             else:  # Download from FTP, if applicable
-                s = ref_file.split(refsep)
-                refdir = s[0]
-                refname = s[1]
+                refname = os.path.join(ref_file)
                 if self.use_ftp_crds:
-                    download_crds(refdir, refname, timeout=self.timeout)
+                    download_crds(refname, self.timeout)
         return filename
 
     def compare_outputs(self, outputs, raise_error=True):
@@ -286,7 +201,7 @@ class BaseCal:
                       files[0], files[1]))
                 shutil.move(files[0], files[1])
             log_pattern = [os.path.join(os.path.dirname(x), '*.log') for x in new_truths]
-            upload_results(pattern=new_truths + log_pattern,
+            generate_upload_schema(pattern=new_truths + log_pattern,
                            testname=testname,
                            target= tree)
 

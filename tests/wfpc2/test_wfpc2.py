@@ -1,14 +1,15 @@
 import os
+import pytest
 
 from stsci.tools import teal
 from drizzlepac import astrodrizzle
 from stwcs import updatewcs
-
 from ..resources import BaseWFPC2
 
 
 class TestWFPC2(BaseWFPC2):
 
+    @pytest.mark.skip(reason="FIXME: updatewcs fails")
     def test_waiver_single(self):
         """ This test confirms that drizzlepac can correcly process .
         """
@@ -87,6 +88,7 @@ class TestWFPC2(BaseWFPC2):
         outputs = [(outfile, reffile)]
         self.compare_outputs(outputs)
 
+    @pytest.mark.skip(reason="FIXME: updatewcs fails")
     def test_wfpc2_single(self):
         """ This test confirms that drizzlepac can correcly process single
         WFPC2 exposures.
@@ -125,6 +127,7 @@ class TestWFPC2(BaseWFPC2):
         outputs = [(outfile, reffile)]
         self.compare_outputs(outputs)
 
+    @pytest.mark.skip(reason="FIXME: updatewcs fails")
     def test_mef_asn(self):
         """ This test confirms that drizzlepac can correcly process input
         WFPC2 data stored in Multi-extensions FITS(MEF) format.

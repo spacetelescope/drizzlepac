@@ -1,13 +1,10 @@
-import os
-
 from stsci.tools import teal
-import drizzlepac
 from drizzlepac import astrodrizzle
-from ..helpers.mark import require_bigdata, runslow, slow
 
-from ..resources import BaseACS, raw_from_asn
+from ..resources import BaseACS
+from ci_watson.hst_helpers import raw_from_asn
 
-@require_bigdata
+
 class TestAsnNarrowband(BaseACS):
 
     def test_acs_narrowband(self):
@@ -15,6 +12,7 @@ class TestAsnNarrowband(BaseACS):
         asn_file = rootname + '_asn.fits'
 
         # Prepare input files.
+        # TODO: Why is input_file not referenced?
         input_file = self.get_data('input', asn_file)
 
         for raw_file in raw_from_asn(asn_file, suffix='_flt.fits'):

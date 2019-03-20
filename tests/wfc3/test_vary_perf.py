@@ -3,8 +3,7 @@ import os
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
-from ..helpers.mark import require_bigdata
-from ..helpers.io import get_bigdata
+from ci_watson.artifactory_helpers import get_bigdata
 
 from stwcs import updatewcs
 
