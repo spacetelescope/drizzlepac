@@ -3,9 +3,9 @@ import os
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
-from ..helpers.mark import require_bigdata
 
-from ..resources import BaseACS, raw_from_asn
+from ..resources import BaseACS
+from ci_watson.hst_helpers import raw_from_asn
 
 
 class TestAsnRegress(BaseACS):

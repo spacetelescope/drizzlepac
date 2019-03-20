@@ -1,13 +1,8 @@
 import os
 
 from stsci.tools import teal
-import drizzlepac
 from drizzlepac import astrodrizzle
-from ..helpers.mark import require_bigdata
-from ..helpers.io import get_bigdata
-
 from stwcs import updatewcs
-
 from ..resources import BaseWFC3
 
 def pytest_generate_tests(metafunc):
@@ -46,7 +41,7 @@ class TestVaryPerf(BaseWFC3):
 
         # Prepare input files.
         raw_inputs = ["ib6m02d9q_flt.fits", "ib6m02daq_flt.fits"]
-        inputs = [os.path.basename(self.get_input_file('input', i)) 
+        inputs = [os.path.basename(self.get_input_file('input', i))
                       for i in raw_inputs]
 
         # Merge common parameter settings with test-specific settings

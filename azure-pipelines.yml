@@ -6,6 +6,9 @@
 trigger:
 - master
 
+variables:
+  PYTHONUNBUFFERED: '1'
+
 jobs:
 - template: azure-templates.yml
   parameters:
