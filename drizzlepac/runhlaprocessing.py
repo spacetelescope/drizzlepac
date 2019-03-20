@@ -20,6 +20,50 @@ __version__ = 0.1
 __version_date__ = '19-Mar-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
+# set up instrument/detector-specific astrodrizzle params
+astrodrizzle_param_dict = {}
+astrodrizzle_param_dict["ACS HRC"] = {
+    "PIXSCALE": 0.025,
+    "PIXFRAC": 1.0,
+    "KERNEL": "square",
+    "OUTNX": None,
+    "OUTNY": None,
+    "ROT": 0.0,
+    "DRIZ_BITS": 256}
+astrodrizzle_param_dict["ACS SBC"] = {
+    "PIXSCALE": 0.03,
+    "PIXFRAC": 1.0,
+    "KERNEL": "square",
+    "OUTNX": None,
+    "OUTNY": None,
+    "ROT": 0.0,
+    "DRIZ_BITS": 256}
+astrodrizzle_param_dict["ACS WFC"] = {
+    "PIXSCALE": 0.05,
+    "PIXFRAC": 1.0,
+    "KERNEL": "square",
+    "OUTNX": None,
+    "OUTNY": None,
+    "ROT": 0.0,
+    "DRIZ_BITS": 256}
+astrodrizzle_param_dict["WFC3 IR"] = {
+    "PIXSCALE": 0.09,
+    "PIXFRAC": 1.0,
+    "KERNEL": "square",
+    "OUTNX": None,
+    "OUTNY": None,
+    "ROT": 0.0,
+    "DRIZ_BITS": 768}
+astrodrizzle_param_dict["WFC3 UVIS"] = {
+    "PIXSCALE": 0.04,
+    "PIXFRAC": 1.0,
+    "KERNEL": "square",
+    "OUTNX": None,
+    "OUTNY": None,
+    "ROT": 0.0,
+    "DRIZ_BITS": 256}
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def perform_processing(input_filename, **kwargs):
     """
@@ -68,6 +112,12 @@ def run_processing(input_filename, result=None, debug=True):
         obs_info_dict["total detection product 00"] = "11150 A1S WFC3 IR"
         obs_info_dict['multivisit mosaic product 00'] = "1234567 ACS WFC F606W"
 
+        # obs_info_dict["single exposure product 00"] = "10265 01S ACS WFC F606W j92c01b4q"
+        # obs_info_dict["single exposure product 01"] = "10265 01S ACS WFC F606W j92c01b5q"
+        # obs_info_dict["single exposure product 02"] = "10265 01S ACS WFC F606W j92c01b7q"
+        # obs_info_dict["single exposure product 03"] = "10265 01S ACS WFC F606W j92c01b9q"
+        # obs_info_dict["filter product 00"] = "10265 01S ACS WFC F606W"
+
         # 3: For each defined product...
         for obs_category in obs_info_dict.keys():
         #   3.1: generate an output name
@@ -77,7 +127,10 @@ def run_processing(input_filename, result=None, debug=True):
 
         #   3.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the newly defined output name
         #   3.2.1: set up runastrodriz input 'configobj'
-
+            for inst_det in astrodrizzle_param_dict.keys():
+                if obs_info_dict[obs_category].find(inst_det) != -1:
+                    adriz_param_dict=astrodrizzle_param_dict[inst_det]
+                    break
         #   3.2.2: execute runastrodriz
         #    runastrodriz.run(configobj=driz_config) #TODO: uncomment once steps 1, 2, and 3.2.1 are up and running
 
@@ -88,11 +141,12 @@ def run_processing(input_filename, result=None, debug=True):
         # 4: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
 
         # 5: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+
         return_value = 0
     except:
         return_value = 1
         if debug:
-
+            log.info("\a\a\a")
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
