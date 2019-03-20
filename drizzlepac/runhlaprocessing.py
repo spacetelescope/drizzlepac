@@ -79,7 +79,7 @@ def run_processing(input_filename, result=None, debug=True):
         #   3.2.1: set up runastrodriz input 'configobj'
 
         #   3.2.2: execute runastrodriz
-        #     runastrodriz.run(configobj=driz_config) #TODO: uncomment once steps 1, 2, and 3.2.1 are up and running
+        #    runastrodriz.run(configobj=driz_config) #TODO: uncomment once steps 1, 2, and 3.2.1 are up and running
 
         #   3.3: Create source catalog from newly defined product (HLA-204)
 
@@ -99,6 +99,46 @@ def run_processing(input_filename, result=None, debug=True):
     result.append(return_value)
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+def convert_base10_base36(in_number):
+    """
+    Convert base-10 numbers to base-36ish, in the same style that HST visits are named
+
+    Parameters
+    ----------
+    in_number : integer
+        base 10 value to convert to base 36.
+
+    Returns
+    --------
+    out_val : string
+        converted base 36 value
+    """
+    if in_number < 100:
+        out_val = "{}{}".format("0"*(2-len(str(in_number))),in_number)
+    elif (in_number > 99) and (in_number<360) :
+        alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        alphadict = {}
+        for item in enumerate(list(alphabet)):
+            alphadict[item[0]] = item[1]
+        c1 = (in_number - 100)//26
+        c2 = (in_number - 100)%26
+        out_val = "{}{}".format(c1,alphadict[c2])
+    else:
+
+        chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+        sign = '-' if in_number < 0 else ''
+        in_number = abs(in_number)
+        out_val = ''
+
+        while in_number > 0:
+            in_number, remainder = divmod(in_number, 36)
+            out_val = chars[remainder] + out_val
+
+    return(out_val)
+
+# ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
@@ -113,4 +153,3 @@ if __name__ == '__main__':
         ARGS.debug = False
 
     rv = perform_processing(ARGS.input_filename,debug=ARGS.debug)
-    print(rv)
