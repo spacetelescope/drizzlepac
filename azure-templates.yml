@@ -40,7 +40,7 @@ jobs:
 
       # Some namespace packages require but do not provide stsci.distutils.
     - script: |
-        $(PIP_INSTALL) pip numpy stsci.distutils
+        $(PIP_INSTALL) pip numpy stsci.distutils d2to1
       displayName: install dependencies
 
     - script: |
