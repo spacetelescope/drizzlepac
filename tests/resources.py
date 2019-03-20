@@ -21,6 +21,10 @@ from ci_watson.artifactory_helpers import get_bigdata, generate_upload_schema
 from ci_watson.hst_helpers import download_crds, ref_from_image
 
 
+INPUTS_ROOT = pytest.config.getini('inputs_root')[0]
+RESULTS_ROOT = pytest.config.getini('results_root')[0]
+
+
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
 @pytest.mark.bigdata
@@ -29,7 +33,8 @@ class BaseCal:
     use_ftp_crds = True
     timeout = 30  # seconds
     tree = 'dev'
-    results_root = 'drizzlepac-results'
+    inputs_root = INPUTS_ROOT
+    results_root = RESULTS_ROOT
 
     # Numpy default for allclose comparison
     rtol = 1e-6
@@ -85,10 +90,10 @@ class BaseCal:
     def get_data(self, *args):
         """
         Download `filename` into working directory using
-        `helpers/io/get_bigdata`.  This will then return the full path to
+        `get_bigdata`.  This will then return the full path to
         the local copy of the file.
         """
-        local_file = get_bigdata(self.tree, self.input_loc, *args)
+        local_file = get_bigdata(self.inputs_root, self.tree, self.input_loc, *args)
 
         return local_file
 
