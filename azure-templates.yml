@@ -38,8 +38,9 @@ jobs:
       condition: eq( variables['Agent.OS'], 'Windows_NT' )
       displayName: Pip on Windows
 
+      # Some namespace packages require but do not provide stsci.distutils.
     - script: |
-        $(PIP_INSTALL) pip numpy
+        $(PIP_INSTALL) pip numpy stsci.distutils
       displayName: install dependencies
 
     - script: |
