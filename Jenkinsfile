@@ -54,6 +54,7 @@ for (numpy_ver in matrix_numpy) {
                          'stsci.stimage',
                          'setuptools',
                          // test dependencies
+			 'ci-watson',
                          'pytest',
                          'pytest-remotedata',
                          'crds']
