@@ -171,6 +171,7 @@ def run_processing(input_filename, result=None, debug=True):
     try:
         # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
         # TODO: SUBROUTINE CALL GOES HERE.
+
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
         # TODO: SUBROUTINE CALL GOES HERE.
         obs_info_dict,file_list = generate_test_data() #TODO: REMOVE once all previous steps are up and running
@@ -184,6 +185,7 @@ def run_processing(input_filename, result=None, debug=True):
 
         #   3.2: align images with alignimages.perform_align() (I THINK)
         # TODO: SUBROUTINE CALL GOES HERE.
+
         #   3.3: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
         #        newly defined output name
             for inst_det in astrodrizzle_param_dict.keys():
@@ -194,6 +196,7 @@ def run_processing(input_filename, result=None, debug=True):
 
         #   3.4: Create source catalog from newly defined product (HLA-204)
         # TODO: SUBROUTINE CALL GOES HERE.
+
         #   3.5: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
 
         # 4: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
