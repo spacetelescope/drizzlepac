@@ -4,8 +4,8 @@
 
 """
 import argparse
+import drizzlepac
 from drizzlepac import generate_final_product_filenames
-from drizzlepac import astrodrizzle
 from drizzlepac import util
 import pdb
 from stsci.tools import logutil
@@ -23,45 +23,45 @@ __version_date__ = '19-Mar-2019'
 # set up instrument/detector-specific astrodrizzle params
 astrodrizzle_param_dict = {}
 astrodrizzle_param_dict["ACS HRC"] = {
-    "PIXSCALE": 0.025,
+    "SCALE": 0.025,
     "PIXFRAC": 1.0,
     "KERNEL": "square",
     "OUTNX": None,
     "OUTNY": None,
     "ROT": 0.0,
-    "DRIZ_BITS": 256}
+    "BITS": 256}
 astrodrizzle_param_dict["ACS SBC"] = {
-    "PIXSCALE": 0.03,
+    "SCALE": 0.03,
     "PIXFRAC": 1.0,
     "KERNEL": "square",
     "OUTNX": None,
     "OUTNY": None,
     "ROT": 0.0,
-    "DRIZ_BITS": 256}
+    "BITS": 256}
 astrodrizzle_param_dict["ACS WFC"] = {
-    "PIXSCALE": 0.05,
+    "SCALE": 0.05,
     "PIXFRAC": 1.0,
     "KERNEL": "square",
     "OUTNX": None,
     "OUTNY": None,
     "ROT": 0.0,
-    "DRIZ_BITS": 256}
+    "BITS": 256}
 astrodrizzle_param_dict["WFC3 IR"] = {
-    "PIXSCALE": 0.09,
+    "SCALE": 0.09,
     "PIXFRAC": 1.0,
     "KERNEL": "square",
     "OUTNX": None,
     "OUTNY": None,
     "ROT": 0.0,
-    "DRIZ_BITS": 768}
+    "BITS": 768}
 astrodrizzle_param_dict["WFC3 UVIS"] = {
-    "PIXSCALE": 0.04,
+    "SCALE": 0.04,
     "PIXFRAC": 1.0,
     "KERNEL": "square",
     "OUTNX": None,
     "OUTNY": None,
     "ROT": 0.0,
-    "DRIZ_BITS": 256}
+    "BITS": 256}
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -234,7 +234,27 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename):
     -------
     Nothing.
     """
-    log.info("Processing with astrodrizzle version {}".format(astrodrizzle.__version__))
+    log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
+    # Define parameters which need to be set specifically for
+    #    pipeline use of astrodrizzle
+    pipeline_pars = {'mdriztab': True,
+                     'stepsize': 10,
+                     'output': outfilename,
+                     'preserve': False,
+                     'resetbits': 4096,
+                     'final_wcs': True,
+                     }
+
+    # splice in parameters from instrument/detector-specific astrodrizzle dictionary
+    for key in adriz_param_dict.keys():
+        pipeline_pars["final_{}".format(key.lower())] = adriz_param_dict[key]
+        pipeline_pars["driz_sep_{}".format(key.lower())] = adriz_param_dict[key]
+
+    # Execute astrodrizzle
+    b = drizzlepac.astrodrizzle.AstroDrizzle(input=filelist, runfile="astrodrizzle.log",
+                                             configobj='defaults', in_memory=None,
+                                             num_cores=None, **pipeline_pars)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
