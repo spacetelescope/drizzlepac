@@ -104,7 +104,7 @@ class BaseCal:
         downloaded, if necessary.
         """
         filename = self.get_data(*args)
-        ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE'])
+        ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE', 'DGEOFILE'])
         print("Looking for REF_FILES: {}".format(ref_files))
 
         for ref_file in ref_files:
