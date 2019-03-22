@@ -161,13 +161,13 @@ def perform_processing(input_filename, **kwargs):
         run
     """
     return_value = []
-    run_processing(input_filename,result=return_value,**kwargs)
+    run_hla_processing(input_filename,result=return_value,**kwargs)
     return(return_value[0])
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 @util.with_logging
-def run_processing(input_filename, result=None, debug=True):
+def run_hla_processing(input_filename, result=None, debug=True):
     try:
         # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
         # TODO: SUBROUTINE CALL GOES HERE.
