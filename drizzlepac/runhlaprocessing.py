@@ -130,15 +130,15 @@ def generate_test_data():
     # obs_info_dict['multivisit mosaic product 00'] = "1234567 ACS WFC F606W"
 
     # obs_info_dict/filelist definition for ACS/WFC visit 10265_01
-    # obs_info_dict["single exposure product 00"] = "10265 01S ACS WFC F606W j92c01b4q"
-    # obs_info_dict["single exposure product 01"] = "10265 01S ACS WFC F606W j92c01b5q"
-    # obs_info_dict["single exposure product 02"] = "10265 01S ACS WFC F606W j92c01b7q"
-    # obs_info_dict["single exposure product 03"] = "10265 01S ACS WFC F606W j92c01b9q"
-    obs_info_dict["filter product 00"] = "10265 01S ACS WFC F606W"
-
-    file_list = ['j92c01b4q_flc.fits','j92c01b5q_flc.fits','j92c01b7q_flc.fits','j92c01b9q_flc.fits']
-
-    return(obs_info_dict,file_list)
+    obs_info_dict["single exposure product 00"] = {"info": "10265 01S ACS WFC F606W j92c01b4q", "files":["j92c01b4q_flc.fits"]}
+    obs_info_dict["single exposure product 01"] = {"info": "10265 01S ACS WFC F606W j92c01b5q", "files":["j92c01b5q_flc.fits"]}
+    obs_info_dict["single exposure product 02"] = {"info": "10265 01S ACS WFC F606W j92c01b7q", "files":["j92c01b7q_flc.fits"]}
+    obs_info_dict["single exposure product 03"] = {"info": "10265 01S ACS WFC F606W j92c01b9q", "files":["j92c01b9q_flc.fits"]}
+    obs_info_dict["filter product 00"] = {"info": "10265 01S ACS WFC F606W", "files":['j92c01b4q_flc.fits',
+                                                                                      'j92c01b5q_flc.fits',
+                                                                                      'j92c01b7q_flc.fits',
+                                                                                      'j92c01b9q_flc.fits']}
+    return(obs_info_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
 def perform_processing(input_filename, **kwargs):
@@ -163,55 +163,6 @@ def perform_processing(input_filename, **kwargs):
     return_value = []
     run_hla_processing(input_filename,result=return_value,**kwargs)
     return(return_value[0])
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-@util.with_logging
-def run_hla_processing(input_filename, result=None, debug=True):
-    try:
-        # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
-        # TODO: SUBROUTINE CALL GOES HERE.
-
-        # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
-        # TODO: SUBROUTINE CALL GOES HERE.
-        obs_info_dict,file_list = generate_test_data() #TODO: REMOVE once all previous steps are up and running
-
-        # 3: For each defined product...
-        for obs_category in obs_info_dict.keys():
-        #   3.1: generate an output name
-            product_filename_dict = generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category])
-            for key in product_filename_dict.keys():
-                log.info("{}: {}".format(key, product_filename_dict[key]))
-
-        #   3.2: align images with alignimages.perform_align() (I THINK)
-        # TODO: SUBROUTINE CALL GOES HERE.
-
-        #   3.3: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
-        #        newly defined output name
-            for inst_det in astrodrizzle_param_dict.keys():
-                if obs_info_dict[obs_category].find(inst_det) != -1:
-                    adriz_param_dict=astrodrizzle_param_dict[inst_det]
-                    break
-            run_astrodrizzle(file_list,adriz_param_dict,product_filename_dict['image'])
-
-        #   3.4: Create source catalog from newly defined product (HLA-204)
-        # TODO: SUBROUTINE CALL GOES HERE.
-
-        #   3.5: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-
-        # 4: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
-
-        # 5: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
-
-        return_value = 0
-    except:
-        return_value = 1
-        if debug:
-            log.info("\a\a\a")
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
-    result.append(return_value)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -255,6 +206,58 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename):
                                              configobj='defaults', in_memory=None,
                                              num_cores=None, **pipeline_pars)
 
+# ----------------------------------------------------------------------------------------------------------------------
+@util.with_logging
+def run_hla_processing(input_filename, result=None, debug=True):
+    try:
+        # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
+        # TODO: SUBROUTINE CALL GOES HERE.
+
+        # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
+        # TODO: SUBROUTINE CALL GOES HERE.
+        obs_info_dict = generate_test_data() #TODO: REMOVE once all previous steps are up and running
+
+        # 3: generate an output names for each defined product...
+        for obs_category in obs_info_dict.keys():
+            obs_info_dict[obs_category]['product filenames'] = generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category]["info"])
+            for key in obs_info_dict[obs_category].keys():
+                log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
+
+
+
+        # 4: For each defined product...
+
+        for obs_category in obs_info_dict.keys():
+
+        #   3.2: align images with alignimages.perform_align() (I THINK)
+        # TODO: SUBROUTINE CALL GOES HERE.
+
+        #   3.3: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
+        #        newly defined output name
+            for inst_det in astrodrizzle_param_dict.keys():
+                if obs_info_dict[obs_category].find(inst_det) != -1:
+                    adriz_param_dict=astrodrizzle_param_dict[inst_det]
+                    break
+            run_astrodrizzle(file_list,adriz_param_dict,product_filename_dict['image'])
+
+        #   3.4: Create source catalog from newly defined product (HLA-204)
+        # TODO: SUBROUTINE CALL GOES HERE.
+
+        #   3.5: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
+
+        # 4: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
+
+        # 5: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+
+        return_value = 0
+    except:
+        return_value = 1
+        if debug:
+            log.info("\a\a\a")
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+
+    result.append(return_value)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
