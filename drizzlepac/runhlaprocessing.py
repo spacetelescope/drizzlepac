@@ -4,6 +4,7 @@
 
 """
 import argparse
+import collections
 import drizzlepac
 from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
@@ -138,6 +139,10 @@ def generate_test_data():
                                                                                       'j92c01b5q_flc.fits',
                                                                                       'j92c01b7q_flc.fits',
                                                                                       'j92c01b9q_flc.fits']}
+    # obs_info_dict["total detection product 00"] = {"info": "10265 01S ACS WFC", "files":['j92c01b4q_flc.fits',
+    #                                                                                            'j92c01b5q_flc.fits',
+    #                                                                                            'j92c01b7q_flc.fits',
+    #                                                                                            'j92c01b9q_flc.fits']}
     return(obs_info_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -163,6 +168,57 @@ def perform_processing(input_filename, **kwargs):
     return_value = []
     run_hla_processing(input_filename,result=return_value,**kwargs)
     return(return_value[0])
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def restructure_obs_info_dict(obs_info_dict):
+    """
+    restructures obs_info_dict so that single exposure product names become part of their parent filter products or
+    total detection products.
+
+    Parameters
+    ----------
+    obs_info_dict : dictionary
+        dictionary to be restructured.
+
+    Returns
+    -------
+    restructured_dict : ordered dictionary
+        reordered and restructured dict
+
+    """
+    restructured_dict = collections.OrderedDict()
+    single_exposure_dict = {}
+    priority_list = ['multivisit mosaic product','total detection product','filter product','single exposure product']
+    # 1: reorder dictionary from most complicated product to least complicated product
+    for obs_category in priority_list:
+        for ctr_b10 in range(0,10000):
+            ctr_b36=convert_base10_base36(ctr_b10)
+            category_to_search = "{} {}".format(obs_category,ctr_b36)
+            if category_to_search in obs_info_dict.keys():
+                print("{} FOUND.".format(category_to_search))
+                restructured_dict[category_to_search] = obs_info_dict[category_to_search]
+                if obs_category.startswith("single"):
+                    single_exposure_dict[obs_info_dict[category_to_search]['files'][0]]=category_to_search
+            else:
+                print("{} not found.".format(category_to_search))
+                break
+
+    # 2: have the most complicated products 'absorb' the generated product names of associated single exposure files so
+    #    they are not generated twice.
+    temp_restructured_dict = restructured_dict.copy()
+
+    for category in temp_restructured_dict.keys():
+        if not category.startswith('single exposure product'):
+            try:
+                for subprod_ctr,imgname in zip(range(0,len(temp_restructured_dict[category]['files'])),temp_restructured_dict[category]['files']):
+                    single_exp_dict_key=single_exposure_dict[imgname]
+                    restructured_dict[category]["subproduct #{} filenames".format(subprod_ctr)]=temp_restructured_dict[single_exp_dict_key]['product filenames']
+                    del restructured_dict[single_exp_dict_key]
+                    del single_exposure_dict[imgname]
+            except:
+                continue
+    return(restructured_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -223,32 +279,31 @@ def run_hla_processing(input_filename, result=None, debug=True):
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
 
+        # 4: restructure obs_info_dict so that it's ready for processing.
+        obs_info_dict = restructure_obs_info_dict(obs_info_dict)
 
-
-        # 4: For each defined product...
-
+        # 5: For each defined product...
         for obs_category in obs_info_dict.keys():
 
-        #   3.2: align images with alignimages.perform_align() (I THINK)
+        #   5.1: align images with alignimages.perform_align() (I THINK)
         # TODO: SUBROUTINE CALL GOES HERE.
 
-        #   3.3: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
+        #   5.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
         #        newly defined output name
             for inst_det in astrodrizzle_param_dict.keys():
-                if obs_info_dict[obs_category].find(inst_det) != -1:
+                if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
                     adriz_param_dict=astrodrizzle_param_dict[inst_det]
                     break
-            run_astrodrizzle(file_list,adriz_param_dict,product_filename_dict['image'])
+            run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'])
 
-        #   3.4: Create source catalog from newly defined product (HLA-204)
+        #   5.3: Create source catalog from newly defined product (HLA-204)
         # TODO: SUBROUTINE CALL GOES HERE.
 
-        #   3.5: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
+        #   5.4: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
 
-        # 4: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
+        # 6: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
 
-        # 5: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
-
+        # 7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except:
         return_value = 1
