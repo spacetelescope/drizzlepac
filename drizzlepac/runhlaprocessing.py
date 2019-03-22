@@ -5,9 +5,11 @@
 """
 import argparse
 import collections
+import datetime
 import drizzlepac
 from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
+import os
 import pdb
 from stsci.tools import logutil
 import sys
@@ -139,10 +141,10 @@ def generate_test_data():
                                                                                       'j92c01b5q_flc.fits',
                                                                                       'j92c01b7q_flc.fits',
                                                                                       'j92c01b9q_flc.fits']}
-    # obs_info_dict["total detection product 00"] = {"info": "10265 01S ACS WFC", "files":['j92c01b4q_flc.fits',
-    #                                                                                            'j92c01b5q_flc.fits',
-    #                                                                                            'j92c01b7q_flc.fits',
-    #                                                                                            'j92c01b9q_flc.fits']}
+    obs_info_dict["total detection product 00"] = {"info": "10265 01S ACS WFC", "files":['j92c01b4q_flc.fits',
+                                                                                               'j92c01b5q_flc.fits',
+                                                                                               'j92c01b7q_flc.fits',
+                                                                                               'j92c01b9q_flc.fits']}
     return(obs_info_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -168,6 +170,38 @@ def perform_processing(input_filename, **kwargs):
     return_value = []
     run_hla_processing(input_filename,result=return_value,**kwargs)
     return(return_value[0])
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+def rename_subproduct_files(obs_info_dict_item):
+    """
+    renames subproduct images (single-exposure products)
+
+    Parameters
+    ----------
+    obs_info_dict_item : dictionary
+        obs_info_dict singleton that may contain files to be renamed.
+
+    Returns
+    -------
+    Nothing.
+    """
+    # Bail out if there are no subproducts to rename.
+    if "subproduct #0 filenames" not in obs_info_dict_item.keys():
+        log.info("No subproduct image files to rename.")
+        return()
+    else:
+        for key in obs_info_dict_item.keys():
+            log.info("Subproduct image files found.")
+            if key.startswith("subproduct"):
+                dest_imgname = obs_info_dict_item[key]["image"]
+                imgname_root = dest_imgname.split("_")[-2]
+                src_imgname = "{}_single_sci.fits".format(imgname_root)
+
+                #rename single_sci.fits image
+                os.rename(src_imgname,dest_imgname)
+                log.info("RENAME {} ~~> {}".format(src_imgname,dest_imgname))
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -265,6 +299,8 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename):
 # ----------------------------------------------------------------------------------------------------------------------
 @util.with_logging
 def run_hla_processing(input_filename, result=None, debug=True):
+    startingDT = datetime.datetime.now()
+    log.info("Run start time: ",str(startingDT))
     try:
         # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
         # TODO: SUBROUTINE CALL GOES HERE.
@@ -285,7 +321,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 5: For each defined product...
         for obs_category in obs_info_dict.keys():
 
-        #   5.1: align images with alignimages.perform_align() (I THINK)
+        #   5.1: align images with alignimages.perform_align()
         # TODO: SUBROUTINE CALL GOES HERE.
 
         #   5.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
@@ -295,7 +331,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
                     adriz_param_dict=astrodrizzle_param_dict[inst_det]
                     break
             run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'])
-
+            rename_subproduct_files(obs_info_dict[obs_category])
         #   5.3: Create source catalog from newly defined product (HLA-204)
         # TODO: SUBROUTINE CALL GOES HERE.
 
@@ -312,6 +348,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
+    log.info('Total processing time: {} sec'.format((datetime.datetime.now() - startingDT).total_seconds()))
     result.append(return_value)
 
 # ----------------------------------------------------------------------------------------------------------------------
