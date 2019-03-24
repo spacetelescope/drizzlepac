@@ -103,10 +103,11 @@ def check_and_get_data(input_list,**pars):
 
     # If the regression test flag is True, a regression test has been invoked where the input_list 
     # actually contains the full filename(s) (e.g., *_flt.fits).  Note that not all regression tests use 
-    # this functionality as Artifactory is accessed for the data source with the use of this flag.
+    # this functionality as Artifactory is accessed for the data source with the use of this flag.  Some
+    # regression tests use astroquery to connect to MAST. This regression testing code is not a scalable
+    # solution, but it is necessary for the alignment portion of the drizzle software.
     if pars['regtest'] == True:
         # Artifactory root name and test folder containing the data
-        remote_root=os.environ['TEST_BIGDATA']
         data_path = pars['test_data_path']
         from ci_watson.artifactory_helpers import get_bigdata
         for infile in input_list:
@@ -119,7 +120,6 @@ def check_and_get_data(input_list,**pars):
         for input_item in input_list:
             try:
                 filelist = aqutils.retrieve_observation(input_item,archive=archive,clobber=clobber)
-                #filelist = aqutils.retrieve_observation(input_item)
             except Exception:
                 filelist = []
             if len(filelist) == 0:
