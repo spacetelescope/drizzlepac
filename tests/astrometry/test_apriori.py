@@ -9,7 +9,7 @@ from ..resources import BaseACS
 
 class TestAcsApriori(BaseACS):
 
-    @pytest.mark.parameterize('dataset', ['J9I408010'])#, 'J9AV01080', 'JCZGM1010'])
+    @pytest.mark.parametrize('dataset', ['J9I408010'])#, 'J9AV01080', 'JCZGM1010'])
     def test_acs_apriori(self, dataset):
         """This test will perform fits between ALL a priori solutions and GAIA.
 
