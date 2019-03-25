@@ -12,6 +12,7 @@ from drizzlepac.hlautils.astroquery_utils import retrieve_observation
 
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
+@pytest.mark.bigdata
 class BaseTest(object):
     prevdir = os.getcwd()
     use_ftp_crds = True
