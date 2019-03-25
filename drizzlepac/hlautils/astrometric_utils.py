@@ -1192,7 +1192,7 @@ def build_wcscat(image, group_id, source_catalog):
                 'group_id': group_id,
                 'filename': image,
                 'catalog': imcat,
-                'name': 'img{:d} sources'.format(group_id)
+                'name': image
             }
         )
 
