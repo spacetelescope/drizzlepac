@@ -45,7 +45,8 @@ def compare_wcs_alignment(dataset):
     wcsnames = headerlet.get_headerlet_kw_names(img0, kw='WCSNAME')
     if len(wcsnames) == 0:
         msg = "No a priori solutions found for {}".format(img0)
-        raise ValueError,msg
+        log.error(msg)
+        raise ValueError(msg)
 
     for wcs in wcsnames:
         log.info("Starting with {}".format(wcs))

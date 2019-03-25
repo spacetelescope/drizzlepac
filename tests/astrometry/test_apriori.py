@@ -38,9 +38,10 @@ class TestAcsApriori(BaseACS):
         for wcs in wcsnames:
             results = results_dict[wcs]
             # Check that fit for this WCS was successful
-            print("Comparing fit for WCS='{}'...".format(wcs))
+            print("Comparing fit for WCS='{}'...".format(wcs), end=' ')
             assert (results['status'] == 0).all()
             assert (results['fit_qual'] < 2).all()
 
             offset = np.sqrt(results['offset_x']**2+results['offset_y']**2)
             assert (offset < pipeline_offset).all()
+            print("SUCCESS")
