@@ -387,9 +387,8 @@ def run_perform_align(filelist):
                 log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
 
     except Exception:
-        # Something went wrong with alignment to GAIA, so report this in
-        # trailer file
-       log.info("EXCEPTION encountered in alignimages...\n")
+        # Something went wrong with alignment to GAIA, so report this
+        log.info("EXCEPTION encountered in alignimages...\n")
         log.info("   No correction to absolute astrometric frame applied!\n")
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
