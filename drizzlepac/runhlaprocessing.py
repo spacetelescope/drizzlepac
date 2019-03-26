@@ -300,7 +300,7 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename):
 @util.with_logging
 def run_hla_processing(input_filename, result=None, debug=True):
     startingDT = datetime.datetime.now()
-    log.info("Run start time: ",str(startingDT))
+    log.info("Run start time: {}".format(str(startingDT)))
     try:
         # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
         log.debug("1: (TODO) Interpret input csv file as an astropy table with defined column names")
