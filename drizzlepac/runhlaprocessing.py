@@ -7,6 +7,7 @@ import argparse
 import collections
 import datetime
 import drizzlepac
+from drizzlepac import alignimages
 from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
 import os
