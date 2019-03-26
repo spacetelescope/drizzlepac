@@ -326,11 +326,11 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 5: For each defined product...
         for obs_category in obs_info_dict.keys():
         #   5.1: align images with alignimages.perform_align()
-            log.info("5.1: (TO DO) align images with alignimages.perform_align()")
+            log.info("5.1: align images with alignimages.perform_align()")
             if "subproduct #0 filenames" in obs_info_dict[obs_category].keys():
                 run_perform_align(obs_info_dict[obs_category]['files'])
             else:
-                log.info("Align_images step skipped.")
+                log.info("{}: Align_images step skipped.".format(obs_category))
 
         #   5.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
         #        newly defined output name
