@@ -17,6 +17,8 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+- Added test code to validate astrometric solutions from the database. [#294]
+
 - Fixed VS compiler errors with pointer artithmetic on void pointers. [#273]
 
 - Added relative fit source matching algorithm to alignimages. [#271]
