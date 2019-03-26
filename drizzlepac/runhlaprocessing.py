@@ -303,40 +303,50 @@ def run_hla_processing(input_filename, result=None, debug=True):
     log.info("Run start time: ",str(startingDT))
     try:
         # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
+        log.debug("1: (TODO) Interpret input csv file as an astropy table with defined column names")
         # TODO: SUBROUTINE CALL GOES HERE.
 
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
+        log.debug("2: Apply rules to determine what exposures need to be combined into separate products")
         # TODO: SUBROUTINE CALL GOES HERE.
         obs_info_dict = generate_test_data() #TODO: REMOVE once all previous steps are up and running
 
         # 3: generate an output names for each defined product...
+        log.debug("3: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
             obs_info_dict[obs_category]['product filenames'] = generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category]["info"])
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
 
         # 4: restructure obs_info_dict so that it's ready for processing.
+        log.debug("4: restructure obs_info_dict so that it's ready for processing.")
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
 
         # 5: For each defined product...
         for obs_category in obs_info_dict.keys():
-
         #   5.1: align images with alignimages.perform_align()
-        # TODO: SUBROUTINE CALL GOES HERE.
+            log.debug("5.1: (TO DO) align images with alignimages.perform_align()")
+            if "subproduct #0 filenames" in obs_info_dict[obs_category].keys():
+                run_perform_align(obs_info_dict[obs_category]['files'])
+            else:
+                log.info("Align_images step skipped.")
 
         #   5.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
         #        newly defined output name
+            log.debug("5.2: Run AstroDrizzle")
             for inst_det in astrodrizzle_param_dict.keys():
                 if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
                     adriz_param_dict=astrodrizzle_param_dict[inst_det]
                     break
             run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'])
             rename_subproduct_files(obs_info_dict[obs_category])
+
         #   5.3: Create source catalog from newly defined product (HLA-204)
+            log.debug("5.3: (TODO) Create source catalog from newly defined product")
         # TODO: SUBROUTINE CALL GOES HERE.
 
         #   5.4: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-
+            log.debug("5.4: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
         # 6: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
 
         # 7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
@@ -349,8 +359,38 @@ def run_hla_processing(input_filename, result=None, debug=True):
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
     log.info('Total processing time: {} sec'.format((datetime.datetime.now() - startingDT).total_seconds()))
+    log.debug("7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition")
     result.append(return_value)
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+def run_perform_align(filelist):
+    """
+    executes drizzlepac.alignimages.perform_align(). If run is successful, and a good fit solution is found, the newly
+    created headerlets are applied as the primary WCS in the in flc.fits or flt.fits images.
+
+    Parameters
+    ----------
+    filelist : list
+        List of files to be processed by drizzlepac.alignimages.perform_align().
+
+    Returns
+    -------
+    Nothing.
+    """
+    try:
+        align_table = alignimages.perform_align(filelist,debug=True,update_hdr_wcs=True)
+        for row in align_table:
+            if row['status'] == 0:
+                log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
+            else:
+                log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
+
+    except Exception:
+        # Something went wrong with alignment to GAIA, so report this in
+        # trailer file
+       log.info("EXCEPTION encountered in alignimages...\n")
+        log.info("   No correction to absolute astrometric frame applied!\n")
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
