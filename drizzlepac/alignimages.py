@@ -791,6 +791,7 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
             log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             log.info("nmatchesCheck: {} radialOffsetCheck: {} largeRmsCheck: {}, consistencyCheck: {}".format(nmatchesCheck,radialOffsetCheck,largeRmsCheck,consistencyCheck))
 
+
     # determine which fit quality category this latest fit falls into
     if overall_valid == False:
         fitQual = 5
