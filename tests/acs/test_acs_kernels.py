@@ -1,12 +1,10 @@
 import os
 
 from stsci.tools import teal
-import drizzlepac
 from drizzlepac import astrodrizzle
-from ..helpers.mark import require_bigdata
-from ..helpers.io import get_bigdata
+from ci_watson.artifactory_helpers import get_bigdata
+from ..resources import BaseACS
 
-from ..resources import BaseACS, raw_from_asn
 
 def pytest_generate_tests(metafunc):
     # called once per each test function

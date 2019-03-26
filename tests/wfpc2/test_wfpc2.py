@@ -1,9 +1,9 @@
 import os
+import pytest
 
 from stsci.tools import teal
 from drizzlepac import astrodrizzle
 from stwcs import updatewcs
-
 from ..resources import BaseWFPC2
 
 

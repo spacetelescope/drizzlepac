@@ -34,7 +34,8 @@ for (numpy_ver in matrix_numpy) {
     bc.nodetype = "linux"
     bc.name = MATRIX_TITLE
     bc.env_vars = ['BUILD_MATRIX_SUFFIX=' + MATRIX_SUFFIX,
-                   'BUILD_MATRIX_ID=' + matrix_id]
+                   'BUILD_MATRIX_ID=' + matrix_id,
+                   'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
     bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
     bc.conda_packages = ['acstools',
                          'fitsblender',
@@ -54,6 +55,7 @@ for (numpy_ver in matrix_numpy) {
                          'stsci.stimage',
                          'setuptools',
                          // test dependencies
+			 'ci-watson',
                          'pytest',
                          'pytest-remotedata',
                          'crds']

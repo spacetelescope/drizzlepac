@@ -46,6 +46,7 @@ bc.conda_packages = ['acstools',
                      'astropy',
                      'stsci.stimage',
                      'tweakwcs',
+		     'ci-watson',
                      'setuptools',
                      'pip',
                      'python=3.6']
