@@ -389,6 +389,8 @@ def run_perform_align(filelist):
     except Exception:
         # Something went wrong with alignment to GAIA, so report this
         log.info("EXCEPTION encountered in alignimages...\n")
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         log.info("   No correction to absolute astrometric frame applied!\n")
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
