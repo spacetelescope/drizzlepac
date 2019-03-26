@@ -190,7 +190,7 @@ def perform_align(input_list, **kwargs):
     return filteredTable
 
 @util.with_logging
-def run_align(input_list, archive=False, clobber=False, debug=True, update_hdr_wcs=False, result=None, runfile=None,#TODO: reset debug default value to "FALSE" prior to final merge
+def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None, runfile=None,#TODO: reset debug default value to "FALSE" prior to final merge
                   print_fit_parameters=True, print_git_info=False, output=False):
 
     log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
