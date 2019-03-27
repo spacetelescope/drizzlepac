@@ -73,6 +73,8 @@ class TestAcsApriori(BaseACS):
             # Determine success/failure of this dataset's fit
             wcs_success = status and fit_qual and delta and rot and scale
             if wcs_success:
+                # If at least one WCS succeeds, overall success needs to be set to True
+                success = True
                 print("SUCCESS")
             else:
                 print("FAILED  due to:")
@@ -86,7 +88,5 @@ class TestAcsApriori(BaseACS):
                     print("\t* larger rotation from fit.")
                 if not scale:
                     print("\t* larger scale from fit.")
-            # If at least one WCS succeeds, overall success needs to be set to True
-            success = wcs_success or success
 
         assert success

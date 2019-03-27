@@ -56,7 +56,7 @@ def compare_wcs_alignment(dataset):
     # Step 1:
     #   Determine alignment for pipeline-defined WCS
     results = alignimages.perform_align([dataset], clobber=False, debug=True)
-    if len(results) == 0:
+    if not results:
         msg = "No valid exposures found for {}.".format(dataset)
         msg += "\n            Please check that input was either a valid ASN"
         msg += "\n            or a single un-associated exposure."
@@ -66,8 +66,7 @@ def compare_wcs_alignment(dataset):
 
     # Step 2:
     #   Create results output organized by WCSNAME
-    img0 = imglist[0]
-    default_wcsname = fits.getval(img0, 'wcsname', ext=1)
+    default_wcsname = fits.getval(imglist[0], 'wcsname', ext=1)
     log.info("Default WCSNAME: {}".format(default_wcsname))
     alignment = {default_wcsname:extract_results(results)}
 
@@ -78,7 +77,7 @@ def compare_wcs_alignment(dataset):
     # Step 4:
     #   Loop over each WCS solution and perform alignment to GAIA
     wcsnames = headerlet.get_headerlet_kw_names(img0, kw='WCSNAME')
-    if len(wcsnames) == 0:
+    if not wcsnames:
         msg = "No a priori solutions found for {}".format(img0)
         log.error(msg)
         raise ValueError(msg)
@@ -93,14 +92,10 @@ def compare_wcs_alignment(dataset):
             hnames = headerlet.get_headerlet_kw_names(img)
             print("[testutils]WCSNAMES[{}]: {}".format(img, wnames))
 
-            hdrlet = None
-            for w,h in zip(wnames, hnames):
-                if 'OPUS' not in w and w == wcs:
-                    hdrlet = h
-                    break
-            if hdrlet:
-                log.info("Applying WCS {} to {}".format(hdrlet, img))
-                headerlet.restore_from_headerlet(img, hdrname=hdrlet,
+            if wcs in wnames:
+                hdrname = hnames[wnames.index(wcs)]
+                log.info("Applying WCS {} to {}".format(hdrname, img))
+                headerlet.restore_from_headerlet(img, hdrname=hdrname,
                                                  archive=False, force=True)
 
         results = alignimages.perform_align([dataset], clobber=False, debug=True)
