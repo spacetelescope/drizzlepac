@@ -3,6 +3,7 @@
 """This script is a modernized implementation of tweakreg.
 
 """
+import argparse
 import copy
 import datetime
 import sys
@@ -1141,9 +1142,9 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
 
 
 if __name__ == '__main__':
-    import argparse
-    PARSER = argparse.ArgumentParser(description='Align images')
-    PARSER.add_argument('raw_input_list', nargs='+', help='The Images one '
+
+    parser = argparse.ArgumentParser(description='Align images')
+    parser.add_argument('raw_input_list', nargs='+', help='The Images one '
                     'wishes to align. Valid input formats: 1. An association '
                     'name; Example; j92c12345. 2. A space-separated list of '
                     'flc.fits (or flt.fits) files to align; Example: '
@@ -1151,41 +1152,39 @@ if __name__ == '__main__':
                     'file containing a list of fits files to align, one per '
                     'line; Example: input_list.txt')
 
-    PARSER.add_argument( '-a', '--archive', required=False,choices=['True','False'],default='False',help='Retain '
-                    'copies of the downloaded files in the astroquery created sub-directories? Unless explicitly set, '
-                    'the default is "False".')
+    parser.add_argument( '-a', '--archive',type=str2bool,required=False,default=False,help='Retain copies of the '
+                    'downloaded files in the astroquery created sub-directories? Unless explicitly set, the default is '
+                    '"False".')
 
-    PARSER.add_argument( '-c', '--clobber', required=False,choices=['True','False'],default='False',help='Download and '
+    parser.add_argument( '-c', '--clobber',type=str2bool, required=False,choices=[True,False],default=False,help='Download and '
                     'overwrite existing local copies of input files? Unless explicitly set, the default is "False".')
 
-    PARSER.add_argument( '-d', '--debug', required=False,choices=['True','False'],default='False',help='Attempt to use '
-                    'saved sourcelists stored in pickle files if they exist, or if they do not exist, save sourcelists'
+    parser.add_argument( '-d', '--debug',type=str2bool, required=False,choices=[True,False],default=False,help='Attempt to use saved '
+                    'sourcelists stored in pickle files if they exist, or if they do not exist, save sourcelists'
                     ' in pickle files for reuse so that step 4 can be skipped for faster subsequent debug/development '
                     'runs?? Unless explicitly set, the default is "False".')
 
-    PARSER.add_argument( '-u', '--update_hdr_wcs', required=False,choices=['True','False'],default='False',help='Write '
-                    'newly computed WCS information to image image headers and create headerlet files? Unless explicitly '
-                    'set, the default is "False".')
+    parser.add_argument( '-u', '--update_hdr_wcs',type=str2bool, required=False,choices=[True,False],default=False,help='Write newly '
+                    'computed WCS information to image image headers and create headerlet files? Unless explicitly set,'
+                    ' the default is "False".')
 
-    PARSER.add_argument( '-p', '--print_fit_parameters', required=False,choices=['True','False'],default='True',help=''
-                    'Specify whether or not to print out FIT results for each chip. Unless explicitly set, the default '
-                    'is "True".')
+    parser.add_argument( '-p', '--print_fit_parameters',type=str2bool, required=False,choices=[True,False],default=True,help='Specify'
+                    ' whether or not to print out FIT results for each chip. Unless explicitly set, the default is '
+                    '"True".')
 
-    PARSER.add_argument( '-g', '--print_git_info', required=False,choices=['True','False'],default='False',help='Display '
-                    'git repository information? Unless explicitly set, the default is "False".')
+    parser.add_argument( '-g', '--print_git_info',type=str2bool, required=False,choices=[True,False],default=False,help='Display git '
+                    'repository information? Unless explicitly set, the default is "False".')
 
-    PARSER.add_argument( '-o', '--output', required=False,choices=['True','False'],default='False',help='Should '
+    parser.add_argument( '-o', '--output',type=str2bool, required=False,choices=[True,False],default=False,help='Should '
                     'utils.astrometric_utils.create_astrometric_catalog() generate file "ref_cat.ecsv" and should '
                     'generate_source_catalogs() generate the .reg region files for every chip of every input image and '
                     'should generate_astrometric_catalog() generate file "refcatalog.cat"? Unless explicitly set, the '
                     'default is "False".')
-    'Should the code generate '
-
-    ARGS = PARSER.parse_args()
+    args = parser.parse_args()
 
     # Build list of input images
     input_list = []
-    for item in ARGS.raw_input_list:
+    for item in args.raw_input_list:
         if os.path.exists(item):
             with open(item, 'r') as infile:
                 fileLines = infile.readlines()
@@ -1194,24 +1193,9 @@ if __name__ == '__main__':
         else:
             input_list.append(item)
 
-    # Convert input args from text strings to Boolean True/False values
-    archive = convert_string_tf_to_boolean(ARGS.archive)
-
-    clobber = convert_string_tf_to_boolean(ARGS.clobber)
-
-    debug = convert_string_tf_to_boolean(ARGS.debug)
-
-    update_hdr_wcs = convert_string_tf_to_boolean(ARGS.update_hdr_wcs)
-
-    print_fit_parameters = convert_string_tf_to_boolean(ARGS.print_fit_parameters)
-
-    print_git_info = convert_string_tf_to_boolean(ARGS.print_git_info)
-
-    output = convert_string_tf_to_boolean(ARGS.output)
-
     # Get to it!
-    return_value = perform_align(input_list, archive=archive, clobber=clobber, debug=debug,
-                                 update_hdr_wcs=update_hdr_wcs, print_fit_parameters=print_fit_parameters,
-                                 print_git_info=print_git_info, output=output)
+    return_value = perform_align(input_list, archive=args.archive, clobber=args.clobber, debug=args.debug,
+                                 update_hdr_wcs=args.update_hdr_wcs, print_fit_parameters=args.print_fit_parameters,
+                                 print_git_info=args.print_git_info, output=args.output)
 
     log.info(return_value)
