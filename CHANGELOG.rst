@@ -17,7 +17,14 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+
 - Added test code to validate astrometric solutions from the database. [#294]
+
+- Fixed a bug in the 2D histogram code used for estimating shifts for
+  catalog pre-matching. This may result in better matching. [#286]
+
+- Now ``tolerance`` (in ``tweakreg``) is no longer ignored when ``use2dhist``
+  is enabled. [#286]
 
 - Fixed VS compiler errors with pointer artithmetic on void pointers. [#273]
 
