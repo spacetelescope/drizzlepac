@@ -1,9 +1,24 @@
 #!/usr/bin/env python
 
+from astropy.table import Table
+
 """This script is development space for code that will be most likely
     absorbed into a larger script later on.
 
 """
+def interpret_input(results):
+    """
+    Interpret the database query for a given visit to prepare the returned
+    values for use in generating the names of all the expected output products.
+    """
+    colnames = ['filename', 'proposal id', 'program_id', 'obset_id', 'visit_id',
+                'exptime', 'filters', 'detector', 'pathname']
+    visit_table = Table.read(results, format='ascii.fast_no_header')
+    # label each column with a descriptive name
+    for col, cname in zip(visit_table.colnames, colnames):
+        visit_table[col].name = cname
+    return visit_table
+
 
 def run_generator(product_category,obs_info):
     """
