@@ -129,8 +129,7 @@ def check_and_get_data(input_list,**pars):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
-def convert_string_tf_to_boolean(invalue):
+def str2bool(v):
     """Converts string 'True' or 'False' value to Boolean True or Boolean False.
 
     :param invalue: string
@@ -139,11 +138,12 @@ def convert_string_tf_to_boolean(invalue):
     :return: Boolean
         converted True/False value
     """
-    outvalue = False
-    if invalue == 'True':
-        outvalue = True
-    return(outvalue)
-
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 # ----------------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, **kwargs):
