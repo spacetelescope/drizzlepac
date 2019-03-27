@@ -25,7 +25,7 @@ from enum import Enum
 # as described through FITS keywords
 class Messages(Enum):
     OK, WARN, NOPROC = 1, -1, -2
- 
+
 def analyze_data(inputFileList, **kwargs):
     """
     Determine if images within the dataset can be aligned
@@ -86,6 +86,10 @@ def analyze_data(inputFileList, **kwargs):
     catalogSources = 0 # Number of astrometric catalog sources determined based upon coordinate overlap with image WCS
     foundSources = 0   # Number of sources detected in images
     matchSources = 0   # Number of sources cross matched between astrometric catalog and detected in image
+    offset_x = None
+    offset_y = None
+    rot = None
+    scale = None
     rms_x = -1.0
     rms_y = -1.0
     rms_ra = -1.0
@@ -100,6 +104,7 @@ def analyze_data(inputFileList, **kwargs):
     status = 9999
     compromised = 0
     headerletFile = None
+    fit_qual = -1
 
     fit_rms = -1.0
     total_rms = -1.0
@@ -107,10 +112,13 @@ def analyze_data(inputFileList, **kwargs):
 
     namesArray = ('imageName', 'instrument', 'detector', 'filter', 'aperture', 'obstype',
             'subarray', 'dateObs', 'mjdutc', 'doProcess', 'processMsg', 'catalog', 'foundSources',
-            'catalogSources','matchSources', 'rms_x', 'rms_y', 'rms_ra', 'rms_dec', 'completed',
-            'fit_rms', 'total_rms', 'datasetKey', 'status', 'headerletFile')
+            'catalogSources','matchSources',
+            'offset_x', 'offset_y', 'rotation','scale',
+            'rms_x', 'rms_y', 'rms_ra', 'rms_dec', 'completed',
+            'fit_rms', 'total_rms', 'datasetKey', 'status', 'fit_qual', 'headerletFile')
     dataType = ('S20', 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b', 'S30',
-            'S20', 'i4', 'i4', 'i4', 'f8', 'f8', 'f8', 'f8', 'b', 'f8', 'f8', 'i8', 'i4', 'S30')
+            'S20', 'i4', 'i4', 'i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8',
+            'b', 'f8', 'f8', 'i8', 'i4', 'i4', 'S30')
 
     # Create an astropy table
     outputTable = Table(names=namesArray,dtype=dataType)
@@ -246,9 +254,10 @@ def analyze_data(inputFileList, **kwargs):
         # Populate a row of the table
         outputTable.add_row([inputFile, instrume, detector, sfilter, aperture, obstype,
                              subarray, dateObs, mjdutc, doProcess, processMsg, catalog,
-                             foundSources, catalogSources, matchSources, rms_x, rms_y,
+                             foundSources, catalogSources, matchSources,
+                             offset_x, offset_y, rot, scale, rms_x, rms_y,
                              rms_ra, rms_dec, completed, fit_rms, total_rms, datasetKey,
-                             status, headerletFile])
+                             status, fit_qual, headerletFile])
     #outputTable.pprint(max_width=-1)
 
     return(outputTable)

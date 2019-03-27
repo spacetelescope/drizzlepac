@@ -329,7 +329,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                    extracted_sources[image]['catalog_table'])
         # add the name of the image to the imglist object
         for im in img:
-            im.meta['name'] = image
+        #    im.meta['name'] = image
+            print('im.meta[name] = {}'.format(im.meta['name']))
         imglist.extend(img)
     #store mapping of group_id to filename/chip
     group_id_dict={}
@@ -363,6 +364,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.warning("ERROR! No astrometric sources found in any catalog. Exiting...") #bail out if not enough sources can be found any of the astrometric catalogs
                 filteredTable['status'][:] = 1
                 filteredTable['processMsg'][:] = "No astrometric sources found"
+                filteredTable['fit_qual'][:] = fitQual
                 currentDT = datetime.datetime.now()
                 deltaDT = (currentDT - startingDT).total_seconds()
                 log.info('Processing time of [STEP 5]: {} sec'.format(deltaDT))
@@ -426,6 +428,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     filteredTable['processMsg'][:] = "Fitting failure"
                     # It may be there are additional catalogs and algorithms to try, so keep going
                     fitQual = 5 # Flag this fit with the 'bad' quality value
+                    filteredTable['fit_qual'][:] = fitQual
                     continue
                 if fitQual == 1:  # break out of inner fit algorithm loop
                     break
@@ -469,6 +472,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 filteredTable[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
                 filteredTable[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
                 filteredTable[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
+                filteredTable[index]['offset_x'], filteredTable[index]['offset_y'] = item.meta['fit_info']['shift']
+                filteredTable[index]['scale'] = item.meta['fit_info']['scale'][0]
+                filteredTable[index]['rotation'] = item.meta['fit_info']['rot']
+
                 # populate filteredTable fields "status", "compromised" and
                 # "processMsg" with fitStatusDict fields "valid", "compromised"
                 # and "reason".
@@ -483,6 +490,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     filteredTable['compromised'] = 1
                 if fitStatusDict[explicitDictKey]['reason'] != "":
                     filteredTable[index]['processMsg'] = fitStatusDict[explicitDictKey]['reason']
+                filteredTable['fit_qual'][index] = fitQual
 
     currentDT = datetime.datetime.now()
     deltaDT = (currentDT - startingDT).total_seconds()
@@ -782,6 +790,7 @@ def determine_fit_quality(imglist,filteredTable, print_fit_parameters=True):
                     log.info("{} : {}".format(tweakwcs_info_key,item.meta['fit_info'][tweakwcs_info_key]))
             log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             log.info("nmatchesCheck: {} radialOffsetCheck: {} largeRmsCheck: {}, consistencyCheck: {}".format(nmatchesCheck,radialOffsetCheck,largeRmsCheck,consistencyCheck))
+
 
     # determine which fit quality category this latest fit falls into
     if overall_valid == False:
@@ -1083,7 +1092,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             if item.meta['group_id'] == group_id and \
                group_id not in group_dict:
                     group_dict[group_id] = {'ref_idx':None, 'FIT_RMS':None}
-                    log.debug("fit_info: {}".format(item.meta['fit_info']))
+                    log.info("fit_info: {}".format(item.meta['fit_info']))
                     tinfo = item.meta['fit_info']
                     ref_idx = tinfo['matched_ref_idx']
                     fitmask = tinfo['fitmask']
@@ -1102,6 +1111,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                     group_dict[group_id]['FIT_RMS'] = fit_rms
                     group_dict[group_id]['RMS_RA'] = ra_rms
                     group_dict[group_id]['RMS_DEC'] = dec_rms
+
                     obs_rms.append(fit_rms)
     # Compute RMS for entire ASN/observation set
     total_rms = np.mean(obs_rms)
