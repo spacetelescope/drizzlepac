@@ -1186,11 +1186,15 @@ if __name__ == '__main__':
     input_list = []
     for item in args.raw_input_list:
         if os.path.exists(item):
-            with open(item, 'r') as infile:
-                file_lines = infile.readlines()
-            for file_line in file_lines:
-                input_list.append(file_line.strip())
+            if item.endswith(".fits"):
+                input_list.append(item)
+            else:
+                with open(item, 'r') as infile:
+                    file_lines = infile.readlines()
+                for file_line in file_lines:
+                    input_list.append(file_line.strip())
         else:
+            log.info("{} not found in working directory!".format(item))
             input_list.append(item)
 
     # Get to it!
