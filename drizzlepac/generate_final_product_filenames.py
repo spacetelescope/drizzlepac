@@ -85,7 +85,7 @@ def create_row_info(row):
     row_info = ''
     for info in info_list:
         row_info += '{} '.format(info)
-    return row_info.upper(), row['filename']
+    return row_info.strip().upper(), row['filename']
 
 
 def run_generator(product_category,obs_info):
