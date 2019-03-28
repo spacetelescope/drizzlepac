@@ -13,7 +13,7 @@ __taskname__ = 'testutils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-def compare_wcs_alignment(dataset):
+def compare_wcs_alignment(dataset, force=False):
     """Return results from aligning dataset using all available WCS solutions.
 
         This code will ALWAYS make sure the ASTROMETRY_STEP_CONTROL variable
@@ -25,6 +25,10 @@ def compare_wcs_alignment(dataset):
         -----------
         dataset : str
             Rootname of either a single (un-associated) exposure or an ASN
+
+        force : bool
+            Specify whether or not to overwrite dataset files found locally
+            with fresh copies retrieved from MAST.  Default: False
 
         Returns
         -------
@@ -50,12 +54,16 @@ def compare_wcs_alignment(dataset):
     """
     # Setup
     #   Insure that database will be queried for new WCS solutions
-    control = os.environ['ASTROMETRY_STEP_CONTROL']
+    if 'ASTROMETRY_STEP_CONTROL' in os.environ:
+        control = os.environ['ASTROMETRY_STEP_CONTROL']
+    else:
+        control = None
     os.environ['ASTROMETRY_STEP_CONTROL'] = 'ON'
 
     # Step 1:
     #   Determine alignment for pipeline-defined WCS
-    results = alignimages.perform_align([dataset], clobber=False, debug=True)
+    clobber = force
+    results = alignimages.perform_align([dataset], clobber=clobber, debug=True)
     if not results:
         msg = "No valid exposures found for {}.".format(dataset)
         msg += "\n            Please check that input was either a valid ASN"
@@ -102,7 +110,8 @@ def compare_wcs_alignment(dataset):
         alignment[wcs] = extract_results(results)
 
     # Restore user environment to original state
-    os.environ['ASTROMETRY_STEP_CONTROL'] = control
+    if control:
+        os.environ['ASTROMETRY_STEP_CONTROL'] = control
 
     return alignment
 
