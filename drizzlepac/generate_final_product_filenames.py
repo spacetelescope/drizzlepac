@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from astropy.table import Table
+from astropy.table import Table, Column
 
 """This script is development space for code that will be most likely
     absorbed into a larger script later on.
@@ -11,13 +11,81 @@ def interpret_input(results):
     Interpret the database query for a given visit to prepare the returned
     values for use in generating the names of all the expected output products.
     """
-    colnames = ['filename', 'proposal id', 'program_id', 'obset_id', 'visit_id',
+    colnames = ['filename', 'proposal_id', 'program_id', 'obset_id', 'visit_id',
                 'exptime', 'filters', 'detector', 'pathname']
+    instrument_dict = {'i':'WFC3', 'j':'ACS','o':'STIS','u':'WFPC2','x':'FOC','w':'WFPC'}
     visit_table = Table.read(results, format='ascii.fast_no_header')
     # label each column with a descriptive name
     for col, cname in zip(visit_table.colnames, colnames):
         visit_table[col].name = cname
+    # Add INSTRUMENT column
+    instr= instrument_dict[visit_table['filename'][0][0]]
+    visit_table.add_column(Column([instr]*len(visit_table)),name='instrument')
     return visit_table
+
+# Translate the database query on a visit into actionable lists of filenames
+def build_visit_tree(visit_table):
+    """Convert visit table into a tree listing all products to be created."""
+
+    #Define information/formatted strings to be included in output dict
+    sep_str = 'single exposure product {:02d}'
+    fp_str = 'filter product {:02d}'
+    tdp_str = 'total detection product {:02d}'
+    # Each product will consist of the appropriate string as the key and
+    # a dict of 'info' and 'files' information
+    base_entry = {'info':"", 'files':[]}
+
+    # Start interpreting the visit table
+    visit_tree = {}
+    for row in visit_table:
+        # Check for multiple instruments
+        instr = row['instrument']
+        det = row['detector']
+        filt = row['filters']
+        expt = row['exptime']
+        row_info, filename = create_row_info(row)
+        if instr not in visit_tree:
+            visit_tree[instr] = {}
+            visit_tree[instr][det] = {}
+            visit_tree[instr][det][filt] = {}
+            visit_tree[instr][det][filt][expt] = [(row_info, filename)]
+        else:
+            instr_node = visit_tree[instr]
+            if det not in instr_node:
+                instr_node[det] = {}
+                instr_node[det][filt] = {}
+                instr_node[det][filt][expt] = [(row_info, filename)]
+
+            else:
+                det_node = instr_node[det]
+                if filt not in det_node:
+                    det_node[filt] = {}
+                    det_node[filt][expt] = [(row_info, filename)]
+                else:
+                    filt_node = det_node[filt]
+                    add_expt = False
+                    for e in filt_node:
+                        if 0.5 <= expt/e <= 2.0:
+                            filt_node[e].append((row_info, filename))
+                            add_expt = True
+                            break
+                    if not add_expt:
+                        filt_node[expt] = [(row_info, filename)]
+    return visit_tree
+
+def create_row_info(row):
+    """Build info string for a row from the visit table"""
+    instr = row['instrument']
+    propid = row['proposal_id']
+    progid = row['program_id']
+    det = row['detector']
+    filt = row['filters']
+    rootname = row['filename'][:row['filename'].find('_')]
+    info_list = [propid, progid, instr, det, filt, rootname]
+    row_info = ''
+    for info in info_list:
+        row_info += '{} '.format(info)
+    return row_info.upper(), row['filename']
 
 
 def run_generator(product_category,obs_info):
