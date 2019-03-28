@@ -1187,9 +1187,9 @@ if __name__ == '__main__':
     for item in args.raw_input_list:
         if os.path.exists(item):
             with open(item, 'r') as infile:
-                fileLines = infile.readlines()
-            for fileLine in fileLines:
-                input_list.append(fileLine.strip())
+                file_lines = infile.readlines()
+            for file_line in file_lines:
+                input_list.append(file_line.strip())
         else:
             input_list.append(item)
 
