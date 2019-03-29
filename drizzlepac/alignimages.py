@@ -3,6 +3,7 @@
 """This script is a modernized implementation of tweakreg.
 
 """
+import argparse
 import copy
 import datetime
 import sys
@@ -125,24 +126,6 @@ def check_and_get_data(input_list,**pars):
     # TODO: add trap to deal with non-existent (incorrect) rootnames
     # TODO: Address issue about how the code will retrieve association information if there isn't a local file to get 'ASN_ID' header info
     return(totalInputList)
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def convert_string_tf_to_boolean(invalue):
-    """Converts string 'True' or 'False' value to Boolean True or Boolean False.
-
-    :param invalue: string
-        input true/false value
-
-    :return: Boolean
-        converted True/False value
-    """
-    outvalue = False
-    if invalue == 'True':
-        outvalue = True
-    return(outvalue)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1146,9 +1129,9 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
 
 
 if __name__ == '__main__':
-    import argparse
-    PARSER = argparse.ArgumentParser(description='Align images')
-    PARSER.add_argument('raw_input_list', nargs='+', help='The Images one '
+
+    parser = argparse.ArgumentParser(description='Align images')
+    parser.add_argument('raw_input_list', nargs='+', help='The Images one '
                     'wishes to align. Valid input formats: 1. An association '
                     'name; Example; j92c12345. 2. A space-separated list of '
                     'flc.fits (or flt.fits) files to align; Example: '
@@ -1156,67 +1139,52 @@ if __name__ == '__main__':
                     'file containing a list of fits files to align, one per '
                     'line; Example: input_list.txt')
 
-    PARSER.add_argument( '-a', '--archive', required=False,choices=['True','False'],default='False',help='Retain '
-                    'copies of the downloaded files in the astroquery created sub-directories? Unless explicitly set, '
-                    'the default is "False".')
+    parser.add_argument( '-a', '--archive',required=False,action='store_true',help='Turning on this option will retain '
+                    'copies of the downloaded files in the astroquery created sub-directories.')
 
-    PARSER.add_argument( '-c', '--clobber', required=False,choices=['True','False'],default='False',help='Download and '
-                    'overwrite existing local copies of input files? Unless explicitly set, the default is "False".')
+    parser.add_argument( '-c', '--clobber',required=False,action='store_true',help='If this option is turned on, the '
+                    'program will download new copies of the input files, overwriting any existing local copies in the '
+                    'working directory')
 
-    PARSER.add_argument( '-d', '--debug', required=False,choices=['True','False'],default='False',help='Attempt to use '
-                    'saved sourcelists stored in pickle files if they exist, or if they do not exist, save sourcelists'
-                    ' in pickle files for reuse so that step 4 can be skipped for faster subsequent debug/development '
-                    'runs?? Unless explicitly set, the default is "False".')
+    parser.add_argument( '-d', '--debug',required=False,action='store_true',help='If this option is turned on, the '
+                    'program will attempt to use saved sourcelists stored in a pickle file generated during a previous '
+                    'run. Using a saved sorucelist instead of generating new sourcelists greatly reduces overall run '
+                    'time. If the pickle file does not exist, the program will generate new sourcelists and save them '
+                    'in a pickle file named after the first input file.')
 
-    PARSER.add_argument( '-u', '--update_hdr_wcs', required=False,choices=['True','False'],default='False',help='Write '
-                    'newly computed WCS information to image image headers and create headerlet files? Unless explicitly '
-                    'set, the default is "False".')
+    parser.add_argument( '-g', '--print_git_info',required=False,action='store_true',help='Turning on this option will '
+                    'display git repository information at the start of the run.')
 
-    PARSER.add_argument( '-p', '--print_fit_parameters', required=False,choices=['True','False'],default='True',help=''
-                    'Specify whether or not to print out FIT results for each chip. Unless explicitly set, the default '
-                    'is "True".')
-
-    PARSER.add_argument( '-g', '--print_git_info', required=False,choices=['True','False'],default='False',help='Display '
-                    'git repository information? Unless explicitly set, the default is "False".')
-
-    PARSER.add_argument( '-o', '--output', required=False,choices=['True','False'],default='False',help='Should '
-                    'utils.astrometric_utils.create_astrometric_catalog() generate file "ref_cat.ecsv" and should '
+    parser.add_argument( '-o', '--output',required=False,action='store_true',help='If turned on, '
+                    'utils.astrometric_utils.create_astrometric_catalog() generate file "ref_cat.ecsv", '
                     'generate_source_catalogs() generate the .reg region files for every chip of every input image and '
-                    'should generate_astrometric_catalog() generate file "refcatalog.cat"? Unless explicitly set, the '
-                    'default is "False".')
-    'Should the code generate '
+                    'generate_astrometric_catalog() generate file "refcatalog.cat".')
 
-    ARGS = PARSER.parse_args()
+    parser.add_argument( '-p', '--print_fit_parameters',required=False,action='store_true',help='Turning on this option '
+                    'will print out fit results for each chip.')
+
+    parser.add_argument( '-u', '--update_hdr_wcs',required=False,action='store_true',help='Turning on this option will '
+                    'write newly computed WCS information to image image headers and create headerlet files.')
+    args = parser.parse_args()
 
     # Build list of input images
     input_list = []
-    for item in ARGS.raw_input_list:
+    for item in args.raw_input_list:
         if os.path.exists(item):
-            with open(item, 'r') as infile:
-                fileLines = infile.readlines()
-            for fileLine in fileLines:
-                input_list.append(fileLine.strip())
+            if item.endswith(".fits"):
+                input_list.append(item)
+            else:
+                with open(item, 'r') as infile:
+                    file_lines = infile.readlines()
+                for file_line in file_lines:
+                    input_list.append(file_line.strip())
         else:
+            log.info("{} not found in working directory!".format(item))
             input_list.append(item)
 
-    # Convert input args from text strings to Boolean True/False values
-    archive = convert_string_tf_to_boolean(ARGS.archive)
-
-    clobber = convert_string_tf_to_boolean(ARGS.clobber)
-
-    debug = convert_string_tf_to_boolean(ARGS.debug)
-
-    update_hdr_wcs = convert_string_tf_to_boolean(ARGS.update_hdr_wcs)
-
-    print_fit_parameters = convert_string_tf_to_boolean(ARGS.print_fit_parameters)
-
-    print_git_info = convert_string_tf_to_boolean(ARGS.print_git_info)
-
-    output = convert_string_tf_to_boolean(ARGS.output)
-
     # Get to it!
-    return_value = perform_align(input_list, archive=archive, clobber=clobber, debug=debug,
-                                 update_hdr_wcs=update_hdr_wcs, print_fit_parameters=print_fit_parameters,
-                                 print_git_info=print_git_info, output=output)
+    return_value = perform_align(input_list, archive=args.archive, clobber=args.clobber, debug=args.debug,
+                                 update_hdr_wcs=args.update_hdr_wcs, print_fit_parameters=args.print_fit_parameters,
+                                 print_git_info=args.print_git_info, output=args.output)
 
     log.info(return_value)
