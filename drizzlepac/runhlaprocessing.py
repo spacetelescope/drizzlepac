@@ -224,7 +224,10 @@ def restructure_obs_info_dict(obs_info_dict):
     """
     restructured_dict = collections.OrderedDict()
     single_exposure_dict = {}
-    priority_list = ['multivisit mosaic product','total detection product','filter product','single exposure product']
+    priority_list = ['single exposure product',
+                     'filter product',
+                     'total detection product',
+                     'multivisit mosaic product']
     # 1: reorder dictionary from most complicated product to least complicated product
     for obs_category in priority_list:
         for ctr_b10 in range(0,10000):
@@ -323,32 +326,35 @@ def run_hla_processing(input_filename, result=None, debug=True):
         log.info("4: restructure obs_info_dict so that it's ready for processing.")
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
 
-        # 5: For each defined product...
-        for obs_category in obs_info_dict.keys():
-        #   5.1: align images with alignimages.perform_align()
-            log.info("5.1: align images with alignimages.perform_align()")
-            if "subproduct #0 filenames" in obs_info_dict[obs_category].keys():
-                run_perform_align(obs_info_dict[obs_category]['files'])
-            else:
-                log.info("{}: Align_images step skipped.".format(obs_category))
 
-        #   5.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
-        #        newly defined output name
-            log.info("5.2: Run AstroDrizzle")
-            for inst_det in astrodrizzle_param_dict.keys():
-                if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                    adriz_param_dict=astrodrizzle_param_dict[inst_det]
-                    break
-            run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'])
-            rename_subproduct_files(obs_info_dict[obs_category])
 
-        #   5.3: Create source catalog from newly defined product (HLA-204)
-            log.info("5.3: (TODO) Create source catalog from newly defined product")
-        # TODO: SUBROUTINE CALL GOES HERE.
 
-        #   5.4: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-            log.info("5.4: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
-        # 6: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
+        # # 5: For each defined product...
+        # for obs_category in obs_info_dict.keys():
+        # #   5.1: align images with alignimages.perform_align()
+        #     log.info("5.1: align images with alignimages.perform_align()")
+        #     if "subproduct #0 filenames" in obs_info_dict[obs_category].keys():
+        #         run_perform_align(obs_info_dict[obs_category]['files'])
+        #     else:
+        #         log.info("{}: Align_images step skipped.".format(obs_category))
+        #
+        # #   5.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
+        # #        newly defined output name
+        #     log.info("5.2: Run AstroDrizzle")
+        #     for inst_det in astrodrizzle_param_dict.keys():
+        #         if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
+        #             adriz_param_dict=astrodrizzle_param_dict[inst_det]
+        #             break
+        #     run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'])
+        #     rename_subproduct_files(obs_info_dict[obs_category])
+        #
+        # #   5.3: Create source catalog from newly defined product (HLA-204)
+        #     log.info("5.3: (TODO) Create source catalog from newly defined product")
+        # # TODO: SUBROUTINE CALL GOES HERE.
+        #
+        # #   5.4: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
+        #     log.info("5.4: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
+        # # 6: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
 
         # 7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
