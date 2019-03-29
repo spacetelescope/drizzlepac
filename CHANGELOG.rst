@@ -17,6 +17,9 @@ of the list).
 
 3.0.2 (unreleased)
 ==================
+
+- Added test code to validate astrometric solutions from the database. [#294]
+
 - Fixed a bug in the 2D histogram code used for estimating shifts for
   catalog pre-matching. This may result in better matching. [#286]
 
@@ -86,6 +89,8 @@ of the list).
 - Improved the logging to write to STDOUT, as well as a file [#235]
 
 - Modified the check on the tweakwcs_output to be more robust[#260]
+
+- Ensure singletons do not use the match_relative_fit algorithm [#259]
 
 
 2.2.6 (02-Nov-2018)
