@@ -326,9 +326,6 @@ def run_hla_processing(input_filename, result=None, debug=True):
         log.info("4: restructure obs_info_dict so that it's ready for processing.")
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
 
-
-
-
         # # 5: For each defined product...
         # for obs_category in obs_info_dict.keys():
         # #   5.1: align images with alignimages.perform_align()
