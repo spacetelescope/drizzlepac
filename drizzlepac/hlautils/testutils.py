@@ -108,15 +108,14 @@ def compare_wcs_alignment(dataset, force=False):
             results = alignimages.perform_align([dataset], clobber=False, debug=True)
             alignment[wcs] = extract_results(results)
 
-    except Exception:
-        raise   # re-raise with all traceback information
-
     finally:
         # Regardless of what happens, always reset the environment variable
         # if it was modified in the first place.
         # Restore user environment to original state
         if control:
             os.environ['ASTROMETRY_STEP_CONTROL'] = control
+        else:
+            del os.environ['ASTROMETRY_STEP_CONTROL']
 
     return alignment
 
