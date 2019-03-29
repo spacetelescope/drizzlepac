@@ -129,24 +129,6 @@ def check_and_get_data(input_list,**pars):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-
-def str2bool(v):
-    """Converts string 'True' or 'False' value to Boolean True or Boolean False.
-
-    :param invalue: string
-        input true/false value
-
-    :return: Boolean
-        converted True/False value
-    """
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
-# ----------------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, **kwargs):
     """Main calling function.
 
@@ -1152,34 +1134,32 @@ if __name__ == '__main__':
                     'file containing a list of fits files to align, one per '
                     'line; Example: input_list.txt')
 
-    parser.add_argument( '-a', '--archive',type=str2bool,required=False,default=False,help='Retain copies of the '
-                    'downloaded files in the astroquery created sub-directories? Unless explicitly set, the default is '
-                    '"False".')
+    parser.add_argument( '-a', '--archive',required=False,action='store_true',help='Turning on this option will retain '
+                    'copies of the downloaded files in the astroquery created sub-directories.')
 
-    parser.add_argument( '-c', '--clobber',type=str2bool, required=False,choices=[True,False],default=False,help='Download and '
-                    'overwrite existing local copies of input files? Unless explicitly set, the default is "False".')
+    parser.add_argument( '-c', '--clobber',required=False,action='store_true',help='If this option is turned on, the '
+                    'program will download new copies of the input files, overwriting any existing local copies in the '
+                    'working directory')
 
-    parser.add_argument( '-d', '--debug',type=str2bool, required=False,choices=[True,False],default=False,help='Attempt to use saved '
-                    'sourcelists stored in pickle files if they exist, or if they do not exist, save sourcelists'
-                    ' in pickle files for reuse so that step 4 can be skipped for faster subsequent debug/development '
-                    'runs?? Unless explicitly set, the default is "False".')
+    parser.add_argument( '-d', '--debug',required=False,action='store_true',help='If this option is turned on, the '
+                    'program will attempt to use saved sourcelists stored in a pickle file generated during a previous '
+                    'run. Using a saved sorucelist instead of generating new sourcelists greatly reduces overall run '
+                    'time. If the pickle file does not exist, the program will generate new sourcelists and save them '
+                    'in a pickle file named after the first input file.')
 
-    parser.add_argument( '-u', '--update_hdr_wcs',type=str2bool, required=False,choices=[True,False],default=False,help='Write newly '
-                    'computed WCS information to image image headers and create headerlet files? Unless explicitly set,'
-                    ' the default is "False".')
+    parser.add_argument( '-g', '--print_git_info',required=False,action='store_true',help='Turning on this option will '
+                    'display git repository information at the start of the run.')
 
-    parser.add_argument( '-p', '--print_fit_parameters',type=str2bool, required=False,choices=[True,False],default=True,help='Specify'
-                    ' whether or not to print out FIT results for each chip. Unless explicitly set, the default is '
-                    '"True".')
-
-    parser.add_argument( '-g', '--print_git_info',type=str2bool, required=False,choices=[True,False],default=False,help='Display git '
-                    'repository information? Unless explicitly set, the default is "False".')
-
-    parser.add_argument( '-o', '--output',type=str2bool, required=False,choices=[True,False],default=False,help='Should '
-                    'utils.astrometric_utils.create_astrometric_catalog() generate file "ref_cat.ecsv" and should '
+    parser.add_argument( '-o', '--output',required=False,action='store_true',help='If turned on, '
+                    'utils.astrometric_utils.create_astrometric_catalog() generate file "ref_cat.ecsv", '
                     'generate_source_catalogs() generate the .reg region files for every chip of every input image and '
-                    'should generate_astrometric_catalog() generate file "refcatalog.cat"? Unless explicitly set, the '
-                    'default is "False".')
+                    'generate_astrometric_catalog() generate file "refcatalog.cat".')
+
+    parser.add_argument( '-p', '--print_fit_parameters',required=False,action='store_true',help='Turning on this option '
+                    'will print out fit results for each chip.')
+
+    parser.add_argument( '-u', '--update_hdr_wcs',required=False,action='store_true',help='Turning on this option will '
+                    'write newly computed WCS information to image image headers and create headerlet files.')
     args = parser.parse_args()
 
     # Build list of input images
