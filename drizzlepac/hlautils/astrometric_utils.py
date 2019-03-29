@@ -20,7 +20,6 @@ from io import BytesIO
 import csv
 import requests
 import inspect
-import logging
 import sys
 
 import numpy as np
@@ -36,14 +35,12 @@ from astropy.table import Table, vstack
 from astropy.coordinates import SkyCoord
 from astropy.io import fits as pf
 from astropy.io import ascii
-from astropy.nddata import NDData
 from astropy.convolution import Gaussian2DKernel
 from astropy.stats import gaussian_fwhm_to_sigma
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 
-import photutils
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D, MedianBackground
 from photutils import DAOStarFinder
@@ -1192,7 +1189,7 @@ def build_wcscat(image, group_id, source_catalog):
                 'group_id': group_id,
                 'filename': image,
                 'catalog': imcat,
-                'name': 'img{:d} sources'.format(group_id)
+                'name': image
             }
         )
 
