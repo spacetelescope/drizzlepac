@@ -15,6 +15,27 @@ def interpret_input(results, exposure_limit=2.0):
     """
     Interpret the database query for a given visit to prepare the returned
     values for use in generating the names of all the expected output products.
+    
+    Input will have format of:
+        ia1s70jtq_flt.fits,11150,A1S,70,70,149.232269,F110W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70jtq/ia1s70jtq_flt.fits
+        ia1s70iwq_flt.fits,11150,A1S,70,70,0.91161000000000003,F160W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70iwq/ia1s70iwq_flt.fits
+        
+    Output dict will have format (as needed by further code for creating the
+        product filenames) of:
+    
+        obs_info_dict["single exposure product 00"] = {'info': '11150 A1S WFC3 IR F110W IA1S70JTQ', 
+                                                        'files':['ia1s70jtq_flt.fits']}
+        obs_info_dict["single exposure product 01"] = {'info': '11150 A1S WFC3 IR F160W IA1S70JWQ', 
+                                                        'files':['ia1s70jwq_flt.fits']}
+                                                        
+        obs_info_dict["filter product 00"] = {"info": '11150 A1S WFC3 IR F110W', 
+                                              "files":['ia1s70jtq_flt.fits']}
+        obs_info_dict["filter product 01"] = {"info": '11150 A1S WFC3 IR F160W', 
+                                              "files":['ia1s70jwq_flt.fits']}
+        obs_info_dict["total detection product 00"] = {'info': '11150 A1S WFC3 IR',
+                                                       'files':['ia1s70jtq_flt.fits',
+                                                                'ia1s70iwq_flt.fits']}
+    
     """
     colnames = ['filename', 'proposal_id', 'program_id', 'obset_id', 'visit_id',
                 'exptime', 'filters', 'detector', 'pathname']
