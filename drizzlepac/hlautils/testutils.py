@@ -28,7 +28,7 @@ def compare_wcs_alignment(dataset, force=False):
 
         force : bool
             Specify whether or not to overwrite dataset files found locally
-            with fresh copies retrieved from MAST.  Default: False
+            with fresh copies retrieved from MAST.
 
         Returns
         -------
@@ -53,65 +53,70 @@ def compare_wcs_alignment(dataset, force=False):
             - All images in dataset have the same set of a priori solutions
     """
     # Setup
+    # Remember what state the environment was in before this code runs
+    control = os.environ.get('ASTROMETRY_STEP_CONTROL')
+
     #   Insure that database will be queried for new WCS solutions
-    if 'ASTROMETRY_STEP_CONTROL' in os.environ:
-        control = os.environ['ASTROMETRY_STEP_CONTROL']
-    else:
-        control = None
     os.environ['ASTROMETRY_STEP_CONTROL'] = 'ON'
 
-    # Step 1:
-    #   Determine alignment for pipeline-defined WCS
-    clobber = force
-    results = alignimages.perform_align([dataset], clobber=clobber, debug=True)
-    if not results:
-        msg = "No valid exposures found for {}.".format(dataset)
-        msg += "\n            Please check that input was either a valid ASN"
-        msg += "\n            or a single un-associated exposure."
-        raise ValueError(msg)
+    try:
+        # Step 1:
+        #   Determine alignment for pipeline-defined WCS
+        results = alignimages.perform_align([dataset], clobber=force, debug=True)
+        if not results:
+            msg = "No valid exposures found for {}.".format(dataset)
+            msg += "\n            Please check that input was either a valid ASN"
+            msg += "\n            or a single un-associated exposure."
+            raise ValueError(msg)
 
-    imglist = results['imageName'].astype(str).tolist()
+        imglist = results['imageName'].astype(str).tolist()
 
-    # Step 2:
-    #   Create results output organized by WCSNAME
-    default_wcsname = fits.getval(imglist[0], 'wcsname', ext=1)
-    log.info("Default WCSNAME: {}".format(default_wcsname))
-    alignment = {default_wcsname:extract_results(results)}
+        # Step 2:
+        #   Create results output organized by WCSNAME
+        default_wcsname = fits.getval(imglist[0], 'wcsname', ext=1)
+        log.info("Default WCSNAME: {}".format(default_wcsname))
+        alignment = {default_wcsname:extract_results(results)}
 
-    # Step 3:
-    #   Update inputs with latest distortion model and pull in solutions from dB
-    imglist = updatewcs.updatewcs(imglist)
-    img0 = imglist[0]
-    # Step 4:
-    #   Loop over each WCS solution and perform alignment to GAIA
-    wcsnames = headerlet.get_headerlet_kw_names(img0, kw='WCSNAME')
-    if not wcsnames:
-        msg = "No a priori solutions found for {}".format(img0)
-        log.error(msg)
-        raise ValueError(msg)
+        # Step 3:
+        #   Update inputs with latest distortion model and pull in solutions from dB
+        imglist = updatewcs.updatewcs(imglist)
+        img0 = imglist[0]
+        # Step 4:
+        #   Loop over each WCS solution and perform alignment to GAIA
+        wcsnames = headerlet.get_headerlet_kw_names(img0, kw='WCSNAME')
+        if not wcsnames:
+            msg = "No a priori solutions found for {}".format(img0)
+            log.error(msg)
+            raise ValueError(msg)
 
-    for wcs in wcsnames:
-        log.info("Starting with {}".format(wcs))
-        if 'OPUS' in wcs or wcs == default_wcsname:
-            continue # skip default pipeline solutions, since we have already aligned it
-        # apply WCS from headerlet
-        for img in imglist:
-            wnames = headerlet.get_headerlet_kw_names(img, kw='WCSNAME')
-            hnames = headerlet.get_headerlet_kw_names(img)
-            print("[testutils]WCSNAMES[{}]: {}".format(img, wnames))
+        for wcs in wcsnames:
+            log.info("Starting with {}".format(wcs))
+            if 'OPUS' in wcs or wcs == default_wcsname:
+                continue # skip default pipeline solutions, since we have already aligned it
+            # apply WCS from headerlet
+            for img in imglist:
+                wnames = headerlet.get_headerlet_kw_names(img, kw='WCSNAME')
+                hnames = headerlet.get_headerlet_kw_names(img)
+                print("[testutils]WCSNAMES[{}]: {}".format(img, wnames))
 
-            if wcs in wnames:
-                hdrname = hnames[wnames.index(wcs)]
-                log.info("Applying WCS {} to {}".format(hdrname, img))
-                headerlet.restore_from_headerlet(img, hdrname=hdrname,
-                                                 archive=False, force=True)
+                if wcs in wnames:
+                    hdrname = hnames[wnames.index(wcs)]
+                    log.info("Applying WCS {} to {}".format(hdrname, img))
+                    headerlet.restore_from_headerlet(img, hdrname=hdrname,
+                                                     archive=False, force=True)
 
-        results = alignimages.perform_align([dataset], clobber=False, debug=True)
-        alignment[wcs] = extract_results(results)
+            results = alignimages.perform_align([dataset], clobber=False, debug=True)
+            alignment[wcs] = extract_results(results)
 
-    # Restore user environment to original state
-    if control:
-        os.environ['ASTROMETRY_STEP_CONTROL'] = control
+    except Exception:
+        raise   # re-raise with all traceback information
+
+    finally:
+        # Regardless of what happens, always reset the environment variable
+        # if it was modified in the first place.
+        # Restore user environment to original state
+        if control:
+            os.environ['ASTROMETRY_STEP_CONTROL'] = control
 
     return alignment
 
