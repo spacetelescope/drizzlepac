@@ -198,9 +198,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     # Define astrometric catalog list in priority order
     catalogList = ['GAIADR2', 'GAIADR1']
 
-    # Define fitting algorithm list in priority order
-    fit_algorithm_list = [match_relative_fit,match_default_fit,match_2dhist_fit]
-
     # 0: print git info
     if print_git_info:
         log.info("-------------------- STEP 0: Display Git revision info  ------------------------------------------------")
@@ -248,6 +245,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     processList = filteredTable['imageName'][np.where(filteredTable['doProcess'])]
     processList = list(processList) #Convert processList from numpy list to regular python list
     log.info("SUCCESS")
+
+    # Define fitting algorithm list in priority order
+    # The match_relative_fit algorithm must have more than one image as the first image is
+    # the reference for the remaining images.
+    if len(processList) > 1:
+        fit_algorithm_list=[match_relative_fit,match_2dhist_fit,match_default_fit]
+    else:
+        fit_algorithm_list=[match_2dhist_fit,match_default_fit]
 
     currentDT = datetime.datetime.now()
     deltaDT = (currentDT - startingDT).total_seconds()
