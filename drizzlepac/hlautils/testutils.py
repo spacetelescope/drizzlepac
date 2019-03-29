@@ -112,7 +112,7 @@ def compare_wcs_alignment(dataset, force=False):
         # Regardless of what happens, always reset the environment variable
         # if it was modified in the first place.
         # Restore user environment to original state
-        if control:
+        if control is None:  # Need to be explicit here since T/F are actually valid
             os.environ['ASTROMETRY_STEP_CONTROL'] = control
         else:
             del os.environ['ASTROMETRY_STEP_CONTROL']
