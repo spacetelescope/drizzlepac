@@ -18,6 +18,8 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Implemented initial version of pipeline poller interpreter [#300]
+
 - Added test code to validate astrometric solutions from the database. [#294]
 
 - Fixed a bug in the 2D histogram code used for estimating shifts for
