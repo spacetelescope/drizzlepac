@@ -43,6 +43,12 @@ class TestAlignMosaic(BaseHLATest):
 
         The environment variable needs to be set in the following manner:
             export TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory/
+            OR
+            export TEST_BIGDATA=/Users/YourNameHere/TestDataDirectory/
+
+        For this test, the TEST_BIGDATA defines the root of the location where the data
+        is stored.  The full path is TEST_BIGDATA plus the path components provided
+        in the get_bigdata() invocation.
      
         This test file can be executed in the following manner:
             $ pytest -s --bigdata test_align.py >& test_align_output.txt &
@@ -50,47 +56,43 @@ class TestAlignMosaic(BaseHLATest):
 
     """
 
-    ref_loc = ['truth']
-
+    @pytest.mark.slow
     def test_align_ngc188(self):
         """ Verify whether NGC188 exposures can be aligned to an astrometric standard.
 
         Characeteristics of this test:
-          * Input exposures include both ACS and WFC3 images of the same general field-of-view
             of NGC188 suitable for creating a combined mosaic using both instruments.
         """
-        self.input_repo = 'hst-hla-pipeline'
-        self.input_loc = 'mosaic_ngc188'
         totalRMS = 0.0
         input_filenames = ['iaal01hxq_flc.fits', 'iaala3btq_flc.fits',
                             'iaal01hyq_flc.fits', 'iaala3bsq_flc.fits',
                             'j8boa1m8q_flc.fits', 'j8boa1m4q_flc.fits',
                             'j8boa1maq_flc.fits', 'j8boa1m6q_flc.fits']
 
-        data_path = ['hst-hla-pipeline','dev','mosaic_ngc188']
+        # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
+        # MAST, get the data now using ci_watson.
+        for input_file in input_filenames:
+            abs_path = get_bigdata('hst-hla-pipeline','dev','mosaic_ngc188',input_file)
+
         try:
-            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=True,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False,regtest=True,
-                test_data_path=data_path)
+            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
             # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if (datasetTable):
+            if datasetTable:
                 totalRMS = datasetTable['total_rms'][0]
 
         except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
-        # Perform some clean up
-        #if os.path.exists('ref_cat.ecsv'): os.remove('ref_cat.ecsv')
-        #if os.path.exists('refcatalog.cat'): os.remove('refcatalog.cat')
-        #for filename in os.listdir():
-        #    if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
+        # Examine the output table to extract the RMS for the entire fit and the compromised information
+        if datasetTable:
+            totalRMS = datasetTable['total_rms'][0]
 
-        #reference_wcs = amutils.build_reference_wcs(input_filenames)
-        #test_limit = self.fit_limit / reference_wcs.pscale
         assert (0.0 < totalRMS <= RMS_LIMIT)
 
+    @pytest.mark.slow
     def test_align_47tuc(self):
         """ Verify whether 47Tuc exposures can be aligned to an astrometric standard.
 
@@ -98,20 +100,23 @@ class TestAlignMosaic(BaseHLATest):
           * Input exposures include both ACS and WFC3 images of the same general field-of-view
             of 47Tuc suitable for creating a combined mosaic using both instruments.
         """
-        self.input_loc = 'mosaic_47tuc'
         totalRMS = 0.0
         input_filenames = ['ib6v06c4q_flc.fits','ib6v06c7q_flc.fits',
                                 'ib6v25aqq_flc.fits','ib6v25atq_flc.fits',
                                 'jddh02gjq_flc.fits','jddh02glq_flc.fits',
                                 'jddh02goq_flc.fits']
-        data_path = ['hst-hla-pipeline','dev','mosaic_47tuc']
+
+        # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
+        # MAST, get the data now using ci_watson.
+        for input_file in input_filenames:
+            abs_path = get_bigdata('hst-hla-pipeline','dev','mosaic_47tuc',input_file)
+
         try:
-            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=True,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False,regtest=True,
-                test_data_path=data_path)
+            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
             # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if (datasetTable):
+            if datasetTable:
                 totalRMS = datasetTable['total_rms'][0]
 
         except Exception:
@@ -153,6 +158,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   'ibnh02c7q_flc.fits','ibnh02c5q_flc.fits',
                                                   'ibnh02cpq_flc.fits','ibnh02c9q_flc.fits',
                                                   'ibnh02bfq_flc.fits','ibnh02beq_flc.fits']])
+    @pytest.mark.slow
     def test_align_single_visits(self,input_filenames):
         """ Verify whether single-visit exposures can be aligned to an astrometric standard.
 
@@ -171,17 +177,19 @@ class TestAlignMosaic(BaseHLATest):
             * WFC3 dataset 12379_02: 4X F606W, 4x F502N full-frame WFC3/UVIS images
 
         """
-        self.input_loc = 'base_tests'
-        self.curdir = os.getcwd()
         totalRMS = 0.0
-        data_path = ['hst-hla-pipeline','dev','base_tests']
+
+        # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
+        # MAST, get the data now using ci_watson.
+        for input_file in input_filenames:
+            abs_path = get_bigdata('hst-hla-pipeline','dev','base_tests',input_file)
+
         try:
-            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=True,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False,regtest=True,
-                test_data_path=data_path)
+            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
             # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if (datasetTable):
+            if datasetTable:
                 totalRMS = datasetTable['total_rms'][0]
 
         except Exception:
@@ -192,17 +200,14 @@ class TestAlignMosaic(BaseHLATest):
 
     def test_astroquery(self):
         """Verify that new astroquery interface will work"""
-        #self.curdir = os.getcwd()
-        #self.input_loc = ''
 
         totalRMS = 0.0
         try:
             datasetTable = alignimages.perform_align(['IB6V06060'],archive=False,clobber=True,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False,regtest=False,
-                test_data_path=None)
+                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
             # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if (datasetTable):
+            if datasetTable:
                 totalRMS = datasetTable['total_rms'][0]
 
         except Exception:

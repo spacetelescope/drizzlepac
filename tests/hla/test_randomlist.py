@@ -10,7 +10,6 @@ from astropy.io import ascii
 from .base_test import BaseHLATest
 from drizzlepac import alignimages
 import drizzlepac.hlautils.catalog_utils as catutils
-import drizzlepac.hlautils.astrometric_utils as amutils
 
 @pytest.mark.bigdata
 class TestAlignMosaic(BaseHLATest):
@@ -37,12 +36,24 @@ class TestAlignMosaic(BaseHLATest):
               * Number of stars used for the fit and other information is not available
                 with the current version of `tweakreg`.
 
+        The environment variable needs to be set in the following manner:
+            export TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory/
+            OR
+            export TEST_BIGDATA=/Users/YourNameHere/TestDataDirectory/
+
+        For this test, the TEST_BIGDATA defines the root of the location  where the CSV 
+        file is stored.  The full path is TEST_BIGDATA/self.input_repo/self.tree/self.input_loc.
+        The CSV is output from a database and lists associations and singletons for ACS 
+        and WFC3 instruments randomly sorted.  The actual data files are downloaded from MAST
+        via astroquery.
+     
+        This test file can be executed in the following manner:
+            $ pytest -s --bigdata test_randomlist.py >& test_random_output.txt &
+            $ tail -f test_random_output.txt
     """
 
-    ref_loc = ['truth']
-
-    @pytest.mark.xfail
-    #@pytest.mark.slow
+    #@pytest.mark.xfail
+    @pytest.mark.slow
     def test_align_randomFields(self):
         """ Wrapper to set up the test for aligning a large number of randomly
             selected fields (aka datasets) from a input ascii file (CSV).
@@ -56,15 +67,15 @@ class TestAlignMosaic(BaseHLATest):
         inputListFile = 'ACSWFC3List.csv'
 
         # Desired number of random entries for testing
-        #inputNumEntries = 50
-        inputNumEntries = 4
+        inputNumEntries = 50
 
         # Seed for random number generator
         inputSeedValue = 1
 
         # Obtain the full path to the file containing the dataset field names
-        self.input_loc  = 'master_lists'
-        self.curdir     = os.getcwd()
+        self.input_repo = 'hst-hla-pipeline'
+        self.tree = 'dev'
+        self.input_loc = 'master_lists'
         input_file_path = self.get_data(inputListFile)
 
         # Randomly select a subset of field names (each field represented by a row) from
@@ -168,8 +179,10 @@ class TestAlignMosaic(BaseHLATest):
                 continue
 
         # Perform some clean up
-        if os.path.exists('ref_cat.ecsv'): os.remove('ref_cat.ecsv')
-        if os.path.exists('refcatalog.cat'): os.remove('refcatalog.cat')
+        if os.path.exists('ref_cat.ecsv'): 
+            os.remove('ref_cat.ecsv')
+        if os.path.exists('refcatalog.cat'):  
+            os.remove('refcatalog.cat')
         for filename in os.listdir():
             if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
                 os.unlink(filename)

@@ -172,8 +172,8 @@ def get_hdu(filename):
     return fits_file[fextn]
 
 def build_hdulist(filename, extn_list):
-    """Create a new HDUList object based on extensions specified in extn_list"""
-    f = fits.open(filename)
-    fhdu = [f[extn] for extn in extn_list]
+    """Create a new list object based on extensions specified in extn_list"""
+    with fits.open(filename) as f:
+        fhdu = [f[extn] for extn in extn_list]
 
     return fhdu

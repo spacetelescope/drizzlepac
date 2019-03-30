@@ -80,80 +80,98 @@ def check_and_get_data(input_list,**pars):
 
     Parameters
     ----------
-    imglist : list
+    input_list : list
         List of one or more calibrated fits images that will be used for catalog generation.
-
-    regtest: Boolean
-        Flag to signal the use of PyTest to run regresssion tests.  When using PyTest with individual images
-        which are part of an association (e.g., *_flt.fits), the files cannot be obtained from MAST as 
-        singletons. They are stored in Artifactory as part of the regression test suite.  
-
-    test_data_path : List of strings  
-        List of comma separated strings defining the path on Artifactory where the *_fl[t|c].fits files are stored.
-        The root of the path is defined by the environment variables TEST_BIGDATA.
-
 
     Returns
     =======
-    input_file_list : list
+    total_input_list: list
         list of full filenames
 
     """
-    totalInputList = []
+    empty_list = []       
+    retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
+    candidate_list = []   # File names gathered from *_asn.fits file
+    ipppssoot_list = []   # ipppssoot names used to avoid duplicate downloads 
+    total_input_list = [] # Output full filename list of data on disk
 
-    # If the regression test flag is True, a regression test has been invoked where the input_list 
-    # actually contains the full filename(s) (e.g., *_flt.fits).  Note that not all regression tests use 
-    # this functionality as Artifactory is accessed for the data source with the use of this flag.  Some
-    # regression tests use astroquery to connect to MAST. This regression testing code is not a scalable
-    # solution, but it is necessary for the alignment portion of the drizzle software.
-    if pars['regtest'] == True:
-        # Artifactory root name and test folder containing the data
-        data_path = pars['test_data_path']
-        from ci_watson.artifactory_helpers import get_bigdata
-        for infile in input_list:
-            full_file_path = get_bigdata(data_path[0],data_path[1],data_path[2],infile)
-            totalInputList.append(infile)
-    else:
-        archive = pars['archive']
-        clobber = pars['clobber']
-        retrieve_list = [] # list of already retrieved ASNs, only request each once
-        for input_item in input_list:
-            try:
-                filelist = aqutils.retrieve_observation(input_item,archive=archive,clobber=clobber)
-            except Exception:
-                filelist = []
-            if len(filelist) == 0:
-                # look for local copy of the file
-                input_rootname = input_item[:input_item.find('_')]
-                fitsfilenames = sorted(glob.glob("{}_fl?.fits".format(input_rootname)))
-                if len(fitsfilenames) > 0:
-                    imghdu = fits.open(fitsfilenames[0])
-                    imgprimaryheader = imghdu[0].header
-                    try:
-                        asnid = imgprimaryheader['ASN_ID'].strip().lower()
-                        if asnid == 'NONE':
-                            asnid = None
-                    except KeyError:
-                        asnid = None
-                    if asnid and asnid not in retrieve_list:
-                        try:
-                            filelist = aqutils.retrieve_observation(asnid,**pars)
-                            retrieve_list.append(asnid) # record asn's already retrieved
-                        except Exception:
-                            filelist = []
+    # Loop over the input_list to determine if the item in the input_list is a full association file 
+    # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification 
+    # (association or singleton, ipppssoot).
+    for input_item in input_list:
+        print('Input item: ', input_item)
+        indx = input_item.find('_')
+        
+        # Input with a suffix (_xxx.fits)
+        if indx != -1:
+            lc_input_item = input_item.lower()
+            suffix = lc_input_item[indx+1:indx+4]
+            print('file: ', lc_input_item)
+            # For an association, need to open the table and read the image names as this could
+            # be a custom association.  The assumption is this file is on local disk when specified
+            # in this manner (vs just the ipppssoot of the association).
+            # This "if" block just collects the wanted full file names.
+            if suffix == 'asn':
+                try:
+                    asntab = Table.read(input_item, format='fits')
+                except ValueError:
+                    log.error('File {} not found.'.format(input_item))
+                    return(empty_list)
+                for row in asntab:
+                    if row['MEMTYPE'].startswith('PROD'):
+                        continue
+                    memname = row['MEMNAME'].lower().strip()
+                    # Need to check if the MEMNAME is a full filename or an ipppssoot
+                    if memname.find('_') != -1:
+                        candidate_list.append(memname)
+                    else:
+                        candidate_list.append(memname + '_flc.fits')
+            elif any ([suffix == 'flc', suffix == 'flt']):
+                if lc_input_item not in candidate_list:
+                    candidate_list.append(lc_input_item)
+            else:
+                log.error('Inappropriate file suffix: {}.  Looking for "asn.fits", "flc.fits", or "flt.fits".'.format(suffix))
+                return(empty_list)
 
-            if len(filelist) > 0:
-                totalInputList += filelist
+        # Input is an ipppssoot (association or singleton), nine characters by definition.
+        # This "else" block actually downloads the data specified as ipppssoot.
+        else:
+            if len(input_item) == 9:
+                try:
+                    if input_item not in ipppssoot_list:
+                        # An ipppssoot of an individual file which is part of an association cannot be
+                        # retrieved from MAST
+                        retrieve_list = aqutils.retrieve_observation(input_item,**pars)
 
-        if len(filelist) > 0:
-            # remove duplicate list elements, sort resulting list of unique elements:
-            totalInputList = sorted(list(set(totalInputList)))
+                        # If the retrieved list is not empty, add filename(s) to the total_input_list.
+                        # Also, update the ipppssoot_list so we do not try to download the data again.  Need
+                        # to do this since retrieve_list can be empty because (1) data cannot be acquired (error)
+                        # or (2) data is already on disk (ok).
+                        if retrieve_list:
+                            total_input_list += retrieve_list
+                            ipppssoot_list.append(input_item)
+                        else:
+                            log.error('File {} cannot be retrieved from MAST.'.format(input_item))
+                            return(empty_list)
+                except Exception:
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
-    log.info("TOTAL INPUT LIST: {}".format(totalInputList))
-    # TODO: add trap to deal with non-existent (incorrect) rootnames
-    # TODO: Address issue about how the code will retrieve association information if there isn't a local file to get 'ASN_ID' header info
-    return(totalInputList)
+    # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
+    # Now check candidate_list to detect or acquire the requested files from MAST via
+    # astroquery.
+    if candidate_list:
+        for file in candidate_list:
+            # If the file is found on disk, add it to the total_input_list and continue
+            if glob.glob('{}'.format(file)):
+                total_input_list.append(file)
+                continue
+            else:
+                log.error('File {} cannot be found on the local disk.'.format(file))
+                return(empty_list)
 
+    log.info("TOTAL INPUT LIST: {}".format(total_input_list))
+    return(total_input_list)
 
 # ----------------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, **kwargs):
@@ -189,15 +207,6 @@ def perform_align(input_list, **kwargs):
         generate_source_catalogs() generate the .reg region files for every chip of every input image and should
         generate_astrometric_catalog() generate file 'refcatalog.cat'?
  
-    regtest: Boolean
-        Flag to signal the use of PyTest to run regresssion tests.  When using PyTest with individual images
-        which are part of an association (e.g., *_flt.fits), the files cannot be obtained from MAST as 
-        singletons. They are stored in Artifactory as part of the regression test suite.  
-
-    test_data_path : str
-        List of comma separated strings defining the path on Artifactory where the *_fl[t|c].fits files are stored.
-        The root of the path is defined by the environment variables TEST_BIGDATA.
-
     Updates
     -------
     filteredTable: Astropy Table
@@ -210,7 +219,7 @@ def perform_align(input_list, **kwargs):
 
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None, runfile=None,
-                  print_fit_parameters=True, print_git_info=False, output=False, regtest=False, test_data_path=None):
+                  print_fit_parameters=True, print_git_info=False, output=False):
 
     log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
 
@@ -235,11 +244,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             log.warning("WARNING: Unable to display Git repository revision information.")
 
     print(input_list)
+   
     # 1: Interpret input data and optional parameters
     log.info("-------------------- STEP 1: Get data ------------------------------------------------------------------")
     zeroDT = startingDT = datetime.datetime.now()
     log.info(str(startingDT))
-    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, regtest=regtest, test_data_path=test_data_path)
+    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
     log.info("SUCCESS")
 
     currentDT = datetime.datetime.now()
