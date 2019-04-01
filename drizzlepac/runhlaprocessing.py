@@ -384,16 +384,16 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # TODO: FINAL DRIZZLE STEP CODE GOES HERE!
 
         # 9: Create source catalogs from newly defined products (HLA-204)
-        log.info("5.3: (TODO) Create source catalog from newly defined product")
+        log.info("9: (TODO) Create source catalog from newly defined product")
         # TODO: SOURCELIST GENERATION SUBROUTINE CALL GOES HERE.
 
         # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        log.info("5.4: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
+        log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
 
         # 11: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
 
-        # 12: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+    # 12: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except:
         return_value = 1
