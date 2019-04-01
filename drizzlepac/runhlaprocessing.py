@@ -261,7 +261,7 @@ def restructure_obs_info_dict(obs_info_dict):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_astrodrizzle(filelist,adriz_param_dict,outfilename):
+def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
     """
     Run astrodrizzle on user-specified file(s) with specified parameters.
 
@@ -274,7 +274,11 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename):
         Dictionary containing instrument/specific values for astrodrizzle paramters "PIXSCALE", "PIXFRAC":, "KERNEL",
         "OUTNX", "OUTNY", "ROT", and "DRIZ_BITS".
 
-    outfilename: name of the output drizzle-combined image.
+    outfilename : string
+        name of the output drizzle-combined image.
+
+    custom_wcs : HSTWCS object
+        The composite WCS created by wcs_functions.make_mosaic_wcs()
 
     RETURNS
     -------
@@ -295,6 +299,21 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename):
     for key in adriz_param_dict.keys():
         pipeline_pars["final_{}".format(key.lower())] = adriz_param_dict[key]
         pipeline_pars["driz_sep_{}".format(key.lower())] = adriz_param_dict[key]
+
+    # prep custom_wcs values
+    if custom_wcs:
+        custom_pars = wcs_functions.create_mosaic_pars(custom_wcs)
+    #merge custom_pars into pipeline_pars
+        log.info("Recombobulating Astrodrizzle input parameters")
+        pipeline_keys=pipeline_pars.keys()
+        for custom_key in custom_pars.keys():
+            if custom_key in pipeline_keys:
+                log.info("Updating pipeline_pars value '{}' from {} to {}".format(custom_key,pipeline_pars[custom_key],custom_pars[custom_key]))
+                pipeline_pars[custom_key] = custom_pars[custom_key]
+            else:
+                log.info("Inserting custom_pars value '{}' = {} into pipeline_pars.".format(custom_key,custom_pars[custom_key]))
+                pipeline_pars[custom_key] = custom_pars[custom_key]
+        log.info("AstroDrizzle parameter recombobulation successful.")
 
     # Execute astrodrizzle
     b = drizzlepac.astrodrizzle.AstroDrizzle(input=filelist, runfile="astrodrizzle.log",
@@ -339,45 +358,42 @@ def run_hla_processing(input_filename, result=None, debug=True):
                 log.info("{}: Alignimages step skipped.".format(obs_category))
 
         #6: run meta wcs code to get common WCS for all images.
-        log.info("run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        log.info("6: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in wcs_input_list:log.info("{}".format(imgname))
         if wcs_input_list: meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
 
-        # # 7: Run AstroDrizzle to produce filter-level products.
-        # for obs_category in obs_info_dict.keys():
-        #     if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
-        #
-        #
-        # pdb.set_trace()
-        # # 5: For each defined product...
-        # for obs_category in obs_info_dict.keys():
-        # #   5.1: align images with alignimages.perform_align()
-        #     log.info("5.1: align images with alignimages.perform_align()")
-        #     if "subproduct #0 filenames" in obs_info_dict[obs_category].keys():
-        #         run_perform_align(obs_info_dict[obs_category]['files'])
-        #     else:
-        #         log.info("{}: Align_images step skipped.".format(obs_category))
-        #
-        # #   5.2: Run astrodrizzle on inputs which define the new product using parameters defined by HLA along with the
-        # #        newly defined output name
-        #     log.info("5.2: Run AstroDrizzle")
-        #     for inst_det in astrodrizzle_param_dict.keys():
-        #         if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-        #             adriz_param_dict=astrodrizzle_param_dict[inst_det]
-        #             break
-        #     run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'])
-        #     rename_subproduct_files(obs_info_dict[obs_category])
-        #
-        # #   5.3: Create source catalog from newly defined product (HLA-204)
-        #     log.info("5.3: (TODO) Create source catalog from newly defined product")
-        # # TODO: SUBROUTINE CALL GOES HERE.
-        #
-        # #   5.4: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        #     log.info("5.4: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
-        # # 6: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
+        # 7: Run AstroDrizzle to produce filter-level products.
+        log.info("7: Run AstroDrizzle to produce filter-level products.")
+        for obs_category in obs_info_dict.keys():
+            if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
+                for inst_det in astrodrizzle_param_dict.keys():
+                        if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
+                            adriz_param_dict=astrodrizzle_param_dict[inst_det]
+                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det,obs_category))
+                            break
+                run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'],custom_wcs=meta_wcs)
+                rename_subproduct_files(obs_info_dict[obs_category])
 
-        # 7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+
+            else:
+                log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
+
+
+        # 8: Run AstroDrizzle to produce total detection products
+        # TODO: FINAL DRIZZLE STEP CODE GOES HERE!
+
+        # 9: Create source catalogs from newly defined products (HLA-204)
+        log.info("5.3: (TODO) Create source catalog from newly defined product")
+        # TODO: SOURCELIST GENERATION SUBROUTINE CALL GOES HERE.
+
+        # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
+        log.info("5.4: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
+        # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
+
+        # 11: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
+
+        # 12: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except:
         return_value = 1
@@ -420,6 +436,7 @@ def run_perform_align(filelist):
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         log.info("   No correction to absolute astrometric frame applied!\n")
+
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
