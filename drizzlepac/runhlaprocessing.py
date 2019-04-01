@@ -10,6 +10,7 @@ import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
+from drizzlepac import wcs_functions
 import os
 import pdb
 from stsci.tools import logutil
@@ -326,6 +327,29 @@ def run_hla_processing(input_filename, result=None, debug=True):
         log.info("4: restructure obs_info_dict so that it's ready for processing.")
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
 
+        # 5: run alignimages.py on images on a filter-by-filter basis.
+        log.info("5: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
+        wcs_input_list=[]
+        for obs_category in obs_info_dict.keys():
+            if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
+
+                run_perform_align(obs_info_dict[obs_category]['files'])
+                wcs_input_list += obs_info_dict[obs_category]['files']
+            else:
+                log.info("{}: Alignimages step skipped.".format(obs_category))
+
+        #6: run meta wcs code to get common WCS for all images.
+        log.info("run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        log.info("The following images will be used: ")
+        for imgname in wcs_input_list:log.info("{}".format(imgname))
+        if wcs_input_list: meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
+
+        # # 7: Run AstroDrizzle to produce filter-level products.
+        # for obs_category in obs_info_dict.keys():
+        #     if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
+        #
+        #
+        # pdb.set_trace()
         # # 5: For each defined product...
         # for obs_category in obs_info_dict.keys():
         # #   5.1: align images with alignimages.perform_align()
