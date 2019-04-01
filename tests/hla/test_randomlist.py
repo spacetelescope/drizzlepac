@@ -178,9 +178,9 @@ class TestAlignMosaic(BaseHLATest):
                 continue
 
         # Perform some clean up
-        if os.path.exists('ref_cat.ecsv'): 
+        if os.path.isfile('ref_cat.ecsv'): 
             os.remove('ref_cat.ecsv')
-        if os.path.exists('refcatalog.cat'):  
+        if os.path.isfile('refcatalog.cat'):  
             os.remove('refcatalog.cat')
         for filename in os.listdir():
             if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
