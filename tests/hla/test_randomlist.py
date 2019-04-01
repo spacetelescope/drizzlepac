@@ -63,7 +63,6 @@ class TestAlignMosaic(BaseHLATest):
             of the test.
         """
 
-        #inputListFiles = ['ACSList50R_v2.csv', 'WFC3List50R_v2.csv']
         inputListFile = 'ACSWFC3List.csv'
 
         # Desired number of random entries for testing
