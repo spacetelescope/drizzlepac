@@ -14,6 +14,11 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+3.1.0 (unreleased)
+==================
+
+- Added new parameter 'keep_files' to AstroDrizzle function to control what
+  intermediate files are kept when 'clean=True'  [#301]
 
 3.0.2 (unreleased)
 ==================
