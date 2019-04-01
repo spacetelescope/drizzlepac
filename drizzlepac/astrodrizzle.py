@@ -57,7 +57,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
-                 wcsmap=None, **input_dict):
+                 wcsmap=None, keep_files=None, **input_dict):
     """ AstroDrizzle command-line interface """
     # Support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj
@@ -115,13 +115,13 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have
     # already called 'run()'.
     if not editpars:
-        run(configObj, wcsmap=wcsmap)
+        run(configObj, wcsmap=wcsmap, keep_files=keep_files)
 
 ##############################
 ##  Interfaces used by TEAL ##
 ##############################
 @util.with_logging
-def run(configobj, wcsmap=None):
+def run(configobj, wcsmap=None, keep_files=None):
     """
     Initial example by Nadia ran MD with configobj EPAR using:
     It can be run in one of two ways:
@@ -157,6 +157,23 @@ def run(configobj, wcsmap=None):
             "ERROR:\nNo valid input files found!   Please restart the task "
             "and check the value for the 'input' parameter."), file=sys.stderr)
         def_logname = None
+        return
+
+    # validate input values for keep_file parameter
+    clean_files = ['blotImage','crmaskImage','finalMask',
+                    'staticMask','singleDrizMask','outSky',
+                    'outSContext','outSWeight','outSingle',
+                    'outMedian','dqmask','tmpmask',
+                    'skyMatchMask']
+    invalid_entries = []
+    for kfile in keep_files:
+        if kfile not in clean_files:
+            invalid_entries.append(kfile)
+    if invalid_entries:
+        errmsg = "ERROR: These entries of the `keep_files` parameters "
+        errmsg += "were invalid\n:    {}\n".format(invalid_entries)
+        errmsg += "Valid options are: \n    {}\n".format(clean_files)
+        print(textutil.textbox(errmsg, width=45))
         return
 
     clean = configobj['STATE OF INPUT FILES']['clean']
@@ -242,7 +259,7 @@ def run(configobj, wcsmap=None):
         if imgObjList:
             for image in imgObjList:
                 if clean:
-                    image.clean()
+                    image.clean(keep_files=keep_files)
                 image.close()
             del imgObjList
             del outwcs

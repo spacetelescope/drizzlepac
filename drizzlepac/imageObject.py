@@ -128,7 +128,7 @@ class baseImageObject:
         # else:
         #     self._image.data= None # np.array(0,dtype=self.getNumpyType(self._image.header["BITPIX"]))
 
-    def clean(self):
+    def clean(self, keep_files=None):
         """ Deletes intermediate products generated for this imageObject.
         """
         clean_files = ['blotImage','crmaskImage','finalMask',
@@ -136,7 +136,14 @@ class baseImageObject:
                         'outSContext','outSWeight','outSingle',
                         'outMedian','dqmask','tmpmask',
                         'skyMatchMask']
-
+        if keep_files:
+            for kfile in keep_files:
+                if kfile in clean_files:
+                    clean_files.remove(kfile)
+                else:
+                    log.info("Did not find intermediate product type {} to keep.".format(kfile))
+                    log.info("Valid choices are: {}".format(clean_files))
+                    
         log.info('Removing intermediate files for %s' % self._filename)
         # We need to remove the combined products first; namely, median image
         util.removeFileSafely(self.outputNames['outMedian'])
