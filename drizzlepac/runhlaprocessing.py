@@ -380,7 +380,6 @@ def run_hla_processing(input_filename, result=None, debug=True):
             else:
                 log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
 
-
         # 8: Run AstroDrizzle to produce total detection products
         log.info("8: Run AstroDrizzle to produce total detection products")
         for obs_category in obs_info_dict.keys():
@@ -403,6 +402,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
                 run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'],custom_wcs=meta_wcs)
             else:
                 log.info("{}: Total detection AstroDrizzle step skipped.".format(obs_category))
+
         # 9: Create source catalogs from newly defined products (HLA-204)
         log.info("9: (TODO) Create source catalog from newly defined product")
         # TODO: SOURCELIST GENERATION SUBROUTINE CALL GOES HERE.
