@@ -97,6 +97,9 @@ of the list).
   to the associated regression tests migrated from the original hlapipeline
   package [#283].
 
+- Fixed improper logic caused by nested if statements in analyze.py found
+  when testing [#283].
+
 
 2.2.6 (02-Nov-2018)
 ===================
