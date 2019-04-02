@@ -165,10 +165,7 @@ def run(configobj, wcsmap=None, keep_files=[]):
                     'outSContext','outSWeight','outSingle',
                     'outMedian','dqmask','tmpmask',
                     'skyMatchMask']
-    invalid_entries = []
-    for kfile in keep_files:
-        if kfile not in clean_files:
-            invalid_entries.append(kfile)
+    invalid_entries = set(keep_files).difference(clean_files)
     if invalid_entries:
         errmsg = "ERROR: These entries of the `keep_files` parameters "
         errmsg += "were invalid\n:    {}\n".format(invalid_entries)
