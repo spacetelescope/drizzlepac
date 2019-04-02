@@ -26,48 +26,47 @@ __version_date__ = '19-Mar-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
 # set up instrument/detector-specific astrodrizzle params
-astrodrizzle_param_dict = {}
-astrodrizzle_param_dict["ACS HRC"] = {
-    "SCALE": 0.025,
-    "PIXFRAC": 1.0,
-    "KERNEL": "square",
-    "OUTNX": None,
-    "OUTNY": None,
-    "ROT": 0.0,
-    "BITS": 256}
-astrodrizzle_param_dict["ACS SBC"] = {
-    "SCALE": 0.03,
-    "PIXFRAC": 1.0,
-    "KERNEL": "square",
-    "OUTNX": None,
-    "OUTNY": None,
-    "ROT": 0.0,
-    "BITS": 256}
-astrodrizzle_param_dict["ACS WFC"] = {
-    "SCALE": 0.05,
-    "PIXFRAC": 1.0,
-    "KERNEL": "square",
-    "OUTNX": None,
-    "OUTNY": None,
-    "ROT": 0.0,
-    "BITS": 256}
-astrodrizzle_param_dict["WFC3 IR"] = {
-    "SCALE": 0.09,
-    "PIXFRAC": 1.0,
-    "KERNEL": "square",
-    "OUTNX": None,
-    "OUTNY": None,
-    "ROT": 0.0,
-    "BITS": 768}
-astrodrizzle_param_dict["WFC3 UVIS"] = {
-    "SCALE": 0.04,
-    "PIXFRAC": 1.0,
-    "KERNEL": "square",
-    "OUTNX": None,
-    "OUTNY": None,
-    "ROT": 0.0,
-    "BITS": 256}
-
+astrodrizzle_param_dict={
+    "ACS HRC": {
+        "SCALE": 0.025,
+        "PIXFRAC": 1.0,
+        "KERNEL": "square",
+        "OUTNX": None,
+        "OUTNY": None,
+        "ROT": 0.0,
+        "BITS": 256},
+    "ACS SBC": {
+        "SCALE": 0.03,
+        "PIXFRAC": 1.0,
+        "KERNEL": "square",
+        "OUTNX": None,
+        "OUTNY": None,
+        "ROT": 0.0,
+        "BITS": 256},
+    "ACS WFC": {
+        "SCALE": 0.05,
+        "PIXFRAC": 1.0,
+        "KERNEL": "square",
+        "OUTNX": None,
+        "OUTNY": None,
+        "ROT": 0.0,
+        "BITS": 256},
+    "WFC3 IR": {
+        "SCALE": 0.09,
+        "PIXFRAC": 1.0,
+        "KERNEL": "square",
+        "OUTNX": None,
+        "OUTNY": None,
+        "ROT": 0.0,
+        "BITS": 768},
+    "WFC3 UVIS": {
+        "SCALE": 0.04,
+        "PIXFRAC": 1.0,
+        "KERNEL": "square",
+        "OUTNX": None,
+        "OUTNY": None,
+        "ROT": 0.0,
+        "BITS": 256}}
 # ----------------------------------------------------------------------------------------------------------------------
 
 def convert_base10_base36(in_number):
@@ -291,15 +290,15 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
                      'stepsize': 10,
                      'output': outfilename,
                      'preserve': False,
-                     'resetbits': 4096,
-                     'final_wcs': True,
-                     }
+                     'resetbits': 4096}
 
     # splice in parameters from instrument/detector-specific astrodrizzle dictionary
     for key in adriz_param_dict.keys():
-        pipeline_pars["final_{}".format(key.lower())] = adriz_param_dict[key]
-        pipeline_pars["driz_sep_{}".format(key.lower())] = adriz_param_dict[key]
-
+        if key in ["SCALE","PIXFRAC","KERNEL","OUTNX","OUTNY","ROT","BITS"]:
+            pipeline_pars["final_{}".format(key.lower())] = adriz_param_dict[key]
+            pipeline_pars["driz_sep_{}".format(key.lower())] = adriz_param_dict[key]
+        else:
+            pipeline_pars[key] = adriz_param_dict[key]
     # prep custom_wcs values
     if custom_wcs:
         custom_pars = wcs_functions.create_mosaic_pars(custom_wcs)
@@ -308,8 +307,9 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
         pipeline_keys=pipeline_pars.keys()
         for custom_key in custom_pars.keys():
             if custom_key in pipeline_keys:
-                log.info("Updating pipeline_pars value '{}' from {} to {}".format(custom_key,pipeline_pars[custom_key],custom_pars[custom_key]))
-                pipeline_pars[custom_key] = custom_pars[custom_key]
+                if custom_pars[custom_key] != pipeline_pars[custom_key]:
+                    log.info("Updating pipeline_pars value '{}' from {} to {}".format(custom_key,pipeline_pars[custom_key],custom_pars[custom_key]))
+                    pipeline_pars[custom_key] = custom_pars[custom_key]
             else:
                 log.info("Inserting custom_pars value '{}' = {} into pipeline_pars.".format(custom_key,custom_pars[custom_key]))
                 pipeline_pars[custom_key] = custom_pars[custom_key]
@@ -367,22 +367,42 @@ def run_hla_processing(input_filename, result=None, debug=True):
         log.info("7: Run AstroDrizzle to produce filter-level products.")
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
+                adriz_param_dict = {}
                 for inst_det in astrodrizzle_param_dict.keys():
                         if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict=astrodrizzle_param_dict[inst_det]
+                            adriz_param_dict=astrodrizzle_param_dict[inst_det].copy()
                             log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det,obs_category))
                             break
+                # Turn on astrodrizzle step 7a: Custom WCS for final output
+                adriz_param_dict["final_wcs"] = True
                 run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'],custom_wcs=meta_wcs)
                 rename_subproduct_files(obs_info_dict[obs_category])
-
-
             else:
                 log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
 
 
         # 8: Run AstroDrizzle to produce total detection products
-        # TODO: FINAL DRIZZLE STEP CODE GOES HERE!
-
+        log.info("8: Run AstroDrizzle to produce total detection products")
+        for obs_category in obs_info_dict.keys():
+            if obs_category.startswith("total detection product"):
+                adriz_param_dict = {}
+                for inst_det in astrodrizzle_param_dict.keys():
+                        if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
+                            adriz_param_dict=astrodrizzle_param_dict[inst_det].copy()
+                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det,obs_category))
+                            break
+                # Turn off all astrodrizzle steps EXCEPT steps 7 and 7a.
+                adriz_param_dict["static"] = False
+                adriz_param_dict["skysub"] = False
+                adriz_param_dict["driz_separate"] = False
+                adriz_param_dict["driz_sep_wcs"] = False
+                adriz_param_dict["median"] = False
+                adriz_param_dict["blot"] = False
+                adriz_param_dict["driz_combine"] = True
+                adriz_param_dict["final_wcs"] = True
+                run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'],custom_wcs=meta_wcs)
+            else:
+                log.info("{}: Total detection AstroDrizzle step skipped.".format(obs_category))
         # 9: Create source catalogs from newly defined products (HLA-204)
         log.info("9: (TODO) Create source catalog from newly defined product")
         # TODO: SOURCELIST GENERATION SUBROUTINE CALL GOES HERE.
