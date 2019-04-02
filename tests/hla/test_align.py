@@ -20,7 +20,7 @@ RMS_LIMIT = 10.0
 class TestAlignMosaic(BaseHLATest):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard.
 
-        Characeteristics of these tests:
+        Characteristics of these tests:
           * A single astrometric catalog was obtained with both GAIA and non-GAIA
             (PanSTARRS?) sources for the entire combined field-of-view using the GSSS
             server.
@@ -60,7 +60,7 @@ class TestAlignMosaic(BaseHLATest):
     def test_align_ngc188(self):
         """ Verify whether NGC188 exposures can be aligned to an astrometric standard.
 
-        Characeteristics of this test:
+        Characteristics of this test:
             of NGC188 suitable for creating a combined mosaic using both instruments.
         """
         totalRMS = 0.0
@@ -96,7 +96,7 @@ class TestAlignMosaic(BaseHLATest):
     def test_align_47tuc(self):
         """ Verify whether 47Tuc exposures can be aligned to an astrometric standard.
 
-        Characeteristics of this test:
+        Characteristics of this test:
           * Input exposures include both ACS and WFC3 images of the same general field-of-view
             of 47Tuc suitable for creating a combined mosaic using both instruments.
         """
@@ -125,7 +125,6 @@ class TestAlignMosaic(BaseHLATest):
 
         assert (0.0 < totalRMS <= RMS_LIMIT)
 
-    @pytest.mark.xfail
     @pytest.mark.parametrize("input_filenames", [['j8ura1j1q_flt.fits','j8ura1j2q_flt.fits',
                                                   'j8ura1j4q_flt.fits','j8ura1j6q_flt.fits',
                                                   'j8ura1j7q_flt.fits','j8ura1j8q_flt.fits',
@@ -145,15 +144,6 @@ class TestAlignMosaic(BaseHLATest):
                                                   'jbqf02iaq_flc.fits'],
                                                  ['ib2u12kaq_flt.fits', 'ib2u12keq_flt.fits',
                                                   'ib2u12kiq_flt.fits', 'ib2u12klq_flt.fits'],
-                                                 ['ibjt01a1q_flc.fits', 'ibjt01a8q_flc.fits',
-                                                  'ibjt01aiq_flt.fits', 'ibjt01amq_flt.fits',
-                                                  'ibjt01aqq_flt.fits', 'ibjt01auq_flt.fits',
-                                                  'ibjt01yqq_flc.fits', 'ibjt01z0q_flc.fits',
-                                                  'ibjt01zwq_flc.fits', 'ibjt01a4q_flc.fits',
-                                                  'ibjt01acq_flc.fits', 'ibjt01akq_flt.fits',
-                                                  'ibjt01aoq_flt.fits', 'ibjt01asq_flt.fits',
-                                                  'ibjt01avq_flt.fits', 'ibjt01yuq_flc.fits',
-                                                  'ibjt01ztq_flc.fits'],
                                                  ['ibnh02coq_flc.fits','ibnh02cmq_flc.fits',
                                                   'ibnh02c7q_flc.fits','ibnh02c5q_flc.fits',
                                                   'ibnh02cpq_flc.fits','ibnh02c9q_flc.fits',
@@ -173,7 +163,6 @@ class TestAlignMosaic(BaseHLATest):
             * ACS dataset 10265_01: 4x F606W full-frame ACS/WFC images
             * ACS dataset 12580_02: 5x F475W & 6x F814W ACS/WFC images
             * WFC3 dataset 11663_12: 4x F160W full-frame WFC3/IR images
-            * WFC3 dataset 12219_01: 8x F160W full-frame WFC3/IR images, 9x F336W full-frame WFC3/UVIS images
             * WFC3 dataset 12379_02: 4X F606W, 4x F502N full-frame WFC3/UVIS images
 
         """
@@ -195,6 +184,57 @@ class TestAlignMosaic(BaseHLATest):
         except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+
+        assert (0.0 < totalRMS <= RMS_LIMIT)
+
+    @pytest.mark.xfail
+    @pytest.mark.slow
+    def test_align_fail_single_visit(self):
+        """ Verify whether single-visit exposures can be aligned to an astrometric standard.
+
+        Characteristics of this test:
+          * Input exposures include exposures from a number of single visit datasets to explore what impact differing
+            observing modes (differing instruments, detectors, filters, subarray size, etc.) have on astrometry.
+            This test is known to fail due to "RuntimeError: Number of output coordinates exceeded allocation (475)a".
+            It will exercise the code using both catalogs for each of the three fitting algorithms at this time. Nans 
+            will be present in the output table.
+
+
+        The following datasets are used in these tests:
+            * WFC3 dataset 12219_01: 8x F160W full-frame WFC3/IR images, 9x F336W full-frame WFC3/UVIS images
+
+        """
+        totalRMS = 0.0
+        input_filenames = ['ibjt01a1q_flc.fits', 'ibjt01a8q_flc.fits',
+                                'ibjt01aiq_flt.fits', 'ibjt01amq_flt.fits',
+                                'ibjt01aqq_flt.fits', 'ibjt01auq_flt.fits',
+                                'ibjt01yqq_flc.fits', 'ibjt01z0q_flc.fits',
+                                'ibjt01zwq_flc.fits', 'ibjt01a4q_flc.fits',
+                                'ibjt01acq_flc.fits', 'ibjt01akq_flt.fits',
+                                'ibjt01aoq_flt.fits', 'ibjt01asq_flt.fits',
+                                'ibjt01avq_flt.fits', 'ibjt01yuq_flc.fits',
+                                'ibjt01ztq_flc.fits'],
+
+        # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
+        # MAST, get the data now using ci_watson.
+        for input_file in input_filenames:
+            get_bigdata('hst-hla-pipeline','dev','base_tests',input_file)
+
+        try:
+            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
+
+            # Examine the output table to extract the RMS for the entire fit and the compromised information
+            if datasetTable:
+                totalRMS = datasetTable['total_rms'][0]
+
+        except Exception:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+
+        # Examine the output table to extract the RMS for the entire fit and the compromised information
+        if datasetTable:
+            totalRMS = datasetTable['total_rms'][0]
 
         assert (0.0 < totalRMS <= RMS_LIMIT)
 

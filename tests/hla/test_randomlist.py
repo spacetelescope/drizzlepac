@@ -52,7 +52,7 @@ class TestAlignMosaic(BaseHLATest):
             $ tail -f test_random_output.txt
     """
 
-    #@pytest.mark.xfail
+    @pytest.mark.xfail
     @pytest.mark.slow
     def test_align_randomFields(self):
         """ Wrapper to set up the test for aligning a large number of randomly
