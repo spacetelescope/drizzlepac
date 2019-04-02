@@ -57,7 +57,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
-                 wcsmap=None, keep_files=None, **input_dict):
+                 wcsmap=None, keep_files=[], **input_dict):
     """ AstroDrizzle command-line interface """
     # Support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj
@@ -121,7 +121,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
 ##  Interfaces used by TEAL ##
 ##############################
 @util.with_logging
-def run(configobj, wcsmap=None, keep_files=None):
+def run(configobj, wcsmap=None, keep_files=[]):
     """
     Initial example by Nadia ran MD with configobj EPAR using:
     It can be run in one of two ways:
