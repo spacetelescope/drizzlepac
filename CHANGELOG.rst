@@ -92,6 +92,14 @@ of the list).
 
 - Ensure singletons do not use the match_relative_fit algorithm [#259]
 
+- Entirely re-wrote check_and_get_data function in alignimages.py.
+  Updates to the overall hlapipeline alignment code and updates/clean-up 
+  to the associated regression tests migrated from the original hlapipeline
+  package [#283].
+
+- Fixed improper logic caused by nested if statements in analyze.py found
+  when testing [#283].
+
 
 2.2.6 (02-Nov-2018)
 ===================
