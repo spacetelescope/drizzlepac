@@ -109,7 +109,7 @@ def convert_base10_base36(in_number):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def generate_test_data():
+def generate_test_data(file_name):
     """
     Generates test data for use during development
 
@@ -117,35 +117,87 @@ def generate_test_data():
     -------
     obs_info_dict,filelist
     """
-    obs_info_dict = {}
-    # obs_info_dict definition #1
-    # obs_info_dict["single exposure product 00"] = "50 A1S WFC3 IR F110W ia1s70jrq"  # test proposal_id padding
-    # obs_info_dict["single exposure product 01"] = "11150 A1S WFC3 UVIS F110W ia1s70jtq"
-    # obs_info_dict["single exposure product 02"] = "11150 A1S WFC3 IR F110W ia1s70jvq"
-    # obs_info_dict["single exposure product 03"] = "11150 A1S WFC3 IR F110W ia1s70jwq"
-    # obs_info_dict["single exposure product 04"] = "11150 A1S WFC3 IR F160W ia1s70jkq"
-    # obs_info_dict["single exposure product 05"] = "11150 A1S WFC3 IR F160W ia1s70jmq"
-    # obs_info_dict["single exposure product 06"] = "11150 A1S WFC3 IR F160W ia1s70joq"
-    # obs_info_dict["single exposure product 07"] = "11150 A1S WFC3 IR F160W ia1s70jpq"
-    # obs_info_dict["single exposure product 08"] = "10182 A1S ACS HRC PR200LPOL120UV j90za1hyq"  # determine maximum generated name length
-    # obs_info_dict["filter product 00"] = "11150 A1S WFC3 IR F110W"
-    # obs_info_dict["filter product 01"] = "11150 A1S WFC3 IR F160W"
-    # obs_info_dict["total detection product 00"] = "11150 A1S WFC3 IR"
-    # obs_info_dict['multivisit mosaic product 00'] = "1234567 ACS WFC F606W"
+    if file_name == "ib4604.out":
+        obs_info_dict = {'total detection product 00':
+                             {'info': '11665 B46 WFC3 UVIS',
+                              'files': ['ib4604fmq_flc.fits',
+                                        'ib4604fxq_flc.fits',
+                                        'ib4604fnq_flc.fits',
+                                        'ib4604fuq_flc.fits',
+                                        'ib4604fqq_flc.fits',
+                                        'ib4604fvq_flc.fits',
+                                        'ib4604g2q_flt.fits',
+                                        'ib4604g6q_flt.fits',
+                                        'ib4604g3q_flt.fits',
+                                        'ib4604g8q_flt.fits']},
+                         'filter product 00':
+                             {'info': '11665 B46 WFC3 IR F110W',
+                              'files': ['ib4604g2q_flt.fits',
+                                        'ib4604g6q_flt.fits']},
+                         'single exposure product 00':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FMQ',
+                              'files': ['ib4604fmq_flc.fits']},
+                         'single exposure product 01':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FXQ',
+                              'files': ['ib4604fxq_flc.fits']},
+                         'filter product 01':
+                             {'info': '11665 B46 WFC3 IR F160W',
+                              'files': ['ib4604g3q_flt.fits',
+                                        'ib4604g8q_flt.fits']},
+                         'single exposure product 02':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FNQ',
+                              'files': ['ib4604fnq_flc.fits']},
+                         'single exposure product 03':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FUQ',
+                              'files': ['ib4604fuq_flc.fits']},
+                         'filter product 02':
+                             {'info': '11665 B46 WFC3 UVIS F555W',
+                              'files': ['ib4604fqq_flc.fits',
+                                        'ib4604fvq_flc.fits']},
+                         'single exposure product 04':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FQQ',
+                              'files': ['ib4604fqq_flc.fits']},
+                         'single exposure product 05':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FVQ',
+                              'files': ['ib4604fvq_flc.fits']},
+                         'single exposure product 06':
+                             {'info': '11665 B46 WFC3 IR F110W IB4604G2Q',
+                              'files': ['ib4604g2q_flt.fits']},
+                         'single exposure product 07':
+                             {'info': '11665 B46 WFC3 IR F110W IB4604G6Q',
+                              'files': ['ib4604g6q_flt.fits']},
+                         'single exposure product 08':
+                             {'info': '11665 B46 WFC3 IR F160W IB4604G3Q',
+                              'files': ['ib4604g3q_flt.fits']},
+                         'single exposure product 09':
+                             {'info': '11665 B46 WFC3 IR F160W IB4604G8Q',
+                              'files': ['ib4604g8q_flt.fits']}}
 
-    # obs_info_dict/filelist definition for ACS/WFC visit 10265_01
-    obs_info_dict["single exposure product 00"] = {"info": "10265 01S ACS WFC F606W j92c01b4q", "files":["j92c01b4q_flc.fits"]}
-    obs_info_dict["single exposure product 01"] = {"info": "10265 01S ACS WFC F606W j92c01b5q", "files":["j92c01b5q_flc.fits"]}
-    obs_info_dict["single exposure product 02"] = {"info": "10265 01S ACS WFC F606W j92c01b7q", "files":["j92c01b7q_flc.fits"]}
-    obs_info_dict["single exposure product 03"] = {"info": "10265 01S ACS WFC F606W j92c01b9q", "files":["j92c01b9q_flc.fits"]}
-    obs_info_dict["filter product 00"] = {"info": "10265 01S ACS WFC F606W", "files":['j92c01b4q_flc.fits',
-                                                                                      'j92c01b5q_flc.fits',
-                                                                                      'j92c01b7q_flc.fits',
-                                                                                      'j92c01b9q_flc.fits']}
-    obs_info_dict["total detection product 00"] = {"info": "10265 01S ACS WFC", "files":['j92c01b4q_flc.fits',
-                                                                                               'j92c01b5q_flc.fits',
-                                                                                               'j92c01b7q_flc.fits',
-                                                                                               'j92c01b9q_flc.fits']}
+    if file_name == "j92c01.out":# obs_info_dict/filelist definition for ACS/WFC visit 10265_01
+        obs_info_dict={"single exposure product 00":
+                           {"info": "10265 01S ACS WFC F606W j92c01b4q",
+                            "files":["j92c01b4q_flc.fits"]},
+                       "single exposure product 01":
+                           {"info": "10265 01S ACS WFC F606W j92c01b5q",
+                            "files":["j92c01b5q_flc.fits"]},
+                       "single exposure product 02":
+                           {"info": "10265 01S ACS WFC F606W j92c01b7q",
+                            "files":["j92c01b7q_flc.fits"]},
+                       "single exposure product 03":
+                           {"info": "10265 01S ACS WFC F606W j92c01b9q",
+                            "files":["j92c01b9q_flc.fits"]},
+                       "filter product 00":
+                           {"info": "10265 01S ACS WFC F606W",
+                            "files":['j92c01b4q_flc.fits',
+                                     'j92c01b5q_flc.fits',
+                                     'j92c01b7q_flc.fits',
+                                     'j92c01b9q_flc.fits']},
+                       "total detection product 00":
+                           {"info": "10265 01S ACS WFC",
+                            "files":['j92c01b4q_flc.fits',
+                                     'j92c01b5q_flc.fits',
+                                     'j92c01b7q_flc.fits',
+                                     'j92c01b9q_flc.fits']}}
     return(obs_info_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -333,7 +385,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
         # TODO: SUBROUTINE CALL GOES HERE.
-        obs_info_dict = generate_test_data() #TODO: REMOVE once all previous steps are up and running
+        obs_info_dict = generate_test_data(input_filename) #TODO: REMOVE once all previous steps are up and running
 
         # 3: generate an output names for each defined product...
         log.info("3: generate an output names for each defined product")
@@ -353,7 +405,8 @@ def run_hla_processing(input_filename, result=None, debug=True):
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
 
                 run_perform_align(obs_info_dict[obs_category]['files'])
-                wcs_input_list += obs_info_dict[obs_category]['files']
+                for item in obs_info_dict[obs_category]['files']:
+                    wcs_input_list.append(item)
             else:
                 log.info("{}: Alignimages step skipped.".format(obs_category))
 
