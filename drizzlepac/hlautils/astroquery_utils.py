@@ -51,28 +51,29 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
 
     # Query MAST for the data with an observation type of either "science" or
     # "calibration"
-    obsTable = Observations.query_criteria(obs_id=obsid, obstype='all')
+    obs_table = Observations.query_criteria(obs_id=obsid, obstype='all')
     # Catch the case where no files are found for download
-    if len(obsTable) == 0:
+    if len(obs_table) == 0:
         log.info("WARNING: Query for {} returned NO RESULTS!".format(obsid))
         return local_files
 
-    dpobs = Observations.get_product_list(obsTable)
-    dataProductsByID = Observations.filter_products(dpobs,
-                                                    productSubGroupDescription=
-                                                    suffix, extension='fits',
-                                                    mrp_only=False)
+    dpobs = Observations.get_product_list(obs_table)
+    data_products_by_id = \
+        Observations.filter_products(dpobs,
+                                     productSubGroupDescription=suffix, 
+                                     extension='fits',
+                                     mrp_only=False)
 
     # After the filtering has been done, ensure there is still data in the
     # table for download. If the table is empty, look for FLT images in lieu
     # of FLC images. Only want one or the other (not both!), so just do the
     # filtering again.
-    if len(dataProductsByID) == 0:
+    if len(data_products_by_id) == 0:
         log.info(
             "WARNING: No FLC files found for {} - will look for FLT files "
             "instead.".format(obsid))
         suffix = ['FLT']
-        dataProductsByID = \
+        data_products_by_id = \
             Observations.filter_products(dpobs,
                                          productSubGroupDescription=suffix,
                                          extension='fits',
@@ -80,37 +81,38 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
 
         # If still no data, then return.  An exception will eventually be
         # thrown in the higher level code.
-        if len(dataProductsByID) == 0:
+        if len(data_products_by_id) == 0:
             log.info(
                 "WARNING: No FLC or FLT files found for {}.".format(obsid))
             return local_files
-    allImages = []
-    for tableLine in dataProductsByID:
-        allImages.append(tableLine['productFilename'])
-    log.info(allImages)
+    all_images = []
+    for tableLine in data_products_by_id:
+        all_images.append(tableLine['productFilename'])
+    log.info(all_images)
     if not clobber:
-        rowsToRemove = []
-        for rowCtr in range(0, len(dataProductsByID)):
-            if os.path.exists(dataProductsByID[rowCtr]['productFilename']):
+        rows_to_remove = []
+        for rowCtr in range(0, len(data_products_by_id)):
+            if os.path.exists(data_products_by_id[rowCtr]['productFilename']):
                 log.info("{} already exists. File download skipped.".format(
-                    dataProductsByID[rowCtr]['productFilename']))
-                rowsToRemove.append(rowCtr)
-        if rowsToRemove:
-            rowsToRemove.reverse()
-            for rowNum in rowsToRemove:
-                dataProductsByID.remove_row(rowNum)
+                    data_products_by_id[rowCtr]['productFilename']))
+                rows_to_remove.append(rowCtr)
+        if rows_to_remove:
+            rows_to_remove.reverse()
+            for rowNum in rows_to_remove:
+                data_products_by_id.remove_row(rowNum)
 
-    manifest = Observations.download_products(dataProductsByID, mrp_only=False)
+    manifest = Observations.download_products(data_products_by_id, 
+                                              mrp_only=False)
 
     if not clobber:
-        rowsToRemove.reverse()
-        for rownum in rowsToRemove:
+        rows_to_remove.reverse()
+        for rownum in rows_to_remove:
             if not manifest:
-                local_files = allImages
+                local_files = all_images
                 return local_files
             else:
                 manifest.insert_row(rownum,
-                                    vals=[allImages[rownum], "LOCAL", "None",
+                                    vals=[all_images[rownum], "LOCAL", "None",
                                           "None"])
 
     download_dir = None
