@@ -96,6 +96,10 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'numpydoc',
+    'sphinx_automodapi.automodapi',
+    'sphinx_automodapi.automodsumm',
+    'sphinx_automodapi.autodoc_enhancements',
+    'sphinx_automodapi.smart_resolver',
 ]
 
 if on_rtd:
