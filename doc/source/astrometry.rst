@@ -46,7 +46,7 @@ The use of headerlets extends this standard by allowing each new WCS, specified 
    20  HDRLET        5 HeaderletHDU     26   ()
    21  HDRLET        6 HeaderletHDU     26   ()
 
-In this example, extensions 16 through 21 contain headerlets each of which specifies different astrometric alignment (each may potentially be based on a different distortion model) and each has been assigned a unique name given by the **WCSNAME** keyword.  A quick listing of the names of all these WCSs can be obtained using the Python library STWCS ::
+In this example, extensions 16 through 21 contain headerlets each of which specifies different astrometric alignment (each may potentially be based on a different distortion model) and each has been assigned a unique name given by the **WCSNAME** keyword.  A quick listing of the names of all these WCSs can be obtained using the Python library STWCS:
 
 .. code-block:: python
 
