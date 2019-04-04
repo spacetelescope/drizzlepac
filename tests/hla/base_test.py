@@ -28,7 +28,7 @@ class BaseHLATest(BaseTest):
     results_root = 'hst-hla-pipeline-results'
     output_shift_file = None
     fit_limit = 0.010 # 10 milli-arcseconds
-    
+
     docopy = False  # Do not make additional copy by default
     rtol = 1e-6
 
@@ -343,22 +343,16 @@ class BaseUnit(BaseHLATest):
 
     def read_image(self, filename):
         """
-        Read the image from a fits file
+        Read the image from first extension of a fits file
         """
-        hdu = fits.open(filename)
-
-        image = hdu[1].data
-        hdu.close()
-        return image
+        return fits.getdata(filename,ext=1)
 
     def read_wcs(self, filename):
         """
         Read the wcs of a fits file
         """
-        hdu = fits.open(filename)
-
-        wcs = stwcs.wcsutil.HSTWCS(hdu, 1)
-        hdu.close()
+        from fits.open(filename) as hdu:
+            wcs = stwcs.wcsutil.HSTWCS(hdu, 1)
         return wcs
 
     def write_wcs(self, hdu, image_wcs):
